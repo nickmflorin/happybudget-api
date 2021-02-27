@@ -1,0 +1,12 @@
+.elasticbeanstalk/*
+.venv/
+.git/
+.gitignore
+.editorconfig
+postgres-data
+.python-version
+.venv/
+pip-wheel-metadata
+__pycache__
+.pytest_cache/
+*.egg-info

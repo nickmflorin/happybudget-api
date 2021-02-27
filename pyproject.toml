@@ -1,0 +1,55 @@
+[tool.poetry]
+name = "greenbudget"
+version = "0.1.0"
+description = "Backend Application for Green Buget Application"
+authors = ["nickmflorin <nickmflorin@gmail.com>"]
+repository = "https://github.com/Saturation-IO/greenbudget-api"
+homepage = "https://github.com/Saturation-IO/greenbudget-api"
+include = [
+  "README.md",
+  "pyproject.toml"
+]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+dj-database-url = "0.5.0"
+djangorestframework = "3.11.1"
+Django = "^3.1.6"
+djangorestframework_simplejwt = "4.3.0"
+djangorestframework-filters = "1.0.0.dev0"
+tox = "^3.20.1"
+python-dotenv = "^0.15.0"
+pytest = "^6.2.2"
+django-cors-headers = "^3.7.0"
+
+[tool.poetry.extras]
+docs = [
+  "sphinx",
+  "sphinx-rtd-theme",
+  "sphinxcontrib.documentedlist",
+  "sphinxcontrib.httpdomain",
+  "sphinxcontrib.httpexample"
+]
+debug = [ "ipython", "ipdb" ]
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.1.1"
+coverage = "^4.5"
+flake8 = "^3.7"
+pytest-freezegun = "^0.4.2"
+factory-boy = "3.0.1"
+pytest-django = "3.10.0"
+responses = "^0.12.1"
+mock = "4.0.2"
+pylint = "2.6.0"
+pytest-cov = "^2.10.1"
+pytest-pythonpath = "^0.7.3"
+flake8_formatter_junit_xml = "^0.0.6"
+ipdb = "0.13.4"
+
+[tool.poetry.scripts]
+manage = "backend.lib.django_utils.cli:main"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
