@@ -9,6 +9,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from greenbudget.app.user.serializers import UserSerializer
+
 from .auth_backends import (
     JWTCookieAuthentication, CsrfExcemptSessionAuthentication)
 from .exceptions import InvalidToken, ExpiredToken, TokenExpiredError
@@ -39,5 +41,9 @@ class TokenValidateView(APIView):
             raise InvalidToken(*e.args) from e
         user_id = token_obj.get(api_settings.USER_ID_CLAIM)
         user = get_user_model().objects.get(pk=user_id)
-        # TODO: Return the serialized user.
-        return Response({}, status=status.HTTP_201_CREATED)
+        return Response({
+            'user': UserSerializer(
+                user,
+                expand=['organization', 'role']
+            ).data,
+        }, status=status.HTTP_201_CREATED)

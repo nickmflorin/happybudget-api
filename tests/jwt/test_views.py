@@ -2,6 +2,7 @@ from datetime import datetime
 from http.cookies import SimpleCookie
 import pytest
 
+from greenbudget.lib.utils.dateutils import api_datetime_string
 from greenbudget.app.jwt.tokens import GreenbudgetSlidingToken
 
 
@@ -24,7 +25,24 @@ def test_validate_token(api_client, settings, user):
     assert response.status_code == 201
     assert 'greenbudgetjwt' in response.cookies
 
-    assert response.json() == {}
+    assert response.json() == {
+        'user': {
+            'id': user.pk,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'full_name': user.full_name,
+            'email': user.email,
+            'username': user.username,
+            'is_active': user.is_active,
+            'is_admin': user.is_admin,
+            'is_superuser': user.is_superuser,
+            'is_staff': user.is_staff,
+            'date_joined': api_datetime_string(user.date_joined),
+            'updated_at': api_datetime_string(user.updated_at),
+            'created_at': api_datetime_string(user.created_at),
+            'last_login': '2020-01-01 00:00:00',
+        }
+    }
 
 
 @pytest.mark.freeze_time('2020-01-01')
