@@ -1,9 +1,9 @@
-from datetime import timedelta
-from django.utils import timezone
 import logging
 import pytest
 import requests
 from rest_framework.test import APIClient
+
+from greenbudget.app.user.models import User
 
 
 @pytest.fixture(autouse=True)
@@ -46,3 +46,20 @@ def api_client():
             super().force_login(user, **kwargs)
 
     return GreenbudgetApiClient()
+
+
+@pytest.fixture
+def user(db):
+    user = User.objects.create(
+        email="test+user@gmail.com",
+        username="test+user@gmail.com",
+        first_name="Test",
+        last_name="User",
+        is_active=True,
+        is_admin=False,
+        is_staff=False,
+        is_superuser=False,
+    )
+    user.set_password("test-password")
+    user.save()
+    return user

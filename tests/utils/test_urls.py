@@ -38,14 +38,15 @@ class TestMakeUrlAbsolute:
             scheme="http",
             domain="google.com"
         )
-        assert absolute_url == "http://google.com/api/document/5"
+        assert absolute_url == "https://google.com/api/document/5"
 
     @override_settings(APP_URL="https://greenbudget.com")
     def test_make_absolute_url_absolute(self):
         """
         If the URL is already absolute, the URL should be unchanged.
         """
-        absolute_url = make_url_absolute("https://greenbudget.com/api/document/5")
+        absolute_url = make_url_absolute(
+            "https://greenbudget.com/api/document/5")
         assert absolute_url == "https://greenbudget.com/api/document/5"
 
 
@@ -56,7 +57,8 @@ class TestRelativizeUrl:
         If the scheme differs from the APP_URL in settings, the
         URL should still be relativized.
         """
-        relativized_url = relativize_url("http://greenbudget.com/api/document/5")
+        relativized_url = relativize_url(
+            "http://greenbudget.com/api/document/5")
         assert relativized_url == "/api/document/5"
 
     @override_settings(APP_URL="http://greenbudget.com")
@@ -65,7 +67,8 @@ class TestRelativizeUrl:
         If the URL is absolute in the context of the APP_URL, the
         URL relative to that scheme/domain should be returned.
         """
-        relativized_url = relativize_url("http://greenbudget.com/api/document/5")
+        relativized_url = relativize_url(
+            "http://greenbudget.com/api/document/5")
         assert relativized_url == "/api/document/5"
 
     @override_settings(APP_URL="http://greenbudget.com")

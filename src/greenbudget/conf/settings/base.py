@@ -114,6 +114,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'greenbudget.app.budget',
+    'greenbudget.app.user',
+    'greenbudget.app.jwt'
 ]
 
 AUTHENTICATION_BACKENDS = [
