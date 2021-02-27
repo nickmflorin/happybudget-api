@@ -211,6 +211,14 @@ Django = ">=2.2"
 
 [[package]]
 category = "main"
+description = "Cache-based rate-limiting for Django."
+name = "django-ratelimit"
+optional = false
+python-versions = ">=3.4"
+version = "3.0.1"
+
+[[package]]
+category = "main"
 description = "Web APIs for Django, made easy."
 name = "djangorestframework"
 optional = false
@@ -879,7 +887,7 @@ debug = []
 docs = []
 
 [metadata]
-content-hash = "74a8fafe2970dc2c844101d34500684ae6a05f48a2a327f939c4776c6b43c050"
+content-hash = "72a104b7b3951e00211b22b663e3ab04dea37ec7f5127304ff53551053e6571f"
 lock-version = "1.0"
 python-versions = "^3.8"
 
@@ -1038,6 +1046,10 @@ django-cors-headers = [
 django-filter = [
     {file = "django-filter-2.4.0.tar.gz", hash = "sha256:84e9d5bb93f237e451db814ed422a3a625751cbc9968b484ecc74964a8696b06"},
     {file = "django_filter-2.4.0-py3-none-any.whl", hash = "sha256:e00d32cebdb3d54273c48f4f878f898dced8d5dfaad009438fe61ebdf535ace1"},
+]
+django-ratelimit = [
+    {file = "django-ratelimit-3.0.1.tar.gz", hash = "sha256:73223d860abd5c5d7b9a807fabb39a6220068129b514be8d78044b52607ab154"},
+    {file = "django_ratelimit-3.0.1-py2.py3-none-any.whl", hash = "sha256:857e797f23de948b204a31dba9d88aea3ce731b7a5d926d0240c772e19b5486f"},
 ]
 djangorestframework = [
     {file = "djangorestframework-3.11.1-py3-none-any.whl", hash = "sha256:8b1ac62c581dbc5799b03e535854b92fc4053ecfe74bad3f9c05782063d4196b"},
