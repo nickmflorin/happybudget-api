@@ -1,6 +1,8 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+from .managers import UserManager
+
 
 class User(AbstractUser):
     email = models.EmailField(unique=True)
@@ -9,7 +11,9 @@ class User(AbstractUser):
     updated_at = models.DateTimeField(auto_now=True)
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['emai']
+    REQUIRED_FIELDS = ['username']
+
+    objects = UserManager()
 
     class Meta:
         verbose_name = "User"

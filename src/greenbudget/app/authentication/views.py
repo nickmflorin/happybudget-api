@@ -1,5 +1,3 @@
-from ratelimit.decorators import ratelimit
-
 from django.conf import settings
 from django.contrib.auth import logout, login as django_login
 from django.utils.decorators import method_decorator
@@ -37,7 +35,6 @@ class LoginView(generics.GenericAPIView):
     def dispatch(self, request, *args, **kwargs):
         return super(LoginView, self).dispatch(request, *args, **kwargs)
 
-    @ratelimit(key='user_or_ip', rate='3/s')
     def post(self, request, *args, **kwargs):
         was_limited = getattr(request, 'limited', False)
         if was_limited:
