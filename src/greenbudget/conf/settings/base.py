@@ -105,6 +105,7 @@ AUTH_USER_MODEL = 'user.User'
 
 INSTALLED_APPS = [
     'greenbudget',  # Must be before django authentication.
+    'polymorphic',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

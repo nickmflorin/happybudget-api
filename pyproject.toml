@@ -24,6 +24,8 @@ django-cors-headers = "^3.7.0"
 cryptography = "^3.4.6"
 PyJWT = "1.7.1"
 django-ratelimit = "^3.0.1"
+django-model-utils = "^4.1.1"
+django-polymorphic = "^3.0.0"
 
 [tool.poetry.extras]
 docs = [
