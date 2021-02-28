@@ -1,0 +1,24 @@
+version: "3.8"
+
+services:
+  web:
+    environment:
+      - COMPOSE_CONVERT_WINDOWS_PATHS=1
+    build: .
+    command: bash -c "ls -al && gunicorn greenbudget.wsgi -c /code/greenbudget/conf/gunicorn_config.py"
+    restart: always
+    networks:
+      - greenbudget
+    ports:
+      - "8000:8000"
+    # Note if you have trouble with Windows try mounting volumes in this format
+    volumes:
+      - type: bind
+        source: ./src
+        target: /code
+    env_file:
+      - .env
+
+networks:
+  greenbudget:
+    driver: bridge
