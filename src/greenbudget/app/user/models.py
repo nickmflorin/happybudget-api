@@ -3,6 +3,7 @@ from django.db import models
 
 
 class User(AbstractUser):
+    email = models.EmailField(unique=True)
     is_admin = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -11,7 +12,6 @@ class User(AbstractUser):
     REQUIRED_FIELDS = ['emai']
 
     class Meta:
-        db_table = 'user_user'
         verbose_name = "User"
         verbose_name_plural = "Users"
         ordering = ('-created_at', )

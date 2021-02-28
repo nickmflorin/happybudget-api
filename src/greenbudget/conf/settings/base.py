@@ -153,39 +153,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'greenbudget.wsgi.application'
 
-# Database Configurations
-# DB_HOST = config(
-#     name='DJANGO_DB_HOST',
-#     required=True,
-#     default={
-#         Environments.DEV: 'localhost',
-#         Environments.TEST: 'localhost',
-#     }
-# )
-# DB_NAME = config(
-#     name='DJANGO_DB_NAME',
-#     required=True,
-#     default={
-#         Environments.DEV: 'postgres',
-#         Environments.TEST: 'postgres',
-#     }
-# )
-# POSTGRES_USER = config(
-#     name='POSTGRES_USER',
-#     required=True,
-#     default={
-#         Environments.DEV: 'postgres',
-#         Environments.TEST: 'postgres',
-#     }
-# )
-# POSTGRES_PASSWORD = config(
-#     name='POSTGRES_PASSWORD',
-#     required=[Environments.PROD],
-#     default={
-#         Environments.TEST: 'e618b5086c5d6d018c254b9f076fda66*A',
-#         Environments.DEV: 'e618b5086c5d6d018c254b9f076fda66*A',
-#     }
-# )
 DATABASES = {
     'default': {
         'ATOMIC_REQUESTS': True,
