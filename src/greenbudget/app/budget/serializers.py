@@ -1,0 +1,30 @@
+from rest_framework import serializers
+
+from greenbudget.lib.rest_framework_utils.serializers import (
+    EnhancedModelSerializer)
+from greenbudget.app.user.serializers import UserSerializer
+
+from .models import Budget
+
+
+class BudgetSerializer(EnhancedModelSerializer):
+    id = serializers.IntegerField(read_only=True)
+    author = UserSerializer(nested=True)
+    project_number = serializers.IntegerField(read_only=True)
+    production_type = serializers.IntegerField(read_only=True)
+    production_type_name = serializers.CharField(read_only=True)
+    created_at = serializers.DateTimeField(read_only=True)
+    shoot_date = serializers.DateTimeField(read_only=True)
+    delivery_date = serializers.DateTimeField(read_only=True)
+    build_days = serializers.IntegerField(read_only=True)
+    prelight_days = serializers.IntegerField(read_only=True)
+    studio_shoot_days = serializers.IntegerField(read_only=True)
+    location_days = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Budget
+        fields = (
+            'id', 'author', 'project_number', 'production_type',
+            'production_type_name', 'created_at', 'shoot_date',
+            'delivery_date', 'build_days', 'prelight_days', 'studio_shoot_days',
+            'location_days')

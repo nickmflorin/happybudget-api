@@ -7,6 +7,7 @@ from django.utils.translation import gettext_lazy as _
 
 
 class Budget(PolymorphicModel):
+    name = models.CharField(max_length=256)
     author = models.ForeignKey(
         to='user.User',
         related_name='budgets',
@@ -17,7 +18,7 @@ class Budget(PolymorphicModel):
     PRODUCTION_TYPES = Choices(
         (0, "film", _("Film")),
         (1, "episodic", _("Episodic")),
-        (2, "music", _("Episodic")),
+        (2, "music", _("Music")),
         (3, "commercial", _("Commercial")),
         (4, "documentary", _("Documentary")),
         (5, "custom", _("Custom")),
@@ -35,3 +36,7 @@ class Budget(PolymorphicModel):
     prelight_days = models.IntegerField(default=0)
     studio_shoot_days = models.IntegerField(default=0)
     location_days = models.IntegerField(default=0)
+
+    @property
+    def production_type_name(self):
+        return self.PRODUCTION_TYPES[self.production_type]

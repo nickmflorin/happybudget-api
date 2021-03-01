@@ -5,6 +5,8 @@ from rest_framework.test import APIClient
 
 from greenbudget.app.user.models import User
 
+from .factories import *  # noqa
+
 
 @pytest.fixture(autouse=True)
 def no_requests(monkeypatch):
