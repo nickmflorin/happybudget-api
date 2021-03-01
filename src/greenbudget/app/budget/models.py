@@ -6,7 +6,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 
-class BaseBudget(PolymorphicModel):
+class Budget(PolymorphicModel):
     author = models.ForeignKey(
         to='user.User',
         related_name='budgets',
@@ -16,6 +16,11 @@ class BaseBudget(PolymorphicModel):
 
     PRODUCTION_TYPES = Choices(
         (0, "film", _("Film")),
+        (1, "episodic", _("Episodic")),
+        (2, "music", _("Episodic")),
+        (3, "commercial", _("Commercial")),
+        (4, "documentary", _("Documentary")),
+        (5, "custom", _("Custom")),
     )
     production_type = models.IntegerField(
         choices=PRODUCTION_TYPES,
