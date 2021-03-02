@@ -3,7 +3,6 @@ from polymorphic.models import PolymorphicModel
 
 from django.db import models
 from django.utils import timezone
-from django.utils.translation import gettext_lazy as _
 
 
 class Budget(PolymorphicModel):
@@ -16,12 +15,12 @@ class Budget(PolymorphicModel):
     project_number = models.IntegerField(default=0)
 
     PRODUCTION_TYPES = Choices(
-        (0, "film", _("Film")),
-        (1, "episodic", _("Episodic")),
-        (2, "music", _("Music")),
-        (3, "commercial", _("Commercial")),
-        (4, "documentary", _("Documentary")),
-        (5, "custom", _("Custom")),
+        (0, "film", "Film"),
+        (1, "episodic", "Episodic"),
+        (2, "music", "Music"),
+        (3, "commercial", "Commercial"),
+        (4, "documentary", "Documentary"),
+        (5, "custom", "Custom"),
     )
     production_type = models.IntegerField(
         choices=PRODUCTION_TYPES,

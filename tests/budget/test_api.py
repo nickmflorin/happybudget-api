@@ -1,6 +1,7 @@
 import pytest
 
 from greenbudget.lib.utils.dateutils import api_datetime_string
+from greenbudget.app.budget.models import Budget
 
 
 @pytest.mark.freeze_time('2020-01-01')
@@ -13,6 +14,7 @@ def test_get_budgets(api_client, user, create_budget, db):
     assert response.json()['data'] == [
         {
             "id": budgets[0].pk,
+            "name": budgets[0].name,
             "project_number": budgets[0].project_number,
             "production_type": budgets[0].production_type,
             "production_type_name": budgets[0].production_type_name,
@@ -38,6 +40,7 @@ def test_get_budgets(api_client, user, create_budget, db):
         },
         {
             "id": budgets[1].pk,
+            "name": budgets[1].name,
             "project_number": budgets[1].project_number,
             "production_type": budgets[1].production_type,
             "production_type_name": budgets[1].production_type_name,
@@ -72,6 +75,44 @@ def test_get_budget(api_client, user, create_budget, db):
     assert response.status_code == 200
     assert response.json() == {
         "id": budget.pk,
+        "name": budget.name,
+        "project_number": budget.project_number,
+        "production_type": budget.production_type,
+        "production_type_name": budget.production_type_name,
+        "created_at": "2020-01-01 00:00:00",
+        "shoot_date": api_datetime_string(budget.shoot_date),
+        "delivery_date": api_datetime_string(budget.delivery_date),
+        "build_days": budget.build_days,
+        "prelight_days": budget.prelight_days,
+        "studio_shoot_days": budget.studio_shoot_days,
+        "location_days": budget.location_days,
+        "author": {
+            "id": user.pk,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "email": user.email,
+            "username": user.username,
+            "is_active": user.is_active,
+            "is_admin": user.is_admin,
+            "is_superuser": user.is_superuser,
+            "is_staff": user.is_staff,
+            "full_name": user.full_name
+        }
+    }
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_create_budget(api_client, user, db):
+    api_client.force_login(user)
+    response = api_client.post("/v1/budgets/", data={"name": "Test Name"})
+    assert response.status_code == 201
+
+    budget = Budget.objects.first()
+    assert budget is not None
+
+    assert response.json() == {
+        "id": budget.pk,
+        "name": budget.name,
         "project_number": budget.project_number,
         "production_type": budget.production_type,
         "production_type_name": budget.production_type_name,

@@ -9,7 +9,12 @@ from .models import Budget
 
 class BudgetSerializer(EnhancedModelSerializer):
     id = serializers.IntegerField(read_only=True)
-    author = UserSerializer(nested=True)
+    name = serializers.CharField(
+        required=True,
+        allow_blank=False,
+        allow_null=False
+    )
+    author = UserSerializer(nested=True, read_only=True)
     project_number = serializers.IntegerField(read_only=True)
     production_type = serializers.IntegerField(read_only=True)
     production_type_name = serializers.CharField(read_only=True)
@@ -24,7 +29,7 @@ class BudgetSerializer(EnhancedModelSerializer):
     class Meta:
         model = Budget
         fields = (
-            'id', 'author', 'project_number', 'production_type',
+            'id', 'name', 'author', 'project_number', 'production_type',
             'production_type_name', 'created_at', 'shoot_date',
             'delivery_date', 'build_days', 'prelight_days', 'studio_shoot_days',
             'location_days')
