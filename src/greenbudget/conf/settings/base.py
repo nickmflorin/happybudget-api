@@ -114,6 +114,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
+    'timezone_field',
     'greenbudget.app.budget',
     'greenbudget.app.budget_item',
     'greenbudget.app.user',

@@ -35,13 +35,17 @@ class UserSerializer(EnhancedModelSerializer):
     date_joined = serializers.DateTimeField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
+    timezone = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         nested_fields = ('id', 'first_name', 'last_name', 'email', 'username',
             'is_active', 'is_admin', 'is_superuser', 'is_staff', 'full_name')
         fields = nested_fields + (
-            'created_at', 'updated_at', 'last_login', 'date_joined')
+            'created_at', 'updated_at', 'last_login', 'date_joined', 'timezone')
+
+    def get_timezone(self, instance):
+        return str(instance.timezone)
 
     def validate(self, attrs):
         request = self.context["request"]

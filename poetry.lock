@@ -241,6 +241,21 @@ version = "3.0.1"
 
 [[package]]
 category = "main"
+description = "A Django app providing database and form fields for pytz timezone objects."
+name = "django-timezone-field"
+optional = false
+python-versions = ">=3.5"
+version = "4.1.1"
+
+[package.dependencies]
+django = ">=2.2"
+pytz = "*"
+
+[package.extras]
+rest_framework = ["djangorestframework (>=3.0.0)"]
+
+[[package]]
+category = "main"
 description = "Web APIs for Django, made easy."
 name = "djangorestframework"
 optional = false
@@ -917,7 +932,7 @@ debug = []
 docs = []
 
 [metadata]
-content-hash = "70df127d45d40a48731052588cef3eaa858824f12e50a4a4f57b44c0002c242b"
+content-hash = "f7dfd7e05c6b89c4c5d037419477cf7afef9604943cdc0978cd355eb273e9fd8"
 lock-version = "1.0"
 python-versions = "^3.8"
 
@@ -1088,6 +1103,10 @@ django-polymorphic = [
 django-ratelimit = [
     {file = "django-ratelimit-3.0.1.tar.gz", hash = "sha256:73223d860abd5c5d7b9a807fabb39a6220068129b514be8d78044b52607ab154"},
     {file = "django_ratelimit-3.0.1-py2.py3-none-any.whl", hash = "sha256:857e797f23de948b204a31dba9d88aea3ce731b7a5d926d0240c772e19b5486f"},
+]
+django-timezone-field = [
+    {file = "django-timezone-field-4.1.1.tar.gz", hash = "sha256:b5b587aabed8db66eb3453691522164915c1aa1b326d8ddeadc8832a8580faeb"},
+    {file = "django_timezone_field-4.1.1-py3-none-any.whl", hash = "sha256:068dc2c9b11c2230e126f511a515609d46f8cc49278b293e7536be07997fe892"},
 ]
 djangorestframework = [
     {file = "djangorestframework-3.11.1-py3-none-any.whl", hash = "sha256:8b1ac62c581dbc5799b03e535854b92fc4053ecfe74bad3f9c05782063d4196b"},

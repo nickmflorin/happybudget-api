@@ -28,6 +28,8 @@ class QuantityBudgetItem(BudgetItem):
     name = models.CharField(max_length=30, default=None, null=True)
     quantity = models.DecimalField(
         default=None, decimal_places=2, max_digits=10, null=True)
+    multiplier = models.DecimalField(
+        default=None, decimal_places=2, max_digits=10, null=True)
     unit = models.CharField(max_length=20, default=None, null=True)
     rate = models.DecimalField(
         default=None, decimal_places=2, max_digits=10, null=True)

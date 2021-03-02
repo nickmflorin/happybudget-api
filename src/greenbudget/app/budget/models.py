@@ -17,7 +17,7 @@ class Budget(PolymorphicModel):
     PRODUCTION_TYPES = Choices(
         (0, "film", "Film"),
         (1, "episodic", "Episodic"),
-        (2, "music", "Music"),
+        (2, "music_video", "Music Video"),
         (3, "commercial", "Commercial"),
         (4, "documentary", "Documentary"),
         (5, "custom", "Custom"),
@@ -35,6 +35,13 @@ class Budget(PolymorphicModel):
     prelight_days = models.IntegerField(default=0)
     studio_shoot_days = models.IntegerField(default=0)
     location_days = models.IntegerField(default=0)
+
+    class Meta:
+        get_latest_by = "created_at"
+        ordering = ('-created_at', )
+        verbose_name = "Budget"
+        verbose_name_plural = "Budgets"
+        unique_together = (('author', 'name'), )
 
     @property
     def production_type_name(self):

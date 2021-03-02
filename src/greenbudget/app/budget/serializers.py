@@ -16,7 +16,7 @@ class BudgetSerializer(EnhancedModelSerializer):
     )
     author = UserSerializer(nested=True, read_only=True)
     project_number = serializers.IntegerField(read_only=True)
-    production_type = serializers.IntegerField(required=True)
+    production_type = serializers.ChoiceField(choices=Budget.PRODUCTION_TYPES)
     production_type_name = serializers.CharField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
     shoot_date = serializers.DateTimeField(read_only=True)
@@ -33,3 +33,12 @@ class BudgetSerializer(EnhancedModelSerializer):
             'production_type_name', 'created_at', 'shoot_date',
             'delivery_date', 'build_days', 'prelight_days', 'studio_shoot_days',
             'location_days')
+
+    def validate_name(self, value):
+        user = self.context['user']
+        validator = serializers.UniqueTogetherValidator(
+            queryset=Budget.objects.filter(author=user),
+            fields=('name', ),
+        )
+        validator({'name': value, 'user': user}, self)
+        return value

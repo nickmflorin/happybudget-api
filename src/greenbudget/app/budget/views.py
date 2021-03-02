@@ -16,6 +16,14 @@ class UserBudgetViewSet(
     ordering_fields = ['status_changed_at', 'name', 'created_at']
     search_fields = ['name']
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update(
+            request=self.request,
+            user=self.request.user,
+        )
+        return context
+
     def get_queryset(self):
         return self.request.user.budgets.all()
 
