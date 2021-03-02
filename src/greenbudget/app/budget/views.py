@@ -41,7 +41,7 @@ class UserBudgetViewSet(
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        instance.to_trash(request.user)
+        instance.to_trash()
         return response.Response(status=204)
 
     def perform_create(self, serializer):
