@@ -19,6 +19,7 @@ class BudgetSerializer(EnhancedModelSerializer):
     production_type = serializers.ChoiceField(choices=Budget.PRODUCTION_TYPES)
     production_type_name = serializers.CharField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
+    updated_at = serializers.DateTimeField(read_only=True)
     shoot_date = serializers.DateTimeField(read_only=True)
     delivery_date = serializers.DateTimeField(read_only=True)
     build_days = serializers.IntegerField(read_only=True)
@@ -32,7 +33,7 @@ class BudgetSerializer(EnhancedModelSerializer):
             'id', 'name', 'author', 'project_number', 'production_type',
             'production_type_name', 'created_at', 'shoot_date',
             'delivery_date', 'build_days', 'prelight_days', 'studio_shoot_days',
-            'location_days')
+            'location_days', 'updated_at')
 
     def validate_name(self, value):
         user = self.context['user']

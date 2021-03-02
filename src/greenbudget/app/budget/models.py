@@ -28,6 +28,7 @@ class Budget(PolymorphicModel):
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     shoot_date = models.DateTimeField(default=timezone.now)
     delivery_date = models.DateTimeField(default=timezone.now)
 
@@ -37,8 +38,8 @@ class Budget(PolymorphicModel):
     location_days = models.IntegerField(default=0)
 
     class Meta:
-        get_latest_by = "created_at"
-        ordering = ('-created_at', )
+        get_latest_by = "updated_at"
+        ordering = ('-updated_at', )
         verbose_name = "Budget"
         verbose_name_plural = "Budgets"
         unique_together = (('author', 'name'), )
