@@ -26,6 +26,7 @@ class BudgetSerializer(EnhancedModelSerializer):
     prelight_days = serializers.IntegerField(read_only=True)
     studio_shoot_days = serializers.IntegerField(read_only=True)
     location_days = serializers.IntegerField(read_only=True)
+    trash = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Budget
@@ -33,7 +34,7 @@ class BudgetSerializer(EnhancedModelSerializer):
             'id', 'name', 'author', 'project_number', 'production_type',
             'production_type_name', 'created_at', 'shoot_date',
             'delivery_date', 'build_days', 'prelight_days', 'studio_shoot_days',
-            'location_days', 'updated_at')
+            'location_days', 'updated_at', 'trash')
 
     def validate_name(self, value):
         user = self.context['user']

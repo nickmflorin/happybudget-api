@@ -4,6 +4,8 @@ from polymorphic.models import PolymorphicModel
 from django.db import models
 from django.utils import timezone
 
+from .managers import BudgetManager
+
 
 class Budget(PolymorphicModel):
     name = models.CharField(max_length=256)
@@ -36,6 +38,10 @@ class Budget(PolymorphicModel):
     prelight_days = models.IntegerField(default=0)
     studio_shoot_days = models.IntegerField(default=0)
     location_days = models.IntegerField(default=0)
+
+    trash = models.BooleanField(default=False)
+
+    objects = BudgetManager()
 
     class Meta:
         get_latest_by = "updated_at"

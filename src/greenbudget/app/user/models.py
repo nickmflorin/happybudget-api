@@ -7,6 +7,8 @@ from .managers import UserManager
 
 
 class User(AbstractUser):
+    first_name = models.CharField(max_length=30)
+    last_name = models.CharField(max_length=30)
     email = models.EmailField(unique=True)
     is_admin = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -14,7 +16,7 @@ class User(AbstractUser):
     timezone = TimeZoneField(default='America/New_York')
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username']
+    REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
 
     objects = UserManager()
 
@@ -28,10 +30,4 @@ class User(AbstractUser):
 
     @property
     def full_name(self):
-        if self.first_name is not None and self.first_name != "":
-            if self.last_name is not None and self.last_name != "":
-                return "%s %s" % (self.first_name, self.last_name)
-            return self.first_name
-        if self.last_name is not None and self.last_name != "":
-            return self.last_name
-        return ""
+        return self.first_name + self.last_name
