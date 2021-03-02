@@ -104,7 +104,10 @@ def test_get_budget(api_client, user, create_budget, db):
 @pytest.mark.freeze_time('2020-01-01')
 def test_create_budget(api_client, user, db):
     api_client.force_login(user)
-    response = api_client.post("/v1/budgets/", data={"name": "Test Name"})
+    response = api_client.post("/v1/budgets/", data={
+        "name": "Test Name",
+        "production_type": 1,
+    })
     assert response.status_code == 201
 
     budget = Budget.objects.first()
@@ -114,8 +117,8 @@ def test_create_budget(api_client, user, db):
         "id": budget.pk,
         "name": budget.name,
         "project_number": budget.project_number,
-        "production_type": budget.production_type,
-        "production_type_name": budget.production_type_name,
+        "production_type": 1,
+        "production_type_name": budget.PRODUCTION_TYPES[1],
         "created_at": "2020-01-01 00:00:00",
         "shoot_date": api_datetime_string(budget.shoot_date),
         "delivery_date": api_datetime_string(budget.delivery_date),

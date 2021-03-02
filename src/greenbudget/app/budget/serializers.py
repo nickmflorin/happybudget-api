@@ -16,7 +16,7 @@ class BudgetSerializer(EnhancedModelSerializer):
     )
     author = UserSerializer(nested=True, read_only=True)
     project_number = serializers.IntegerField(read_only=True)
-    production_type = serializers.IntegerField(read_only=True)
+    production_type = serializers.IntegerField(required=True)
     production_type_name = serializers.CharField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
     shoot_date = serializers.DateTimeField(read_only=True)
