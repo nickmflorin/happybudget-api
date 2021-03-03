@@ -1,10 +1,68 @@
 
+from django.contrib.auth import authenticate
 from rest_framework import serializers, exceptions, validators
 
 from greenbudget.lib.rest_framework_utils.serializers import (
     EnhancedModelSerializer)
 
 from .models import User
+from .utils import get_user_from_social_token
+
+
+class SocialRegistrationSerializer(serializers.ModelSerializer):
+    token_id = serializers.CharField()
+    language = serializers.CharField()
+    timezone = serializers.CharField()
+    provider = serializers.ChoiceField(choices=["google"])
+
+    class Meta:
+        model = User
+        fields = (
+            'token_id', 'language', 'timezone', 'provider')
+
+    def validate(self, attrs):
+        google_user = get_user_from_social_token(
+            token=attrs.pop('token_id'),
+            provider=attrs.pop('provider')
+        )
+        attrs.update(
+            first_name=google_user.first_name,
+            last_name=google_user.last_name,
+            organization=attrs['organization'],
+            is_google_authenticated=True,
+            is_admin=False,
+            is_staff=False,
+            is_superuser=False,
+            is_active=True,
+            username=google_user.email,
+            email=google_user.email
+        )
+        return attrs
+
+
+class ChangePasswordSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(
+        required=True, allow_null=False, allow_blank=False)
+    current = serializers.CharField(
+        required=True, allow_null=False, allow_blank=False)
+
+    class Meta:
+        model = User
+        fields = ('password', 'current')
+
+    def validate_current(self, current):
+        auth = authenticate(
+            username=self.instance.get_username(),
+            password=current
+        )
+        if not auth:
+            raise exceptions.ValidationError("Invalid current password.")
+        return current
+
+    def update(self, instance, validated_data):
+        instance.set_password(validated_data['password'])
+        instance.save()
+        return instance
 
 
 class UserSerializer(EnhancedModelSerializer):
