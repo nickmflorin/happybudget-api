@@ -46,8 +46,6 @@ class SubAccount(models.Model):
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey('content_type', 'object_id')
     subaccounts = GenericRelation('self')
-    # account = GenericRelation('account.Account')
-    # subaccount = GenericRelation('self')
 
     def __str__(self):
         return "<{cls} id={id}, name={name}, line={line}>".format(
@@ -62,3 +60,14 @@ class SubAccount(models.Model):
         if self.unit is None:
             return ""
         return self.UNITS[self.unit]
+
+    @property
+    def account(self):
+        from greenbudget.app.account.models import Account
+        # TODO: We need to figure out a way to build this validation into the
+        # model so that it does not accidentally happen.  There should always
+        # be a top level SubAccount that has an Account as a parent.
+        parent = self.content_object
+        while not isinstance(parent, Account):
+            parent = parent.content_object
+        return parent
