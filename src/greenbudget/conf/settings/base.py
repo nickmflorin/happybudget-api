@@ -42,6 +42,7 @@ EMAIL_HOST = 'greenbudget.io'
 SMTP_EMAIL_PORT = 25
 
 PWD_RESET_LINK_EXPIRY_TIME_IN_HRS = 24
+GOOGLE_OAUTH_API_URL = "https://www.googleapis.com/oauth2/v3/tokeninfo/"
 
 # Session Configuration
 SESSION_COOKIE_HTTPONLY = True
