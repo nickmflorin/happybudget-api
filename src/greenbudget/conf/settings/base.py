@@ -125,9 +125,10 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'timezone_field',
+    'greenbudget.app.account',
     'greenbudget.app.authentication',
     'greenbudget.app.budget',
-    'greenbudget.app.budget_item',
+    'greenbudget.app.subaccount',
     'greenbudget.app.user',
     'greenbudget.app.jwt'
 ]

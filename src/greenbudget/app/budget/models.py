@@ -4,6 +4,7 @@ from polymorphic.models import PolymorphicModel
 from django.db import models
 from django.utils import timezone
 
+from .exceptions import BudgetPermissionError
 from .managers import BudgetManager
 
 
@@ -50,6 +51,13 @@ class Budget(PolymorphicModel):
         verbose_name_plural = "Budgets"
         unique_together = (('author', 'name'), )
 
+    def __str__(self):
+        return "<{cls} id={id}, name={name}>".format(
+            cls=self.__class__.__name__,
+            id=self.pk,
+            name=self.name
+        )
+
     @property
     def production_type_name(self):
         return self.PRODUCTION_TYPES[self.production_type]
@@ -61,3 +69,7 @@ class Budget(PolymorphicModel):
     def restore(self):
         self.trash = False
         self.save()
+
+    def raise_no_access(self, user):
+        if user != self.author:
+            raise BudgetPermissionError()

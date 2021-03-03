@@ -1,6 +1,9 @@
 import factory
+from django.contrib.contenttypes.models import ContentType
 
+from greenbudget.app.account.models import Account
 from greenbudget.app.budget.models import Budget
+from greenbudget.app.subaccount.models import SubAccount
 from greenbudget.app.user.models import User
 
 from .base import CustomModelFactory
@@ -84,3 +87,39 @@ class BudgetFactory(CustomModelFactory):
 
     class Meta:
         model = Budget
+
+
+class AccountFactory(CustomModelFactory):
+    """
+    A DjangoModelFactory to create instances of :obj:`Account`.
+    """
+    created_by = factory.SubFactory(UserFactory)
+    updated_by = factory.SubFactory(UserFactory)
+    account_number = factory.Faker('random_number')
+    description = factory.Faker('sentence')
+    budget = factory.SubFactory(BudgetFactory)
+
+    class Meta:
+        model = Account
+
+
+class SubAccountFactory(CustomModelFactory):
+    """
+    A DjangoModelFactory to create instances of :obj:`SubAccount`.
+    """
+    created_by = factory.SubFactory(UserFactory)
+    updated_by = factory.SubFactory(UserFactory)
+    line = factory.Faker('random_number')
+    description = factory.Faker('sentence')
+    name = factory.Faker('name')
+    unit = SubAccount.UNITS.days
+    multiplier = 1.00
+    rate = 1.00
+
+    content_object = factory.SubFactory(AccountFactory)
+    content_type = factory.LazyAttribute(
+        lambda o: ContentType.objects.get_for_model(o.content_object))
+    object_id = factory.SelfAttribute('content_object.pk')
+
+    class Meta:
+        model = SubAccount

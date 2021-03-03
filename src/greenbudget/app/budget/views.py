@@ -6,8 +6,13 @@ from .serializers import BudgetSerializer
 class GenericBudgetViewSet(viewsets.GenericViewSet):
     lookup_field = 'pk'
     serializer_class = BudgetSerializer
-    ordering_fields = ['status_changed_at', 'name', 'created_at']
+    ordering_fields = ['updated_at', 'name', 'created_at']
     search_fields = ['name']
+
+    def get_object(self):
+        instance = super().get_object()
+        instance.raise_no_access(self.request.user)
+        return instance
 
 
 class UserBudgetViewSet(
