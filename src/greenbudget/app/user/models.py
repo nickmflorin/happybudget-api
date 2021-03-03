@@ -4,6 +4,7 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 from .managers import UserManager
+from .utils import get_user_from_social_token
 
 
 class User(AbstractUser):
@@ -31,3 +32,12 @@ class User(AbstractUser):
     @property
     def full_name(self):
         return self.first_name + self.last_name
+
+    def sync_with_social_provider(self, token, provider):
+        assert provider == "google", \
+            "Unsupported social provider %s." % provider
+        social_user = get_user_from_social_token(token, provider)
+        if self.first_name is None or self.first_name == "":
+            self.first_name = social_user.first_name
+        if self.last_name is None or self.last_name == "":
+            self.last_name = social_user.last_name

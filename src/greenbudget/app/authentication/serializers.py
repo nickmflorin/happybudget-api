@@ -1,4 +1,8 @@
+from datetime import timedelta
+
+from django.conf import settings
 from django.contrib.auth import authenticate
+from django.utils import timezone
 
 from rest_framework import serializers
 
@@ -9,7 +13,8 @@ from greenbudget.app.user.exceptions import InvalidSocialToken
 
 from .exceptions import (
     AccountDisabledError, InvalidCredentialsError, EmailDoesNotExist,
-    PasswordResetLinkUsedError, InvalidResetToken)
+    PasswordResetLinkUsedError, InvalidResetToken,
+    PasswordResetLinkExpiredError)
 from .models import ResetUID
 
 

@@ -1,6 +1,9 @@
 from django.contrib.auth.models import UserManager as DjangoUserManager
 from django.db import models
 
+from .exceptions import InvalidSocialToken
+from .utils import get_google_user_from_token
+
 
 class UserQuerier(object):
 
@@ -22,6 +25,18 @@ class UserManager(UserQuerier, DjangoUserManager):
 
     def get_queryset(self):
         return self.queryset_class(self.model)
+
+    def get_from_google_token(self, token):
+        try:
+            google_user = get_google_user_from_token(token)
+        except InvalidSocialToken:
+            raise self.model.DoesNotExist()
+        else:
+            return self.get(email=google_user.email)
+
+    def get_from_social_token(self, token, provider):
+        assert provider == "google", "Provider %s not supported." % provider
+        return self.get_from_google_token(token)
 
     def create(self, email, password=None, **kwargs):
         kwargs['username'] = email

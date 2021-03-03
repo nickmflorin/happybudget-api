@@ -1,7 +1,9 @@
 """
 Settings configuration file for dev environment.
 """
-from greenbudget.conf import Environments, config
+import os
+
+from greenbudget.conf import Environments
 
 from .base import *  # noqa
 
@@ -12,6 +14,8 @@ ENVIRONMENT = Environments.DEV
 APP_DOMAIN = '127.0.0.1:3000'
 APP_URL = 'http://%s' % APP_DOMAIN
 APP_V1_URL = os.path.join(APP_URL, "v1")
+
+EMAIL_HOST = 'localhost'
 
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False

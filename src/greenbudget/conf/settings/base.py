@@ -35,6 +35,14 @@ SECRET_KEY = config(
     }
 )
 
+# Email Configurations
+EMAIL_ENABLED = True
+FROM_EMAIL = 'support@nirvedacognition.ai'
+EMAIL_HOST = 'greenbudget.io'
+SMTP_EMAIL_PORT = 25
+
+PWD_RESET_LINK_EXPIRY_TIME_IN_HRS = 24
+
 # Session Configuration
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_NAME = 'greenbudgetsessionid'
@@ -116,6 +124,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'timezone_field',
+    'greenbudget.app.authentication',
     'greenbudget.app.budget',
     'greenbudget.app.budget_item',
     'greenbudget.app.user',
