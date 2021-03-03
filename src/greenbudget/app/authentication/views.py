@@ -41,7 +41,7 @@ class AbstractLoginView(generics.GenericAPIView):
     authentication_classes = []
     permission_classes = (AllowAny, )
 
-    @ratelimit(key='user_or_ip', rate='3/s')
+    # @ratelimit(key='user_or_ip', rate='3/s')  -> Needs to be fixed
     def post(self, request, *args, **kwargs):
         was_limited = getattr(request, 'limited', False)
         if was_limited:
