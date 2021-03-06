@@ -19,7 +19,7 @@ class Account(models.Model):
         on_delete=models.SET_NULL,
         null=True
     )
-    account_number = models.CharField(null=True, max_length=128)
+    account_number = models.CharField(max_length=128)
     description = models.CharField(null=True, max_length=128)
     access = models.ManyToManyField(
         to='user.User',
@@ -34,7 +34,9 @@ class Account(models.Model):
 
     class Meta:
         get_latest_by = "updated_at"
-        ordering = ('-updated_at', )
+        # Since the data from this model is used to power AGGridReact tables,
+        # we want to keep the ordering of the accounts consistent.
+        ordering = ('-created_at', )
         verbose_name = "Account"
         verbose_name_plural = "Accounts"
         unique_together = (('account_number', 'budget'), )
@@ -45,3 +47,7 @@ class Account(models.Model):
             id=self.pk,
             account_number=self.account_number
         )
+
+    @property
+    def ancestors(self):
+        return [self.budget]

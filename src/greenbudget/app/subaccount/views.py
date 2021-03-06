@@ -76,7 +76,10 @@ class SubAccountRecursiveViewSet(
     def perform_create(self, serializer):
         serializer.save(
             updated_by=self.request.user,
-            created_by=self.request.user
+            created_by=self.request.user,
+            object_id=self.subaccount.pk,
+            content_type=ContentType.objects.get_for_model(SubAccount),
+            content_object=self.subaccount
         )
 
 
@@ -111,5 +114,8 @@ class AccountSubAccountViewSet(
     def perform_create(self, serializer):
         serializer.save(
             updated_by=self.request.user,
-            created_by=self.request.user
+            created_by=self.request.user,
+            object_id=self.account.pk,
+            content_type=ContentType.objects.get_for_model(Account),
+            content_object=self.account
         )

@@ -22,8 +22,8 @@ class SubAccount(models.Model):
         null=True
     )
     description = models.CharField(null=True, max_length=128)
-    name = models.CharField(null=True, max_length=128)
-    line = models.CharField(null=True, max_length=128)
+    name = models.CharField(max_length=128)
+    line = models.CharField(max_length=128)
     quantity = models.IntegerField(null=True)
     rate = models.DecimalField(decimal_places=2, max_digits=10, null=True)
     multiplier = models.DecimalField(decimal_places=2, max_digits=10, null=True)
@@ -71,3 +71,7 @@ class SubAccount(models.Model):
         while not isinstance(parent, Account):
             parent = parent.content_object
         return parent
+
+    @property
+    def ancestors(self):
+        return self.content_object.ancestors + [self.content_object]
