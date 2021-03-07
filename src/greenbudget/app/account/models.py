@@ -51,3 +51,17 @@ class Account(models.Model):
     @property
     def ancestors(self):
         return [self.budget]
+
+    @property
+    def variance(self):
+        return None
+
+    @property
+    def estimated(self):
+        estimated = []
+        for subaccount in self.subaccounts.all():
+            if subaccount.estimated is not None:
+                estimated.append(subaccount.estimated)
+        if len(estimated) != 0:
+            return sum(estimated)
+        return None

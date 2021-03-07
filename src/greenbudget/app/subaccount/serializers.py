@@ -9,13 +9,20 @@ from greenbudget.app.user.serializers import UserSerializer
 from .models import SubAccount
 
 
-class SubAccountSerializer(EnhancedModelSerializer):
+class SubAccountSimpleSerializer(EnhancedModelSerializer):
     id = serializers.IntegerField(read_only=True)
     name = serializers.CharField(
         required=False,
         allow_blank=False,
         allow_null=False
     )
+
+    class Meta:
+        model = SubAccount
+        fields = ('id', 'name')
+
+
+class SubAccountSerializer(SubAccountSimpleSerializer):
     line = serializers.CharField(
         required=False,
         allow_blank=False,
@@ -51,18 +58,24 @@ class SubAccountSerializer(EnhancedModelSerializer):
         choices=SubAccount.UNITS
     )
     unit_name = serializers.CharField(read_only=True)
+    estimated = serializers.DecimalField(
+        read_only=True,
+        decimal_places=2,
+        max_digits=10
+    )
     ancestors = AncestorSerializer(many=True, read_only=True)
     account = serializers.IntegerField(read_only=True, source='account.pk')
     parent = serializers.IntegerField(read_only=True, source='object_id')
     parent_type = serializers.SerializerMethodField()
+    subaccounts = SubAccountSimpleSerializer(many=True, read_only=True)
 
     class Meta:
         model = SubAccount
-        fields = (
-            'id', 'name', 'line', 'description', 'created_by', 'updated_by',
+        fields = SubAccountSimpleSerializer.Meta.fields + (
+            'line', 'description', 'created_by', 'updated_by',
             'created_at', 'updated_at', 'quantity', 'rate', 'multiplier',
             'unit', 'unit_name', 'account', 'parent', 'parent_type',
-            'ancestors')
+            'ancestors', 'estimated', 'subaccounts')
 
     def get_parent_type(self, instance):
         if isinstance(instance.content_object, Account):

@@ -73,3 +73,17 @@ class Budget(PolymorphicModel):
     def raise_no_access(self, user):
         if user != self.author:
             raise BudgetPermissionError()
+
+    @property
+    def variance(self):
+        return None
+
+    @property
+    def estimated(self):
+        estimated = []
+        for account in self.accounts.all():
+            if account.estimated is not None:
+                estimated.append(account.estimated)
+        if len(estimated) != 0:
+            return sum(estimated)
+        return None

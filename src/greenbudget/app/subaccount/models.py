@@ -47,6 +47,13 @@ class SubAccount(models.Model):
     content_object = GenericForeignKey('content_type', 'object_id')
     subaccounts = GenericRelation('self')
 
+    DERIVING_FIELDS = [
+        "quantity",
+        "rate",
+        "multiplier",
+        "unit"
+    ]
+
     def __str__(self):
         return "<{cls} id={id}, name={name}, line={line}>".format(
             cls=self.__class__.__name__,
@@ -54,6 +61,21 @@ class SubAccount(models.Model):
             name=self.name,
             line=self.line,
         )
+
+    @property
+    def estimated(self):
+        if self.subaccounts.count() == 0:
+            if self.quantity is not None and self.rate is not None:
+                return self.quantity * self.rate
+            return None
+        else:
+            estimated = []
+            for subaccount in self.subaccounts.all():
+                if subaccount.estimated is not None:
+                    estimated.append(subaccount.estimated)
+            if len(estimated) != 0:
+                return sum(estimated)
+            return None
 
     @property
     def unit_name(self):
@@ -71,6 +93,10 @@ class SubAccount(models.Model):
         while not isinstance(parent, Account):
             parent = parent.content_object
         return parent
+
+    @property
+    def variance(self):
+        return None
 
     @property
     def ancestors(self):

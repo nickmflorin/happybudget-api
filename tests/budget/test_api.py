@@ -26,6 +26,7 @@ def test_get_budgets(api_client, user, create_budget, db):
             "prelight_days": budgets[0].prelight_days,
             "studio_shoot_days": budgets[0].studio_shoot_days,
             "location_days": budgets[0].location_days,
+            "estimated": None,
             'trash': False,
             "author": {
                 "id": user.pk,
@@ -54,6 +55,7 @@ def test_get_budgets(api_client, user, create_budget, db):
             "prelight_days": budgets[1].prelight_days,
             "studio_shoot_days": budgets[1].studio_shoot_days,
             "location_days": budgets[1].location_days,
+            "estimated": None,
             'trash': False,
             "author": {
                 "id": user.pk,
@@ -92,6 +94,7 @@ def test_get_budget(api_client, user, create_budget, db):
         "studio_shoot_days": budget.studio_shoot_days,
         "location_days": budget.location_days,
         "trash": False,
+        "estimated": None,
         "author": {
             "id": user.pk,
             "first_name": user.first_name,
@@ -134,6 +137,7 @@ def test_create_budget(api_client, user, db):
         "studio_shoot_days": budget.studio_shoot_days,
         "location_days": budget.location_days,
         'trash': False,
+        "estimated": None,
         "author": {
             "id": user.pk,
             "first_name": user.first_name,
@@ -187,6 +191,7 @@ def test_get_budgets_in_trash(api_client, user, create_budget, db):
             "studio_shoot_days": budgets[0].studio_shoot_days,
             "location_days": budgets[0].location_days,
             'trash': True,
+            "estimated": None,
             "author": {
                 "id": user.pk,
                 "first_name": user.first_name,
@@ -215,6 +220,7 @@ def test_get_budgets_in_trash(api_client, user, create_budget, db):
             "studio_shoot_days": budgets[1].studio_shoot_days,
             "location_days": budgets[1].location_days,
             'trash': True,
+            "estimated": None,
             "author": {
                 "id": user.pk,
                 "first_name": user.first_name,
@@ -252,6 +258,7 @@ def test_get_budget_in_trash(api_client, user, create_budget, db):
         "studio_shoot_days": budget.studio_shoot_days,
         "location_days": budget.location_days,
         'trash': True,
+        "estimated": None,
         "author": {
             "id": user.pk,
             "first_name": user.first_name,

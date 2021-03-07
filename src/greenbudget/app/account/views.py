@@ -12,6 +12,14 @@ class GenericAccountViewSet(viewsets.GenericViewSet):
     ordering_fields = ['updated_at', 'name', 'created_at']
     search_fields = ['name']
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update(
+            request=self.request,
+            user=self.request.user,
+        )
+        return context
+
 
 class AccountViewSet(
     mixins.UpdateModelMixin,
@@ -53,6 +61,11 @@ class BudgetAccountViewSet(
     (2) POST /budgets/<pk>/accounts/
     """
     budget_lookup_field = ("pk", "budget_pk")
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update(budget=self.budget)
+        return context
 
     def get_queryset(self):
         return self.budget.accounts.all()
