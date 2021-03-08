@@ -2,7 +2,7 @@ from django.contrib.contenttypes.models import ContentType
 from rest_framework import viewsets, mixins
 
 from greenbudget.app.account.models import Account
-from greenbudget.app.account.mixins import AccountNestedMixin
+from greenbudget.app.account.mixins import BudgetAccountNestedMixin
 
 from .mixins import SubAccountNestedMixin
 from .models import SubAccount
@@ -75,9 +75,6 @@ class SubAccountRecursiveViewSet(
             content_type=content_type
         )
 
-    def perform_update(self, serializer):
-        serializer.save(updated_by=self.request.user)
-
     def perform_create(self, serializer):
         serializer.save(
             updated_by=self.request.user,
@@ -91,7 +88,7 @@ class SubAccountRecursiveViewSet(
 class AccountSubAccountViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
-    AccountNestedMixin,
+    BudgetAccountNestedMixin,
     GenericSubAccountViewSet
 ):
     """

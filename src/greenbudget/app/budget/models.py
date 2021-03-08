@@ -76,6 +76,18 @@ class Budget(PolymorphicModel):
 
     @property
     def variance(self):
+        if self.actual is not None and self.estimated is not None:
+            return self.estimated - self.actual
+        return None
+
+    @property
+    def actual(self):
+        actuals = []
+        for account in self.acounts.all():
+            if account.actual is not None:
+                actuals.append(account.actual)
+        if len(actuals) != 0:
+            return sum(actuals)
         return None
 
     @property

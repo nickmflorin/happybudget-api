@@ -1,7 +1,9 @@
+import datetime
 import factory
 from django.contrib.contenttypes.models import ContentType
 
 from greenbudget.app.account.models import Account
+from greenbudget.app.actual.models import Actual
 from greenbudget.app.budget.models import Budget
 from greenbudget.app.subaccount.models import SubAccount
 from greenbudget.app.user.models import User
@@ -123,3 +125,23 @@ class SubAccountFactory(CustomModelFactory):
 
     class Meta:
         model = SubAccount
+
+
+class ActualFactory(CustomModelFactory):
+    """
+    A DjangoModelFactory to create instances of :obj:`Actual`.
+    """
+    created_by = factory.SubFactory(UserFactory)
+    updated_by = factory.SubFactory(UserFactory)
+    vendor = factory.Faker('name')
+    description = factory.Faker('sentence')
+    purchase_order = factory.Faker('random_number')
+    value = factory.Faker('pydecimal')
+    payment_method = Actual.PAYMENT_METHODS.check
+    parent = factory.SubFactory(AccountFactory)
+    content_type = factory.LazyAttribute(
+        lambda o: ContentType.objects.get_for_model(o.parent))
+    object_id = factory.SelfAttribute('parent.pk')
+
+    class Meta:
+        model = Actual

@@ -69,6 +69,16 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
         decimal_places=2,
         max_digits=10
     )
+    actual = serializers.DecimalField(
+        read_only=True,
+        decimal_places=2,
+        max_digits=10
+    )
+    variance = serializers.DecimalField(
+        read_only=True,
+        decimal_places=2,
+        max_digits=10
+    )
     ancestors = AncestorSerializer(many=True, read_only=True)
     account = serializers.IntegerField(read_only=True, source='account.pk')
     parent = serializers.IntegerField(read_only=True, source='object_id')
@@ -81,7 +91,7 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
             'line', 'name', 'description', 'created_by', 'updated_by',
             'created_at', 'updated_at', 'quantity', 'rate', 'multiplier',
             'unit', 'unit_name', 'account', 'parent', 'parent_type',
-            'ancestors', 'estimated', 'subaccounts')
+            'ancestors', 'estimated', 'subaccounts', 'actual', 'variance')
 
     def get_parent_type(self, instance):
         if isinstance(instance.parent, Account):

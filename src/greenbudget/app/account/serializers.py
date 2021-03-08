@@ -38,6 +38,16 @@ class AccountSerializer(EnhancedModelSerializer):
         decimal_places=2,
         max_digits=10
     )
+    actual = serializers.DecimalField(
+        read_only=True,
+        decimal_places=2,
+        max_digits=10
+    )
+    variance = serializers.DecimalField(
+        read_only=True,
+        decimal_places=2,
+        max_digits=10
+    )
     subaccounts = SubAccountSimpleSerializer(many=True, read_only=True)
 
     class Meta:
@@ -45,7 +55,7 @@ class AccountSerializer(EnhancedModelSerializer):
         fields = (
             'id', 'account_number', 'description', 'created_by', 'updated_by',
             'created_at', 'updated_at', 'access', 'budget', 'ancestors',
-            'estimated', 'subaccounts')
+            'estimated', 'subaccounts', 'actual', 'variance')
 
     def validate_account_number(self, value):
         # In the case of creating an Account via a POST request, the budget

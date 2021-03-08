@@ -1,6 +1,7 @@
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 
+from greenbudget.app.actual.models import Actual
 from greenbudget.app.subaccount.models import SubAccount
 
 
@@ -31,6 +32,7 @@ class Account(models.Model):
         on_delete=models.CASCADE
     )
     subaccounts = GenericRelation(SubAccount)
+    actuals = GenericRelation(Actual)
 
     class Meta:
         get_latest_by = "updated_at"
@@ -54,6 +56,18 @@ class Account(models.Model):
 
     @property
     def variance(self):
+        if self.actual is not None and self.estimated is not None:
+            return self.estimated - self.actual
+        return None
+
+    @property
+    def actual(self):
+        actuals = []
+        for actual in self.actuals.all():
+            if actual.value is not None:
+                actuals.append(actual.value)
+        if len(actuals) != 0:
+            return sum(actuals)
         return None
 
     @property

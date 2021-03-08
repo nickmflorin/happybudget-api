@@ -1,6 +1,7 @@
 from django.urls import path, include
 from rest_framework import routers
 
+from greenbudget.app.actual.urls import account_actuals_urlpatterns
 from greenbudget.app.subaccount.urls import account_subaccounts_urlpatterns
 
 from .views import BudgetAccountViewSet, AccountViewSet
@@ -18,4 +19,8 @@ budget_accounts_urlpatterns = budget_accounts_router.urls + [
 
 router = routers.SimpleRouter()
 router.register(r'', AccountViewSet, basename='account')
-urlpatterns = router.urls
+urlpatterns = router.urls + [
+    path('<int:account_pk>/', include([
+        path('actuals/', include(account_actuals_urlpatterns)),
+    ]))
+]

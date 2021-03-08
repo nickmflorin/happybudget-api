@@ -5,6 +5,8 @@ from django.contrib.contenttypes.fields import (
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
+from greenbudget.app.actual.models import Actual
+
 
 class SubAccount(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
@@ -46,6 +48,7 @@ class SubAccount(models.Model):
     object_id = models.PositiveIntegerField()
     parent = GenericForeignKey('content_type', 'object_id')
     subaccounts = GenericRelation('self')
+    actuals = GenericRelation(Actual)
 
     DERIVING_FIELDS = [
         "quantity",
@@ -70,6 +73,22 @@ class SubAccount(models.Model):
             name=self.name,
             line=self.line,
         )
+
+    @property
+    def variance(self):
+        if self.actual is not None and self.estimated is not None:
+            return self.estimated - self.actual
+        return None
+
+    @property
+    def actual(self):
+        actuals = []
+        for actual in self.actuals.all():
+            if actual.value is not None:
+                actuals.append(actual.value)
+        if len(actuals) != 0:
+            return sum(actuals)
+        return None
 
     @property
     def estimated(self):
