@@ -126,6 +126,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'timezone_field',
     'greenbudget.app.account',
+    'greenbudget.app.actual',
     'greenbudget.app.authentication',
     'greenbudget.app.budget',
     'greenbudget.app.subaccount',
