@@ -88,16 +88,24 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
         assert isinstance(instance.parent, SubAccount)
         return "subaccount"
 
-    def validate_account_number(self, value):
-        # In the case of creating an SubAccount via a POST request, the parent
-        # will be in the context.  In the case of updating a SubAccount via a
-        # PATCH request, the instance will be non-null.
+    def validate_line(self, value):
         parent = self.context.get('parent')
-        if budget is None:
-            budget = self.instance.budget
+        if parent is None:
+            parent = self.instance.parent
         validator = serializers.UniqueTogetherValidator(
-            queryset=Account.objects.filter(budget=budget),
-            fields=('account_number', ),
+            queryset=parent.subaccounts.all(),
+            fields=('line', ),
         )
-        validator({'account_number': value, 'budget': budget}, self)
+        validator({'line': value, 'object_id': parent.pk}, self)
+        return value
+
+    def validate_name(self, value):
+        parent = self.context.get('parent')
+        if parent is None:
+            parent = self.instance.parent
+        validator = serializers.UniqueTogetherValidator(
+            queryset=parent.subaccounts.all(),
+            fields=('name', ),
+        )
+        validator({'name': value, 'object_id': parent.pk}, self)
         return value

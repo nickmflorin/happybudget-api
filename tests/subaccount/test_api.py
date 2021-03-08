@@ -141,6 +141,50 @@ def test_create_subaccount(api_client, user, create_account, create_budget):
 
 
 @pytest.mark.freeze_time('2020-01-01')
+def test_create_subaccount_duplicate_line(api_client, user, create_account,
+        create_budget, create_sub_account):
+    api_client.force_login(user)
+    budget = create_budget()
+    account = create_account(budget=budget)
+    create_sub_account(parent=account, line="Line Number")
+    response = api_client.post(
+        "/v1/budgets/%s/accounts/%s/subaccounts/" % (budget.pk, account.pk),
+        data={'name': 'New Subaccount', 'line': 'Line Number'}
+    )
+    assert response.status_code == 400
+    assert response.json() == {
+        'errors': {
+            'line': [{
+                'message': 'The fields line must make a unique set.',
+                'code': 'unique'
+            }]
+        }
+    }
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_create_subaccount_duplicate_name(api_client, user, create_account,
+        create_budget, create_sub_account):
+    api_client.force_login(user)
+    budget = create_budget()
+    account = create_account(budget=budget)
+    create_sub_account(parent=account, name="Sub Account Name")
+    response = api_client.post(
+        "/v1/budgets/%s/accounts/%s/subaccounts/" % (budget.pk, account.pk),
+        data={'name': 'Sub Account Name', 'line': 'Line Number'}
+    )
+    assert response.status_code == 400
+    assert response.json() == {
+        'errors': {
+            'name': [{
+                'message': 'The fields name must make a unique set.',
+                'code': 'unique'
+            }]
+        }
+    }
+
+
+@pytest.mark.freeze_time('2020-01-01')
 def test_update_subaccount(api_client, user, create_sub_account, create_account,
         create_budget):
     api_client.force_login(user)
@@ -221,6 +265,52 @@ def test_update_subaccount(api_client, user, create_sub_account, create_account,
     assert subaccount.line == "New Line"
     assert subaccount.quantity == 10
     assert subaccount.rate == 1.5
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_update_subaccount_duplicate_line(api_client, user, create_account,
+        create_budget, create_sub_account):
+    api_client.force_login(user)
+    budget = create_budget()
+    account = create_account(budget=budget)
+    create_sub_account(parent=account, line="Line Number")
+    sub_account = create_sub_account(parent=account, line="Line Number 2")
+    response = api_client.patch(
+        "/v1/subaccounts/%s/" % (sub_account.pk),
+        data={'line': 'Line Number'}
+    )
+    assert response.status_code == 400
+    assert response.json() == {
+        'errors': {
+            'line': [{
+                'message': 'The fields line must make a unique set.',
+                'code': 'unique'
+            }]
+        }
+    }
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_update_subaccount_duplicate_name(api_client, user, create_account,
+        create_budget, create_sub_account):
+    api_client.force_login(user)
+    budget = create_budget()
+    account = create_account(budget=budget)
+    create_sub_account(parent=account, name="Sub Account Name")
+    sub_account = create_sub_account(parent=account, name="Sub Account Name 2")
+    response = api_client.patch(
+        "/v1/subaccounts/%s/" % sub_account.pk,
+        data={'name': 'Sub Account Name'}
+    )
+    assert response.status_code == 400
+    assert response.json() == {
+        'errors': {
+            'name': [{
+                'message': 'The fields name must make a unique set.',
+                'code': 'unique'
+            }]
+        }
+    }
 
 
 @pytest.mark.freeze_time('2020-01-01')
