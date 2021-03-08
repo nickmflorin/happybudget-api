@@ -37,5 +37,10 @@ def get_user_from_token(token: Optional[str]) -> Union[
         data = refresh_serializer.validate({'token': token})
         token_obj = verify_token(data['token'])
         user_id = token_obj.get(api_settings.USER_ID_CLAIM)
-        return get_user_model().objects.get(pk=user_id)
+        # This is an edge case where an old JWT might be stashed in the browser
+        # but the user may have been deleted.
+        try:
+            return get_user_model().objects.get(pk=user_id)
+        except get_user_model().DoesNotExist:
+            return AnonymousUser()
     return AnonymousUser()

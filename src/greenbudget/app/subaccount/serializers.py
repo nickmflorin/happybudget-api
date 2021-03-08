@@ -1,3 +1,4 @@
+from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers
 
 from greenbudget.lib.rest_framework_utils.serializers import (
@@ -96,7 +97,11 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
             queryset=parent.subaccounts.all(),
             fields=('line', ),
         )
-        validator({'line': value, 'object_id': parent.pk}, self)
+        validator({
+            'line': value,
+            'object_id': parent.pk,
+            'content_type': ContentType.objects.get_for_model(parent)
+        }, self)
         return value
 
     def validate_name(self, value):
@@ -107,5 +112,9 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
             queryset=parent.subaccounts.all(),
             fields=('name', ),
         )
-        validator({'name': value, 'object_id': parent.pk}, self)
+        validator({
+            'name': value,
+            'object_id': parent.pk,
+            'content_type': ContentType.objects.get_for_model(parent)
+        }, self)
         return value
