@@ -75,7 +75,8 @@ class SubAccount(models.Model):
     def estimated(self):
         if self.subaccounts.count() == 0:
             if self.quantity is not None and self.rate is not None:
-                return self.quantity * self.rate
+                multiplier = self.multiplier or 1.0
+                return self.quantity * self.rate * multiplier
             return None
         else:
             estimated = []
