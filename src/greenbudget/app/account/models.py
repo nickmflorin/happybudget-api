@@ -36,7 +36,7 @@ class Account(models.Model):
         get_latest_by = "updated_at"
         # Since the data from this model is used to power AGGridReact tables,
         # we want to keep the ordering of the accounts consistent.
-        ordering = ('-created_at', )
+        ordering = ('created_at', )
         verbose_name = "Account"
         verbose_name_plural = "Accounts"
         unique_together = (('account_number', 'budget'), )

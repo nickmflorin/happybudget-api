@@ -24,7 +24,12 @@ class SubAccountSimpleSerializer(EnhancedModelSerializer):
 
 class SubAccountSerializer(SubAccountSimpleSerializer):
     line = serializers.CharField(
-        required=False,
+        required=True,
+        allow_blank=False,
+        allow_null=False
+    )
+    name = serializers.CharField(
+        required=True,
         allow_blank=False,
         allow_null=False
     )
@@ -72,13 +77,27 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
     class Meta:
         model = SubAccount
         fields = SubAccountSimpleSerializer.Meta.fields + (
-            'line', 'description', 'created_by', 'updated_by',
+            'line', 'name', 'description', 'created_by', 'updated_by',
             'created_at', 'updated_at', 'quantity', 'rate', 'multiplier',
             'unit', 'unit_name', 'account', 'parent', 'parent_type',
             'ancestors', 'estimated', 'subaccounts')
 
     def get_parent_type(self, instance):
-        if isinstance(instance.content_object, Account):
+        if isinstance(instance.parent, Account):
             return "account"
-        assert isinstance(instance.content_object, SubAccount)
+        assert isinstance(instance.parent, SubAccount)
         return "subaccount"
+
+    def validate_account_number(self, value):
+        # In the case of creating an SubAccount via a POST request, the parent
+        # will be in the context.  In the case of updating a SubAccount via a
+        # PATCH request, the instance will be non-null.
+        parent = self.context.get('parent')
+        if budget is None:
+            budget = self.instance.budget
+        validator = serializers.UniqueTogetherValidator(
+            queryset=Account.objects.filter(budget=budget),
+            fields=('account_number', ),
+        )
+        validator({'account_number': value, 'budget': budget}, self)
+        return value

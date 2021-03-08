@@ -60,6 +60,11 @@ class SubAccountRecursiveViewSet(
     """
     subaccount_lookup_field = ("pk", "subaccount_pk")
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update(parent=self.subaccount)
+        return context
+
     def get_queryset(self):
         # The queryset will already be limited to SubAccount(s) that belong
         # to Budget(s) that are not in the Trash, because the @property
@@ -79,7 +84,7 @@ class SubAccountRecursiveViewSet(
             created_by=self.request.user,
             object_id=self.subaccount.pk,
             content_type=ContentType.objects.get_for_model(SubAccount),
-            content_object=self.subaccount
+            parent=self.subaccount
         )
 
 
@@ -97,6 +102,14 @@ class AccountSubAccountViewSet(
     """
     budget_lookup_field = ("pk", "budget_pk")
     account_lookup_field = ("pk", "account_pk")
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update(
+            budget=self.budget,
+            parent=self.account
+        )
+        return context
 
     def get_queryset(self):
         # The queryset will already be limited to SubAccount(s) that belong
@@ -117,5 +130,5 @@ class AccountSubAccountViewSet(
             created_by=self.request.user,
             object_id=self.account.pk,
             content_type=ContentType.objects.get_for_model(Account),
-            content_object=self.account
+            parent=self.account
         )

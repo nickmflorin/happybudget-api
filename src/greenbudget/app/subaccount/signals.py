@@ -11,6 +11,6 @@ def remove_parent_calculated_fields(instance, **kwargs):
     # derived from the children, not the attributes on that SubAccount.
     for field in instance.DERIVING_FIELDS:
         print("Setting field %s to None on %s." %
-              (field, instance.content_object.pk))
-        setattr(instance.content_object, field, None)
-    instance.content_object.save()
+              (field, instance.parent.pk))
+        setattr(instance.parent, field, None)
+    instance.parent.save()

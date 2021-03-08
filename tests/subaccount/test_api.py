@@ -9,7 +9,7 @@ def test_get_subaccount(api_client, user, create_sub_account, create_account,
     api_client.force_login(user)
     budget = create_budget()
     account = create_account(budget=budget)
-    subaccount = create_sub_account(content_object=account)
+    subaccount = create_sub_account(parent=account)
     response = api_client.get("/v1/subaccounts/%s/" % subaccount.pk)
     assert response.status_code == 200
     assert response.json() == {
@@ -147,7 +147,7 @@ def test_update_subaccount(api_client, user, create_sub_account, create_account,
     budget = create_budget()
     account = create_account(budget=budget)
     subaccount = create_sub_account(
-        content_object=account,
+        parent=account,
         name="Original Name",
         description="Original Description",
         line="Original Line"
@@ -231,9 +231,9 @@ def test_get_budget_account_subaccounts(api_client, user, create_account,
     account = create_account(budget=budget)
     another_account = create_account(budget=budget)
     subaccounts = [
-        create_sub_account(content_object=account),
-        create_sub_account(content_object=account),
-        create_sub_account(content_object=another_account)
+        create_sub_account(parent=account),
+        create_sub_account(parent=account),
+        create_sub_account(parent=another_account)
     ]
     response = api_client.get(
         "/v1/budgets/%s/accounts/%s/subaccounts/"
@@ -360,12 +360,12 @@ def test_get_subaccount_subaccounts(api_client, user, create_sub_account,
     api_client.force_login(user)
     budget = create_budget()
     account = create_account(budget=budget)
-    parent = create_sub_account(content_object=account)
+    parent = create_sub_account(parent=account)
     another_parent = create_sub_account()
     subaccounts = [
-        create_sub_account(content_object=parent),
-        create_sub_account(content_object=parent),
-        create_sub_account(content_object=another_parent)
+        create_sub_account(parent=parent),
+        create_sub_account(parent=parent),
+        create_sub_account(parent=another_parent)
     ]
     response = api_client.get("/v1/subaccounts/%s/subaccounts/" % parent.pk)
     assert response.status_code == 200

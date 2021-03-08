@@ -26,7 +26,7 @@ class SubAccount(models.Model):
     line = models.CharField(max_length=128)
     quantity = models.IntegerField(null=True)
     rate = models.DecimalField(decimal_places=2, max_digits=10, null=True)
-    multiplier = models.DecimalField(decimal_places=2, max_digits=10, null=True)
+    multiplier = models.IntegerField(null=True)
     UNITS = Choices(
         (0, "minutes", "Minutes"),
         (1, "hours", "Hours"),
@@ -44,7 +44,7 @@ class SubAccount(models.Model):
         | models.Q(app_label='subaccount', model='SubAccount')
     )
     object_id = models.PositiveIntegerField()
-    content_object = GenericForeignKey('content_type', 'object_id')
+    parent = GenericForeignKey('content_type', 'object_id')
     subaccounts = GenericRelation('self')
 
     DERIVING_FIELDS = [
@@ -53,6 +53,15 @@ class SubAccount(models.Model):
         "multiplier",
         "unit"
     ]
+
+    class Meta:
+        get_latest_by = "updated_at"
+        # Since the data from this model is used to power AGGridReact tables,
+        # we want to keep the ordering of the accounts consistent.
+        ordering = ('created_at', )
+        verbose_name = "Sub Account"
+        verbose_name_plural = "Sub Accounts"
+        unique_together = (('object_id', 'name'), )
 
     def __str__(self):
         return "<{cls} id={id}, name={name}, line={line}>".format(
@@ -89,9 +98,9 @@ class SubAccount(models.Model):
         # TODO: We need to figure out a way to build this validation into the
         # model so that it does not accidentally happen.  There should always
         # be a top level SubAccount that has an Account as a parent.
-        parent = self.content_object
+        parent = self.parent
         while not isinstance(parent, Account):
-            parent = parent.content_object
+            parent = parent.parent
         return parent
 
     @property
@@ -100,4 +109,4 @@ class SubAccount(models.Model):
 
     @property
     def ancestors(self):
-        return self.content_object.ancestors + [self.content_object]
+        return self.parent.ancestors + [self.parent]

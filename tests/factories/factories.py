@@ -116,10 +116,10 @@ class SubAccountFactory(CustomModelFactory):
     multiplier = 1.00
     rate = 1.00
 
-    content_object = factory.SubFactory(AccountFactory)
+    parent = factory.SubFactory(AccountFactory)
     content_type = factory.LazyAttribute(
-        lambda o: ContentType.objects.get_for_model(o.content_object))
-    object_id = factory.SelfAttribute('content_object.pk')
+        lambda o: ContentType.objects.get_for_model(o.parent))
+    object_id = factory.SelfAttribute('parent.pk')
 
     class Meta:
         model = SubAccount
