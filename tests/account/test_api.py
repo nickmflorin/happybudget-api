@@ -21,6 +21,8 @@ def test_get_accounts(api_client, user, create_account, create_budget):
             "access": [],
             "budget": budget.pk,
             "estimated": None,
+            "variance": None,
+            "actual": None,
             "subaccounts": [],
             "ancestors": [{
                 "type": "budget",
@@ -61,6 +63,8 @@ def test_get_accounts(api_client, user, create_account, create_budget):
             "access": [],
             "budget": budget.pk,
             "estimated": None,
+            "variance": None,
+            "actual": None,
             "subaccounts": [],
             "ancestors": [{
                 "type": "budget",
@@ -96,9 +100,10 @@ def test_get_accounts(api_client, user, create_account, create_budget):
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_account(api_client, user, create_account):
+def test_get_account(api_client, user, create_account, create_budget):
     api_client.force_login(user)
-    account = create_account()
+    budget = create_budget()
+    account = create_account(budget=budget)
     response = api_client.get("/v1/accounts/%s/" % account.pk)
     assert response.status_code == 200
     assert response.json() == {
@@ -110,6 +115,8 @@ def test_get_account(api_client, user, create_account):
         "access": [],
         "budget": account.budget.pk,
         "estimated": None,
+        "variance": None,
+        "actual": None,
         "subaccounts": [],
         "ancestors": [{
             "type": "budget",
@@ -164,6 +171,8 @@ def test_create_account(api_client, user, create_budget):
         "access": [],
         "budget": budget.pk,
         "estimated": None,
+        "variance": None,
+        "actual": None,
         "subaccounts": [],
         "ancestors": [{
             "type": "budget",
@@ -231,6 +240,8 @@ def test_update_account(api_client, user, create_budget, create_account):
         "access": [],
         "budget": budget.pk,
         "estimated": None,
+        "variance": None,
+        "actual": None,
         "subaccounts": [],
         "ancestors": [{
             "type": "budget",

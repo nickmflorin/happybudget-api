@@ -9,7 +9,7 @@ def test_get_subaccount(api_client, user, create_sub_account, create_account,
     api_client.force_login(user)
     budget = create_budget()
     account = create_account(budget=budget)
-    subaccount = create_sub_account(parent=account)
+    subaccount = create_sub_account(parent=account, budget=budget)
     response = api_client.get("/v1/subaccounts/%s/" % subaccount.pk)
     assert response.status_code == 200
     assert response.json() == {
@@ -27,7 +27,9 @@ def test_get_subaccount(api_client, user, create_sub_account, create_account,
         "parent": account.pk,
         "parent_type": "account",
         "account": account.pk,
+        "actual": None,
         "estimated": None,
+        "variance": None,
         "subaccounts": [],
         "ancestors": [
             {
@@ -99,7 +101,9 @@ def test_create_subaccount(api_client, user, create_account, create_budget):
         "parent": account.pk,
         "parent_type": "account",
         "account": account.pk,
+        "actual": None,
         "estimated": None,
+        "variance": None,
         "subaccounts": [],
         "ancestors": [
             {
@@ -146,7 +150,7 @@ def test_create_subaccount_duplicate_line(api_client, user, create_account,
     api_client.force_login(user)
     budget = create_budget()
     account = create_account(budget=budget)
-    create_sub_account(parent=account, line="Line Number")
+    create_sub_account(parent=account, line="Line Number", budget=budget)
     response = api_client.post(
         "/v1/budgets/%s/accounts/%s/subaccounts/" % (budget.pk, account.pk),
         data={'name': 'New Subaccount', 'line': 'Line Number'}
@@ -168,7 +172,7 @@ def test_create_subaccount_duplicate_name(api_client, user, create_account,
     api_client.force_login(user)
     budget = create_budget()
     account = create_account(budget=budget)
-    create_sub_account(parent=account, name="Sub Account Name")
+    create_sub_account(parent=account, name="Sub Account Name", budget=budget)
     response = api_client.post(
         "/v1/budgets/%s/accounts/%s/subaccounts/" % (budget.pk, account.pk),
         data={'name': 'Sub Account Name', 'line': 'Line Number'}
@@ -194,7 +198,8 @@ def test_update_subaccount(api_client, user, create_sub_account, create_account,
         parent=account,
         name="Original Name",
         description="Original Description",
-        line="Original Line"
+        line="Original Line",
+        budget=budget
     )
     response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk, data={
         "name": "New Name",
@@ -221,6 +226,8 @@ def test_update_subaccount(api_client, user, create_sub_account, create_account,
         "parent_type": "account",
         "account": account.pk,
         "estimated": '15.00',
+        "actual": None,
+        "variance": None,
         "subaccounts": [],
         "ancestors": [
             {
@@ -273,8 +280,9 @@ def test_update_subaccount_duplicate_line(api_client, user, create_account,
     api_client.force_login(user)
     budget = create_budget()
     account = create_account(budget=budget)
-    create_sub_account(parent=account, line="Line Number")
-    sub_account = create_sub_account(parent=account, line="Line Number 2")
+    create_sub_account(parent=account, line="Line Number", budget=budget)
+    sub_account = create_sub_account(
+        parent=account, line="Line Number 2", budget=budget)
     response = api_client.patch(
         "/v1/subaccounts/%s/" % (sub_account.pk),
         data={'line': 'Line Number'}
@@ -296,8 +304,9 @@ def test_update_subaccount_duplicate_name(api_client, user, create_account,
     api_client.force_login(user)
     budget = create_budget()
     account = create_account(budget=budget)
-    create_sub_account(parent=account, name="Sub Account Name")
-    sub_account = create_sub_account(parent=account, name="Sub Account Name 2")
+    create_sub_account(parent=account, name="Sub Account Name", budget=budget)
+    sub_account = create_sub_account(
+        parent=account, name="Sub Account Name 2", budget=budget)
     response = api_client.patch(
         "/v1/subaccounts/%s/" % sub_account.pk,
         data={'name': 'Sub Account Name'}
@@ -321,9 +330,9 @@ def test_get_budget_account_subaccounts(api_client, user, create_account,
     account = create_account(budget=budget)
     another_account = create_account(budget=budget)
     subaccounts = [
-        create_sub_account(parent=account),
-        create_sub_account(parent=account),
-        create_sub_account(parent=another_account)
+        create_sub_account(parent=account, budget=budget),
+        create_sub_account(parent=account, budget=budget),
+        create_sub_account(parent=another_account, budget=budget)
     ]
     response = api_client.get(
         "/v1/budgets/%s/accounts/%s/subaccounts/"
@@ -347,7 +356,9 @@ def test_get_budget_account_subaccounts(api_client, user, create_account,
             "parent": account.pk,
             "parent_type": "account",
             "account": account.pk,
+            "actual": None,
             "estimated": None,
+            "variance": None,
             "subaccounts": [],
             "ancestors": [
                 {
@@ -401,7 +412,9 @@ def test_get_budget_account_subaccounts(api_client, user, create_account,
             "parent": account.pk,
             "parent_type": "account",
             "account": account.pk,
+            "actual": None,
             "estimated": None,
+            "variance": None,
             "subaccounts": [],
             "ancestors": [
                 {
@@ -450,33 +463,35 @@ def test_get_subaccount_subaccounts(api_client, user, create_sub_account,
     api_client.force_login(user)
     budget = create_budget()
     account = create_account(budget=budget)
-    parent = create_sub_account(parent=account)
-    another_parent = create_sub_account()
+    parent = create_sub_account(parent=account, budget=budget)
+    another_parent = create_sub_account(parent=account, budget=budget)
     subaccounts = [
-        create_sub_account(parent=parent),
-        create_sub_account(parent=parent),
-        create_sub_account(parent=another_parent)
+        create_sub_account(parent=parent, budget=budget),
+        create_sub_account(parent=parent, budget=budget),
+        create_sub_account(parent=another_parent, budget=budget)
     ]
     response = api_client.get("/v1/subaccounts/%s/subaccounts/" % parent.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'] == [
         {
-            "id": subaccounts[0].pk,
-            "name": subaccounts[0].name,
-            "line": "%s" % subaccounts[0].line,
-            "description": subaccounts[0].description,
+            "id": subaccounts[1].pk,
+            "name": subaccounts[1].name,
+            "line": "%s" % subaccounts[1].line,
+            "description": subaccounts[1].description,
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
-            "quantity": subaccounts[0].quantity,
-            "rate": "{:.2f}".format(subaccounts[0].rate),
-            "multiplier": "{:.2f}".format(subaccounts[0].multiplier),
-            "unit": subaccounts[0].unit,
-            "unit_name": subaccounts[0].unit_name,
+            "quantity": subaccounts[1].quantity,
+            "rate": "{:.2f}".format(subaccounts[1].rate),
+            "multiplier": "{:.2f}".format(subaccounts[1].multiplier),
+            "unit": subaccounts[1].unit,
+            "unit_name": subaccounts[1].unit_name,
             "parent": parent.pk,
             "parent_type": "subaccount",
             "account": parent.account.pk,
+            "actual": None,
             "estimated": None,
+            "variance": None,
             "subaccounts": [],
             "ancestors": [
                 {
@@ -521,21 +536,23 @@ def test_get_subaccount_subaccounts(api_client, user, create_sub_account,
             }
         },
         {
-            "id": subaccounts[1].pk,
-            "name": subaccounts[1].name,
-            "line": "%s" % subaccounts[1].line,
-            "description": subaccounts[1].description,
+            "id": subaccounts[0].pk,
+            "name": subaccounts[0].name,
+            "line": "%s" % subaccounts[0].line,
+            "description": subaccounts[0].description,
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
-            "quantity": subaccounts[1].quantity,
-            "rate": "{:.2f}".format(subaccounts[1].rate),
-            "multiplier": "{:.2f}".format(subaccounts[1].multiplier),
-            "unit": subaccounts[1].unit,
-            "unit_name": subaccounts[1].unit_name,
+            "quantity": subaccounts[0].quantity,
+            "rate": "{:.2f}".format(subaccounts[0].rate),
+            "multiplier": "{:.2f}".format(subaccounts[0].multiplier),
+            "unit": subaccounts[0].unit,
+            "unit_name": subaccounts[0].unit_name,
             "parent": parent.pk,
             "parent_type": "subaccount",
             "account": parent.account.pk,
+            "actual": None,
             "estimated": None,
+            "variance": None,
             "subaccounts": [],
             "ancestors": [
                 {

@@ -1,4 +1,3 @@
-import datetime
 import factory
 from django.contrib.contenttypes.models import ContentType
 
@@ -95,11 +94,11 @@ class AccountFactory(CustomModelFactory):
     """
     A DjangoModelFactory to create instances of :obj:`Account`.
     """
+    budget = factory.SubFactory(BudgetFactory)
     created_by = factory.SubFactory(UserFactory)
     updated_by = factory.SubFactory(UserFactory)
     account_number = factory.Faker('random_number')
     description = factory.Faker('sentence')
-    budget = factory.SubFactory(BudgetFactory)
 
     class Meta:
         model = Account
@@ -117,7 +116,7 @@ class SubAccountFactory(CustomModelFactory):
     unit = SubAccount.UNITS.days
     multiplier = 1.00
     rate = 1.00
-
+    budget = factory.SubFactory(BudgetFactory)
     parent = factory.SubFactory(AccountFactory)
     content_type = factory.LazyAttribute(
         lambda o: ContentType.objects.get_for_model(o.parent))
@@ -138,6 +137,7 @@ class ActualFactory(CustomModelFactory):
     purchase_order = factory.Faker('random_number')
     value = factory.Faker('pydecimal')
     payment_method = Actual.PAYMENT_METHODS.check
+    budget = factory.SubFactory(BudgetFactory)
     parent = factory.SubFactory(AccountFactory)
     content_type = factory.LazyAttribute(
         lambda o: ContentType.objects.get_for_model(o.parent))

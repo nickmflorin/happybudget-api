@@ -1,6 +1,9 @@
 from rest_framework import viewsets, mixins, response, status, decorators
 
-from .serializers import BudgetSerializer
+from greenbudget.app.account.models import Account
+from greenbudget.app.subaccount.models import SubAccount
+
+from .serializers import BudgetSerializer, BudgetElementSerializer
 
 
 class GenericBudgetViewSet(viewsets.GenericViewSet):
@@ -51,6 +54,22 @@ class UserBudgetViewSet(
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
+
+    @decorators.action(detail=True, methods=["GET"])
+    def elements(self, request, *args, **kwargs):
+        """
+        Returns all of the elements belonging to the :obj:`Budget`, including
+        all nested :obj:`SubAccount`(s) and :obj:`Account`(s).
+        """
+        instance = self.get_object()
+        account_qs = Account.objects.filter(budget=instance).all()
+        subaccount_qs = SubAccount.objects.filter(budget=instance).all()
+        serializer = BudgetElementSerializer(
+            account_qs + subaccount_qs, many=True)
+        return response.Response(
+            {"data": serializer.data},
+            status=status.HTTP_200_OK
+        )
 
 
 class UserBudgetTrashViewSet(

@@ -4,11 +4,13 @@ from greenbudget.app.actual.models import Actual
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_account_actuals(api_client, user, create_account, create_actual):
-    account = create_account()
+def test_get_account_actuals(api_client, user, create_account, create_actual,
+        create_budget):
+    budget = create_budget()
+    account = create_account(budget=budget)
     actuals = [
-        create_actual(parent=account),
-        create_actual(parent=account)
+        create_actual(parent=account, budget=budget),
+        create_actual(parent=account, budget=budget)
     ]
     api_client.force_login(user)
     response = api_client.get("/v1/accounts/%s/actuals/" % account.pk)
@@ -100,11 +102,12 @@ def test_get_account_actuals(api_client, user, create_account, create_actual):
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_get_subaccount_actuals(api_client, user, create_sub_account,
-        create_actual):
-    sub_account = create_sub_account()
+        create_actual, create_budget):
+    budget = create_budget()
+    sub_account = create_sub_account(budget=budget)
     actuals = [
-        create_actual(parent=sub_account),
-        create_actual(parent=sub_account)
+        create_actual(parent=sub_account, budget=budget),
+        create_actual(parent=sub_account, budget=budget)
     ]
     api_client.force_login(user)
     response = api_client.get("/v1/subaccounts/%s/actuals/" % sub_account.pk)

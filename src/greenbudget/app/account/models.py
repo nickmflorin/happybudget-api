@@ -29,7 +29,8 @@ class Account(models.Model):
     budget = models.ForeignKey(
         to='budget.Budget',
         related_name="accounts",
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        db_index=True
     )
     subaccounts = GenericRelation(SubAccount)
     actuals = GenericRelation(Actual)

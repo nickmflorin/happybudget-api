@@ -81,7 +81,8 @@ class SubAccountRecursiveViewSet(
             created_by=self.request.user,
             object_id=self.subaccount.pk,
             content_type=ContentType.objects.get_for_model(SubAccount),
-            parent=self.subaccount
+            parent=self.subaccount,
+            budget=self.subaccount.budget
         )
 
 
@@ -127,5 +128,6 @@ class AccountSubAccountViewSet(
             created_by=self.request.user,
             object_id=self.account.pk,
             content_type=ContentType.objects.get_for_model(Account),
-            parent=self.account
+            parent=self.account,
+            budget=self.account.budget
         )

@@ -33,6 +33,15 @@ class Actual(models.Model):
     )
     payment_method = models.IntegerField(choices=PAYMENT_METHODS, null=True)
 
+    # TODO: We need to build in constraints such that the budget that the
+    # parent entity belongs to is the same as the budget that this entity
+    # belongs to.
+    budget = models.ForeignKey(
+        to='budget.Budget',
+        related_name="actuals",
+        on_delete=models.CASCADE,
+        db_index=True,
+    )
     content_type = models.ForeignKey(
         to=ContentType,
         on_delete=models.CASCADE,

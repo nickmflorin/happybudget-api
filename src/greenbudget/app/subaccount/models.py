@@ -39,13 +39,22 @@ class SubAccount(models.Model):
     )
     unit = models.IntegerField(choices=UNITS, null=True)
 
+    # TODO: We need to build in constraints such that the budget that the
+    # parent entity belongs to is the same as the budget that this entity
+    # belongs to.
+    budget = models.ForeignKey(
+        to='budget.Budget',
+        related_name="subaccounts",
+        on_delete=models.CASCADE,
+        db_index=True,
+    )
     content_type = models.ForeignKey(
         to=ContentType,
         on_delete=models.CASCADE,
         limit_choices_to=models.Q(app_label='account', model='Account')
         | models.Q(app_label='subaccount', model='SubAccount')
     )
-    object_id = models.PositiveIntegerField()
+    object_id = models.PositiveIntegerField(db_index=True)
     parent = GenericForeignKey('content_type', 'object_id')
     subaccounts = GenericRelation('self')
     actuals = GenericRelation(Actual)
