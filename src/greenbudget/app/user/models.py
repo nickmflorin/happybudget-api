@@ -31,7 +31,7 @@ class User(AbstractUser):
 
     @property
     def full_name(self):
-        return self.first_name + self.last_name
+        return self.first_name + " " + self.last_name
 
     def sync_with_social_provider(self, token, provider):
         assert provider == "google", \

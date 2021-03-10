@@ -85,7 +85,7 @@ class SubAccount(models.Model):
         actuals = []
         for actual in self.actuals.all():
             if actual.value is not None:
-                actuals.append(actual.value)
+                actuals.append(float(actual.value))
         if len(actuals) != 0:
             return sum(actuals)
         return None
@@ -95,7 +95,7 @@ class SubAccount(models.Model):
         if self.subaccounts.count() == 0:
             if self.quantity is not None and self.rate is not None:
                 multiplier = self.multiplier or 1.0
-                return self.quantity * self.rate * multiplier
+                return float(self.quantity) * float(self.rate) * float(multiplier)  # noqa
             return None
         else:
             estimated = []
@@ -122,10 +122,6 @@ class SubAccount(models.Model):
         while not isinstance(parent, Account):
             parent = parent.parent
         return parent
-
-    @property
-    def variance(self):
-        return None
 
     @property
     def ancestors(self):

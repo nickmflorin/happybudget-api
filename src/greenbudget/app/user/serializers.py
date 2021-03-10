@@ -33,6 +33,47 @@ class ChangePasswordSerializer(serializers.ModelSerializer):
         return instance
 
 
+class UserRegistrationSerializer(serializers.ModelSerializer):
+    first_name = serializers.CharField(
+        required=True,
+        allow_blank=False,
+        allow_null=False
+    )
+    last_name = serializers.CharField(
+        required=True,
+        allow_blank=False,
+        allow_null=False
+    )
+    email = serializers.EmailField(
+        required=True,
+        allow_blank=False,
+        allow_null=False,
+        validators=[
+            validators.UniqueValidator(queryset=User.objects.all())]
+    )
+    password = serializers.CharField(
+        required=True,
+        allow_blank=False,
+        allow_null=False,
+        style={'input_type': 'password'}
+    )
+
+    class Meta:
+        model = User
+        fields = (
+            'first_name', 'last_name', 'email', 'password')
+
+    def validate(self, attrs):
+        attrs.update(
+            is_admin=False,
+            is_staff=False,
+            is_superuser=False,
+            is_active=True,
+            username=attrs['email']
+        )
+        return attrs
+
+
 class UserSerializer(EnhancedModelSerializer):
     first_name = serializers.CharField(
         required=True,

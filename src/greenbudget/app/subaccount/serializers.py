@@ -1,5 +1,5 @@
 from django.contrib.contenttypes.models import ContentType
-from rest_framework import serializers
+from rest_framework import serializers, exceptions
 
 from greenbudget.lib.rest_framework_utils.serializers import (
     EnhancedModelSerializer)
@@ -128,3 +128,12 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
             'content_type': ContentType.objects.get_for_model(parent)
         }, self)
         return value
+
+    def validate(self, attrs):
+        if self.instance is not None and self.instance.subaccounts.count() != 0:
+            if any([field in attrs for field in self.instance.DERIVING_FIELDS]):
+                raise exceptions.ValidationError(
+                    "Field can only be updated when the sub account is not "
+                    "derived."
+                )
+        return super().validate(attrs)

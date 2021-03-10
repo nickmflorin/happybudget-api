@@ -51,7 +51,7 @@ class Actual(models.Model):
         verbose_name_plural = "Actual"
 
     def __str__(self):
-        return "<{cls} id={id}, name={name}, line={line}>".format(
+        return "<{cls} id={id}, value={value}, content_type={content_type}>".format(  # noqa
             cls=self.__class__.__name__,
             id=self.pk,
             content_type=self.content_type.model,

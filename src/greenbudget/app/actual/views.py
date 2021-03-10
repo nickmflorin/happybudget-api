@@ -35,7 +35,6 @@ class GenericActualViewSet(viewsets.GenericViewSet):
         )
 
 
-
 class ActualsViewSet(
     mixins.UpdateModelMixin,
     mixins.RetrieveModelMixin,
@@ -54,7 +53,6 @@ class ActualsViewSet(
         # TODO: Do we have to worry about filtering out actuals that belong
         # to a budget that might be in the trash?
         return Actual.objects.all()
-
 
 
 class AccountActualsViewSet(
@@ -127,6 +125,7 @@ class BudgetActualsViewSet(
         # TODO: This is likely going to be an expensive set of queries, and
         # we should investigate if there are better ways to do this.
         actuals = []
+
         def add_subaccount_actuals(subaccount):
             actuals.extend(list(subaccount.actuals.all()))
             for subsubaccount in subaccount.subaccounts.all():
