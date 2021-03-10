@@ -1,5 +1,3 @@
-from ratelimit.decorators import ratelimit
-
 from django.utils.decorators import method_decorator
 from django.views.decorators.debug import sensitive_post_parameters
 
@@ -22,7 +20,7 @@ class UserRegistrationView(mixins.CreateModelMixin, viewsets.GenericViewSet):
     def dispatch(self, request, *args, **kwargs):
         return super().dispatch(request, *args, **kwargs)
 
-    @ratelimit(key='user_or_ip', rate='3/s')
+    # @ratelimit(key='user_or_ip', rate='3/s')  -> Needs to be fixed
     def create(self, request, *args, **kwargs):
         was_limited = getattr(request, 'limited', False)
         if was_limited:
