@@ -16,7 +16,7 @@ class UserRegistrationView(mixins.CreateModelMixin, viewsets.GenericViewSet):
     permission_classes = (permissions.AllowAny, )
     serializer_class = UserRegistrationSerializer
 
-    @sensitive_post_parameters_m('token_id')
+    @sensitive_post_parameters_m('password')
     def dispatch(self, request, *args, **kwargs):
         return super().dispatch(request, *args, **kwargs)
 
