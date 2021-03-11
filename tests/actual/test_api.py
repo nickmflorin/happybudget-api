@@ -11,7 +11,7 @@ def test_create_actual(api_client, user, create_account,
     api_client.force_login(user)
     response = api_client.post(
         "/v1/accounts/%s/actuals/" % account.pk,
-        data={"object_id": account.pk, "parent_type": "account"}
+        data={"object_id": account.pk}
     )
     assert response.status_code == 201
     assert response.json() == {
@@ -59,23 +59,68 @@ def test_create_actual(api_client, user, create_account,
     assert actual.parent == account
 
 
-def test_create_actual_invalid_parent(api_client, user, create_account,
-        create_budget):
-    budgets = [create_budget(), create_budget()]
-    accounts = [
-        create_account(budget=budgets[0]),
-        create_account(budget=budgets[1])
-    ]
+@pytest.mark.freeze_time('2020-01-01')
+def test_update_actual(api_client, user, create_account,
+        create_budget, create_actual):
+    budget = create_budget()
+    account = create_account(budget=budget)
+    actual = create_actual(parent=account, budget=budget)
+
     api_client.force_login(user)
-    response = api_client.post(
-        "/v1/accounts/%s/actuals/" % accounts[0].pk,
-        data={"object_id": accounts[1].pk, "parent_type": "account"}
+    response = api_client.patch(
+        "/v1/actuals/%s/" % actual.pk,
+        data={
+            "vendor": "Vendor Name",
+            "payment_id": "Payment ID",
+        }
     )
-    assert response.status_code == 400
+    assert response.status_code == 200
+    assert response.json() == {
+        "id": actual.pk,
+        "description": actual.description,
+        "created_at": "2020-01-01 00:00:00",
+        "updated_at": "2020-01-01 00:00:00",
+        "purchase_order": "%s" % actual.purchase_order,
+        "date": actual.date,
+        "payment_id": "Payment ID",
+        "value": "{:.2f}".format(actual.value),
+        "payment_method": actual.payment_method,
+        "payment_method_name": actual.PAYMENT_METHODS[actual.payment_method],
+        "object_id": account.pk,
+        "parent_type": "account",
+        "vendor": "Vendor Name",
+        "created_by": {
+            "id": user.pk,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "email": user.email,
+            "username": user.username,
+            "is_active": user.is_active,
+            "is_admin": user.is_admin,
+            "is_superuser": user.is_superuser,
+            "is_staff": user.is_staff,
+            "full_name": user.full_name
+        },
+        "updated_by": {
+            "id": user.pk,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "email": user.email,
+            "username": user.username,
+            "is_active": user.is_active,
+            "is_admin": user.is_admin,
+            "is_superuser": user.is_superuser,
+            "is_staff": user.is_staff,
+            "full_name": user.full_name
+        }
+    }
+    actual.refresh_from_db()
+    assert actual.payment_id == "Payment ID"
+    assert actual.vendor == "Vendor Name"
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_update_actual(api_client, user, create_account,
+def test_change_actual_parent(api_client, user, create_account,
         create_budget, create_actual):
     budget = create_budget()
     account = create_account(budget=budget)
@@ -130,6 +175,25 @@ def test_update_actual(api_client, user, create_account,
     actual.refresh_from_db()
     assert actual.budget == budget
     assert actual.parent == another_account
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_change_actual_parent_invalid(api_client, user, create_account,
+        create_budget, create_actual):
+    budgets = [
+        create_budget(),
+        create_budget()
+    ]
+    account = create_account(budget=budgets[0])
+    another_account = create_account(budget=budgets[1])
+    actual = create_actual(parent=account, budget=budgets[0])
+
+    api_client.force_login(user)
+    response = api_client.patch(
+        "/v1/actuals/%s/" % actual.pk,
+        data={"object_id": another_account.pk, "parent_type": "account"}
+    )
+    assert response.status_code == 400
 
 
 @pytest.mark.freeze_time('2020-01-01')

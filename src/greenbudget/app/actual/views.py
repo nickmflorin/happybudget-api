@@ -17,6 +17,11 @@ class GenericActualViewSet(viewsets.GenericViewSet):
     ordering_fields = ['updated_at', 'vendor', 'created_at']
     search_fields = ['vendor']
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update(request=self.request)
+        return context
+
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
 
@@ -61,7 +66,11 @@ class AccountActualsViewSet(
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context.update(budget=self.account.budget)
+        context.update(
+            budget=self.account.budget,
+            parent_type="account",
+            object_id=self.account.pk,
+        )
         return context
 
     def get_queryset(self):
@@ -94,7 +103,11 @@ class SubAccountActualsViewSet(
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context.update(budget=self.subaccount.budget)
+        context.update(
+            budget=self.subaccount.budget,
+            parent_type="subaccount",
+            object_id=self.subaccount.pk,
+        )
         return context
 
     def get_queryset(self):
