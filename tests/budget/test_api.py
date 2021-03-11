@@ -4,8 +4,22 @@ from greenbudget.lib.utils.dateutils import api_datetime_string
 from greenbudget.app.budget.models import Budget
 
 
+# def test_get_budget_elements(api_client, user, create_budget, create_account,
+#         create_sub_account):
+#     budget = create_budget()
+#     account = create_account(budget=budget, account_number="Account A")
+#     subaccount = create_sub_account(budget=budget, name="Jack")
+#     api_client.force_login(user)
+#     response = api_client.get(
+#         "/v1/budgets/%s/elements/?search=%s"
+#         % (budget.pk, "Account")
+#     )
+#     print(response.status_code)
+#     print(response.json())
+
+
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_budgets(api_client, user, create_budget, db):
+def test_get_budgets(api_client, user, create_budget):
     api_client.force_login(user)
     budgets = [create_budget(), create_budget()]
     response = api_client.get("/v1/budgets/")
@@ -27,6 +41,8 @@ def test_get_budgets(api_client, user, create_budget, db):
             "studio_shoot_days": budgets[0].studio_shoot_days,
             "location_days": budgets[0].location_days,
             "estimated": None,
+            "variance": None,
+            "actual": None,
             'trash': False,
             "author": {
                 "id": user.pk,
@@ -56,6 +72,8 @@ def test_get_budgets(api_client, user, create_budget, db):
             "studio_shoot_days": budgets[1].studio_shoot_days,
             "location_days": budgets[1].location_days,
             "estimated": None,
+            "variance": None,
+            "actual": None,
             'trash': False,
             "author": {
                 "id": user.pk,
@@ -95,6 +113,8 @@ def test_get_budget(api_client, user, create_budget, db):
         "location_days": budget.location_days,
         "trash": False,
         "estimated": None,
+        "variance": None,
+        "actual": None,
         "author": {
             "id": user.pk,
             "first_name": user.first_name,
@@ -138,6 +158,8 @@ def test_create_budget(api_client, user, db):
         "location_days": budget.location_days,
         'trash': False,
         "estimated": None,
+        "variance": None,
+        "actual": None,
         "author": {
             "id": user.pk,
             "first_name": user.first_name,
@@ -192,6 +214,8 @@ def test_get_budgets_in_trash(api_client, user, create_budget, db):
             "location_days": budgets[0].location_days,
             'trash': True,
             "estimated": None,
+            "variance": None,
+            "actual": None,
             "author": {
                 "id": user.pk,
                 "first_name": user.first_name,
@@ -221,6 +245,8 @@ def test_get_budgets_in_trash(api_client, user, create_budget, db):
             "location_days": budgets[1].location_days,
             'trash': True,
             "estimated": None,
+            "variance": None,
+            "actual": None,
             "author": {
                 "id": user.pk,
                 "first_name": user.first_name,
@@ -259,6 +285,8 @@ def test_get_budget_in_trash(api_client, user, create_budget, db):
         "location_days": budget.location_days,
         'trash': True,
         "estimated": None,
+        "variance": None,
+        "actual": None,
         "author": {
             "id": user.pk,
             "first_name": user.first_name,

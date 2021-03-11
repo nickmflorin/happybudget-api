@@ -24,7 +24,7 @@ class SubAccountSimpleSerializer(EnhancedModelSerializer):
 
 
 class SubAccountSerializer(SubAccountSimpleSerializer):
-    line = serializers.CharField(
+    identifier = serializers.CharField(
         required=True,
         allow_blank=False,
         allow_null=False
@@ -88,7 +88,7 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
     class Meta:
         model = SubAccount
         fields = SubAccountSimpleSerializer.Meta.fields + (
-            'line', 'name', 'description', 'created_by', 'updated_by',
+            'identifier', 'name', 'description', 'created_by', 'updated_by',
             'created_at', 'updated_at', 'quantity', 'rate', 'multiplier',
             'unit', 'unit_name', 'account', 'parent', 'parent_type',
             'ancestors', 'estimated', 'subaccounts', 'actual', 'variance')
@@ -99,16 +99,16 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
         assert isinstance(instance.parent, SubAccount)
         return "subaccount"
 
-    def validate_line(self, value):
+    def validate_identifier(self, value):
         parent = self.context.get('parent')
         if parent is None:
             parent = self.instance.parent
         validator = serializers.UniqueTogetherValidator(
             queryset=parent.subaccounts.all(),
-            fields=('line', ),
+            fields=('identifier', ),
         )
         validator({
-            'line': value,
+            'identifier': value,
             'object_id': parent.pk,
             'content_type': ContentType.objects.get_for_model(parent)
         }, self)

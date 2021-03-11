@@ -23,7 +23,7 @@ class AncestorSerializer(serializers.Serializer):
         if isinstance(instance, Budget):
             return instance.name
         elif isinstance(instance, Account):
-            return instance.account_number
+            return instance.identifier
         else:
             assert isinstance(instance, SubAccount)
             return instance.name

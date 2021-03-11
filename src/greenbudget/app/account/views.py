@@ -62,7 +62,7 @@ class BudgetAccountViewSet(
         return context
 
     def get_queryset(self):
-        return self.budget.accounts.all()
+        return Account.objects.filter(budget=self.budget).all()
 
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)

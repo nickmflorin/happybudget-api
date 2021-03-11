@@ -4,6 +4,8 @@ from polymorphic.models import PolymorphicModel
 from django.db import models
 from django.utils import timezone
 
+from greenbudget.app.account.models import Account
+
 from .exceptions import BudgetPermissionError
 from .managers import BudgetManager
 
@@ -83,9 +85,9 @@ class Budget(PolymorphicModel):
     @property
     def actual(self):
         actuals = []
-        for account in self.acounts.all():
-            if account.actual is not None:
-                actuals.append(account.actual)
+        for element in self.items.all():
+            if isinstance(element, Account) and element.actual is not None:
+                actuals.append(element.actual)
         if len(actuals) != 0:
             return sum(actuals)
         return None
@@ -93,9 +95,9 @@ class Budget(PolymorphicModel):
     @property
     def estimated(self):
         estimated = []
-        for account in self.accounts.all():
-            if account.estimated is not None:
-                estimated.append(account.estimated)
+        for element in self.items.all():
+            if isinstance(element, Account) and element.estimated is not None:
+                estimated.append(element.estimated)
         if len(estimated) != 0:
             return sum(estimated)
         return None

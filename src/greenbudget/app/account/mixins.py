@@ -38,4 +38,5 @@ class BudgetAccountNestedMixin(BudgetNestedMixin):
             self.account_lookup_field[0]: (
                 self.kwargs[self.account_lookup_field[1]])
         }
-        return get_object_or_404(self.budget.accounts.all(), **params)
+        return get_object_or_404(Account.objects.filter(
+            budget=self.budget), **params)

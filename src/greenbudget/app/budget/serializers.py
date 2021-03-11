@@ -22,7 +22,7 @@ class BudgetElementSerializer(serializers.Serializer):
 
     def get_name(self, instance):
         if isinstance(instance, Account):
-            return instance.account_number
+            return instance.identifier
         assert isinstance(instance, SubAccount)
         return instance.name
 

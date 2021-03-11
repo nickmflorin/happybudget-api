@@ -14,7 +14,7 @@ def test_get_accounts(api_client, user, create_account, create_budget):
     assert response.json()['data'] == [
         {
             "id": accounts[0].pk,
-            "account_number": "%s" % accounts[0].account_number,
+            "identifier": "%s" % accounts[0].identifier,
             "description": accounts[0].description,
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
@@ -56,7 +56,7 @@ def test_get_accounts(api_client, user, create_account, create_budget):
         },
         {
             "id": accounts[1].pk,
-            "account_number": "%s" % accounts[1].account_number,
+            "identifier": "%s" % accounts[1].identifier,
             "description": accounts[1].description,
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
@@ -108,7 +108,7 @@ def test_get_account(api_client, user, create_account, create_budget):
     assert response.status_code == 200
     assert response.json() == {
         "id": account.pk,
-        "account_number": "%s" % account.account_number,
+        "identifier": "%s" % account.identifier,
         "description": account.description,
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
@@ -155,7 +155,7 @@ def test_create_account(api_client, user, create_budget):
     api_client.force_login(user)
     budget = create_budget()
     response = api_client.post("/v1/budgets/%s/accounts/" % budget.pk, data={
-        'account_number': 'new_account'
+        'identifier': 'new_account'
     })
     assert response.status_code == 201
 
@@ -164,7 +164,7 @@ def test_create_account(api_client, user, create_budget):
 
     assert response.json() == {
         "id": account.pk,
-        "account_number": 'new_account',
+        "identifier": 'new_account',
         "description": None,
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
@@ -211,9 +211,9 @@ def test_create_account_duplicate_number(api_client, user, create_budget,
         create_account):
     api_client.force_login(user)
     budget = create_budget()
-    create_account(budget=budget, account_number="new_account")
+    create_account(budget=budget, identifier="new_account")
     response = api_client.post("/v1/budgets/%s/accounts/" % budget.pk, data={
-        'account_number': 'new_account'
+        'identifier': 'new_account'
     })
     assert response.status_code == 400
 
@@ -224,16 +224,16 @@ def test_update_account(api_client, user, create_budget, create_account):
     budget = create_budget()
     account = create_account(
         budget=budget,
-        account_number="original_account_number"
+        identifier="original_identifier"
     )
     response = api_client.patch("/v1/accounts/%s/" % account.pk, data={
-        'account_number': 'new_account',
+        'identifier': 'new_account',
         'description': 'Account description',
     })
     assert response.status_code == 200
     assert response.json() == {
         "id": account.pk,
-        "account_number": 'new_account',
+        "identifier": 'new_account',
         "description": 'Account description',
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
@@ -274,7 +274,7 @@ def test_update_account(api_client, user, create_budget, create_account):
         }
     }
     account.refresh_from_db()
-    assert account.account_number == "new_account"
+    assert account.identifier == "new_account"
     assert account.description == "Account description"
 
 
@@ -283,13 +283,13 @@ def test_update_account_duplicate_number(api_client, user, create_budget,
         create_account):
     api_client.force_login(user)
     budget = create_budget()
-    create_account(account_number="account_number", budget=budget)
+    create_account(identifier="identifier", budget=budget)
     account = create_account(
         budget=budget,
-        account_number="original_account_number"
+        identifier="original_identifier"
     )
     response = api_client.patch("/v1/accounts/%s/" % account.pk, data={
-        'account_number': 'account_number',
+        'identifier': 'identifier',
         'description': 'Account description',
     })
     assert response.status_code == 400

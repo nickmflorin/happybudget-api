@@ -15,7 +15,7 @@ def test_get_subaccount(api_client, user, create_sub_account, create_account,
     assert response.json() == {
         "id": subaccount.pk,
         "name": subaccount.name,
-        "line": "%s" % subaccount.line,
+        "identifier": "%s" % subaccount.identifier,
         "description": subaccount.description,
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
@@ -40,7 +40,7 @@ def test_get_subaccount(api_client, user, create_sub_account, create_account,
             {
                 "id": account.id,
                 "type": "account",
-                "name": '%s' % account.account_number,
+                "name": '%s' % account.identifier,
             }
         ],
         "created_by": {
@@ -77,19 +77,23 @@ def test_create_subaccount(api_client, user, create_account, create_budget):
     account = create_account(budget=budget)
     response = api_client.post(
         "/v1/budgets/%s/accounts/%s/subaccounts/" % (budget.pk, account.pk),
-        data={'name': 'New Subaccount', 'line': '100', 'description': 'Test'}
+        data={
+            'name': 'New Subaccount',
+            'identifier': '100',
+            'description': 'Test'
+        }
     )
     assert response.status_code == 201
     subaccount = SubAccount.objects.first()
     assert subaccount.name == "New Subaccount"
     assert subaccount.description == "Test"
-    assert subaccount.line == "100"
+    assert subaccount.identifier == "100"
 
     assert subaccount is not None
     assert response.json() == {
         "id": subaccount.pk,
         "name": 'New Subaccount',
-        "line": '100',
+        "identifier": '100',
         "description": 'Test',
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
@@ -114,7 +118,7 @@ def test_create_subaccount(api_client, user, create_account, create_budget):
             {
                 "id": account.id,
                 "type": "account",
-                "name": '%s' % account.account_number,
+                "name": '%s' % account.identifier,
             }
         ],
         "created_by": {
@@ -145,21 +149,22 @@ def test_create_subaccount(api_client, user, create_account, create_budget):
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_subaccount_duplicate_line(api_client, user, create_account,
-        create_budget, create_sub_account):
+def test_create_subaccount_duplicate_identifier(api_client, user,
+        create_account, create_budget, create_sub_account):
     api_client.force_login(user)
     budget = create_budget()
     account = create_account(budget=budget)
-    create_sub_account(parent=account, line="Line Number", budget=budget)
+    create_sub_account(
+        parent=account, identifier="identifier Number", budget=budget)
     response = api_client.post(
         "/v1/budgets/%s/accounts/%s/subaccounts/" % (budget.pk, account.pk),
-        data={'name': 'New Subaccount', 'line': 'Line Number'}
+        data={'name': 'New Subaccount', 'identifier': 'identifier Number'}
     )
     assert response.status_code == 400
     assert response.json() == {
         'errors': {
-            'line': [{
-                'message': 'The fields line must make a unique set.',
+            'identifier': [{
+                'message': 'The fields identifier must make a unique set.',
                 'code': 'unique'
             }]
         }
@@ -175,7 +180,7 @@ def test_create_subaccount_duplicate_name(api_client, user, create_account,
     create_sub_account(parent=account, name="Sub Account Name", budget=budget)
     response = api_client.post(
         "/v1/budgets/%s/accounts/%s/subaccounts/" % (budget.pk, account.pk),
-        data={'name': 'Sub Account Name', 'line': 'Line Number'}
+        data={'name': 'Sub Account Name', 'identifier': 'identifier Number'}
     )
     assert response.status_code == 400
     assert response.json() == {
@@ -198,13 +203,13 @@ def test_update_subaccount(api_client, user, create_sub_account, create_account,
         parent=account,
         name="Original Name",
         description="Original Description",
-        line="Original Line",
+        identifier="Original identifier",
         budget=budget
     )
     response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk, data={
         "name": "New Name",
         "description": "New Description",
-        "line": "New Line",
+        "identifier": "New identifier",
         "quantity": 10,
         "rate": 1.5
     })
@@ -213,7 +218,7 @@ def test_update_subaccount(api_client, user, create_sub_account, create_account,
     assert response.json() == {
         "id": subaccount.pk,
         "name": "New Name",
-        "line": "New Line",
+        "identifier": "New identifier",
         "description": "New Description",
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
@@ -238,7 +243,7 @@ def test_update_subaccount(api_client, user, create_sub_account, create_account,
             {
                 "id": account.id,
                 "type": "account",
-                "name": '%s' % account.account_number,
+                "name": '%s' % account.identifier,
             }
         ],
         "created_by": {
@@ -269,29 +274,30 @@ def test_update_subaccount(api_client, user, create_sub_account, create_account,
 
     assert subaccount.name == "New Name"
     assert subaccount.description == "New Description"
-    assert subaccount.line == "New Line"
+    assert subaccount.identifier == "New identifier"
     assert subaccount.quantity == 10
     assert subaccount.rate == 1.5
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_update_subaccount_duplicate_line(api_client, user, create_account,
-        create_budget, create_sub_account):
+def test_update_subaccount_duplicate_identifier(api_client, user,
+        create_account, create_budget, create_sub_account):
     api_client.force_login(user)
     budget = create_budget()
     account = create_account(budget=budget)
-    create_sub_account(parent=account, line="Line Number", budget=budget)
+    create_sub_account(
+        parent=account, identifier="identifier Number", budget=budget)
     sub_account = create_sub_account(
-        parent=account, line="Line Number 2", budget=budget)
+        parent=account, identifier="identifier Number 2", budget=budget)
     response = api_client.patch(
         "/v1/subaccounts/%s/" % (sub_account.pk),
-        data={'line': 'Line Number'}
+        data={'identifier': 'identifier Number'}
     )
     assert response.status_code == 400
     assert response.json() == {
         'errors': {
-            'line': [{
-                'message': 'The fields line must make a unique set.',
+            'identifier': [{
+                'message': 'The fields identifier must make a unique set.',
                 'code': 'unique'
             }]
         }
@@ -342,17 +348,17 @@ def test_get_budget_account_subaccounts(api_client, user, create_account,
     assert response.json()['count'] == 2
     assert response.json()['data'] == [
         {
-            "id": subaccounts[1].pk,
-            "name": subaccounts[1].name,
-            "line": "%s" % subaccounts[1].line,
-            "description": subaccounts[1].description,
+            "id": subaccounts[0].pk,
+            "name": subaccounts[0].name,
+            "identifier": "%s" % subaccounts[0].identifier,
+            "description": subaccounts[0].description,
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
-            "quantity": subaccounts[1].quantity,
-            "rate": "{:.2f}".format(subaccounts[1].rate),
-            "multiplier": "{:.2f}".format(subaccounts[1].multiplier),
-            "unit": subaccounts[1].unit,
-            "unit_name": subaccounts[1].unit_name,
+            "quantity": subaccounts[0].quantity,
+            "rate": "{:.2f}".format(subaccounts[0].rate),
+            "multiplier": "{:.2f}".format(subaccounts[0].multiplier),
+            "unit": subaccounts[0].unit,
+            "unit_name": subaccounts[0].unit_name,
             "parent": account.pk,
             "parent_type": "account",
             "account": account.pk,
@@ -369,7 +375,7 @@ def test_get_budget_account_subaccounts(api_client, user, create_account,
                 {
                     "id": account.id,
                     "type": "account",
-                    "name": '%s' % account.account_number,
+                    "name": '%s' % account.identifier,
                 }
             ],
             "created_by": {
@@ -398,17 +404,17 @@ def test_get_budget_account_subaccounts(api_client, user, create_account,
             }
         },
         {
-            "id": subaccounts[0].pk,
-            "name": subaccounts[0].name,
-            "line": "%s" % subaccounts[0].line,
-            "description": subaccounts[0].description,
+            "id": subaccounts[1].pk,
+            "name": subaccounts[1].name,
+            "identifier": "%s" % subaccounts[1].identifier,
+            "description": subaccounts[1].description,
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
-            "quantity": subaccounts[0].quantity,
-            "rate": "{:.2f}".format(subaccounts[0].rate),
-            "multiplier": "{:.2f}".format(subaccounts[0].multiplier),
-            "unit": subaccounts[0].unit,
-            "unit_name": subaccounts[0].unit_name,
+            "quantity": subaccounts[1].quantity,
+            "rate": "{:.2f}".format(subaccounts[1].rate),
+            "multiplier": "{:.2f}".format(subaccounts[1].multiplier),
+            "unit": subaccounts[1].unit,
+            "unit_name": subaccounts[1].unit_name,
             "parent": account.pk,
             "parent_type": "account",
             "account": account.pk,
@@ -425,7 +431,7 @@ def test_get_budget_account_subaccounts(api_client, user, create_account,
                 {
                     "id": account.id,
                     "type": "account",
-                    "name": '%s' % account.account_number,
+                    "name": '%s' % account.identifier,
                 }
             ],
             "created_by": {
@@ -452,7 +458,7 @@ def test_get_budget_account_subaccounts(api_client, user, create_account,
                 "is_staff": user.is_staff,
                 "full_name": user.full_name
             }
-        }
+        },
     ]
 
 
@@ -475,17 +481,17 @@ def test_get_subaccount_subaccounts(api_client, user, create_sub_account,
     assert response.json()['count'] == 2
     assert response.json()['data'] == [
         {
-            "id": subaccounts[1].pk,
-            "name": subaccounts[1].name,
-            "line": "%s" % subaccounts[1].line,
-            "description": subaccounts[1].description,
+            "id": subaccounts[0].pk,
+            "name": subaccounts[0].name,
+            "identifier": "%s" % subaccounts[0].identifier,
+            "description": subaccounts[0].description,
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
-            "quantity": subaccounts[1].quantity,
-            "rate": "{:.2f}".format(subaccounts[1].rate),
-            "multiplier": "{:.2f}".format(subaccounts[1].multiplier),
-            "unit": subaccounts[1].unit,
-            "unit_name": subaccounts[1].unit_name,
+            "quantity": subaccounts[0].quantity,
+            "rate": "{:.2f}".format(subaccounts[0].rate),
+            "multiplier": "{:.2f}".format(subaccounts[0].multiplier),
+            "unit": subaccounts[0].unit,
+            "unit_name": subaccounts[0].unit_name,
             "parent": parent.pk,
             "parent_type": "subaccount",
             "account": parent.account.pk,
@@ -502,7 +508,7 @@ def test_get_subaccount_subaccounts(api_client, user, create_sub_account,
                 {
                     "id": account.id,
                     "type": "account",
-                    "name": '%s' % account.account_number,
+                    "name": '%s' % account.identifier,
                 },
                 {
                     "id": parent.id,
@@ -536,17 +542,17 @@ def test_get_subaccount_subaccounts(api_client, user, create_sub_account,
             }
         },
         {
-            "id": subaccounts[0].pk,
-            "name": subaccounts[0].name,
-            "line": "%s" % subaccounts[0].line,
-            "description": subaccounts[0].description,
+            "id": subaccounts[1].pk,
+            "name": subaccounts[1].name,
+            "identifier": "%s" % subaccounts[1].identifier,
+            "description": subaccounts[1].description,
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
-            "quantity": subaccounts[0].quantity,
-            "rate": "{:.2f}".format(subaccounts[0].rate),
-            "multiplier": "{:.2f}".format(subaccounts[0].multiplier),
-            "unit": subaccounts[0].unit,
-            "unit_name": subaccounts[0].unit_name,
+            "quantity": subaccounts[1].quantity,
+            "rate": "{:.2f}".format(subaccounts[1].rate),
+            "multiplier": "{:.2f}".format(subaccounts[1].multiplier),
+            "unit": subaccounts[1].unit,
+            "unit_name": subaccounts[1].unit_name,
             "parent": parent.pk,
             "parent_type": "subaccount",
             "account": parent.account.pk,
@@ -563,7 +569,7 @@ def test_get_subaccount_subaccounts(api_client, user, create_sub_account,
                 {
                     "id": account.id,
                     "type": "account",
-                    "name": '%s' % account.account_number,
+                    "name": '%s' % account.identifier,
                 },
                 {
                     "id": parent.id,
@@ -595,5 +601,5 @@ def test_get_subaccount_subaccounts(api_client, user, create_sub_account,
                 "is_staff": user.is_staff,
                 "full_name": user.full_name
             }
-        }
+        },
     ]

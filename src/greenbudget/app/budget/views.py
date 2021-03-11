@@ -1,9 +1,24 @@
 from rest_framework import viewsets, mixins, response, status, decorators
 
-from greenbudget.app.account.models import Account
-from greenbudget.app.subaccount.models import SubAccount
+# from greenbudget.app.account.models import Account
+# from greenbudget.app.subaccount.models import SubAccount
 
+from .mixins import BudgetNestedMixin
 from .serializers import BudgetSerializer, BudgetElementSerializer
+
+
+class BudgetElementViewSet(
+    mixins.ListModelMixin,
+    BudgetNestedMixin,
+    viewsets.GenericViewSet
+):
+    serializer_class = BudgetElementSerializer
+    budget_lookup_field = ("pk", "budget_pk")
+    search_fields = ['name']
+
+    def get_queryset(self):
+        from itertools import chain
+        return chain(self.budget.accounts.all(), self.budget.subaccounts.all())
 
 
 class GenericBudgetViewSet(viewsets.GenericViewSet):
@@ -55,21 +70,21 @@ class UserBudgetViewSet(
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
-    @decorators.action(detail=True, methods=["GET"])
-    def elements(self, request, *args, **kwargs):
-        """
-        Returns all of the elements belonging to the :obj:`Budget`, including
-        all nested :obj:`SubAccount`(s) and :obj:`Account`(s).
-        """
-        instance = self.get_object()
-        account_qs = Account.objects.filter(budget=instance).all()
-        subaccount_qs = SubAccount.objects.filter(budget=instance).all()
-        serializer = BudgetElementSerializer(
-            account_qs + subaccount_qs, many=True)
-        return response.Response(
-            {"data": serializer.data},
-            status=status.HTTP_200_OK
-        )
+    # @decorators.action(detail=True, methods=["GET"])
+    # def elements(self, request, *args, **kwargs):
+    #     """
+    #     Returns all of the elements belonging to the :obj:`Budget`, including
+    #     all nested :obj:`SubAccount`(s) and :obj:`Account`(s).
+    #     """
+    #     instance = self.get_object()
+    #     account_qs = Account.objects.filter(budget=instance).all()
+    #     subaccount_qs = SubAccount.objects.filter(budget=instance).all()
+    #     serializer = BudgetElementSerializer(
+    #         account_qs + subaccount_qs, many=True)
+    #     return response.Response(
+    #         {"data": serializer.data},
+    #         status=status.HTTP_200_OK
+    #     )
 
 
 class UserBudgetTrashViewSet(

@@ -12,7 +12,7 @@ from .models import Account
 
 class AccountSerializer(EnhancedModelSerializer):
     id = serializers.IntegerField(read_only=True)
-    account_number = serializers.CharField(
+    identifier = serializers.CharField(
         required=True,
         allow_blank=False,
         allow_null=False
@@ -53,11 +53,11 @@ class AccountSerializer(EnhancedModelSerializer):
     class Meta:
         model = Account
         fields = (
-            'id', 'account_number', 'description', 'created_by', 'updated_by',
+            'id', 'identifier', 'description', 'created_by', 'updated_by',
             'created_at', 'updated_at', 'access', 'budget', 'ancestors',
             'estimated', 'subaccounts', 'actual', 'variance')
 
-    def validate_account_number(self, value):
+    def validate_identifier(self, value):
         # In the case of creating an Account via a POST request, the budget
         # will be in the context.  In the case of updating an Account via a
         # PATCH request, the instance will be non-null.
@@ -66,7 +66,7 @@ class AccountSerializer(EnhancedModelSerializer):
             budget = self.instance.budget
         validator = serializers.UniqueTogetherValidator(
             queryset=Account.objects.filter(budget=budget),
-            fields=('account_number', ),
+            fields=('identifier', ),
         )
-        validator({'account_number': value, 'budget': budget}, self)
+        validator({'identifier': value, 'budget': budget}, self)
         return value

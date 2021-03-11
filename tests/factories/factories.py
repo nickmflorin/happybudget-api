@@ -90,33 +90,33 @@ class BudgetFactory(CustomModelFactory):
         model = Budget
 
 
-class AccountFactory(CustomModelFactory):
-    """
-    A DjangoModelFactory to create instances of :obj:`Account`.
-    """
+class BudgetItemFactory(CustomModelFactory):
     budget = factory.SubFactory(BudgetFactory)
     created_by = factory.SubFactory(UserFactory)
     updated_by = factory.SubFactory(UserFactory)
-    account_number = factory.Faker('random_number')
+    identifier = factory.Faker('random_number')
     description = factory.Faker('sentence')
 
+    class Meta:
+        abstract = True
+
+
+class AccountFactory(BudgetItemFactory):
+    """
+    A DjangoModelFactory to create instances of :obj:`Account`.
+    """
     class Meta:
         model = Account
 
 
-class SubAccountFactory(CustomModelFactory):
+class SubAccountFactory(BudgetItemFactory):
     """
     A DjangoModelFactory to create instances of :obj:`SubAccount`.
     """
-    created_by = factory.SubFactory(UserFactory)
-    updated_by = factory.SubFactory(UserFactory)
-    line = factory.Faker('random_number')
-    description = factory.Faker('sentence')
     name = factory.Faker('name')
     unit = SubAccount.UNITS.days
     multiplier = 1.00
     rate = 1.00
-    budget = factory.SubFactory(BudgetFactory)
     parent = factory.SubFactory(AccountFactory)
     content_type = factory.LazyAttribute(
         lambda o: ContentType.objects.get_for_model(o.parent))

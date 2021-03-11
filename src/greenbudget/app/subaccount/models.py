@@ -6,26 +6,12 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
 from greenbudget.app.actual.models import Actual
+from greenbudget.app.budget_item.models import BudgetItem
 
 
-class SubAccount(models.Model):
-    created_at = models.DateTimeField(auto_now_add=True)
-    created_by = models.ForeignKey(
-        to='user.User',
-        related_name='created_sub_accounts',
-        on_delete=models.SET_NULL,
-        null=True
-    )
-    updated_at = models.DateTimeField(auto_now=True)
-    updated_by = models.ForeignKey(
-        to='user.User',
-        related_name='updated_sub_accounts',
-        on_delete=models.SET_NULL,
-        null=True
-    )
-    description = models.CharField(null=True, max_length=128)
+class SubAccount(BudgetItem):
+    type = "subaccount"
     name = models.CharField(max_length=128)
-    line = models.CharField(max_length=128)
     quantity = models.IntegerField(null=True)
     rate = models.DecimalField(decimal_places=2, max_digits=10, null=True)
     multiplier = models.IntegerField(null=True)
@@ -39,15 +25,6 @@ class SubAccount(models.Model):
     )
     unit = models.IntegerField(choices=UNITS, null=True)
 
-    # TODO: We need to build in constraints such that the budget that the
-    # parent entity belongs to is the same as the budget that this entity
-    # belongs to.
-    budget = models.ForeignKey(
-        to='budget.Budget',
-        related_name="subaccounts",
-        on_delete=models.CASCADE,
-        db_index=True,
-    )
     content_type = models.ForeignKey(
         to=ContentType,
         on_delete=models.CASCADE,
@@ -73,7 +50,6 @@ class SubAccount(models.Model):
         ordering = ('created_at', )
         verbose_name = "Sub Account"
         verbose_name_plural = "Sub Accounts"
-        unique_together = (('object_id', 'content_type', 'name'), )
 
     def __str__(self):
         return "<{cls} id={id}, name={name}, line={line}>".format(
@@ -82,22 +58,6 @@ class SubAccount(models.Model):
             name=self.name,
             line=self.line,
         )
-
-    @property
-    def variance(self):
-        if self.actual is not None and self.estimated is not None:
-            return self.estimated - self.actual
-        return None
-
-    @property
-    def actual(self):
-        actuals = []
-        for actual in self.actuals.all():
-            if actual.value is not None:
-                actuals.append(float(actual.value))
-        if len(actuals) != 0:
-            return sum(actuals)
-        return None
 
     @property
     def estimated(self):
