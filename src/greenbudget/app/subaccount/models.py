@@ -37,6 +37,7 @@ class SubAccount(BudgetItem):
     actuals = GenericRelation(Actual)
 
     DERIVING_FIELDS = [
+        "name",
         "quantity",
         "rate",
         "multiplier",
