@@ -17,14 +17,6 @@ class GenericActualViewSet(viewsets.GenericViewSet):
     ordering_fields = ['updated_at', 'vendor', 'created_at']
     search_fields = ['vendor']
 
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context.update(
-            request=self.request,
-            user=self.request.user,
-        )
-        return context
-
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
 
@@ -50,9 +42,7 @@ class ActualsViewSet(
     """
 
     def get_queryset(self):
-        # TODO: Do we have to worry about filtering out actuals that belong
-        # to a budget that might be in the trash?
-        return Actual.objects.all()
+        return Actual.objects.filter(budget__trash=False)
 
 
 class AccountActualsViewSet(
@@ -69,6 +59,11 @@ class AccountActualsViewSet(
     """
     account_lookup_field = ("pk", "account_pk")
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update(budget=self.account.budget)
+        return context
+
     def get_queryset(self):
         return self.account.actuals.all()
 
@@ -78,7 +73,8 @@ class AccountActualsViewSet(
             created_by=self.request.user,
             object_id=self.account.pk,
             content_type=ContentType.objects.get_for_model(Account),
-            parent=self.account
+            parent=self.account,
+            budget=self.account.budget,
         )
 
 
@@ -96,6 +92,11 @@ class SubAccountActualsViewSet(
     """
     subaccount_lookup_field = ("pk", "subaccount_pk")
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update(budget=self.subaccount.budget)
+        return context
+
     def get_queryset(self):
         return self.subaccount.actuals.all()
 
@@ -105,7 +106,8 @@ class SubAccountActualsViewSet(
             created_by=self.request.user,
             object_id=self.subaccount.pk,
             content_type=ContentType.objects.get_for_model(SubAccount),
-            parent=self.subaccount
+            parent=self.subaccount,
+            budget=self.subaccount.budget,
         )
 
 
@@ -122,18 +124,4 @@ class BudgetActualsViewSet(
     budget_lookup_field = ("pk", "budget_pk")
 
     def get_queryset(self):
-        # TODO: This is likely going to be an expensive set of queries, and
-        # we should investigate if there are better ways to do this.
-        actuals = []
-
-        def add_subaccount_actuals(subaccount):
-            actuals.extend(list(subaccount.actuals.all()))
-            for subsubaccount in subaccount.subaccounts.all():
-                add_subaccount_actuals(subsubaccount)
-
-        for account in self.budget.accounts.all():
-            actuals.extend(list(account.actuals.all()))
-            for subaccount in account.subaccounts.all():
-                add_subaccount_actuals(subaccount)
-
-        return actuals
+        return Actual.objects.filter(budget=self.budget)

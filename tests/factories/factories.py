@@ -135,7 +135,7 @@ class ActualFactory(CustomModelFactory):
     vendor = factory.Faker('name')
     description = factory.Faker('sentence')
     purchase_order = factory.Faker('random_number')
-    value = factory.Faker('pydecimal')
+    value = 100.00
     payment_method = Actual.PAYMENT_METHODS.check
     budget = factory.SubFactory(BudgetFactory)
     parent = factory.SubFactory(AccountFactory)

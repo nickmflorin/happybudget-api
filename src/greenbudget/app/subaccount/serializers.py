@@ -2,7 +2,6 @@ from rest_framework import serializers, exceptions
 
 from greenbudget.lib.rest_framework_utils.serializers import (
     EnhancedModelSerializer)
-from greenbudget.app.account.models import Account
 from greenbudget.app.common.serializers import AncestorSerializer
 from greenbudget.app.user.serializers import UserSerializer
 
@@ -82,8 +81,11 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
     budget = serializers.PrimaryKeyRelatedField(read_only=True)
     ancestors = AncestorSerializer(many=True, read_only=True)
     account = serializers.IntegerField(read_only=True, source='account.pk')
-    parent = serializers.IntegerField(read_only=True, source='object_id')
-    parent_type = serializers.SerializerMethodField()
+    object_id = serializers.IntegerField(read_only=True)
+    parent_type = serializers.ChoiceField(
+        choices=["account", "subaccount"],
+        read_only=True
+    )
     subaccounts = SubAccountSimpleSerializer(many=True, read_only=True)
 
     class Meta:
@@ -91,15 +93,9 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
         fields = SubAccountSimpleSerializer.Meta.fields + (
             'identifier', 'name', 'description', 'created_by', 'updated_by',
             'created_at', 'updated_at', 'quantity', 'rate', 'multiplier',
-            'unit', 'unit_name', 'account', 'parent', 'parent_type',
+            'unit', 'unit_name', 'account', 'object_id', 'parent_type',
             'ancestors', 'estimated', 'subaccounts', 'actual', 'variance',
             'budget', 'type')
-
-    def get_parent_type(self, instance):
-        if isinstance(instance.parent, Account):
-            return "account"
-        assert isinstance(instance.parent, SubAccount)
-        return "subaccount"
 
     def validate_identifier(self, value):
         budget = self.context.get('budget')

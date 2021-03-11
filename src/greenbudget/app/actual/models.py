@@ -24,6 +24,7 @@ class Actual(models.Model):
     vendor = models.CharField(null=True, max_length=128)
     purchase_order = models.CharField(null=True, max_length=128)
     date = models.DateTimeField(null=True)
+    # TODO: Should we make this unique across the budget?
     payment_id = models.CharField(max_length=50, null=True)
     value = models.DecimalField(decimal_places=2, max_digits=10, null=True)
     PAYMENT_METHODS = Choices(
@@ -72,3 +73,10 @@ class Actual(models.Model):
         if self.payment_method is None:
             return ""
         return self.PAYMENT_METHODS[self.payment_method]
+
+    @property
+    def parent_type(self):
+        from greenbudget.app.account.models import Account
+        if isinstance(self.parent, Account):
+            return "account"
+        return "subaccount"

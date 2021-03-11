@@ -96,3 +96,9 @@ class SubAccount(BudgetItem):
     @property
     def ancestors(self):
         return self.parent.ancestors + [self.parent]
+
+    @property
+    def parent_type(self):
+        if isinstance(self.parent, self.__class__):
+            return "subaccount"
+        return "account"
