@@ -4,11 +4,16 @@ from greenbudget.app.budget.models import Budget
 from greenbudget.app.account.models import Account
 from greenbudget.app.subaccount.models import SubAccount
 
+from .models import BudgetItem
 
-class AncestorSerializer(serializers.Serializer):
+
+class BudgetItemSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
-    identifier = serializers.SerializerMethodField(read_only=True)
+    name = serializers.SerializerMethodField(read_only=True)
     type = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = BudgetItem
 
     def get_type(self, instance):
         if isinstance(instance, Budget):
@@ -19,7 +24,11 @@ class AncestorSerializer(serializers.Serializer):
             assert isinstance(instance, SubAccount)
             return "subaccount"
 
-    def get_identifier(self, instance):
+    def get_name(self, instance):
         if isinstance(instance, Budget):
             return instance.name
-        return instance.identifier
+        elif isinstance(instance, Account):
+            return instance.identifier
+        else:
+            assert isinstance(instance, SubAccount)
+            return instance.name

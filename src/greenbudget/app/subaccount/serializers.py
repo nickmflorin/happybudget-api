@@ -30,7 +30,7 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
         allow_null=False
     )
     name = serializers.CharField(
-        required=True,
+        required=False,
         allow_blank=False,
         allow_null=False
     )
