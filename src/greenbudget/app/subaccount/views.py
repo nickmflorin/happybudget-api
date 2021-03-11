@@ -30,11 +30,14 @@ class SubAccountViewSet(
     (3) DELETE /subaccounts/<pk>/
     """
 
+    def get_serializer_context(self):
+        instance = self.get_object()
+        context = super().get_serializer_context()
+        context.update(budget=instance.budget)
+        return context
+
     def get_queryset(self):
-        # TODO: How do we filter for only subaccounts whose budget is not
-        # in the trash?  Because the parent can be both a budget and a
-        # subaccount.
-        return SubAccount.objects.all()
+        return SubAccount.objects.filter(budget__trash=False)
 
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
@@ -62,7 +65,10 @@ class SubAccountRecursiveViewSet(
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context.update(parent=self.subaccount)
+        context.update(
+            parent=self.subaccount,
+            budget=self.subaccount.budget
+        )
         return context
 
     def get_queryset(self):
