@@ -35,12 +35,12 @@ def test_get_subaccount(api_client, user, create_sub_account, create_account,
             {
                 "id": budget.id,
                 "type": "budget",
-                "name": budget.name,
+                "identifier": budget.name,
             },
             {
                 "id": account.id,
                 "type": "account",
-                "name": '%s' % account.identifier,
+                "identifier": '%s' % account.identifier,
             }
         ],
         "created_by": {
@@ -113,12 +113,12 @@ def test_create_subaccount(api_client, user, create_account, create_budget):
             {
                 "id": budget.id,
                 "type": "budget",
-                "name": budget.name,
+                "identifier": budget.name,
             },
             {
                 "id": account.id,
                 "type": "account",
-                "name": '%s' % account.identifier,
+                "identifier": '%s' % account.identifier,
             }
         ],
         "created_by": {
@@ -172,28 +172,6 @@ def test_create_subaccount_duplicate_identifier(api_client, user,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_subaccount_duplicate_name(api_client, user, create_account,
-        create_budget, create_sub_account):
-    api_client.force_login(user)
-    budget = create_budget()
-    account = create_account(budget=budget)
-    create_sub_account(parent=account, name="Sub Account Name", budget=budget)
-    response = api_client.post(
-        "/v1/budgets/%s/accounts/%s/subaccounts/" % (budget.pk, account.pk),
-        data={'name': 'Sub Account Name', 'identifier': 'identifier Number'}
-    )
-    assert response.status_code == 400
-    assert response.json() == {
-        'errors': {
-            'name': [{
-                'message': 'The fields name must make a unique set.',
-                'code': 'unique'
-            }]
-        }
-    }
-
-
-@pytest.mark.freeze_time('2020-01-01')
 def test_update_subaccount(api_client, user, create_sub_account, create_account,
         create_budget):
     api_client.force_login(user)
@@ -238,12 +216,12 @@ def test_update_subaccount(api_client, user, create_sub_account, create_account,
             {
                 "id": budget.id,
                 "type": "budget",
-                "name": budget.name,
+                "identifier": budget.name,
             },
             {
                 "id": account.id,
                 "type": "account",
-                "name": '%s' % account.identifier,
+                "identifier": '%s' % account.identifier,
             }
         ],
         "created_by": {
@@ -284,44 +262,23 @@ def test_update_subaccount_duplicate_identifier(api_client, user,
         create_account, create_budget, create_sub_account):
     api_client.force_login(user)
     budget = create_budget()
-    account = create_account(budget=budget)
+    accounts = [
+        create_account(budget=budget),
+        create_account(budget=budget)
+    ]
     create_sub_account(
-        parent=account, identifier="identifier Number", budget=budget)
+        parent=accounts[0], identifier="Identifier", budget=budget)
     sub_account = create_sub_account(
-        parent=account, identifier="identifier Number 2", budget=budget)
+        parent=accounts[1], identifier="Identifier 2", budget=budget)
     response = api_client.patch(
         "/v1/subaccounts/%s/" % (sub_account.pk),
-        data={'identifier': 'identifier Number'}
+        data={'identifier': 'Identifier'}
     )
     assert response.status_code == 400
     assert response.json() == {
         'errors': {
             'identifier': [{
                 'message': 'The fields identifier must make a unique set.',
-                'code': 'unique'
-            }]
-        }
-    }
-
-
-@pytest.mark.freeze_time('2020-01-01')
-def test_update_subaccount_duplicate_name(api_client, user, create_account,
-        create_budget, create_sub_account):
-    api_client.force_login(user)
-    budget = create_budget()
-    account = create_account(budget=budget)
-    create_sub_account(parent=account, name="Sub Account Name", budget=budget)
-    sub_account = create_sub_account(
-        parent=account, name="Sub Account Name 2", budget=budget)
-    response = api_client.patch(
-        "/v1/subaccounts/%s/" % sub_account.pk,
-        data={'name': 'Sub Account Name'}
-    )
-    assert response.status_code == 400
-    assert response.json() == {
-        'errors': {
-            'name': [{
-                'message': 'The fields name must make a unique set.',
                 'code': 'unique'
             }]
         }
@@ -370,12 +327,12 @@ def test_get_budget_account_subaccounts(api_client, user, create_account,
                 {
                     "id": budget.id,
                     "type": "budget",
-                    "name": budget.name,
+                    "identifier": budget.name,
                 },
                 {
                     "id": account.id,
                     "type": "account",
-                    "name": '%s' % account.identifier,
+                    "identifier": '%s' % account.identifier,
                 }
             ],
             "created_by": {
@@ -426,12 +383,12 @@ def test_get_budget_account_subaccounts(api_client, user, create_account,
                 {
                     "id": budget.id,
                     "type": "budget",
-                    "name": budget.name,
+                    "identifier": budget.name,
                 },
                 {
                     "id": account.id,
                     "type": "account",
-                    "name": '%s' % account.identifier,
+                    "identifier": '%s' % account.identifier,
                 }
             ],
             "created_by": {
@@ -503,17 +460,17 @@ def test_get_subaccount_subaccounts(api_client, user, create_sub_account,
                 {
                     "id": budget.id,
                     "type": "budget",
-                    "name": budget.name,
+                    "identifier": budget.name,
                 },
                 {
                     "id": account.id,
                     "type": "account",
-                    "name": '%s' % account.identifier,
+                    "identifier": '%s' % account.identifier,
                 },
                 {
                     "id": parent.id,
                     "type": "subaccount",
-                    "name": parent.name,
+                    "identifier": "%s" % parent.identifier,
                 }
             ],
             "created_by": {
@@ -564,17 +521,17 @@ def test_get_subaccount_subaccounts(api_client, user, create_sub_account,
                 {
                     "id": budget.id,
                     "type": "budget",
-                    "name": budget.name,
+                    "identifier": budget.name,
                 },
                 {
                     "id": account.id,
                     "type": "account",
-                    "name": '%s' % account.identifier,
+                    "identifier": '%s' % account.identifier,
                 },
                 {
                     "id": parent.id,
                     "type": "subaccount",
-                    "name": parent.name,
+                    "identifier": "%s" % parent.identifier,
                 }
             ],
             "created_by": {

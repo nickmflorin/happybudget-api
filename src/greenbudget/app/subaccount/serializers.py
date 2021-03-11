@@ -1,4 +1,3 @@
-from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers, exceptions
 
 from greenbudget.lib.rest_framework_utils.serializers import (
@@ -100,33 +99,14 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
         return "subaccount"
 
     def validate_identifier(self, value):
-        parent = self.context.get('parent')
-        if parent is None:
-            parent = self.instance.parent
+        budget = self.context.get('budget')
+        if budget is None:
+            budget = self.instance.budget
         validator = serializers.UniqueTogetherValidator(
-            queryset=parent.subaccounts.all(),
+            queryset=budget.items.all(),
             fields=('identifier', ),
         )
-        validator({
-            'identifier': value,
-            'object_id': parent.pk,
-            'content_type': ContentType.objects.get_for_model(parent)
-        }, self)
-        return value
-
-    def validate_name(self, value):
-        parent = self.context.get('parent')
-        if parent is None:
-            parent = self.instance.parent
-        validator = serializers.UniqueTogetherValidator(
-            queryset=parent.subaccounts.all(),
-            fields=('name', ),
-        )
-        validator({
-            'name': value,
-            'object_id': parent.pk,
-            'content_type': ContentType.objects.get_for_model(parent)
-        }, self)
+        validator({'identifier': value}, self)
         return value
 
     def validate(self, attrs):
