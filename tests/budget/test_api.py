@@ -4,18 +4,23 @@ from greenbudget.lib.utils.dateutils import api_datetime_string
 from greenbudget.app.budget.models import Budget
 
 
-# def test_get_budget_elements(api_client, user, create_budget, create_account,
-#         create_sub_account):
-#     budget = create_budget()
-#     account = create_account(budget=budget, account_number="Account A")
-#     subaccount = create_sub_account(budget=budget, name="Jack")
-#     api_client.force_login(user)
-#     response = api_client.get(
-#         "/v1/budgets/%s/elements/?search=%s"
-#         % (budget.pk, "Account")
-#     )
-#     print(response.status_code)
-#     print(response.json())
+def test_get_budget_items(api_client, user, create_budget, create_account,
+        create_sub_account):
+    budget = create_budget()
+    account = create_account(budget=budget, identifier="Account A")
+    create_sub_account(budget=budget, identifier="Jack")
+    api_client.force_login(user)
+    response = api_client.get(
+        "/v1/budgets/%s/items/?search=%s"
+        % (budget.pk, "Account")
+    )
+    assert response.status_code == 200
+    assert response.json()['count'] == 1
+    assert response.json()['data'] == [{
+        'id': account.pk,
+        'identifier': 'Account A',
+        'type': 'account'
+    }]
 
 
 @pytest.mark.freeze_time('2020-01-01')
