@@ -28,6 +28,7 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
         allow_blank=False,
         allow_null=False
     )
+    type = serializers.CharField(read_only=True)
     name = serializers.CharField(
         required=False,
         allow_blank=False,
@@ -78,6 +79,7 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
         decimal_places=2,
         max_digits=10
     )
+    budget = serializers.PrimaryKeyRelatedField(read_only=True)
     ancestors = AncestorSerializer(many=True, read_only=True)
     account = serializers.IntegerField(read_only=True, source='account.pk')
     parent = serializers.IntegerField(read_only=True, source='object_id')
@@ -90,7 +92,8 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
             'identifier', 'name', 'description', 'created_by', 'updated_by',
             'created_at', 'updated_at', 'quantity', 'rate', 'multiplier',
             'unit', 'unit_name', 'account', 'parent', 'parent_type',
-            'ancestors', 'estimated', 'subaccounts', 'actual', 'variance')
+            'ancestors', 'estimated', 'subaccounts', 'actual', 'variance',
+            'budget', 'type')
 
     def get_parent_type(self, instance):
         if isinstance(instance.parent, Account):

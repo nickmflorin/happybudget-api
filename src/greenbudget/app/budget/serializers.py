@@ -2,29 +2,9 @@ from rest_framework import serializers
 
 from greenbudget.lib.rest_framework_utils.serializers import (
     EnhancedModelSerializer)
-from greenbudget.app.account.models import Account
-from greenbudget.app.subaccount.models import SubAccount
 from greenbudget.app.user.serializers import UserSerializer
 
 from .models import Budget
-
-
-class BudgetElementSerializer(serializers.Serializer):
-    id = serializers.IntegerField(read_only=True)
-    name = serializers.SerializerMethodField(read_only=True)
-    type = serializers.SerializerMethodField(read_only=True)
-
-    def get_type(self, instance):
-        if isinstance(instance, Account):
-            return "account"
-        assert isinstance(instance, SubAccount)
-        return "subaccount"
-
-    def get_name(self, instance):
-        if isinstance(instance, Account):
-            return instance.identifier
-        assert isinstance(instance, SubAccount)
-        return instance.name
 
 
 class BudgetSerializer(EnhancedModelSerializer):

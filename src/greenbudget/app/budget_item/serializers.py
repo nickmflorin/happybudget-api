@@ -7,7 +7,8 @@ class BudgetItemSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     identifier = serializers.CharField(read_only=True)
     type = serializers.CharField(read_only=True)
+    budget = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = BudgetItem
-        fields = ('id', 'identifier', 'type')
+        fields = ('id', 'identifier', 'type', 'budget')

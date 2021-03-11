@@ -12,6 +12,7 @@ from .models import Account
 
 class AccountSerializer(EnhancedModelSerializer):
     id = serializers.IntegerField(read_only=True)
+    type = serializers.CharField(read_only=True)
     identifier = serializers.CharField(
         required=True,
         allow_blank=False,
@@ -55,7 +56,7 @@ class AccountSerializer(EnhancedModelSerializer):
         fields = (
             'id', 'identifier', 'description', 'created_by', 'updated_by',
             'created_at', 'updated_at', 'access', 'budget', 'ancestors',
-            'estimated', 'subaccounts', 'actual', 'variance')
+            'estimated', 'subaccounts', 'actual', 'variance', 'type')
 
     def validate_identifier(self, value):
         # In the case of creating an Account via a POST request, the budget

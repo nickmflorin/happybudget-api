@@ -19,7 +19,8 @@ def test_get_budget_items(api_client, user, create_budget, create_account,
     assert response.json()['data'] == [{
         'id': account.pk,
         'identifier': 'Account A',
-        'type': 'account'
+        'type': 'account',
+        'budget': budget.pk
     }]
 
 
