@@ -1,10 +1,12 @@
 from model_utils import Choices
 from polymorphic.models import PolymorphicModel
 
+from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django.utils import timezone
 
 from greenbudget.app.account.models import Account
+from greenbudget.app.comment.models import Comment
 
 from .exceptions import BudgetPermissionError
 from .managers import BudgetManager
@@ -44,6 +46,7 @@ class Budget(PolymorphicModel):
 
     trash = models.BooleanField(default=False)
 
+    comments = GenericRelation(Comment)
     objects = BudgetManager()
 
     class Meta:

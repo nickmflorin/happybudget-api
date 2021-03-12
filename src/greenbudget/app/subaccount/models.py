@@ -7,6 +7,7 @@ from django.db import models
 
 from greenbudget.app.actual.models import Actual
 from greenbudget.app.budget_item.models import BudgetItem
+from greenbudget.app.comment.models import Comment
 
 
 class SubAccount(BudgetItem):
@@ -35,6 +36,7 @@ class SubAccount(BudgetItem):
     parent = GenericForeignKey('content_type', 'object_id')
     subaccounts = GenericRelation('self')
     actuals = GenericRelation(Actual)
+    comments = GenericRelation(Comment)
 
     DERIVING_FIELDS = [
         "name",

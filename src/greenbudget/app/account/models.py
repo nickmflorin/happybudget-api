@@ -3,6 +3,7 @@ from django.db import models
 
 from greenbudget.app.actual.models import Actual
 from greenbudget.app.budget_item.models import BudgetItem
+from greenbudget.app.comment.models import Comment
 from greenbudget.app.subaccount.models import SubAccount
 
 
@@ -14,6 +15,7 @@ class Account(BudgetItem):
     )
     subaccounts = GenericRelation(SubAccount)
     actuals = GenericRelation(Actual)
+    comments = GenericRelation(Comment)
 
     class Meta:
         get_latest_by = "updated_at"

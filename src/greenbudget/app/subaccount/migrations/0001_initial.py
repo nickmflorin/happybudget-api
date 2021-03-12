@@ -30,8 +30,7 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Sub Account',
                 'verbose_name_plural': 'Sub Accounts',
                 'ordering': ('created_at',),
-                'get_latest_by': 'updated_at',
-                'unique_together': {('object_id', 'content_type', 'name')},
+                'get_latest_by': 'updated_at'
             },
             bases=('budget_item.budgetitem',),
         ),
