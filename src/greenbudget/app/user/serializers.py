@@ -74,6 +74,17 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return attrs
 
 
+class SimpleUserSerializer(serializers.ModelSerializer):
+    first_name = serializers.CharField(read_only=True)
+    last_name = serializers.CharField(read_only=True)
+    full_name = serializers.CharField(read_only=True)
+    email = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = User
+        fields = ('id', 'first_name', 'last_name', 'full_name', 'email')
+
+
 class UserSerializer(EnhancedModelSerializer):
     first_name = serializers.CharField(
         required=True,
