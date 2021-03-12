@@ -15,7 +15,14 @@ def test_get_budget_comment(api_client, user, create_comment, create_budget):
         'text': comment.text,
         'object_id': budget.pk,
         'likes': [],
-        'content_object_type': 'budget'
+        'content_object_type': 'budget',
+        'user': {
+            'id': user.pk,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'full_name': user.full_name,
+            'email': user.email
+        }
     }
 
 
@@ -33,7 +40,14 @@ def test_get_account_comment(api_client, user, create_comment, create_account):
         'text': comment.text,
         'object_id': account.pk,
         'likes': [],
-        'content_object_type': 'account'
+        'content_object_type': 'account',
+        'user': {
+            'id': user.pk,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'full_name': user.full_name,
+            'email': user.email
+        }
     }
 
 
@@ -52,5 +66,12 @@ def test_get_subaccount_comment(api_client, user, create_comment,
         'text': comment.text,
         'object_id': sub_account.pk,
         'likes': [],
-        'content_object_type': 'subaccount'
+        'content_object_type': 'subaccount',
+        'user': {
+            'id': user.pk,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'full_name': user.full_name,
+            'email': user.email
+        }
     }

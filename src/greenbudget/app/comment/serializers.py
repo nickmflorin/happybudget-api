@@ -21,6 +21,7 @@ class CommentSerializer(serializers.ModelSerializer):
         many=True,
         queryset=User.objects.active()
     )
+    user = SimpleUserSerializer(read_only=True)
 
     class Meta:
         model = Comment
