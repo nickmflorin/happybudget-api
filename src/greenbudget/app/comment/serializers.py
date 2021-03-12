@@ -18,6 +18,7 @@ class CommentSerializer(serializers.ModelSerializer):
     object_id = serializers.IntegerField(read_only=True)
     likes = serializers.PrimaryKeyRelatedField(
         required=False,
+        many=True,
         queryset=User.objects.active()
     )
 

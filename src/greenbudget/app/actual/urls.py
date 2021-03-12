@@ -15,12 +15,12 @@ account_actuals_urlpatterns = account_actuals_router.urls
 subaccount_actuals_router = routers.SimpleRouter()
 subaccount_actuals_router.register(
     r'', SubAccountActualsViewSet, basename='actual')
-subaccount_actuals_urls = subaccount_actuals_router.urls
+subaccount_actuals_urlpatterns = subaccount_actuals_router.urls
 
 budget_actuals_router = routers.SimpleRouter()
 budget_actuals_router.register(
     r'', BudgetActualsViewSet, basename='actual')
-budget_actuals_router = budget_actuals_router.urls
+budget_actuals_urlpatterns = budget_actuals_router.urls
 
 router = routers.SimpleRouter()
 router.register(r'', ActualsViewSet, basename='actual')

@@ -1,7 +1,8 @@
 from django.urls import path, include
 from rest_framework import routers
 
-from greenbudget.app.actual.urls import subaccount_actuals_urls
+from greenbudget.app.actual.urls import subaccount_actuals_urlpatterns
+from greenbudget.app.comment.urls import subaccount_comments_urlpatterns
 
 from .views import (
     SubAccountViewSet, AccountSubAccountViewSet, SubAccountRecursiveViewSet)
@@ -23,6 +24,7 @@ router.register(r'', SubAccountViewSet, basename='subaccount')
 urlpatterns = router.urls + [
     path('<int:subaccount_pk>/', include([
         path('subaccounts/', include(subaccount_subaccounts_router.urls)),
-        path('actuals/', include(subaccount_actuals_urls)),
+        path('actuals/', include(subaccount_actuals_urlpatterns)),
+        path('comments/', include(subaccount_comments_urlpatterns)),
     ]))
 ]

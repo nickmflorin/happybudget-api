@@ -4,6 +4,7 @@ from django.contrib.contenttypes.models import ContentType
 from greenbudget.app.account.models import Account
 from greenbudget.app.actual.models import Actual
 from greenbudget.app.budget.models import Budget
+from greenbudget.app.comment.models import Comment
 from greenbudget.app.subaccount.models import SubAccount
 from greenbudget.app.user.models import User
 
@@ -145,3 +146,18 @@ class ActualFactory(CustomModelFactory):
 
     class Meta:
         model = Actual
+
+
+class CommentFactory(CustomModelFactory):
+    """
+    A DjangoModelFactory to create instances of :obj:`Comment`.
+    """
+    text = factory.Faker('sentence')
+    user = factory.SubFactory(UserFactory)
+    content_object = factory.SubFactory(BudgetFactory)
+    content_type = factory.LazyAttribute(
+        lambda o: ContentType.objects.get_for_model(o.content_object))
+    object_id = factory.SelfAttribute('content_object.pk')
+
+    class Meta:
+        model = Comment
