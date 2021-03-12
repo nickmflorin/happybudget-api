@@ -57,7 +57,7 @@ class BudgetCommentViewSet(
     budget_lookup_field = ("pk", "budget_pk")
 
     def get_queryset(self):
-        content_type = ContentType.objects.get_for_model(Comment)
+        content_type = ContentType.objects.get_for_model(Budget)
         return Comment.objects.filter(
             object_id=self.budget.pk,
             content_type=content_type
