@@ -1,5 +1,7 @@
 import pytest
 
+from greenbudget.app.comment.models import Comment
+
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_get_budget_comment(api_client, user, create_comment, create_budget):
@@ -75,3 +77,101 @@ def test_get_subaccount_comment(api_client, user, create_comment,
             'email': user.email
         }
     }
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_create_budget_comment(api_client, user, create_budget):
+    budget = create_budget()
+    api_client.force_login(user)
+    response = api_client.post("/v1/budgets/%s/comments/" % budget.pk, data={
+        "text": "This is a fake comment."
+    })
+    assert response.status_code == 201
+    assert response.json() == {
+        'id': 1,
+        'created_at': '2020-01-01 00:00:00',
+        'updated_at': '2020-01-01 00:00:00',
+        'text': "This is a fake comment.",
+        'object_id': budget.pk,
+        'likes': [],
+        'content_object_type': 'budget',
+        'user': {
+            'id': user.pk,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'full_name': user.full_name,
+            'email': user.email
+        }
+    }
+    comment = Comment.objects.first()
+    assert comment is not None
+    assert comment.text == "This is a fake comment."
+    assert comment.content_object == budget
+    assert comment.user == user
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_create_account_comment(api_client, user, create_budget, create_account):  # noqa
+    budget = create_budget()
+    account = create_account(budget=budget)
+    api_client.force_login(user)
+    response = api_client.post("/v1/accounts/%s/comments/" % account.pk, data={
+        "text": "This is a fake comment."
+    })
+    assert response.status_code == 201
+    assert response.json() == {
+        'id': 1,
+        'created_at': '2020-01-01 00:00:00',
+        'updated_at': '2020-01-01 00:00:00',
+        'text': "This is a fake comment.",
+        'object_id': account.pk,
+        'likes': [],
+        'content_object_type': 'account',
+        'user': {
+            'id': user.pk,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'full_name': user.full_name,
+            'email': user.email
+        }
+    }
+    comment = Comment.objects.first()
+    assert comment is not None
+    assert comment.text == "This is a fake comment."
+    assert comment.content_object == account
+    assert comment.user == user
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_create_sub_account_comment(api_client, user, create_budget,
+        create_account, create_sub_account):
+    budget = create_budget()
+    account = create_account(budget=budget)
+    subaccount = create_sub_account(parent=account, budget=budget)
+    api_client.force_login(user)
+    response = api_client.post(
+        "/v1/subaccounts/%s/comments/" % subaccount.pk,
+        data={"text": "This is a fake comment."}
+    )
+    assert response.status_code == 201
+    assert response.json() == {
+        'id': 1,
+        'created_at': '2020-01-01 00:00:00',
+        'updated_at': '2020-01-01 00:00:00',
+        'text': "This is a fake comment.",
+        'object_id': subaccount.pk,
+        'likes': [],
+        'content_object_type': 'subaccount',
+        'user': {
+            'id': user.pk,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'full_name': user.full_name,
+            'email': user.email
+        }
+    }
+    comment = Comment.objects.first()
+    assert comment is not None
+    assert comment.text == "This is a fake comment."
+    assert comment.content_object == subaccount
+    assert comment.user == user

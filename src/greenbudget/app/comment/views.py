@@ -54,6 +54,7 @@ class BudgetCommentViewSet(
     (1) GET /budgets/<pk>/comments/
     (2) POST /budgets/<pk>/comments/
     """
+    budget_lookup_field = ("pk", "budget_pk")
 
     def get_queryset(self):
         content_type = ContentType.objects.get_for_model(Comment)
@@ -64,8 +65,7 @@ class BudgetCommentViewSet(
 
     def perform_create(self, serializer):
         serializer.save(
-            updated_by=self.request.user,
-            created_by=self.request.user,
+            user=self.request.user,
             object_id=self.budget.pk,
             content_type=ContentType.objects.get_for_model(Budget),
             content_object=self.budget
@@ -84,6 +84,7 @@ class AccountCommentViewSet(
     (1) GET /accounts/<pk>/comments/
     (2) POST /accounts/<pk>/comments/
     """
+    account_lookup_field = ("pk", "account_pk")
 
     def get_queryset(self):
         content_type = ContentType.objects.get_for_model(Account)
@@ -94,8 +95,7 @@ class AccountCommentViewSet(
 
     def perform_create(self, serializer):
         serializer.save(
-            updated_by=self.request.user,
-            created_by=self.request.user,
+            user=self.request.user,
             object_id=self.account.pk,
             content_type=ContentType.objects.get_for_model(Account),
             content_object=self.account
@@ -114,6 +114,7 @@ class SubAccountCommentViewSet(
     (1) GET /subaccounts/<pk>/comments/
     (2) POST /subaccounts/<pk>/comments/
     """
+    subaccount_lookup_field = ("pk", "subaccount_pk")
 
     def get_queryset(self):
         content_type = ContentType.objects.get_for_model(SubAccount)
@@ -124,8 +125,7 @@ class SubAccountCommentViewSet(
 
     def perform_create(self, serializer):
         serializer.save(
-            updated_by=self.request.user,
-            created_by=self.request.user,
+            user=self.request.user,
             object_id=self.subaccount.pk,
             content_type=ContentType.objects.get_for_model(SubAccount),
             content_object=self.subaccount
