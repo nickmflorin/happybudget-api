@@ -27,7 +27,7 @@ class CommentSerializer(serializers.ModelSerializer):
         model = Comment
         fields = (
             'id', 'created_at', 'updated_at', 'text', 'object_id', 'likes',
-            'content_object_type')
+            'content_object_type', 'user')
         response = {
             'likes': (SimpleUserSerializer, {'many': True}),
         }
