@@ -42,8 +42,5 @@ class TokenValidateView(APIView):
         user_id = token_obj.get(api_settings.USER_ID_CLAIM)
         user = get_user_model().objects.get(pk=user_id)
         return Response({
-            'user': UserSerializer(
-                user,
-                expand=['organization', 'role']
-            ).data,
+            'user': UserSerializer(user).data,
         }, status=status.HTTP_201_CREATED)
