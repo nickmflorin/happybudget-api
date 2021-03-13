@@ -6,6 +6,14 @@ from greenbudget.app.user.serializers import SimpleUserSerializer
 from .models import Comment
 
 
+class CommentReplySerializer(serializers.ModelSerializer):
+    text = serializers.CharField(allow_null=False, allow_blank=False)
+
+    class Meta:
+        model = Comment
+        fields = ('text', )
+
+
 class CommentSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)

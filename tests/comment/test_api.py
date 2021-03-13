@@ -232,3 +232,37 @@ def test_create_sub_account_comment(api_client, user, create_budget,
     assert comment.text == "This is a fake comment."
     assert comment.content_object == subaccount
     assert comment.user == user
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_reply_to_comment(api_client, user, create_comment, create_budget):
+    budget = create_budget()
+    comment = create_comment(user=user, content_object=budget)
+
+    api_client.force_login(user)
+    response = api_client.post("/v1/comments/%s/reply/" % comment.pk, data={
+        'text': 'This is a reply!'
+    })
+    assert response.status_code == 201
+
+    comment.refresh_from_db()
+    assert comment.comments.count() == 1
+
+    nested_comment = comment.comments.first()
+    assert response.json() == {
+        'id': nested_comment.pk,
+        'created_at': '2020-01-01 00:00:00',
+        'updated_at': '2020-01-01 00:00:00',
+        'text': nested_comment.text,
+        'object_id': comment.pk,
+        'likes': [],
+        'comments': [],
+        'content_object_type': 'comment',
+        'user': {
+            'id': user.pk,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'full_name': user.full_name,
+            'email': user.email
+        }
+    }

@@ -1,5 +1,5 @@
 from django.contrib.contenttypes.models import ContentType
-from rest_framework import viewsets, mixins
+from rest_framework import viewsets, mixins, decorators, response, status
 
 from greenbudget.app.account.models import Account
 from greenbudget.app.account.mixins import AccountNestedMixin
@@ -9,7 +9,7 @@ from greenbudget.app.subaccount.models import SubAccount
 from greenbudget.app.subaccount.mixins import SubAccountNestedMixin
 
 from .models import Comment
-from .serializers import CommentSerializer
+from .serializers import CommentSerializer, CommentReplySerializer
 
 
 class GenericCommentViewSet(viewsets.GenericViewSet):
@@ -40,6 +40,22 @@ class CommentViewSet(
 
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
+
+    @decorators.action(methods=["POST"], detail=True)
+    def reply(self, request, *args, **kwargs):
+        comment = self.get_object()
+        serializer = CommentReplySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save(
+            user=self.request.user,
+            object_id=comment.pk,
+            content_type=ContentType.objects.get_for_model(Comment),
+            content_object=comment
+        )
+        return response.Response(
+            self.serializer_class(instance).data,
+            status=status.HTTP_201_CREATED
+        )
 
 
 class BudgetCommentViewSet(
