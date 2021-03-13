@@ -50,4 +50,6 @@ class Comment(models.Model):
             return "budget"
         elif isinstance(self.content_object, Account):
             return "account"
+        elif isinstance(self.content_object, type(self)):
+            return "comment"
         return "subaccount"
