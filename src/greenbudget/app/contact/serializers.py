@@ -9,6 +9,7 @@ from .models import Contact
 
 
 class ContactSerializer(EnhancedModelSerializer):
+    id = serializers.IntegerField(read_only=True)
     first_name = serializers.CharField()
     last_name = serializers.CharField()
     full_name = serializers.CharField(read_only=True)
@@ -26,5 +27,5 @@ class ContactSerializer(EnhancedModelSerializer):
     class Meta:
         model = Contact
         fields = (
-            'first_name', 'last_name', 'created_at', 'updated_at', 'role',
+            'id', 'first_name', 'last_name', 'created_at', 'updated_at', 'role',
             'city', 'country', 'phone_number', 'email', 'full_name')
