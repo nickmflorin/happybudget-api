@@ -5,7 +5,7 @@ from rest_framework.test import APIClient
 
 from greenbudget.app.user.models import User
 
-from .factories import *  # noqa
+from .fixtures import *  # noqa
 
 
 @pytest.fixture(autouse=True)

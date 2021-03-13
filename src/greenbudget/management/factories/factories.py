@@ -76,7 +76,6 @@ class BudgetFactory(CustomModelFactory):
     """
     A DjangoModelFactory to create instances of :obj:`Budget`.
     """
-    id = factory.Sequence(lambda n: n + 1)
     name = factory.Faker('name')
     author = factory.SubFactory(UserFactory)
     production_type = 1

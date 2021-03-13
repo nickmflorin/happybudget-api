@@ -1,6 +1,6 @@
 import pytest
 
-from .factories import (
+from greenbudget.management.factories import (
     UserFactory, BudgetFactory, AccountFactory, SubAccountFactory,
     ActualFactory, CommentFactory)
 
