@@ -219,6 +219,18 @@ Django = ">=2.2"
 
 [[package]]
 category = "main"
+description = "Location field for Django"
+name = "django-location-field"
+optional = false
+python-versions = "*"
+version = "2.1.0"
+
+[package.dependencies]
+Django = ">=1.7"
+six = "*"
+
+[[package]]
+category = "main"
 description = "Django model mixins and utilities"
 name = "django-model-utils"
 optional = false
@@ -227,6 +239,25 @@ version = "4.1.1"
 
 [package.dependencies]
 Django = ">=2.0.1"
+
+[[package]]
+category = "main"
+description = "An international phone number field for django models."
+name = "django-phonenumber-field"
+optional = false
+python-versions = ">=3.5"
+version = "5.0.0"
+
+[package.dependencies]
+Django = ">=2.2"
+
+[package.dependencies.phonenumbers]
+optional = true
+version = ">=7.0.2"
+
+[package.extras]
+phonenumbers = ["phonenumbers (>=7.0.2)"]
+phonenumberslite = ["phonenumberslite (>=7.0.2)"]
 
 [[package]]
 category = "main"
@@ -553,6 +584,14 @@ version = "4.8.0"
 
 [package.dependencies]
 ptyprocess = ">=0.5"
+
+[[package]]
+category = "main"
+description = "Python version of Google's common library for parsing, formatting, storing and validating international phone numbers."
+name = "phonenumbers"
+optional = false
+python-versions = "*"
+version = "8.12.19"
 
 [[package]]
 category = "dev"
@@ -940,7 +979,7 @@ debug = []
 docs = []
 
 [metadata]
-content-hash = "03a47d29c433d7165497f0917e3ecd2fb8f172767b743a4ff4292435ae5b084c"
+content-hash = "2ca9a3b09a5cd128a5f784cc85fec8b6aca86e10d275b0ef10c009f7fa862ec0"
 lock-version = "1.0"
 python-versions = "^3.8"
 
@@ -1104,9 +1143,17 @@ django-filter = [
     {file = "django-filter-2.4.0.tar.gz", hash = "sha256:84e9d5bb93f237e451db814ed422a3a625751cbc9968b484ecc74964a8696b06"},
     {file = "django_filter-2.4.0-py3-none-any.whl", hash = "sha256:e00d32cebdb3d54273c48f4f878f898dced8d5dfaad009438fe61ebdf535ace1"},
 ]
+django-location-field = [
+    {file = "django-location-field-2.1.0.tar.gz", hash = "sha256:fbde6115814fb0b071b8026d5b0c906efca20a79536110f7dc33d1e505c85106"},
+    {file = "django_location_field-2.1.0-py2.py3-none-any.whl", hash = "sha256:26ef54c8c389d8bac8f58b036182a3c46ff6e50d220a732792bcb2eede4e619f"},
+]
 django-model-utils = [
     {file = "django-model-utils-4.1.1.tar.gz", hash = "sha256:eb5dd05ef7d7ce6bc79cae54ea7c4a221f6f81e2aad7722933aee66489e7264b"},
     {file = "django_model_utils-4.1.1-py3-none-any.whl", hash = "sha256:ef7c440024e797796a3811432abdd2be8b5225ae64ef346f8bfc6de7d8e5d73c"},
+]
+django-phonenumber-field = [
+    {file = "django-phonenumber-field-5.0.0.tar.gz", hash = "sha256:1eb7af3a108744665f7c3939d38aa15b3728c57d13d45d656b0a2aa11e8cdc3c"},
+    {file = "django_phonenumber_field-5.0.0-py3-none-any.whl", hash = "sha256:adb46905cc4ecb19d8494424e1c4352f24946bb472340a2a17257d44bf8228e6"},
 ]
 django-polymorphic = [
     {file = "django-polymorphic-3.0.0.tar.gz", hash = "sha256:9d886f19f031d26bb1391c055ed9be06fb226a04a4cec1842b372c58873b3caa"},
@@ -1230,6 +1277,10 @@ parso = [
 pexpect = [
     {file = "pexpect-4.8.0-py2.py3-none-any.whl", hash = "sha256:0b48a55dcb3c05f3329815901ea4fc1537514d6ba867a152b581d69ae3710937"},
     {file = "pexpect-4.8.0.tar.gz", hash = "sha256:fc65a43959d153d0114afe13997d439c22823a27cefceb5ff35c2178c6784c0c"},
+]
+phonenumbers = [
+    {file = "phonenumbers-8.12.19-py2.py3-none-any.whl", hash = "sha256:dadc72b81effefa499f2ee7f77fcad601fb725c024f444c9ea60500e4d79aa4e"},
+    {file = "phonenumbers-8.12.19.tar.gz", hash = "sha256:0f597b602e64af90c06b14c8223e94fdb0ed20f203e1c9785a8bbe4de00c45e8"},
 ]
 pickleshare = [
     {file = "pickleshare-0.7.5-py2.py3-none-any.whl", hash = "sha256:9649af414d74d4df115d5d718f82acb59c9d418196b7b4290ed47a12ce62df56"},

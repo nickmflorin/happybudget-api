@@ -122,6 +122,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_extensions',
+    'location_field.apps.DefaultConfig',
+    'phonenumber_field',
     'rest_framework',
     'corsheaders',
     'timezone_field',
@@ -131,6 +133,7 @@ INSTALLED_APPS = [
     'greenbudget.app.budget',
     'greenbudget.app.budget_item',
     'greenbudget.app.comment',
+    'greenbudget.app.contact',
     'greenbudget.app.subaccount',
     'greenbudget.app.user',
     'greenbudget.app.jwt'
