@@ -18,7 +18,8 @@ class ContactSerializer(EnhancedModelSerializer):
         required=False,
         choices=Contact.ROLES
     )
-    location = serializers.CharField()
+    city = serializers.CharField()
+    country = serializers.CharField()
     phone_number = PhoneNumberField()
     email = serializers.EmailField()
 
@@ -26,4 +27,4 @@ class ContactSerializer(EnhancedModelSerializer):
         model = Contact
         fields = (
             'first_name', 'last_name', 'created_at', 'updated_at', 'role',
-            'location', 'phone_number', 'email', 'full_name')
+            'city', 'country', 'phone_number', 'email', 'full_name')

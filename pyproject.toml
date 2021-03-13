@@ -29,7 +29,6 @@ django-polymorphic = "^3.0.0"
 psycopg2 = "^2.8.6"
 django-timezone-field = "^4.1.1"
 django-extensions = "^3.1.1"
-django-location-field = "^2.1.0"
 django-phonenumber-field = {extras = ["phonenumbers"], version = "^5.0.0"}
 
 [tool.poetry.extras]

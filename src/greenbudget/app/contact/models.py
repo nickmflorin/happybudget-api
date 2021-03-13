@@ -1,4 +1,3 @@
-from location_field.models.plain import PlainLocationField
 from model_utils import Choices
 from phonenumber_field.modelfields import PhoneNumberField
 
@@ -29,7 +28,9 @@ class Contact(models.Model):
         (10, "other", "Other"),
     )
     role = models.IntegerField(choices=ROLES)
-    location = PlainLocationField(based_fields=['city'])
+    # TODO: Use a better system for establishing contact location.
+    city = models.CharField(max_length=30)
+    country = models.CharField(max_length=30)
     phone_number = PhoneNumberField()
     email = models.EmailField()
 

@@ -122,7 +122,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_extensions',
-    'location_field.apps.DefaultConfig',
     'phonenumber_field',
     'rest_framework',
     'corsheaders',

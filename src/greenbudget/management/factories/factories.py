@@ -5,6 +5,7 @@ from greenbudget.app.account.models import Account
 from greenbudget.app.actual.models import Actual
 from greenbudget.app.budget.models import Budget
 from greenbudget.app.comment.models import Comment
+from greenbudget.app.contact.models import Contact
 from greenbudget.app.subaccount.models import SubAccount
 from greenbudget.app.user.models import User
 
@@ -160,3 +161,20 @@ class CommentFactory(CustomModelFactory):
 
     class Meta:
         model = Comment
+
+
+class ContactFactory(CustomModelFactory):
+    """
+    A DjangoModelFactory to create instances of :obj:`Contact`.
+    """
+    first_name = factory.Faker('first_name')
+    last_name = factory.Faker('last_name')
+    email = factory.Faker('email')
+    user = factory.SubFactory(UserFactory)
+    role = Contact.ROLES.producer
+    phone_number = '+15183696530'
+    country = "United States"
+    city = "New York"
+
+    class Meta:
+        model = Contact
