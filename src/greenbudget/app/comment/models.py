@@ -1,5 +1,6 @@
 from django.db import models
-from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.fields import (
+    GenericForeignKey, GenericRelation)
 from django.contrib.contenttypes.models import ContentType
 
 
@@ -22,9 +23,11 @@ class Comment(models.Model):
         limit_choices_to=models.Q(app_label='account', model='Account')
         | models.Q(app_label='subaccount', model='SubAccount')
         | models.Q(app_label='budget', model='Budget')
+        | models.Q(app_label='comment', model='Comment')
     )
     object_id = models.PositiveIntegerField(db_index=True)
     content_object = GenericForeignKey('content_type', 'object_id')
+    comments = GenericRelation('self')
 
     class Meta:
         get_latest_by = "updated_at"

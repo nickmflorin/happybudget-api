@@ -22,12 +22,16 @@ class CommentSerializer(serializers.ModelSerializer):
         queryset=User.objects.active()
     )
     user = SimpleUserSerializer(read_only=True)
+    comments = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Comment
         fields = (
             'id', 'created_at', 'updated_at', 'text', 'object_id', 'likes',
-            'content_object_type', 'user')
+            'content_object_type', 'user', 'comments')
         response = {
             'likes': (SimpleUserSerializer, {'many': True}),
         }
+
+    def get_comments(self, instance):
+        return self.__class__(instance.comments.all(), many=True).data

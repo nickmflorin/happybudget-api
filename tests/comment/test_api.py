@@ -17,6 +17,7 @@ def test_get_budget_comment(api_client, user, create_comment, create_budget):
         'text': comment.text,
         'object_id': budget.pk,
         'likes': [],
+        'comments': [],
         'content_object_type': 'budget',
         'user': {
             'id': user.pk,
@@ -42,6 +43,7 @@ def test_get_account_comment(api_client, user, create_comment, create_account):
         'text': comment.text,
         'object_id': account.pk,
         'likes': [],
+        'comments': [],
         'content_object_type': 'account',
         'user': {
             'id': user.pk,
@@ -68,6 +70,7 @@ def test_get_subaccount_comment(api_client, user, create_comment,
         'text': comment.text,
         'object_id': sub_account.pk,
         'likes': [],
+        'comments': [],
         'content_object_type': 'subaccount',
         'user': {
             'id': user.pk,
@@ -94,6 +97,7 @@ def test_create_budget_comment(api_client, user, create_budget):
         'text': "This is a fake comment.",
         'object_id': budget.pk,
         'likes': [],
+        'comments': [],
         'content_object_type': 'budget',
         'user': {
             'id': user.pk,
@@ -126,6 +130,7 @@ def test_create_account_comment(api_client, user, create_budget, create_account)
         'text': "This is a fake comment.",
         'object_id': account.pk,
         'likes': [],
+        'comments': [],
         'content_object_type': 'account',
         'user': {
             'id': user.pk,
@@ -161,6 +166,7 @@ def test_create_sub_account_comment(api_client, user, create_budget,
         'text': "This is a fake comment.",
         'object_id': subaccount.pk,
         'likes': [],
+        'comments': [],
         'content_object_type': 'subaccount',
         'user': {
             'id': user.pk,
