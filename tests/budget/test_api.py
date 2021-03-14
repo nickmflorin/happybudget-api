@@ -339,8 +339,8 @@ def test_get_budget_items(api_client, user, create_budget, create_account,
     assert response.json()['data'] == [{
         'id': account.pk,
         'identifier': 'Account A',
-        'type': 'account',
-        'budget': budget.pk
+        'description': account.description,
+        'type': 'account'
     }]
 
 
@@ -397,23 +397,27 @@ def test_get_budget_items_tree(api_client, user, create_budget, create_account,
             "id": accounts[0].pk,
             "identifier": "Account A",
             "type": "account",
+            "description": accounts[0].description,
             "children": [
                 {
                     "id": subaccounts[0][0].pk,
                     "identifier": "Sub Account A-A",
                     "type": "subaccount",
+                    "description": subaccounts[0][0].description,
                     "children": []
                 },
                 {
                     "id": subaccounts[0][1].pk,
                     "identifier": "Sub Account A-B",
                     "type": "subaccount",
+                    "description": subaccounts[0][1].description,
                     "children": []
                 },
                 {
                     "id": subaccounts[0][2].pk,
                     "identifier": "Sub Account A-C",
                     "type": "subaccount",
+                    "description": subaccounts[0][2].description,
                     "children": []
                 }
             ]
@@ -422,23 +426,27 @@ def test_get_budget_items_tree(api_client, user, create_budget, create_account,
             "id": accounts[1].pk,
             "identifier": "Account B",
             "type": "account",
+            "description": accounts[1].description,
             "children": [
                 {
                     "id": subaccounts[1][0].pk,
                     "identifier": "Sub Account B-A",
                     "type": "subaccount",
+                    "description": subaccounts[1][0].description,
                     "children": []
                 },
                 {
                     "id": subaccounts[1][1].pk,
                     "identifier": "Sub Account B-B",
                     "type": "subaccount",
+                    "description": subaccounts[1][1].description,
                     "children": []
                 },
                 {
                     "id": subaccounts[1][2].pk,
                     "identifier": "Sub Account B-C",
                     "type": "subaccount",
+                    "description": subaccounts[1][2].description,
                     "children": []
                 }
             ]
