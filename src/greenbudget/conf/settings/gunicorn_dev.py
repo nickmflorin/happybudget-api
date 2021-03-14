@@ -20,3 +20,14 @@ CSRF_TRUSTED_ORIGINS = [
 ALLOWED_HOSTS = [
     '0.0.0.0',
 ]
+
+DATABASES = {
+    'default': {
+        'ATOMIC_REQUESTS': True,
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': "postgres",
+        'USER': "postgres",
+        'HOST': "localhost",
+        'PORT': '5432'
+    },
+}
