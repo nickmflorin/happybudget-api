@@ -4,26 +4,6 @@ from greenbudget.lib.utils.dateutils import api_datetime_string
 from greenbudget.app.budget.models import Budget
 
 
-def test_get_budget_items(api_client, user, create_budget, create_account,
-        create_sub_account):
-    budget = create_budget()
-    account = create_account(budget=budget, identifier="Account A")
-    create_sub_account(budget=budget, identifier="Jack")
-    api_client.force_login(user)
-    response = api_client.get(
-        "/v1/budgets/%s/items/?search=%s"
-        % (budget.pk, "Account")
-    )
-    assert response.status_code == 200
-    assert response.json()['count'] == 1
-    assert response.json()['data'] == [{
-        'id': account.pk,
-        'identifier': 'Account A',
-        'type': 'account',
-        'budget': budget.pk
-    }]
-
-
 @pytest.mark.freeze_time('2020-01-01')
 def test_get_budgets(api_client, user, create_budget):
     api_client.force_login(user)
@@ -342,3 +322,125 @@ def test_permanently_delete_budget(api_client, user, create_budget, db):
     assert response.status_code == 204
 
     assert Budget.objects.first() is None
+
+
+def test_get_budget_items(api_client, user, create_budget, create_account,
+        create_sub_account):
+    budget = create_budget()
+    account = create_account(budget=budget, identifier="Account A")
+    create_sub_account(budget=budget, identifier="Jack")
+    api_client.force_login(user)
+    response = api_client.get(
+        "/v1/budgets/%s/items/?search=%s"
+        % (budget.pk, "Account")
+    )
+    assert response.status_code == 200
+    assert response.json()['count'] == 1
+    assert response.json()['data'] == [{
+        'id': account.pk,
+        'identifier': 'Account A',
+        'type': 'account',
+        'budget': budget.pk
+    }]
+
+
+def test_get_budget_items_tree(api_client, user, create_budget, create_account,
+        create_sub_account):
+    budget = create_budget()
+    accounts = [
+        create_account(budget=budget, identifier="Account A"),
+        create_account(budget=budget, identifier="Account B"),
+    ]
+    subaccounts = [
+        [
+            create_sub_account(
+                budget=budget,
+                parent=accounts[0],
+                identifier="Sub Account A-A"
+            ),
+            create_sub_account(
+                budget=budget,
+                parent=accounts[0],
+                identifier="Sub Account A-B"
+            ),
+            create_sub_account(
+                budget=budget,
+                parent=accounts[0],
+                identifier="Sub Account A-C"
+            )
+        ],
+        [
+            create_sub_account(
+                budget=budget,
+                parent=accounts[1],
+                identifier="Sub Account B-A"
+            ),
+            create_sub_account(
+                budget=budget,
+                parent=accounts[1],
+                identifier="Sub Account B-B"
+            ),
+            create_sub_account(
+                budget=budget,
+                parent=accounts[1],
+                identifier="Sub Account B-C"
+            )
+        ]
+    ]
+    api_client.force_login(user)
+    response = api_client.get("/v1/budgets/%s/items/tree/" % budget.pk)
+
+    assert response.status_code == 200
+    assert response.json()['count'] == 2
+    assert response.json()['data'] == [
+        {
+            "id": accounts[0].pk,
+            "identifier": "Account A",
+            "type": "account",
+            "children": [
+                {
+                    "id": subaccounts[0][0].pk,
+                    "identifier": "Sub Account A-A",
+                    "type": "subaccount",
+                    "children": []
+                },
+                {
+                    "id": subaccounts[0][1].pk,
+                    "identifier": "Sub Account A-B",
+                    "type": "subaccount",
+                    "children": []
+                },
+                {
+                    "id": subaccounts[0][2].pk,
+                    "identifier": "Sub Account A-C",
+                    "type": "subaccount",
+                    "children": []
+                }
+            ]
+        },
+        {
+            "id": accounts[1].pk,
+            "identifier": "Account B",
+            "type": "account",
+            "children": [
+                {
+                    "id": subaccounts[1][0].pk,
+                    "identifier": "Sub Account B-A",
+                    "type": "subaccount",
+                    "children": []
+                },
+                {
+                    "id": subaccounts[1][1].pk,
+                    "identifier": "Sub Account B-B",
+                    "type": "subaccount",
+                    "children": []
+                },
+                {
+                    "id": subaccounts[1][2].pk,
+                    "identifier": "Sub Account B-C",
+                    "type": "subaccount",
+                    "children": []
+                }
+            ]
+        }
+    ]

@@ -5,7 +5,7 @@ from django.db.models import QuerySet
 from rest_framework import pagination, response
 
 
-def paginate_action(func):
+def paginate_action(serializer_cls=None):
     """
     Decorator for `rest_framework.decorators.action` endpoints that allows the
     view's pagination to be applied to the queryset returned by the action
@@ -30,28 +30,29 @@ def paginate_action(func):
             qs = qs.filter(...)
             return qs
     """
-    @functools.wraps(func)
-    def inner(instance, *args, **kwargs):
-        qs = func(instance, *args, **kwargs)
+    def decorator(func):
+        @functools.wraps(func)
+        def inner(instance, *args, **kwargs):
+            qs = func(instance, *args, **kwargs)
 
-        serializer_cls = instance.get_serializer
-        if isinstance(qs, tuple):
-            serializer_cls = qs[1]
-            qs = qs[0]
+            serializer_klass = serializer_cls
+            if serializer_klass is None:
+                serializer_klass = instance.get_serializer
 
-        assert isinstance(
-            qs, (list, QuerySet)), (
-                "The `paginate_action` decorator must decorate a method that "
-                "returns a queryset or a list.")
+            assert isinstance(
+                qs, (list, QuerySet)), (
+                    "The `paginate_action` decorator must decorate a method "
+                    "that returns a queryset or a list.")
 
-        page = instance.paginate_queryset(qs)
-        if page is not None:
-            serializer = serializer_cls(page, many=True)
-            return instance.get_paginated_response(serializer.data)
+            page = instance.paginate_queryset(qs)
+            if page is not None:
+                serializer = serializer_klass(page, many=True)
+                return instance.get_paginated_response(serializer.data)
 
-        serializer = serializer_cls(qs, many=True)
-        return response.Response(serializer.data)
-    return inner
+            serializer = serializer_klass(qs, many=True)
+            return response.Response(serializer.data)
+        return inner
+    return decorator
 
 
 class Pagination(pagination.PageNumberPagination):
