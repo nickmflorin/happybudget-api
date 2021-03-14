@@ -42,7 +42,7 @@ class BudgetItem(PolymorphicModel):
     @property
     def variance(self):
         if self.actual is not None and self.estimated is not None:
-            return self.estimated - self.actual
+            return float(self.estimated) - float(self.actual)
         return None
 
     @property
