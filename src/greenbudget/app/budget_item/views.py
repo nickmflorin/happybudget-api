@@ -1,4 +1,4 @@
-from rest_framework import viewsets, mixins, decorators, response, status
+from rest_framework import viewsets, mixins, decorators
 
 from greenbudget.lib.rest_framework_utils.pagination import paginate_action
 
