@@ -4,8 +4,7 @@
 
 - Docker
 - pyenv
-- brew
-- Python3
+- homebrew
 - MacOSX (Docker is still rocky on a Windows machine but it can be done).
 - poetry
 
@@ -85,9 +84,69 @@ Then, edit `docker-compose.override.yml` to make sure all services are active (`
 ##### ENV File
 
 Finally, we need to create and edit a `.env` file in the project root to include configuration values and
-sensitive information. Ask another team member for help with this.
+sensitive information. Ask another team member for help with this.  In order to run the application locally,
+the `.env` file must specify the `DJANGO_SECRET_KEY`.
 
-### Testing
+## Running Locally
+
+Right now, there are two primary services required to operate the application: `db` and `web`.  Each of these
+can be run separately, inside or outside of a `docker` container.  Inside of the container, the `db` service
+will run as a `PostgreSQL` server and the `web` service will run via a `gunicorn` web server.  Outside of the
+container, the `db` service will be run as a simple `sqlite3` file and the `web` service will be run via a simple
+`Django` web server.
+
+#### All Services Inside Container
+
+The simplest way to get the application running locally is to bring up both services inside the `docker` container:
+
+```bash
+$ docker-compose up
+```
+
+This will bring up both the `db` service and the `web` service.  However, this is usually not the most productive way
+to develop locally, since the `web` service will not change when code changes are made.
+
+#### `db` Service Inside Container, `web` Service Outside Container
+
+In order to improve the local development process, we can run the `db` service inside the `docker` container
+while using the `Django` web server to run the `web` service.  We can do this as follows:
+
+```bash
+$ docker-compose up -d db
+$ . ./env/bin/activate
+$ python src/manage.py runserver
+```
+
+#### Both Services Outside the Container
+
+If we wish to use a lighter weight `sqlite` option for the application database, we can do so as well.  In order
+to do these, we need to create a `local.py` file in `src/conf/settings/local.py`.  When we create a `local.py` file,
+any settings specified in the file will override those in the `src/config/settings/dev.py` file.  The file should look
+something like this:
+
+```python
+import dj_database_url
+from .dev import *
+
+DATABASES = {
+    'default': dj_database_url.parse('sqlite:///%s/db.sqlite3' % BASE_DIR)  # noqa
+}
+```
+
+Then, we need to set the `DJANGO_SETTINGS_MODULE` environment variable to point to this settings file:
+
+```bash
+$ export DJANGO_SETTINGS_MODULE=greenbudget.conf.settings.local.py
+```
+
+Now, we can just run the `Django` web server and it will use the local `sqlite` file as it's database:
+
+```bash
+$ . ./env/bin/activate
+$ python src/manage.py runserver
+```
+
+## Testing
 
 See the ReadMe in `testing/ReadMe.md`.
 
@@ -128,7 +187,7 @@ tox -e lint
 Running these commands will usually be slow the first time, just because `tox` has to setup the cached
 environment - but after that, they all run very quickly and can be very useful.
 
-### Managing Dependencies
+## Managing Dependencies
 
 We use [`poetry`](https://python-poetry.org/docs/) as a package management system.
 [`poetry`](https://python-poetry.org/docs/)'s analogue to a `requirements.txt`
