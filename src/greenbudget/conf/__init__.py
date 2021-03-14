@@ -19,6 +19,7 @@ def get_environment():
     mapping = {
         'greenbudget.conf.settings.dev': Environments.DEV,
         'greenbudget.conf.settings.local': Environments.DEV,
+        'greenbudget.conf.settings.gunicorn_dev': Environments.DEV,
         'greenbudget.conf.settings.prod': Environments.PROD,
         'greenbudget.conf.settings.test': Environments.TEST
     }
@@ -73,8 +74,15 @@ class Config:
         if os.path.exists(dotenv_path):
             load_dotenv(dotenv_path=dotenv_path)
         else:
-            logger.warning(
-                "Could not find an ENV file at %s - not loading." % dotenv_path)
+            # This is a temporary hack to allow the .env file inside the docker
+            # container to be found correctly.
+            load_dotenv(dotenv_path=".env")
+            # if os.path.exists(".env"):
+            #     load_dotenv(dotenv_path=".env")
+            # else:
+            #     logger.warning(
+            #         "Could not find an ENV file at %s - not loading."
+            #         % dotenv_path)
 
     def __call__(self, name, default='', cast=str, required=False):
         # Whether or not the configuration is required can be a function of

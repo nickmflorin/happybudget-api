@@ -1,4 +1,5 @@
-from django.db import models
+from polymorphic.managers import PolymorphicManager
+from polymorphic.query import PolymorphicQuerySet
 
 
 class BudgetQuerier(object):
@@ -12,11 +13,11 @@ class BudgetQuerier(object):
         return self.filter(trash=True)
 
 
-class BudgetQuery(BudgetQuerier, models.query.QuerySet):
+class BudgetQuery(BudgetQuerier, PolymorphicQuerySet):
     pass
 
 
-class BudgetManager(BudgetQuerier, models.Manager):
+class BudgetManager(BudgetQuerier, PolymorphicManager):
     queryset_class = BudgetQuery
 
     def get_queryset(self):

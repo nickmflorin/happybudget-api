@@ -3,7 +3,7 @@ version: "3.8"
 services:
   web:
     environment:
-      - COMPOSE_CONVERT_WINDOWS_PATHS=1
+      DJANGO_SETTINGS_MODULE: greenbudget.conf.settings.gunicorn_dev
     build: .
     command: bash -c "ls -al && gunicorn greenbudget.wsgi -c /app/greenbudget/conf/gunicorn_config.py"
     restart: always
