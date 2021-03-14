@@ -23,7 +23,7 @@ class ContactViewSet(
     lookup_field = 'pk'
     serializer_class = ContactSerializer
     ordering_fields = ['updated_at', 'first_name', 'last_name', 'created_at']
-    search_fields = ['first_name', 'last_name', 'role', 'location']
+    search_fields = ['first_name', 'last_name', 'role', 'city', 'country']
 
     def get_queryset(self):
         # TODO: Make sure this will not work for inactive users.

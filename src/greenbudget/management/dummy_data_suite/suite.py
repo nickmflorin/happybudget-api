@@ -11,13 +11,14 @@ from greenbudget.app.subaccount.models import SubAccount
 from greenbudget.app.user.models import User
 
 from greenbudget.management.factories import (
-    UserFactory, BudgetFactory, AccountFactory, SubAccountFactory)
+    UserFactory, BudgetFactory, AccountFactory, ContactFactory)
 
 
 num_budgets_per_user = 8
 num_users = 20
 num_accounts_range = [5, 15]
 num_sub_accounts_range = [5, 15]
+num_contacts = 30
 
 primary_user_email = "nickmflorin@gmail.com"
 
@@ -126,7 +127,10 @@ class DummyDataSuite:
         except User.DoesNotExist:
             raise management.CommandError()
 
-        MODELS[0]()
+        for _ in range(num_contacts):
+            ContactFactory(user=primary_user)
+
+        # MODELS[0]()
 
         # users = []
         # for _ in range(num_users):
