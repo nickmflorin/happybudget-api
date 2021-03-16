@@ -1,7 +1,9 @@
-from copy import deepcopy
+import collections
+import csv
 import random
 
 from django.core import management
+from django.conf import settings
 
 from greenbudget.app.account.models import Account
 from greenbudget.app.actual.models import Actual
@@ -12,7 +14,6 @@ from greenbudget.app.user.models import User
 
 from greenbudget.management.factories import (
     UserFactory, BudgetFactory, AccountFactory, ContactFactory)
-
 
 num_budgets_per_user = 8
 num_users = 20
@@ -30,7 +31,61 @@ def get_random_in_range(rng):
     return random.choice(choices)
 
 
-# def generate_subaccount_random_identifier(starter, budget):
+Record = collections.namedtuple('Record',
+    ['identifier', 'description', 'type', 'detail'])
+RecordGroup = collections.namedtuple('RecordGroup', ['account', 'subaccounts'])
+
+
+def get_records():
+    filepath = settings.BASE_DIR / "management" / "dummy_data_suite" \
+        / "mock_budget.csv"
+    records = []
+    with open(filepath, newline='') as csvfile:
+        budget_reader = csv.reader(csvfile, delimiter=',', quotechar='|')
+        first_row = False
+        for row in budget_reader:
+            if first_row is False:
+                first_row = True
+                continue
+            record = Record(
+                identifier=row[0],
+                description=row[1],
+                type=row[2],
+                detail=row[3]
+            )
+            records.append(record)
+    return records
+
+
+def group_records(records):
+    grouped = []
+    for i, record in enumerate(records):
+        if record.identifier.endswith('00'):
+            print("Account: %s" % record.identifier)
+            group = RecordGroup(account=record, subaccounts=[])
+            j = i + 1
+            while True:
+                if j == len(records):
+                    break
+                elif records[j].identifier.endswith('00'):
+                    break
+                print("Sub Account: %s" % records[j].identifier)
+                group.subaccounts.append(records[j])
+                j += 1
+            grouped.append(group)
+    return grouped
+
+
+def establish_budget_from_records(user, records):
+    budget = BudgetFactory(user=user)
+    for group in records:
+        account = Account.objects.create(
+            budget=budget,
+            created_by=user,
+            updated_by=user,
+            identifier=group.account.identifier,
+            description=group.account.description
+        )
 
 
 class Selector:
@@ -122,13 +177,12 @@ MODELS = [
 
 class DummyDataSuite:
     def generate(self):
-        try:
-            primary_user = User.objects.get(email=primary_user_email)
-        except User.DoesNotExist:
-            raise management.CommandError()
+        records = get_records()
+        users = User.objects.filter(is_superuser=True).all()
+        establish_mock_budget(users[0], records)
 
-        for _ in range(num_contacts):
-            ContactFactory(user=primary_user)
+        # for _ in range(num_contacts):
+        #     ContactFactory(user=primary_user)
 
         # MODELS[0]()
 
