@@ -177,14 +177,55 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'greenbudget.wsgi.application'
 
+DATABASE_NAME = config(
+    name='DATABASE_NAME',
+    required=[Environments.PROD],
+    default={
+        Environments.TEST: 'postgres',
+        Environments.DEV: 'postgres'
+    }
+)
+DATABASE_USER = config(
+    name='DATABASE_USER',
+    required=[Environments.PROD],
+    default={
+        Environments.TEST: 'postgres',
+        Environments.DEV: 'postgres'
+    }
+)
+DATABASE_PASSWORD = config(
+    name='DATABASE_PASSWORD',
+    required=[Environments.PROD],
+    default={
+        Environments.TEST: '',
+        Environments.DEV: ''
+    }
+)
+DATABASE_HOST = config(
+    name='DATABASE_HOST',
+    required=[Environments.PROD],
+    default={
+        Environments.TEST: 'localhost',
+        Environments.DEV: 'localhost'
+    }
+)
+DATABASE_PORT = config(
+    name='DATABASE_HOST',
+    required=[Environments.PROD],
+    default={
+        Environments.TEST: '5432',
+        Environments.DEV: '5432'
+    }
+)
 DATABASES = {
     'default': {
         'ATOMIC_REQUESTS': True,
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': "postgres",
-        'USER': "postgres",
-        'HOST': "localhost",
-        'PORT': '5432'
+        'NAME': DATABASE_NAME,
+        'USER': DATABASE_USER,
+        'HOST': DATABASE_HOST,
+        'PASSWORD': DATABASE_PASSWORD,
+        'PORT': DATABASE_HOST
     },
 }
 
