@@ -133,6 +133,7 @@ INSTALLED_APPS = [
     'greenbudget.app.budget_item',
     'greenbudget.app.comment',
     'greenbudget.app.contact',
+    'greenbudget.app.history',
     'greenbudget.app.subaccount',
     'greenbudget.app.user',
     'greenbudget.app.jwt'
