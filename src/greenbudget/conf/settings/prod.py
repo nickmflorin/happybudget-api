@@ -13,5 +13,16 @@ CORS_ORIGIN_REGEX_WHITELIST = (
 )
 
 ALLOWED_HOSTS = [
-    'https://www.greenbudget.io',
+    'https://3.88.164.226',
 ]
+
+DATABASES = {
+    'default': {
+        'ATOMIC_REQUESTS': True,
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': "postgres",
+        'USER': "postgres",
+        'HOST': "0.0.0.0",
+        'PORT': '5432'
+    },
+}
