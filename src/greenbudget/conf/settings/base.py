@@ -225,7 +225,7 @@ DATABASES = {
         'USER': DATABASE_USER,
         'HOST': DATABASE_HOST,
         'PASSWORD': DATABASE_PASSWORD,
-        'PORT': DATABASE_HOST
+        'PORT': DATABASE_PORT
     },
 }
 
