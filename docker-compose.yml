@@ -3,7 +3,7 @@ version: "3.3"
 services:
   web:
     environment:
-      DJANGO_SETTINGS_MODULE: greenbudget.conf.settings.gunicorn_dev
+      DJANGO_SETTINGS_MODULE: greenbudget.conf.settings.prod
     build: .
     command: bash -c "ls -al && gunicorn greenbudget.wsgi -c /app/greenbudget/conf/gunicorn_config.py"
     restart: always
