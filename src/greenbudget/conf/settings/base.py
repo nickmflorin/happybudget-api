@@ -210,7 +210,7 @@ DATABASE_HOST = config(
     }
 )
 DATABASE_PORT = config(
-    name='DATABASE_HOST',
+    name='DATABASE_PORT',
     required=[Environments.PROD],
     default={
         Environments.TEST: '5432',
