@@ -1,8 +1,12 @@
 from model_utils import Choices
 
-from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.fields import (
+    GenericForeignKey, GenericRelation)
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+
+from greenbudget.app.comment.models import Comment
+from greenbudget.app.history.models import Event
 
 
 class Actual(models.Model):
@@ -51,6 +55,9 @@ class Actual(models.Model):
     )
     object_id = models.PositiveIntegerField()
     parent = GenericForeignKey('content_type', 'object_id')
+
+    comments = GenericRelation(Comment)
+    events = GenericRelation(Event)
 
     class Meta:
         get_latest_by = "updated_at"

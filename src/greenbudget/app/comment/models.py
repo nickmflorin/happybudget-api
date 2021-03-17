@@ -20,10 +20,11 @@ class Comment(models.Model):
     content_type = models.ForeignKey(
         to=ContentType,
         on_delete=models.CASCADE,
-        limit_choices_to=models.Q(app_label='account', model='Account')
-        | models.Q(app_label='subaccount', model='SubAccount')
-        | models.Q(app_label='budget', model='Budget')
-        | models.Q(app_label='comment', model='Comment')
+        limit_choices_to=models.Q(app_label='account', model='account')
+        | models.Q(app_label='subaccount', model='subaccount')
+        | models.Q(app_label='budget', model='budget')
+        | models.Q(app_label='actual', model='actual')
+        | models.Q(app_label='comment', model='comment')
     )
     object_id = models.PositiveIntegerField(db_index=True)
     content_object = GenericForeignKey('content_type', 'object_id')

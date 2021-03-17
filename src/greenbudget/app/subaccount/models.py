@@ -8,6 +8,7 @@ from django.db import models
 from greenbudget.app.actual.models import Actual
 from greenbudget.app.budget_item.models import BudgetItem
 from greenbudget.app.comment.models import Comment
+from greenbudget.app.history.models import Event
 
 
 class SubAccount(BudgetItem):
@@ -29,14 +30,15 @@ class SubAccount(BudgetItem):
     content_type = models.ForeignKey(
         to=ContentType,
         on_delete=models.CASCADE,
-        limit_choices_to=models.Q(app_label='account', model='Account')
-        | models.Q(app_label='subaccount', model='SubAccount')
+        limit_choices_to=models.Q(app_label='account', model='account')
+        | models.Q(app_label='subaccount', model='subaccount')
     )
     object_id = models.PositiveIntegerField(db_index=True)
     parent = GenericForeignKey('content_type', 'object_id')
     subaccounts = GenericRelation('self')
     actuals = GenericRelation(Actual)
     comments = GenericRelation(Comment)
+    events = GenericRelation(Event)
 
     DERIVING_FIELDS = [
         "name",
