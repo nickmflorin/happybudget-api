@@ -112,6 +112,8 @@ REFERRER_POLICY = 'same-origin'
 
 AUTH_USER_MODEL = 'user.User'
 
+TRACK_MODEL_HISTORY = True
+
 INSTALLED_APPS = [
     'greenbudget',  # Must be before django authentication.
     'polymorphic',
@@ -149,6 +151,7 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'greenbudget.app.jwt.middleware.TokenCookieMiddleware',
+    'greenbudget.app.history.middleware.ModelHistoryMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',

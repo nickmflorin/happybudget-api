@@ -1,12 +1,17 @@
 from copy import deepcopy
 from functools import partialmethod
+import logging
 import threading
 
 from django.apps import apps
+from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
 from .models import Event, FieldAlterationEvent
+
+
+logger = logging.getLogger('backend')
 
 
 def get_models_for_fk_choices(model_cls, fk_field):
@@ -46,7 +51,9 @@ class ModelInstanceTracker(object):
         return dict((f, getattr(self.instance, f)) for f in fields)
 
     def has_changed(self, field):
-        return self.previous(field) != getattr(self.instance, field)
+        if field in self.saved_data:
+            return self.previous(field) != getattr(self.instance, field)
+        return False
 
     def previous(self, field):
         return self.saved_data.get(field)
@@ -62,9 +69,15 @@ class ModelHistoryTracker:
     tracker_class = ModelInstanceTracker
     thread = threading.local()
 
-    def __init__(self, fields):
+    def __init__(self, fields, user_field=None):
         assert len(fields) != 0, "Must provide at least 1 field to track."
         self.fields = set(fields)
+        # This field is used to get the associated User off of the model
+        # being tracked ONLY in the case that there is not an active request
+        # (and thus, a user attached to the request).  We really only have to
+        # worry about this when performing tests, since model write operations
+        # will always be performed in the presence of a request.
+        self._user_field = user_field
 
     def __get__(self, instance, owner):
         if instance is None:
@@ -73,23 +86,37 @@ class ModelHistoryTracker:
             return Event.objects.get_for_model(instance)
 
     def contribute_to_class(self, cls, name):
+        # Do not track the model history if the settings do not explicitly turn
+        # it on.
+        if getattr(settings, 'TRACK_MODEL_HISTORY', False) is False:
+            logger.info(
+                "Suppressing model tracking behavior for %s - "
+                "`settings.TRACK_MODEL_HISTORY` is either not defined or False."
+                % cls.__name__
+            )
+            return
+
+        # Make sure the fields we are tracking are supported.
         for field in self.fields:
             if not hasattr(cls, field) or not isinstance(
-                    getattr(cls, field), (models.CharField, models.DecimalField)):  # noqa
+                    getattr(cls, field).field, (models.CharField, models.DecimalField)):  # noqa
                 raise Exception("Invalid/unsupported field %s." % field)
 
-        allowed_models = get_models_for_fk_choices(Event, "content_type")
-        if cls not in allowed_models:
-            raise Exception(
-                "Cannot track history of model %s because it is not yet "
-                "supported by the Event model." % cls.__name__
-            )
+        # Currently, we can't perform this check because the app registry
+        # is not loaded yet.  We should find a more appropriate place to apply
+        # this check.
+        # allowed_models = get_models_for_fk_choices(Event, "content_type")
+        # if cls not in allowed_models:
+        #     raise Exception(
+        #         "Cannot track history of model %s because it is not yet "
+        #         "supported by the Event model." % cls.__name__
+        #     )
 
         setattr(cls, '_get_field_events', _get_field_events)
         for field_name in self.fields:
             field = getattr(cls, field_name)
             setattr(cls, 'get_%s_events' % field_name,
-                partialmethod(cls._get_char_field_events, field=field))
+                partialmethod(cls._get_field_events, field=field))
 
         self.name = name
         self.attname = '_%s' % name
@@ -119,14 +146,19 @@ class ModelHistoryTracker:
         original_save = instance.save
 
         def save(**kwargs):
-            is_new_object = instance.pk is None
-            ret = original_save(**kwargs)
+            # We only want to track changes to fields of already created models.
+            # This doesn't seem to be working properly however, because the
+            # id is already being attributed to instances due to the .create()
+            # method.  This most likely has to do with M2M fields - something
+            # we should look into.
+            if instance.pk is None:
+                return original_save(**kwargs)
+
             tracker = getattr(instance, self.attname)
 
-            events = []
             for field_name in self.fields:
-                if tracker.has_changed(field_name) or is_new_object:
-                    user = self.get_request_user()
+                if tracker.has_changed(field_name):
+                    user = self.get_event_user(instance)
 
                     old_value = tracker.previous(field_name)
                     if old_value is not None:
@@ -135,31 +167,48 @@ class ModelHistoryTracker:
                     new_value = tracker.get_field_value(field_name)
                     if new_value is not None:
                         new_value = "%s" % new_value
-
-                    events.append(FieldAlterationEvent(
-                        object=instance,
+                    # Note: We cannot do bulk create operations because of
+                    # the multi-table inheritance that comes with polymorphism.
+                    FieldAlterationEvent.objects.create(
+                        content_object=instance,
                         field=field_name,
                         old_value=old_value,
                         new_value=new_value,
                         user=user,
-                    ))
-
-            if events:
-                FieldAlterationEvent.objects.bulk_create(events)
-
+                    )
             # Update tracker in case this model is saved again
             self._initialize_tracker(instance)
-
-            return ret
+            return original_save(**kwargs)
 
         instance.save = save
 
-    def get_request_user(self):
-        user = self.thread.request.user
-        if not user.is_authenticated:
-            raise Exception(
-                "User should be authenticated to perform read/write operations!")  # noqa
-        return user
+    def get_event_user(self, instance):
+        try:
+            user = self.thread.request.user
+        except AttributeError:
+            if self._user_field is None:
+                raise Exception(
+                    "The user cannot be inferred from the request and the "
+                    "`user_field` was not provided to the tracker.  Make sure "
+                    "that the `ModelHistoryMiddleware` is installed and/or the "
+                    "`user_field` is defined on initialization."
+                )
+            # NOTE: When using fields like `created_by` or `updated_by` that
+            # may be NULL, this can cause an error if these fields are NULL
+            # because the Event requires a user.  However, we really only have
+            # to worry about this in tests, because all of our model operations
+            # will be funneled through a request which will have the user
+            # attached to it (assuming the user is logged in).
+            assert hasattr(instance, self._user_field), \
+                "Invalid user field %s provided." % self._user_field
+            return getattr(instance, self._user_field)
+        else:
+            if not user.is_authenticated:
+                raise Exception(
+                    "User should be authenticated to perform read/write "
+                    "operations!"
+                )
+            return user
 
 
 def _get_field_events(self, field):
