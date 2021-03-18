@@ -13,6 +13,10 @@ from .models import Event, FieldAlterationEvent
 
 logger = logging.getLogger('backend')
 
+SUPPORTED_FIELDS = (
+    models.CharField, models.DecimalField, models.IntegerField,
+    models.DateTimeField)
+
 
 def get_models_for_fk_choices(model_cls, fk_field):
     if not hasattr(model_cls, fk_field) \
@@ -84,7 +88,7 @@ class ModelHistoryTracker:
         # Make sure the fields we are tracking are supported.
         for field in self.fields:
             if not hasattr(cls, field) or not isinstance(
-                    getattr(cls, field).field, (models.CharField, models.DecimalField)):  # noqa
+                    getattr(cls, field).field, SUPPORTED_FIELDS):
                 raise Exception("Invalid/unsupported field %s." % field)
 
         # Currently, we can't perform this check because the app registry
@@ -142,11 +146,11 @@ class ModelHistoryTracker:
 
                     old_value = tracker.saved_data.get(field_name)
                     if old_value is not None:
-                        old_value = "%s" % old_value
+                        old_value = str(old_value)
 
                     new_value = tracker.get_field_value(field_name)
                     if new_value is not None:
-                        new_value = "%s" % new_value
+                        new_value = str(new_value)
 
                     # Note: We cannot do bulk create operations because of
                     # the multi-table inheritance that comes with polymorphism.

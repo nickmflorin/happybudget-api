@@ -41,9 +41,9 @@ class SubAccount(BudgetItem):
     comments = GenericRelation(Comment)
     events = GenericRelation(Event)
 
-    # TODO: Add support for other fields (IntegerField, FK Fields).
     field_history = ModelHistoryTracker(
-        ['description', 'identifier', 'name', 'rate'],
+        ['description', 'identifier', 'name', 'rate', 'quantity', 'multiplier',
+        'unit'],
         user_field='updated_by'
     )
 

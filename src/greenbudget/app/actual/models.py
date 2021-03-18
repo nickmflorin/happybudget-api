@@ -59,9 +59,10 @@ class Actual(models.Model):
 
     comments = GenericRelation(Comment)
     events = GenericRelation(Event)
-    # TODO: Add support for other fields (IntegerField, FK Fields).
+
     field_history = ModelHistoryTracker(
-        ['description', 'vendor', 'purchase_order', 'payment_id', 'value'],
+        ['description', 'vendor', 'purchase_order', 'payment_id', 'value',
+        'payment_method', 'date'],
         user_field='updated_by'
     )
 
