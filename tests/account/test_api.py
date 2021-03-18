@@ -1,3 +1,4 @@
+from copy import deepcopy
 import pytest
 
 from greenbudget.app.account.models import Account
@@ -317,12 +318,9 @@ def test_get_accounts_history(api_client, create_budget, create_account, user):
     assert response.status_code == 200
 
     assert FieldAlterationEvent.objects.count() == 2
-    events = FieldAlterationEvent.objects.all()
-
     assert response.json()['count'] == 2
-    assert response.json()['data'] == [
+    serialized_events = [
         {
-            "id": events[0].pk,
             "created_at": "2020-01-01 00:00:00",
             "new_value": "Account description",
             "old_value": account.description,
@@ -339,7 +337,6 @@ def test_get_accounts_history(api_client, create_budget, create_account, user):
             }
         },
         {
-            "id": events[1].pk,
             "created_at": "2020-01-01 00:00:00",
             "new_value": "new_identifier",
             "old_value": "original_identifier",
@@ -356,6 +353,10 @@ def test_get_accounts_history(api_client, create_budget, create_account, user):
             }
         }
     ]
+    for serialized_event in response.json()['data']:
+        event_without_id = deepcopy(serialized_event)
+        del event_without_id['id']
+        assert event_without_id in serialized_events
 
 
 @pytest.mark.freeze_time('2020-01-01')
@@ -374,12 +375,9 @@ def test_get_account_history(api_client, create_budget, create_account, user):
     assert response.status_code == 200
 
     assert FieldAlterationEvent.objects.count() == 2
-    events = FieldAlterationEvent.objects.all()
-
     assert response.json()['count'] == 2
-    assert response.json()['data'] == [
+    serialized_events = [
         {
-            "id": events[0].pk,
             "created_at": "2020-01-01 00:00:00",
             "new_value": "Account description",
             "old_value": account.description,
@@ -396,7 +394,6 @@ def test_get_account_history(api_client, create_budget, create_account, user):
             }
         },
         {
-            "id": events[1].pk,
             "created_at": "2020-01-01 00:00:00",
             "new_value": "new_identifier",
             "old_value": "original_identifier",
@@ -413,3 +410,7 @@ def test_get_account_history(api_client, create_budget, create_account, user):
             }
         }
     ]
+    for serialized_event in response.json()['data']:
+        event_without_id = deepcopy(serialized_event)
+        del event_without_id['id']
+        assert event_without_id in serialized_events
