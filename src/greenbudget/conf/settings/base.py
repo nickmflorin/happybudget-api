@@ -62,7 +62,7 @@ CSRF_COOKIE_NAME = 'greenbudgetcsrftoken'
 CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_DOMAIN = "3.88.164.226"
 CSRF_TRUSTED_ORIGINS = [
-    'master.d2er1ogdont4na.amplifyapp.com',
+    '.amplifyapp.com',
 ]
 
 # CORS Configuration
