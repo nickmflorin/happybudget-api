@@ -19,6 +19,7 @@ services:
     env_file:
       - .env
 
+  # Service is only used locally!
   db:
     restart: "no"
     build: './postgres'
