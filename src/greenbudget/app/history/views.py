@@ -2,6 +2,7 @@ from django.contrib.contenttypes.models import ContentType
 from rest_framework import viewsets, mixins
 
 from greenbudget.app.account.models import Account
+from greenbudget.app.account.mixins import AccountNestedMixin
 from greenbudget.app.budget.mixins import BudgetNestedMixin
 
 from .models import FieldAlterationEvent
@@ -31,6 +32,26 @@ class AccountsHistoryViewSet(
         content_type = ContentType.objects.get_for_model(Account)
         return FieldAlterationEvent.objects.filter(
             object_id__in=[acct.pk for acct in self.budget.accounts.all()],
+            content_type=content_type
+        )
+
+
+class AccountHistoryViewSet(
+    mixins.ListModelMixin,
+    AccountNestedMixin,
+    GenericHistoryViewset
+):
+    """
+    ViewSet to handle requests to the following endpoints:
+
+    (1) GET /accounts/<pk>/history/
+    """
+    account_lookup_field = ("pk", "account_pk")
+
+    def get_queryset(self):
+        content_type = ContentType.objects.get_for_model(Account)
+        return FieldAlterationEvent.objects.filter(
+            object_id=self.account.pk,
             content_type=content_type
         )
 

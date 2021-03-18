@@ -3,7 +3,8 @@ from rest_framework import routers
 
 from greenbudget.app.actual.urls import account_actuals_urlpatterns
 from greenbudget.app.comment.urls import account_comments_urlpatterns
-from greenbudget.app.history.urls import accounts_history_urlpatterns
+from greenbudget.app.history.urls import (
+    accounts_history_urlpatterns, account_history_urlpatterns)
 from greenbudget.app.subaccount.urls import account_subaccounts_urlpatterns
 
 from .views import BudgetAccountViewSet, AccountViewSet
@@ -26,5 +27,6 @@ urlpatterns = router.urls + [
     path('<int:account_pk>/', include([
         path('actuals/', include(account_actuals_urlpatterns)),
         path('comments/', include(account_comments_urlpatterns)),
+        path('history/', include(account_history_urlpatterns)),
     ]))
 ]
