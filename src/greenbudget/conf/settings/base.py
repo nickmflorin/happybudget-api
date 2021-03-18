@@ -38,7 +38,7 @@ SECRET_KEY = config(
 # Email Configurations
 EMAIL_ENABLED = True
 FROM_EMAIL = 'support@nirvedacognition.ai'
-EMAIL_HOST = '3.88.164.226'
+EMAIL_HOST = '.greenbudget.cloud'
 SMTP_EMAIL_PORT = 25
 
 PWD_RESET_LINK_EXPIRY_TIME_IN_HRS = 24
@@ -62,15 +62,15 @@ CSRF_COOKIE_NAME = 'greenbudgetcsrftoken'
 CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_DOMAIN = "3.88.164.226"
 CSRF_TRUSTED_ORIGINS = [
-    '.amplifyapp.com',
+    '.greenbudget.cloud',
 ]
-
-# CORS Configuration
-CORS_ALLOW_CREDENTIALS = True
+CORS_ORIGIN_ALLOW_ALL = False
 CORS_ORIGIN_REGEX_WHITELIST = (
-    r'^(https?://)?localhost:?[\d]*?$',
-    r'^(https?://)?127.0.0.1:?[\d]*?$'
-)
+    r'^(https?://)?([\w\.-]*?)\.greenbudget\.cloud$',)
+
+ALLOWED_HOSTS = [
+    '3.88.164.226',
+]
 
 # JWT Configuration
 JWT_COOKIE_SECURE = True

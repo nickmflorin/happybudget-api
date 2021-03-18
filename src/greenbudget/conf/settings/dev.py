@@ -30,3 +30,9 @@ CSRF_TRUSTED_ORIGINS = [
 ALLOWED_HOSTS = [
     '127.0.0.1'
 ]
+# CORS Configuration
+CORS_ALLOW_CREDENTIALS = True
+CORS_ORIGIN_REGEX_WHITELIST = (
+    r'^(https?://)?localhost:?[\d]*?$',
+    r'^(https?://)?127.0.0.1:?[\d]*?$'
+)
