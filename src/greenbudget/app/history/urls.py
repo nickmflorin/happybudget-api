@@ -2,7 +2,7 @@ from rest_framework import routers
 
 from .views import (
     AccountsHistoryViewSet, AccountHistoryViewSet, SubAccountsHistoryViewSet,
-    SubAccountHistoryViewSet)
+    SubAccountHistoryViewSet, ActualsHistoryViewSet, ActualHistoryViewSet)
 
 app_name = "history"
 
@@ -24,3 +24,11 @@ subaccount_history_router = routers.SimpleRouter()
 subaccount_history_router.register(
     r'', SubAccountHistoryViewSet, basename='history')
 subaccount_history_urlpatterns = subaccount_history_router.urls
+
+actuals_history_router = routers.SimpleRouter()
+actuals_history_router.register(r'', ActualsHistoryViewSet, basename='history')
+actuals_history_urlpatterns = actuals_history_router.urls
+
+actual_history_router = routers.SimpleRouter()
+actual_history_router.register(r'', ActualHistoryViewSet, basename='history')
+actual_history_urlpatterns = actual_history_router.urls
