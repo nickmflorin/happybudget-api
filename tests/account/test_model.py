@@ -18,6 +18,7 @@ def test_field_changes(create_budget, user):
 
     assert FieldAlterationEvent.objects.count() == 1
     alteration = FieldAlterationEvent.objects.first()
+    assert alteration.user == user
     assert alteration.field == "description"
     assert alteration.old_value == "Description"
     assert alteration.new_value == "New Description"
@@ -42,3 +43,4 @@ def test_field_changes_null_at_start(create_budget, user):
     assert alteration.field == "description"
     assert alteration.old_value is None
     assert alteration.new_value == "Description"
+    assert alteration.user == user
