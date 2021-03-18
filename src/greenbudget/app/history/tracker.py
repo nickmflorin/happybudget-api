@@ -36,27 +36,12 @@ class ModelInstanceTracker(object):
     def get_field_value(self, field):
         return getattr(self.instance, field)
 
-    def set_saved_fields(self, fields=None):
-        if not self.instance.pk:
-            self.saved_data = {}
-        elif not fields:
-            self.saved_data = self.current()
-
-        for field, field_value in self.saved_data.items():
-            self.saved_data[field] = deepcopy(field_value)
-
-    def current(self, fields=None):
-        if fields is None:
-            fields = self.fields
-        return dict((f, getattr(self.instance, f)) for f in fields)
+    def set_saved_fields(self):
+        self.saved_data = dict(
+            (f, deepcopy(getattr(self.instance, f))) for f in self.fields)
 
     def has_changed(self, field):
-        if field in self.saved_data:
-            return self.previous(field) != getattr(self.instance, field)
-        return False
-
-    def previous(self, field):
-        return self.saved_data.get(field)
+        return self.saved_data.get(field) != getattr(self.instance, field)
 
 
 class ModelHistoryTracker:
@@ -147,26 +132,22 @@ class ModelHistoryTracker:
 
         def save(**kwargs):
             # We only want to track changes to fields of already created models.
-            # This doesn't seem to be working properly however, because the
-            # id is already being attributed to instances due to the .create()
-            # method.  This most likely has to do with M2M fields - something
-            # we should look into.
             if instance.pk is None:
                 return original_save(**kwargs)
 
             tracker = getattr(instance, self.attname)
-
             for field_name in self.fields:
                 if tracker.has_changed(field_name):
                     user = self.get_event_user(instance)
 
-                    old_value = tracker.previous(field_name)
+                    old_value = tracker.saved_data.get(field_name)
                     if old_value is not None:
                         old_value = "%s" % old_value
 
                     new_value = tracker.get_field_value(field_name)
                     if new_value is not None:
                         new_value = "%s" % new_value
+
                     # Note: We cannot do bulk create operations because of
                     # the multi-table inheritance that comes with polymorphism.
                     FieldAlterationEvent.objects.create(

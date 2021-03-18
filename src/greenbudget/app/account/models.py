@@ -20,8 +20,8 @@ class Account(BudgetItem):
     comments = GenericRelation(Comment)
     events = GenericRelation(Event)
 
-    # field_history = ModelHistoryTracker(
-    #     ['description', 'identifier'], user_field='updated_by')
+    field_history = ModelHistoryTracker(
+        ['description', 'identifier'], user_field='updated_by')
 
     class Meta:
         get_latest_by = "updated_at"
