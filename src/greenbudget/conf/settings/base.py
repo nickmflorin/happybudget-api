@@ -22,7 +22,7 @@ APPS_DIR = BASE_DIR / "app"
 TIME_ZONE = 'UTC'
 USE_TZ = True
 
-APP_DOMAIN = 'greenbudget.io'
+APP_DOMAIN = '3.88.164.226'
 APP_URL = 'https://%s' % APP_DOMAIN
 APP_V1_URL = os.path.join(APP_URL, "v1")
 
@@ -62,13 +62,12 @@ CSRF_COOKIE_NAME = 'greenbudgetcsrftoken'
 CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_DOMAIN = "3.88.164.226"
 CSRF_TRUSTED_ORIGINS = [
-    '3.88.164.226',
+    'master.d2er1ogdont4na.amplifyapp.com',
 ]
 
 # CORS Configuration
 CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_REGEX_WHITELIST = (
-    r'^(https?://)?([\w\.-]*?)\.greenbudget\.io:?[\d]*?$',
     r'^(https?://)?localhost:?[\d]*?$',
     r'^(https?://)?127.0.0.1:?[\d]*?$'
 )
