@@ -9,6 +9,7 @@ from greenbudget.app.actual.models import Actual
 from greenbudget.app.budget_item.models import BudgetItem
 from greenbudget.app.comment.models import Comment
 from greenbudget.app.history.models import Event
+from greenbudget.app.history.tracker import ModelHistoryTracker
 
 
 class SubAccount(BudgetItem):
@@ -39,6 +40,12 @@ class SubAccount(BudgetItem):
     actuals = GenericRelation(Actual)
     comments = GenericRelation(Comment)
     events = GenericRelation(Event)
+
+    # TODO: Add support for other fields (IntegerField, FK Fields).
+    field_history = ModelHistoryTracker(
+        ['description', 'identifier', 'name', 'rate'],
+        user_field='updated_by'
+    )
 
     DERIVING_FIELDS = [
         "name",
