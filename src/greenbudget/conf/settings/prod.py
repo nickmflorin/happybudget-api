@@ -13,5 +13,5 @@ CORS_ORIGIN_REGEX_WHITELIST = (
 )
 
 ALLOWED_HOSTS = [
-    'https://3.88.164.226',
+    '3.88.164.226',
 ]
