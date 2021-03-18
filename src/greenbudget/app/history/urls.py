@@ -1,8 +1,14 @@
 from rest_framework import routers
 
 from .views import (
-    AccountsHistoryViewSet, AccountHistoryViewSet, SubAccountsHistoryViewSet,
-    SubAccountHistoryViewSet, ActualsHistoryViewSet, ActualHistoryViewSet)
+    AccountsHistoryViewSet,
+    AccountHistoryViewSet,
+    AccountSubAccountsHistoryViewSet,
+    SubAccountSubAccountsHistoryViewSet,
+    SubAccountHistoryViewSet,
+    ActualsHistoryViewSet,
+    ActualHistoryViewSet
+)
 
 app_name = "history"
 
@@ -15,10 +21,15 @@ account_history_router = routers.SimpleRouter()
 account_history_router.register(r'', AccountHistoryViewSet, basename='history')
 account_history_urlpatterns = account_history_router.urls
 
-subaccounts_history_router = routers.SimpleRouter()
-subaccounts_history_router.register(
-    r'', SubAccountsHistoryViewSet, basename='history')
-subaccounts_history_urlpatterns = subaccounts_history_router.urls
+account_subaccounts_history_router = routers.SimpleRouter()
+account_subaccounts_history_router.register(
+    r'', AccountSubAccountsHistoryViewSet, basename='history')
+account_subaccounts_history_urlpatterns = account_subaccounts_history_router.urls  # noqa
+
+subaccount_subaccounts_history_router = routers.SimpleRouter()
+subaccount_subaccounts_history_router.register(
+    r'', SubAccountSubAccountsHistoryViewSet, basename='history')
+subaccount_subaccounts_history_urlpatterns = subaccount_subaccounts_history_router.urls  # noqa
 
 subaccount_history_router = routers.SimpleRouter()
 subaccount_history_router.register(

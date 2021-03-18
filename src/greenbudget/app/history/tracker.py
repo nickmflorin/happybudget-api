@@ -14,8 +14,11 @@ from .models import Event, FieldAlterationEvent
 logger = logging.getLogger('backend')
 
 SUPPORTED_FIELDS = (
-    models.CharField, models.DecimalField, models.IntegerField,
-    models.DateTimeField)
+    models.CharField,
+    models.DecimalField,
+    models.IntegerField,
+    models.DateTimeField
+)
 
 
 def get_models_for_fk_choices(model_cls, fk_field):
@@ -135,8 +138,12 @@ class ModelHistoryTracker:
         original_save = instance.save
 
         def save(**kwargs):
+            # There are some cases where we do not want to record that a change
+            # has occured, when it is not the result of a user operation.
+            record_changes = kwargs.pop('record_changes', True)
+
             # We only want to track changes to fields of already created models.
-            if instance.pk is None:
+            if instance.pk is None or record_changes is False:
                 return original_save(**kwargs)
 
             tracker = getattr(instance, self.attname)

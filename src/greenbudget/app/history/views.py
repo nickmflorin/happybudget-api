@@ -61,7 +61,7 @@ class AccountHistoryViewSet(
         )
 
 
-class SubAccountsHistoryViewSet(
+class AccountSubAccountsHistoryViewSet(
     mixins.ListModelMixin,
     BudgetAccountNestedMixin,
     GenericHistoryViewset
@@ -78,6 +78,27 @@ class SubAccountsHistoryViewSet(
         content_type = ContentType.objects.get_for_model(SubAccount)
         return FieldAlterationEvent.objects.filter(
             object_id__in=[acct.pk for acct in self.account.subaccounts.all()],
+            content_type=content_type
+        )
+
+
+class SubAccountSubAccountsHistoryViewSet(
+    mixins.ListModelMixin,
+    SubAccountNestedMixin,
+    GenericHistoryViewset
+):
+    """
+    ViewSet to handle requests to the following endpoints:
+
+    (1) GET /subaccounts/<pk>/subaccounts/history/
+    """
+    subaccount_lookup_field = ("pk", "subaccount_pk")
+
+    def get_queryset(self):
+        content_type = ContentType.objects.get_for_model(SubAccount)
+        return FieldAlterationEvent.objects.filter(
+            object_id__in=[
+                acct.pk for acct in self.subaccount.subaccounts.all()],
             content_type=content_type
         )
 

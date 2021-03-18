@@ -64,11 +64,11 @@ class SubAccount(BudgetItem):
         verbose_name_plural = "Sub Accounts"
 
     def __str__(self):
-        return "<{cls} id={id}, name={name}, line={line}>".format(
+        return "<{cls} id={id}, name={name}, identifier={identifier}>".format(
             cls=self.__class__.__name__,
             id=self.pk,
             name=self.name,
-            line=self.line,
+            identifier=self.identifier,
         )
 
     @property
