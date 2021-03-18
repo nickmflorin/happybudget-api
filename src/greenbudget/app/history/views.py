@@ -2,8 +2,11 @@ from django.contrib.contenttypes.models import ContentType
 from rest_framework import viewsets, mixins
 
 from greenbudget.app.account.models import Account
-from greenbudget.app.account.mixins import AccountNestedMixin
+from greenbudget.app.account.mixins import (
+    AccountNestedMixin, BudgetAccountNestedMixin)
 from greenbudget.app.budget.mixins import BudgetNestedMixin
+from greenbudget.app.subaccount.models import SubAccount
+from greenbudget.app.subaccount.mixins import SubAccountNestedMixin
 
 from .models import FieldAlterationEvent
 from .serializers import FieldAlterationEventSerializer
@@ -52,6 +55,47 @@ class AccountHistoryViewSet(
         content_type = ContentType.objects.get_for_model(Account)
         return FieldAlterationEvent.objects.filter(
             object_id=self.account.pk,
+            content_type=content_type
+        )
+
+
+class SubAccountsHistoryViewSet(
+    mixins.ListModelMixin,
+    BudgetAccountNestedMixin,
+    GenericHistoryViewset
+):
+    """
+    ViewSet to handle requests to the following endpoints:
+
+    (1) GET /budgets/<pk>/accounts/<pk>/subaccounts/history/
+    """
+    budget_lookup_field = ("pk", "budget_pk")
+    account_lookup_field = ("pk", "account_pk")
+
+    def get_queryset(self):
+        content_type = ContentType.objects.get_for_model(SubAccount)
+        return FieldAlterationEvent.objects.filter(
+            object_id__in=[acct.pk for acct in self.account.subaccounts.all()],
+            content_type=content_type
+        )
+
+
+class SubAccountHistoryViewSet(
+    mixins.ListModelMixin,
+    SubAccountNestedMixin,
+    GenericHistoryViewset
+):
+    """
+    ViewSet to handle requests to the following endpoints:
+
+    (1) GET /subaccounts/<pk>/history/
+    """
+    subaccount_lookup_field = ("pk", "subaccount_pk")
+
+    def get_queryset(self):
+        content_type = ContentType.objects.get_for_model(SubAccount)
+        return FieldAlterationEvent.objects.filter(
+            object_id=self.subaccount.pk,
             content_type=content_type
         )
 
