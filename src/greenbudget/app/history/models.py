@@ -32,6 +32,17 @@ class Event(PolymorphicModel):
         verbose_name = "Event"
         verbose_name_plural = "Events"
 
+    @property
+    def content_object_type(self):
+        from greenbudget.app.actual.models import Actual
+        from greenbudget.app.account.models import Account
+        if isinstance(self.content_object, Actual):
+            return "actual"
+        elif isinstance(self.content_object, Account):
+            return "account"
+        else:
+            return "subaccount"
+
 
 class FieldAlterationEvent(Event):
     type = "field_alteration"

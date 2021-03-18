@@ -34,8 +34,6 @@ class CommentViewSet(
     """
 
     def get_queryset(self):
-        # TODO: How do we filter by comments that belong a budget or
-        # accounts/subaccounts that are in a budget that is not in the trash?
         return Comment.objects.all()
 
     def perform_update(self, serializer):

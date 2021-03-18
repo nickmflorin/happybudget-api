@@ -1,6 +1,7 @@
 import pytest
 
 from greenbudget.app.account.models import Account
+from greenbudget.app.history.models import FieldAlterationEvent
 
 
 @pytest.mark.freeze_time('2020-01-01')
@@ -298,3 +299,60 @@ def test_update_account_duplicate_number(api_client, user, create_budget,
         'description': 'Account description',
     })
     assert response.status_code == 400
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_get_accounts_history(api_client, create_budget, create_account, user):
+    budget = create_budget()
+    account = create_account(
+        budget=budget,
+        identifier="original_identifier"
+    )
+    api_client.force_login(user)
+    response = api_client.patch("/v1/accounts/%s/" % account.pk, data={
+        'identifier': 'new_identifier',
+        'description': 'Account description',
+    })
+    response = api_client.get("/v1/budgets/%s/accounts/history/" % budget.pk)
+    assert response.status_code == 200
+
+    assert FieldAlterationEvent.objects.count() == 2
+    events = FieldAlterationEvent.objects.all()
+
+    assert response.json()['count'] == 2
+    assert response.json()['data'] == [
+        {
+            "id": events[0].pk,
+            "created_at": "2020-01-01 00:00:00",
+            "new_value": "Account description",
+            "old_value": account.description,
+            "field": "description",
+            "object_id": account.pk,
+            "content_object_type": "account",
+            "type": "field_alteration",
+            "user": {
+                "id": user.pk,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "full_name": user.full_name,
+                "email": user.email
+            }
+        },
+        {
+            "id": events[1].pk,
+            "created_at": "2020-01-01 00:00:00",
+            "new_value": "new_identifier",
+            "old_value": "original_identifier",
+            "field": "identifier",
+            "object_id": account.pk,
+            "content_object_type": "account",
+            "type": "field_alteration",
+            "user": {
+                "id": user.pk,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "full_name": user.full_name,
+                "email": user.email
+            }
+        }
+    ]

@@ -80,6 +80,10 @@ class Budget(PolymorphicModel):
             raise BudgetPermissionError()
 
     @property
+    def accounts(self):
+        return Account.objects.filter(budget=self)
+
+    @property
     def variance(self):
         if self.actual is not None and self.estimated is not None:
             return float(self.estimated) - float(self.actual)
@@ -88,9 +92,9 @@ class Budget(PolymorphicModel):
     @property
     def actual(self):
         actuals = []
-        for element in self.items.all():
-            if isinstance(element, Account) and element.actual is not None:
-                actuals.append(element.actual)
+        for account in self.accounts.all():
+            if account.actual is not None:
+                actuals.append(account.actual)
         if len(actuals) != 0:
             return sum(actuals)
         return None
@@ -98,9 +102,9 @@ class Budget(PolymorphicModel):
     @property
     def estimated(self):
         estimated = []
-        for element in self.items.all():
-            if isinstance(element, Account) and element.estimated is not None:
-                estimated.append(element.estimated)
+        for account in self.accounts.all():
+            if account.estimated is not None:
+                estimated.append(account.estimated)
         if len(estimated) != 0:
             return sum(estimated)
         return None
