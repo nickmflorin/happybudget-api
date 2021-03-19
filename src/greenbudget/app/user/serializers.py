@@ -105,17 +105,19 @@ class UserSerializer(EnhancedModelSerializer):
             validators.UniqueValidator(queryset=User.objects.all())]
     )
     username = serializers.EmailField(read_only=True)
-    is_active = serializers.BooleanField(default=True)
-    is_admin = serializers.BooleanField(default=False)
-    is_staff = serializers.BooleanField(default=False)
-    is_superuser = serializers.BooleanField(default=False)
+    is_active = serializers.BooleanField(default=True, read_only=True)
+    is_admin = serializers.BooleanField(default=False, read_only=True)
+    is_staff = serializers.BooleanField(default=False, read_only=True)
+    is_superuser = serializers.BooleanField(default=False, read_only=True)
     last_login = serializers.DateTimeField(read_only=True)
     date_joined = serializers.DateTimeField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
-    timezone = serializers.SerializerMethodField()
+    timezone = serializers.SerializerMethodField(read_only=True)
     profile_image = serializers.ImageField(
-        required=False, allow_empty_file=False)
+        required=False,
+        allow_empty_file=False
+    )
 
     class Meta:
         model = User
@@ -127,14 +129,3 @@ class UserSerializer(EnhancedModelSerializer):
 
     def get_timezone(self, instance):
         return str(instance.timezone)
-
-    def validate(self, attrs):
-        request = self.context["request"]
-
-        # Only super admins can create/update super admin users.
-        is_superuser = attrs.get('is_superuser',
-            self.instance.is_superuser if self.instance is not None else False)
-        if is_superuser and not request.user.is_superuser:
-            raise exceptions.PermissionDenied(
-                "Cannot update or create superusers.")
-        return attrs

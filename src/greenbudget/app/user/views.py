@@ -51,7 +51,7 @@ class UserRegistrationView(mixins.CreateModelMixin, viewsets.GenericViewSet):
     permission_classes = (permissions.AllowAny, )
     serializer_class = UserRegistrationSerializer
 
-    @ sensitive_post_parameters_m('password')
+    @sensitive_post_parameters_m('password')
     def dispatch(self, request, *args, **kwargs):
         return super().dispatch(request, *args, **kwargs)
 
@@ -69,3 +69,11 @@ class UserRegistrationView(mixins.CreateModelMixin, viewsets.GenericViewSet):
             UserSerializer(instance).data,
             status=status.HTTP_201_CREATED
         )
+
+
+class ActiveUserViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
+    lookup_field = 'pk'
+    serializer_class = UserSerializer
+
+    def get_object(self):
+        return self.request.user

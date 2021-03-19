@@ -27,6 +27,7 @@ def test_registration(api_client, db):
         "updated_at": "2020-01-01 00:00:00",
         "last_login": None,
         "date_joined": "2020-01-01 00:00:00",
+        "profile_image": None,
         "timezone": "America/New_York"
     }
     user = User.objects.get(pk=response.json()['id'])
@@ -39,3 +40,35 @@ def test_registration(api_client, db):
     assert user.is_superuser is False
     assert user.is_active is True
     assert user.check_password("Hoopla") is True
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_update_logged_in_user(api_client, user):
+    api_client.force_login(user)
+    response = api_client.patch("/v1/users/user/", data={
+        'first_name': 'New First Name',
+        'last_name': 'New Last Name'
+    })
+    assert response.status_code == 200
+    assert response.json() == {
+        "id": 1,
+        "first_name": "New First Name",
+        "last_name": "New Last Name",
+        "email": user.email,
+        "username": user.username,
+        "is_active": True,
+        "is_admin": False,
+        "is_superuser": False,
+        "is_staff": False,
+        "full_name": "New First Name New Last Name",
+        "created_at": "2020-01-01 00:00:00",
+        "updated_at": "2020-01-01 00:00:00",
+        "last_login": "2020-01-01 00:00:00",
+        "date_joined": "2020-01-01 00:00:00",
+        "profile_image": None,
+        "timezone": str(user.timezone)
+    }
+
+    user.refresh_from_db()
+    assert user.first_name == "New First Name"
+    assert user.last_name == "New Last Name"
