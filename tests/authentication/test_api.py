@@ -170,7 +170,8 @@ def test_reset_password(user, api_client, db):
         'updated_at': api_datetime_string(user.updated_at),
         'created_at': api_datetime_string(user.created_at),
         'last_login': None,
-        'timezone': str(user.timezone)
+        'timezone': str(user.timezone),
+        "profile_image": None,
     }
 
 

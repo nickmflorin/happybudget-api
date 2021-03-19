@@ -57,7 +57,8 @@ def test_get_subaccount(api_client, user, create_sub_account, create_account,
             "is_admin": user.is_admin,
             "is_superuser": user.is_superuser,
             "is_staff": user.is_staff,
-            "full_name": user.full_name
+            "full_name": user.full_name,
+            "profile_image": None,
         },
         "updated_by": {
             "id": user.pk,
@@ -69,7 +70,8 @@ def test_get_subaccount(api_client, user, create_sub_account, create_account,
             "is_admin": user.is_admin,
             "is_superuser": user.is_superuser,
             "is_staff": user.is_staff,
-            "full_name": user.full_name
+            "full_name": user.full_name,
+            "profile_image": None,
         }
     }
 
@@ -137,7 +139,8 @@ def test_create_subaccount(api_client, user, create_account, create_budget):
             "is_admin": user.is_admin,
             "is_superuser": user.is_superuser,
             "is_staff": user.is_staff,
-            "full_name": user.full_name
+            "full_name": user.full_name,
+            "profile_image": None,
         },
         "updated_by": {
             "id": user.pk,
@@ -149,7 +152,8 @@ def test_create_subaccount(api_client, user, create_account, create_budget):
             "is_admin": user.is_admin,
             "is_superuser": user.is_superuser,
             "is_staff": user.is_staff,
-            "full_name": user.full_name
+            "full_name": user.full_name,
+            "profile_image": None,
         }
     }
 
@@ -242,7 +246,8 @@ def test_update_subaccount(api_client, user, create_sub_account, create_account,
             "is_admin": user.is_admin,
             "is_superuser": user.is_superuser,
             "is_staff": user.is_staff,
-            "full_name": user.full_name
+            "full_name": user.full_name,
+            "profile_image": None,
         },
         "updated_by": {
             "id": user.pk,
@@ -254,7 +259,8 @@ def test_update_subaccount(api_client, user, create_sub_account, create_account,
             "is_admin": user.is_admin,
             "is_superuser": user.is_superuser,
             "is_staff": user.is_staff,
-            "full_name": user.full_name
+            "full_name": user.full_name,
+            "profile_image": None,
         }
     }
 
@@ -355,7 +361,8 @@ def test_get_budget_account_subaccounts(api_client, user, create_account,
                 "is_admin": user.is_admin,
                 "is_superuser": user.is_superuser,
                 "is_staff": user.is_staff,
-                "full_name": user.full_name
+                "full_name": user.full_name,
+                "profile_image": None,
             },
             "updated_by": {
                 "id": user.pk,
@@ -367,7 +374,8 @@ def test_get_budget_account_subaccounts(api_client, user, create_account,
                 "is_admin": user.is_admin,
                 "is_superuser": user.is_superuser,
                 "is_staff": user.is_staff,
-                "full_name": user.full_name
+                "full_name": user.full_name,
+                "profile_image": None,
             }
         },
         {
@@ -413,7 +421,8 @@ def test_get_budget_account_subaccounts(api_client, user, create_account,
                 "is_admin": user.is_admin,
                 "is_superuser": user.is_superuser,
                 "is_staff": user.is_staff,
-                "full_name": user.full_name
+                "full_name": user.full_name,
+                "profile_image": None,
             },
             "updated_by": {
                 "id": user.pk,
@@ -425,7 +434,8 @@ def test_get_budget_account_subaccounts(api_client, user, create_account,
                 "is_admin": user.is_admin,
                 "is_superuser": user.is_superuser,
                 "is_staff": user.is_staff,
-                "full_name": user.full_name
+                "full_name": user.full_name,
+                "profile_image": None,
             }
         },
     ]
@@ -497,7 +507,8 @@ def test_get_subaccount_subaccounts(api_client, user, create_sub_account,
                 "is_admin": user.is_admin,
                 "is_superuser": user.is_superuser,
                 "is_staff": user.is_staff,
-                "full_name": user.full_name
+                "full_name": user.full_name,
+                "profile_image": None,
             },
             "updated_by": {
                 "id": user.pk,
@@ -509,7 +520,8 @@ def test_get_subaccount_subaccounts(api_client, user, create_sub_account,
                 "is_admin": user.is_admin,
                 "is_superuser": user.is_superuser,
                 "is_staff": user.is_staff,
-                "full_name": user.full_name
+                "full_name": user.full_name,
+                "profile_image": None,
             }
         },
         {
@@ -560,7 +572,8 @@ def test_get_subaccount_subaccounts(api_client, user, create_sub_account,
                 "is_admin": user.is_admin,
                 "is_superuser": user.is_superuser,
                 "is_staff": user.is_staff,
-                "full_name": user.full_name
+                "full_name": user.full_name,
+                "profile_image": None,
             },
             "updated_by": {
                 "id": user.pk,
@@ -572,7 +585,8 @@ def test_get_subaccount_subaccounts(api_client, user, create_sub_account,
                 "is_admin": user.is_admin,
                 "is_superuser": user.is_superuser,
                 "is_staff": user.is_staff,
-                "full_name": user.full_name
+                "full_name": user.full_name,
+                "profile_image": None,
             }
         },
     ]
@@ -622,7 +636,8 @@ def test_get_account_subaccounts_history(api_client, create_budget, user,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
                 "full_name": user.full_name,
-                "email": user.email
+                "email": user.email,
+                "profile_image": None,
             }
         },
         {
@@ -638,7 +653,8 @@ def test_get_account_subaccounts_history(api_client, create_budget, user,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
                 "full_name": user.full_name,
-                "email": user.email
+                "email": user.email,
+                "profile_image": None,
             }
         },
         {
@@ -654,7 +670,8 @@ def test_get_account_subaccounts_history(api_client, create_budget, user,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
                 "full_name": user.full_name,
-                "email": user.email
+                "email": user.email,
+                "profile_image": None,
             }
         },
         {
@@ -670,7 +687,8 @@ def test_get_account_subaccounts_history(api_client, create_budget, user,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
                 "full_name": user.full_name,
-                "email": user.email
+                "email": user.email,
+                "profile_image": None,
             }
         },
         {
@@ -686,7 +704,8 @@ def test_get_account_subaccounts_history(api_client, create_budget, user,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
                 "full_name": user.full_name,
-                "email": user.email
+                "email": user.email,
+                "profile_image": None,
             }
         }
     ]
@@ -740,7 +759,8 @@ def test_get_subaccount_subaccounts_history(api_client, create_budget, user,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
                 "full_name": user.full_name,
-                "email": user.email
+                "email": user.email,
+                "profile_image": None,
             }
         },
         {
@@ -756,7 +776,8 @@ def test_get_subaccount_subaccounts_history(api_client, create_budget, user,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
                 "full_name": user.full_name,
-                "email": user.email
+                "email": user.email,
+                "profile_image": None,
             }
         },
         {
@@ -772,7 +793,8 @@ def test_get_subaccount_subaccounts_history(api_client, create_budget, user,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
                 "full_name": user.full_name,
-                "email": user.email
+                "email": user.email,
+                "profile_image": None,
             }
         },
         {
@@ -788,7 +810,8 @@ def test_get_subaccount_subaccounts_history(api_client, create_budget, user,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
                 "full_name": user.full_name,
-                "email": user.email
+                "email": user.email,
+                "profile_image": None,
             }
         },
         {
@@ -804,7 +827,8 @@ def test_get_subaccount_subaccounts_history(api_client, create_budget, user,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
                 "full_name": user.full_name,
-                "email": user.email
+                "email": user.email,
+                "profile_image": None,
             }
         }
     ]
@@ -855,7 +879,8 @@ def test_get_subaccount_history(api_client, create_budget, create_account,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
                 "full_name": user.full_name,
-                "email": user.email
+                "email": user.email,
+                "profile_image": None,
             }
         },
         {
@@ -871,7 +896,8 @@ def test_get_subaccount_history(api_client, create_budget, create_account,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
                 "full_name": user.full_name,
-                "email": user.email
+                "email": user.email,
+                "profile_image": None,
             }
         },
         {
@@ -887,7 +913,8 @@ def test_get_subaccount_history(api_client, create_budget, create_account,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
                 "full_name": user.full_name,
-                "email": user.email
+                "email": user.email,
+                "profile_image": None,
             }
         },
         {
@@ -903,7 +930,8 @@ def test_get_subaccount_history(api_client, create_budget, create_account,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
                 "full_name": user.full_name,
-                "email": user.email
+                "email": user.email,
+                "profile_image": None,
             }
         },
         {
@@ -919,7 +947,8 @@ def test_get_subaccount_history(api_client, create_budget, create_account,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
                 "full_name": user.full_name,
-                "email": user.email
+                "email": user.email,
+                "profile_image": None,
             }
         }
     ]

@@ -40,7 +40,8 @@ def test_create_actual(api_client, user, create_account,
             "is_admin": user.is_admin,
             "is_superuser": user.is_superuser,
             "is_staff": user.is_staff,
-            "full_name": user.full_name
+            "full_name": user.full_name,
+            "profile_image": None,
         },
         "updated_by": {
             "id": user.pk,
@@ -52,7 +53,8 @@ def test_create_actual(api_client, user, create_account,
             "is_admin": user.is_admin,
             "is_superuser": user.is_superuser,
             "is_staff": user.is_staff,
-            "full_name": user.full_name
+            "full_name": user.full_name,
+            "profile_image": None,
         }
     }
     actual = Actual.objects.first()
@@ -101,7 +103,8 @@ def test_update_actual(api_client, user, create_account,
             "is_admin": user.is_admin,
             "is_superuser": user.is_superuser,
             "is_staff": user.is_staff,
-            "full_name": user.full_name
+            "full_name": user.full_name,
+            "profile_image": None,
         },
         "updated_by": {
             "id": user.pk,
@@ -113,7 +116,8 @@ def test_update_actual(api_client, user, create_account,
             "is_admin": user.is_admin,
             "is_superuser": user.is_superuser,
             "is_staff": user.is_staff,
-            "full_name": user.full_name
+            "full_name": user.full_name,
+            "profile_image": None,
         }
     }
     actual.refresh_from_db()
@@ -159,7 +163,8 @@ def test_change_actual_parent(api_client, user, create_account,
             "is_admin": user.is_admin,
             "is_superuser": user.is_superuser,
             "is_staff": user.is_staff,
-            "full_name": user.full_name
+            "full_name": user.full_name,
+            "profile_image": None,
         },
         "updated_by": {
             "id": user.pk,
@@ -171,7 +176,8 @@ def test_change_actual_parent(api_client, user, create_account,
             "is_admin": user.is_admin,
             "is_superuser": user.is_superuser,
             "is_staff": user.is_staff,
-            "full_name": user.full_name
+            "full_name": user.full_name,
+            "profile_image": None,
         }
     }
     actual.refresh_from_db()
@@ -237,7 +243,8 @@ def test_get_account_actuals(api_client, user, create_account, create_actual,
                 "is_admin": user.is_admin,
                 "is_superuser": user.is_superuser,
                 "is_staff": user.is_staff,
-                "full_name": user.full_name
+                "full_name": user.full_name,
+                "profile_image": None,
             },
             "updated_by": {
                 "id": user.pk,
@@ -249,7 +256,8 @@ def test_get_account_actuals(api_client, user, create_account, create_actual,
                 "is_admin": user.is_admin,
                 "is_superuser": user.is_superuser,
                 "is_staff": user.is_staff,
-                "full_name": user.full_name
+                "full_name": user.full_name,
+                "profile_image": None,
             }
         },
         {
@@ -277,7 +285,8 @@ def test_get_account_actuals(api_client, user, create_account, create_actual,
                 "is_admin": user.is_admin,
                 "is_superuser": user.is_superuser,
                 "is_staff": user.is_staff,
-                "full_name": user.full_name
+                "full_name": user.full_name,
+                "profile_image": None,
             },
             "updated_by": {
                 "id": user.pk,
@@ -289,7 +298,8 @@ def test_get_account_actuals(api_client, user, create_account, create_actual,
                 "is_admin": user.is_admin,
                 "is_superuser": user.is_superuser,
                 "is_staff": user.is_staff,
-                "full_name": user.full_name
+                "full_name": user.full_name,
+                "profile_image": None,
             }
         },
     ]
@@ -334,7 +344,8 @@ def test_get_subaccount_actuals(api_client, user, create_sub_account,
                 "is_admin": user.is_admin,
                 "is_superuser": user.is_superuser,
                 "is_staff": user.is_staff,
-                "full_name": user.full_name
+                "full_name": user.full_name,
+                "profile_image": None,
             },
             "updated_by": {
                 "id": user.pk,
@@ -346,7 +357,8 @@ def test_get_subaccount_actuals(api_client, user, create_sub_account,
                 "is_admin": user.is_admin,
                 "is_superuser": user.is_superuser,
                 "is_staff": user.is_staff,
-                "full_name": user.full_name
+                "full_name": user.full_name,
+                "profile_image": None,
             }
         },
         {
@@ -374,7 +386,8 @@ def test_get_subaccount_actuals(api_client, user, create_sub_account,
                 "is_admin": user.is_admin,
                 "is_superuser": user.is_superuser,
                 "is_staff": user.is_staff,
-                "full_name": user.full_name
+                "full_name": user.full_name,
+                "profile_image": None,
             },
             "updated_by": {
                 "id": user.pk,
@@ -386,7 +399,8 @@ def test_get_subaccount_actuals(api_client, user, create_sub_account,
                 "is_admin": user.is_admin,
                 "is_superuser": user.is_superuser,
                 "is_staff": user.is_staff,
-                "full_name": user.full_name
+                "full_name": user.full_name,
+                "profile_image": None,
             }
         },
     ]
@@ -427,7 +441,8 @@ def test_get_actuals_history(api_client, create_budget, create_account,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
                 "full_name": user.full_name,
-                "email": user.email
+                "email": user.email,
+                "profile_image": None,
             }
         },
         {
@@ -443,7 +458,8 @@ def test_get_actuals_history(api_client, create_budget, create_account,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
                 "full_name": user.full_name,
-                "email": user.email
+                "email": user.email,
+                "profile_image": None,
             }
         }
     ]
@@ -488,7 +504,8 @@ def test_get_actual_history(api_client, create_budget, create_account, user,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
                 "full_name": user.full_name,
-                "email": user.email
+                "email": user.email,
+                "profile_image": None,
             }
         },
         {
@@ -504,7 +521,8 @@ def test_get_actual_history(api_client, create_budget, create_account, user,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
                 "full_name": user.full_name,
-                "email": user.email
+                "email": user.email,
+                "profile_image": None,
             }
         }
     ]

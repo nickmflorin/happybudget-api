@@ -24,7 +24,8 @@ def test_get_budget_comment(api_client, user, create_comment, create_budget):
             'first_name': user.first_name,
             'last_name': user.last_name,
             'full_name': user.full_name,
-            'email': user.email
+            'email': user.email,
+            "profile_image": None,
         },
         'comments': [{
             'id': nested_comment.pk,
@@ -40,7 +41,8 @@ def test_get_budget_comment(api_client, user, create_comment, create_budget):
                 'first_name': user.first_name,
                 'last_name': user.last_name,
                 'full_name': user.full_name,
-                'email': user.email
+                'email': user.email,
+                "profile_image": None,
             }
         }]
     }
@@ -67,7 +69,8 @@ def test_get_account_comment(api_client, user, create_comment, create_account):
             'first_name': user.first_name,
             'last_name': user.last_name,
             'full_name': user.full_name,
-            'email': user.email
+            'email': user.email,
+            "profile_image": None,
         },
         'comments': [{
             'id': nested_comment.pk,
@@ -83,7 +86,8 @@ def test_get_account_comment(api_client, user, create_comment, create_account):
                 'first_name': user.first_name,
                 'last_name': user.last_name,
                 'full_name': user.full_name,
-                'email': user.email
+                'email': user.email,
+                "profile_image": None,
             }
         }]
     }
@@ -111,7 +115,8 @@ def test_get_subaccount_comment(api_client, user, create_comment,
             'first_name': user.first_name,
             'last_name': user.last_name,
             'full_name': user.full_name,
-            'email': user.email
+            'email': user.email,
+            "profile_image": None,
         },
         'comments': [{
             'id': nested_comment.pk,
@@ -127,7 +132,8 @@ def test_get_subaccount_comment(api_client, user, create_comment,
                 'first_name': user.first_name,
                 'last_name': user.last_name,
                 'full_name': user.full_name,
-                'email': user.email
+                'email': user.email,
+                "profile_image": None,
             }
         }]
     }
@@ -155,7 +161,8 @@ def test_create_budget_comment(api_client, user, create_budget):
             'first_name': user.first_name,
             'last_name': user.last_name,
             'full_name': user.full_name,
-            'email': user.email
+            'email': user.email,
+            "profile_image": None,
         }
     }
     comment = Comment.objects.first()
@@ -188,7 +195,8 @@ def test_create_account_comment(api_client, user, create_budget, create_account)
             'first_name': user.first_name,
             'last_name': user.last_name,
             'full_name': user.full_name,
-            'email': user.email
+            'email': user.email,
+            "profile_image": None,
         }
     }
     comment = Comment.objects.first()
@@ -224,7 +232,8 @@ def test_create_sub_account_comment(api_client, user, create_budget,
             'first_name': user.first_name,
             'last_name': user.last_name,
             'full_name': user.full_name,
-            'email': user.email
+            'email': user.email,
+            "profile_image": None,
         }
     }
     comment = Comment.objects.first()
@@ -263,6 +272,7 @@ def test_reply_to_comment(api_client, user, create_comment, create_budget):
             'first_name': user.first_name,
             'last_name': user.last_name,
             'full_name': user.full_name,
-            'email': user.email
+            'email': user.email,
+            "profile_image": None,
         }
     }

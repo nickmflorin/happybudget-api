@@ -40,7 +40,8 @@ def test_get_budgets(api_client, user, create_budget):
                 "is_admin": user.is_admin,
                 "is_superuser": user.is_superuser,
                 "is_staff": user.is_staff,
-                "full_name": user.full_name
+                "full_name": user.full_name,
+                "profile_image": None,
             },
         },
         {
@@ -71,7 +72,8 @@ def test_get_budgets(api_client, user, create_budget):
                 "is_admin": user.is_admin,
                 "is_superuser": user.is_superuser,
                 "is_staff": user.is_staff,
-                "full_name": user.full_name
+                "full_name": user.full_name,
+                "profile_image": None,
             },
         }
     ]
@@ -111,7 +113,8 @@ def test_get_budget(api_client, user, create_budget, db):
             "is_admin": user.is_admin,
             "is_superuser": user.is_superuser,
             "is_staff": user.is_staff,
-            "full_name": user.full_name
+            "full_name": user.full_name,
+            "profile_image": None,
         }
     }
 
@@ -156,7 +159,8 @@ def test_create_budget(api_client, user, db):
             "is_admin": user.is_admin,
             "is_superuser": user.is_superuser,
             "is_staff": user.is_staff,
-            "full_name": user.full_name
+            "full_name": user.full_name,
+            "profile_image": None,
         }
     }
 
@@ -212,7 +216,8 @@ def test_get_budgets_in_trash(api_client, user, create_budget, db):
                 "is_admin": user.is_admin,
                 "is_superuser": user.is_superuser,
                 "is_staff": user.is_staff,
-                "full_name": user.full_name
+                "full_name": user.full_name,
+                "profile_image": None,
             },
         },
         {
@@ -243,7 +248,8 @@ def test_get_budgets_in_trash(api_client, user, create_budget, db):
                 "is_admin": user.is_admin,
                 "is_superuser": user.is_superuser,
                 "is_staff": user.is_staff,
-                "full_name": user.full_name
+                "full_name": user.full_name,
+                "profile_image": None,
             },
         }
     ]
@@ -283,7 +289,8 @@ def test_get_budget_in_trash(api_client, user, create_budget, db):
             "is_admin": user.is_admin,
             "is_superuser": user.is_superuser,
             "is_staff": user.is_staff,
-            "full_name": user.full_name
+            "full_name": user.full_name,
+            "profile_image": None,
         }
     }
 
