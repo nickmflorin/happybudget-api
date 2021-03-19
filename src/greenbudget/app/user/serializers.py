@@ -114,13 +114,16 @@ class UserSerializer(EnhancedModelSerializer):
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
     timezone = serializers.SerializerMethodField()
+    profile_image = serializers.ImageField(
+        required=False, allow_empty_file=False)
 
     class Meta:
         model = User
         nested_fields = ('id', 'first_name', 'last_name', 'email', 'username',
             'is_active', 'is_admin', 'is_superuser', 'is_staff', 'full_name')
         fields = nested_fields + (
-            'created_at', 'updated_at', 'last_login', 'date_joined', 'timezone')
+            'created_at', 'updated_at', 'last_login', 'date_joined', 'timezone',
+            'profile_image')
 
     def get_timezone(self, instance):
         return str(instance.timezone)

@@ -7,6 +7,12 @@ from .managers import UserManager
 from .utils import get_user_from_social_token
 
 
+def upload_to(instance, filename):
+    ext = filename.split('.')[-1]
+    filename = f"profile_image_{instance.email.lower().replace(' ','')}.{ext}"
+    return f'users/{instance.email.lower()}/{filename}'
+
+
 class User(AbstractUser):
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30)
@@ -15,6 +21,7 @@ class User(AbstractUser):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     timezone = TimeZoneField(default='America/New_York')
+    profile_image = models.ImageField(upload_to=upload_to, null=True)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']

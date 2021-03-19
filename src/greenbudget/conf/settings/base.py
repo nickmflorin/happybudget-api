@@ -10,6 +10,7 @@ from pathlib import Path
 
 from greenbudget.conf import Environments, config
 
+from .aws import *  # noqa
 from .logging import *  # noqa
 
 DEBUG = False
@@ -231,6 +232,9 @@ DATABASES = {
 STATICFILES_DIRS = [str(BASE_DIR / "static"), ]
 STATIC_URL = '/static/'
 STATIC_ROOT = str(BASE_DIR / "statcdn/")
+
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
 REST_FRAMEWORK = {
     'DATETIME_FORMAT': '%Y-%m-%d %H:%M:%S',

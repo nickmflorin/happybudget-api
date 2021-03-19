@@ -33,6 +33,9 @@ django-phonenumber-field = {extras = ["phonenumbers"], version = "^5.0.0"}
 psycopg2-binary = "^2.8.6"
 gunicorn = "^20.0.4"
 python-dateutil = "^2.8.1"
+boto3 = "^1.17.32"
+django-storages = "^1.11.1"
+Pillow = "^8.1.2"
 
 [tool.poetry.extras]
 docs = [
