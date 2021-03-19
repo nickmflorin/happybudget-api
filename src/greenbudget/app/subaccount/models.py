@@ -16,7 +16,7 @@ class SubAccount(BudgetItem):
     type = "subaccount"
     name = models.CharField(max_length=128, null=True)
     quantity = models.IntegerField(null=True)
-    rate = models.DecimalField(decimal_places=2, max_digits=10, null=True)
+    rate = models.FloatField(null=True)
     multiplier = models.IntegerField(null=True)
     UNITS = Choices(
         (0, "minutes", "Minutes"),

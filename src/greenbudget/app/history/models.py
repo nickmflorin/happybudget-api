@@ -1,4 +1,5 @@
 from polymorphic.models import PolymorphicModel
+import json
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -46,8 +47,8 @@ class Event(PolymorphicModel):
 
 class FieldAlterationEvent(Event):
     type = "field_alteration"
-    old_value = models.TextField(null=True)
-    new_value = models.TextField(null=True)
+    old_value = models.TextField()
+    new_value = models.TextField()
     field = models.CharField(max_length=256)
 
     objects = FieldAlterationManager()
@@ -57,3 +58,11 @@ class FieldAlterationEvent(Event):
         ordering = ('created_at', )
         verbose_name = "Field Alteration Event"
         verbose_name_plural = "Field Alteration Events"
+
+    @property
+    def serialized_old_value(self):
+        return json.loads(self.old_value)
+
+    @property
+    def serialized_new_value(self):
+        return json.loads(self.new_value)

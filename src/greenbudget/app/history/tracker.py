@@ -1,5 +1,7 @@
 from copy import deepcopy
 from functools import partialmethod
+import decimal
+import json
 import logging
 import threading
 
@@ -15,7 +17,7 @@ logger = logging.getLogger('backend')
 
 SUPPORTED_FIELDS = (
     models.CharField,
-    models.DecimalField,
+    models.FloatField,
     models.IntegerField,
     models.DateTimeField
 )
@@ -53,7 +55,7 @@ class ModelInstanceTracker(object):
 
 class ModelHistoryTracker:
     """
-    Credit due where credit is due - most of this was adopted from an existing
+    Credit due where credit is due - some of this was adopted from an existing
     package:
 
     https://github.com/grantmcconnaughey/django-field-history
@@ -94,16 +96,6 @@ class ModelHistoryTracker:
                     getattr(cls, field).field, SUPPORTED_FIELDS):
                 raise Exception("Invalid/unsupported field %s." % field)
 
-        # Currently, we can't perform this check because the app registry
-        # is not loaded yet.  We should find a more appropriate place to apply
-        # this check.
-        # allowed_models = get_models_for_fk_choices(Event, "content_type")
-        # if cls not in allowed_models:
-        #     raise Exception(
-        #         "Cannot track history of model %s because it is not yet "
-        #         "supported by the Event model." % cls.__name__
-        #     )
-
         setattr(cls, '_get_field_events', _get_field_events)
         for field_name in self.fields:
             field = getattr(cls, field_name)
@@ -111,28 +103,32 @@ class ModelHistoryTracker:
                 partialmethod(cls._get_field_events, field=field))
 
         self.name = name
-        self.attname = '_%s' % name
         models.signals.class_prepared.connect(self.finalize_class, sender=cls)
 
     def finalize_class(self, sender, **kwargs):
-        self.fields = self.fields
-        models.signals.post_init.connect(self.initialize_tracker)
-        self.model_class = sender
+        models.signals.post_init.connect(self.post_init, sender=sender)
+        models.signals.post_save.connect(self.post_save, sender=sender)
         setattr(sender, self.name, self)
 
-    def initialize_tracker(self, sender, instance, **kwargs):
-        # Only initialize instances of the given model (including children).
-        if not isinstance(instance, self.model_class):
-            return
-        self._initialize_tracker(instance)
+    def post_init(self, sender, instance, **kwargs):
+        self.initialize_tracker(instance)
         # Patch the model's default save method to also create instances of
         # Event when appropriate.
         self.patch_save(instance)
 
-    def _initialize_tracker(self, instance):
+    def post_save(self, sender, instance, **kwargs):
+        pass
+
+    def initialize_tracker(self, instance):
         tracker = self.tracker_class(instance, self.fields)
-        setattr(instance, self.attname, tracker)
+        # Expose the Tracker instance as an attribute on the model.
+        setattr(instance, '_%s' % self.name, tracker)
         tracker.set_saved_fields()
+
+    def _serialize_value(self, value):
+        if isinstance(value, decimal.Decimal):
+            return str(value)
+        return json.dumps(value)
 
     def patch_save(self, instance):
         original_save = instance.save
@@ -146,30 +142,27 @@ class ModelHistoryTracker:
             if instance.pk is None or record_changes is False:
                 return original_save(**kwargs)
 
-            tracker = getattr(instance, self.attname)
+            tracker = getattr(instance, '_%s' % self.name)
             for field_name in self.fields:
                 if tracker.has_changed(field_name):
-                    user = self.get_event_user(instance)
-
-                    old_value = tracker.saved_data.get(field_name)
-                    if old_value is not None:
-                        old_value = str(old_value)
-
-                    new_value = tracker.get_field_value(field_name)
-                    if new_value is not None:
-                        new_value = str(new_value)
-
                     # Note: We cannot do bulk create operations because of
                     # the multi-table inheritance that comes with polymorphism.
-                    FieldAlterationEvent.objects.create(
-                        content_object=instance,
-                        field=field_name,
-                        old_value=old_value,
-                        new_value=new_value,
-                        user=user,
-                    )
+                    try:
+                        FieldAlterationEvent.objects.create(
+                            content_object=instance,
+                            field=field_name,
+                            old_value=self._serialize_value(
+                                tracker.saved_data[field_name]),
+                            new_value=self._serialize_value(
+                                tracker.get_field_value(field_name)),
+                            user=self.get_event_user(instance),
+                        )
+                    except TypeError:
+                        import ipdb
+                        ipdb.set_trace()
+
             # Update tracker in case this model is saved again
-            self._initialize_tracker(instance)
+            self.initialize_tracker(instance)
             return original_save(**kwargs)
 
         instance.save = save

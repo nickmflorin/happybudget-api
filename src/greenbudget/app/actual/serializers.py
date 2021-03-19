@@ -42,12 +42,7 @@ class ActualSerializer(EnhancedModelSerializer):
         allow_blank=False,
         allow_null=False
     )
-    value = serializers.DecimalField(
-        required=False,
-        allow_null=False,
-        decimal_places=2,
-        max_digits=10
-    )
+    value = serializers.FloatField(required=False, allow_null=False)
     payment_method = serializers.ChoiceField(
         required=False,
         choices=Actual.PAYMENT_METHODS

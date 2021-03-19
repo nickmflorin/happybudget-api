@@ -31,7 +31,7 @@ class Actual(models.Model):
     date = models.DateTimeField(null=True)
     # TODO: Should we make this unique across the budget?
     payment_id = models.CharField(max_length=50, null=True)
-    value = models.DecimalField(decimal_places=2, max_digits=10, null=True)
+    value = models.FloatField(null=True)
     PAYMENT_METHODS = Choices(
         (0, "check", "Check"),
         (1, "card", "Card"),

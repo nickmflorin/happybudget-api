@@ -34,21 +34,9 @@ class AccountSerializer(EnhancedModelSerializer):
     )
     budget = serializers.PrimaryKeyRelatedField(read_only=True)
     ancestors = AncestorSerializer(many=True, read_only=True)
-    estimated = serializers.DecimalField(
-        read_only=True,
-        decimal_places=2,
-        max_digits=10
-    )
-    actual = serializers.DecimalField(
-        read_only=True,
-        decimal_places=2,
-        max_digits=10
-    )
-    variance = serializers.DecimalField(
-        read_only=True,
-        decimal_places=2,
-        max_digits=10
-    )
+    estimated = serializers.FloatField(read_only=True)
+    actual = serializers.FloatField(read_only=True)
+    variance = serializers.FloatField(read_only=True)
     subaccounts = SubAccountSimpleSerializer(many=True, read_only=True)
 
     class Meta:

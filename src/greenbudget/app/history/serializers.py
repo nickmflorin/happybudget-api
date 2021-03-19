@@ -8,8 +8,14 @@ from .models import FieldAlterationEvent
 class FieldAlterationEventSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
-    new_value = serializers.CharField(read_only=True)
-    old_value = serializers.CharField(read_only=True)
+    new_value = serializers.JSONField(
+        read_only=True,
+        source='serialized_new_value'
+    )
+    old_value = serializers.JSONField(
+        read_only=True,
+        source='serialized_old_value'
+    )
     field = serializers.CharField(read_only=True)
     content_object_type = serializers.ChoiceField(
         read_only=True,

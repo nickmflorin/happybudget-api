@@ -46,38 +46,16 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
         required=False,
         allow_null=False
     )
-    rate = serializers.DecimalField(
-        required=False,
-        allow_null=False,
-        decimal_places=2,
-        max_digits=10
-    )
-    multiplier = serializers.DecimalField(
-        required=False,
-        allow_null=False,
-        decimal_places=2,
-        max_digits=10
-    )
+    rate = serializers.FloatField(required=False, allow_null=False)
+    multiplier = serializers.FloatField(required=False, allow_null=False)
+    estimated = serializers.FloatField(read_only=True)
+    actual = serializers.FloatField(read_only=True)
+    variance = serializers.FloatField(read_only=True)
     unit = serializers.ChoiceField(
         required=False,
         choices=SubAccount.UNITS
     )
     unit_name = serializers.CharField(read_only=True)
-    estimated = serializers.DecimalField(
-        read_only=True,
-        decimal_places=2,
-        max_digits=10
-    )
-    actual = serializers.DecimalField(
-        read_only=True,
-        decimal_places=2,
-        max_digits=10
-    )
-    variance = serializers.DecimalField(
-        read_only=True,
-        decimal_places=2,
-        max_digits=10
-    )
     budget = serializers.PrimaryKeyRelatedField(read_only=True)
     ancestors = AncestorSerializer(many=True, read_only=True)
     account = serializers.IntegerField(read_only=True, source='account.pk')
