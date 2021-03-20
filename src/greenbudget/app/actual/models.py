@@ -11,6 +11,7 @@ from greenbudget.app.history.tracker import ModelHistoryTracker
 
 
 class Actual(models.Model):
+    type = "actual"
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(
         to='user.User',

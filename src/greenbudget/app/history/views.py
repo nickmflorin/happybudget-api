@@ -10,15 +10,14 @@ from greenbudget.app.budget.mixins import BudgetNestedMixin
 from greenbudget.app.subaccount.models import SubAccount
 from greenbudget.app.subaccount.mixins import SubAccountNestedMixin
 
-from .models import FieldAlterationEvent
-from .serializers import FieldAlterationEventSerializer
+from .models import Event
+from .serializers import EventPolymorphicSerializer
 
 
 class GenericHistoryViewset(viewsets.GenericViewSet):
     lookup_field = 'pk'
-    serializer_class = FieldAlterationEventSerializer
+    serializer_class = EventPolymorphicSerializer
     ordering_fields = ['updated_at', 'created_at']
-    search_fields = ['field']
 
 
 class AccountsHistoryViewSet(
@@ -35,7 +34,7 @@ class AccountsHistoryViewSet(
 
     def get_queryset(self):
         content_type = ContentType.objects.get_for_model(Account)
-        return FieldAlterationEvent.objects.filter(
+        return Event.objects.filter(
             object_id__in=[acct.pk for acct in self.budget.accounts.all()],
             content_type=content_type
         )
@@ -55,7 +54,7 @@ class AccountHistoryViewSet(
 
     def get_queryset(self):
         content_type = ContentType.objects.get_for_model(Account)
-        return FieldAlterationEvent.objects.filter(
+        return Event.objects.filter(
             object_id=self.account.pk,
             content_type=content_type
         )
@@ -76,7 +75,7 @@ class AccountSubAccountsHistoryViewSet(
 
     def get_queryset(self):
         content_type = ContentType.objects.get_for_model(SubAccount)
-        return FieldAlterationEvent.objects.filter(
+        return Event.objects.filter(
             object_id__in=[acct.pk for acct in self.account.subaccounts.all()],
             content_type=content_type
         )
@@ -96,7 +95,7 @@ class SubAccountSubAccountsHistoryViewSet(
 
     def get_queryset(self):
         content_type = ContentType.objects.get_for_model(SubAccount)
-        return FieldAlterationEvent.objects.filter(
+        return Event.objects.filter(
             object_id__in=[
                 acct.pk for acct in self.subaccount.subaccounts.all()],
             content_type=content_type
@@ -117,7 +116,7 @@ class SubAccountHistoryViewSet(
 
     def get_queryset(self):
         content_type = ContentType.objects.get_for_model(SubAccount)
-        return FieldAlterationEvent.objects.filter(
+        return Event.objects.filter(
             object_id=self.subaccount.pk,
             content_type=content_type
         )
@@ -137,7 +136,7 @@ class ActualsHistoryViewSet(
 
     def get_queryset(self):
         content_type = ContentType.objects.get_for_model(Actual)
-        return FieldAlterationEvent.objects.filter(
+        return Event.objects.filter(
             object_id__in=[actual.pk for actual in self.budget.actuals.all()],
             content_type=content_type
         )
@@ -157,7 +156,7 @@ class ActualHistoryViewSet(
 
     def get_queryset(self):
         content_type = ContentType.objects.get_for_model(Actual)
-        return FieldAlterationEvent.objects.filter(
+        return Event.objects.filter(
             object_id=self.actual.pk,
             content_type=content_type
         )

@@ -150,7 +150,10 @@ class ModelHistoryTracker:
                 return original_save(**kwargs)
 
             tracker = getattr(instance, '_%s' % self.name)
-            for field_name in self.fields:
+
+            # Track the history of the fields in alphabetical order for
+            # consistent ordering of history.
+            for field_name in sorted(self.fields):
                 if tracker.has_changed(field_name):
                     # Note: We cannot do bulk create operations because of
                     # the multi-table inheritance that comes with polymorphism.

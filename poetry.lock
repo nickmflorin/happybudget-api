@@ -297,6 +297,20 @@ version = "3.0.1"
 
 [[package]]
 category = "main"
+description = "Polymorphic serializers for Django REST Framework."
+name = "django-rest-polymorphic"
+optional = false
+python-versions = "*"
+version = "0.1.9"
+
+[package.dependencies]
+django = "*"
+django-polymorphic = "*"
+djangorestframework = "*"
+six = "*"
+
+[[package]]
+category = "main"
 description = "Support for many storage backends in Django"
 name = "django-storages"
 optional = false
@@ -1067,7 +1081,7 @@ debug = []
 docs = []
 
 [metadata]
-content-hash = "8c1c8bbe1efb6c64d7d0fc625f0a3f03b393e41b4c161f1faeb8cc746144e232"
+content-hash = "c2196ece3741b8049a61449a0eee5a1c84b261db1ad9ca76c6dc30b4fbd7d70f"
 lock-version = "1.0"
 python-versions = "^3.8"
 
@@ -1254,6 +1268,10 @@ django-polymorphic = [
 django-ratelimit = [
     {file = "django-ratelimit-3.0.1.tar.gz", hash = "sha256:73223d860abd5c5d7b9a807fabb39a6220068129b514be8d78044b52607ab154"},
     {file = "django_ratelimit-3.0.1-py2.py3-none-any.whl", hash = "sha256:857e797f23de948b204a31dba9d88aea3ce731b7a5d926d0240c772e19b5486f"},
+]
+django-rest-polymorphic = [
+    {file = "django-rest-polymorphic-0.1.9.tar.gz", hash = "sha256:43d7f8c5b43a225fe792ac40e98d196d4c8d6872a796b61246085819b1b5f1c6"},
+    {file = "django_rest_polymorphic-0.1.9-py2.py3-none-any.whl", hash = "sha256:ae9dd7a104bd6d2faac3bb7cdc31d3c3c768a4bb25f75451e866d9fab66fb6eb"},
 ]
 django-storages = [
     {file = "django-storages-1.11.1.tar.gz", hash = "sha256:c823dbf56c9e35b0999a13d7e05062b837bae36c518a40255d522fbe3750fbb4"},

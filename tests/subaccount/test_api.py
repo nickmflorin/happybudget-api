@@ -602,14 +602,14 @@ def test_get_account_subaccounts_history(api_client, create_budget, user,
         parent=account,
         name="Original Name",
         description="Original Description",
-        identifier="Original identifier",
+        identifier="old_identifier",
         budget=budget
     )
     api_client.force_login(user)
     response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk, data={
         "name": "New Name",
         "description": "New Description",
-        "identifier": "New identifier",
+        "identifier": "new_identifier",
         "quantity": 10,
         "rate": 1.5
     })
@@ -628,9 +628,13 @@ def test_get_account_subaccounts_history(api_client, create_budget, user,
             "new_value": "New Description",
             "old_value": "Original Description",
             "field": "description",
-            "object_id": subaccount.pk,
-            "content_object_type": "subaccount",
             "type": "field_alteration",
+            "content_object": {
+                'id': subaccount.pk,
+                'identifier': 'new_identifier',
+                'type': 'subaccount',
+                'description': 'New Description'
+            },
             "user": {
                 "id": user.pk,
                 "first_name": user.first_name,
@@ -642,12 +646,16 @@ def test_get_account_subaccounts_history(api_client, create_budget, user,
         },
         {
             "created_at": "2020-01-01 00:00:00",
-            "new_value": "New identifier",
-            "old_value": "Original identifier",
+            "new_value": "new_identifier",
+            "old_value": "old_identifier",
             "field": "identifier",
-            "object_id": subaccount.pk,
-            "content_object_type": "subaccount",
             "type": "field_alteration",
+            "content_object": {
+                'id': subaccount.pk,
+                'identifier': 'new_identifier',
+                'type': 'subaccount',
+                'description': 'New Description'
+            },
             "user": {
                 "id": user.pk,
                 "first_name": user.first_name,
@@ -662,9 +670,13 @@ def test_get_account_subaccounts_history(api_client, create_budget, user,
             "new_value": 1.5,
             "old_value": subaccount.rate,
             "field": "rate",
-            "object_id": subaccount.pk,
-            "content_object_type": "subaccount",
             "type": "field_alteration",
+            "content_object": {
+                'id': subaccount.pk,
+                'identifier': 'new_identifier',
+                'type': 'subaccount',
+                'description': 'New Description'
+            },
             "user": {
                 "id": user.pk,
                 "first_name": user.first_name,
@@ -679,9 +691,13 @@ def test_get_account_subaccounts_history(api_client, create_budget, user,
             "new_value": "New Name",
             "old_value": "Original Name",
             "field": "name",
-            "object_id": subaccount.pk,
-            "content_object_type": "subaccount",
             "type": "field_alteration",
+            "content_object": {
+                'id': subaccount.pk,
+                'identifier': 'new_identifier',
+                'type': 'subaccount',
+                'description': 'New Description'
+            },
             "user": {
                 "id": user.pk,
                 "first_name": user.first_name,
@@ -696,9 +712,13 @@ def test_get_account_subaccounts_history(api_client, create_budget, user,
             "new_value": 10,
             "old_value": None,
             "field": "quantity",
-            "object_id": subaccount.pk,
-            "content_object_type": "subaccount",
             "type": "field_alteration",
+            "content_object": {
+                'id': subaccount.pk,
+                'identifier': 'new_identifier',
+                'type': 'subaccount',
+                'description': 'New Description'
+            },
             "user": {
                 "id": user.pk,
                 "first_name": user.first_name,
@@ -726,14 +746,14 @@ def test_get_subaccount_subaccounts_history(api_client, create_budget, user,
         parent=parent_subaccount,
         name="Original Name",
         description="Original Description",
-        identifier="Original identifier",
+        identifier="old_identifier",
         budget=budget
     )
     api_client.force_login(user)
     response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk, data={
         "name": "New Name",
         "description": "New Description",
-        "identifier": "New identifier",
+        "identifier": "new_identifier",
         "quantity": 10,
         "rate": 1.5
     })
@@ -751,9 +771,13 @@ def test_get_subaccount_subaccounts_history(api_client, create_budget, user,
             "new_value": "New Description",
             "old_value": "Original Description",
             "field": "description",
-            "object_id": subaccount.pk,
-            "content_object_type": "subaccount",
             "type": "field_alteration",
+            "content_object": {
+                'id': subaccount.pk,
+                'identifier': 'new_identifier',
+                'type': 'subaccount',
+                'description': 'New Description'
+            },
             "user": {
                 "id": user.pk,
                 "first_name": user.first_name,
@@ -765,12 +789,16 @@ def test_get_subaccount_subaccounts_history(api_client, create_budget, user,
         },
         {
             "created_at": "2020-01-01 00:00:00",
-            "new_value": "New identifier",
-            "old_value": "Original identifier",
+            "new_value": "new_identifier",
+            "old_value": "old_identifier",
             "field": "identifier",
-            "object_id": subaccount.pk,
-            "content_object_type": "subaccount",
             "type": "field_alteration",
+            "content_object": {
+                'id': subaccount.pk,
+                'identifier': 'new_identifier',
+                'type': 'subaccount',
+                'description': 'New Description'
+            },
             "user": {
                 "id": user.pk,
                 "first_name": user.first_name,
@@ -785,9 +813,13 @@ def test_get_subaccount_subaccounts_history(api_client, create_budget, user,
             "new_value": 1.5,
             "old_value": subaccount.rate,
             "field": "rate",
-            "object_id": subaccount.pk,
-            "content_object_type": "subaccount",
             "type": "field_alteration",
+            "content_object": {
+                'id': subaccount.pk,
+                'identifier': 'new_identifier',
+                'type': 'subaccount',
+                'description': 'New Description'
+            },
             "user": {
                 "id": user.pk,
                 "first_name": user.first_name,
@@ -802,9 +834,13 @@ def test_get_subaccount_subaccounts_history(api_client, create_budget, user,
             "new_value": "New Name",
             "old_value": "Original Name",
             "field": "name",
-            "object_id": subaccount.pk,
-            "content_object_type": "subaccount",
             "type": "field_alteration",
+            "content_object": {
+                'id': subaccount.pk,
+                'identifier': 'new_identifier',
+                'type': 'subaccount',
+                'description': 'New Description'
+            },
             "user": {
                 "id": user.pk,
                 "first_name": user.first_name,
@@ -819,9 +855,13 @@ def test_get_subaccount_subaccounts_history(api_client, create_budget, user,
             "new_value": 10,
             "old_value": None,
             "field": "quantity",
-            "object_id": subaccount.pk,
-            "content_object_type": "subaccount",
             "type": "field_alteration",
+            "content_object": {
+                'id': subaccount.pk,
+                'identifier': 'new_identifier',
+                'type': 'subaccount',
+                'description': 'New Description'
+            },
             "user": {
                 "id": user.pk,
                 "first_name": user.first_name,
@@ -848,14 +888,14 @@ def test_get_subaccount_history(api_client, create_budget, create_account,
         parent=account,
         name="Original Name",
         description="Original Description",
-        identifier="Original identifier",
+        identifier="old_identifier",
         budget=budget
     )
     api_client.force_login(user)
     response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk, data={
         "name": "New Name",
         "description": "New Description",
-        "identifier": "New identifier",
+        "identifier": "new_identifier",
         "quantity": 10,
         "rate": 1.5
     })
@@ -871,9 +911,13 @@ def test_get_subaccount_history(api_client, create_budget, create_account,
             "new_value": "New Description",
             "old_value": "Original Description",
             "field": "description",
-            "object_id": subaccount.pk,
-            "content_object_type": "subaccount",
             "type": "field_alteration",
+            "content_object": {
+                'id': subaccount.pk,
+                'identifier': 'new_identifier',
+                'type': 'subaccount',
+                'description': 'New Description'
+            },
             "user": {
                 "id": user.pk,
                 "first_name": user.first_name,
@@ -885,12 +929,16 @@ def test_get_subaccount_history(api_client, create_budget, create_account,
         },
         {
             "created_at": "2020-01-01 00:00:00",
-            "new_value": "New identifier",
-            "old_value": "Original identifier",
+            "new_value": "new_identifier",
+            "old_value": "old_identifier",
             "field": "identifier",
-            "object_id": subaccount.pk,
-            "content_object_type": "subaccount",
             "type": "field_alteration",
+            "content_object": {
+                'id': subaccount.pk,
+                'identifier': 'new_identifier',
+                'type': 'subaccount',
+                'description': 'New Description'
+            },
             "user": {
                 "id": user.pk,
                 "first_name": user.first_name,
@@ -905,9 +953,13 @@ def test_get_subaccount_history(api_client, create_budget, create_account,
             "new_value": 1.5,
             "old_value": subaccount.rate,
             "field": "rate",
-            "object_id": subaccount.pk,
-            "content_object_type": "subaccount",
             "type": "field_alteration",
+            "content_object": {
+                'id': subaccount.pk,
+                'identifier': 'new_identifier',
+                'type': 'subaccount',
+                'description': 'New Description'
+            },
             "user": {
                 "id": user.pk,
                 "first_name": user.first_name,
@@ -922,9 +974,13 @@ def test_get_subaccount_history(api_client, create_budget, create_account,
             "new_value": "New Name",
             "old_value": "Original Name",
             "field": "name",
-            "object_id": subaccount.pk,
-            "content_object_type": "subaccount",
             "type": "field_alteration",
+            "content_object": {
+                'id': subaccount.pk,
+                'identifier': 'new_identifier',
+                'type': 'subaccount',
+                'description': 'New Description'
+            },
             "user": {
                 "id": user.pk,
                 "first_name": user.first_name,
@@ -939,9 +995,13 @@ def test_get_subaccount_history(api_client, create_budget, create_account,
             "new_value": 10,
             "old_value": None,
             "field": "quantity",
-            "object_id": subaccount.pk,
-            "content_object_type": "subaccount",
             "type": "field_alteration",
+            "content_object": {
+                'id': subaccount.pk,
+                'identifier': 'new_identifier',
+                'type': 'subaccount',
+                'description': 'New Description'
+            },
             "user": {
                 "id": user.pk,
                 "first_name": user.first_name,
