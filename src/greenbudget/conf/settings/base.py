@@ -74,7 +74,7 @@ CORS_ORIGIN_WHITELIST = [
     "https://greenbudget.cloud",
     "https://www.greenbudget.cloud",
     "app.greenbudget.cloud",
-    "https://app.greenbudget.cloud"
+    "https://app.greenbudget.cloud/"
 ]
 
 ALLOWED_HOSTS = [
