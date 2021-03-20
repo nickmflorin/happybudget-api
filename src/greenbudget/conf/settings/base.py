@@ -50,7 +50,7 @@ SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_NAME = 'greenbudgetsessionid'
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_DOMAIN = "greenbudget-api.com"
+SESSION_COOKIE_DOMAIN = ".greenbudget.cloud"
 SESSION_COOKIE_AGE = 60 * 60
 #: Extend the session on every request
 SESSION_SAVE_EVERY_REQUEST = True
@@ -61,7 +61,7 @@ CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_NAME = 'greenbudgetcsrftoken'
 CSRF_COOKIE_SECURE = True
-CSRF_COOKIE_DOMAIN = "greenbudget-api.com"
+CSRF_COOKIE_DOMAIN = ".greenbudget.cloud"
 CSRF_TRUSTED_ORIGINS = [
     '.greenbudget.cloud',
 ]
@@ -79,7 +79,7 @@ ALLOWED_HOSTS = [
 # JWT Configuration
 JWT_COOKIE_SECURE = True
 JWT_TOKEN_COOKIE_NAME = 'greenbudgetjwt'
-JWT_COOKIE_DOMAIN = "greenbudget-api.com"
+JWT_COOKIE_DOMAIN = ".greenbudget.cloud"
 SIMPLE_JWT = {
     'AUTH_TOKEN_CLASSES': (
         'greenbudget.app.jwt.tokens.GreenbudgetSlidingToken',),
