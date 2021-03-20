@@ -68,7 +68,7 @@ CSRF_TRUSTED_ORIGINS = [
 CORS_ORIGIN_ALLOW_ALL = False
 CORS_ORIGIN_REGEX_WHITELIST = (
     r'^(https?://)?([\w\.-]*?)\.greenbudget\.cloud$',
-    r'^(https?://)?.app.greenbudget\.cloud$',)
+    r'^(https?://)?app.greenbudget\.cloud$',)
 
 ALLOWED_HOSTS = [
     'www.greenbudget-api.com',
