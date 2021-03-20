@@ -23,7 +23,7 @@ APPS_DIR = BASE_DIR / "app"
 TIME_ZONE = 'UTC'
 USE_TZ = True
 
-APP_DOMAIN = '3.88.164.226'
+APP_DOMAIN = 'www.greenbudget-api.com/'
 APP_URL = 'https://%s' % APP_DOMAIN
 APP_V1_URL = os.path.join(APP_URL, "v1")
 
@@ -50,7 +50,7 @@ SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_NAME = 'greenbudgetsessionid'
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_DOMAIN = "3.88.164.226"
+SESSION_COOKIE_DOMAIN = "greenbudget-api.com"
 SESSION_COOKIE_AGE = 60 * 60
 #: Extend the session on every request
 SESSION_SAVE_EVERY_REQUEST = True
@@ -61,7 +61,7 @@ CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_NAME = 'greenbudgetcsrftoken'
 CSRF_COOKIE_SECURE = True
-CSRF_COOKIE_DOMAIN = "3.88.164.226"
+CSRF_COOKIE_DOMAIN = "greenbudget-api.com"
 CSRF_TRUSTED_ORIGINS = [
     '.greenbudget.cloud',
 ]
@@ -70,13 +70,13 @@ CORS_ORIGIN_REGEX_WHITELIST = (
     r'^(https?://)?([\w\.-]*?)\.greenbudget\.cloud$',)
 
 ALLOWED_HOSTS = [
-    '3.88.164.226',
+    'www.greenbudget-api.com',
 ]
 
 # JWT Configuration
 JWT_COOKIE_SECURE = True
 JWT_TOKEN_COOKIE_NAME = 'greenbudgetjwt'
-JWT_COOKIE_DOMAIN = "3.88.164.226"
+JWT_COOKIE_DOMAIN = "greenbudget-api.com"
 SIMPLE_JWT = {
     'AUTH_TOKEN_CLASSES': (
         'greenbudget.app.jwt.tokens.GreenbudgetSlidingToken',),
