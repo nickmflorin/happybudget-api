@@ -61,8 +61,16 @@ class FieldAlterationEvent(Event):
 
     @property
     def serialized_old_value(self):
+        # Temporary - at least until this serialization business gets resolved.
+        if type(self.old_value) is str:
+            self.old_value = json.dumps(self.old_value)
+            self.save()
         return json.loads(self.old_value)
 
     @property
     def serialized_new_value(self):
+        # Temporary - at least until this serialization business gets resolved.
+        if type(self.new_value) is str:
+            self.new_value = json.dumps(self.new_value)
+            self.save()
         return json.loads(self.new_value)
