@@ -2,11 +2,110 @@ from django.contrib.contenttypes.models import ContentType
 from rest_framework import viewsets, mixins
 
 from greenbudget.app.account.models import Account
-from greenbudget.app.account.mixins import BudgetAccountNestedMixin
+from greenbudget.app.account.mixins import (
+    AccountNestedMixin, BudgetAccountNestedMixin)
 
 from .mixins import SubAccountNestedMixin
-from .models import SubAccount
-from .serializers import SubAccountSerializer
+from .models import SubAccount, SubAccountGroup
+from .serializers import SubAccountSerializer, SubAccountGroupSerializer
+
+
+class SubAccountGroupViewSet(
+    mixins.UpdateModelMixin,
+    mixins.RetrieveModelMixin,
+    viewsets.GenericViewSet
+):
+    """
+    Viewset to handle requests to the following endpoints:
+
+    (1) PATCH /subaccounts/subaccount-groups/<pk>/
+    (2) GET /subaccounts/subaccount-groups/<pk>/
+    """
+    lookup_field = 'pk'
+    serializer_class = SubAccountGroupSerializer
+    subaccount_lookup_field = ("pk", "subaccount_pk")
+
+    def get_queryset(self):
+        return SubAccountGroup.objects.all()
+
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
+
+
+class SubAccountSubAccountGroupViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    SubAccountNestedMixin,
+    viewsets.GenericViewSet
+):
+    """
+    Viewset to handle requests to the following endpoints:
+
+    (1) POST /subaccounts/<pk>/subaccount-groups/
+    (2) GET /subaccounts/<pk>/subaccount-groups/
+    """
+    lookup_field = 'pk'
+    serializer_class = SubAccountGroupSerializer
+    subaccount_lookup_field = ("pk", "subaccount_pk")
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update(parent=self.subaccount)
+        return context
+
+    def perform_create(self, serializer):
+        serializer.save(
+            created_by=self.request.user,
+            object_id=self.subaccount.pk,
+            content_type=ContentType.objects.get_for_model(SubAccount),
+            parent=self.subaccount
+        )
+
+
+class AccountSubAccountGroupViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    AccountNestedMixin,
+    viewsets.GenericViewSet
+):
+    """
+    Viewset to handle requests to the following endpoints:
+
+    (1) POST /accounts/<pk>/subaccount-groups/
+    (2) GET /accounts/<pk>/subaccount-groups/
+    """
+    lookup_field = 'pk'
+    serializer_class = SubAccountGroupSerializer
+    account_lookup_field = ("pk", "account_pk")
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update(parent=self.account)
+        return context
+
+    def perform_create(self, serializer):
+        serializer.save(
+            created_by=self.request.user,
+            object_id=self.account.pk,
+            content_type=ContentType.objects.get_for_model(Account),
+            parent=self.account
+        )
+
+
+class AccountGroupViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
+    """
+    Viewset to handle requests to the following endpoints:
+
+    (1) POST /subaccounts/<pk>/groups/
+    """
+    lookup_field = 'pk'
+    serializer_class = SubAccountGroupSerializer
+
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
 
 
 class GenericSubAccountViewSet(viewsets.GenericViewSet):

@@ -6,7 +6,7 @@ from greenbudget.app.budget_item.models import BudgetItem
 from greenbudget.app.comment.models import Comment
 from greenbudget.app.history.models import Event
 from greenbudget.app.history.tracker import ModelHistoryTracker
-from greenbudget.app.subaccount.models import SubAccount
+from greenbudget.app.subaccount.models import SubAccount, SubAccountGroup
 
 
 class Account(BudgetItem):
@@ -19,6 +19,7 @@ class Account(BudgetItem):
     actuals = GenericRelation(Actual)
     comments = GenericRelation(Comment)
     events = GenericRelation(Event)
+    subaccount_groups = GenericRelation(SubAccountGroup)
 
     field_history = ModelHistoryTracker(
         ['description', 'identifier'], user_field='updated_by')

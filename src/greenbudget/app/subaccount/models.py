@@ -3,13 +3,46 @@ from model_utils import Choices
 from django.contrib.contenttypes.fields import (
     GenericForeignKey, GenericRelation)
 from django.contrib.contenttypes.models import ContentType
-from django.db import models
+from django.db import models, IntegrityError
 
 from greenbudget.app.actual.models import Actual
 from greenbudget.app.budget_item.models import BudgetItem
 from greenbudget.app.comment.models import Comment
 from greenbudget.app.history.models import Event
 from greenbudget.app.history.tracker import ModelHistoryTracker
+
+
+class SubAccountGroup(models.Model):
+    name = models.CharField(max_length=128)
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(
+        to='user.User',
+        related_name='created_sub_account_groups',
+        on_delete=models.SET_NULL,
+        null=True
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(
+        to='user.User',
+        related_name='updated_sub_account_groups',
+        on_delete=models.SET_NULL,
+        null=True
+    )
+    content_type = models.ForeignKey(
+        to=ContentType,
+        on_delete=models.CASCADE,
+        limit_choices_to=models.Q(app_label='account', model='account')
+        | models.Q(app_label='subaccount', model='subaccount')
+    )
+    object_id = models.PositiveIntegerField(db_index=True)
+    parent = GenericForeignKey('content_type', 'object_id')
+
+    class Meta:
+        get_latest_by = "created_at"
+        ordering = ('created_at', )
+        verbose_name = "Sub Account Group"
+        verbose_name_plural = "Sub Account Groups"
+        unique_together = (('object_id', 'content_type', 'name'))
 
 
 class SubAccount(BudgetItem):
@@ -27,7 +60,6 @@ class SubAccount(BudgetItem):
         (5, "nights", "Nights"),
     )
     unit = models.IntegerField(choices=UNITS, null=True)
-
     content_type = models.ForeignKey(
         to=ContentType,
         on_delete=models.CASCADE,
@@ -36,10 +68,18 @@ class SubAccount(BudgetItem):
     )
     object_id = models.PositiveIntegerField(db_index=True)
     parent = GenericForeignKey('content_type', 'object_id')
+    group = models.ForeignKey(
+        to='subaccount.SubAccountGroup',
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name='subaccounts'
+    )
+
     subaccounts = GenericRelation('self')
     actuals = GenericRelation(Actual)
     comments = GenericRelation(Comment)
     events = GenericRelation(Event)
+    subaccount_groups = GenericRelation(SubAccountGroup)
 
     field_history = ModelHistoryTracker(
         ['description', 'identifier', 'name', 'rate', 'quantity', 'multiplier',
@@ -57,8 +97,6 @@ class SubAccount(BudgetItem):
 
     class Meta:
         get_latest_by = "updated_at"
-        # Since the data from this model is used to power AGGridReact tables,
-        # we want to keep the ordering of the accounts consistent.
         ordering = ('created_at', )
         verbose_name = "Sub Account"
         verbose_name_plural = "Sub Accounts"
@@ -113,3 +151,11 @@ class SubAccount(BudgetItem):
         if isinstance(self.parent, self.__class__):
             return "subaccount"
         return "account"
+
+    def save(self, *args, **kwargs):
+        if self.group is not None and self.group.parent != self.parent:
+            raise IntegrityError(
+                "The group that a subaccount belongs to must have the same "
+                "parent as that subaccount."
+            )
+        return super().save(*args, **kwargs)

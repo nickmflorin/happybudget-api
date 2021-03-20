@@ -8,7 +8,7 @@ from greenbudget.app.actual.models import Actual
 from greenbudget.app.budget.models import Budget
 from greenbudget.app.comment.models import Comment
 from greenbudget.app.contact.models import Contact
-from greenbudget.app.subaccount.models import SubAccount
+from greenbudget.app.subaccount.models import SubAccount, SubAccountGroup
 from greenbudget.app.user.models import User
 
 from .base import CustomModelFactory
@@ -111,6 +111,16 @@ class AccountFactory(BudgetItemFactory):
     """
     class Meta:
         model = Account
+
+
+class SubAccountGroupFactory(CustomModelFactory):
+    """
+    A DjangoModelFactory to create instances of :obj:`SubAccount`.
+    """
+    name = factory.Faker('name')
+
+    class Meta:
+        model = SubAccountGroup
 
 
 @factory.django.mute_signals(models.signals.post_save, models.signals.post_init)
