@@ -65,11 +65,11 @@ CSRF_COOKIE_DOMAIN = ".greenbudget.cloud"
 CSRF_TRUSTED_ORIGINS = [
     '.greenbudget.cloud',
 ]
-CORS_ORIGIN_ALLOW_ALL = False
-CORS_ORIGIN_REGEX_WHITELIST = (
-    r'^(https?://)?([\w\.-]*?)\.greenbudget\.cloud$',
-    r'^(https?://)?app.greenbudget\.cloud$',
-    r'^https://app.greenbudget.cloud')
+CORS_ORIGIN_ALLOW_ALL = True
+# CORS_ORIGIN_REGEX_WHITELIST = (
+#     r'^(https?://)?([\w\.-]*?)\.greenbudget\.cloud$',
+#     r'^(https?://)?app.greenbudget\.cloud$',
+#     r'^https://app.greenbudget.cloud')
 
 ALLOWED_HOSTS = [
     'www.greenbudget-api.com',
