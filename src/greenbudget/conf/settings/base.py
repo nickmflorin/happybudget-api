@@ -118,7 +118,7 @@ SIMPLE_JWT = {
     'USER_ID_CLAIM': 'user_id',
 }
 
-REFERRER_POLICY = 'same-origin'
+# REFERRER_POLICY = 'same-origin'
 
 AUTH_USER_MODEL = 'user.User'
 
