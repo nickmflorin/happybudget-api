@@ -1,5 +1,7 @@
 import factory
+
 from django.contrib.contenttypes.models import ContentType
+from django.db import models
 
 from greenbudget.app.account.models import Account
 from greenbudget.app.actual.models import Actual
@@ -102,6 +104,7 @@ class BudgetItemFactory(CustomModelFactory):
         abstract = True
 
 
+@factory.django.mute_signals(models.signals.post_save, models.signals.post_init)
 class AccountFactory(BudgetItemFactory):
     """
     A DjangoModelFactory to create instances of :obj:`Account`.
@@ -110,6 +113,7 @@ class AccountFactory(BudgetItemFactory):
         model = Account
 
 
+@factory.django.mute_signals(models.signals.post_save, models.signals.post_init)
 class SubAccountFactory(BudgetItemFactory):
     """
     A DjangoModelFactory to create instances of :obj:`SubAccount`.
@@ -127,6 +131,7 @@ class SubAccountFactory(BudgetItemFactory):
         model = SubAccount
 
 
+@factory.django.mute_signals(models.signals.post_save, models.signals.post_init)
 class ActualFactory(CustomModelFactory):
     """
     A DjangoModelFactory to create instances of :obj:`Actual`.

@@ -1,6 +1,6 @@
 from copy import deepcopy
+import datetime
 from functools import partialmethod
-import decimal
 import json
 import logging
 import threading
@@ -10,7 +10,9 @@ from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
-from .models import Event, FieldAlterationEvent
+from greenbudget.lib.utils.dateutils import api_datetime_string
+
+from .models import Event, FieldAlterationEvent, CreateEvent
 
 
 logger = logging.getLogger('backend')
@@ -112,12 +114,16 @@ class ModelHistoryTracker:
 
     def post_init(self, sender, instance, **kwargs):
         self.initialize_tracker(instance)
-        # Patch the model's default save method to also create instances of
-        # Event when appropriate.
+        # Patch the model's default save and delete methods to also create
+        # instances of Event when appropriate.
         self.patch_save(instance)
 
     def post_save(self, sender, instance, **kwargs):
-        pass
+        if kwargs['created'] is True and instance._record_history is True:
+            CreateEvent.objects.create(
+                content_object=instance,
+                user=self.get_event_user(instance),
+            )
 
     def initialize_tracker(self, instance):
         tracker = self.tracker_class(instance, self.fields)
@@ -126,8 +132,8 @@ class ModelHistoryTracker:
         tracker.set_saved_fields()
 
     def _serialize_value(self, value):
-        if isinstance(value, decimal.Decimal):
-            return str(value)
+        if type(value) is datetime.datetime:
+            value = api_datetime_string(value)
         return json.dumps(value)
 
     def patch_save(self, instance):
@@ -136,10 +142,11 @@ class ModelHistoryTracker:
         def save(**kwargs):
             # There are some cases where we do not want to record that a change
             # has occured, when it is not the result of a user operation.
-            record_changes = kwargs.pop('record_changes', True)
+            record_history = kwargs.pop('record_history', True)
+            setattr(instance, '_record_history', record_history)
 
             # We only want to track changes to fields of already created models.
-            if instance.pk is None or record_changes is False:
+            if instance.pk is None or record_history is False:
                 return original_save(**kwargs)
 
             tracker = getattr(instance, '_%s' % self.name)
@@ -147,19 +154,15 @@ class ModelHistoryTracker:
                 if tracker.has_changed(field_name):
                     # Note: We cannot do bulk create operations because of
                     # the multi-table inheritance that comes with polymorphism.
-                    try:
-                        FieldAlterationEvent.objects.create(
-                            content_object=instance,
-                            field=field_name,
-                            old_value=self._serialize_value(
-                                tracker.saved_data[field_name]),
-                            new_value=self._serialize_value(
-                                tracker.get_field_value(field_name)),
-                            user=self.get_event_user(instance),
-                        )
-                    except TypeError:
-                        import ipdb
-                        ipdb.set_trace()
+                    FieldAlterationEvent.objects.create(
+                        content_object=instance,
+                        field=field_name,
+                        serialized_old_value=self._serialize_value(
+                            tracker.saved_data[field_name]),
+                        serialized_new_value=self._serialize_value(
+                            tracker.get_field_value(field_name)),
+                        user=self.get_event_user(instance),
+                    )
 
             # Update tracker in case this model is saved again
             self.initialize_tracker(instance)

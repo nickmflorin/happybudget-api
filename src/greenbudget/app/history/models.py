@@ -29,7 +29,7 @@ class Event(PolymorphicModel):
 
     class Meta:
         get_latest_by = "created_at"
-        ordering = ('created_at', )
+        ordering = ('-created_at', )
         verbose_name = "Event"
         verbose_name_plural = "Events"
 
@@ -45,32 +45,34 @@ class Event(PolymorphicModel):
             return "subaccount"
 
 
+class CreateEvent(Event):
+    type = "create"
+
+    class Meta:
+        get_latest_by = "created_at"
+        ordering = ('-created_at', )
+        verbose_name = "Create Event"
+        verbose_name_plural = "Create Events"
+
+
 class FieldAlterationEvent(Event):
     type = "field_alteration"
-    old_value = models.TextField()
-    new_value = models.TextField()
+    serialized_old_value = models.TextField()
+    serialized_new_value = models.TextField()
     field = models.CharField(max_length=256)
 
     objects = FieldAlterationManager()
 
     class Meta:
         get_latest_by = "created_at"
-        ordering = ('created_at', )
+        ordering = ('-created_at', )
         verbose_name = "Field Alteration Event"
         verbose_name_plural = "Field Alteration Events"
 
     @property
-    def serialized_old_value(self):
-        # Temporary - at least until this serialization business gets resolved.
-        if type(self.old_value) is str:
-            self.old_value = json.dumps(self.old_value)
-            self.save()
-        return json.loads(self.old_value)
+    def old_value(self):
+        return json.loads(self.serialized_old_value)
 
     @property
-    def serialized_new_value(self):
-        # Temporary - at least until this serialization business gets resolved.
-        if type(self.new_value) is str:
-            self.new_value = json.dumps(self.new_value)
-            self.save()
-        return json.loads(self.new_value)
+    def new_value(self):
+        return json.loads(self.serialized_new_value)
