@@ -65,6 +65,7 @@ CSRF_COOKIE_DOMAIN = ".greenbudget.cloud"
 CSRF_TRUSTED_ORIGINS = [
     '.greenbudget.cloud',
 ]
+CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_ALLOW_ALL = False
 CORS_ORIGIN_REGEX_WHITELIST = (r'^(https?://)?app.greenbudget\.cloud$', )
 
@@ -108,8 +109,6 @@ SIMPLE_JWT = {
     'USER_ID_FIELD': 'pk',
     'USER_ID_CLAIM': 'user_id',
 }
-
-# REFERRER_POLICY = 'same-origin'
 
 AUTH_USER_MODEL = 'user.User'
 
