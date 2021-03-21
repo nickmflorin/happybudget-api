@@ -39,7 +39,7 @@ SECRET_KEY = config(
 # Email Configurations
 EMAIL_ENABLED = True
 FROM_EMAIL = 'support@nirvedacognition.ai'
-EMAIL_HOST = 'https://app.greenbudget.cloud'
+EMAIL_HOST = '.greenbudget.cloud'
 SMTP_EMAIL_PORT = 25
 
 PWD_RESET_LINK_EXPIRY_TIME_IN_HRS = 24
@@ -49,7 +49,7 @@ GOOGLE_OAUTH_API_URL = "https://www.googleapis.com/oauth2/v3/tokeninfo/"
 SESSION_COOKIE_NAME = 'greenbudgetsessionid'
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_DOMAIN = ".greenbudget-api.com"
+SESSION_COOKIE_DOMAIN = ".greenbudget.cloud"
 SESSION_COOKIE_AGE = 60 * 60
 #: Extend the session on every request
 SESSION_SAVE_EVERY_REQUEST = True
@@ -63,13 +63,18 @@ CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_DOMAIN = ".greenbudget.cloud"
 CSRF_TRUSTED_ORIGINS = [
     'https://app.greenbudget.cloud',
+    'https://app.dev.greenbudget.cloud',
 ]
 CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_ALLOW_ALL = False
-CORS_ORIGIN_REGEX_WHITELIST = (r'^(https?://)?app.greenbudget\.cloud$', )
+CORS_ORIGIN_REGEX_WHITELIST = (
+    r'^(https?://)?app.greenbudget.cloud$',
+    r'^(https?://)?app.dev.greenbudget.cloud$',
+)
 
 ALLOWED_HOSTS = [
-    'www.greenbudget-api.com',
+    'www.api.greenbudget.cloud',
+    'api.greenbudget.cloud',
     'gb-dev-lb-563148772.us-east-1.elb.amazonaws.com',  # Load Balancer
     '172.31.88.83'  # EB Health Check
 ]
