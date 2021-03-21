@@ -38,6 +38,15 @@ def get_cookie_user(request):
     return request._cached_cookie_user
 
 
+class SameSiteMiddleware(MiddlewareMixin):
+    def process_response(self, request, response):
+        if 'sessionid' in response.cookies:
+            response.cookies['sessionid']['samesite'] = 'None'
+        if 'csrftoken' in response.cookies:
+            response.cookies['csrftoken']['samesite'] = 'None'
+        return response
+
+
 class TokenCookieMiddleware(MiddlewareMixin):
     """
     Middleware that automatically maintains and uses cookies for JWT

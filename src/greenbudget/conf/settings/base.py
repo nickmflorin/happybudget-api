@@ -154,6 +154,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'greenbudget.app.jwt.middleware.SameSiteMiddleware',
     'greenbudget.app.jwt.middleware.TokenCookieMiddleware',
     'greenbudget.app.history.middleware.ModelHistoryMiddleware',
     'django.middleware.common.CommonMiddleware',
