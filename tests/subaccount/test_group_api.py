@@ -284,3 +284,27 @@ def test_update_subaccount_group_duplicate_name(api_client, user,
             'subaccounts': [subaccount.pk]
         })
     assert response.status_code == 400
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_group_subaccount_already_in_group(api_client, user,
+        create_sub_account, create_account, create_budget,
+        create_sub_account_group):
+    budget = create_budget()
+    account = create_account(budget=budget)
+    group = create_sub_account_group(parent=account)
+    subaccount = create_sub_account(parent=account, budget=budget, group=group)
+
+    another_group = create_sub_account_group(parent=account, name="Group Name")
+
+    api_client.force_login(user)
+    response = api_client.patch(
+        "/v1/subaccounts/subaccount-groups/%s/" % another_group.pk, data={
+            'name': 'Group Name',
+            'subaccounts': [subaccount.pk]
+        })
+    assert response.status_code == 200
+    subaccount.refresh_from_db()
+    assert subaccount.group == another_group
+    group.refresh_from_db()
+    assert group.subaccounts.count() == 0
