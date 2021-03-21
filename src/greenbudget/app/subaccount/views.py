@@ -92,22 +92,6 @@ class AccountSubAccountGroupViewSet(
         )
 
 
-class AccountGroupViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
-    """
-    Viewset to handle requests to the following endpoints:
-
-    (1) POST /subaccounts/<pk>/groups/
-    """
-    lookup_field = 'pk'
-    serializer_class = SubAccountGroupSerializer
-
-    def perform_update(self, serializer):
-        serializer.save(updated_by=self.request.user)
-
-    def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
-
-
 class GenericSubAccountViewSet(viewsets.GenericViewSet):
     lookup_field = 'pk'
     serializer_class = SubAccountSerializer
