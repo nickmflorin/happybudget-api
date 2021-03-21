@@ -23,7 +23,7 @@ APPS_DIR = BASE_DIR / "app"
 TIME_ZONE = 'UTC'
 USE_TZ = True
 
-APP_DOMAIN = 'www.greenbudget-api.com/'
+APP_DOMAIN = 'api.greenbudget.cloud/'
 APP_URL = 'https://%s' % APP_DOMAIN
 APP_V1_URL = os.path.join(APP_URL, "v1")
 
@@ -69,12 +69,9 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_ALLOW_ALL = False
 CORS_ORIGIN_REGEX_WHITELIST = (
     r'^(https?://)?([\w\.-]*?)\.greenbudget\.cloud:?[\d]*?$',
-    # r'^(https?://)?app.greenbudget.cloud$',
-    # r'^(https?://)?app.dev.greenbudget.cloud$',
 )
 
 ALLOWED_HOSTS = [
-    'www.api.greenbudget.cloud',
     'api.greenbudget.cloud',
     'gb-dev-lb-563148772.us-east-1.elb.amazonaws.com',  # Load Balancer
     '172.31.88.83'  # EB Health Check
@@ -83,7 +80,7 @@ ALLOWED_HOSTS = [
 # JWT Configuration
 JWT_COOKIE_SECURE = True
 JWT_TOKEN_COOKIE_NAME = 'greenbudgetjwt'
-JWT_COOKIE_DOMAIN = "https://app.greenbudget.cloud"
+JWT_COOKIE_DOMAIN = ".greenbudget.cloud"
 SIMPLE_JWT = {
     'AUTH_TOKEN_CLASSES': (
         'greenbudget.app.jwt.tokens.GreenbudgetSlidingToken',),
