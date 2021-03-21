@@ -48,10 +48,8 @@ PWD_RESET_LINK_EXPIRY_TIME_IN_HRS = 24
 GOOGLE_OAUTH_API_URL = "https://www.googleapis.com/oauth2/v3/tokeninfo/"
 
 # Session Configuration
-SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_NAME = 'greenbudgetsessionid'
 SESSION_COOKIE_SECURE = True
-SESSION_COOKIE_SAMESITE = False
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_DOMAIN = ".greenbudget-api.com"
 SESSION_COOKIE_AGE = 60 * 60
@@ -62,7 +60,6 @@ SESSION_SAVE_EVERY_REQUEST = True
 CSRF_COOKIE_SECURE = True
 # Must be false so that the frontend can include as a header.
 CSRF_COOKIE_HTTPONLY = False
-CSRF_COOKIE_SAMESITE = False
 CSRF_COOKIE_NAME = 'greenbudgetcsrftoken'
 CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_DOMAIN = ".greenbudget.cloud"
@@ -154,7 +151,6 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'greenbudget.app.jwt.middleware.SameSiteMiddleware',
     'greenbudget.app.jwt.middleware.TokenCookieMiddleware',
     'greenbudget.app.history.middleware.ModelHistoryMiddleware',
     'django.middleware.common.CommonMiddleware',
