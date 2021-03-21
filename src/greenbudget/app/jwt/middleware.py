@@ -40,6 +40,7 @@ def get_cookie_user(request):
 
 class SameSiteMiddleware(MiddlewareMixin):
     def process_response(self, request, response):
+        print("PROCESSING RESPONSE")
         if 'sessionid' in response.cookies:
             response.cookies['sessionid']['samesite'] = 'None'
         if 'csrftoken' in response.cookies:
