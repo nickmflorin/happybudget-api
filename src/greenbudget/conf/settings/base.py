@@ -74,7 +74,8 @@ CORS_ORIGIN_REGEX_WHITELIST = (
 ALLOWED_HOSTS = [
     'api.greenbudget.cloud',
     'gb-dev-lb-563148772.us-east-1.elb.amazonaws.com',  # Load Balancer
-    '172.31.88.83'  # EB Health Check
+    '172.31.88.83',  # EB Health Check
+    '54.236.237.215',
 ]
 
 # JWT Configuration
