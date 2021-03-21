@@ -19,6 +19,8 @@ BASE_DIR = Path(os.path.abspath(__file__)).parents[2]
 ROOT_DIR = Path(os.path.abspath(__file__)).parents[4]
 APPS_DIR = BASE_DIR / "app"
 
+REFERRER_POLICY = 'same-origin'
+
 # Localization Configuration
 TIME_ZONE = 'UTC'
 USE_TZ = True
@@ -49,8 +51,9 @@ GOOGLE_OAUTH_API_URL = "https://www.googleapis.com/oauth2/v3/tokeninfo/"
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_NAME = 'greenbudgetsessionid'
 SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_SAMESITE = False
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_DOMAIN = "https://app.greenbudget.cloud"
+SESSION_COOKIE_DOMAIN = ".greenbudget-api.com"
 SESSION_COOKIE_AGE = 60 * 60
 #: Extend the session on every request
 SESSION_SAVE_EVERY_REQUEST = True
@@ -59,9 +62,10 @@ SESSION_SAVE_EVERY_REQUEST = True
 CSRF_COOKIE_SECURE = True
 # Must be false so that the frontend can include as a header.
 CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SAMESITE = False
 CSRF_COOKIE_NAME = 'greenbudgetcsrftoken'
 CSRF_COOKIE_SECURE = True
-CSRF_COOKIE_DOMAIN = "https://app.greenbudget.cloud"
+CSRF_COOKIE_DOMAIN = ".greenbudget.cloud"
 CSRF_TRUSTED_ORIGINS = [
     'https://app.greenbudget.cloud',
 ]
