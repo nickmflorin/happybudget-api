@@ -39,7 +39,7 @@ SECRET_KEY = config(
 # Email Configurations
 EMAIL_ENABLED = True
 FROM_EMAIL = 'support@nirvedacognition.ai'
-EMAIL_HOST = '.app.greenbudget.cloud'
+EMAIL_HOST = 'https://app.greenbudget.cloud'
 SMTP_EMAIL_PORT = 25
 
 PWD_RESET_LINK_EXPIRY_TIME_IN_HRS = 24
@@ -50,7 +50,7 @@ SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_NAME = 'greenbudgetsessionid'
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_DOMAIN = "app.greenbudget.cloud"
+SESSION_COOKIE_DOMAIN = "https://app.greenbudget.cloud"
 SESSION_COOKIE_AGE = 60 * 60
 #: Extend the session on every request
 SESSION_SAVE_EVERY_REQUEST = True
@@ -61,9 +61,9 @@ CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_NAME = 'greenbudgetcsrftoken'
 CSRF_COOKIE_SECURE = True
-CSRF_COOKIE_DOMAIN = "app.greenbudget.cloud"
+CSRF_COOKIE_DOMAIN = "https://app.greenbudget.cloud"
 CSRF_TRUSTED_ORIGINS = [
-    'app.greenbudget.cloud',
+    'https://app.greenbudget.cloud',
 ]
 CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_ALLOW_ALL = False
@@ -78,7 +78,7 @@ ALLOWED_HOSTS = [
 # JWT Configuration
 JWT_COOKIE_SECURE = True
 JWT_TOKEN_COOKIE_NAME = 'greenbudgetjwt'
-JWT_COOKIE_DOMAIN = "app.greenbudget.cloud"
+JWT_COOKIE_DOMAIN = "https://app.greenbudget.cloud"
 SIMPLE_JWT = {
     'AUTH_TOKEN_CLASSES': (
         'greenbudget.app.jwt.tokens.GreenbudgetSlidingToken',),
