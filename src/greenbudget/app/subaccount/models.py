@@ -1,3 +1,4 @@
+from colorful.fields import RGBColorField
 from model_utils import Choices
 
 from django.contrib.contenttypes.fields import (
@@ -36,6 +37,20 @@ class SubAccountGroup(models.Model):
     )
     object_id = models.PositiveIntegerField(db_index=True)
     parent = GenericForeignKey('content_type', 'object_id')
+    color = RGBColorField(colors=[
+        "#797695",
+        "#ff7165",
+        "#80cbc4",
+        "#ce93d8",
+        "#fed835",
+        "#c87987",
+        "#69f0ae",
+        "#a1887f",
+        "#81d4fa",
+        "#f75776",
+        "#66bb6a",
+        "#58add6"
+    ], default='#EFEFEF')
 
     class Meta:
         get_latest_by = "created_at"

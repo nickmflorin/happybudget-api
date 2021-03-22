@@ -15,7 +15,8 @@ def test_create_subaccount_subaccount_group(api_client, user,
     response = api_client.post(
         "/v1/subaccounts/%s/subaccount-groups/" % subaccount.pk, data={
             'name': 'Group Name',
-            'subaccounts': [child_subaccount.pk]
+            'subaccounts': [child_subaccount.pk],
+            'color': '#a1887f'
         })
     assert response.status_code == 201
 
@@ -31,6 +32,7 @@ def test_create_subaccount_subaccount_group(api_client, user,
         "name": "Group Name",
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
+        "color": '#a1887f',
         "updated_by": None,
         "created_by": {
             "id": user.pk,
@@ -71,7 +73,8 @@ def test_create_subaccount_subaccount_group_invalid_child(api_client, user,
     response = api_client.post(
         "/v1/subaccounts/%s/subaccount-groups/" % another_sub_account.pk, data={
             'name': 'Group Name',
-            'subaccounts': [child_subaccount.pk]
+            'subaccounts': [child_subaccount.pk],
+            'color': '#a1887f',
         })
     assert response.status_code == 400
 
@@ -91,7 +94,8 @@ def test_create_subaccount_subaccount_group_duplicate_name(api_client, user,
     response = api_client.post(
         "/v1/subaccounts/%s/subaccount-groups/" % subaccount.pk, data={
             'name': 'Group Name',
-            'subaccounts': [child_subaccount.pk]
+            'subaccounts': [child_subaccount.pk],
+            'color': '#a1887f',
         })
     assert response.status_code == 400
 
@@ -107,7 +111,8 @@ def test_create_account_subaccount_group(api_client, user,
     response = api_client.post(
         "/v1/accounts/%s/subaccount-groups/" % account.pk, data={
             'name': 'Group Name',
-            'subaccounts': [subaccount.pk]
+            'subaccounts': [subaccount.pk],
+            'color': '#a1887f',
         })
     assert response.status_code == 201
 
@@ -124,6 +129,7 @@ def test_create_account_subaccount_group(api_client, user,
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
         "updated_by": None,
+        "color": '#a1887f',
         "created_by": {
             "id": user.pk,
             "first_name": user.first_name,
@@ -180,7 +186,8 @@ def test_create_account_subaccount_group_invalid_child(api_client, user,
     response = api_client.post(
         "/v1/accounts/%s/subaccount-groups/" % account.pk, data={
             'name': 'Group Name',
-            'subaccounts': [subaccount.pk]
+            'subaccounts': [subaccount.pk],
+            'color': '#a1887f',
         })
     assert response.status_code == 400
 
@@ -212,6 +219,7 @@ def test_update_subaccount_group(api_client, user, create_sub_account,
         "name": "Group Name",
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
+        "color": '#EFEFEF',
         "updated_by": {
             "id": user.pk,
             "first_name": user.first_name,
@@ -262,7 +270,7 @@ def test_update_subaccount_group_invalid_child(api_client, user,
     response = api_client.patch(
         "/v1/subaccounts/subaccount-groups/%s/" % group.pk, data={
             'name': 'Group Name',
-            'subaccounts': [subaccount.pk]
+            'subaccounts': [subaccount.pk],
         })
     assert response.status_code == 400
 

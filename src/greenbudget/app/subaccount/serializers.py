@@ -32,6 +32,23 @@ class SubAccountGroupSerializer(EnhancedModelSerializer):
     updated_by = UserSerializer(nested=True, read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
+    color = serializers.ChoiceField(
+        required=True,
+        choices=[
+            "#797695",
+            "#ff7165",
+            "#80cbc4",
+            "#ce93d8",
+            "#fed835",
+            "#c87987",
+            "#69f0ae",
+            "#a1887f",
+            "#81d4fa",
+            "#f75776",
+            "#66bb6a",
+            "#58add6"
+        ]
+    )
     # TODO: We have to build in validation that ensures that the sub accounts
     # in a group all belong to the same parent!
     subaccounts = serializers.PrimaryKeyRelatedField(
@@ -44,7 +61,7 @@ class SubAccountGroupSerializer(EnhancedModelSerializer):
         model = SubAccountGroup
         nested_fields = (
             'id', 'name', 'created_by', 'created_at', 'updated_by',
-            'updated_at')
+            'updated_at', 'color')
         fields = nested_fields + ('subaccounts', )
         response = {
             'subaccounts': (

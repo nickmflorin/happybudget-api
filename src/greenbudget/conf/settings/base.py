@@ -128,6 +128,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_extensions',
     'phonenumber_field',
+    'colorful',
     'rest_framework',
     'corsheaders',
     'timezone_field',
