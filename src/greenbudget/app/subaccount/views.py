@@ -13,6 +13,7 @@ from .serializers import SubAccountSerializer, SubAccountGroupSerializer
 class SubAccountGroupViewSet(
     mixins.UpdateModelMixin,
     mixins.RetrieveModelMixin,
+    mixins.DestroyModelMixin,
     viewsets.GenericViewSet
 ):
     """

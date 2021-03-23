@@ -316,3 +316,18 @@ def test_group_subaccount_already_in_group(api_client, user,
     assert subaccount.group == another_group
     group.refresh_from_db()
     assert group.subaccounts.count() == 0
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_delete_subaccount_group(api_client, user, create_sub_account,
+        create_account, create_budget, create_sub_account_group):
+    budget = create_budget()
+    account = create_account(budget=budget)
+    group = create_sub_account_group(parent=account)
+
+    api_client.force_login(user)
+    response = api_client.delete(
+        "/v1/subaccounts/subaccount-groups/%s/" % group.pk)
+    assert response.status_code == 204
+
+    assert SubAccountGroup.objects.count() == 0
