@@ -52,8 +52,6 @@ class SubAccountGroupSerializer(EnhancedModelSerializer):
             "#58add6"
         ]
     )
-    # TODO: We have to build in validation that ensures that the sub accounts
-    # in a group all belong to the same parent!
     subaccounts = serializers.PrimaryKeyRelatedField(
         many=True,
         required=False,
