@@ -59,6 +59,32 @@ class SubAccountGroup(models.Model):
         verbose_name_plural = "Sub Account Groups"
         unique_together = (('object_id', 'content_type', 'name'))
 
+    @property
+    def variance(self):
+        if self.actual is not None and self.estimated is not None:
+            return float(self.estimated) - float(self.actual)
+        return None
+
+    @property
+    def actual(self):
+        actuals = []
+        for subaccount in self.subaccounts.all():
+            if subaccount.actual is not None:
+                actuals.append(subaccount.actual)
+        if len(actuals) != 0:
+            return sum(actuals)
+        return None
+
+    @property
+    def estimated(self):
+        estimated = []
+        for subaccount in self.subaccounts.all():
+            if subaccount.estimated is not None:
+                estimated.append(subaccount.estimated)
+        if len(estimated) != 0:
+            return sum(estimated)
+        return None
+
 
 class SubAccount(BudgetItem):
     type = "subaccount"

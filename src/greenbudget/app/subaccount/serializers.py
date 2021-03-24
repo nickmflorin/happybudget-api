@@ -32,6 +32,9 @@ class SubAccountGroupSerializer(EnhancedModelSerializer):
     updated_by = UserSerializer(nested=True, read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
+    estimated = serializers.FloatField(read_only=True)
+    actual = serializers.FloatField(read_only=True)
+    variance = serializers.FloatField(read_only=True)
     color = serializers.ChoiceField(
         required=True,
         choices=[
@@ -61,7 +64,7 @@ class SubAccountGroupSerializer(EnhancedModelSerializer):
         model = SubAccountGroup
         nested_fields = (
             'id', 'name', 'created_by', 'created_at', 'updated_by',
-            'updated_at', 'color')
+            'updated_at', 'color', 'estimated', 'actual', 'variance')
         fields = nested_fields + ('subaccounts', )
         response = {
             'subaccounts': (
