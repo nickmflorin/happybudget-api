@@ -29,7 +29,13 @@ class Event(PolymorphicModel):
     content_object = GenericForeignKey('content_type', 'object_id')
     objects = EventManager()
 
+    non_polymorphic = models.Manager()
+
     class Meta:
+        # See https://code.djangoproject.com/ticket/23076 - this addresses
+        # a bug with the Django-polymorphic package in regard to deleting parent
+        # models.
+        base_manager_name = 'non_polymorphic'
         get_latest_by = "created_at"
         ordering = ('-created_at', )
         verbose_name = "Event"
