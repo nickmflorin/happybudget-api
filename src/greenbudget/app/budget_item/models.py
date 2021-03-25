@@ -3,6 +3,14 @@ from polymorphic.models import PolymorphicModel
 from django.db import models
 
 
+# Right now, we still need to iron out a discrepancy in the UI: whether or not
+# the actuals for parent line items should be determined from the sum of the
+# actuals of it's children, or the sum of the actuals tied to the parent.  This
+# is a temporary toggle to switch between the two.
+DETERMINE_ACCOUNT_ACTUAL_FROM_UNDERLYINGS = True
+DETERMINE_SUB_ACCOUNT_ACTUAL_FROM_UNDERLYINGS = False
+
+
 class BudgetItem(PolymorphicModel):
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(
@@ -47,10 +55,22 @@ class BudgetItem(PolymorphicModel):
 
     @property
     def actual(self):
+        from greenbudget.app.account.models import Account
+
         actuals = []
-        for actual in self.actuals.all():
-            if actual.value is not None:
-                actuals.append(actual.value)
+        flag = DETERMINE_SUB_ACCOUNT_ACTUAL_FROM_UNDERLYINGS
+        if isinstance(self, Account):
+            flag = DETERMINE_ACCOUNT_ACTUAL_FROM_UNDERLYINGS
+
+        if flag:
+            for subaccount in self.subaccounts.all():
+                if subaccount.actual is not None:
+                    actuals.append(subaccount.actual)
+        else:
+            for actual in self.actuals.all():
+                if actual.value is not None:
+                    actuals.append(actual.value)
+
         if len(actuals) != 0:
             return sum(actuals)
         return None

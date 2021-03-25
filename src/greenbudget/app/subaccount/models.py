@@ -13,6 +13,7 @@ from greenbudget.app.history.models import Event
 from greenbudget.app.history.tracker import ModelHistoryTracker
 
 
+# TODO: We might be able to extend this off of a BudgetItem.
 class SubAccountGroup(models.Model):
     name = models.CharField(max_length=128)
     created_at = models.DateTimeField(auto_now_add=True)

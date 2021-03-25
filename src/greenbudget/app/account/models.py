@@ -9,6 +9,13 @@ from greenbudget.app.history.tracker import ModelHistoryTracker
 from greenbudget.app.subaccount.models import SubAccount, SubAccountGroup
 
 
+# Right now, we still need to iron out a discrepancy in the UI: whether or not
+# the actuals for parent line items should be determined from the sum of the
+# actuals of it's children, or the sum of the actuals tied to the parent.  This
+# is a temporary toggle to switch between the two.
+DETERMINE_ACTUAL_FROM_UNDERLYINGS = True
+
+
 class Account(BudgetItem):
     type = "account"
     access = models.ManyToManyField(
@@ -42,22 +49,6 @@ class Account(BudgetItem):
     @property
     def ancestors(self):
         return [self.budget]
-
-    @property
-    def variance(self):
-        if self.actual is not None and self.estimated is not None:
-            return float(self.estimated) - float(self.actual)
-        return None
-
-    @property
-    def actual(self):
-        actuals = []
-        for actual in self.actuals.all():
-            if actual.value is not None:
-                actuals.append(actual.value)
-        if len(actuals) != 0:
-            return sum(actuals)
-        return None
 
     @property
     def estimated(self):
