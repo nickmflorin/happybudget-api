@@ -143,7 +143,8 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
     subaccounts = SubAccountSimpleSerializer(many=True, read_only=True)
     group = serializers.PrimaryKeyRelatedField(
         required=False,
-        queryset=SubAccountGroup.objects.all()
+        queryset=SubAccountGroup.objects.all(),
+        allow_null=True
     )
 
     class Meta:

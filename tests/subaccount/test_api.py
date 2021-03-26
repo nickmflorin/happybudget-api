@@ -1,6 +1,6 @@
 import pytest
 
-from greenbudget.app.subaccount.models import SubAccount
+from greenbudget.app.subaccount.models import SubAccount, SubAccountGroup
 
 
 @pytest.mark.freeze_time('2020-01-01')
@@ -596,3 +596,25 @@ def test_get_subaccount_subaccounts(api_client, user, create_sub_account,
             }
         },
     ]
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_remove_subaccount_from_group(api_client, user, create_sub_account,
+        create_account, create_budget, create_sub_account_group):
+    api_client.force_login(user)
+    budget = create_budget()
+    account = create_account(budget=budget)
+    group = create_sub_account_group(parent=account)
+    subaccount = create_sub_account(parent=account, budget=budget, group=group)
+
+    response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk,
+        format='json',
+        data={
+            "group": None,
+        }
+    )
+    assert response.status_code == 200
+    subaccount.refresh_from_db()
+    assert subaccount.group is None
+
+    assert SubAccountGroup.objects.first() is None
