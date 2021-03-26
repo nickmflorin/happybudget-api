@@ -12,6 +12,8 @@ from greenbudget.app.comment.models import Comment
 from greenbudget.app.history.models import Event
 from greenbudget.app.history.tracker import ModelHistoryTracker
 
+from .track_group_removal import track_group_removal
+
 
 # TODO: We might be able to extend this off of a BudgetItem.
 class SubAccountGroup(models.Model):
@@ -87,6 +89,7 @@ class SubAccountGroup(models.Model):
         return None
 
 
+@track_group_removal()
 class SubAccount(BudgetItem):
     type = "subaccount"
     name = models.CharField(max_length=128, null=True)
