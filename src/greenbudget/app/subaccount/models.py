@@ -1,4 +1,3 @@
-from colorful.fields import RGBColorField
 from model_utils import Choices
 
 from django.contrib.contenttypes.fields import (
@@ -9,30 +8,15 @@ from django.db import models, IntegrityError
 from greenbudget.lib.model_tracker import track_model
 
 from greenbudget.app.actual.models import Actual
-from greenbudget.app.budget_item.models import BudgetItem
+from greenbudget.app.budget_item.models import BudgetItem, BudgetItemGroup
 from greenbudget.app.budget_item.hooks import (
     on_create, on_field_change, on_group_removal)
 from greenbudget.app.comment.models import Comment
 from greenbudget.app.history.models import Event
 
 
-# TODO: We might be able to extend this off of a BudgetItem.
-class SubAccountGroup(models.Model):
+class SubAccountGroup(BudgetItemGroup):
     name = models.CharField(max_length=128)
-    created_at = models.DateTimeField(auto_now_add=True)
-    created_by = models.ForeignKey(
-        to='user.User',
-        related_name='created_sub_account_groups',
-        on_delete=models.SET_NULL,
-        null=True
-    )
-    updated_at = models.DateTimeField(auto_now=True)
-    updated_by = models.ForeignKey(
-        to='user.User',
-        related_name='updated_sub_account_groups',
-        on_delete=models.SET_NULL,
-        null=True
-    )
     content_type = models.ForeignKey(
         to=ContentType,
         on_delete=models.CASCADE,
@@ -41,20 +25,6 @@ class SubAccountGroup(models.Model):
     )
     object_id = models.PositiveIntegerField(db_index=True)
     parent = GenericForeignKey('content_type', 'object_id')
-    color = RGBColorField(colors=[
-        "#797695",
-        "#ff7165",
-        "#80cbc4",
-        "#ce93d8",
-        "#fed835",
-        "#c87987",
-        "#69f0ae",
-        "#a1887f",
-        "#81d4fa",
-        "#f75776",
-        "#66bb6a",
-        "#58add6"
-    ], default='#EFEFEF')
 
     class Meta:
         get_latest_by = "created_at"
@@ -62,32 +32,6 @@ class SubAccountGroup(models.Model):
         verbose_name = "Sub Account Group"
         verbose_name_plural = "Sub Account Groups"
         unique_together = (('object_id', 'content_type', 'name'))
-
-    @property
-    def variance(self):
-        if self.actual is not None and self.estimated is not None:
-            return float(self.estimated) - float(self.actual)
-        return None
-
-    @property
-    def actual(self):
-        actuals = []
-        for subaccount in self.subaccounts.all():
-            if subaccount.actual is not None:
-                actuals.append(subaccount.actual)
-        if len(actuals) != 0:
-            return sum(actuals)
-        return None
-
-    @property
-    def estimated(self):
-        estimated = []
-        for subaccount in self.subaccounts.all():
-            if subaccount.estimated is not None:
-                estimated.append(subaccount.estimated)
-        if len(estimated) != 0:
-            return sum(estimated)
-        return None
 
 
 @track_model(
