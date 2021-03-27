@@ -12,5 +12,4 @@ def remove_parent_calculated_fields(instance, **kwargs):
     if isinstance(instance.parent, SubAccount):
         for field in instance.DERIVING_FIELDS:
             setattr(instance.parent, field, None)
-        # TODO: Do we need to prevent recursions here on the save signal?
-        instance.parent.save(record_history=False)
+        instance.parent.save(track_changes=False)

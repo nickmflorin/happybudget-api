@@ -7,7 +7,6 @@ from django.db import models
 
 from greenbudget.app.comment.models import Comment
 from greenbudget.app.history.models import Event
-from greenbudget.app.history.tracker import ModelHistoryTracker
 
 
 class Actual(models.Model):
@@ -60,12 +59,6 @@ class Actual(models.Model):
 
     comments = GenericRelation(Comment)
     events = GenericRelation(Event)
-
-    field_history = ModelHistoryTracker(
-        ['description', 'vendor', 'purchase_order', 'payment_id', 'value',
-        'payment_method', 'date'],
-        user_field='updated_by'
-    )
 
     class Meta:
         get_latest_by = "updated_at"

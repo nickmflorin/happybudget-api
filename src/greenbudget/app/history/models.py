@@ -1,9 +1,12 @@
+import datetime
 from polymorphic.models import PolymorphicModel
 import json
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+
+from greenbudget.lib.utils.dateutils import api_datetime_string
 
 from .managers import EventManager, FieldAlterationManager
 
@@ -40,6 +43,12 @@ class Event(PolymorphicModel):
         ordering = ('-created_at', )
         verbose_name = "Event"
         verbose_name_plural = "Events"
+
+    @staticmethod
+    def serialize_value(value):
+        if type(value) is datetime.datetime:
+            value = api_datetime_string(value)
+        return json.dumps(value)
 
 
 class CreateEvent(Event):

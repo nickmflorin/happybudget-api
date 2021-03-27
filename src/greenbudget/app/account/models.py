@@ -1,11 +1,14 @@
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 
+from greenbudget.lib.model_tracker import track_model
+
 from greenbudget.app.actual.models import Actual
 from greenbudget.app.budget_item.models import BudgetItem
+from greenbudget.app.budget_item.hooks import (
+    on_create, on_field_change, on_group_removal)
 from greenbudget.app.comment.models import Comment
 from greenbudget.app.history.models import Event
-from greenbudget.app.history.tracker import ModelHistoryTracker
 from greenbudget.app.subaccount.models import SubAccount, SubAccountGroup
 
 
@@ -16,6 +19,14 @@ from greenbudget.app.subaccount.models import SubAccount, SubAccountGroup
 DETERMINE_ACTUAL_FROM_UNDERLYINGS = True
 
 
+@track_model(
+    on_create=on_create,
+    track_removal_of_fields=['group'],
+    user_field='updated_by',
+    on_field_removal_hooks={'group': on_group_removal},
+    on_field_change=on_field_change,
+    track_changes_to_fields=['description', 'identifier'],
+)
 class Account(BudgetItem):
     type = "account"
     access = models.ManyToManyField(
@@ -27,9 +38,6 @@ class Account(BudgetItem):
     comments = GenericRelation(Comment)
     events = GenericRelation(Event)
     subaccount_groups = GenericRelation(SubAccountGroup)
-
-    field_history = ModelHistoryTracker(
-        ['description', 'identifier'], user_field='updated_by')
 
     class Meta:
         get_latest_by = "updated_at"

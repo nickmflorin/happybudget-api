@@ -6,13 +6,14 @@ from django.contrib.contenttypes.fields import (
 from django.contrib.contenttypes.models import ContentType
 from django.db import models, IntegrityError
 
+from greenbudget.lib.model_tracker import track_model
+
 from greenbudget.app.actual.models import Actual
 from greenbudget.app.budget_item.models import BudgetItem
+from greenbudget.app.budget_item.hooks import (
+    on_create, on_field_change, on_group_removal)
 from greenbudget.app.comment.models import Comment
 from greenbudget.app.history.models import Event
-from greenbudget.app.history.tracker import ModelHistoryTracker
-
-from .track_group_removal import track_group_removal
 
 
 # TODO: We might be able to extend this off of a BudgetItem.
@@ -89,7 +90,16 @@ class SubAccountGroup(models.Model):
         return None
 
 
-@track_group_removal()
+@track_model(
+    on_create=on_create,
+    track_removal_of_fields=['group'],
+    user_field='updated_by',
+    on_field_removal_hooks={'group': on_group_removal},
+    on_field_change=on_field_change,
+    track_changes_to_fields=[
+        'description', 'identifier', 'name', 'rate', 'quantity', 'multiplier',
+        'unit'],
+)
 class SubAccount(BudgetItem):
     type = "subaccount"
     name = models.CharField(max_length=128, null=True)
@@ -125,12 +135,6 @@ class SubAccount(BudgetItem):
     comments = GenericRelation(Comment)
     events = GenericRelation(Event)
     subaccount_groups = GenericRelation(SubAccountGroup)
-
-    field_history = ModelHistoryTracker(
-        ['description', 'identifier', 'name', 'rate', 'quantity', 'multiplier',
-        'unit'],
-        user_field='updated_by'
-    )
 
     DERIVING_FIELDS = [
         "name",
