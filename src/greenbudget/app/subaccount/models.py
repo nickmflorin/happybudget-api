@@ -92,9 +92,9 @@ class SubAccountGroup(models.Model):
 
 @track_model(
     on_create=on_create,
-    track_removal_of_fields=['group'],
+    # track_removal_of_fields=['group'],
     user_field='updated_by',
-    on_field_removal_hooks={'group': on_group_removal},
+    # on_field_removal_hooks={'group': on_group_removal},
     on_field_change=on_field_change,
     track_changes_to_fields=[
         'description', 'identifier', 'name', 'rate', 'quantity', 'multiplier',
@@ -123,12 +123,6 @@ class SubAccount(BudgetItem):
     )
     object_id = models.PositiveIntegerField(db_index=True)
     parent = GenericForeignKey('content_type', 'object_id')
-    group = models.ForeignKey(
-        to='subaccount.SubAccountGroup',
-        null=True,
-        on_delete=models.SET_NULL,
-        related_name='subaccounts'
-    )
 
     subaccounts = GenericRelation('self')
     actuals = GenericRelation(Actual)
