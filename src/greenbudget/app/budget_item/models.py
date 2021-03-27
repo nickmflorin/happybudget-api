@@ -101,6 +101,12 @@ class BudgetItem(PolymorphicModel):
         on_delete=models.CASCADE,
         db_index=True,
     )
+    group = models.ForeignKey(
+        to='budget_item.BudgetItemGroup',
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name='children'
+    )
 
     class Meta:
         get_latest_by = "updated_at"
