@@ -50,7 +50,7 @@ account_subaccounts_groups_urlpatterns = account_groups_router.urls
 router = routers.SimpleRouter()
 router.register(r'', SubAccountViewSet, basename='subaccount')
 router.register(
-    r'subaccount-groups',
+    r'groups',
     SubAccountGroupViewSet,
     basename='subaccount-group'
 )
@@ -61,6 +61,6 @@ urlpatterns = router.urls + [
         path('actuals/', include(subaccount_actuals_urlpatterns)),
         path('comments/', include(subaccount_comments_urlpatterns)),
         path('history/', include(subaccount_history_urlpatterns)),
-        path('subaccount-groups/', include(subaccount_groups_router.urls)),
+        path('groups/', include(subaccount_groups_router.urls)),
     ]))
 ]

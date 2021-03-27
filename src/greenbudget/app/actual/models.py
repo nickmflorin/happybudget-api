@@ -5,10 +5,21 @@ from django.contrib.contenttypes.fields import (
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
+from greenbudget.lib.model_tracker import track_model
+
+from greenbudget.app.budget_item.hooks import on_create, on_field_change
 from greenbudget.app.comment.models import Comment
 from greenbudget.app.history.models import Event
 
 
+@track_model(
+    on_create=on_create,
+    user_field='updated_by',
+    on_field_change=on_field_change,
+    track_changes_to_fields=[
+        'description', 'vendor', 'purchase_order', 'date', 'payment_id',
+        'value', 'payment_method'],
+)
 class Actual(models.Model):
     type = "actual"
     created_at = models.DateTimeField(auto_now_add=True)
@@ -62,8 +73,6 @@ class Actual(models.Model):
 
     class Meta:
         get_latest_by = "updated_at"
-        # Since the data from this model is used to power AGGridReact tables,
-        # we want to keep the ordering of the accounts consistent.
         ordering = ('created_at', )
         verbose_name = "Actual"
         verbose_name_plural = "Actual"

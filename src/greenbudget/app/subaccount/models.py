@@ -72,7 +72,7 @@ class SubAccount(BudgetItem):
     actuals = GenericRelation(Actual)
     comments = GenericRelation(Comment)
     events = GenericRelation(Event)
-    subaccount_groups = GenericRelation(SubAccountGroup)
+    groups = GenericRelation(SubAccountGroup)
 
     DERIVING_FIELDS = [
         "name",

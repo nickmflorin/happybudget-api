@@ -1,15 +1,14 @@
 from rest_framework import serializers, exceptions
 
-from greenbudget.lib.rest_framework_utils.serializers import (
-    EnhancedModelSerializer)
+from greenbudget.app.budget_item.serializers import (
+    BudgetItemGroupSerializer, BudgetItemSimpleSerializer)
 from greenbudget.app.common.serializers import AncestorSerializer
 from greenbudget.app.user.serializers import UserSerializer
 
 from .models import SubAccount, SubAccountGroup
 
 
-class SubAccountSimpleSerializer(EnhancedModelSerializer):
-    id = serializers.IntegerField(read_only=True)
+class SubAccountSimpleSerializer(BudgetItemSimpleSerializer):
     name = serializers.CharField(
         required=False,
         allow_blank=False,
@@ -18,41 +17,11 @@ class SubAccountSimpleSerializer(EnhancedModelSerializer):
 
     class Meta:
         model = SubAccount
-        fields = ('id', 'name')
+        fields = BudgetItemSimpleSerializer.Meta.fields + ('name',)
 
 
-class SubAccountGroupSerializer(EnhancedModelSerializer):
-    id = serializers.IntegerField(read_only=True)
-    name = serializers.CharField(
-        required=False,
-        allow_blank=False,
-        allow_null=False
-    )
-    created_by = UserSerializer(nested=True, read_only=True)
-    updated_by = UserSerializer(nested=True, read_only=True)
-    created_at = serializers.DateTimeField(read_only=True)
-    updated_at = serializers.DateTimeField(read_only=True)
-    estimated = serializers.FloatField(read_only=True)
-    actual = serializers.FloatField(read_only=True)
-    variance = serializers.FloatField(read_only=True)
-    color = serializers.ChoiceField(
-        required=True,
-        choices=[
-            "#797695",
-            "#ff7165",
-            "#80cbc4",
-            "#ce93d8",
-            "#fed835",
-            "#c87987",
-            "#69f0ae",
-            "#a1887f",
-            "#81d4fa",
-            "#f75776",
-            "#66bb6a",
-            "#58add6"
-        ]
-    )
-    subaccounts = serializers.PrimaryKeyRelatedField(
+class SubAccountGroupSerializer(BudgetItemGroupSerializer):
+    children = serializers.PrimaryKeyRelatedField(
         many=True,
         required=False,
         queryset=SubAccount.objects.all()
@@ -60,29 +29,14 @@ class SubAccountGroupSerializer(EnhancedModelSerializer):
 
     class Meta:
         model = SubAccountGroup
-        nested_fields = (
-            'id', 'name', 'created_by', 'created_at', 'updated_by',
-            'updated_at', 'color', 'estimated', 'actual', 'variance')
-        fields = nested_fields + ('subaccounts', )
+        nested_fields = BudgetItemGroupSerializer.Meta.fields
+        fields = nested_fields + ('children', )
         response = {
-            'subaccounts': (
+            'children': (
                 SubAccountSimpleSerializer, {'many': True, 'nested': True})
         }
 
-    def validate_name(self, value):
-        # In the case of a POST request, the parent will be in the context. In
-        # the case of a PATCH request, the instance will be non-null.
-        parent = self.context.get('parent')
-        if parent is None:
-            parent = self.instance.parent
-        validator = serializers.UniqueTogetherValidator(
-            queryset=parent.subaccount_groups.all(),
-            fields=('name', ),
-        )
-        validator({'name': value}, self)
-        return value
-
-    def validate_subaccounts(self, value):
+    def validate_children(self, value):
         # In the case of a POST request, the parent will be in the context. In
         # the case of a PATCH request, the instance will be non-null.
         parent = self.context.get('parent')
@@ -92,23 +46,13 @@ class SubAccountGroupSerializer(EnhancedModelSerializer):
             if subaccount.parent != parent:
                 raise exceptions.ValidationError(
                     "The subaccount %s does not belong to the same parent "
-                    "that the group does (%s)." % (subaccount.pk, parent)
+                    "that the group does (%s)." % (subaccount.pk, parent.pk)
                 )
         return value
 
 
 class SubAccountSerializer(SubAccountSimpleSerializer):
-    identifier = serializers.CharField(
-        required=True,
-        allow_blank=False,
-        allow_null=False
-    )
     type = serializers.CharField(read_only=True)
-    name = serializers.CharField(
-        required=False,
-        allow_blank=False,
-        allow_null=False
-    )
     description = serializers.CharField(
         required=False,
         allow_blank=False,

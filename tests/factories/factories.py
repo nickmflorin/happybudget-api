@@ -3,7 +3,7 @@ import factory
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
-from greenbudget.app.account.models import Account
+from greenbudget.app.account.models import Account, AccountGroup
 from greenbudget.app.actual.models import Actual
 from greenbudget.app.budget.models import Budget
 from greenbudget.app.comment.models import Comment
@@ -104,6 +104,16 @@ class BudgetItemFactory(CustomModelFactory):
         abstract = True
 
 
+class AccountGroupFactory(CustomModelFactory):
+    """
+    A DjangoModelFactory to create instances of :obj:`AccountGroup`.
+    """
+    name = factory.Faker('name')
+
+    class Meta:
+        model = AccountGroup
+
+
 @factory.django.mute_signals(models.signals.post_save, models.signals.post_init)
 class AccountFactory(BudgetItemFactory):
     """
@@ -115,7 +125,7 @@ class AccountFactory(BudgetItemFactory):
 
 class SubAccountGroupFactory(CustomModelFactory):
     """
-    A DjangoModelFactory to create instances of :obj:`SubAccount`.
+    A DjangoModelFactory to create instances of :obj:`SubAccountGroup`.
     """
     name = factory.Faker('name')
 

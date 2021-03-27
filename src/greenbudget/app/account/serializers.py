@@ -1,13 +1,47 @@
-from rest_framework import serializers
+from rest_framework import serializers, exceptions
 
 from greenbudget.lib.rest_framework_utils.serializers import (
     EnhancedModelSerializer)
+
 from greenbudget.app.common.serializers import AncestorSerializer
+from greenbudget.app.budget_item.serializers import (
+    BudgetItemGroupSerializer, BudgetItemSimpleSerializer)
 from greenbudget.app.subaccount.serializers import SubAccountSimpleSerializer
 from greenbudget.app.user.models import User
 from greenbudget.app.user.serializers import UserSerializer
 
-from .models import Account
+from .models import Account, AccountGroup
+
+
+class AccountGroupSerializer(BudgetItemGroupSerializer):
+    children = serializers.PrimaryKeyRelatedField(
+        many=True,
+        required=False,
+        queryset=Account.objects.all()
+    )
+
+    class Meta:
+        model = AccountGroup
+        nested_fields = BudgetItemGroupSerializer.Meta.fields
+        fields = nested_fields + ('children', )
+        response = {
+            'children': (
+                BudgetItemSimpleSerializer, {'many': True, 'nested': True})
+        }
+
+    def validate_children(self, value):
+        # In the case of a POST request, the parent will be in the context. In
+        # the case of a PATCH request, the instance will be non-null.
+        budget = self.context.get('parent')
+        if budget is None:
+            budget = self.instance.budget
+        for account in value:
+            if account.budget != budget:
+                raise exceptions.ValidationError(
+                    "The account %s does not belong to the same budget "
+                    "that the group does (%s)." % (account.pk, budget.pk)
+                )
+        return value
 
 
 class AccountSerializer(EnhancedModelSerializer):
@@ -38,13 +72,18 @@ class AccountSerializer(EnhancedModelSerializer):
     actual = serializers.FloatField(read_only=True)
     variance = serializers.FloatField(read_only=True)
     subaccounts = SubAccountSimpleSerializer(many=True, read_only=True)
+    group = serializers.PrimaryKeyRelatedField(
+        required=False,
+        queryset=AccountGroup.objects.all(),
+        allow_null=True
+    )
 
     class Meta:
         model = Account
         fields = (
             'id', 'identifier', 'description', 'created_by', 'updated_by',
             'created_at', 'updated_at', 'access', 'budget', 'ancestors',
-            'estimated', 'subaccounts', 'actual', 'variance', 'type')
+            'estimated', 'subaccounts', 'actual', 'variance', 'type', 'group')
 
     def validate_identifier(self, value):
         # In the case of creating an Account via a POST request, the budget

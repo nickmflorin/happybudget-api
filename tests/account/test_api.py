@@ -25,6 +25,7 @@ def test_get_accounts(api_client, user, create_account, create_budget):
             "variance": None,
             "actual": None,
             "subaccounts": [],
+            "group": None,
             "ancestors": [{
                 "type": "budget",
                 "id": budget.pk,
@@ -70,6 +71,7 @@ def test_get_accounts(api_client, user, create_account, create_budget):
             "variance": None,
             "actual": None,
             "subaccounts": [],
+            "group": None,
             "ancestors": [{
                 "type": "budget",
                 "id": budget.pk,
@@ -125,6 +127,7 @@ def test_get_account(api_client, user, create_account, create_budget):
         "variance": None,
         "actual": None,
         "subaccounts": [],
+        "group": None,
         "ancestors": [{
             "type": "budget",
             "id": account.budget.pk,
@@ -184,6 +187,7 @@ def test_create_account(api_client, user, create_budget):
         "variance": None,
         "actual": None,
         "subaccounts": [],
+        "group": None,
         "ancestors": [{
             "type": "budget",
             "id": budget.pk,
@@ -256,6 +260,7 @@ def test_update_account(api_client, user, create_budget, create_account):
         "variance": None,
         "actual": None,
         "subaccounts": [],
+        "group": None,
         "ancestors": [{
             "type": "budget",
             "id": budget.pk,

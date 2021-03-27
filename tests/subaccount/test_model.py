@@ -21,8 +21,8 @@ def test_group_parent_constraint(create_sub_account, create_account,
         )
 
 
-def test_remove_from_group_group_deleted(create_sub_account, create_account,
-        create_budget, create_sub_account_group, user):
+def test_remove_from_group_group_deleted(create_account, create_budget,
+        create_sub_account_group, user):
     budget = create_budget()
     account = create_account(budget=budget)
     group = create_sub_account_group(parent=account)

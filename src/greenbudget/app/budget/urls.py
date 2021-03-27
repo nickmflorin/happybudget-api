@@ -1,7 +1,8 @@
 from django.urls import path, include
 from rest_framework import routers
 
-from greenbudget.app.account.urls import budget_accounts_urlpatterns
+from greenbudget.app.account.urls import (
+    budget_accounts_urlpatterns, budget_accounts_groups_urlpatterns)
 from greenbudget.app.actual.urls import budget_actuals_urlpatterns
 from greenbudget.app.comment.urls import budget_comments_urlpatterns
 
@@ -21,5 +22,6 @@ urlpatterns = router.urls + [
         path('accounts/', include(budget_accounts_urlpatterns)),
         path('actuals/', include(budget_actuals_urlpatterns)),
         path('comments/', include(budget_comments_urlpatterns)),
+        path('groups/', include(budget_accounts_groups_urlpatterns)),
     ]))
 ]

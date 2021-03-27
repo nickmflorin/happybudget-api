@@ -13,9 +13,9 @@ def test_create_subaccount_subaccount_group(api_client, user,
 
     api_client.force_login(user)
     response = api_client.post(
-        "/v1/subaccounts/%s/subaccount-groups/" % subaccount.pk, data={
+        "/v1/subaccounts/%s/groups/" % subaccount.pk, data={
             'name': 'Group Name',
-            'subaccounts': [child_subaccount.pk],
+            'children': [child_subaccount.pk],
             'color': '#a1887f'
         })
     assert response.status_code == 201
@@ -23,12 +23,12 @@ def test_create_subaccount_subaccount_group(api_client, user,
     group = SubAccountGroup.objects.first()
     assert group is not None
     assert group.name == "Group Name"
-    assert group.subaccounts.count() == 1
-    assert group.subaccounts.first() == child_subaccount
+    assert group.children.count() == 1
+    assert group.children.first() == child_subaccount
     assert group.parent == subaccount
 
     assert response.json() == {
-        "id": 1,
+        "id": group.pk,
         "name": "Group Name",
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
@@ -50,10 +50,11 @@ def test_create_subaccount_subaccount_group(api_client, user,
             "full_name": user.full_name,
             "profile_image": None,
         },
-        "subaccounts": [
+        "children": [
             {
                 "id": child_subaccount.pk,
-                "name": child_subaccount.name
+                "name": child_subaccount.name,
+                "identifier": '%s' % child_subaccount.identifier
             }
         ]
     }
@@ -74,9 +75,9 @@ def test_create_subaccount_subaccount_group_invalid_child(api_client, user,
 
     api_client.force_login(user)
     response = api_client.post(
-        "/v1/subaccounts/%s/subaccount-groups/" % another_sub_account.pk, data={
+        "/v1/subaccounts/%s/groups/" % another_sub_account.pk, data={
             'name': 'Group Name',
-            'subaccounts': [child_subaccount.pk],
+            'children': [child_subaccount.pk],
             'color': '#a1887f',
         })
     assert response.status_code == 400
@@ -95,9 +96,9 @@ def test_create_subaccount_subaccount_group_duplicate_name(api_client, user,
 
     api_client.force_login(user)
     response = api_client.post(
-        "/v1/subaccounts/%s/subaccount-groups/" % subaccount.pk, data={
+        "/v1/subaccounts/%s/groups/" % subaccount.pk, data={
             'name': 'Group Name',
-            'subaccounts': [child_subaccount.pk],
+            'children': [child_subaccount.pk],
             'color': '#a1887f',
         })
     assert response.status_code == 400
@@ -112,9 +113,9 @@ def test_create_account_subaccount_group(api_client, user,
 
     api_client.force_login(user)
     response = api_client.post(
-        "/v1/accounts/%s/subaccount-groups/" % account.pk, data={
+        "/v1/accounts/%s/groups/" % account.pk, data={
             'name': 'Group Name',
-            'subaccounts': [subaccount.pk],
+            'children': [subaccount.pk],
             'color': '#a1887f',
         })
     assert response.status_code == 201
@@ -122,8 +123,8 @@ def test_create_account_subaccount_group(api_client, user,
     group = SubAccountGroup.objects.first()
     assert group is not None
     assert group.name == "Group Name"
-    assert group.subaccounts.count() == 1
-    assert group.subaccounts.first() == subaccount
+    assert group.children.count() == 1
+    assert group.children.first() == subaccount
     assert group.parent == account
 
     assert response.json() == {
@@ -149,10 +150,11 @@ def test_create_account_subaccount_group(api_client, user,
             "full_name": user.full_name,
             "profile_image": None,
         },
-        "subaccounts": [
+        "children": [
             {
                 "id": subaccount.pk,
-                "name": subaccount.name
+                "name": subaccount.name,
+                "identifier": '%s' % subaccount.identifier
             }
         ]
     }
@@ -169,9 +171,9 @@ def test_create_account_subaccount_group_duplicate_name(api_client, user,
 
     api_client.force_login(user)
     response = api_client.post(
-        "/v1/subaccounts/%s/subaccount-groups/" % subaccount.pk, data={
+        "/v1/subaccounts/%s/groups/" % subaccount.pk, data={
             'name': 'Group Name',
-            'subaccounts': [subaccount.pk]
+            'children': [subaccount.pk]
         })
     assert response.status_code == 400
 
@@ -190,9 +192,9 @@ def test_create_account_subaccount_group_invalid_child(api_client, user,
 
     api_client.force_login(user)
     response = api_client.post(
-        "/v1/accounts/%s/subaccount-groups/" % account.pk, data={
+        "/v1/accounts/%s/groups/" % account.pk, data={
             'name': 'Group Name',
-            'subaccounts': [subaccount.pk],
+            'children': [subaccount.pk],
             'color': '#a1887f',
         })
     assert response.status_code == 400
@@ -208,16 +210,16 @@ def test_update_subaccount_group(api_client, user, create_sub_account,
 
     api_client.force_login(user)
     response = api_client.patch(
-        "/v1/subaccounts/subaccount-groups/%s/" % group.pk, data={
+        "/v1/subaccounts/groups/%s/" % group.pk, data={
             'name': 'Group Name',
-            'subaccounts': [subaccount.pk]
+            'children': [subaccount.pk]
         })
     assert response.status_code == 200
 
     group.refresh_from_db()
     assert group.name == "Group Name"
-    assert group.subaccounts.count() == 1
-    assert group.subaccounts.first() == subaccount
+    assert group.children.count() == 1
+    assert group.children.first() == subaccount
     assert group.parent == account
 
     assert response.json() == {
@@ -255,10 +257,11 @@ def test_update_subaccount_group(api_client, user, create_sub_account,
             "full_name": user.full_name,
             "profile_image": None,
         },
-        "subaccounts": [
+        "children": [
             {
                 "id": subaccount.pk,
-                "name": subaccount.name
+                "name": subaccount.name,
+                "identifier": '%s' % subaccount.identifier
             }
         ]
     }
@@ -277,9 +280,9 @@ def test_update_subaccount_group_invalid_child(api_client, user,
 
     api_client.force_login(user)
     response = api_client.patch(
-        "/v1/subaccounts/subaccount-groups/%s/" % group.pk, data={
+        "/v1/subaccounts/groups/%s/" % group.pk, data={
             'name': 'Group Name',
-            'subaccounts': [subaccount.pk],
+            'children': [subaccount.pk],
         })
     assert response.status_code == 400
 
@@ -296,9 +299,9 @@ def test_update_subaccount_group_duplicate_name(api_client, user,
 
     api_client.force_login(user)
     response = api_client.patch(
-        "/v1/subaccounts/subaccount-groups/%s/" % group.pk, data={
+        "/v1/subaccounts/groups/%s/" % group.pk, data={
             'name': 'Group Name',
-            'subaccounts': [subaccount.pk]
+            'children': [subaccount.pk]
         })
     assert response.status_code == 400
 
@@ -316,27 +319,27 @@ def test_group_subaccount_already_in_group(api_client, user,
 
     api_client.force_login(user)
     response = api_client.patch(
-        "/v1/subaccounts/subaccount-groups/%s/" % another_group.pk, data={
+        "/v1/subaccounts/groups/%s/" % another_group.pk, data={
             'name': 'Group Name',
-            'subaccounts': [subaccount.pk]
+            'children': [subaccount.pk]
         })
     assert response.status_code == 200
     subaccount.refresh_from_db()
     assert subaccount.group == another_group
     group.refresh_from_db()
-    assert group.subaccounts.count() == 0
+    assert group.children.count() == 0
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_delete_subaccount_group(api_client, user, create_sub_account,
-        create_account, create_budget, create_sub_account_group):
+def test_delete_subaccount_group(api_client, user, create_account,
+        create_budget, create_sub_account_group):
     budget = create_budget()
     account = create_account(budget=budget)
     group = create_sub_account_group(parent=account)
 
     api_client.force_login(user)
     response = api_client.delete(
-        "/v1/subaccounts/subaccount-groups/%s/" % group.pk)
+        "/v1/subaccounts/groups/%s/" % group.pk)
     assert response.status_code == 204
 
     assert SubAccountGroup.objects.count() == 0

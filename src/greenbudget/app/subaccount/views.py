@@ -19,12 +19,11 @@ class SubAccountGroupViewSet(
     """
     Viewset to handle requests to the following endpoints:
 
-    (1) PATCH /subaccounts/subaccount-groups/<pk>/
-    (2) GET /subaccounts/subaccount-groups/<pk>/
+    (1) PATCH /subaccounts/groups/<pk>/
+    (2) GET /subaccounts/groups/<pk>/
     """
     lookup_field = 'pk'
     serializer_class = SubAccountGroupSerializer
-    subaccount_lookup_field = ("pk", "subaccount_pk")
 
     def get_queryset(self):
         return SubAccountGroup.objects.all()
@@ -42,8 +41,8 @@ class SubAccountSubAccountGroupViewSet(
     """
     Viewset to handle requests to the following endpoints:
 
-    (1) POST /subaccounts/<pk>/subaccount-groups/
-    (2) GET /subaccounts/<pk>/subaccount-groups/
+    (1) POST /subaccounts/<pk>/groups/
+    (2) GET /subaccounts/<pk>/groups/
     """
     lookup_field = 'pk'
     serializer_class = SubAccountGroupSerializer
@@ -72,8 +71,8 @@ class AccountSubAccountGroupViewSet(
     """
     Viewset to handle requests to the following endpoints:
 
-    (1) POST /accounts/<pk>/subaccount-groups/
-    (2) GET /accounts/<pk>/subaccount-groups/
+    (1) POST /accounts/<pk>/groups/
+    (2) GET /accounts/<pk>/groups/
     """
     lookup_field = 'pk'
     serializer_class = SubAccountGroupSerializer
