@@ -4,7 +4,7 @@ from django.db import models
 from greenbudget.lib.model_tracker import track_model
 
 from greenbudget.app.actual.models import Actual
-from greenbudget.app.budget_item.models import BudgetItem
+from greenbudget.app.budget_item.models import BudgetItem, BudgetItemGroup
 from greenbudget.app.budget_item.hooks import (
     on_create, on_field_change, on_group_removal)
 from greenbudget.app.comment.models import Comment
@@ -19,11 +19,28 @@ from greenbudget.app.subaccount.models import SubAccount, SubAccountGroup
 DETERMINE_ACTUAL_FROM_UNDERLYINGS = True
 
 
+class AccountGroup(BudgetItemGroup):
+    name = models.CharField(max_length=128)
+    budget = models.ForeignKey(
+        to='budget.Budget',
+        related_name="groups",
+        on_delete=models.CASCADE,
+        db_index=True,
+    )
+
+    class Meta:
+        get_latest_by = "created_at"
+        ordering = ('created_at', )
+        verbose_name = "Account Group"
+        verbose_name_plural = "Account Groups"
+        unique_together = (('budget', 'name'))
+
+
 @track_model(
     on_create=on_create,
-    track_removal_of_fields=['group'],
+    # track_removal_of_fields=['group'],
     user_field='updated_by',
-    on_field_removal_hooks={'group': on_group_removal},
+    # on_field_removal_hooks={'group': on_group_removal},
     on_field_change=on_field_change,
     track_changes_to_fields=['description', 'identifier'],
 )
@@ -37,12 +54,10 @@ class Account(BudgetItem):
     actuals = GenericRelation(Actual)
     comments = GenericRelation(Comment)
     events = GenericRelation(Event)
-    subaccount_groups = GenericRelation(SubAccountGroup)
+    groups = GenericRelation(SubAccountGroup)
 
     class Meta:
         get_latest_by = "updated_at"
-        # Since the data from this model is used to power AGGridReact tables,
-        # we want to keep the ordering of the accounts consistent.
         ordering = ('created_at', )
         verbose_name = "Account"
         verbose_name_plural = "Accounts"

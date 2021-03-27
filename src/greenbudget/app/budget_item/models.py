@@ -1,3 +1,4 @@
+from colorful.fields import RGBColorField
 from polymorphic.models import PolymorphicModel
 
 from django.db import models
@@ -11,18 +12,81 @@ DETERMINE_ACCOUNT_ACTUAL_FROM_UNDERLYINGS = True
 DETERMINE_SUB_ACCOUNT_ACTUAL_FROM_UNDERLYINGS = False
 
 
-class BudgetItem(PolymorphicModel):
+class BudgetItemGroup(PolymorphicModel):
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(
         to='user.User',
-        related_name='created_sub_accounts',
+        related_name='created_groups',
         on_delete=models.SET_NULL,
         null=True
     )
     updated_at = models.DateTimeField(auto_now=True)
     updated_by = models.ForeignKey(
         to='user.User',
-        related_name='updated_sub_accounts',
+        related_name='updated_groups',
+        on_delete=models.SET_NULL,
+        null=True
+    )
+    color = RGBColorField(colors=[
+        "#797695",
+        "#ff7165",
+        "#80cbc4",
+        "#ce93d8",
+        "#fed835",
+        "#c87987",
+        "#69f0ae",
+        "#a1887f",
+        "#81d4fa",
+        "#f75776",
+        "#66bb6a",
+        "#58add6"
+    ], default='#EFEFEF')
+
+    class Meta:
+        get_latest_by = "created_at"
+        ordering = ('created_at', )
+        verbose_name = "Budget Item Group"
+        verbose_name_plural = "Budget Item Groups"
+
+    @property
+    def variance(self):
+        if self.actual is not None and self.estimated is not None:
+            return float(self.estimated) - float(self.actual)
+        return None
+
+    @property
+    def actual(self):
+        actuals = []
+        for child in self.children.all():
+            if child.actual is not None:
+                actuals.append(child.actual)
+        if len(actuals) != 0:
+            return sum(actuals)
+        return None
+
+    @property
+    def estimated(self):
+        estimated = []
+        for child in self.children.all():
+            if child.estimated is not None:
+                estimated.append(child.estimated)
+        if len(estimated) != 0:
+            return sum(estimated)
+        return None
+
+
+class BudgetItem(PolymorphicModel):
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(
+        to='user.User',
+        related_name='created_budget_items',
+        on_delete=models.SET_NULL,
+        null=True
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(
+        to='user.User',
+        related_name='updated_budget_items',
         on_delete=models.SET_NULL,
         null=True
     )
@@ -40,8 +104,6 @@ class BudgetItem(PolymorphicModel):
 
     class Meta:
         get_latest_by = "updated_at"
-        # Since the data from this model is used to power AGGridReact tables,
-        # we want to keep the ordering of the accounts consistent.
         ordering = ('created_at', )
         verbose_name = "Budget Item"
         verbose_name_plural = "Budget Items"
