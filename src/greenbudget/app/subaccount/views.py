@@ -21,6 +21,7 @@ class SubAccountGroupViewSet(
 
     (1) PATCH /subaccounts/groups/<pk>/
     (2) GET /subaccounts/groups/<pk>/
+    (3) DELETE /subaccounts/groups/<pk>/
     """
     lookup_field = 'pk'
     serializer_class = SubAccountGroupSerializer

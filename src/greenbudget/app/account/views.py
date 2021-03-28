@@ -17,6 +17,7 @@ class AccountGroupViewSet(
 
     (1) PATCH /accounts/groups/<pk>/
     (2) GET /accounts/groups/<pk>/
+    (3) DELETE /accounts/groups/<pk>/
     """
     lookup_field = 'pk'
     serializer_class = AccountGroupSerializer
