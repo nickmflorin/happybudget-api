@@ -82,7 +82,6 @@ class track_model:
         # exception.
         if hasattr(cls, '__track_model_decorated__'):
             raise Exception("`track_model` does not support model inheritance.")
-            # self.merge(getattr(cls, '__track_model_decorated__'))
 
         # Contains a local copy of the previous values of the fields.
         cls.__data = {}
@@ -127,6 +126,7 @@ class track_model:
             """
             Returns the previous value for the provided field before the last
             save.
+
             Parameters:
             ----------
             field: :obj:`str`
@@ -159,14 +159,38 @@ class track_model:
             :obj:`track_model` is configured for to a local store on the model.
             This store is used at a later point in time to determine if any
             fields have changed.
+
+            NOTE:
+            ----
+            There are some caveats to this, as it relates to Django, post_init
+            signals and ForeignKey fields.
+
+            When a model has an FK field, the field is actually represented by
+            a :obj:`django.db.models.query_utils.DeferredAttribute` instance.
+            The value on the FK field isn't actually loaded into memory until
+            the attribute is accessed.  However, when this happens, it triggers
+            a reinitialization of the model to store the temporary data.  This
+            is problematic with post_init signals, because it causes an
+            infinite recursion when accessing FK fields inside of the post_init
+            logic flow.
+
+            That is exactly what is happening here - we are accessing the FK
+            fields inside of a chain of logic that is triggered on post_init,
+            which causes an infinite recursion.  To get around this, we only
+            track fields that are already loaded into memory (non FK fields)
+            and for FK fields, we just track the ID of the associated model -
+            preventing the FK instance from being loaded into memory and
+            causing an infinite recursion.
             """
             instance.__data = dict()
             if instance.id:
                 for f in instance.__tracked_fields:
-                    # TODO: Explanation as to why we have to do this with
-                    # post init, recursions and foreign keys.
+                    # Only load the field into the store if it is already
+                    # loaded into memory.
                     if f in instance.__dict__:
                         instance.__data[f] = getattr(instance, f)
+                    # If the field is not already loaded into memory, it may
+                    # be a FK field - so we only track the associated ID.
                     elif '%s_id' % f in instance.__dict__:
                         instance.__data[f] = getattr(instance, '%s_id' % f)
 
@@ -176,7 +200,6 @@ class track_model:
             hook into the provided callbacks when fields are changed, fields
             are removed or the instance is created for the first time.
             """
-            # flags = set_flags(instance, **kwargs)
             new_instance = instance.id is None
 
             track_changes = kwargs.pop('track_changes', True)
@@ -203,7 +226,6 @@ class track_model:
                                     'new_value': getattr(instance, k),
                                     'user': self.get_user(instance),
                                 })
-
                         # Call either the specifically provided hook for the
                         # field or the general hook for the case when the field
                         # has been removed.
@@ -221,7 +243,6 @@ class track_model:
                                     'new_value': getattr(instance, k),
                                     'user': self.get_user(instance),
                                 })
-
             store(instance)
 
         def _post_init(sender, instance, **kwargs):
@@ -273,40 +294,6 @@ class track_model:
             self.validate_field(klass, k)
         for k, _ in self._on_field_change_hooks.items():
             self.validate_field(klass, k)
-
-    def merge(self, track_model_instance):
-        """
-        Merges the configuration of this :obj:`track_model` with another
-        :obj:`track_model` so that inherited models can use behavior of the
-        parent model's tracking configuration.
-        NOTE:
-        ----
-        This is not currently used, because Polymorphic extensions do not play
-        well when the model save method is patched.  We will leave around for
-        now, just in case we figure out how to do so.
-        """
-        for k, v in self.__dict__.items():
-            merging_value = getattr(track_model_instance, k)
-            # Merge together list fields.
-            if isinstance(v, (tuple, list)):
-                assert isinstance(merging_value, (list, tuple))
-                # Note that we cannot use set() here, because the elements of
-                # the lists might not be hashable.
-                union = []
-                for obj in list(v) + list(merging_value):
-                    if obj not in union:
-                        union.append(obj)
-                setattr(self, k, union)
-            # Merge together dictionary fields.
-            elif isinstance(v, dict):
-                # TODO: We might want to recursively merge here if the value in
-                # the dictionary is also a list.
-                assert isinstance(merging_value, dict)
-                setattr(self, k, {**v, **merging_value})
-            # Overrride singleton fields only if it is not on the current
-            # instance.
-            elif v is None:
-                setattr(self, k, merging_value)
 
     def get_user(self, instance):
         try:
