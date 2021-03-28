@@ -163,7 +163,12 @@ class track_model:
             instance.__data = dict()
             if instance.id:
                 for f in instance.__tracked_fields:
-                    instance.__data[f] = getattr(instance, f)
+                    # TODO: Explanation as to why we have to do this with
+                    # post init, recursions and foreign keys.
+                    if f in instance.__dict__:
+                        instance.__data[f] = getattr(instance, f)
+                    elif '%s_id' % f in instance.__dict__:
+                        instance.__data[f] = getattr(instance, '%s_id' % f)
 
         def save(instance, *args, **kwargs):
             """

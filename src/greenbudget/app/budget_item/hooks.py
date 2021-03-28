@@ -4,6 +4,7 @@ from django.conf import settings
 
 from greenbudget.app.history.models import (
     Event, FieldAlterationEvent, CreateEvent)
+from .models import BudgetItemGroup
 
 
 logger = logging.getLogger('greenbudget')
@@ -11,17 +12,18 @@ logger = logging.getLogger('greenbudget')
 
 def on_group_removal(instance, data):
     if instance.__class__.objects.filter(
-            group=data['previous_value']).count() == 0:
+            group_id=data['previous_value']).count() == 0:
         logger.info(
             "Deleting group %s after it was removed from %s %s "
             "because the group has no other children."
             % (
-                data['previous_value'].id,
+                data['previous_value'],
                 instance.__class__.__name__,
                 instance.id
             )
         )
-        data['previous_value'].delete()
+        group = BudgetItemGroup.objects.get(pk=data['previous_value'])
+        group.delete()
 
 
 def on_field_change(instance, field, data):
