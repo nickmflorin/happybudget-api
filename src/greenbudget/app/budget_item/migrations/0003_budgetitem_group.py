@@ -6,6 +6,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('budget_item', '0002_budget_item_group'),
+        ('subaccount', '0006_remove_subaccount_group'),
     ]
 
     operations = [
