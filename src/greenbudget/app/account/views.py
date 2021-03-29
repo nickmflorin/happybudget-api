@@ -45,6 +45,9 @@ class BudgetAccountGroupViewSet(
     serializer_class = AccountGroupSerializer
     budget_lookup_field = ("pk", "budget_pk")
 
+    def get_queryset(self):
+        return AccountGroup.objects.filter(budget=self.budget)
+
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context.update(parent=self.budget)

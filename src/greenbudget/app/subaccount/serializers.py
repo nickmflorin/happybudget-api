@@ -99,9 +99,6 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
             'unit', 'unit_name', 'account', 'object_id', 'parent_type',
             'ancestors', 'estimated', 'subaccounts', 'actual', 'variance',
             'budget', 'type', 'group')
-        response = {
-            'group': (SubAccountGroupSerializer, {'nested': True})
-        }
 
     def validate_identifier(self, value):
         budget = self.context.get('budget')
