@@ -49,6 +49,12 @@ class SubAccountSubAccountGroupViewSet(
     serializer_class = SubAccountGroupSerializer
     subaccount_lookup_field = ("pk", "subaccount_pk")
 
+    def get_queryset(self):
+        return SubAccountGroup.objects.filter(
+            content_type=ContentType.objects.get_for_model(SubAccount),
+            object_id=self.subaccount.pk,
+        )
+
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context.update(parent=self.subaccount)
@@ -78,6 +84,12 @@ class AccountSubAccountGroupViewSet(
     lookup_field = 'pk'
     serializer_class = SubAccountGroupSerializer
     account_lookup_field = ("pk", "account_pk")
+
+    def get_queryset(self):
+        return SubAccountGroup.objects.filter(
+            content_type=ContentType.objects.get_for_model(Account),
+            object_id=self.account.pk,
+        )
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
