@@ -331,7 +331,7 @@ def test_bulk_update_account(api_client, user, create_budget, create_account,
         data={
             'changes': [
                 {
-                    'id': subaccounts[0].pk,
+                    'id': 10000,
                     'name': 'New Name 1',
                 },
                 {
@@ -340,5 +340,6 @@ def test_bulk_update_account(api_client, user, create_budget, create_account,
                 }
             ]
         })
+    assert response.status_code == 200
     assert response.json()['subaccounts'][0]['name'] == 'New Name 1'
     assert response.json()['subaccounts'][1]['name'] == 'New Name 2'
