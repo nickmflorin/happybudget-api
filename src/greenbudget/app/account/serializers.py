@@ -6,11 +6,57 @@ from greenbudget.lib.rest_framework_utils.serializers import (
 from greenbudget.app.common.serializers import AncestorSerializer
 from greenbudget.app.budget_item.serializers import (
     BudgetItemGroupSerializer, BudgetItemSimpleSerializer)
-from greenbudget.app.subaccount.serializers import SubAccountSimpleSerializer
+from greenbudget.app.subaccount.serializers import (
+    SubAccountChangeSerializer,
+    SubAccountSimpleSerializer,
+    SubAccountSerializer
+)
 from greenbudget.app.user.models import User
 from greenbudget.app.user.serializers import UserSerializer
 
 from .models import Account, AccountGroup
+
+
+class AccountBulkUpdateSerializer(serializers.ModelSerializer):
+    changes = SubAccountChangeSerializer(many=True)
+
+    class Meta:
+        model = Account
+        fields = ('changes', )
+
+    def validate_changes(self, changes):
+        grouped = {}
+        for change in changes:
+            instance = change['id']
+            del change['id']
+            if instance.parent != self.instance:
+                raise exceptions.ValidationError(
+                    "The sub-account %s does not belong to account %s."
+                    % (instance.pk, self.instance.pk)
+                )
+            if instance.pk not in grouped:
+                grouped[instance.pk] = {
+                    **{'instance': instance}, **change}
+            else:
+                grouped[instance.pk] = {
+                    **grouped[change['id'].pk],
+                    **{'instance': instance},
+                    **change
+                }
+        return grouped
+
+    def update(self, instance, validated_data):
+        for id, change in validated_data['changes'].items():
+            subaccount = change['instance']
+            del change['instance']
+            serializer = SubAccountSerializer(
+                instance=subaccount,
+                data=change,
+                partial=True
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        return instance
 
 
 class AccountGroupSerializer(BudgetItemGroupSerializer):

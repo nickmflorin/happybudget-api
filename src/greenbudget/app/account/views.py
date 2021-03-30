@@ -1,9 +1,13 @@
-from rest_framework import viewsets, mixins
+from rest_framework import viewsets, mixins, decorators, response
 
 from greenbudget.app.budget.mixins import BudgetNestedMixin
 
 from .models import Account, AccountGroup
-from .serializers import AccountSerializer, AccountGroupSerializer
+from .serializers import (
+    AccountSerializer,
+    AccountGroupSerializer,
+    AccountBulkUpdateSerializer
+)
 
 
 class AccountGroupViewSet(
@@ -87,6 +91,7 @@ class AccountViewSet(
     (1) GET /accounts/<pk>/
     (2) PATCH /accounts/<pk>/
     (3) DELETE /accounts/<pk>/
+    (4) PATCH /accounts/<pk>/bulk-update/
     """
 
     def get_queryset(self):
@@ -94,6 +99,15 @@ class AccountViewSet(
 
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
+
+    @decorators.action(detail=True, url_path='bulk-update', methods=["PATCH"])
+    def bulk_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = AccountBulkUpdateSerializer(
+            instance=instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save(updated_by=request.user)
+        return response.Response(self.serializer_class(instance).data)
 
 
 class BudgetAccountViewSet(

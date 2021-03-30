@@ -119,3 +119,10 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
                     "derived."
                 )
         return super().validate(attrs)
+
+
+class SubAccountChangeSerializer(SubAccountSerializer):
+    id = serializers.PrimaryKeyRelatedField(
+        required=True,
+        queryset=SubAccount.objects.all()
+    )

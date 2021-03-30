@@ -313,3 +313,32 @@ def test_update_account_duplicate_number(api_client, user, create_budget,
         'description': 'Account description',
     })
     assert response.status_code == 400
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_bulk_update_account(api_client, user, create_budget, create_account,
+        create_sub_account):
+    api_client.force_login(user)
+    budget = create_budget()
+    account = create_account(budget=budget)
+    subaccounts = [
+        create_sub_account(budget=budget, parent=account),
+        create_sub_account(budget=budget, parent=account)
+    ]
+    response = api_client.patch(
+        "/v1/accounts/%s/bulk-update/" % account.pk,
+        format='json',
+        data={
+            'changes': [
+                {
+                    'id': subaccounts[0].pk,
+                    'name': 'New Name 1',
+                },
+                {
+                    'id': subaccounts[1].pk,
+                    'name': 'New Name 2',
+                }
+            ]
+        })
+    assert response.json()['subaccounts'][0]['name'] == 'New Name 1'
+    assert response.json()['subaccounts'][1]['name'] == 'New Name 2'
