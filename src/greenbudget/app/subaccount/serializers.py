@@ -107,7 +107,7 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
         # context, we do not have access to the context.  Validation will
         # have to be done by the serializer using this serializer in its nested
         # form.
-        if self._nested is False:
+        if self._nested is not True:
             parent = self.context.get('parent')
             if parent is None:
                 parent = self.instance.parent
@@ -165,7 +165,7 @@ class AbstractBulkCreateSubAccountsSerializer(serializers.ModelSerializer):
 
 
 class AbstractBulkUpdateSubAccountsSerializer(serializers.ModelSerializer):
-    data = SubAccountBulkChangeSerializer(many=True)
+    data = SubAccountBulkChangeSerializer(many=True, nested=True)
 
     class Meta:
         model = SubAccount
