@@ -1,3 +1,4 @@
+from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers, exceptions
 
 from greenbudget.app.budget_item.serializers import (
@@ -132,3 +133,90 @@ class SubAccountBulkChangeSerializer(SubAccountSerializer):
         required=True,
         queryset=SubAccount.objects.all()
     )
+
+
+class AbstractBulkCreateSubAccountsSerializer(serializers.ModelSerializer):
+    data = SubAccountSerializer(many=True, nested=True)
+
+    class Meta:
+        abstract = True
+        fields = ('data', )
+
+    def update(self, instance, validated_data):
+        subaccounts = []
+        for payload in validated_data['data']:
+            serializer = SubAccountSerializer(data=payload, context={
+                'parent': instance
+            })
+            serializer.is_valid(raise_exception=True)
+            # Note that the updated_by argument is the user updating the
+            # Account by adding new SubAccount(s), so the SubAccount(s) should
+            # be denoted as having been created by this user.
+            subaccount = serializer.save(
+                updated_by=validated_data['updated_by'],
+                created_by=validated_data['updated_by'],
+                object_id=instance.pk,
+                content_type=ContentType.objects.get_for_model(SubAccount),
+                parent=instance,
+                budget=instance.budget
+            )
+            subaccounts.append(subaccount)
+        return subaccounts
+
+
+class AbstractBulkUpdateSubAccountsSerializer(serializers.ModelSerializer):
+    data = SubAccountBulkChangeSerializer(many=True)
+
+    class Meta:
+        model = SubAccount
+        fields = ('data', )
+
+    def validate_data(self, data):
+        grouped = {}
+        for change in data:
+            instance = change['id']
+            del change['id']
+            if instance.parent != self.instance:
+                raise exceptions.ValidationError(
+                    "The sub-account %s does not belong to account %s."
+                    % (instance.pk, self.instance.pk)
+                )
+            if instance.pk not in grouped:
+                grouped[instance.pk] = {
+                    **{'instance': instance}, **change}
+            else:
+                grouped[instance.pk] = {
+                    **grouped[instance.pk],
+                    **{'instance': instance},
+                    **change
+                }
+        return grouped
+
+    def update(self, instance, validated_data):
+        for id, change in validated_data['data'].items():
+            subaccount = change['instance']
+            del change['instance']
+            serializer = SubAccountSerializer(
+                instance=subaccount,
+                data=change,
+                partial=True
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save(updated_by=validated_data['updated_by'])
+        return instance
+
+
+class SubAccountBulkCreateSubAccountsSerializer(
+        AbstractBulkCreateSubAccountsSerializer):
+
+    class Meta:
+        model = SubAccount
+        fields = AbstractBulkCreateSubAccountsSerializer.Meta.fields
+
+
+class SubAccountBulkUpdateSubAccountsSerializer(
+        AbstractBulkUpdateSubAccountsSerializer):
+
+    class Meta:
+        model = SubAccount
+        fields = AbstractBulkUpdateSubAccountsSerializer.Meta.fields

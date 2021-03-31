@@ -1,12 +1,17 @@
 from django.contrib.contenttypes.models import ContentType
-from rest_framework import viewsets, mixins
+from rest_framework import viewsets, mixins, decorators, response, status
 
 from greenbudget.app.account.models import Account
 from greenbudget.app.account.mixins import AccountNestedMixin
 
 from .mixins import SubAccountNestedMixin
 from .models import SubAccount, SubAccountGroup
-from .serializers import SubAccountSerializer, SubAccountGroupSerializer
+from .serializers import (
+    SubAccountSerializer,
+    SubAccountGroupSerializer,
+    SubAccountBulkCreateSubAccountsSerializer,
+    SubAccountBulkUpdateSubAccountsSerializer
+)
 
 
 class SubAccountGroupViewSet(
@@ -88,19 +93,46 @@ class SubAccountViewSet(
     (2) PATCH /subaccounts/<pk>/
     (3) DELETE /subaccounts/<pk>/
     (4) PATCH /subaccounts/<pk>/bulk-update-subaccounts/
+    (5) PATCH /subaccounts/<pk>/bulk-create-subaccounts/
     """
-
-    # def get_serializer_context(self):
-    #     instance = self.get_object()
-    #     context = super().get_serializer_context()
-    #     context.update(budget=instance.budget)
-    #     return context
 
     def get_queryset(self):
         return SubAccount.objects.filter(budget__trash=False)
 
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
+
+    @decorators.action(
+        detail=True, url_path='bulk-update-subaccounts', methods=["PATCH"])
+    def bulk_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = SubAccountBulkUpdateSubAccountsSerializer(
+            instance=instance,
+            data=request.data,
+            partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save(updated_by=request.user)
+        return response.Response(
+            self.serializer_class(instance).data,
+            status=status.HTTP_200_OK
+        )
+
+    @decorators.action(
+        detail=True, url_path='bulk-create-subaccounts', methods=["PATCH"])
+    def bulk_create(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = SubAccountBulkCreateSubAccountsSerializer(
+            instance=instance,
+            data=request.data,
+            partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        subaccounts = serializer.save(updated_by=request.user)
+        return response.Response(
+            {'data': SubAccountSerializer(subaccounts, many=True).data},
+            status=status.HTTP_201_CREATED
+        )
 
 
 class SubAccountRecursiveViewSet(
@@ -126,9 +158,6 @@ class SubAccountRecursiveViewSet(
         return context
 
     def get_queryset(self):
-        # The queryset will already be limited to SubAccount(s) that belong
-        # to Budget(s) that are not in the Trash, because the @property
-        # `account` only looks at active Budget(s).
         content_type = ContentType.objects.get_for_model(SubAccount)
         return SubAccount.objects.filter(
             object_id=self.subaccount.pk,
@@ -166,9 +195,6 @@ class AccountSubAccountViewSet(
         return context
 
     def get_queryset(self):
-        # The queryset will already be limited to SubAccount(s) that belong
-        # to Budget(s) that are not in the Trash, because the @property
-        # `account` only looks at active Budget(s).
         content_type = ContentType.objects.get_for_model(Account)
         return SubAccount.objects.filter(
             object_id=self.account.pk,
