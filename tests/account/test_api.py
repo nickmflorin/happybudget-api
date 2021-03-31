@@ -358,8 +358,7 @@ def test_bulk_create_account_subaccounts(api_client, user, create_budget,
     budget = create_budget()
     account = create_account(budget=budget)
     response = api_client.patch(
-        "/v1/budgets/%s/accounts/%s/bulk-create-subaccounts/"
-        % (budget.pk, account.pk),
+        "/v1/accounts/%s/bulk-create-subaccounts/" % account.pk,
         format='json',
         data={
             'data': [
@@ -386,7 +385,7 @@ def test_bulk_create_account_subaccounts(api_client, user, create_budget,
     assert subaccounts[1].budget == budget
     assert subaccounts[1].parent == account
 
-    assert response.json()['subaccounts'][0]['identifier'] == 'subaccount-a'
-    assert response.json()['subaccounts'][0]['name'] == 'New Name 1'
-    assert response.json()['subaccounts'][1]['identifier'] == 'subaccount-b'
-    assert response.json()['subaccounts'][1]['name'] == 'New Name 2'
+    assert response.json()['data'][0]['identifier'] == 'subaccount-a'
+    assert response.json()['data'][0]['name'] == 'New Name 1'
+    assert response.json()['data'][1]['identifier'] == 'subaccount-b'
+    assert response.json()['data'][1]['name'] == 'New Name 2'

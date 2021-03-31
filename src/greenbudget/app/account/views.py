@@ -4,7 +4,8 @@ from rest_framework import viewsets, mixins, decorators, response, status
 from greenbudget.app.account.mixins import AccountNestedMixin
 from greenbudget.app.budget.mixins import BudgetNestedMixin
 from greenbudget.app.subaccount.models import SubAccountGroup
-from greenbudget.app.subaccount.serializers import SubAccountGroupSerializer, SubAccountSerializer
+from greenbudget.app.subaccount.serializers import (
+    SubAccountGroupSerializer, SubAccountSerializer)
 
 from .models import Account, AccountGroup
 from .serializers import (
@@ -102,6 +103,7 @@ class AccountViewSet(
     (2) PATCH /accounts/<pk>/
     (3) DELETE /accounts/<pk>/
     (4) PATCH /accounts/<pk>/bulk-update-subaccounts/
+    (5) PATCH /accounts/<pk>/bulk-create-subaccounts/
     """
 
     def get_queryset(self):
@@ -126,6 +128,22 @@ class AccountViewSet(
             status=status.HTTP_200_OK
         )
 
+    @decorators.action(
+        detail=True, url_path='bulk-create-subaccounts', methods=["PATCH"])
+    def bulk_create(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = AccountBulkCreateSubAccountsSerializer(
+            instance=instance,
+            data=request.data,
+            partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        subaccounts = serializer.save(updated_by=request.user)
+        return response.Response(
+            {'data': SubAccountSerializer(subaccounts, many=True).data},
+            status=status.HTTP_201_CREATED
+        )
+
 
 class BudgetAccountViewSet(
     mixins.CreateModelMixin,
@@ -139,7 +157,6 @@ class BudgetAccountViewSet(
 
     (1) GET /budgets/<pk>/accounts/
     (2) POST /budgets/<pk>/accounts/
-    (3) PATCH /budgets/<pk>/accounts/<pk>/bulk-create-subaccounts/
     """
     budget_lookup_field = ("pk", "budget_pk")
 
@@ -159,21 +176,4 @@ class BudgetAccountViewSet(
             updated_by=self.request.user,
             created_by=self.request.user,
             budget=self.budget
-        )
-
-    @decorators.action(
-        detail=True, url_path='bulk-create-subaccounts', methods=["PATCH"])
-    def bulk_create(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = AccountBulkCreateSubAccountsSerializer(
-            instance=instance,
-            data=request.data,
-            partial=True,
-            context=self.get_serializer_context()
-        )
-        serializer.is_valid(raise_exception=True)
-        subaccounts = serializer.save(updated_by=request.user)
-        return response.Response(
-            {'data': SubAccountSerializer(sub).data for sub in subaccounts},
-            status=status.HTTP_201_CREATED
         )
