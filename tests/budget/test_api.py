@@ -1,6 +1,8 @@
 import pytest
 
 from greenbudget.lib.utils.dateutils import api_datetime_string
+
+from greenbudget.app.account.models import Account
 from greenbudget.app.budget.models import Budget
 
 
@@ -459,3 +461,71 @@ def test_get_budget_items_tree(api_client, user, create_budget, create_account,
             ]
         }
     ]
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_bulk_update_budget_accounts(api_client, user, create_budget,
+        create_account):
+    api_client.force_login(user)
+    budget = create_budget()
+    accounts = [
+        create_account(budget=budget),
+        create_account(budget=budget)
+    ]
+    response = api_client.patch(
+        "/v1/budgets/%s/bulk-update-accounts/" % budget.pk,
+        format='json',
+        data={
+            'data': [
+                {
+                    'id': accounts[0].pk,
+                    'description': 'New Description 1',
+                },
+                {
+                    'id': accounts[1].pk,
+                    'description': 'New Description 2',
+                }
+            ]
+        })
+    assert response.status_code == 200
+
+    accounts[0].refresh_from_db()
+    assert accounts[0].description == "New Description 1"
+    accounts[1].refresh_from_db()
+    assert accounts[1].description == "New Description 2"
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_bulk_create_budget_accounts(api_client, user, create_budget):
+    api_client.force_login(user)
+    budget = create_budget()
+    response = api_client.patch(
+        "/v1/budgets/%s/bulk-create-accounts/" % budget.pk,
+        format='json',
+        data={
+            'data': [
+                {
+                    'identifier': 'account-a',
+                    'description': 'New Description 1',
+                },
+                {
+                    'identifier': 'account-b',
+                    'description': 'New Description 2',
+                }
+            ]
+        })
+    assert response.status_code == 201
+
+    accounts = Account.objects.all()
+    assert len(accounts) == 2
+    assert accounts[0].identifier == "account-a"
+    assert accounts[0].description == "New Description 1"
+    assert accounts[0].budget == budget
+    assert accounts[1].description == "New Description 2"
+    assert accounts[1].identifier == "account-b"
+    assert accounts[1].budget == budget
+
+    assert response.json()['data'][0]['identifier'] == 'account-a'
+    assert response.json()['data'][0]['description'] == 'New Description 1'
+    assert response.json()['data'][1]['identifier'] == 'account-b'
+    assert response.json()['data'][1]['description'] == 'New Description 2'

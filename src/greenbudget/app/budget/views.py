@@ -1,10 +1,15 @@
 from rest_framework import viewsets, mixins, response, status, decorators
 
 from greenbudget.app.account.models import AccountGroup
-from greenbudget.app.account.serializers import AccountGroupSerializer
+from greenbudget.app.account.serializers import (
+    AccountSerializer, AccountGroupSerializer)
 
 from .mixins import BudgetNestedMixin
-from .serializers import BudgetSerializer
+from .serializers import (
+    BudgetSerializer,
+    BudgetBulkCreateAccountsSerializer,
+    BudgetBulkUpdateAccountsSerializer
+)
 
 
 class BudgetAccountGroupViewSet(
@@ -66,6 +71,8 @@ class UserBudgetViewSet(
     (3) GET /budgets/<pk>/
     (4) PATCH /budgets/<pk>/
     (5) DELETE /budgets/<pk>/
+    (6) PATCH /budgets/<pk>/bulk-update-accounts/
+    (7) PATCH /budgets/<pk>/bulk-create-accounts/
     """
 
     def get_serializer_context(self):
@@ -86,6 +93,38 @@ class UserBudgetViewSet(
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
+
+    @decorators.action(
+        detail=True, url_path='bulk-update-accounts', methods=["PATCH"])
+    def bulk_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = BudgetBulkUpdateAccountsSerializer(
+            instance=instance,
+            data=request.data,
+            partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save(updated_by=request.user)
+        return response.Response(
+            self.serializer_class(instance).data,
+            status=status.HTTP_200_OK
+        )
+
+    @decorators.action(
+        detail=True, url_path='bulk-create-accounts', methods=["PATCH"])
+    def bulk_create(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = BudgetBulkCreateAccountsSerializer(
+            instance=instance,
+            data=request.data,
+            partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        subaccounts = serializer.save(updated_by=request.user)
+        return response.Response(
+            {'data': AccountSerializer(subaccounts, many=True).data},
+            status=status.HTTP_201_CREATED
+        )
 
 
 class UserBudgetTrashViewSet(

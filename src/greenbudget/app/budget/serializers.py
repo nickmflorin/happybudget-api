@@ -1,7 +1,10 @@
-from rest_framework import serializers
+from rest_framework import serializers, exceptions
 
 from greenbudget.lib.rest_framework_utils.serializers import (
     EnhancedModelSerializer)
+
+from greenbudget.app.account.serializers import (
+    AccountSerializer, AccountBulkChangeSerializer)
 from greenbudget.app.user.serializers import UserSerializer
 
 from .models import Budget
@@ -48,3 +51,71 @@ class BudgetSerializer(EnhancedModelSerializer):
         )
         validator({'name': value, 'user': user}, self)
         return value
+
+
+class BudgetBulkCreateAccountsSerializer(serializers.ModelSerializer):
+    data = AccountSerializer(many=True, nested=True)
+
+    class Meta:
+        model = Budget
+        fields = ('data', )
+
+    def update(self, instance, validated_data):
+        accounts = []
+        for payload in validated_data['data']:
+            serializer = AccountSerializer(data=payload, context={
+                'budget': instance
+            })
+            serializer.is_valid(raise_exception=True)
+            # Note that the updated_by argument is the user updating the
+            # Budget by adding new Account(s), so the Account(s) should
+            # be denoted as having been created by this user.
+            account = serializer.save(
+                updated_by=validated_data['updated_by'],
+                created_by=validated_data['updated_by'],
+                budget=instance
+            )
+            accounts.append(account)
+        return accounts
+
+
+class BudgetBulkUpdateAccountsSerializer(serializers.ModelSerializer):
+    data = AccountBulkChangeSerializer(many=True, nested=True)
+
+    class Meta:
+        model = Budget
+        fields = ('data', )
+
+    def validate_data(self, data):
+        grouped = {}
+        for change in data:
+            instance = change['id']
+            del change['id']
+            if instance.budget != self.instance:
+                raise exceptions.ValidationError(
+                    "The account %s does not belong to budget %s."
+                    % (instance.pk, self.instance.pk)
+                )
+            if instance.pk not in grouped:
+                grouped[instance.pk] = {
+                    **{'instance': instance}, **change}
+            else:
+                grouped[instance.pk] = {
+                    **grouped[instance.pk],
+                    **{'instance': instance},
+                    **change
+                }
+        return grouped
+
+    def update(self, instance, validated_data):
+        for id, change in validated_data['data'].items():
+            account = change['instance']
+            del change['instance']
+            serializer = AccountSerializer(
+                instance=account,
+                data=change,
+                partial=True
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save(updated_by=validated_data['updated_by'])
+        return instance

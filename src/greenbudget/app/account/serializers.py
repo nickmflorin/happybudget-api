@@ -106,15 +106,24 @@ class AccountSerializer(EnhancedModelSerializer):
             'estimated', 'subaccounts', 'actual', 'variance', 'type', 'group')
 
     def validate_identifier(self, value):
-        # In the case of creating an Account via a POST request, the budget
-        # will be in the context.  In the case of updating an Account via a
-        # PATCH request, the instance will be non-null.
-        budget = self.context.get('budget')
-        if budget is None:
-            budget = self.instance.budget
-        validator = serializers.UniqueTogetherValidator(
-            queryset=Account.objects.filter(budget=budget),
-            fields=('identifier', ),
-        )
-        validator({'identifier': value, 'budget': budget}, self)
+        # In the case that the serializer is nested and being used in a write
+        # context, we do not have access to the context.  Validation will
+        # have to be done by the serializer using this serializer in its nested
+        # form.
+        if self._nested is not True:
+            budget = self.context.get('budget')
+            if budget is None:
+                budget = self.instance.budget
+            validator = serializers.UniqueTogetherValidator(
+                queryset=Account.objects.filter(budget=budget),
+                fields=('identifier', ),
+            )
+            validator({'identifier': value, 'budget': budget}, self)
         return value
+
+
+class AccountBulkChangeSerializer(AccountSerializer):
+    id = serializers.PrimaryKeyRelatedField(
+        required=True,
+        queryset=Account.objects.all()
+    )

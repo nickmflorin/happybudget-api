@@ -168,7 +168,7 @@ class AbstractBulkUpdateSubAccountsSerializer(serializers.ModelSerializer):
     data = SubAccountBulkChangeSerializer(many=True, nested=True)
 
     class Meta:
-        model = SubAccount
+        abstract = True
         fields = ('data', )
 
     def validate_data(self, data):
