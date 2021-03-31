@@ -73,7 +73,8 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
     variance = serializers.FloatField(read_only=True)
     unit = serializers.ChoiceField(
         required=False,
-        choices=SubAccount.UNITS
+        choices=SubAccount.UNITS,
+        allow_null=True
     )
     unit_name = serializers.CharField(read_only=True)
     budget = serializers.PrimaryKeyRelatedField(read_only=True)
