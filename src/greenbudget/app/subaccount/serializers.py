@@ -101,14 +101,19 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
             'budget', 'type', 'group')
 
     def validate_identifier(self, value):
-        budget = self.context.get('budget')
-        if budget is None:
-            budget = self.instance.budget
-        validator = serializers.UniqueTogetherValidator(
-            queryset=budget.items.all(),
-            fields=('identifier', ),
-        )
-        validator({'identifier': value}, self)
+        # In the case that the serializer is nested and being used in a write
+        # context, we do not have access to the context.  Validation will
+        # have to be done by the serializer using this serializer in its nested
+        # form.
+        if self._nested is False:
+            budget = self.context.get('budget')
+            if budget is None:
+                budget = self.instance.budget
+            validator = serializers.UniqueTogetherValidator(
+                queryset=budget.items.all(),
+                fields=('identifier', ),
+            )
+            validator({'identifier': value}, self)
         return value
 
     def validate(self, attrs):

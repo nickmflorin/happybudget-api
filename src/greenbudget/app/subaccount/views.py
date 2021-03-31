@@ -2,8 +2,7 @@ from django.contrib.contenttypes.models import ContentType
 from rest_framework import viewsets, mixins
 
 from greenbudget.app.account.models import Account
-from greenbudget.app.account.mixins import (
-    AccountNestedMixin, BudgetAccountNestedMixin)
+from greenbudget.app.account.mixins import BudgetAccountNestedMixin
 
 from .mixins import SubAccountNestedMixin
 from .models import SubAccount, SubAccountGroup
@@ -66,42 +65,6 @@ class SubAccountSubAccountGroupViewSet(
             object_id=self.subaccount.pk,
             content_type=ContentType.objects.get_for_model(SubAccount),
             parent=self.subaccount
-        )
-
-
-class AccountSubAccountGroupViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    AccountNestedMixin,
-    viewsets.GenericViewSet
-):
-    """
-    Viewset to handle requests to the following endpoints:
-
-    (1) POST /accounts/<pk>/groups/
-    (2) GET /accounts/<pk>/groups/
-    """
-    lookup_field = 'pk'
-    serializer_class = SubAccountGroupSerializer
-    account_lookup_field = ("pk", "account_pk")
-
-    def get_queryset(self):
-        return SubAccountGroup.objects.filter(
-            content_type=ContentType.objects.get_for_model(Account),
-            object_id=self.account.pk,
-        )
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context.update(parent=self.account)
-        return context
-
-    def perform_create(self, serializer):
-        serializer.save(
-            created_by=self.request.user,
-            object_id=self.account.pk,
-            content_type=ContentType.objects.get_for_model(Account),
-            parent=self.account
         )
 
 

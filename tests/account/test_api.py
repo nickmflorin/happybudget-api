@@ -1,6 +1,7 @@
 import pytest
 
 from greenbudget.app.account.models import Account
+from greenbudget.app.subaccount.models import SubAccount
 
 
 @pytest.mark.freeze_time('2020-01-01')
@@ -316,8 +317,8 @@ def test_update_account_duplicate_number(api_client, user, create_budget,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_bulk_update_account(api_client, user, create_budget, create_account,
-        create_sub_account):
+def test_bulk_update_account_subaccounts(api_client, user, create_budget,
+        create_account, create_sub_account):
     api_client.force_login(user)
     budget = create_budget()
     account = create_account(budget=budget)
@@ -326,10 +327,10 @@ def test_bulk_update_account(api_client, user, create_budget, create_account,
         create_sub_account(budget=budget, parent=account)
     ]
     response = api_client.patch(
-        "/v1/accounts/%s/bulk-update/" % account.pk,
+        "/v1/accounts/%s/bulk-update-subaccounts/" % account.pk,
         format='json',
         data={
-            'changes': [
+            'data': [
                 {
                     'id': subaccounts[0].pk,
                     'name': 'New Name 1',
@@ -342,4 +343,50 @@ def test_bulk_update_account(api_client, user, create_budget, create_account,
         })
     assert response.status_code == 200
     assert response.json()['subaccounts'][0]['name'] == 'New Name 1'
+    assert response.json()['subaccounts'][1]['name'] == 'New Name 2'
+
+    subaccounts[0].refresh_from_db()
+    assert subaccounts[0].name == "New Name 1"
+    subaccounts[1].refresh_from_db()
+    assert subaccounts[1].name == "New Name 2"
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_bulk_create_account_subaccounts(api_client, user, create_budget,
+        create_account):
+    api_client.force_login(user)
+    budget = create_budget()
+    account = create_account(budget=budget)
+    response = api_client.patch(
+        "/v1/budgets/%s/accounts/%s/bulk-create-subaccounts/"
+        % (budget.pk, account.pk),
+        format='json',
+        data={
+            'data': [
+                {
+                    'identifier': 'subaccount-a',
+                    'name': 'New Name 1',
+                },
+                {
+                    'identifier': 'subaccount-b',
+                    'name': 'New Name 2',
+                }
+            ]
+        })
+    assert response.status_code == 201
+
+    subaccounts = SubAccount.objects.all()
+    assert len(subaccounts) == 2
+    assert subaccounts[0].identifier == "subaccount-a"
+    assert subaccounts[0].name == "New Name 1"
+    assert subaccounts[0].budget == budget
+    assert subaccounts[0].parent == account
+    assert subaccounts[1].name == "New Name 2"
+    assert subaccounts[1].identifier == "subaccount-b"
+    assert subaccounts[1].budget == budget
+    assert subaccounts[1].parent == account
+
+    assert response.json()['subaccounts'][0]['identifier'] == 'subaccount-a'
+    assert response.json()['subaccounts'][0]['name'] == 'New Name 1'
+    assert response.json()['subaccounts'][1]['identifier'] == 'subaccount-b'
     assert response.json()['subaccounts'][1]['name'] == 'New Name 2'

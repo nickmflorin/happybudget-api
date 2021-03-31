@@ -5,14 +5,13 @@ from greenbudget.app.actual.urls import account_actuals_urlpatterns
 from greenbudget.app.comment.urls import account_comments_urlpatterns
 from greenbudget.app.history.urls import (
     accounts_history_urlpatterns, account_history_urlpatterns)
-from greenbudget.app.subaccount.urls import (
-    account_subaccounts_urlpatterns, account_subaccounts_groups_urlpatterns)
+from greenbudget.app.subaccount.urls import account_subaccounts_urlpatterns
 
 from .views import (
     BudgetAccountViewSet,
     AccountViewSet,
-    BudgetAccountGroupViewSet,
-    AccountGroupViewSet
+    AccountGroupViewSet,
+    AccountSubAccountGroupViewSet
 )
 
 
@@ -27,12 +26,12 @@ budget_accounts_urlpatterns = budget_accounts_router.urls + [
     ]))
 ]
 
-budget_groups_router = routers.SimpleRouter()
-budget_groups_router.register(
-    r'', BudgetAccountGroupViewSet,
-    basename='budget-account-group'
+account_groups_router = routers.SimpleRouter()
+account_groups_router.register(
+    r'', AccountSubAccountGroupViewSet,
+    basename='account-subaccount-group'
 )
-budget_accounts_groups_urlpatterns = budget_groups_router.urls
+account_subaccounts_groups_urlpatterns = account_groups_router.urls
 
 router = routers.SimpleRouter()
 router.register(r'', AccountViewSet, basename='account')

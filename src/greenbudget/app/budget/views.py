@@ -1,6 +1,41 @@
 from rest_framework import viewsets, mixins, response, status, decorators
 
+from greenbudget.app.account.models import AccountGroup
+from greenbudget.app.account.serializers import AccountGroupSerializer
+
+from .mixins import BudgetNestedMixin
 from .serializers import BudgetSerializer
+
+
+class BudgetAccountGroupViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    BudgetNestedMixin,
+    viewsets.GenericViewSet
+):
+    """
+    Viewset to handle requests to the following endpoints:
+
+    (1) POST /budgets/<pk>/groups/
+    (2) GET /budgets/<pk>/groups/
+    """
+    lookup_field = 'pk'
+    serializer_class = AccountGroupSerializer
+    budget_lookup_field = ("pk", "budget_pk")
+
+    def get_queryset(self):
+        return AccountGroup.objects.filter(budget=self.budget)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update(parent=self.budget)
+        return context
+
+    def perform_create(self, serializer):
+        serializer.save(
+            created_by=self.request.user,
+            budget=self.budget
+        )
 
 
 class GenericBudgetViewSet(viewsets.GenericViewSet):
