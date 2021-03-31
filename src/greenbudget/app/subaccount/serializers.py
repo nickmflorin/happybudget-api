@@ -107,11 +107,11 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
         # have to be done by the serializer using this serializer in its nested
         # form.
         if self._nested is False:
-            budget = self.context.get('budget')
-            if budget is None:
-                budget = self.instance.budget
+            parent = self.context.get('parent')
+            if parent is None:
+                parent = self.instance.parent
             validator = serializers.UniqueTogetherValidator(
-                queryset=budget.items.all(),
+                queryset=parent.budget.items.all(),
                 fields=('identifier', ),
             )
             validator({'identifier': value}, self)

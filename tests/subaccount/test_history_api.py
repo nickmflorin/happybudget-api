@@ -26,9 +26,7 @@ def test_get_account_subaccounts_history(api_client, create_budget, user,
         "rate": 1.5
     })
     response = api_client.get(
-        "/v1/budgets/%s/accounts/%s/subaccounts/history/"
-        % (budget.pk, account.pk)
-    )
+        "/v1/accounts/%s/subaccounts/history/" % account.pk)
     assert response.status_code == 200
 
     assert FieldAlterationEvent.objects.count() == 5
@@ -153,7 +151,11 @@ def test_get_subaccount_subaccounts_history(api_client, create_budget, user,
     api_client.force_login(user)
     budget = create_budget()
     account = create_account(budget=budget)
-    parent_subaccount = create_sub_account(parent=account, budget=budget)
+    parent_subaccount = create_sub_account(
+        parent=account,
+        budget=budget,
+        identifier="subaccount-a"
+    )
     subaccount = create_sub_account(
         parent=parent_subaccount,
         name="Original Name",

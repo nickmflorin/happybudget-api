@@ -2,8 +2,7 @@ from django.contrib.contenttypes.models import ContentType
 from rest_framework import viewsets, mixins
 
 from greenbudget.app.account.models import Account
-from greenbudget.app.account.mixins import (
-    AccountNestedMixin, BudgetAccountNestedMixin)
+from greenbudget.app.account.mixins import AccountNestedMixin
 from greenbudget.app.actual.models import Actual
 from greenbudget.app.actual.mixins import ActualNestedMixin
 from greenbudget.app.budget.mixins import BudgetNestedMixin
@@ -62,15 +61,14 @@ class AccountHistoryViewSet(
 
 class AccountSubAccountsHistoryViewSet(
     mixins.ListModelMixin,
-    BudgetAccountNestedMixin,
+    AccountNestedMixin,
     GenericHistoryViewset
 ):
     """
     ViewSet to handle requests to the following endpoints:
 
-    (1) GET /budgets/<pk>/accounts/<pk>/subaccounts/history/
+    (1) GET /accounts/<pk>/subaccounts/history/
     """
-    budget_lookup_field = ("pk", "budget_pk")
     account_lookup_field = ("pk", "account_pk")
 
     def get_queryset(self):

@@ -30,7 +30,7 @@ class AccountBulkCreateSubAccountsSerializer(serializers.ModelSerializer):
         subaccounts = []
         for payload in validated_data['data']:
             serializer = SubAccountSerializer(data=payload, context={
-                'budget': instance.budget
+                'parent': instance
             })
             serializer.is_valid(raise_exception=True)
             # Note that the updated_by argument is the user updating the

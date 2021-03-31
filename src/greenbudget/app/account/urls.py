@@ -19,12 +19,9 @@ app_name = "account"
 
 budget_accounts_router = routers.SimpleRouter()
 budget_accounts_router.register(r'', BudgetAccountViewSet, basename='account')
-budget_accounts_urlpatterns = budget_accounts_router.urls + [
+budget_accounts_urlpatterns = [
     path('history/', include(accounts_history_urlpatterns)),
-    path('<int:account_pk>/', include([
-        path('subaccounts/', include(account_subaccounts_urlpatterns)),
-    ]))
-]
+] + budget_accounts_router.urls
 
 account_groups_router = routers.SimpleRouter()
 account_groups_router.register(
@@ -46,5 +43,6 @@ urlpatterns = router.urls + [
         path('comments/', include(account_comments_urlpatterns)),
         path('history/', include(account_history_urlpatterns)),
         path('groups/', include(account_subaccounts_groups_urlpatterns)),
+        path('subaccounts/', include(account_subaccounts_urlpatterns)),
     ]))
 ]

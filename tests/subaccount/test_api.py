@@ -82,7 +82,7 @@ def test_create_subaccount(api_client, user, create_account, create_budget):
     budget = create_budget()
     account = create_account(budget=budget)
     response = api_client.post(
-        "/v1/budgets/%s/accounts/%s/subaccounts/" % (budget.pk, account.pk),
+        "/v1/accounts/%s/subaccounts/" % account.pk,
         data={
             'name': 'New Subaccount',
             'identifier': '100',
@@ -168,7 +168,7 @@ def test_create_subaccount_duplicate_identifier(api_client, user,
     create_sub_account(
         parent=account, identifier="identifier Number", budget=budget)
     response = api_client.post(
-        "/v1/budgets/%s/accounts/%s/subaccounts/" % (budget.pk, account.pk),
+        "/v1/accounts/%s/subaccounts/" % account.pk,
         data={'name': 'New Subaccount', 'identifier': 'identifier Number'}
     )
     assert response.status_code == 400
@@ -313,10 +313,7 @@ def test_get_budget_account_subaccounts(api_client, user, create_account,
         create_sub_account(parent=account, budget=budget),
         create_sub_account(parent=another_account, budget=budget)
     ]
-    response = api_client.get(
-        "/v1/budgets/%s/accounts/%s/subaccounts/"
-        % (budget.pk, account.pk)
-    )
+    response = api_client.get("/v1/accounts/%s/subaccounts/" % account.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'] == [

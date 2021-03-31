@@ -2,7 +2,7 @@ from django.contrib.contenttypes.models import ContentType
 from rest_framework import viewsets, mixins
 
 from greenbudget.app.account.models import Account
-from greenbudget.app.account.mixins import BudgetAccountNestedMixin
+from greenbudget.app.account.mixins import AccountNestedMixin
 
 from .mixins import SubAccountNestedMixin
 from .models import SubAccount, SubAccountGroup
@@ -87,13 +87,14 @@ class SubAccountViewSet(
     (1) GET /subaccounts/<pk>/
     (2) PATCH /subaccounts/<pk>/
     (3) DELETE /subaccounts/<pk>/
+    (4) PATCH /subaccounts/<pk>/bulk-update-subaccounts/
     """
 
-    def get_serializer_context(self):
-        instance = self.get_object()
-        context = super().get_serializer_context()
-        context.update(budget=instance.budget)
-        return context
+    # def get_serializer_context(self):
+    #     instance = self.get_object()
+    #     context = super().get_serializer_context()
+    #     context.update(budget=instance.budget)
+    #     return context
 
     def get_queryset(self):
         return SubAccount.objects.filter(budget__trash=False)
@@ -120,7 +121,7 @@ class SubAccountRecursiveViewSet(
         context = super().get_serializer_context()
         context.update(
             parent=self.subaccount,
-            budget=self.subaccount.budget
+            # budget=self.subaccount.budget
         )
         return context
 
@@ -148,24 +149,20 @@ class SubAccountRecursiveViewSet(
 class AccountSubAccountViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
-    BudgetAccountNestedMixin,
+    AccountNestedMixin,
     GenericSubAccountViewSet
 ):
     """
     ViewSet to handle requests to the following endpoints:
 
-    (1) GET /budgets/<pk>/accounts/<pk>/subaccounts
-    (2) POST /budgets/<pk>/accounts/<pk>/subaccounts
+    (1) GET /accounts/<pk>/subaccounts
+    (2) POST /accounts/<pk>/subaccounts
     """
-    budget_lookup_field = ("pk", "budget_pk")
     account_lookup_field = ("pk", "account_pk")
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context.update(
-            budget=self.budget,
-            parent=self.account
-        )
+        context.update(parent=self.account)
         return context
 
     def get_queryset(self):
