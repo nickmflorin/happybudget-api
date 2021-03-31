@@ -27,6 +27,7 @@ class AccountBulkCreateSubAccountsSerializer(serializers.ModelSerializer):
         fields = ('data', )
 
     def update(self, instance, validated_data):
+        subaccounts = []
         for payload in validated_data['data']:
             serializer = SubAccountSerializer(data=payload, context={
                 'budget': self.context['budget']
@@ -35,7 +36,7 @@ class AccountBulkCreateSubAccountsSerializer(serializers.ModelSerializer):
             # Note that the updated_by argument is the user updating the
             # Account by adding new SubAccount(s), so the SubAccount(s) should
             # be denoted as having been created by this user.
-            serializer.save(
+            subaccount = serializer.save(
                 updated_by=validated_data['updated_by'],
                 created_by=validated_data['updated_by'],
                 object_id=instance.pk,
@@ -43,7 +44,8 @@ class AccountBulkCreateSubAccountsSerializer(serializers.ModelSerializer):
                 parent=instance,
                 budget=self.context['budget']
             )
-        return instance
+            subaccounts.append(subaccount)
+        return subaccounts
 
 
 class AccountBulkUpdateSubAccountsSerializer(serializers.ModelSerializer):
