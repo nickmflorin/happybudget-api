@@ -7,7 +7,7 @@ from greenbudget.app.common.serializers import AncestorSerializer
 from greenbudget.app.budget_item.serializers import (
     BudgetItemGroupSerializer, BudgetItemSimpleSerializer)
 from greenbudget.app.subaccount.serializers import (
-    SubAccountChangeSerializer,
+    SubAccountBulkChangeSerializer,
     SubAccountSimpleSerializer,
     SubAccountSerializer
 )
@@ -18,7 +18,7 @@ from .models import Account, AccountGroup
 
 
 class AccountBulkUpdateSerializer(serializers.ModelSerializer):
-    changes = SubAccountChangeSerializer(many=True)
+    changes = SubAccountBulkChangeSerializer(many=True)
 
     class Meta:
         model = Account
@@ -55,7 +55,7 @@ class AccountBulkUpdateSerializer(serializers.ModelSerializer):
                 partial=True
             )
             serializer.is_valid(raise_exception=True)
-            serializer.save()
+            serializer.save(updated_by=validated_data['updated_by'])
         return instance
 
 

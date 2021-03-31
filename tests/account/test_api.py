@@ -331,7 +331,7 @@ def test_bulk_update_account(api_client, user, create_budget, create_account,
         data={
             'changes': [
                 {
-                    'id': 10000,
+                    'id': subaccounts[0].pk,
                     'name': 'New Name 1',
                 },
                 {

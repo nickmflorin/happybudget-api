@@ -11,7 +11,7 @@ from .models import SubAccount, SubAccountGroup
 class SubAccountSimpleSerializer(BudgetItemSimpleSerializer):
     name = serializers.CharField(
         required=False,
-        allow_blank=False,
+        allow_blank=True,
         allow_null=False
     )
 
@@ -55,7 +55,7 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
     type = serializers.CharField(read_only=True)
     description = serializers.CharField(
         required=False,
-        allow_blank=False,
+        allow_blank=True,
         allow_null=False
     )
     created_by = UserSerializer(nested=True, read_only=True)
@@ -64,10 +64,10 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
     updated_at = serializers.DateTimeField(read_only=True)
     quantity = serializers.IntegerField(
         required=False,
-        allow_null=False
+        allow_null=True
     )
-    rate = serializers.FloatField(required=False, allow_null=False)
-    multiplier = serializers.FloatField(required=False, allow_null=False)
+    rate = serializers.FloatField(required=False, allow_null=True)
+    multiplier = serializers.FloatField(required=False, allow_null=True)
     estimated = serializers.FloatField(read_only=True)
     actual = serializers.FloatField(read_only=True)
     variance = serializers.FloatField(read_only=True)
@@ -121,7 +121,7 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
         return super().validate(attrs)
 
 
-class SubAccountChangeSerializer(SubAccountSerializer):
+class SubAccountBulkChangeSerializer(SubAccountSerializer):
     id = serializers.PrimaryKeyRelatedField(
         required=True,
         queryset=SubAccount.objects.all()
