@@ -1,5 +1,6 @@
 import os
 
+from django.contrib.auth import login
 from django.utils.decorators import method_decorator
 from django.views.decorators.debug import sensitive_post_parameters
 
@@ -59,6 +60,9 @@ class UserRegistrationView(mixins.CreateModelMixin, viewsets.GenericViewSet):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
+
+        login(request, instance,
+            backend='django.contrib.auth.backends.ModelBackend')
 
         return response.Response(
             UserSerializer(instance).data,
