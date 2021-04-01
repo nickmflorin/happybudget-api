@@ -130,6 +130,10 @@ class SubAccount(BudgetItem):
         return parent
 
     @property
+    def siblings(self):
+        return self.parent.subaccounts.all()
+
+    @property
     def ancestors(self):
         return self.parent.ancestors + [self.parent]
 

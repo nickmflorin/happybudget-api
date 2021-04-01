@@ -5,7 +5,10 @@ from greenbudget.lib.rest_framework_utils.serializers import (
 
 from greenbudget.app.common.serializers import AncestorSerializer
 from greenbudget.app.budget_item.serializers import (
-    BudgetItemGroupSerializer, BudgetItemSimpleSerializer)
+    BudgetItemGroupSerializer,
+    BudgetItemSimpleSerializer,
+    BudgetItemSerializer
+)
 from greenbudget.app.subaccount.serializers import (
     SubAccountSimpleSerializer,
     AbstractBulkUpdateSubAccountsSerializer,
@@ -88,6 +91,7 @@ class AccountSerializer(EnhancedModelSerializer):
     )
     budget = serializers.PrimaryKeyRelatedField(read_only=True)
     ancestors = AncestorSerializer(many=True, read_only=True)
+    siblings = BudgetItemSerializer(many=True, read_only=True)
     estimated = serializers.FloatField(read_only=True)
     actual = serializers.FloatField(read_only=True)
     variance = serializers.FloatField(read_only=True)
@@ -103,7 +107,8 @@ class AccountSerializer(EnhancedModelSerializer):
         fields = (
             'id', 'identifier', 'description', 'created_by', 'updated_by',
             'created_at', 'updated_at', 'access', 'budget', 'ancestors',
-            'estimated', 'subaccounts', 'actual', 'variance', 'type', 'group')
+            'estimated', 'subaccounts', 'actual', 'variance', 'type', 'group',
+            'siblings')
 
     def validate_identifier(self, value):
         # In the case that the serializer is nested and being used in a write

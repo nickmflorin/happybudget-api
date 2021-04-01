@@ -2,7 +2,10 @@ from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers, exceptions
 
 from greenbudget.app.budget_item.serializers import (
-    BudgetItemGroupSerializer, BudgetItemSimpleSerializer)
+    BudgetItemGroupSerializer,
+    BudgetItemSimpleSerializer,
+    BudgetItemSerializer
+)
 from greenbudget.app.common.serializers import AncestorSerializer
 from greenbudget.app.user.serializers import UserSerializer
 
@@ -80,6 +83,7 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
     unit_name = serializers.CharField(read_only=True)
     budget = serializers.PrimaryKeyRelatedField(read_only=True)
     ancestors = AncestorSerializer(many=True, read_only=True)
+    siblings = BudgetItemSerializer(many=True, read_only=True)
     account = serializers.IntegerField(read_only=True, source='account.pk')
     object_id = serializers.IntegerField(read_only=True)
     parent_type = serializers.ChoiceField(
@@ -100,7 +104,7 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
             'created_at', 'updated_at', 'quantity', 'rate', 'multiplier',
             'unit', 'unit_name', 'account', 'object_id', 'parent_type',
             'ancestors', 'estimated', 'subaccounts', 'actual', 'variance',
-            'budget', 'type', 'group')
+            'budget', 'type', 'group', 'siblings')
 
     def validate_identifier(self, value):
         # In the case that the serializer is nested and being used in a write
