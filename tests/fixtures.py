@@ -38,7 +38,7 @@ def create_budget(user, db):
     >>>     assert budget.name == 'Test Budget'
     """
     def inner(*args, **kwargs):
-        kwargs.setdefault('author', user)
+        kwargs.setdefault('created_by', user)
         return BudgetFactory(*args, **kwargs)
     return inner
 

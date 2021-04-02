@@ -94,7 +94,7 @@ class UserBudgetViewSet(
         return response.Response(status=204)
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+        serializer.save(created_by=self.request.user)
 
     @decorators.action(
         detail=True, url_path='bulk-update-accounts', methods=["PATCH"])

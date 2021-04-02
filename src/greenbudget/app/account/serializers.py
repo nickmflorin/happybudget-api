@@ -14,7 +14,6 @@ from greenbudget.app.subaccount.serializers import (
     AbstractBulkCreateSubAccountsSerializer
 )
 from greenbudget.app.user.models import User
-from greenbudget.app.user.serializers import UserSerializer
 
 from .models import Account, AccountGroup
 
@@ -79,8 +78,8 @@ class AccountSerializer(EnhancedModelSerializer):
         allow_blank=False,
         allow_null=False
     )
-    created_by = UserSerializer(nested=True, read_only=True)
-    updated_by = UserSerializer(nested=True, read_only=True)
+    created_by = serializers.PrimaryKeyRelatedField(read_only=True)
+    updated_by = serializers.PrimaryKeyRelatedField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
     access = serializers.PrimaryKeyRelatedField(

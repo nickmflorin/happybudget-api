@@ -15,7 +15,7 @@ from .managers import BudgetManager
 class Budget(PolymorphicModel):
     type = "budget"
     name = models.CharField(max_length=256)
-    author = models.ForeignKey(
+    created_by = models.ForeignKey(
         to='user.User',
         related_name='budgets',
         on_delete=models.CASCADE,
@@ -55,7 +55,7 @@ class Budget(PolymorphicModel):
         ordering = ('-updated_at', )
         verbose_name = "Budget"
         verbose_name_plural = "Budgets"
-        unique_together = (('author', 'name'), )
+        unique_together = (('created_by', 'name'), )
 
     def __str__(self):
         return "<{cls} id={id}, name={name}>".format(
@@ -77,7 +77,7 @@ class Budget(PolymorphicModel):
         self.save()
 
     def raise_no_access(self, user):
-        if user != self.author:
+        if user != self.created_by:
             raise BudgetPermissionError()
 
     @property

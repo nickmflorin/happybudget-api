@@ -6,7 +6,6 @@ from greenbudget.app.budget_item.serializers import (
     BudgetItemSimpleSerializer
 )
 from greenbudget.app.common.serializers import EntitySerializer
-from greenbudget.app.user.serializers import UserSerializer
 
 from .models import SubAccount, SubAccountGroup
 
@@ -61,8 +60,8 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
         allow_blank=True,
         allow_null=False
     )
-    created_by = UserSerializer(nested=True, read_only=True)
-    updated_by = UserSerializer(nested=True, read_only=True)
+    created_by = serializers.PrimaryKeyRelatedField(read_only=True)
+    updated_by = serializers.PrimaryKeyRelatedField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
     quantity = serializers.IntegerField(

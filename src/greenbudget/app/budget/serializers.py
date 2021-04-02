@@ -7,7 +7,6 @@ from greenbudget.app.account.serializers import (
     AccountSerializer, AccountBulkChangeSerializer)
 from greenbudget.app.actual.serializers import (
     ActualSerializer, ActualBulkChangeSerializer)
-from greenbudget.app.user.serializers import UserSerializer
 
 from .models import Budget
 
@@ -19,7 +18,7 @@ class BudgetSerializer(EnhancedModelSerializer):
         allow_blank=False,
         allow_null=False
     )
-    author = UserSerializer(nested=True, read_only=True)
+    created_by = serializers.PrimaryKeyRelatedField(read_only=True)
     project_number = serializers.IntegerField(read_only=True)
     production_type = serializers.ChoiceField(choices=Budget.PRODUCTION_TYPES)
     production_type_name = serializers.CharField(read_only=True)
@@ -39,7 +38,7 @@ class BudgetSerializer(EnhancedModelSerializer):
     class Meta:
         model = Budget
         fields = (
-            'id', 'name', 'author', 'project_number', 'production_type',
+            'id', 'name', 'created_by', 'project_number', 'production_type',
             'production_type_name', 'created_at', 'shoot_date',
             'delivery_date', 'build_days', 'prelight_days', 'studio_shoot_days',
             'location_days', 'updated_at', 'trash', 'estimated', 'actual',
@@ -48,7 +47,7 @@ class BudgetSerializer(EnhancedModelSerializer):
     def validate_name(self, value):
         user = self.context['user']
         validator = serializers.UniqueTogetherValidator(
-            queryset=Budget.objects.filter(author=user),
+            queryset=Budget.objects.filter(created_by=user),
             fields=('name', ),
         )
         validator({'name': value, 'user': user}, self)

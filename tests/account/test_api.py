@@ -27,6 +27,8 @@ def test_get_accounts(api_client, user, create_account, create_budget):
             "actual": None,
             "subaccounts": [],
             "group": None,
+            "created_by": user.pk,
+            "updated_by": user.pk,
             "ancestors": [{
                 "type": "budget",
                 "id": budget.pk,
@@ -40,33 +42,7 @@ def test_get_accounts(api_client, user, create_account, create_budget):
                 "identifier": accounts[1].identifier,
                 "description": accounts[1].description,
                 "name": None
-            }],
-            "created_by": {
-                "id": user.pk,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "email": user.email,
-                "username": user.username,
-                "is_active": user.is_active,
-                "is_admin": user.is_admin,
-                "is_superuser": user.is_superuser,
-                "is_staff": user.is_staff,
-                "full_name": user.full_name,
-                "profile_image": None,
-            },
-            "updated_by": {
-                "id": user.pk,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "email": user.email,
-                "username": user.username,
-                "is_active": user.is_active,
-                "is_admin": user.is_admin,
-                "is_superuser": user.is_superuser,
-                "is_staff": user.is_staff,
-                "full_name": user.full_name,
-                "profile_image": None,
-            }
+            }]
         },
         {
             "id": accounts[1].pk,
@@ -82,6 +58,8 @@ def test_get_accounts(api_client, user, create_account, create_budget):
             "actual": None,
             "subaccounts": [],
             "group": None,
+            "created_by": user.pk,
+            "updated_by": user.pk,
             "ancestors": [{
                 "type": "budget",
                 "id": budget.pk,
@@ -95,33 +73,7 @@ def test_get_accounts(api_client, user, create_account, create_budget):
                 "identifier": accounts[0].identifier,
                 "description": accounts[0].description,
                 "name": None
-            }],
-            "created_by": {
-                "id": user.pk,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "email": user.email,
-                "username": user.username,
-                "is_active": user.is_active,
-                "is_admin": user.is_admin,
-                "is_superuser": user.is_superuser,
-                "is_staff": user.is_staff,
-                "full_name": user.full_name,
-                "profile_image": None,
-            },
-            "updated_by": {
-                "id": user.pk,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "email": user.email,
-                "username": user.username,
-                "is_active": user.is_active,
-                "is_admin": user.is_admin,
-                "is_superuser": user.is_superuser,
-                "is_staff": user.is_staff,
-                "full_name": user.full_name,
-                "profile_image": None,
-            }
+            }]
         }
     ]
 
@@ -147,6 +99,8 @@ def test_get_account(api_client, user, create_account, create_budget):
         "actual": None,
         "subaccounts": [],
         "group": None,
+        "created_by": user.pk,
+        "updated_by": user.pk,
         "ancestors": [{
             "type": "budget",
             "id": budget.pk,
@@ -155,32 +109,6 @@ def test_get_account(api_client, user, create_account, create_budget):
             "identifier": None,
         }],
         "siblings": [],
-        "created_by": {
-            "id": user.pk,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "email": user.email,
-            "username": user.username,
-            "is_active": user.is_active,
-            "is_admin": user.is_admin,
-            "is_superuser": user.is_superuser,
-            "is_staff": user.is_staff,
-            "full_name": user.full_name,
-            "profile_image": None,
-        },
-        "updated_by": {
-            "id": user.pk,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "email": user.email,
-            "username": user.username,
-            "is_active": user.is_active,
-            "is_admin": user.is_admin,
-            "is_superuser": user.is_superuser,
-            "is_staff": user.is_staff,
-            "full_name": user.full_name,
-            "profile_image": None,
-        }
     }
 
 
@@ -210,6 +138,8 @@ def test_create_account(api_client, user, create_budget):
         "actual": None,
         "subaccounts": [],
         "group": None,
+        "created_by": user.pk,
+        "updated_by": user.pk,
         "ancestors": [{
             "type": "budget",
             "id": budget.pk,
@@ -217,33 +147,7 @@ def test_create_account(api_client, user, create_budget):
             "description": None,
             "identifier": None,
         }],
-        "siblings": [],
-        "created_by": {
-            "id": user.pk,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "email": user.email,
-            "username": user.username,
-            "is_active": user.is_active,
-            "is_admin": user.is_admin,
-            "is_superuser": user.is_superuser,
-            "is_staff": user.is_staff,
-            "full_name": user.full_name,
-            "profile_image": None,
-        },
-        "updated_by": {
-            "id": user.pk,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "email": user.email,
-            "username": user.username,
-            "is_active": user.is_active,
-            "is_admin": user.is_admin,
-            "is_superuser": user.is_superuser,
-            "is_staff": user.is_staff,
-            "full_name": user.full_name,
-            "profile_image": None,
-        }
+        "siblings": []
     }
 
 
@@ -286,6 +190,8 @@ def test_update_account(api_client, user, create_budget, create_account):
         "actual": None,
         "subaccounts": [],
         "group": None,
+        "created_by": user.pk,
+        "updated_by": user.pk,
         "ancestors": [{
             "type": "budget",
             "id": budget.pk,
@@ -293,33 +199,7 @@ def test_update_account(api_client, user, create_budget, create_account):
             "description": None,
             "identifier": None,
         }],
-        "siblings": [],
-        "created_by": {
-            "id": user.pk,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "email": user.email,
-            "username": user.username,
-            "is_active": user.is_active,
-            "is_admin": user.is_admin,
-            "is_superuser": user.is_superuser,
-            "is_staff": user.is_staff,
-            "full_name": user.full_name,
-            "profile_image": None,
-        },
-        "updated_by": {
-            "id": user.pk,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "email": user.email,
-            "username": user.username,
-            "is_active": user.is_active,
-            "is_admin": user.is_admin,
-            "is_superuser": user.is_superuser,
-            "is_staff": user.is_staff,
-            "full_name": user.full_name,
-            "profile_image": None,
-        }
+        "siblings": []
     }
     account.refresh_from_db()
     assert account.identifier == "new_account"

@@ -35,6 +35,8 @@ def test_get_subaccount(api_client, user, create_sub_account, create_account,
         "variance": None,
         "subaccounts": [],
         "group": None,
+        "created_by": user.pk,
+        "updated_by": user.pk,
         "ancestors": [
             {
                 "type": "budget",
@@ -51,33 +53,7 @@ def test_get_subaccount(api_client, user, create_sub_account, create_account,
                 "name": None
             }
         ],
-        "siblings": [],
-        "created_by": {
-            "id": user.pk,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "email": user.email,
-            "username": user.username,
-            "is_active": user.is_active,
-            "is_admin": user.is_admin,
-            "is_superuser": user.is_superuser,
-            "is_staff": user.is_staff,
-            "full_name": user.full_name,
-            "profile_image": None,
-        },
-        "updated_by": {
-            "id": user.pk,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "email": user.email,
-            "username": user.username,
-            "is_active": user.is_active,
-            "is_admin": user.is_admin,
-            "is_superuser": user.is_superuser,
-            "is_staff": user.is_staff,
-            "full_name": user.full_name,
-            "profile_image": None,
-        }
+        "siblings": []
     }
 
 
@@ -123,6 +99,8 @@ def test_create_subaccount(api_client, user, create_account, create_budget):
         "variance": None,
         "subaccounts": [],
         "group": None,
+        "created_by": user.pk,
+        "updated_by": user.pk,
         "ancestors": [
             {
                 "type": "budget",
@@ -140,32 +118,6 @@ def test_create_subaccount(api_client, user, create_account, create_budget):
             }
         ],
         "siblings": [],
-        "created_by": {
-            "id": user.pk,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "email": user.email,
-            "username": user.username,
-            "is_active": user.is_active,
-            "is_admin": user.is_admin,
-            "is_superuser": user.is_superuser,
-            "is_staff": user.is_staff,
-            "full_name": user.full_name,
-            "profile_image": None,
-        },
-        "updated_by": {
-            "id": user.pk,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "email": user.email,
-            "username": user.username,
-            "is_active": user.is_active,
-            "is_admin": user.is_admin,
-            "is_superuser": user.is_superuser,
-            "is_staff": user.is_staff,
-            "full_name": user.full_name,
-            "profile_image": None,
-        }
     }
 
 
@@ -236,6 +188,8 @@ def test_update_subaccount(api_client, user, create_sub_account, create_account,
         "variance": None,
         "subaccounts": [],
         "group": None,
+        "created_by": user.pk,
+        "updated_by": user.pk,
         "ancestors": [
             {
                 "type": "budget",
@@ -252,33 +206,7 @@ def test_update_subaccount(api_client, user, create_sub_account, create_account,
                 "name": None
             }
         ],
-        "siblings": [],
-        "created_by": {
-            "id": user.pk,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "email": user.email,
-            "username": user.username,
-            "is_active": user.is_active,
-            "is_admin": user.is_admin,
-            "is_superuser": user.is_superuser,
-            "is_staff": user.is_staff,
-            "full_name": user.full_name,
-            "profile_image": None,
-        },
-        "updated_by": {
-            "id": user.pk,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "email": user.email,
-            "username": user.username,
-            "is_active": user.is_active,
-            "is_admin": user.is_admin,
-            "is_superuser": user.is_superuser,
-            "is_staff": user.is_staff,
-            "full_name": user.full_name,
-            "profile_image": None,
-        }
+        "siblings": []
     }
 
     assert subaccount.name == "New Name"
@@ -377,32 +305,8 @@ def test_get_budget_account_subaccounts(api_client, user, create_account,
                 "description": subaccounts[1].description,
                 "name": subaccounts[1].name
             }],
-            "created_by": {
-                "id": user.pk,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "email": user.email,
-                "username": user.username,
-                "is_active": user.is_active,
-                "is_admin": user.is_admin,
-                "is_superuser": user.is_superuser,
-                "is_staff": user.is_staff,
-                "full_name": user.full_name,
-                "profile_image": None,
-            },
-            "updated_by": {
-                "id": user.pk,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "email": user.email,
-                "username": user.username,
-                "is_active": user.is_active,
-                "is_admin": user.is_admin,
-                "is_superuser": user.is_superuser,
-                "is_staff": user.is_staff,
-                "full_name": user.full_name,
-                "profile_image": None,
-            }
+            "created_by": user.pk,
+            "updated_by": user.pk,
         },
         {
             "id": subaccounts[1].pk,
@@ -449,32 +353,8 @@ def test_get_budget_account_subaccounts(api_client, user, create_account,
                 "description": subaccounts[0].description,
                 "name": subaccounts[0].name
             }],
-            "created_by": {
-                "id": user.pk,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "email": user.email,
-                "username": user.username,
-                "is_active": user.is_active,
-                "is_admin": user.is_admin,
-                "is_superuser": user.is_superuser,
-                "is_staff": user.is_staff,
-                "full_name": user.full_name,
-                "profile_image": None,
-            },
-            "updated_by": {
-                "id": user.pk,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "email": user.email,
-                "username": user.username,
-                "is_active": user.is_active,
-                "is_admin": user.is_admin,
-                "is_superuser": user.is_superuser,
-                "is_staff": user.is_staff,
-                "full_name": user.full_name,
-                "profile_image": None,
-            }
+            "created_by": user.pk,
+            "updated_by": user.pk,
         },
     ]
 
@@ -549,32 +429,8 @@ def test_get_subaccount_subaccounts(api_client, user, create_sub_account,
                 "description": subaccounts[1].description,
                 "name": subaccounts[1].name
             }],
-            "created_by": {
-                "id": user.pk,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "email": user.email,
-                "username": user.username,
-                "is_active": user.is_active,
-                "is_admin": user.is_admin,
-                "is_superuser": user.is_superuser,
-                "is_staff": user.is_staff,
-                "full_name": user.full_name,
-                "profile_image": None,
-            },
-            "updated_by": {
-                "id": user.pk,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "email": user.email,
-                "username": user.username,
-                "is_active": user.is_active,
-                "is_admin": user.is_admin,
-                "is_superuser": user.is_superuser,
-                "is_staff": user.is_staff,
-                "full_name": user.full_name,
-                "profile_image": None,
-            }
+            "created_by": user.pk,
+            "updated_by": user.pk,
         },
         {
             "id": subaccounts[1].pk,
@@ -628,32 +484,8 @@ def test_get_subaccount_subaccounts(api_client, user, create_sub_account,
                 "description": subaccounts[0].description,
                 "name": subaccounts[0].name
             }],
-            "created_by": {
-                "id": user.pk,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "email": user.email,
-                "username": user.username,
-                "is_active": user.is_active,
-                "is_admin": user.is_admin,
-                "is_superuser": user.is_superuser,
-                "is_staff": user.is_staff,
-                "full_name": user.full_name,
-                "profile_image": None,
-            },
-            "updated_by": {
-                "id": user.pk,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "email": user.email,
-                "username": user.username,
-                "is_active": user.is_active,
-                "is_admin": user.is_admin,
-                "is_superuser": user.is_superuser,
-                "is_staff": user.is_staff,
-                "full_name": user.full_name,
-                "profile_image": None,
-            }
+            "created_by": user.pk,
+            "updated_by": user.pk,
         },
     ]
 

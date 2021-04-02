@@ -4,7 +4,6 @@ from greenbudget.lib.rest_framework_utils.serializers import (
     EnhancedModelSerializer)
 
 from greenbudget.app.account.models import AccountGroup
-from greenbudget.app.user.serializers import UserSerializer
 
 from .models import BudgetItem, BudgetItemGroup
 
@@ -29,8 +28,8 @@ class BudgetItemGroupSerializer(EnhancedModelSerializer):
         allow_blank=False,
         allow_null=False
     )
-    created_by = UserSerializer(nested=True, read_only=True)
-    updated_by = UserSerializer(nested=True, read_only=True)
+    created_by = serializers.PrimaryKeyRelatedField(read_only=True)
+    updated_by = serializers.PrimaryKeyRelatedField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
     estimated = serializers.FloatField(read_only=True)

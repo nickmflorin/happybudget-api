@@ -32,19 +32,7 @@ def test_get_budgets(api_client, user, create_budget):
             "variance": None,
             "actual": None,
             'trash': False,
-            "author": {
-                "id": user.pk,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "email": user.email,
-                "username": user.username,
-                "is_active": user.is_active,
-                "is_admin": user.is_admin,
-                "is_superuser": user.is_superuser,
-                "is_staff": user.is_staff,
-                "full_name": user.full_name,
-                "profile_image": None,
-            },
+            "created_by": user.pk
         },
         {
             "id": budgets[1].pk,
@@ -64,19 +52,7 @@ def test_get_budgets(api_client, user, create_budget):
             "variance": None,
             "actual": None,
             'trash': False,
-            "author": {
-                "id": user.pk,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "email": user.email,
-                "username": user.username,
-                "is_active": user.is_active,
-                "is_admin": user.is_admin,
-                "is_superuser": user.is_superuser,
-                "is_staff": user.is_staff,
-                "full_name": user.full_name,
-                "profile_image": None,
-            },
+            "created_by": user.pk
         }
     ]
 
@@ -105,19 +81,7 @@ def test_get_budget(api_client, user, create_budget, db):
         "estimated": None,
         "variance": None,
         "actual": None,
-        "author": {
-            "id": user.pk,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "email": user.email,
-            "username": user.username,
-            "is_active": user.is_active,
-            "is_admin": user.is_admin,
-            "is_superuser": user.is_superuser,
-            "is_staff": user.is_staff,
-            "full_name": user.full_name,
-            "profile_image": None,
-        }
+        "created_by": user.pk
     }
 
 
@@ -151,19 +115,7 @@ def test_create_budget(api_client, user, db):
         "estimated": None,
         "variance": None,
         "actual": None,
-        "author": {
-            "id": user.pk,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "email": user.email,
-            "username": user.username,
-            "is_active": user.is_active,
-            "is_admin": user.is_admin,
-            "is_superuser": user.is_superuser,
-            "is_staff": user.is_staff,
-            "full_name": user.full_name,
-            "profile_image": None,
-        }
+        "created_by": user.pk
     }
 
 
@@ -208,19 +160,7 @@ def test_get_budgets_in_trash(api_client, user, create_budget, db):
             "estimated": None,
             "variance": None,
             "actual": None,
-            "author": {
-                "id": user.pk,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "email": user.email,
-                "username": user.username,
-                "is_active": user.is_active,
-                "is_admin": user.is_admin,
-                "is_superuser": user.is_superuser,
-                "is_staff": user.is_staff,
-                "full_name": user.full_name,
-                "profile_image": None,
-            },
+            "created_by": user.pk
         },
         {
             "id": budgets[1].pk,
@@ -240,19 +180,7 @@ def test_get_budgets_in_trash(api_client, user, create_budget, db):
             "estimated": None,
             "variance": None,
             "actual": None,
-            "author": {
-                "id": user.pk,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "email": user.email,
-                "username": user.username,
-                "is_active": user.is_active,
-                "is_admin": user.is_admin,
-                "is_superuser": user.is_superuser,
-                "is_staff": user.is_staff,
-                "full_name": user.full_name,
-                "profile_image": None,
-            },
+            "created_by": user.pk
         }
     ]
 
@@ -281,19 +209,7 @@ def test_get_budget_in_trash(api_client, user, create_budget, db):
         "estimated": None,
         "variance": None,
         "actual": None,
-        "author": {
-            "id": user.pk,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "email": user.email,
-            "username": user.username,
-            "is_active": user.is_active,
-            "is_admin": user.is_admin,
-            "is_superuser": user.is_superuser,
-            "is_staff": user.is_staff,
-            "full_name": user.full_name,
-            "profile_image": None,
-        }
+        "created_by": user.pk
     }
 
 

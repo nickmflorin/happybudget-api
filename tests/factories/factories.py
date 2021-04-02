@@ -80,7 +80,7 @@ class BudgetFactory(CustomModelFactory):
     A DjangoModelFactory to create instances of :obj:`Budget`.
     """
     name = factory.Faker('name')
-    author = factory.SubFactory(UserFactory)
+    created_by = factory.SubFactory(UserFactory)
     production_type = 1
     shoot_date = FutureDateTimeField()
     delivery_date = FutureDateTimeField()
