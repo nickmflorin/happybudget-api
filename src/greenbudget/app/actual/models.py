@@ -3,7 +3,7 @@ from model_utils import Choices
 from django.contrib.contenttypes.fields import (
     GenericForeignKey, GenericRelation)
 from django.contrib.contenttypes.models import ContentType
-from django.db import models
+from django.db import models, IntegrityError
 
 from greenbudget.lib.model_tracker import track_model
 
@@ -49,10 +49,6 @@ class Actual(models.Model):
         (2, "wire", "Wire"),
     )
     payment_method = models.IntegerField(choices=PAYMENT_METHODS, null=True)
-
-    # TODO: We need to build in constraints such that the budget that the
-    # parent entity belongs to is the same as the budget that this entity
-    # belongs to.
     budget = models.ForeignKey(
         to='budget.Budget',
         related_name="actuals",
@@ -97,3 +93,9 @@ class Actual(models.Model):
         if isinstance(self.parent, Account):
             return "account"
         return "subaccount"
+
+    def save(self, *args, **kwargs):
+        if self.parent.budget != self.budget:
+            raise IntegrityError(
+                "The actual must belong to the same budget as it's parent.")
+        return super().save(*args, **kwargs)
