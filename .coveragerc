@@ -10,7 +10,7 @@ omit =
     */*wsgi.py
     */manage.py
     */management/*
-    */config/gunicorn_config.py
+    src/greenbudget/conf/gunicorn_config.py
     *django_utils/cli.py
 
 [report]
