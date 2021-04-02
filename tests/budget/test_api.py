@@ -557,3 +557,36 @@ def test_bulk_create_budget_accounts(api_client, user, create_budget):
     assert response.json()['data'][0]['description'] == 'New Description 1'
     assert response.json()['data'][1]['identifier'] == 'account-b'
     assert response.json()['data'][1]['description'] == 'New Description 2'
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_bulk_update_budget_actuals(api_client, user, create_budget,
+        create_account, create_actual):
+    api_client.force_login(user)
+    budget = create_budget()
+    account = create_account(budget=budget)
+    actuals = [
+        create_actual(parent=account, budget=budget),
+        create_actual(parent=account, budget=budget)
+    ]
+    response = api_client.patch(
+        "/v1/budgets/%s/bulk-update-actuals/" % budget.pk,
+        format='json',
+        data={
+            'data': [
+                {
+                    'id': actuals[0].pk,
+                    'description': 'New Description 1',
+                },
+                {
+                    'id': actuals[1].pk,
+                    'description': 'New Description 2',
+                }
+            ]
+        })
+    assert response.status_code == 200
+
+    actuals[0].refresh_from_db()
+    assert actuals[0].description == "New Description 1"
+    actuals[1].refresh_from_db()
+    assert actuals[1].description == "New Description 2"

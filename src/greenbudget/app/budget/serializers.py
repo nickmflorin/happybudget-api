@@ -1,11 +1,12 @@
-from rest_framework import serializers, exceptions
+from rest_framework import serializers
 
 from greenbudget.lib.rest_framework_utils.serializers import (
     EnhancedModelSerializer)
 
 from greenbudget.app.account.serializers import (
     AccountSerializer, AccountBulkChangeSerializer)
-from greenbudget.app.actual.serializers import ActualBulkChangeSerializer
+from greenbudget.app.actual.serializers import (
+    ActualSerializer, ActualBulkChangeSerializer)
 from greenbudget.app.user.serializers import UserSerializer
 
 from .models import Budget
@@ -129,11 +130,6 @@ class BudgetBulkUpdateActualsSerializer(serializers.ModelSerializer):
         for change in data:
             instance = change['id']
             del change['id']
-            if instance.budget != self.instance:
-                raise exceptions.ValidationError(
-                    "The actual %s does not belong to budget %s."
-                    % (instance.pk, self.instance.pk)
-                )
             if instance.pk not in grouped:
                 grouped[instance.pk] = {
                     **{'instance': instance}, **change}
@@ -149,10 +145,11 @@ class BudgetBulkUpdateActualsSerializer(serializers.ModelSerializer):
         for id, change in validated_data['data'].items():
             account = change['instance']
             del change['instance']
-            serializer = AccountSerializer(
+            serializer = ActualSerializer(
                 instance=account,
                 data=change,
-                partial=True
+                partial=True,
+                context={'request': self.context['request']}
             )
             serializer.is_valid(raise_exception=True)
             serializer.save(updated_by=validated_data['updated_by'])

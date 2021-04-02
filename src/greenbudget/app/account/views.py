@@ -114,7 +114,7 @@ class AccountViewSet(
 
     @decorators.action(
         detail=True, url_path='bulk-update-subaccounts', methods=["PATCH"])
-    def bulk_update(self, request, *args, **kwargs):
+    def bulk_update_subaccounts(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = AccountBulkUpdateSubAccountsSerializer(
             instance=instance,
@@ -130,7 +130,7 @@ class AccountViewSet(
 
     @decorators.action(
         detail=True, url_path='bulk-create-subaccounts', methods=["PATCH"])
-    def bulk_create(self, request, *args, **kwargs):
+    def bulk_create_subaccounts(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = AccountBulkCreateSubAccountsSerializer(
             instance=instance,

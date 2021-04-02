@@ -22,15 +22,6 @@ class GenericActualViewSet(viewsets.GenericViewSet):
         context.update(request=self.request)
         return context
 
-    def perform_update(self, serializer):
-        serializer.save(updated_by=self.request.user)
-
-    def perform_create(self, serializer):
-        serializer.save(
-            updated_by=self.request.user,
-            created_by=self.request.user
-        )
-
 
 class ActualsViewSet(
     mixins.UpdateModelMixin,
@@ -45,6 +36,9 @@ class ActualsViewSet(
     (2) PATCH /actuals/<pk>/
     (3) DELETE /actuals/<pk>/
     """
+
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
 
     def get_queryset(self):
         return Actual.objects.filter(budget__trash=False)

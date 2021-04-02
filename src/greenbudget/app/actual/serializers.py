@@ -63,34 +63,40 @@ class ActualSerializer(EnhancedModelSerializer):
             'vendor')
 
     def validate(self, attrs):
-        request = self.context["request"]
-        if request.method == "PATCH":
-            if "parent_type" in attrs or "object_id" in attrs:
-                if "parent_type" not in attrs:
-                    raise RequiredFieldError("parent_type")
-                if "object_id" not in attrs:
-                    raise RequiredFieldError("object_id")
+        # In the case that the serializer is nested and being used in a write
+        # context, we do not have access to the context.  Validation will
+        # have to be done by the serializer using this serializer in its nested
+        # form.
+        if self._nested is not True:
+            request = self.context["request"]
+            if request.method == "PATCH":
+                if "parent_type" in attrs or "object_id" in attrs:
+                    if "parent_type" not in attrs:
+                        raise RequiredFieldError("parent_type")
+                    if "object_id" not in attrs:
+                        raise RequiredFieldError("object_id")
 
-                parent_cls = (
-                    Account if attrs.pop("parent_type") == "account"
-                    else SubAccount)
-                try:
-                    attrs['parent'] = parent_cls.objects.get(
-                        pk=attrs["object_id"])
-                except parent_cls.DoesNotExist:
-                    raise InvalidFieldError(
-                        "object_id",
-                        message="The parent %s does not exist." % attrs["object_id"]  # noqa
-                    )
-                else:
-                    if self.instance.budget != attrs['parent'].budget:
+                    parent_cls = (
+                        Account if attrs.pop("parent_type") == "account"
+                        else SubAccount)
+                    try:
+                        attrs['parent'] = parent_cls.objects.get(
+                            pk=attrs["object_id"])
+                    except parent_cls.DoesNotExist:
                         raise InvalidFieldError(
                             "object_id",
-                            message=(
-                                "The parent %s does not belong to the correct "
-                                "budget." % attrs["object_id"]
-                            )
+                            message="The parent %s does not exist."
+                            % attrs["object_id"]  # noqa
                         )
+                    else:
+                        if self.instance.budget != attrs['parent'].budget:
+                            raise InvalidFieldError(
+                                "object_id",
+                                message=(
+                                    "The parent %s does not belong to the "
+                                    "correct budget." % attrs["object_id"]
+                                )
+                            )
         return attrs
 
 

@@ -135,7 +135,8 @@ class UserBudgetViewSet(
         serializer = BudgetBulkUpdateActualsSerializer(
             instance=instance,
             data=request.data,
-            partial=True
+            partial=True,
+            context=self.get_serializer_context()
         )
         serializer.is_valid(raise_exception=True)
         instance = serializer.save(updated_by=request.user)
