@@ -21,7 +21,7 @@ class Fringe(models.Model):
         (0, "percent", "Percent"),
         (1, "flat", "Flat"),
     )
-    unit = models.IntegerField(choices=UNITS, null=True)
+    unit = models.IntegerField(choices=UNITS, default=UNITS.percent)
     budget = models.ForeignKey(
         to='budget.Budget',
         on_delete=models.CASCADE,
@@ -52,6 +52,12 @@ class Fringe(models.Model):
     @property
     def num_times_used(self):
         return 1  # Temporary - needs to be built in.
+
+    @property
+    def unit_name(self):
+        if self.unit is None:
+            return ""
+        return self.UNITS[self.unit]
 
 
 class Budget(PolymorphicModel):

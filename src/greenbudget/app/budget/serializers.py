@@ -8,7 +8,52 @@ from greenbudget.app.account.serializers import (
 from greenbudget.app.actual.serializers import (
     ActualSerializer, ActualBulkChangeSerializer)
 
-from .models import Budget
+from .models import Budget, Fringe
+
+
+class FringeSerializer(EnhancedModelSerializer):
+    id = serializers.IntegerField(read_only=True)
+    name = serializers.CharField(
+        required=False,
+        allow_blank=False,
+        allow_null=False
+    )
+    description = serializers.CharField(
+        required=False,
+        allow_blank=False,
+        allow_null=True
+    )
+    created_by = serializers.PrimaryKeyRelatedField(read_only=True)
+    updated_by = serializers.PrimaryKeyRelatedField(read_only=True)
+    created_at = serializers.DateTimeField(read_only=True)
+    updated_at = serializers.DateTimeField(read_only=True)
+    rate = serializers.FloatField(required=True, allow_null=False)
+    cutoff = serializers.FloatField(required=False, allow_null=True)
+    unit = serializers.ChoiceField(
+        required=False,
+        choices=Fringe.UNITS,
+        allow_null=True
+    )
+    unit_name = serializers.CharField(read_only=True)
+    num_times_used = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Fringe
+        fields = (
+            'id', 'name', 'description', 'created_by', 'created_at',
+            'updated_by', 'updated_at', 'rate', 'cutoff', 'unit', 'unit_name',
+            'num_times_used')
+
+    def validate_name(self, value):
+        budget = self.context.get('budget')
+        if budget is None:
+            budget = self.instance.budget
+        validator = serializers.UniqueTogetherValidator(
+            queryset=budget.fringes.all(),
+            fields=('name', ),
+        )
+        validator({'name': value}, self)
+        return value
 
 
 class BudgetSerializer(EnhancedModelSerializer):

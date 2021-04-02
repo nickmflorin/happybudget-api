@@ -44,6 +44,43 @@ class BudgetAccountGroupViewSet(
         )
 
 
+class FringesViewSet(
+    mixins.CreateModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.ListModelMixin,
+    mixins.DestroyModelMixin
+):
+    """
+    ViewSet to handle requests to the following endpoints:
+
+    (1) GET /budgets/<pk>/fringes/
+    (2) POST /budgets/<pk>/fringes/
+    (3) GET /budgets/<pk>/fringes/<pk>/
+    (4) PATCH /budgets/<pk>/fringes/<pk>/
+    (5) DELETE /budgets/<pk>/fringes/<pk>/
+    """
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update(
+            request=self.request,
+            user=self.request.user,
+        )
+        return context
+
+    def get_queryset(self):
+        return self.request.user.budgets.active()
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.to_trash()
+        return response.Response(status=204)
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+
 class GenericBudgetViewSet(viewsets.GenericViewSet):
     lookup_field = 'pk'
     serializer_class = BudgetSerializer
