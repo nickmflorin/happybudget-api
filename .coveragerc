@@ -10,6 +10,8 @@ omit =
     */*wsgi.py
     */manage.py
     */management/*
+    */config/gunicorn_config.py
+    *django_utils/cli.py
 
 [report]
 ignore_errors = True
