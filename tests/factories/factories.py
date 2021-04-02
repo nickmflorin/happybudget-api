@@ -5,7 +5,7 @@ from django.db import models
 
 from greenbudget.app.account.models import Account, AccountGroup
 from greenbudget.app.actual.models import Actual
-from greenbudget.app.budget.models import Budget
+from greenbudget.app.budget.models import Budget, Fringe
 from greenbudget.app.comment.models import Comment
 from greenbudget.app.contact.models import Contact
 from greenbudget.app.subaccount.models import SubAccount, SubAccountGroup
@@ -93,7 +93,27 @@ class BudgetFactory(CustomModelFactory):
         model = Budget
 
 
+class FringeFactory(CustomModelFactory):
+    """
+    A DjangoModelFactory to create instances of :obj:`Fringe`.
+    """
+    budget = factory.SubFactory(BudgetFactory)
+    created_by = factory.SubFactory(UserFactory)
+    updated_by = factory.SubFactory(UserFactory)
+    name = factory.Faker('name')
+    description = factory.Faker('sentence')
+    cutoff = None
+    rate = 1.00
+    unit = Fringe.UNITS.percent
+
+    class Meta:
+        model = Fringe
+
+
 class BudgetItemFactory(CustomModelFactory):
+    """
+    A DjangoModelFactory to create instances of :obj:`BudgetItem`.
+    """
     budget = factory.SubFactory(BudgetFactory)
     created_by = factory.SubFactory(UserFactory)
     updated_by = factory.SubFactory(UserFactory)
@@ -149,6 +169,15 @@ class SubAccountFactory(BudgetItemFactory):
 
     class Meta:
         model = SubAccount
+
+    @factory.post_generation
+    def fringes(self, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for fringe in extracted:
+                # pylint: disable=no-member
+                self.fringes.add(fringe)
 
 
 @factory.django.mute_signals(models.signals.post_save, models.signals.post_init)
