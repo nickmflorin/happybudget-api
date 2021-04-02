@@ -9,7 +9,8 @@ from .serializers import (
     BudgetSerializer,
     BudgetBulkCreateAccountsSerializer,
     BudgetBulkUpdateAccountsSerializer,
-    BudgetBulkUpdateActualsSerializer
+    BudgetBulkUpdateActualsSerializer,
+    FringeSerializer
 )
 
 
@@ -49,7 +50,9 @@ class FringesViewSet(
     mixins.UpdateModelMixin,
     mixins.RetrieveModelMixin,
     mixins.ListModelMixin,
-    mixins.DestroyModelMixin
+    mixins.DestroyModelMixin,
+    BudgetNestedMixin,
+    viewsets.GenericViewSet
 ):
     """
     ViewSet to handle requests to the following endpoints:
@@ -60,25 +63,22 @@ class FringesViewSet(
     (4) PATCH /budgets/<pk>/fringes/<pk>/
     (5) DELETE /budgets/<pk>/fringes/<pk>/
     """
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context.update(
-            request=self.request,
-            user=self.request.user,
-        )
-        return context
+    lookup_field = 'pk'
+    budget_lookup_field = ("pk", "budget_pk")
+    serializer_class = FringeSerializer
 
     def get_queryset(self):
-        return self.request.user.budgets.active()
+        return self.budget.fringes.all()
 
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        instance.to_trash()
-        return response.Response(status=204)
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        serializer.save(
+            created_by=self.request.user,
+            updated_by=self.request.user,
+            budget=self.budget
+        )
 
 
 class GenericBudgetViewSet(viewsets.GenericViewSet):
