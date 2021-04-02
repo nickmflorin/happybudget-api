@@ -66,6 +66,7 @@ class SubAccount(BudgetItem):
         | models.Q(app_label='subaccount', model='subaccount')
     )
     object_id = models.PositiveIntegerField(db_index=True)
+    fringes = models.ManyToManyField(to='budget.Fringe')
     parent = GenericForeignKey('content_type', 'object_id')
 
     subaccounts = GenericRelation('self')

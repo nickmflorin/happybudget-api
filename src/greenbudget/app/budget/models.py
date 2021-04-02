@@ -12,6 +12,48 @@ from .exceptions import BudgetPermissionError
 from .managers import BudgetManager
 
 
+class Fringe(models.Model):
+    name = models.CharField(max_length=128)
+    description = models.CharField(null=True, max_length=128)
+    cutoff = models.FloatField(null=True)
+    rate = models.FloatField()
+    UNITS = Choices(
+        (0, "percent", "Percent"),
+        (1, "flat", "Flat"),
+    )
+    unit = models.IntegerField(choices=UNITS, null=True)
+    budget = models.ForeignKey(
+        to='budget.Budget',
+        on_delete=models.CASCADE,
+        related_name='fringes'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(
+        to='user.User',
+        related_name='created_fringes',
+        on_delete=models.SET_NULL,
+        null=True
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(
+        to='user.User',
+        related_name='updated_fringes',
+        on_delete=models.SET_NULL,
+        null=True
+    )
+
+    class Meta:
+        get_latest_by = "updated_at"
+        ordering = ('-created_at', )
+        verbose_name = "Fringe"
+        verbose_name_plural = "Fringes"
+        unique_together = (('budget', 'name'), )
+
+    @property
+    def num_times_used(self):
+        return 1  # Temporary - needs to be built in.
+
+
 class Budget(PolymorphicModel):
     type = "budget"
     name = models.CharField(max_length=256)
