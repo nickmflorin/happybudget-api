@@ -3,11 +3,10 @@ from rest_framework import serializers, exceptions
 from greenbudget.lib.rest_framework_utils.serializers import (
     EnhancedModelSerializer)
 
-from greenbudget.app.common.serializers import AncestorSerializer
+from greenbudget.app.common.serializers import EntitySerializer
 from greenbudget.app.budget_item.serializers import (
     BudgetItemGroupSerializer,
-    BudgetItemSimpleSerializer,
-    BudgetItemSerializer
+    BudgetItemSimpleSerializer
 )
 from greenbudget.app.subaccount.serializers import (
     SubAccountSimpleSerializer,
@@ -90,8 +89,8 @@ class AccountSerializer(EnhancedModelSerializer):
         required=False
     )
     budget = serializers.PrimaryKeyRelatedField(read_only=True)
-    ancestors = AncestorSerializer(many=True, read_only=True)
-    siblings = BudgetItemSerializer(many=True, read_only=True)
+    ancestors = EntitySerializer(many=True, read_only=True)
+    siblings = EntitySerializer(many=True, read_only=True)
     estimated = serializers.FloatField(read_only=True)
     actual = serializers.FloatField(read_only=True)
     variance = serializers.FloatField(read_only=True)
@@ -132,3 +131,12 @@ class AccountBulkChangeSerializer(AccountSerializer):
         required=True,
         queryset=Account.objects.all()
     )
+
+    def validate_id(self, instance):
+        budget = self.parent.parent.instance
+        if budget != instance.budget:
+            raise exceptions.ValidationError(
+                "The account %s does not belong to budget %s."
+                % (instance.pk, budget.pk)
+            )
+        return instance

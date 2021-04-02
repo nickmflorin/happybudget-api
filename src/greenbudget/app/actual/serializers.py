@@ -1,4 +1,4 @@
-from rest_framework import serializers
+from rest_framework import serializers, exceptions
 
 from greenbudget.lib.rest_framework_utils.exceptions import (
     InvalidFieldError, RequiredFieldError)
@@ -92,3 +92,19 @@ class ActualSerializer(EnhancedModelSerializer):
                             )
                         )
         return attrs
+
+
+class ActualBulkChangeSerializer(ActualSerializer):
+    id = serializers.PrimaryKeyRelatedField(
+        required=True,
+        queryset=Actual.objects.all()
+    )
+
+    def validate_id(self, instance):
+        budget = self.parent.parent.instance
+        if budget != instance.budget:
+            raise exceptions.ValidationError(
+                "The actual %s does not belong to budget %s."
+                % (instance.pk, budget.pk)
+            )
+        return instance

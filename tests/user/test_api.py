@@ -25,7 +25,7 @@ def test_registration(api_client, db):
         "full_name": "Jack Johnson",
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
-        "last_login": None,
+        "last_login": "2020-01-01 00:00:00",
         "date_joined": "2020-01-01 00:00:00",
         "profile_image": None,
         "timezone": "America/New_York"

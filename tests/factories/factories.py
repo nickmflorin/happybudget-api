@@ -97,7 +97,7 @@ class BudgetItemFactory(CustomModelFactory):
     budget = factory.SubFactory(BudgetFactory)
     created_by = factory.SubFactory(UserFactory)
     updated_by = factory.SubFactory(UserFactory)
-    identifier = factory.Faker('random_number')
+    identifier = factory.Faker('name')
     description = factory.Faker('sentence')
 
     class Meta:

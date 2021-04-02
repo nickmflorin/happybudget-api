@@ -75,7 +75,10 @@ class Account(BudgetItem):
 
     @property
     def siblings(self):
-        return self.budget.accounts.all()
+        return [
+            account for account in self.budget.accounts.all()
+            if account != self
+        ]
 
     @property
     def estimated(self):

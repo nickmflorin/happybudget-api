@@ -496,6 +496,34 @@ def test_bulk_update_budget_accounts(api_client, user, create_budget,
 
 
 @pytest.mark.freeze_time('2020-01-01')
+def test_bulk_update_budget_accounts_outside_budget(api_client, user,
+        create_budget, create_account):
+    api_client.force_login(user)
+    budget = create_budget()
+    another_budget = create_budget()
+    accounts = [
+        create_account(budget=budget),
+        create_account(budget=another_budget)
+    ]
+    response = api_client.patch(
+        "/v1/budgets/%s/bulk-update-accounts/" % budget.pk,
+        format='json',
+        data={
+            'data': [
+                {
+                    'id': accounts[0].pk,
+                    'description': 'New Description 1',
+                },
+                {
+                    'id': accounts[1].pk,
+                    'description': 'New Description 2',
+                }
+            ]
+        })
+    assert response.status_code == 400
+
+
+@pytest.mark.freeze_time('2020-01-01')
 def test_bulk_create_budget_accounts(api_client, user, create_budget):
     api_client.force_login(user)
     budget = create_budget()

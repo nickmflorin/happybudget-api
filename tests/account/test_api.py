@@ -30,7 +30,16 @@ def test_get_accounts(api_client, user, create_account, create_budget):
             "ancestors": [{
                 "type": "budget",
                 "id": budget.pk,
-                "identifier": budget.name
+                "name": budget.name,
+                "description": None,
+                "identifier": None,
+            }],
+            "siblings": [{
+                "type": "account",
+                "id": accounts[1].pk,
+                "identifier": accounts[1].identifier,
+                "description": accounts[1].description,
+                "name": None
             }],
             "created_by": {
                 "id": user.pk,
@@ -76,7 +85,16 @@ def test_get_accounts(api_client, user, create_account, create_budget):
             "ancestors": [{
                 "type": "budget",
                 "id": budget.pk,
-                "identifier": budget.name
+                "name": budget.name,
+                "description": None,
+                "identifier": None,
+            }],
+            "siblings": [{
+                "type": "account",
+                "id": accounts[0].pk,
+                "identifier": accounts[0].identifier,
+                "description": accounts[0].description,
+                "name": None
             }],
             "created_by": {
                 "id": user.pk,
@@ -131,9 +149,12 @@ def test_get_account(api_client, user, create_account, create_budget):
         "group": None,
         "ancestors": [{
             "type": "budget",
-            "id": account.budget.pk,
-            "identifier": account.budget.name
+            "id": budget.pk,
+            "name": budget.name,
+            "description": None,
+            "identifier": None,
         }],
+        "siblings": [],
         "created_by": {
             "id": user.pk,
             "first_name": user.first_name,
@@ -192,8 +213,11 @@ def test_create_account(api_client, user, create_budget):
         "ancestors": [{
             "type": "budget",
             "id": budget.pk,
-            "identifier": budget.name
+            "name": budget.name,
+            "description": None,
+            "identifier": None,
         }],
+        "siblings": [],
         "created_by": {
             "id": user.pk,
             "first_name": user.first_name,
@@ -265,8 +289,11 @@ def test_update_account(api_client, user, create_budget, create_account):
         "ancestors": [{
             "type": "budget",
             "id": budget.pk,
-            "identifier": budget.name
+            "name": budget.name,
+            "description": None,
+            "identifier": None,
         }],
+        "siblings": [],
         "created_by": {
             "id": user.pk,
             "first_name": user.first_name,

@@ -37,16 +37,21 @@ def test_get_subaccount(api_client, user, create_sub_account, create_account,
         "group": None,
         "ancestors": [
             {
-                "id": budget.id,
                 "type": "budget",
-                "identifier": budget.name,
+                "id": budget.pk,
+                "name": budget.name,
+                "description": None,
+                "identifier": None,
             },
             {
                 "id": account.id,
                 "type": "account",
-                "identifier": '%s' % account.identifier,
+                "identifier": account.identifier,
+                "description": account.description,
+                "name": None
             }
         ],
+        "siblings": [],
         "created_by": {
             "id": user.pk,
             "first_name": user.first_name,
@@ -120,16 +125,21 @@ def test_create_subaccount(api_client, user, create_account, create_budget):
         "group": None,
         "ancestors": [
             {
-                "id": budget.id,
                 "type": "budget",
-                "identifier": budget.name,
+                "id": budget.pk,
+                "name": budget.name,
+                "description": None,
+                "identifier": None,
             },
             {
                 "id": account.id,
                 "type": "account",
-                "identifier": '%s' % account.identifier,
+                "identifier": account.identifier,
+                "description": account.description,
+                "name": None
             }
         ],
+        "siblings": [],
         "created_by": {
             "id": user.pk,
             "first_name": user.first_name,
@@ -228,16 +238,21 @@ def test_update_subaccount(api_client, user, create_sub_account, create_account,
         "group": None,
         "ancestors": [
             {
-                "id": budget.id,
                 "type": "budget",
-                "identifier": budget.name,
+                "id": budget.pk,
+                "name": budget.name,
+                "description": None,
+                "identifier": None,
             },
             {
                 "id": account.id,
                 "type": "account",
-                "identifier": '%s' % account.identifier,
+                "identifier": account.identifier,
+                "description": account.description,
+                "name": None
             }
         ],
+        "siblings": [],
         "created_by": {
             "id": user.pk,
             "first_name": user.first_name,
@@ -341,16 +356,27 @@ def test_get_budget_account_subaccounts(api_client, user, create_account,
             "group": None,
             "ancestors": [
                 {
-                    "id": budget.id,
                     "type": "budget",
-                    "identifier": budget.name,
+                    "id": budget.pk,
+                    "name": budget.name,
+                    "description": None,
+                    "identifier": None,
                 },
                 {
                     "id": account.id,
                     "type": "account",
-                    "identifier": '%s' % account.identifier,
+                    "identifier": account.identifier,
+                    "description": account.description,
+                    "name": None
                 }
             ],
+            "siblings": [{
+                "id": subaccounts[1].id,
+                "type": "subaccount",
+                "identifier": subaccounts[1].identifier,
+                "description": subaccounts[1].description,
+                "name": subaccounts[1].name
+            }],
             "created_by": {
                 "id": user.pk,
                 "first_name": user.first_name,
@@ -402,16 +428,27 @@ def test_get_budget_account_subaccounts(api_client, user, create_account,
             "group": None,
             "ancestors": [
                 {
-                    "id": budget.id,
                     "type": "budget",
-                    "identifier": budget.name,
+                    "id": budget.pk,
+                    "name": budget.name,
+                    "description": None,
+                    "identifier": None,
                 },
                 {
                     "id": account.id,
                     "type": "account",
-                    "identifier": '%s' % account.identifier,
+                    "identifier": account.identifier,
+                    "description": account.description,
+                    "name": None
                 }
             ],
+            "siblings": [{
+                "id": subaccounts[0].id,
+                "type": "subaccount",
+                "identifier": subaccounts[0].identifier,
+                "description": subaccounts[0].description,
+                "name": subaccounts[0].name
+            }],
             "created_by": {
                 "id": user.pk,
                 "first_name": user.first_name,
@@ -484,21 +521,34 @@ def test_get_subaccount_subaccounts(api_client, user, create_sub_account,
             "group": None,
             "ancestors": [
                 {
-                    "id": budget.id,
                     "type": "budget",
-                    "identifier": budget.name,
+                    "id": budget.pk,
+                    "name": budget.name,
+                    "description": None,
+                    "identifier": None,
                 },
                 {
                     "id": account.id,
                     "type": "account",
-                    "identifier": '%s' % account.identifier,
+                    "identifier": account.identifier,
+                    "description": account.description,
+                    "name": None
                 },
                 {
                     "id": parent.id,
                     "type": "subaccount",
-                    "identifier": "%s" % parent.identifier,
+                    "identifier": parent.identifier,
+                    "description": parent.description,
+                    "name": parent.name
                 }
             ],
+            "siblings": [{
+                "id": subaccounts[1].id,
+                "type": "subaccount",
+                "identifier": subaccounts[1].identifier,
+                "description": subaccounts[1].description,
+                "name": subaccounts[1].name
+            }],
             "created_by": {
                 "id": user.pk,
                 "first_name": user.first_name,
@@ -550,21 +600,34 @@ def test_get_subaccount_subaccounts(api_client, user, create_sub_account,
             "group": None,
             "ancestors": [
                 {
-                    "id": budget.id,
                     "type": "budget",
-                    "identifier": budget.name,
+                    "id": budget.pk,
+                    "name": budget.name,
+                    "description": None,
+                    "identifier": None,
                 },
                 {
                     "id": account.id,
                     "type": "account",
-                    "identifier": '%s' % account.identifier,
+                    "identifier": account.identifier,
+                    "description": account.description,
+                    "name": None
                 },
                 {
                     "id": parent.id,
                     "type": "subaccount",
-                    "identifier": "%s" % parent.identifier,
+                    "identifier": parent.identifier,
+                    "description": parent.description,
+                    "name": parent.name
                 }
             ],
+            "siblings": [{
+                "id": subaccounts[0].id,
+                "type": "subaccount",
+                "identifier": subaccounts[0].identifier,
+                "description": subaccounts[0].description,
+                "name": subaccounts[0].name
+            }],
             "created_by": {
                 "id": user.pk,
                 "first_name": user.first_name,

@@ -8,7 +8,8 @@ from .mixins import BudgetNestedMixin
 from .serializers import (
     BudgetSerializer,
     BudgetBulkCreateAccountsSerializer,
-    BudgetBulkUpdateAccountsSerializer
+    BudgetBulkUpdateAccountsSerializer,
+    BudgetBulkUpdateActualsSerializer
 )
 
 
@@ -73,6 +74,7 @@ class UserBudgetViewSet(
     (5) DELETE /budgets/<pk>/
     (6) PATCH /budgets/<pk>/bulk-update-accounts/
     (7) PATCH /budgets/<pk>/bulk-create-accounts/
+    (8) PATCH /budgets/<pk>/bulk-update-actuals/
     """
 
     def get_serializer_context(self):
@@ -96,7 +98,7 @@ class UserBudgetViewSet(
 
     @decorators.action(
         detail=True, url_path='bulk-update-accounts', methods=["PATCH"])
-    def bulk_update(self, request, *args, **kwargs):
+    def bulk_update_accounts(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = BudgetBulkUpdateAccountsSerializer(
             instance=instance,
@@ -112,7 +114,7 @@ class UserBudgetViewSet(
 
     @decorators.action(
         detail=True, url_path='bulk-create-accounts', methods=["PATCH"])
-    def bulk_create(self, request, *args, **kwargs):
+    def bulk_create_accounts(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = BudgetBulkCreateAccountsSerializer(
             instance=instance,
@@ -124,6 +126,22 @@ class UserBudgetViewSet(
         return response.Response(
             {'data': AccountSerializer(subaccounts, many=True).data},
             status=status.HTTP_201_CREATED
+        )
+
+    @decorators.action(
+        detail=True, url_path='bulk-update-actuals', methods=["PATCH"])
+    def bulk_update_actuals(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = BudgetBulkUpdateActualsSerializer(
+            instance=instance,
+            data=request.data,
+            partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save(updated_by=request.user)
+        return response.Response(
+            self.serializer_class(instance).data,
+            status=status.HTTP_200_OK
         )
 
 

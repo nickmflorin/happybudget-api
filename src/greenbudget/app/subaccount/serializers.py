@@ -3,10 +3,9 @@ from rest_framework import serializers, exceptions
 
 from greenbudget.app.budget_item.serializers import (
     BudgetItemGroupSerializer,
-    BudgetItemSimpleSerializer,
-    BudgetItemSerializer
+    BudgetItemSimpleSerializer
 )
-from greenbudget.app.common.serializers import AncestorSerializer
+from greenbudget.app.common.serializers import EntitySerializer
 from greenbudget.app.user.serializers import UserSerializer
 
 from .models import SubAccount, SubAccountGroup
@@ -82,8 +81,8 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
     )
     unit_name = serializers.CharField(read_only=True)
     budget = serializers.PrimaryKeyRelatedField(read_only=True)
-    ancestors = AncestorSerializer(many=True, read_only=True)
-    siblings = BudgetItemSerializer(many=True, read_only=True)
+    ancestors = EntitySerializer(many=True, read_only=True)
+    siblings = EntitySerializer(many=True, read_only=True)
     account = serializers.IntegerField(read_only=True, source='account.pk')
     object_id = serializers.IntegerField(read_only=True)
     parent_type = serializers.ChoiceField(
@@ -138,6 +137,15 @@ class SubAccountBulkChangeSerializer(SubAccountSerializer):
         queryset=SubAccount.objects.all()
     )
 
+    def validate_id(self, instance):
+        account = self.parent.parent.instance
+        if account != instance.parent:
+            raise exceptions.ValidationError(
+                "The sub-account %s does not belong to account %s."
+                % (instance.pk, account.pk)
+            )
+        return instance
+
 
 class AbstractBulkCreateSubAccountsSerializer(serializers.ModelSerializer):
     data = SubAccountSerializer(many=True, nested=True)
@@ -180,11 +188,6 @@ class AbstractBulkUpdateSubAccountsSerializer(serializers.ModelSerializer):
         for change in data:
             instance = change['id']
             del change['id']
-            if instance.parent != self.instance:
-                raise exceptions.ValidationError(
-                    "The sub-account %s does not belong to account %s."
-                    % (instance.pk, self.instance.pk)
-                )
             if instance.pk not in grouped:
                 grouped[instance.pk] = {
                     **{'instance': instance}, **change}

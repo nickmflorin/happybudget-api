@@ -5,6 +5,7 @@ from greenbudget.lib.rest_framework_utils.serializers import (
 
 from greenbudget.app.account.serializers import (
     AccountSerializer, AccountBulkChangeSerializer)
+from greenbudget.app.actual.serializers import ActualBulkChangeSerializer
 from greenbudget.app.user.serializers import UserSerializer
 
 from .models import Budget
@@ -91,9 +92,46 @@ class BudgetBulkUpdateAccountsSerializer(serializers.ModelSerializer):
         for change in data:
             instance = change['id']
             del change['id']
+            if instance.pk not in grouped:
+                grouped[instance.pk] = {
+                    **{'instance': instance}, **change}
+            else:
+                grouped[instance.pk] = {
+                    **grouped[instance.pk],
+                    **{'instance': instance},
+                    **change
+                }
+        return grouped
+
+    def update(self, instance, validated_data):
+        for id, change in validated_data['data'].items():
+            account = change['instance']
+            del change['instance']
+            serializer = AccountSerializer(
+                instance=account,
+                data=change,
+                partial=True
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save(updated_by=validated_data['updated_by'])
+        return instance
+
+
+class BudgetBulkUpdateActualsSerializer(serializers.ModelSerializer):
+    data = ActualBulkChangeSerializer(many=True, nested=True)
+
+    class Meta:
+        model = Budget
+        fields = ('data', )
+
+    def validate_data(self, data):
+        grouped = {}
+        for change in data:
+            instance = change['id']
+            del change['id']
             if instance.budget != self.instance:
                 raise exceptions.ValidationError(
-                    "The account %s does not belong to budget %s."
+                    "The actual %s does not belong to budget %s."
                     % (instance.pk, self.instance.pk)
                 )
             if instance.pk not in grouped:

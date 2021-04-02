@@ -13,6 +13,7 @@ from .managers import BudgetManager
 
 
 class Budget(PolymorphicModel):
+    type = "budget"
     name = models.CharField(max_length=256)
     author = models.ForeignKey(
         to='user.User',
