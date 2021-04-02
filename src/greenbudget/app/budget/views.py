@@ -56,7 +56,7 @@ class GenericBudgetViewSet(viewsets.GenericViewSet):
         return instance
 
 
-class UserBudgetViewSet(
+class BudgetViewSet(
     mixins.CreateModelMixin,
     mixins.UpdateModelMixin,
     mixins.RetrieveModelMixin,
@@ -146,7 +146,7 @@ class UserBudgetViewSet(
         )
 
 
-class UserBudgetTrashViewSet(
+class BudgetTrashViewSet(
     mixins.DestroyModelMixin,
     mixins.RetrieveModelMixin,
     mixins.ListModelMixin,

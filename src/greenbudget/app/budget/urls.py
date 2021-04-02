@@ -7,8 +7,8 @@ from greenbudget.app.comment.urls import budget_comments_urlpatterns
 
 from .views import (
     BudgetAccountGroupViewSet,
-    UserBudgetViewSet,
-    UserBudgetTrashViewSet
+    BudgetViewSet,
+    BudgetTrashViewSet
 )
 
 
@@ -16,8 +16,8 @@ app_name = "budget"
 
 router = routers.SimpleRouter()
 router.register(
-    r'trash', UserBudgetTrashViewSet, basename='trash')
-router.register(r'', UserBudgetViewSet, basename='budget')
+    r'trash', BudgetTrashViewSet, basename='trash')
+router.register(r'', BudgetViewSet, basename='budget')
 
 budget_groups_router = routers.SimpleRouter()
 budget_groups_router.register(
