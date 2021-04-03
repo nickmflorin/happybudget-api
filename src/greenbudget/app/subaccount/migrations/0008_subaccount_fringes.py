@@ -4,7 +4,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('budget', '0002_fringe'),
+        ('budget', '0003_fringe'),
         ('subaccount', '0007_extend_subaccount_group_polymorphically'),
     ]
 
