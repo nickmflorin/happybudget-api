@@ -4,6 +4,7 @@ from greenbudget.app.account.models import AccountGroup
 from greenbudget.app.account.serializers import (
     AccountSerializer, AccountGroupSerializer)
 
+from .models import Fringe
 from .mixins import BudgetNestedMixin
 from .serializers import (
     BudgetSerializer,
@@ -45,33 +46,52 @@ class BudgetAccountGroupViewSet(
         )
 
 
+class GenericFringesViewSet(BudgetNestedMixin, viewsets.GenericViewSet):
+    lookup_field = 'pk'
+    serializer_class = FringeSerializer
+
+
 class FringesViewSet(
-    mixins.CreateModelMixin,
     mixins.UpdateModelMixin,
     mixins.RetrieveModelMixin,
-    mixins.ListModelMixin,
     mixins.DestroyModelMixin,
-    BudgetNestedMixin,
-    viewsets.GenericViewSet
+    GenericFringesViewSet
+):
+    """
+    ViewSet to handle requests to the following endpoints:
+
+    (1) GET /fringes/<pk>/
+    (2) PATCH /fringes/<pk>/
+    (3) DELETE /fringes/<pk>/
+    """
+
+    def get_queryset(self):
+        return Fringe.objects.filter(budget__trash=False)
+
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
+
+
+class BudgetFringesViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    GenericFringesViewSet
 ):
     """
     ViewSet to handle requests to the following endpoints:
 
     (1) GET /budgets/<pk>/fringes/
     (2) POST /budgets/<pk>/fringes/
-    (3) GET /budgets/<pk>/fringes/<pk>/
-    (4) PATCH /budgets/<pk>/fringes/<pk>/
-    (5) DELETE /budgets/<pk>/fringes/<pk>/
     """
-    lookup_field = 'pk'
     budget_lookup_field = ("pk", "budget_pk")
-    serializer_class = FringeSerializer
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update(budget=self.budget)
+        return context
 
     def get_queryset(self):
         return self.budget.fringes.all()
-
-    def perform_update(self, serializer):
-        serializer.save(updated_by=self.request.user)
 
     def perform_create(self, serializer):
         serializer.save(

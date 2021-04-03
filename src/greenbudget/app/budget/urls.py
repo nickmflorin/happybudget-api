@@ -9,6 +9,7 @@ from .views import (
     BudgetAccountGroupViewSet,
     BudgetViewSet,
     BudgetTrashViewSet,
+    BudgetFringesViewSet,
     FringesViewSet
 )
 
@@ -18,10 +19,11 @@ app_name = "budget"
 router = routers.SimpleRouter()
 router.register(
     r'trash', BudgetTrashViewSet, basename='trash')
+router.register(r'fringes', FringesViewSet, basename='fringe')
 router.register(r'', BudgetViewSet, basename='budget')
 
-fringes_router = routers.SimpleRouter()
-fringes_router.register(r'', FringesViewSet, basename='fringe')
+budget_fringes_router = routers.SimpleRouter()
+budget_fringes_router.register(r'', BudgetFringesViewSet, basename='fringe')
 
 budget_groups_router = routers.SimpleRouter()
 budget_groups_router.register(
@@ -37,6 +39,6 @@ urlpatterns = router.urls + [
         path('actuals/', include(budget_actuals_urlpatterns)),
         path('comments/', include(budget_comments_urlpatterns)),
         path('groups/', include(budget_accounts_groups_urlpatterns)),
-        path('fringes/', include(fringes_router.urls)),
+        path('fringes/', include(budget_fringes_router.urls)),
     ]))
 ]
