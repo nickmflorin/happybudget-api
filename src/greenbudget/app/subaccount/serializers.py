@@ -1,6 +1,7 @@
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers, exceptions
 
+from greenbudget.app.budget.models import Fringe
 from greenbudget.app.budget_item.serializers import (
     BudgetItemGroupSerializer,
     BudgetItemSimpleSerializer
@@ -94,6 +95,11 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
         queryset=SubAccountGroup.objects.all(),
         allow_null=True
     )
+    fringes = serializers.PrimaryKeyRelatedField(
+        many=True,
+        required=False,
+        queryset=Fringe.objects.filter(budget__trash=False)
+    )
 
     class Meta:
         model = SubAccount
@@ -102,7 +108,7 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
             'created_at', 'updated_at', 'quantity', 'rate', 'multiplier',
             'unit', 'unit_name', 'account', 'object_id', 'parent_type',
             'ancestors', 'estimated', 'subaccounts', 'actual', 'variance',
-            'budget', 'type', 'group', 'siblings')
+            'budget', 'type', 'group', 'siblings', 'fringes')
 
     def validate_identifier(self, value):
         # In the case that the serializer is nested and being used in a write

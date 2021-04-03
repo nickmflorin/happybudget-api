@@ -34,6 +34,8 @@ def test_get_subaccount(api_client, user, create_sub_account, create_account,
         "estimated": None,
         "variance": None,
         "subaccounts": [],
+        "fringes": [],
+        "siblings": [],
         "group": None,
         "created_by": user.pk,
         "updated_by": user.pk,
@@ -52,8 +54,7 @@ def test_get_subaccount(api_client, user, create_sub_account, create_account,
                 "description": account.description,
                 "name": None
             }
-        ],
-        "siblings": []
+        ]
     }
 
 
@@ -98,6 +99,8 @@ def test_create_subaccount(api_client, user, create_account, create_budget):
         "estimated": None,
         "variance": None,
         "subaccounts": [],
+        "fringes": [],
+        "siblings": [],
         "group": None,
         "created_by": user.pk,
         "updated_by": user.pk,
@@ -116,8 +119,7 @@ def test_create_subaccount(api_client, user, create_account, create_budget):
                 "description": account.description,
                 "name": None
             }
-        ],
-        "siblings": [],
+        ]
     }
 
 
@@ -187,6 +189,8 @@ def test_update_subaccount(api_client, user, create_sub_account, create_account,
         "actual": None,
         "variance": None,
         "subaccounts": [],
+        "fringes": [],
+        "siblings": [],
         "group": None,
         "created_by": user.pk,
         "updated_by": user.pk,
@@ -205,8 +209,7 @@ def test_update_subaccount(api_client, user, create_sub_account, create_account,
                 "description": account.description,
                 "name": None
             }
-        ],
-        "siblings": []
+        ]
     }
 
     assert subaccount.name == "New Name"
@@ -281,6 +284,9 @@ def test_get_budget_account_subaccounts(api_client, user, create_account,
             "estimated": None,
             "variance": None,
             "subaccounts": [],
+            "fringes": [],
+            "created_by": user.pk,
+            "updated_by": user.pk,
             "group": None,
             "ancestors": [
                 {
@@ -305,8 +311,6 @@ def test_get_budget_account_subaccounts(api_client, user, create_account,
                 "description": subaccounts[1].description,
                 "name": subaccounts[1].name
             }],
-            "created_by": user.pk,
-            "updated_by": user.pk,
         },
         {
             "id": subaccounts[1].pk,
@@ -329,7 +333,10 @@ def test_get_budget_account_subaccounts(api_client, user, create_account,
             "estimated": None,
             "variance": None,
             "subaccounts": [],
+            "fringes": [],
             "group": None,
+            "created_by": user.pk,
+            "updated_by": user.pk,
             "ancestors": [
                 {
                     "type": "budget",
@@ -353,8 +360,6 @@ def test_get_budget_account_subaccounts(api_client, user, create_account,
                 "description": subaccounts[0].description,
                 "name": subaccounts[0].name
             }],
-            "created_by": user.pk,
-            "updated_by": user.pk,
         },
     ]
 
@@ -398,7 +403,10 @@ def test_get_subaccount_subaccounts(api_client, user, create_sub_account,
             "estimated": None,
             "variance": None,
             "subaccounts": [],
+            "fringes": [],
             "group": None,
+            "created_by": user.pk,
+            "updated_by": user.pk,
             "ancestors": [
                 {
                     "type": "budget",
@@ -428,9 +436,7 @@ def test_get_subaccount_subaccounts(api_client, user, create_sub_account,
                 "identifier": subaccounts[1].identifier,
                 "description": subaccounts[1].description,
                 "name": subaccounts[1].name
-            }],
-            "created_by": user.pk,
-            "updated_by": user.pk,
+            }]
         },
         {
             "id": subaccounts[1].pk,
@@ -453,7 +459,10 @@ def test_get_subaccount_subaccounts(api_client, user, create_sub_account,
             "estimated": None,
             "variance": None,
             "subaccounts": [],
+            "fringes": [],
             "group": None,
+            "created_by": user.pk,
+            "updated_by": user.pk,
             "ancestors": [
                 {
                     "type": "budget",
@@ -484,8 +493,6 @@ def test_get_subaccount_subaccounts(api_client, user, create_sub_account,
                 "description": subaccounts[0].description,
                 "name": subaccounts[0].name
             }],
-            "created_by": user.pk,
-            "updated_by": user.pk,
         },
     ]
 
