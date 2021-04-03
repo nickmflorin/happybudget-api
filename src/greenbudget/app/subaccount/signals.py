@@ -12,4 +12,5 @@ def remove_parent_calculated_fields(instance, **kwargs):
     if isinstance(instance.parent, SubAccount):
         for field in instance.DERIVING_FIELDS:
             setattr(instance.parent, field, None)
+        instance.parent.fringes.set([])
         instance.parent.save(track_changes=False)
