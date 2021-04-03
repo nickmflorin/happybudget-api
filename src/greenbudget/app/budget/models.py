@@ -16,7 +16,7 @@ class Fringe(models.Model):
     name = models.CharField(max_length=128)
     description = models.CharField(null=True, max_length=128)
     cutoff = models.FloatField(null=True)
-    rate = models.FloatField()
+    rate = models.FloatField(null=True)
     UNITS = Choices(
         (0, "percent", "Percent"),
         (1, "flat", "Flat"),

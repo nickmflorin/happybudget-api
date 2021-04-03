@@ -27,7 +27,7 @@ class FringeSerializer(EnhancedModelSerializer):
     updated_by = serializers.PrimaryKeyRelatedField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
-    rate = serializers.FloatField(required=True, allow_null=False)
+    rate = serializers.FloatField(required=False, allow_null=True)
     cutoff = serializers.FloatField(required=False, allow_null=True)
     unit = serializers.ChoiceField(
         required=False,
