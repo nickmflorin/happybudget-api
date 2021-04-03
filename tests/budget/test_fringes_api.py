@@ -91,14 +91,14 @@ def test_update_budget_fringe(api_client, user, create_budget, create_fringe):
         "updated_by": user.pk,
         "updated_at": "2020-01-01 00:00:00",
         "rate": 5.5,
-        "cutoff": 100.0,
+        "cutoff": None,
         "unit": 1,
         "unit_name": Fringe.UNITS[1],
         "num_times_used": fringe.num_times_used
     }
     assert fringe.name == "Test Fringe"
     assert fringe.rate == 5.5
-    assert fringe.cutoff == 100
+    assert fringe.cutoff is None
     assert fringe.unit == 1
 
 
@@ -124,14 +124,14 @@ def test_create_budget_fringe(api_client, user, create_budget, create_fringe):
         "updated_by": user.pk,
         "updated_at": "2020-01-01 00:00:00",
         "rate": 5.5,
-        "cutoff": 100.0,
+        "cutoff": None,
         "unit": 1,
         "unit_name": Fringe.UNITS[1],
         "num_times_used": fringe.num_times_used
     }
     assert fringe.name == "Test Fringe"
     assert fringe.rate == 5.5
-    assert fringe.cutoff == 100
+    assert fringe.cutoff is None
     assert fringe.unit == 1
 
 

@@ -14,6 +14,8 @@ from greenbudget.app.budget_item.hooks import (
 from greenbudget.app.comment.models import Comment
 from greenbudget.app.history.models import Event
 
+from .utils import fringe_value
+
 
 class SubAccountGroup(BudgetItemGroup):
     name = models.CharField(max_length=128)
@@ -102,7 +104,8 @@ class SubAccount(BudgetItem):
         if self.subaccounts.count() == 0:
             if self.quantity is not None and self.rate is not None:
                 multiplier = self.multiplier or 1.0
-                return float(self.quantity) * float(self.rate) * float(multiplier)  # noqa
+                value = float(self.quantity) * float(self.rate) * float(multiplier)  # noqa
+                return fringe_value(value, self.fringes.all())
             return None
         else:
             estimated = []
@@ -150,7 +153,14 @@ class SubAccount(BudgetItem):
     def save(self, *args, **kwargs):
         if self.group is not None and self.group.parent != self.parent:
             raise IntegrityError(
-                "The group that a subaccount belongs to must have the same "
-                "parent as that subaccount."
+                "The group that a sub-account belongs to must have the same "
+                "parent as that sub-account."
             )
+        if self.id is not None:
+            for fringe in self.fringes.all():
+                if fringe.budget != self.budget:
+                    raise IntegrityError(
+                        "The fringes that belong to a sub-account must belong "
+                        "to the same budget as that sub-account."
+                    )
         return super().save(*args, **kwargs)
