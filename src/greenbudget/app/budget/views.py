@@ -11,6 +11,8 @@ from .serializers import (
     BudgetBulkCreateAccountsSerializer,
     BudgetBulkUpdateAccountsSerializer,
     BudgetBulkUpdateActualsSerializer,
+    BudgetBulkUpdateFringesSerializer,
+    BudgetBulkCreateFringesSerializer,
     FringeSerializer
 )
 
@@ -132,6 +134,8 @@ class BudgetViewSet(
     (6) PATCH /budgets/<pk>/bulk-update-accounts/
     (7) PATCH /budgets/<pk>/bulk-create-accounts/
     (8) PATCH /budgets/<pk>/bulk-update-actuals/
+    (9) PATCH /budgets/<pk>/bulk-update-fringes/
+    (10) PATCH /budgets/<pk>/bulk-create-fringes/
     """
 
     def get_serializer_context(self):
@@ -200,6 +204,39 @@ class BudgetViewSet(
         return response.Response(
             self.serializer_class(instance).data,
             status=status.HTTP_200_OK
+        )
+
+    @decorators.action(
+        detail=True, url_path='bulk-update-fringes', methods=["PATCH"])
+    def bulk_update_fringes(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = BudgetBulkUpdateFringesSerializer(
+            instance=instance,
+            data=request.data,
+            partial=True,
+            context=self.get_serializer_context()
+        )
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save(updated_by=request.user)
+        return response.Response(
+            self.serializer_class(instance).data,
+            status=status.HTTP_200_OK
+        )
+
+    @decorators.action(
+        detail=True, url_path='bulk-create-fringes', methods=["PATCH"])
+    def bulk_create_fringes(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = BudgetBulkCreateFringesSerializer(
+            instance=instance,
+            data=request.data,
+            partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        fringes = serializer.save(updated_by=request.user)
+        return response.Response(
+            {'data': FringeSerializer(fringes, many=True).data},
+            status=status.HTTP_201_CREATED
         )
 
 

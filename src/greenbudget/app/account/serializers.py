@@ -3,11 +3,11 @@ from rest_framework import serializers, exceptions
 from greenbudget.lib.rest_framework_utils.serializers import (
     EnhancedModelSerializer)
 
-from greenbudget.app.common.serializers import EntitySerializer
 from greenbudget.app.budget_item.serializers import (
     BudgetItemGroupSerializer,
     BudgetItemSimpleSerializer
 )
+from greenbudget.app.common.serializers import EntitySerializer
 from greenbudget.app.subaccount.serializers import (
     SubAccountSimpleSerializer,
     AbstractBulkUpdateSubAccountsSerializer,

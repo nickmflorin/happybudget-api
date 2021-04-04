@@ -6,7 +6,10 @@ from greenbudget.app.budget_item.serializers import (
     BudgetItemGroupSerializer,
     BudgetItemSimpleSerializer
 )
-from greenbudget.app.common.serializers import EntitySerializer
+from greenbudget.app.common.serializers import (
+    EntitySerializer,
+    AbstractBulkUpdateSerializer
+)
 
 from .models import SubAccount, SubAccountGroup
 
@@ -181,33 +184,15 @@ class AbstractBulkCreateSubAccountsSerializer(serializers.ModelSerializer):
         return subaccounts
 
 
-class AbstractBulkUpdateSubAccountsSerializer(serializers.ModelSerializer):
+class AbstractBulkUpdateSubAccountsSerializer(AbstractBulkUpdateSerializer):
     data = SubAccountBulkChangeSerializer(many=True, nested=True)
 
     class Meta:
         abstract = True
         fields = ('data', )
 
-    def validate_data(self, data):
-        grouped = {}
-        for change in data:
-            instance = change['id']
-            del change['id']
-            if instance.pk not in grouped:
-                grouped[instance.pk] = {
-                    **{'instance': instance}, **change}
-            else:
-                grouped[instance.pk] = {
-                    **grouped[instance.pk],
-                    **{'instance': instance},
-                    **change
-                }
-        return grouped
-
     def update(self, instance, validated_data):
-        for id, change in validated_data['data'].items():
-            subaccount = change['instance']
-            del change['instance']
+        for subaccount, change in validated_data['data']:
             serializer = SubAccountSerializer(
                 instance=subaccount,
                 data=change,

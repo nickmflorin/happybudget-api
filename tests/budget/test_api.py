@@ -3,7 +3,7 @@ import pytest
 from greenbudget.lib.utils.dateutils import api_datetime_string
 
 from greenbudget.app.account.models import Account
-from greenbudget.app.budget.models import Budget
+from greenbudget.app.budget.models import Budget, Fringe
 
 
 @pytest.mark.freeze_time('2020-01-01')
@@ -506,3 +506,153 @@ def test_bulk_update_budget_actuals(api_client, user, create_budget,
     assert actuals[0].description == "New Description 1"
     actuals[1].refresh_from_db()
     assert actuals[1].description == "New Description 2"
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_bulk_create_budget_fringes(api_client, user, create_budget):
+    api_client.force_login(user)
+    budget = create_budget()
+    response = api_client.patch(
+        "/v1/budgets/%s/bulk-create-fringes/" % budget.pk,
+        format='json',
+        data={
+            'data': [
+                {
+                    'name': 'fringe-a',
+                    'rate': 1.2,
+                },
+                {
+                    'name': 'fringe-b',
+                    'rate': 2.2,
+                }
+            ]
+        })
+    assert response.status_code == 201
+
+    fringes = Fringe.objects.all()
+    assert len(fringes) == 2
+    assert fringes[0].name == "fringe-a"
+    assert fringes[0].rate == 1.2
+    assert fringes[0].budget == budget
+    assert fringes[1].name == "fringe-b"
+    assert fringes[1].rate == 2.2
+    assert fringes[1].budget == budget
+
+    assert response.json()['data'][0]['name'] == 'fringe-a'
+    assert response.json()['data'][0]['rate'] == 1.2
+    assert response.json()['data'][1]['name'] == 'fringe-b'
+    assert response.json()['data'][1]['rate'] == 2.2
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_bulk_update_budget_fringes(api_client, user, create_budget,
+        create_fringe):
+    api_client.force_login(user)
+    budget = create_budget()
+    fringes = [
+        create_fringe(budget=budget),
+        create_fringe(budget=budget)
+    ]
+    response = api_client.patch(
+        "/v1/budgets/%s/bulk-update-fringes/" % budget.pk,
+        format='json',
+        data={
+            'data': [
+                {
+                    'id': fringes[0].pk,
+                    'name': 'New Name 1',
+                },
+                {
+                    'id': fringes[1].pk,
+                    'name': 'New Name 2',
+                }
+            ]
+        })
+    assert response.status_code == 200
+
+    fringes[0].refresh_from_db()
+    assert fringes[0].name == "New Name 1"
+    fringes[1].refresh_from_db()
+    assert fringes[1].name == "New Name 2"
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_bulk_update_budget_fringes_name_not_unique(api_client, user,
+        create_budget, create_fringe):
+    api_client.force_login(user)
+    budget = create_budget()
+    create_fringe(budget=budget, name='Non-Unique Name')
+    fringes = [
+        create_fringe(budget=budget),
+        create_fringe(budget=budget)
+    ]
+    response = api_client.patch(
+        "/v1/budgets/%s/bulk-update-fringes/" % budget.pk,
+        format='json',
+        data={
+            'data': [
+                {
+                    'id': fringes[0].pk,
+                    'name': 'New Name 1',
+                },
+                {
+                    'id': fringes[1].pk,
+                    'name': 'Non-Unique Name',
+                }
+            ]
+        })
+    assert response.status_code == 400
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_bulk_update_budget_fringes_name_not_unique_in_update(api_client, user,
+        create_budget, create_fringe):
+    api_client.force_login(user)
+    budget = create_budget()
+    fringes = [
+        create_fringe(budget=budget, name='Non-Unique Name'),
+        create_fringe(budget=budget)
+    ]
+    response = api_client.patch(
+        "/v1/budgets/%s/bulk-update-fringes/" % budget.pk,
+        format='json',
+        data={
+            'data': [
+                {
+                    'id': fringes[0].pk,
+                    'rate': 5.1,
+                },
+                {
+                    'id': fringes[1].pk,
+                    'name': 'Non-Unique Name',
+                }
+            ]
+        })
+    assert response.status_code == 400
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_bulk_update_budget_fringes_name_will_be_unique(api_client, user,
+        create_budget, create_fringe):
+    api_client.force_login(user)
+    budget = create_budget()
+    fringes = [
+        create_fringe(budget=budget, name='Non-Unique Name'),
+        create_fringe(budget=budget)
+    ]
+    response = api_client.patch(
+        "/v1/budgets/%s/bulk-update-fringes/" % budget.pk,
+        format='json',
+        data={
+            'data': [
+                {
+                    'id': fringes[0].pk,
+                    'name': 'New Name',
+                },
+                {
+                    'id': fringes[1].pk,
+                    'name': 'Non-Unique Name',
+                }
+            ]
+        })
+    assert response.status_code == 200

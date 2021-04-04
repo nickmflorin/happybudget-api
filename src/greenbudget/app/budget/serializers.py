@@ -1,4 +1,4 @@
-from rest_framework import serializers
+from rest_framework import serializers, exceptions
 
 from greenbudget.lib.rest_framework_utils.serializers import (
     EnhancedModelSerializer)
@@ -7,6 +7,7 @@ from greenbudget.app.account.serializers import (
     AccountSerializer, AccountBulkChangeSerializer)
 from greenbudget.app.actual.serializers import (
     ActualSerializer, ActualBulkChangeSerializer)
+from greenbudget.app.common.serializers import AbstractBulkUpdateSerializer
 
 from .models import Budget, Fringe
 
@@ -45,15 +46,36 @@ class FringeSerializer(EnhancedModelSerializer):
             'num_times_used')
 
     def validate_name(self, value):
-        budget = self.context.get('budget')
-        if budget is None:
-            budget = self.instance.budget
-        validator = serializers.UniqueTogetherValidator(
-            queryset=budget.fringes.all(),
-            fields=('name', ),
-        )
-        validator({'name': value}, self)
+        # In the case that the serializer is nested and being used in a write
+        # context, we do not have access to the context.  Validation will
+        # have to be done by the serializer using this serializer in its nested
+        # form.
+        if self._nested is not True:
+            budget = self.context.get('budget')
+            if budget is None:
+                budget = self.instance.budget
+            validator = serializers.UniqueTogetherValidator(
+                queryset=budget.fringes.all(),
+                fields=('name', ),
+            )
+            validator({'name': value}, self)
         return value
+
+
+class FringeBulkChangeSerializer(FringeSerializer):
+    id = serializers.PrimaryKeyRelatedField(
+        required=True,
+        queryset=Fringe.objects.all()
+    )
+
+    def validate_id(self, instance):
+        budget = self.parent.parent.instance
+        if budget != instance.budget:
+            raise exceptions.ValidationError(
+                "The fringe %s does not belong to budget %s."
+                % (instance.pk, budget.pk)
+            )
+        return instance
 
 
 class BudgetSerializer(EnhancedModelSerializer):
@@ -125,33 +147,15 @@ class BudgetBulkCreateAccountsSerializer(serializers.ModelSerializer):
         return accounts
 
 
-class BudgetBulkUpdateAccountsSerializer(serializers.ModelSerializer):
+class BudgetBulkUpdateAccountsSerializer(AbstractBulkUpdateSerializer):
     data = AccountBulkChangeSerializer(many=True, nested=True)
 
     class Meta:
         model = Budget
         fields = ('data', )
 
-    def validate_data(self, data):
-        grouped = {}
-        for change in data:
-            instance = change['id']
-            del change['id']
-            if instance.pk not in grouped:
-                grouped[instance.pk] = {
-                    **{'instance': instance}, **change}
-            else:
-                grouped[instance.pk] = {
-                    **grouped[instance.pk],
-                    **{'instance': instance},
-                    **change
-                }
-        return grouped
-
     def update(self, instance, validated_data):
-        for id, change in validated_data['data'].items():
-            account = change['instance']
-            del change['instance']
+        for account, change in validated_data['data']:
             serializer = AccountSerializer(
                 instance=account,
                 data=change,
@@ -162,38 +166,65 @@ class BudgetBulkUpdateAccountsSerializer(serializers.ModelSerializer):
         return instance
 
 
-class BudgetBulkUpdateActualsSerializer(serializers.ModelSerializer):
+class BudgetBulkUpdateActualsSerializer(AbstractBulkUpdateSerializer):
     data = ActualBulkChangeSerializer(many=True, nested=True)
 
     class Meta:
         model = Budget
         fields = ('data', )
 
-    def validate_data(self, data):
-        grouped = {}
-        for change in data:
-            instance = change['id']
-            del change['id']
-            if instance.pk not in grouped:
-                grouped[instance.pk] = {
-                    **{'instance': instance}, **change}
-            else:
-                grouped[instance.pk] = {
-                    **grouped[instance.pk],
-                    **{'instance': instance},
-                    **change
-                }
-        return grouped
-
     def update(self, instance, validated_data):
-        for id, change in validated_data['data'].items():
-            account = change['instance']
-            del change['instance']
+        for actual, change in validated_data['data']:
             serializer = ActualSerializer(
-                instance=account,
+                instance=actual,
                 data=change,
                 partial=True,
                 context={'request': self.context['request']}
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save(updated_by=validated_data['updated_by'])
+        return instance
+
+
+class BudgetBulkCreateFringesSerializer(serializers.ModelSerializer):
+    data = FringeSerializer(many=True, nested=True)
+
+    class Meta:
+        model = Budget
+        fields = ('data', )
+
+    def update(self, instance, validated_data):
+        fringes = []
+        for payload in validated_data['data']:
+            serializer = FringeSerializer(data=payload, context={
+                'budget': instance
+            })
+            serializer.is_valid(raise_exception=True)
+            # Note that the updated_by argument is the user updating the
+            # Budget by adding new Fringe(s), so the Fringe(s) should
+            # be denoted as having been created by this user.
+            fringe = serializer.save(
+                updated_by=validated_data['updated_by'],
+                created_by=validated_data['updated_by'],
+                budget=instance
+            )
+            fringes.append(fringe)
+        return fringes
+
+
+class BudgetBulkUpdateFringesSerializer(AbstractBulkUpdateSerializer):
+    data = FringeBulkChangeSerializer(many=True, nested=True)
+
+    class Meta:
+        model = Budget
+        fields = ('data', )
+
+    def update(self, instance, validated_data):
+        for fringe, change in validated_data['data']:
+            serializer = FringeSerializer(
+                instance=fringe,
+                data=change,
+                partial=True
             )
             serializer.is_valid(raise_exception=True)
             serializer.save(updated_by=validated_data['updated_by'])
