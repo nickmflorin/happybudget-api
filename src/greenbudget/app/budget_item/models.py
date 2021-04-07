@@ -92,9 +92,6 @@ class BudgetItem(PolymorphicModel):
     )
     identifier = models.CharField(max_length=128)
     description = models.CharField(null=True, max_length=128)
-    # TODO: We need to build in constraints for sub accounts such that the
-    # budget that the subaccount parent belongs to is the same as the budget
-    # that the subaccount belongs to.
     budget = models.ForeignKey(
         to='budget.Budget',
         related_name="items",
