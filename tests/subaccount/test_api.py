@@ -137,12 +137,12 @@ def test_create_subaccount_duplicate_identifier(api_client, user,
     )
     assert response.status_code == 400
     assert response.json() == {
-        'errors': {
-            'identifier': [{
-                'message': 'The fields identifier must make a unique set.',
-                'code': 'unique'
-            }]
-        }
+        'errors': [{
+            'field': 'identifier',
+            'message': 'The fields identifier must make a unique set.',
+            'code': 'unique',
+            'error_type': 'field'
+        }]
     }
 
 
@@ -238,12 +238,12 @@ def test_update_subaccount_duplicate_identifier(api_client, user,
     )
     assert response.status_code == 400
     assert response.json() == {
-        'errors': {
-            'identifier': [{
-                'message': 'The fields identifier must make a unique set.',
-                'code': 'unique'
-            }]
-        }
+        'errors': [{
+            'field': 'identifier',
+            'message': 'The fields identifier must make a unique set.',
+            'code': 'unique',
+            'error_type': 'field'
+        }]
     }
 
 

@@ -9,23 +9,24 @@ from rest_framework.response import Response
 from rest_framework.serializers import as_serializer_error
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
 
-from greenbudget.lib.utils import concat
-
 
 logger = logging.getLogger('greenbudget')
 
 
 def exception_handler(exc, context):
     """
-    A custom exception handler standardizes responses when errors occur.
+    A custom exception handler that standardizes responses when errors occur.
 
     This custom behavior is a small tweak to DRF's REST exception handling
-    protocols - with the purpose of making things simpler in the frontend.
+    protocols - with the purpose of making things simpler in the frontend by
+    flattening out error structures into arrays.  The custom behavior also
+    allows more detailed information to be provided in the response by nature of
+    attributes on the :obj:`ApiException` class itself.
 
     The behavior that is added on top of django-rest-framework's default
     exception_handler is the following:
 
-    (1) Includes both the ValidationError messages and error codes.
+    (1) Inclusion of Error Codes
 
         By default, if you raise a ValidationError when validating a field,
         django-rest-framework will not include the code in the response.  For
@@ -34,68 +35,137 @@ def exception_handler(exc, context):
         >>> raise ValidationError('Username is invalid', code='invalid')
 
         django-rest-framework will return a response with status code 400 and
-        response body {"username": ["Username is invalid"]}.  In many cases, the
-        frontend will need to know what the error code is, so that it can
-        determine which error message to display.
+        response body
 
-        For this reason, this error handler will format the response as:
+        >>> {"username": ["Username is invalid"]}
+
+        In many cases, the frontend will need to know what the error code is,
+        so that it can determine which error message to display.
+
+        For this reason, this error handler will include the error code in the
+        response.
 
         {"errors": [{
-            "username": [{"message": "Username is invalid", "code": "invalid"}]
+            "field": "username",
+            "code": "invalid",
+            "message": "Username is invalid.",
+            "error_type": "field"
         }]}
 
-    (2) Treats authentication errors as their own subset.
+    (2) More Consistent, Flatter Response Structure
 
-        If an :obj:`rest_framework.exceptions.AuthenticationFailed` is raised,
-        the default behavior will be rendering an error in the response that
-        looks like:
+        Typically, django-rest-framework likes to render exceptions in the
+        response by indexing details by keys:
 
-        {"errors": {"__all__": [{"message": ..., "code": ... }]}}
+        >>> raise ValidationError('Username is invalid', code='invalid')
+        >>> {"username": ["Username is invalid"]}
 
-        We want to make those errors more distinct for the frontend, so they
-        are rendered as:
+        This is nice, but what if we also have different errors that aren't
+        necessarily relevant to an error pertaining to a specific field of a
+        request payload?  We have no way of determining what the keys of the
+        error response data refer to.
 
-        {"errors": {"auth": [{"message": ..., "code": ... }]}}
+        For this reason, the error responses are flattened out - with each
+        detail including additional context information:
 
-    (3) Simplifies errors in regard to ManyToManyField(s).
+        {"errors": [
+           {
+               "field": "username",
+               "code": "invalid",
+               "message": "Username is invalid.",
+               "error_type": "field"
+           },
+           {
+               "field": "email",
+               "code": "invalid",
+               "message": "Email is invalid.",
+               "error_type": "field"
+           }
+        ]}
 
-        If submitting a POST request to update an object that has a M2M field,
-        the M2M instances to associate with the object being created can be
-        included as a list of PK's (i.e. POST /users {groups: [1, 4]})
+    (3) Allowing for the Inclusion of Additional Context
 
-        If there is an error with any of the associated groups, DRF will not
-        only include the error but it will be indexed by the index of the
-        problematic element in the array.
+        Sometimes, especially in this application, we need to build errors that
+        include much more information than just a code and a message.  For this
+        reason, extensions of :obj:`ApiException` can be attributed with
+        `detail_data` and `extra`, and if present, the data returned from these
+        properties will be included in the rendered error response.
 
-        >>> {'errors': {'groups': {1: [{'message': ..., 'code': ...}]}}}
+        class MyCustomValidationError(exceptions.ValidationError):
+            def __init__(self, *args, **kwargs):
+                self._username = kwargs.pop('username', None)
+                super().__init__(*args, **kwargs)
 
-        This can make things confusing in the frontend, so we collapse it to:
+            @property
+            def extra(self):
+                return {'foo': 'bar'}
 
-        >>> {'errors': {'groups': [{'message': ..., 'code': ...}]}}
+            @property
+            def detail_data(self):
+                 return {'username': self._username}
 
-    (4) Consistent handling of 404 errors.
+        >>> raise MyCustomValidationError('Username is invalid', code='invalid')
+
+        {
+            "foo": "bar",
+            "errors": [
+                {
+                    "field": "username",
+                    "code": "invalid",
+                    "message": "Username is invalid.",
+                    "error_type": "field",
+                    "username": "fakeuser@gmail.com",
+                }
+            ]
+        }
+
+    (4) Consistent Handling of 404 Errors.
 
         By default, DRF will catch Django Http404 and render a response such as:
 
         >>> { "detail": "Not found." }
 
-        We want to keep those consistent with other DRF exceptions (not Django
-        exceptions) by rendering a response as:
+        We want to keep those consistent with other DRF exceptions that we raise
+        (not Django exceptions) by rendering a response as:
 
-        >>> {'errors': {'__all__': [{'message': 'Not found', 'code': 'not_found'}]}}  # noqa
+        {'errors': [{
+            'message': 'Not found',
+            'code': 'not_found',
+            'error_type': 'http'
+        }]}
 
-    (5) Allows for extra data to be attributed to the exception and returned in
-        the response.
-
-    (6) Allows the exception to include information triggering a database
+    (5) Allows the exception to include information triggering a database
         rollback for the transactions that occured within a view.
-
-    Note:
-    ----
-    This is not currently activated because there are mixins that are being
-    used to bypass the Django REST Framework default exception handling.  Once
-    those are removed, this will be active.
     """
+    def map_detail(detail, error_type, **kwargs):
+        return {**{
+            'message': str(detail),
+            'code': detail.code,
+            'error_type': error_type
+        }, **kwargs}
+
+    def map_details(details, error_type, **kwargs):
+        mapped = []
+        if isinstance(details, dict):
+            for k, v in details.items():
+                mapped += map_details(v, error_type, field=k)
+        elif isinstance(details, list):
+            for detail_i in details:
+                if isinstance(detail_i, (list, dict)):
+                    mapped += map_details(detail_i, error_type, **kwargs)
+                else:
+                    mapped += [map_detail(detail_i, error_type, **kwargs)]
+        else:
+            mapped += [map_detail(details, error_type, **kwargs)]
+        return mapped
+
+    def map_exception_details(exc, error_type=None, default_error_type='global',
+            **kwargs):
+        error_type = error_type or getattr(
+            exc, 'error_type', default_error_type)
+        detail_data = getattr(exc, 'detail_data', {})
+        return map_details(exc.detail, error_type, **{**kwargs, **detail_data})
+
     # In case a Django ValidationError is raised outside of a serializer's
     # validation methods (as might happen if we don't know the validation error
     # until we send a request to a third party API), convert to a DRF
@@ -105,16 +175,9 @@ def exception_handler(exc, context):
 
     # By default, Django REST Framework will catch Http404 and return a response
     # { "detail": "Not found." }.  We want to include a code for the frontend.
-    elif isinstance(exc, Http404):
+    if isinstance(exc, Http404):
         message = str(exc) or 'The requested resource could not be found.'
-        data = {
-            'errors': {
-                '__all__': [{
-                    'message': message,
-                    'code': 'not_found'
-                }]
-            }
-        }
+        data = [{'message': message, 'error_type': 'http', 'code': 'not_found'}]
         logger.warning("There was a user error", extra=data)
         return Response(data, status=404)
 
@@ -124,34 +187,24 @@ def exception_handler(exc, context):
     elif not isinstance(exc, exceptions.APIException):
         return views.exception_handler(exc, context)
 
-    elif isinstance(exc, AuthenticationFailed):
-        data = {'auth': [exc.get_full_details()]}
+    # If the user submitted a request requiring authentication and they are not
+    # authenticated, include information in the context so the FE can force log
+    # out the user.
+    elif isinstance(exc, (AuthenticationFailed, exceptions.NotAuthenticated)):
+        error_type = getattr(exc, 'error_type', 'auth')
+        data = map_details(exc.detail, error_type=error_type, force_logout=True)
 
-    elif isinstance(exc.detail, (list, dict)):
-        data = exc.get_full_details()
-        if exc.status_code == 404 and '__all__' in data:
-            data['__all__'][0]['code'] == 'not_found'
-        elif exc.status_code == 400:
-            # See Point(3) in Docstring
-            if isinstance(data, dict):
-                for field, errors in data.items():
-                    if (isinstance(errors, dict)
-                            and all([
-                                isinstance(k, int) and isinstance(v, list)
-                                for k, v in errors.items()
-                            ])):
-                        data[field] = concat([v for _, v in errors.items()])
-        # Keep things consistent by still referencing the list of errors as
-        # the global errors.
-        if isinstance(data, list):
-            data = {'__all__': data}
+    elif isinstance(exc.detail, dict):
+        error_type = getattr(exc, 'error_type', 'field')
+        data = map_exception_details(exc, error_type=error_type)
+
     else:
-        data = {'__all__': [exc.get_full_details()]}
+        data = map_exception_details(exc, default_error_type='global')
 
     response_data = {'errors': data}
 
     # Allow the exception to include extra data that will be attributed to the
-    # response.
+    # response at the top level, not individual errors.
     if isinstance(getattr(exc, 'extra', None), Mapping):
         response_data.update({k: v for k, v in exc.extra.items()})
 

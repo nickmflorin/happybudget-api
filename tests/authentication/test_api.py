@@ -45,12 +45,11 @@ def test_login_invalid_email(api_client, db):
     assert response.status_code == 403
     assert 'greenbudgetjwt' not in response.cookies
     assert response.json() == {
-        'errors': {
-            '__all__': [{
-                'message': 'The provided username does not exist in our system.',  # noqa
-                'code': 'email_does_not_exist'
-            }]
-        }
+        'errors': [{
+            'message': 'The provided username does not exist in our system.',  # noqa
+            'error_type': 'global',
+            'code': 'email_does_not_exist'
+        }]
     }
 
 
@@ -62,12 +61,11 @@ def test_login_invalid_password(user, api_client):
     assert response.status_code == 403
     assert 'greenbudgetjwt' not in response.cookies
     assert response.json() == {
-        'errors': {
-            '__all__': [{
-                'message': 'The provided password is invalid.',
-                'code': 'invalid_credentials'
-            }]
-        }
+        'errors': [{
+            'message': 'The provided password is invalid.',
+            'error_type': 'global',
+            'code': 'invalid_credentials'
+        }]
     }
 
 
@@ -183,12 +181,11 @@ def test_reset_password_invalid_token(api_client, db):
     })
     assert response.status_code == 403
     assert response.json() == {
-        'errors': {
-            '__all__': [{
-                'message': 'The provided token is invalid.',
-                'code': 'invalid_reset_token'
-            }]
-        }
+        'errors': [{
+            'error_type': 'global',
+            'message': 'The provided token is invalid.',
+            'code': 'invalid_reset_token'
+        }]
     }
 
 
@@ -212,12 +209,11 @@ def test_reset_password_token_expired(user, api_client, freezer, db):
 
     assert response.status_code == 403
     assert response.json() == {
-        'errors': {
-            '__all__': [{
-                'message': 'The password reset link has expired.',
-                'code': 'password_reset_link_expired'
-            }]
-        }
+        'errors': [{
+            'error_type': 'global',
+            'message': 'The password reset link has expired.',
+            'code': 'password_reset_link_expired',
+        }]
     }
 
 

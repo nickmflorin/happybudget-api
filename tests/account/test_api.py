@@ -174,6 +174,7 @@ def test_update_account(api_client, user, create_budget, create_account):
     response = api_client.patch("/v1/accounts/%s/" % account.pk, data={
         'identifier': 'new_account',
         'description': 'Account description',
+        'subaccounts': [100, 101]
     })
     assert response.status_code == 200
     assert response.json() == {
@@ -248,6 +249,47 @@ def test_bulk_update_account_subaccounts(api_client, user, create_budget,
                 }
             ]
         })
+    assert response.status_code == 200
+    assert response.json()['subaccounts'][0]['name'] == 'New Name 1'
+    assert response.json()['subaccounts'][1]['name'] == 'New Name 2'
+
+    subaccounts[0].refresh_from_db()
+    assert subaccounts[0].name == "New Name 1"
+    subaccounts[1].refresh_from_db()
+    assert subaccounts[1].name == "New Name 2"
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_bulk_update_account_subaccounts_error(api_client, user, create_budget,
+        create_account, create_sub_account):
+    api_client.force_login(user)
+    budget = create_budget()
+    account = create_account(budget=budget)
+    subaccounts = [
+        create_sub_account(budget=budget, parent=account),
+        create_sub_account(budget=budget, parent=account)
+    ]
+    create_sub_account(budget=budget, parent=account, identifier="identifier-a")
+    response = api_client.patch(
+        "/v1/accounts/%s/bulk-update-subaccounts/" % account.pk,
+        format='json',
+        data={
+            'data': [
+                {
+                    'id': subaccounts[0].pk,
+                    'name': 'New Name 1',
+                    'identifier': 'identifier-a',
+                },
+                {
+                    'id': subaccounts[1].pk,
+                    'name': 'New Name 2',
+                }
+            ]
+        })
+
+    import json
+    print(json.dumps(response.json(), indent=4))
+    return
     assert response.status_code == 200
     assert response.json()['subaccounts'][0]['name'] == 'New Name 1'
     assert response.json()['subaccounts'][1]['name'] == 'New Name 2'
