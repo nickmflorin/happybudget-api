@@ -51,7 +51,3 @@ class Contact(models.Model):
     @property
     def full_name(self):
         return self.first_name + " " + self.last_name
-
-    @property
-    def role_name(self):
-        return self.ROLES[self.role]

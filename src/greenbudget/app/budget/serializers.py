@@ -1,5 +1,6 @@
 from rest_framework import serializers, exceptions
 
+from greenbudget.lib.rest_framework_utils.fields import ModelChoiceField
 from greenbudget.lib.rest_framework_utils.serializers import (
     EnhancedModelSerializer)
 
@@ -30,19 +31,18 @@ class FringeSerializer(EnhancedModelSerializer):
     updated_at = serializers.DateTimeField(read_only=True)
     rate = serializers.FloatField(required=False, allow_null=True)
     cutoff = serializers.FloatField(required=False, allow_null=True)
-    unit = serializers.ChoiceField(
+    unit = ModelChoiceField(
         required=False,
         choices=Fringe.UNITS,
         allow_null=True
     )
-    unit_name = serializers.CharField(read_only=True)
     num_times_used = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Fringe
         fields = (
             'id', 'name', 'description', 'created_by', 'created_at',
-            'updated_by', 'updated_at', 'rate', 'cutoff', 'unit', 'unit_name',
+            'updated_by', 'updated_at', 'rate', 'cutoff', 'unit',
             'num_times_used')
 
     def validate_name(self, value):
@@ -87,8 +87,7 @@ class BudgetSerializer(EnhancedModelSerializer):
     )
     created_by = serializers.PrimaryKeyRelatedField(read_only=True)
     project_number = serializers.IntegerField(read_only=True)
-    production_type = serializers.ChoiceField(choices=Budget.PRODUCTION_TYPES)
-    production_type_name = serializers.CharField(read_only=True)
+    production_type = ModelChoiceField(choices=Budget.PRODUCTION_TYPES)
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
     shoot_date = serializers.DateTimeField(read_only=True)
@@ -106,10 +105,9 @@ class BudgetSerializer(EnhancedModelSerializer):
         model = Budget
         fields = (
             'id', 'name', 'created_by', 'project_number', 'production_type',
-            'production_type_name', 'created_at', 'shoot_date',
-            'delivery_date', 'build_days', 'prelight_days', 'studio_shoot_days',
-            'location_days', 'updated_at', 'trash', 'estimated', 'actual',
-            'variance')
+            'created_at', 'shoot_date', 'delivery_date', 'build_days',
+            'prelight_days', 'studio_shoot_days', 'location_days', 'updated_at',
+            'trash', 'estimated', 'actual', 'variance')
 
     def validate_name(self, value):
         user = self.context['user']

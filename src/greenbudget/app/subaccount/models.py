@@ -117,12 +117,6 @@ class SubAccount(BudgetItem):
             return None
 
     @property
-    def unit_name(self):
-        if self.unit is None:
-            return ""
-        return self.UNITS[self.unit]
-
-    @property
     def account(self):
         from greenbudget.app.account.models import Account
         # TODO: We need to figure out a way to build this validation into the

@@ -2,6 +2,7 @@ from phonenumber_field.serializerfields import PhoneNumberField
 
 from rest_framework import serializers
 
+from greenbudget.lib.rest_framework_utils.fields import ModelChoiceField
 from greenbudget.lib.rest_framework_utils.serializers import (
     EnhancedModelSerializer)
 
@@ -15,11 +16,10 @@ class ContactSerializer(EnhancedModelSerializer):
     full_name = serializers.CharField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
-    role = serializers.ChoiceField(
+    role = ModelChoiceField(
         required=False,
         choices=Contact.ROLES
     )
-    role_name = serializers.CharField(read_only=True)
     city = serializers.CharField()
     country = serializers.CharField()
     phone_number = PhoneNumberField()
@@ -29,8 +29,7 @@ class ContactSerializer(EnhancedModelSerializer):
         model = Contact
         fields = (
             'id', 'first_name', 'last_name', 'created_at', 'updated_at', 'role',
-            'city', 'country', 'phone_number', 'email', 'full_name',
-            'role_name')
+            'city', 'country', 'phone_number', 'email', 'full_name')
 
     def validate_email(self, value):
         user = self.context['user']

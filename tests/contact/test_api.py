@@ -15,13 +15,15 @@ def test_get_contact(api_client, user, create_contact):
         "last_name": contact.last_name,
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
-        "role": contact.role,
-        "role_name": contact.ROLES[contact.role],
         "city": contact.city,
         "country": contact.country,
         "phone_number": str(contact.phone_number),
         "email": contact.email,
         "full_name": contact.full_name,
+        "role": {
+            "id": contact.role,
+            "name": Contact.ROLES[contact.role]
+        }
     }
 
 
@@ -39,13 +41,15 @@ def test_get_contacts(api_client, user, create_contact):
             "last_name": contacts[0].last_name,
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
-            "role": contacts[0].role,
-            "role_name": Contact.ROLES[contacts[0].role],
             "city": contacts[0].city,
             "country": contacts[0].country,
             "phone_number": str(contacts[0].phone_number),
             "email": contacts[0].email,
             "full_name": contacts[0].full_name,
+            "role": {
+                "id": contacts[0].role,
+                "name": Contact.ROLES[contacts[0].role]
+            }
         },
         {
             "id": contacts[1].pk,
@@ -53,13 +57,15 @@ def test_get_contacts(api_client, user, create_contact):
             "last_name": contacts[1].last_name,
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
-            "role": contacts[1].role,
-            "role_name": Contact.ROLES[contacts[1].role],
             "city": contacts[1].city,
             "country": contacts[1].country,
             "phone_number": str(contacts[1].phone_number),
             "email": contacts[1].email,
             "full_name": contacts[1].full_name,
+            "role": {
+                "id": contacts[1].role,
+                "name": Contact.ROLES[contacts[1].role]
+            }
         }
     ]
 
@@ -94,13 +100,15 @@ def test_create_contact(api_client, user):
         "last_name": "Johnson",
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
-        "role": 1,
-        "role_name": Contact.ROLES[contact.role],
         "city": "New York",
         "country": "United States",
         "phone_number": "+15183696530",
         "email": "jjohnson@gmail.com",
         "full_name": "Jack Johnson",
+        "role": {
+            "id": 1,
+            "name": Contact.ROLES[1]
+        }
     }
 
 
@@ -128,13 +136,15 @@ def test_update_contact(api_client, user, create_contact):
         "last_name": "Johnson",
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
-        "role": contact.role,
-        "role_name": Contact.ROLES[contact.role],
         "city": "New York",
         "country": "United States",
         "phone_number": str(contact.phone_number),
         "email": contact.email,
-        "full_name": contact.full_name
+        "full_name": contact.full_name,
+        "role": {
+            "id": contact.role,
+            "name": Contact.ROLES[contact.role]
+        }
     }
 
 

@@ -1,6 +1,8 @@
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers, exceptions
 
+from greenbudget.lib.rest_framework_utils.fields import ModelChoiceField
+
 from greenbudget.app.budget.models import Fringe
 from greenbudget.app.budget_item.serializers import (
     BudgetItemGroupSerializer,
@@ -77,12 +79,11 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
     estimated = serializers.FloatField(read_only=True)
     actual = serializers.FloatField(read_only=True)
     variance = serializers.FloatField(read_only=True)
-    unit = serializers.ChoiceField(
+    unit = ModelChoiceField(
         required=False,
         choices=SubAccount.UNITS,
         allow_null=True
     )
-    unit_name = serializers.CharField(read_only=True)
     budget = serializers.PrimaryKeyRelatedField(read_only=True)
     ancestors = EntitySerializer(many=True, read_only=True)
     siblings = EntitySerializer(many=True, read_only=True)
@@ -109,9 +110,9 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
         fields = SubAccountSimpleSerializer.Meta.fields + (
             'identifier', 'name', 'description', 'created_by', 'updated_by',
             'created_at', 'updated_at', 'quantity', 'rate', 'multiplier',
-            'unit', 'unit_name', 'account', 'object_id', 'parent_type',
-            'ancestors', 'estimated', 'subaccounts', 'actual', 'variance',
-            'budget', 'type', 'group', 'siblings', 'fringes')
+            'unit', 'account', 'object_id', 'parent_type', 'ancestors',
+            'estimated', 'subaccounts', 'actual', 'variance', 'budget', 'type',
+            'group', 'siblings', 'fringes')
 
     def validate_identifier(self, value):
         # In the case that the serializer is nested and being used in a write

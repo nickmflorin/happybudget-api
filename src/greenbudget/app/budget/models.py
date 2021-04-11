@@ -119,10 +119,6 @@ class Budget(PolymorphicModel):
             name=self.name
         )
 
-    @property
-    def production_type_name(self):
-        return self.PRODUCTION_TYPES[self.production_type]
-
     def to_trash(self):
         self.trash = True
         self.save()

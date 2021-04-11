@@ -2,6 +2,7 @@ from rest_framework import serializers, exceptions
 
 from greenbudget.lib.rest_framework_utils.exceptions import (
     InvalidFieldError, RequiredFieldError)
+from greenbudget.lib.rest_framework_utils.fields import ModelChoiceField
 from greenbudget.lib.rest_framework_utils.serializers import (
     EnhancedModelSerializer)
 
@@ -42,11 +43,10 @@ class ActualSerializer(EnhancedModelSerializer):
         allow_null=False
     )
     value = serializers.FloatField(required=False, allow_null=False)
-    payment_method = serializers.ChoiceField(
+    payment_method = ModelChoiceField(
         required=False,
         choices=Actual.PAYMENT_METHODS
     )
-    payment_method_name = serializers.CharField(read_only=True)
     object_id = serializers.IntegerField(required=False)
     parent_type = serializers.ChoiceField(
         required=False,
@@ -58,8 +58,7 @@ class ActualSerializer(EnhancedModelSerializer):
         fields = (
             'id', 'description', 'created_by', 'updated_by', 'created_at',
             'updated_at', 'purchase_order', 'date', 'payment_id', 'value',
-            'payment_method', 'payment_method_name', 'object_id', 'parent_type',
-            'vendor')
+            'payment_method', 'object_id', 'parent_type', 'vendor')
 
     def validate(self, attrs):
         # In the case that the serializer is nested and being used in a write

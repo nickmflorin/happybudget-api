@@ -23,8 +23,6 @@ def test_get_subaccount(api_client, user, create_sub_account, create_account,
         "quantity": subaccount.quantity,
         "rate": subaccount.rate,
         "multiplier": subaccount.multiplier,
-        "unit": subaccount.unit,
-        "unit_name": subaccount.unit_name,
         "type": "subaccount",
         "object_id": account.pk,
         "budget": budget.pk,
@@ -39,6 +37,10 @@ def test_get_subaccount(api_client, user, create_sub_account, create_account,
         "group": None,
         "created_by": user.pk,
         "updated_by": user.pk,
+        "unit": {
+            "id": subaccount.unit,
+            "name": SubAccount.UNITS[subaccount.unit]
+        },
         "ancestors": [
             {
                 "type": "budget",
@@ -89,7 +91,6 @@ def test_create_subaccount(api_client, user, create_account, create_budget):
         "rate": None,
         "multiplier": None,
         "unit": None,
-        "unit_name": '',
         "type": "subaccount",
         "object_id": account.pk,
         "budget": budget.pk,
@@ -178,8 +179,6 @@ def test_update_subaccount(api_client, user, create_sub_account, create_account,
         "quantity": 10,
         "rate": 1.5,
         "multiplier": subaccount.multiplier,
-        "unit": subaccount.unit,
-        "unit_name": subaccount.unit_name,
         "type": "subaccount",
         "object_id": account.pk,
         "budget": budget.pk,
@@ -194,6 +193,10 @@ def test_update_subaccount(api_client, user, create_sub_account, create_account,
         "group": None,
         "created_by": user.pk,
         "updated_by": user.pk,
+        "unit": {
+            "id": subaccount.unit,
+            "name": SubAccount.UNITS[subaccount.unit]
+        },
         "ancestors": [
             {
                 "type": "budget",
@@ -273,8 +276,6 @@ def test_get_budget_account_subaccounts(api_client, user, create_account,
             "quantity": subaccounts[0].quantity,
             "rate": subaccounts[0].rate,
             "multiplier": subaccounts[0].multiplier,
-            "unit": subaccounts[0].unit,
-            "unit_name": subaccounts[0].unit_name,
             "type": "subaccount",
             "object_id": account.pk,
             "budget": budget.pk,
@@ -288,6 +289,10 @@ def test_get_budget_account_subaccounts(api_client, user, create_account,
             "created_by": user.pk,
             "updated_by": user.pk,
             "group": None,
+            "unit": {
+                "id": subaccounts[0].unit,
+                "name": SubAccount.UNITS[subaccounts[0].unit]
+            },
             "ancestors": [
                 {
                     "type": "budget",
@@ -322,8 +327,6 @@ def test_get_budget_account_subaccounts(api_client, user, create_account,
             "quantity": subaccounts[1].quantity,
             "rate": subaccounts[1].rate,
             "multiplier": subaccounts[1].multiplier,
-            "unit": subaccounts[1].unit,
-            "unit_name": subaccounts[1].unit_name,
             "type": "subaccount",
             "object_id": account.pk,
             "budget": budget.pk,
@@ -337,6 +340,10 @@ def test_get_budget_account_subaccounts(api_client, user, create_account,
             "group": None,
             "created_by": user.pk,
             "updated_by": user.pk,
+            "unit": {
+                "id": subaccounts[1].unit,
+                "name": SubAccount.UNITS[subaccounts[1].unit]
+            },
             "ancestors": [
                 {
                     "type": "budget",
@@ -392,8 +399,6 @@ def test_get_subaccount_subaccounts(api_client, user, create_sub_account,
             "quantity": subaccounts[0].quantity,
             "rate": subaccounts[0].rate,
             "multiplier": subaccounts[0].multiplier,
-            "unit": subaccounts[0].unit,
-            "unit_name": subaccounts[0].unit_name,
             "type": "subaccount",
             "object_id": parent.pk,
             "budget": budget.pk,
@@ -407,6 +412,10 @@ def test_get_subaccount_subaccounts(api_client, user, create_sub_account,
             "group": None,
             "created_by": user.pk,
             "updated_by": user.pk,
+            "unit": {
+                "id": subaccounts[0].unit,
+                "name": SubAccount.UNITS[subaccounts[0].unit]
+            },
             "ancestors": [
                 {
                     "type": "budget",
@@ -448,8 +457,6 @@ def test_get_subaccount_subaccounts(api_client, user, create_sub_account,
             "quantity": subaccounts[1].quantity,
             "rate": subaccounts[1].rate,
             "multiplier": subaccounts[1].multiplier,
-            "unit": subaccounts[1].unit,
-            "unit_name": subaccounts[1].unit_name,
             "type": "subaccount",
             "object_id": parent.pk,
             "budget": budget.pk,
@@ -463,6 +470,10 @@ def test_get_subaccount_subaccounts(api_client, user, create_sub_account,
             "group": None,
             "created_by": user.pk,
             "updated_by": user.pk,
+            "unit": {
+                "id": subaccounts[1].unit,
+                "name": SubAccount.UNITS[subaccounts[1].unit]
+            },
             "ancestors": [
                 {
                     "type": "budget",

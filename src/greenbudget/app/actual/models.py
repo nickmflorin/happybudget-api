@@ -82,12 +82,6 @@ class Actual(models.Model):
         )
 
     @property
-    def payment_method_name(self):
-        if self.payment_method is None:
-            return ""
-        return self.PAYMENT_METHODS[self.payment_method]
-
-    @property
     def parent_type(self):
         from greenbudget.app.account.models import Account
         if isinstance(self.parent, Account):

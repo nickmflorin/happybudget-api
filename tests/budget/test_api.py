@@ -18,8 +18,10 @@ def test_get_budgets(api_client, user, create_budget):
             "id": budgets[0].pk,
             "name": budgets[0].name,
             "project_number": budgets[0].project_number,
-            "production_type": budgets[0].production_type,
-            "production_type_name": budgets[0].production_type_name,
+            "production_type": {
+                "id": budgets[0].production_type,
+                "name": Budget.PRODUCTION_TYPES[budgets[0].production_type]
+            },
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
             "shoot_date": api_datetime_string(budgets[0].shoot_date),
@@ -38,8 +40,10 @@ def test_get_budgets(api_client, user, create_budget):
             "id": budgets[1].pk,
             "name": budgets[1].name,
             "project_number": budgets[1].project_number,
-            "production_type": budgets[1].production_type,
-            "production_type_name": budgets[1].production_type_name,
+            "production_type": {
+                "id": budgets[1].production_type,
+                "name": Budget.PRODUCTION_TYPES[budgets[1].production_type]
+            },
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
             "shoot_date": api_datetime_string(budgets[1].shoot_date),
@@ -67,8 +71,10 @@ def test_get_budget(api_client, user, create_budget, db):
         "id": budget.pk,
         "name": budget.name,
         "project_number": budget.project_number,
-        "production_type": budget.production_type,
-        "production_type_name": budget.production_type_name,
+        "production_type": {
+            "id": budget.production_type,
+            "name": Budget.PRODUCTION_TYPES[budget.production_type]
+        },
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
         "shoot_date": api_datetime_string(budget.shoot_date),
@@ -101,8 +107,10 @@ def test_create_budget(api_client, user, db):
         "id": budget.pk,
         "name": budget.name,
         "project_number": budget.project_number,
-        "production_type": 1,
-        "production_type_name": budget.PRODUCTION_TYPES[1],
+        "production_type": {
+            "id": 1,
+            "name": budget.PRODUCTION_TYPES[1],
+        },
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
         "shoot_date": api_datetime_string(budget.shoot_date),
@@ -146,8 +154,10 @@ def test_get_budgets_in_trash(api_client, user, create_budget, db):
             "id": budgets[0].pk,
             "name": budgets[0].name,
             "project_number": budgets[0].project_number,
-            "production_type": budgets[0].production_type,
-            "production_type_name": budgets[0].production_type_name,
+            "production_type": {
+                "id": budgets[0].production_type,
+                "name": Budget.PRODUCTION_TYPES[budgets[0].production_type]
+            },
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
             "shoot_date": api_datetime_string(budgets[0].shoot_date),
@@ -166,8 +176,10 @@ def test_get_budgets_in_trash(api_client, user, create_budget, db):
             "id": budgets[1].pk,
             "name": budgets[1].name,
             "project_number": budgets[1].project_number,
-            "production_type": budgets[1].production_type,
-            "production_type_name": budgets[1].production_type_name,
+            "production_type": {
+                "id": budgets[1].production_type,
+                "name": Budget.PRODUCTION_TYPES[budgets[1].production_type]
+            },
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
             "shoot_date": api_datetime_string(budgets[1].shoot_date),
@@ -195,8 +207,10 @@ def test_get_budget_in_trash(api_client, user, create_budget, db):
         "id": budget.pk,
         "name": budget.name,
         "project_number": budget.project_number,
-        "production_type": budget.production_type,
-        "production_type_name": budget.production_type_name,
+        "production_type": {
+                "id": budget.production_type,
+                "name": Budget.PRODUCTION_TYPES[budget.production_type]
+        },
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
         "shoot_date": api_datetime_string(budget.shoot_date),

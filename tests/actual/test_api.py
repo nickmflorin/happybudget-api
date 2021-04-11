@@ -24,7 +24,6 @@ def test_create_actual(api_client, user, create_account,
         "payment_id": None,
         "value": None,
         "payment_method": None,
-        "payment_method_name": "",
         "object_id": account.pk,
         "parent_type": "account",
         "vendor": None,
@@ -50,6 +49,7 @@ def test_update_actual(api_client, user, create_account,
         data={
             "vendor": "Vendor Name",
             "payment_id": "Payment ID",
+            "payment_method": 1,
         }
     )
     assert response.status_code == 200
@@ -62,8 +62,10 @@ def test_update_actual(api_client, user, create_account,
         "date": actual.date,
         "payment_id": "Payment ID",
         "value": actual.value,
-        "payment_method": actual.payment_method,
-        "payment_method_name": actual.PAYMENT_METHODS[actual.payment_method],
+        "payment_method": {
+            "id": 1,
+            "name": actual.PAYMENT_METHODS[1]
+        },
         "object_id": account.pk,
         "parent_type": "account",
         "vendor": "Vendor Name",
@@ -98,8 +100,10 @@ def test_change_actual_parent(api_client, user, create_account,
         "date": actual.date,
         "payment_id": actual.payment_id,
         "value": actual.value,
-        "payment_method": actual.payment_method,
-        "payment_method_name": actual.PAYMENT_METHODS[actual.payment_method],
+        "payment_method": {
+            "id": actual.payment_method,
+            "name": actual.PAYMENT_METHODS[actual.payment_method]
+        },
         "object_id": another_account.pk,
         "parent_type": "account",
         "vendor": actual.vendor,
@@ -154,9 +158,10 @@ def test_get_account_actuals(api_client, user, create_account, create_actual,
             "date": actuals[0].date,
             "payment_id": actuals[0].payment_id,
             "value": actuals[0].value,
-            "payment_method": actuals[0].payment_method,
-            "payment_method_name": Actual.PAYMENT_METHODS[
-                actuals[0].payment_method],
+            "payment_method": {
+                "id": actuals[0].payment_method,
+                "name": actuals[0].PAYMENT_METHODS[actuals[0].payment_method]
+            },
             "object_id": account.pk,
             "parent_type": "account",
             "created_by": user.pk,
@@ -172,9 +177,10 @@ def test_get_account_actuals(api_client, user, create_account, create_actual,
             "date": actuals[1].date,
             "payment_id": actuals[1].payment_id,
             "value": actuals[1].value,
-            "payment_method": actuals[1].payment_method,
-            "payment_method_name": Actual.PAYMENT_METHODS[
-                actuals[1].payment_method],
+            "payment_method": {
+                "id": actuals[1].payment_method,
+                "name": actuals[1].PAYMENT_METHODS[actuals[1].payment_method]
+            },
             "object_id": account.pk,
             "parent_type": "account",
             "created_by": user.pk,
@@ -183,7 +189,7 @@ def test_get_account_actuals(api_client, user, create_account, create_actual,
     ]
 
 
-@pytest.mark.freeze_time('2020-01-01')
+@ pytest.mark.freeze_time('2020-01-01')
 def test_get_subaccount_actuals(api_client, user, create_sub_account,
         create_actual, create_budget):
     budget = create_budget()
@@ -207,9 +213,10 @@ def test_get_subaccount_actuals(api_client, user, create_sub_account,
             "date": actuals[0].date,
             "payment_id": actuals[0].payment_id,
             "value": actuals[0].value,
-            "payment_method": actuals[0].payment_method,
-            "payment_method_name": Actual.PAYMENT_METHODS[
-                actuals[0].payment_method],
+            "payment_method": {
+                "id": actuals[0].payment_method,
+                "name": actuals[0].PAYMENT_METHODS[actuals[0].payment_method]
+            },
             "object_id": sub_account.pk,
             "parent_type": "subaccount",
             "created_by": user.pk,
@@ -225,9 +232,10 @@ def test_get_subaccount_actuals(api_client, user, create_sub_account,
             "date": actuals[1].date,
             "payment_id": actuals[1].payment_id,
             "value": actuals[1].value,
-            "payment_method": actuals[1].payment_method,
-            "payment_method_name": Actual.PAYMENT_METHODS[
-                actuals[1].payment_method],
+            "payment_method": {
+                "id": actuals[1].payment_method,
+                "name": actuals[1].PAYMENT_METHODS[actuals[1].payment_method]
+            },
             "object_id": sub_account.pk,
             "parent_type": "subaccount",
             "created_by": user.pk,

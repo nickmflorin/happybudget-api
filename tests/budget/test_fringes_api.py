@@ -25,9 +25,11 @@ def test_get_budget_fringes(api_client, user, create_budget, create_fringe):
             "updated_at": "2020-01-01 00:00:00",
             "rate": fringes[0].rate,
             "cutoff": fringes[0].cutoff,
-            "unit": fringes[0].unit,
-            "unit_name": fringes[0].unit_name,
-            "num_times_used": fringes[0].num_times_used
+            "num_times_used": fringes[0].num_times_used,
+            "unit": {
+                "id": fringes[0].unit,
+                "name": Fringe.UNITS[fringes[0].unit]
+            }
         },
         {
             "id": fringes[1].pk,
@@ -39,9 +41,11 @@ def test_get_budget_fringes(api_client, user, create_budget, create_fringe):
             "updated_at": "2020-01-01 00:00:00",
             "rate": fringes[1].rate,
             "cutoff": fringes[1].cutoff,
-            "unit": fringes[1].unit,
-            "unit_name": fringes[1].unit_name,
-            "num_times_used": fringes[1].num_times_used
+            "num_times_used": fringes[1].num_times_used,
+            "unit": {
+                "id": fringes[1].unit,
+                "name": Fringe.UNITS[fringes[1].unit]
+            }
         },
     ]
 
@@ -63,8 +67,10 @@ def test_get_budget_fringe(api_client, user, create_budget, create_fringe):
         "updated_at": "2020-01-01 00:00:00",
         "rate": fringe.rate,
         "cutoff": fringe.cutoff,
-        "unit": fringe.unit,
-        "unit_name": fringe.unit_name,
+        "unit": {
+            "id": fringe.unit,
+            "name": Fringe.UNITS[fringe.unit]
+        },
         "num_times_used": fringe.num_times_used
     }
 
@@ -92,9 +98,11 @@ def test_update_budget_fringe(api_client, user, create_budget, create_fringe):
         "updated_at": "2020-01-01 00:00:00",
         "rate": 5.5,
         "cutoff": None,
-        "unit": 1,
-        "unit_name": Fringe.UNITS[1],
-        "num_times_used": fringe.num_times_used
+        "num_times_used": fringe.num_times_used,
+        "unit": {
+            "id": 1,
+            "name": Fringe.UNITS[1]
+        }
     }
     assert fringe.name == "Test Fringe"
     assert fringe.rate == 5.5
@@ -125,9 +133,11 @@ def test_create_budget_fringe(api_client, user, create_budget, create_fringe):
         "updated_at": "2020-01-01 00:00:00",
         "rate": 5.5,
         "cutoff": None,
-        "unit": 1,
-        "unit_name": Fringe.UNITS[1],
-        "num_times_used": fringe.num_times_used
+        "num_times_used": fringe.num_times_used,
+        "unit": {
+            "id": 1,
+            "name": Fringe.UNITS[1]
+        }
     }
     assert fringe.name == "Test Fringe"
     assert fringe.rate == 5.5
