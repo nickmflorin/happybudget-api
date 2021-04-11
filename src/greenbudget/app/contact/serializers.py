@@ -31,3 +31,21 @@ class ContactSerializer(EnhancedModelSerializer):
             'id', 'first_name', 'last_name', 'created_at', 'updated_at', 'role',
             'city', 'country', 'phone_number', 'email', 'full_name',
             'role_name')
+
+    def validate_email(self, value):
+        user = self.context['user']
+        validator = serializers.UniqueTogetherValidator(
+            queryset=Contact.objects.filter(user=user),
+            fields=('email', ),
+        )
+        validator({'email': value}, self)
+        return value
+
+    def validate_phone_number(self, value):
+        user = self.context['user']
+        validator = serializers.UniqueTogetherValidator(
+            queryset=Contact.objects.filter(user=user),
+            fields=('phone_number', ),
+        )
+        validator({'phone_number': value}, self)
+        return value

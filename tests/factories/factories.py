@@ -226,7 +226,7 @@ class ContactFactory(CustomModelFactory):
     email = factory.Faker('email')
     user = factory.SubFactory(UserFactory)
     role = Contact.ROLES.producer
-    phone_number = '+15183696530'
+    phone_number = factory.Faker('phone_number')
     country = "United States"
     city = "New York"
 

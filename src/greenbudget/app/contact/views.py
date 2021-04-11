@@ -25,6 +25,11 @@ class ContactViewSet(
     ordering_fields = ['updated_at', 'first_name', 'last_name', 'created_at']
     search_fields = ['first_name', 'last_name', 'role', 'city', 'country']
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update(user=self.request.user)
+        return context
+
     def get_queryset(self):
         # TODO: Make sure this will not work for inactive users.
         return self.request.user.contacts.all()

@@ -39,6 +39,7 @@ class Contact(models.Model):
         ordering = ('created_at', )
         verbose_name = "Contact"
         verbose_name_plural = "Contacts"
+        unique_together = (('user', 'email'), ('user', 'phone_number'))
 
     def __str__(self):
         return "<{cls} id={id}, email={email}>".format(
