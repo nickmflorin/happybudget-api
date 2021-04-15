@@ -1,3 +1,4 @@
+from django.http import HttpResponse
 from rest_framework import viewsets, mixins, response, status, decorators
 
 from greenbudget.app.account.models import AccountGroup
@@ -136,6 +137,7 @@ class BudgetViewSet(
     (8) PATCH /budgets/<pk>/bulk-update-actuals/
     (9) PATCH /budgets/<pk>/bulk-update-fringes/
     (10) PATCH /budgets/<pk>/bulk-create-fringes/
+    (11) GET /budgets/<pk>/pdf/
     """
 
     def get_serializer_context(self):
@@ -238,6 +240,12 @@ class BudgetViewSet(
             {'data': FringeSerializer(fringes, many=True).data},
             status=status.HTTP_201_CREATED
         )
+
+    @decorators.action(detail=True, methods=["GET"])
+    def pdf(self, request, *args, **kwargs):
+        instance = self.get_object()
+        pdf = instance.to_pdf()
+        return HttpResponse(pdf.getvalue(), content_type='application/pdf')
 
 
 class BudgetTrashViewSet(

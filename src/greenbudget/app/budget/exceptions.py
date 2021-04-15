@@ -4,6 +4,12 @@ from rest_framework import exceptions
 
 class BudgetErrorCodes(object):
     NO_USER_ACCESS = "no_user_access"
+    PDF_ERROR = "pdf_error"
+
+
+class BudgetPdfError(exceptions.ParseError):
+    default_detail = _("There was an error processing the budget PDF.")
+    default_code = BudgetErrorCodes.PDF_ERROR
 
 
 class BudgetPermissionError(exceptions.PermissionDenied):

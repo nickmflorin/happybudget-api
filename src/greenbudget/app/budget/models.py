@@ -10,6 +10,7 @@ from greenbudget.app.comment.models import Comment
 
 from .exceptions import BudgetPermissionError
 from .managers import BudgetManager
+from .utils import render_budget_as_pdf
 
 
 class Fringe(models.Model):
@@ -126,6 +127,9 @@ class Budget(PolymorphicModel):
     def restore(self):
         self.trash = False
         self.save()
+
+    def to_pdf(self):
+        return render_budget_as_pdf(self)
 
     def raise_no_access(self, user):
         if user != self.created_by:

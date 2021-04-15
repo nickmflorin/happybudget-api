@@ -57,54 +57,5 @@
           <h1 class="budget-title">{{budget.name}}</h1>
           <h4 class="budget-subtitle">Cost Summary</h4>
         </div>
-        <table class="topsheet-table">
-          <thead>
-          <tr class="table-header">
-            <td scope="col"><span>Acct #</span></td>
-            <td scope="col">Category Description</td>
-            <td scope="col">Estimated</td>
-          </tr>
-        </thead>
-          {% for row in budget.getTopSheetLineItems %}
-          <tr class="table-rows">
-            <td class="border-both lineNumber">{{row.lineNumber}}</td>
-            <td class="categoryDescription">{{row.categoryDescription}}</td>
-            <td class="border-both estimated">${{row.estimated}}</td>
-          </tr>
-          {% endfor %}
-        </table>
-        <pdf:nextpage />
-          {% for row in topsheetArr %}
-          {% if row.accountRows.len != 0 %}
-          <table class="topsheet-table">
-            <thead>
-            <tr class="table-header">
-              <td scope="col">Acct</td>
-              <td scope="col">Description</td>
-              <td scope="col">Name</td>
-              <td scope="col">Qty</td>
-              <td scope="col">Unit</td>
-              <td scope="col">X</td>
-              <td scope="col">Rate</td>
-              <td scope="col">Total</td>
-            </tr>
-          </thead>
-          <tr class="nested-row">
-            <td>{{row.lineNumber}}</td>
-            <td>{{row.categoryDescription}}</td>
-          </tr>
-            {% for account in row.accountRows %}
-            <tr class="nested-account-row">
-              <td>{{account.lineNumber}}</td>
-              <td>{{account.categoryDescription}}</td>
-              <td>{{account.name}}</td>
-              <td>{{account.unit}}</td>
-              <td>{{account.multiply}}</td>
-              <td>{{account.rate}}</td>
-            </tr>
-            {% endfor %}
-          {% endif %}
-          {% endfor %}
-        </table>
     </body>
 </html>
