@@ -233,9 +233,8 @@ DATABASES = {
     },
 }
 
-STATICFILES_DIRS = [str(BASE_DIR / "static"), ]
 STATIC_URL = '/static/'
-STATIC_ROOT = str(BASE_DIR / "statcdn/")
+STATIC_ROOT = str(BASE_DIR / "static")
 
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
