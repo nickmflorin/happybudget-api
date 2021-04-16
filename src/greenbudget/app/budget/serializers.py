@@ -1,93 +1,70 @@
-from rest_framework import serializers, exceptions
+from rest_framework import serializers
 
 from greenbudget.lib.rest_framework_utils.fields import ModelChoiceField
 from greenbudget.lib.rest_framework_utils.serializers import (
     EnhancedModelSerializer)
 
-from greenbudget.app.account.serializers import (
-    AccountSerializer, AccountBulkChangeSerializer)
-from greenbudget.app.actual.serializers import (
-    ActualSerializer, ActualBulkChangeSerializer)
-from greenbudget.app.common.serializers import AbstractBulkUpdateSerializer
+from greenbudget.app.common.serializers import EntitySerializer
+from greenbudget.app.template.models import Template
 
-from .models import Budget, Fringe
+from .models import BaseBudget, Budget
 
 
-class FringeSerializer(EnhancedModelSerializer):
+class TreeNodeSerializer(EntitySerializer):
+
+    def get_children(self, instance):
+        if instance.subaccounts.count():
+            return self.__class__(instance.subaccounts.all(), many=True).data
+        return []
+
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        rep['children'] = self.get_children(instance)
+        return rep
+
+
+class BaseBudgetSimpleSerializer(EnhancedModelSerializer):
     id = serializers.IntegerField(read_only=True)
     name = serializers.CharField(
-        required=False,
+        required=True,
         allow_blank=False,
         allow_null=False
     )
-    description = serializers.CharField(
-        required=False,
-        allow_blank=False,
-        allow_null=True
-    )
-    created_by = serializers.PrimaryKeyRelatedField(read_only=True)
-    updated_by = serializers.PrimaryKeyRelatedField(read_only=True)
-    created_at = serializers.DateTimeField(read_only=True)
-    updated_at = serializers.DateTimeField(read_only=True)
-    rate = serializers.FloatField(required=False, allow_null=True)
-    cutoff = serializers.FloatField(required=False, allow_null=True)
-    unit = ModelChoiceField(
-        required=False,
-        choices=Fringe.UNITS,
-        allow_null=True
-    )
-    num_times_used = serializers.IntegerField(read_only=True)
+    type = serializers.CharField(read_only=True)
 
     class Meta:
-        model = Fringe
-        fields = (
-            'id', 'name', 'description', 'created_by', 'created_at',
-            'updated_by', 'updated_at', 'rate', 'cutoff', 'unit',
-            'num_times_used')
+        model = BaseBudget
+        fields = ('id', 'name', 'type')
+
+
+class BaseBudgetSerializer(BaseBudgetSimpleSerializer):
+    created_by = serializers.PrimaryKeyRelatedField(read_only=True)
+    created_at = serializers.DateTimeField(read_only=True)
+    updated_at = serializers.DateTimeField(read_only=True)
+    trash = serializers.BooleanField(read_only=True)
+    estimated = serializers.FloatField(read_only=True)
+
+    class Meta(BaseBudgetSimpleSerializer.Meta):
+        model = BaseBudget
+        fields = BaseBudgetSimpleSerializer.Meta.fields + (
+            'created_by', 'created_at', 'updated_at', 'trash', 'estimated')
 
     def validate_name(self, value):
-        # In the case that the serializer is nested and being used in a write
-        # context, we do not have access to the context.  Validation will
-        # have to be done by the serializer using this serializer in its nested
-        # form.
-        if self._nested is not True:
-            budget = self.context.get('budget')
-            if budget is None:
-                budget = self.instance.budget
-            validator = serializers.UniqueTogetherValidator(
-                queryset=budget.fringes.all(),
-                fields=('name', ),
-            )
-            validator({'name': value}, self)
+        user = self.context['user']
+        validator = serializers.UniqueTogetherValidator(
+            queryset=self.Meta.model.objects.filter(created_by=user),
+            fields=('name', ),
+        )
+        validator({'name': value, 'user': user}, self)
         return value
 
 
-class FringeBulkChangeSerializer(FringeSerializer):
-    id = serializers.PrimaryKeyRelatedField(
-        required=True,
-        queryset=Fringe.objects.all()
-    )
-
-    def validate_id(self, instance):
-        budget = self.parent.parent.instance
-        if budget != instance.budget:
-            raise exceptions.ValidationError(
-                "The fringe %s does not belong to budget %s."
-                % (instance.pk, budget.pk)
-            )
-        return instance
-
-
-class BudgetSerializer(EnhancedModelSerializer):
-    id = serializers.IntegerField(read_only=True)
-    name = serializers.CharField(
-        required=True,
-        allow_blank=False,
-        allow_null=False
-    )
-    created_by = serializers.PrimaryKeyRelatedField(read_only=True)
+class BudgetSerializer(BaseBudgetSerializer):
     project_number = serializers.IntegerField(read_only=True)
-    production_type = ModelChoiceField(choices=Budget.PRODUCTION_TYPES)
+    production_type = ModelChoiceField(
+        choices=Budget.PRODUCTION_TYPES,
+        required=False
+    )
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
     shoot_date = serializers.DateTimeField(read_only=True)
@@ -100,130 +77,16 @@ class BudgetSerializer(EnhancedModelSerializer):
     estimated = serializers.FloatField(read_only=True)
     actual = serializers.FloatField(read_only=True)
     variance = serializers.FloatField(read_only=True)
+    template = serializers.PrimaryKeyRelatedField(
+        write_only=True,
+        required=False,
+        queryset=Template.objects.active(),
+        allow_null=False
+    )
 
     class Meta:
         model = Budget
-        fields = (
-            'id', 'name', 'created_by', 'project_number', 'production_type',
-            'created_at', 'shoot_date', 'delivery_date', 'build_days',
-            'prelight_days', 'studio_shoot_days', 'location_days', 'updated_at',
-            'trash', 'estimated', 'actual', 'variance')
-
-    def validate_name(self, value):
-        user = self.context['user']
-        validator = serializers.UniqueTogetherValidator(
-            queryset=Budget.objects.filter(created_by=user),
-            fields=('name', ),
-        )
-        validator({'name': value, 'user': user}, self)
-        return value
-
-
-class BudgetBulkCreateAccountsSerializer(serializers.ModelSerializer):
-    data = AccountSerializer(many=True, nested=True)
-
-    class Meta:
-        model = Budget
-        fields = ('data', )
-
-    def update(self, instance, validated_data):
-        accounts = []
-        for payload in validated_data['data']:
-            serializer = AccountSerializer(data=payload, context={
-                'budget': instance
-            })
-            serializer.is_valid(raise_exception=True)
-            # Note that the updated_by argument is the user updating the
-            # Budget by adding new Account(s), so the Account(s) should
-            # be denoted as having been created by this user.
-            account = serializer.save(
-                updated_by=validated_data['updated_by'],
-                created_by=validated_data['updated_by'],
-                budget=instance
-            )
-            accounts.append(account)
-        return accounts
-
-
-class BudgetBulkUpdateAccountsSerializer(AbstractBulkUpdateSerializer):
-    data = AccountBulkChangeSerializer(many=True, nested=True)
-
-    class Meta:
-        model = Budget
-        fields = ('data', )
-
-    def update(self, instance, validated_data):
-        for account, change in validated_data['data']:
-            serializer = AccountSerializer(
-                instance=account,
-                data=change,
-                partial=True
-            )
-            serializer.is_valid(raise_exception=True)
-            serializer.save(updated_by=validated_data['updated_by'])
-        return instance
-
-
-class BudgetBulkUpdateActualsSerializer(AbstractBulkUpdateSerializer):
-    data = ActualBulkChangeSerializer(many=True, nested=True)
-
-    class Meta:
-        model = Budget
-        fields = ('data', )
-
-    def update(self, instance, validated_data):
-        for actual, change in validated_data['data']:
-            serializer = ActualSerializer(
-                instance=actual,
-                data=change,
-                partial=True,
-                context={'request': self.context['request']}
-            )
-            serializer.is_valid(raise_exception=True)
-            serializer.save(updated_by=validated_data['updated_by'])
-        return instance
-
-
-class BudgetBulkCreateFringesSerializer(serializers.ModelSerializer):
-    data = FringeSerializer(many=True, nested=True)
-
-    class Meta:
-        model = Budget
-        fields = ('data', )
-
-    def update(self, instance, validated_data):
-        fringes = []
-        for payload in validated_data['data']:
-            serializer = FringeSerializer(data=payload, context={
-                'budget': instance
-            })
-            serializer.is_valid(raise_exception=True)
-            # Note that the updated_by argument is the user updating the
-            # Budget by adding new Fringe(s), so the Fringe(s) should
-            # be denoted as having been created by this user.
-            fringe = serializer.save(
-                updated_by=validated_data['updated_by'],
-                created_by=validated_data['updated_by'],
-                budget=instance
-            )
-            fringes.append(fringe)
-        return fringes
-
-
-class BudgetBulkUpdateFringesSerializer(AbstractBulkUpdateSerializer):
-    data = FringeBulkChangeSerializer(many=True, nested=True)
-
-    class Meta:
-        model = Budget
-        fields = ('data', )
-
-    def update(self, instance, validated_data):
-        for fringe, change in validated_data['data']:
-            serializer = FringeSerializer(
-                instance=fringe,
-                data=change,
-                partial=True
-            )
-            serializer.is_valid(raise_exception=True)
-            serializer.save(updated_by=validated_data['updated_by'])
-        return instance
+        fields = BaseBudgetSerializer.Meta.fields + (
+            'project_number', 'production_type', 'shoot_date', 'delivery_date',
+            'build_days', 'prelight_days', 'studio_shoot_days', 'location_days',
+            'actual', 'variance', 'template')

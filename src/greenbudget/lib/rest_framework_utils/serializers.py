@@ -33,6 +33,77 @@ class CannotExpandField(Exception):
         super().__init__(message)
 
 
+class PolymorphicNonPolymorphicSerializer(serializers.Serializer):
+    """
+    A :obj:`rest_framework.serializers.Serializer` uses different serializers
+    depending on the instance being serialized.
+
+    The name of this :obj:`rest_framework.serializers.Serializer` is not a joke.
+    Typically, with Polymorphic serializers, the serializer will serialize
+    based on the type of instance where each instance that it can serialize
+    must be a child of a PolymorphicModel.  Here, we loosen that requirement,
+    and allow the serializer to conditionally serialize an instance where that
+    instance need not be a child of a Polymorphic model.
+    """
+
+    def _import_serializer_cls(self, module_path):
+        module_name = ".".join(module_path.split(".")[:-1])
+        class_name = module_path.split(".")[-1]
+        module = importlib.import_module(module_name)
+        return getattr(module, class_name)
+
+    def _configure_serializer_cls(self, value):
+        if isinstance(value, str):
+            cls = self._import_serializer_cls(value)
+            return self._configure_serializer_cls(cls)
+        assert issubclass(value, serializers.BaseSerializer), (
+            "%s is not a serializer class or a module path to a serializer "
+            "class." % value)
+        return value
+
+    def _find_config_for_instance(self, instance):
+        if not hasattr(self, "choices"):
+            raise Exception(
+                "Extensions of PolymorphicNonPolymorphicSerializer must define "
+                "a Meta attribute on the serializer with a `choices` attribute."
+            )
+        for k, v in self.choices.items():
+            if isinstance(instance, k):
+                return v
+        raise Exception(
+            "PolymorphicNonPolymorphicSerializer not configured to "
+            "serialize type %s." % type(instance)
+        )
+
+    def to_representation(self, instance):
+        config = self._find_config_for_instance(instance)
+
+        options = {}
+        instance_type = getattr(instance, "type", None)
+        if isinstance(config, (list, tuple)):
+            if len(config) != 1 and len(config) != 2 and len(config) != 3:
+                raise Exception("Invalid choice provided.")
+            serializer_cls = self._configure_serializer_cls(config[0])
+            if len(config) == 2:
+                if type(config[1]) is dict:
+                    options = config[1]
+                else:
+                    assert type(config[1]) is str, "Invalid choice."
+                    instance_type = config[1]
+            elif len(config) == 3:
+                assert type(config[1]) is str, "Invalid choice."
+                assert type(config[2]) is dict, \
+                    "Serializer keyword arguments must be a dict."
+                instance_type = config[1]
+                options = config[2]
+        else:
+            serializer_cls = self._configure_serializer_cls(config[0])
+
+        data = serializer_cls(instance, **options).data
+        data["type"] = instance_type
+        return data
+
+
 class EnhancedModelSerializer(serializers.ModelSerializer):
     """
     An extremely powerful extension of Django REST Framework's

@@ -1,12 +1,12 @@
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import viewsets, mixins
 
-from greenbudget.app.account.models import Account
+from greenbudget.app.account.models import BudgetAccount
 from greenbudget.app.account.mixins import AccountNestedMixin
 from greenbudget.app.actual.models import Actual
 from greenbudget.app.actual.mixins import ActualNestedMixin
 from greenbudget.app.budget.mixins import BudgetNestedMixin
-from greenbudget.app.subaccount.models import SubAccount
+from greenbudget.app.subaccount.models import BudgetSubAccount
 from greenbudget.app.subaccount.mixins import SubAccountNestedMixin
 
 from .models import Event
@@ -32,7 +32,7 @@ class AccountsHistoryViewSet(
     budget_lookup_field = ("pk", "budget_pk")
 
     def get_queryset(self):
-        content_type = ContentType.objects.get_for_model(Account)
+        content_type = ContentType.objects.get_for_model(BudgetAccount)
         return Event.objects.filter(
             object_id__in=[acct.pk for acct in self.budget.accounts.all()],
             content_type=content_type
@@ -52,7 +52,7 @@ class AccountHistoryViewSet(
     account_lookup_field = ("pk", "account_pk")
 
     def get_queryset(self):
-        content_type = ContentType.objects.get_for_model(Account)
+        content_type = ContentType.objects.get_for_model(BudgetAccount)
         return Event.objects.filter(
             object_id=self.account.pk,
             content_type=content_type
@@ -72,7 +72,7 @@ class AccountSubAccountsHistoryViewSet(
     account_lookup_field = ("pk", "account_pk")
 
     def get_queryset(self):
-        content_type = ContentType.objects.get_for_model(SubAccount)
+        content_type = ContentType.objects.get_for_model(BudgetSubAccount)
         return Event.objects.filter(
             object_id__in=[acct.pk for acct in self.account.subaccounts.all()],
             content_type=content_type
@@ -92,7 +92,7 @@ class SubAccountSubAccountsHistoryViewSet(
     subaccount_lookup_field = ("pk", "subaccount_pk")
 
     def get_queryset(self):
-        content_type = ContentType.objects.get_for_model(SubAccount)
+        content_type = ContentType.objects.get_for_model(BudgetSubAccount)
         return Event.objects.filter(
             object_id__in=[
                 acct.pk for acct in self.subaccount.subaccounts.all()],
@@ -113,7 +113,7 @@ class SubAccountHistoryViewSet(
     subaccount_lookup_field = ("pk", "subaccount_pk")
 
     def get_queryset(self):
-        content_type = ContentType.objects.get_for_model(SubAccount)
+        content_type = ContentType.objects.get_for_model(BudgetSubAccount)
         return Event.objects.filter(
             object_id=self.subaccount.pk,
             content_type=content_type

@@ -4,10 +4,10 @@ from greenbudget.app.actual.models import Actual
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_actual(api_client, user, create_account,
+def test_create_actual(api_client, user, create_budget_account,
         create_budget):
     budget = create_budget()
-    account = create_account(budget=budget)
+    account = create_budget_account(budget=budget)
     api_client.force_login(user)
     response = api_client.post(
         "/v1/accounts/%s/actuals/" % account.pk,
@@ -37,10 +37,10 @@ def test_create_actual(api_client, user, create_account,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_update_actual(api_client, user, create_account,
+def test_update_actual(api_client, user, create_budget_account,
         create_budget, create_actual):
     budget = create_budget()
-    account = create_account(budget=budget)
+    account = create_budget_account(budget=budget)
     actual = create_actual(parent=account, budget=budget)
 
     api_client.force_login(user)
@@ -78,11 +78,11 @@ def test_update_actual(api_client, user, create_account,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_change_actual_parent(api_client, user, create_account,
+def test_change_actual_parent(api_client, user, create_budget_account,
         create_budget, create_actual):
     budget = create_budget()
-    account = create_account(budget=budget)
-    another_account = create_account(budget=budget)
+    account = create_budget_account(budget=budget)
+    another_account = create_budget_account(budget=budget)
     actual = create_actual(parent=account, budget=budget)
 
     api_client.force_login(user)
@@ -116,14 +116,11 @@ def test_change_actual_parent(api_client, user, create_account,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_change_actual_parent_invalid(api_client, user, create_account,
+def test_change_actual_parent_invalid(api_client, user, create_budget_account,
         create_budget, create_actual):
-    budgets = [
-        create_budget(),
-        create_budget()
-    ]
-    account = create_account(budget=budgets[0])
-    another_account = create_account(budget=budgets[1])
+    budgets = [create_budget(), create_budget()]
+    account = create_budget_account(budget=budgets[0])
+    another_account = create_budget_account(budget=budgets[1])
     actual = create_actual(parent=account, budget=budgets[0])
 
     api_client.force_login(user)
@@ -135,10 +132,10 @@ def test_change_actual_parent_invalid(api_client, user, create_account,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_account_actuals(api_client, user, create_account, create_actual,
-        create_budget):
+def test_get_account_actuals(api_client, user, create_budget_account,
+        create_actual, create_budget):
     budget = create_budget()
-    account = create_account(budget=budget)
+    account = create_budget_account(budget=budget)
     actuals = [
         create_actual(parent=account, budget=budget),
         create_actual(parent=account, budget=budget)
@@ -190,10 +187,11 @@ def test_get_account_actuals(api_client, user, create_account, create_actual,
 
 
 @ pytest.mark.freeze_time('2020-01-01')
-def test_get_subaccount_actuals(api_client, user, create_sub_account,
-        create_actual, create_budget):
+def test_get_subaccount_actuals(api_client, user, create_budget_subaccount,
+        create_actual, create_budget, create_budget_account):
     budget = create_budget()
-    sub_account = create_sub_account(budget=budget)
+    account = create_budget_account(budget=budget)
+    sub_account = create_budget_subaccount(budget=budget, parent=account)
     actuals = [
         create_actual(parent=sub_account, budget=budget),
         create_actual(parent=sub_account, budget=budget)

@@ -65,3 +65,8 @@ def user(db):
     user.set_password("test-password")
     user.save()
     return user
+
+
+@pytest.fixture
+def login_user(api_client, user):
+    api_client.force_login(user)

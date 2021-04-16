@@ -3,7 +3,8 @@ import pytest
 from greenbudget.lib.utils.dateutils import api_datetime_string
 
 from greenbudget.app.account.models import Account
-from greenbudget.app.budget.models import Budget, Fringe
+from greenbudget.app.budget.models import Budget
+from greenbudget.app.fringe.models import Fringe
 
 
 @pytest.mark.freeze_time('2020-01-01')
@@ -34,7 +35,8 @@ def test_get_budgets(api_client, user, create_budget):
             "variance": None,
             "actual": None,
             'trash': False,
-            "created_by": user.pk
+            "created_by": user.pk,
+            "type": "budget"
         },
         {
             "id": budgets[1].pk,
@@ -56,13 +58,14 @@ def test_get_budgets(api_client, user, create_budget):
             "variance": None,
             "actual": None,
             'trash': False,
-            "created_by": user.pk
+            "created_by": user.pk,
+            "type": "budget"
         }
     ]
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_budget(api_client, user, create_budget, db):
+def test_get_budget(api_client, user, create_budget):
     api_client.force_login(user)
     budget = create_budget()
     response = api_client.get("/v1/budgets/%s/" % budget.pk)
@@ -87,12 +90,48 @@ def test_get_budget(api_client, user, create_budget, db):
         "estimated": None,
         "variance": None,
         "actual": None,
-        "created_by": user.pk
+        "created_by": user.pk,
+        "type": "budget"
     }
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_budget(api_client, user, db):
+def test_update_budget(api_client, user, create_budget):
+    budget = create_budget()
+    api_client.force_login(user)
+    response = api_client.patch("/v1/budgets/%s/" % budget.pk, data={
+         "name": "New Name"
+    })
+    assert response.status_code == 200
+    budget.refresh_from_db()
+    assert budget.name == "New Name"
+    assert response.json() == {
+        "id": budget.pk,
+        "name": "New Name",
+        "project_number": budget.project_number,
+        "production_type": {
+            "id": budget.production_type,
+            "name": Budget.PRODUCTION_TYPES[budget.production_type]
+        },
+        "created_at": "2020-01-01 00:00:00",
+        "updated_at": "2020-01-01 00:00:00",
+        "shoot_date": api_datetime_string(budget.shoot_date),
+        "delivery_date": api_datetime_string(budget.delivery_date),
+        "build_days": budget.build_days,
+        "prelight_days": budget.prelight_days,
+        "studio_shoot_days": budget.studio_shoot_days,
+        "location_days": budget.location_days,
+        "trash": False,
+        "estimated": None,
+        "variance": None,
+        "actual": None,
+        "created_by": user.pk,
+        "type": "budget"
+    }
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_create_budget(api_client, user):
     api_client.force_login(user)
     response = api_client.post("/v1/budgets/", data={
         "name": "Test Name",
@@ -109,7 +148,7 @@ def test_create_budget(api_client, user, db):
         "project_number": budget.project_number,
         "production_type": {
             "id": 1,
-            "name": budget.PRODUCTION_TYPES[1],
+            "name": Budget.PRODUCTION_TYPES[1],
         },
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
@@ -123,8 +162,96 @@ def test_create_budget(api_client, user, db):
         "estimated": None,
         "variance": None,
         "actual": None,
-        "created_by": user.pk
+        "created_by": user.pk,
+        "type": "budget"
     }
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_create_budget_from_template(api_client, user, create_template,
+        create_template_account, create_template_subaccount):
+    template = create_template()
+    accounts = [
+        create_template_account(budget=template),
+        create_template_account(budget=template)
+    ]
+    subaccounts = [
+        create_template_subaccount(parent=accounts[0], budget=template),
+        create_template_subaccount(parent=accounts[1], budget=template)
+    ]
+    child_subaccounts = [
+        create_template_subaccount(parent=subaccounts[0], budget=template),
+        create_template_subaccount(parent=subaccounts[1], budget=template)
+    ]
+    api_client.force_login(user)
+    response = api_client.post("/v1/budgets/", data={
+        "name": "Test Name",
+        "production_type": 1,
+        "template": template.pk,
+    })
+    assert response.status_code == 201
+    assert response.json()['name'] == 'Test Name'
+    assert response.json()['production_type'] == {
+        "id": 1,
+        "name": Budget.PRODUCTION_TYPES[1],
+    }
+
+    budget = Budget.objects.first()
+    assert budget is not None
+    assert budget.name == "Test Name"
+    assert budget.accounts.count() == 2
+
+    first_account = budget.accounts.first()
+    assert first_account.identifier == accounts[0].identifier
+    assert first_account.description == accounts[0].description
+
+    assert first_account.subaccounts.count() == 1
+    first_account_subaccount = first_account.subaccounts.first()
+    assert first_account_subaccount.identifier == subaccounts[0].identifier
+    assert first_account_subaccount.description == subaccounts[0].description
+    assert first_account_subaccount.name == subaccounts[0].name
+    assert first_account_subaccount.rate == subaccounts[0].rate
+    assert first_account_subaccount.quantity == subaccounts[0].quantity
+    assert first_account_subaccount.multiplier == subaccounts[0].multiplier
+    assert first_account_subaccount.unit == subaccounts[0].unit
+    assert first_account_subaccount.budget == budget
+
+    assert first_account_subaccount.subaccounts.count() == 1
+    first_account_subaccount_subaccount = first_account_subaccount.subaccounts.first()  # noqa
+    assert first_account_subaccount_subaccount.identifier == child_subaccounts[0].identifier  # noqa
+    assert first_account_subaccount_subaccount.description == child_subaccounts[0].description  # noqa
+    assert first_account_subaccount_subaccount.name == child_subaccounts[0].name  # noqa
+    assert first_account_subaccount_subaccount.rate == child_subaccounts[0].rate  # noqa
+    assert first_account_subaccount_subaccount.quantity == child_subaccounts[0].quantity  # noqa
+    assert first_account_subaccount_subaccount.multiplier == child_subaccounts[0].multiplier  # noqa
+    assert first_account_subaccount_subaccount.unit == child_subaccounts[0].unit  # noqa
+    assert first_account_subaccount_subaccount.budget == budget
+
+    second_account = budget.accounts.all()[1]
+    assert second_account.identifier == accounts[1].identifier
+    assert second_account.description == accounts[1].description
+
+    assert second_account.subaccounts.count() == 1
+    second_account_subaccount = second_account.subaccounts.first()
+    assert second_account_subaccount.identifier == subaccounts[1].identifier
+    assert second_account_subaccount.description == subaccounts[1].description
+    assert second_account_subaccount.name == subaccounts[1].name
+    assert second_account_subaccount.rate == subaccounts[1].rate
+    assert second_account_subaccount.quantity == subaccounts[1].quantity
+    assert second_account_subaccount.multiplier == subaccounts[1].multiplier
+    assert second_account_subaccount.unit == subaccounts[1].unit
+    assert second_account_subaccount.budget == budget
+
+    assert second_account_subaccount.subaccounts.count() == 1
+    second_account_subaccount_subaccount = second_account_subaccount.subaccounts.first()  # noqa
+    assert second_account_subaccount_subaccount.identifier == child_subaccounts[1].identifier  # noqa
+    assert second_account_subaccount_subaccount.description == child_subaccounts[1].description  # noqa
+    assert second_account_subaccount_subaccount.name == child_subaccounts[1].name  # noqa
+    assert second_account_subaccount_subaccount.rate == child_subaccounts[1].rate  # noqa
+    assert second_account_subaccount_subaccount.quantity == child_subaccounts[1].quantity  # noqa
+    assert second_account_subaccount_subaccount.multiplier == child_subaccounts[1].multiplier  # noqa
+    assert second_account_subaccount_subaccount.unit == child_subaccounts[1].unit  # noqa
+    assert second_account_subaccount_subaccount.budget == budget
 
 
 @pytest.mark.freeze_time('2020-01-01')
@@ -170,7 +297,8 @@ def test_get_budgets_in_trash(api_client, user, create_budget, db):
             "estimated": None,
             "variance": None,
             "actual": None,
-            "created_by": user.pk
+            "created_by": user.pk,
+            "type": "budget"
         },
         {
             "id": budgets[1].pk,
@@ -192,13 +320,14 @@ def test_get_budgets_in_trash(api_client, user, create_budget, db):
             "estimated": None,
             "variance": None,
             "actual": None,
-            "created_by": user.pk
+            "created_by": user.pk,
+            "type": "budget"
         }
     ]
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_budget_in_trash(api_client, user, create_budget, db):
+def test_get_budget_in_trash(api_client, user, create_budget):
     api_client.force_login(user)
     budget = create_budget(trash=True)
     response = api_client.get("/v1/budgets/trash/%s/" % budget.pk)
@@ -223,12 +352,12 @@ def test_get_budget_in_trash(api_client, user, create_budget, db):
         "estimated": None,
         "variance": None,
         "actual": None,
-        "created_by": user.pk
+        "created_by": user.pk,
+        "type": "budget"
     }
 
 
-@pytest.mark.freeze_time('2020-01-01')
-def test_delete_budget(api_client, user, create_budget, db):
+def test_delete_budget(api_client, user, create_budget):
     api_client.force_login(user)
     budget = create_budget()
     response = api_client.delete("/v1/budgets/%s/" % budget.pk)
@@ -239,8 +368,7 @@ def test_delete_budget(api_client, user, create_budget, db):
     assert budget.id is not None
 
 
-@pytest.mark.freeze_time('2020-01-01')
-def test_restore_budget(api_client, user, create_budget, db):
+def test_restore_budget(api_client, user, create_budget):
     api_client.force_login(user)
     budget = create_budget(trash=True)
     response = api_client.patch("/v1/budgets/trash/%s/restore/" % budget.pk)
@@ -253,21 +381,19 @@ def test_restore_budget(api_client, user, create_budget, db):
     assert budget.trash is False
 
 
-@pytest.mark.freeze_time('2020-01-01')
-def test_permanently_delete_budget(api_client, user, create_budget, db):
+def test_permanently_delete_budget(api_client, user, create_budget):
     api_client.force_login(user)
     budget = create_budget(trash=True)
     response = api_client.delete("/v1/budgets/trash/%s/" % budget.pk)
     assert response.status_code == 204
-
     assert Budget.objects.first() is None
 
 
-def test_get_budget_items(api_client, user, create_budget, create_account,
-        create_sub_account):
+def test_get_budget_items(api_client, user, create_budget,
+        create_budget_account, create_budget_subaccount):
     budget = create_budget()
-    account = create_account(budget=budget, identifier="Account A")
-    create_sub_account(budget=budget, identifier="Jack")
+    account = create_budget_account(budget=budget, identifier="Account A")
+    create_budget_subaccount(budget=budget, parent=account, identifier="Jack")
     api_client.force_login(user)
     response = api_client.get(
         "/v1/budgets/%s/items/?search=%s"
@@ -283,43 +409,43 @@ def test_get_budget_items(api_client, user, create_budget, create_account,
     }]
 
 
-def test_get_budget_items_tree(api_client, user, create_budget, create_account,
-        create_sub_account):
+def test_get_budget_items_tree(api_client, user, create_budget,
+        create_budget_account, create_budget_subaccount):
     budget = create_budget()
     accounts = [
-        create_account(budget=budget, identifier="Account A"),
-        create_account(budget=budget, identifier="Account B"),
+        create_budget_account(budget=budget, identifier="Account A"),
+        create_budget_account(budget=budget, identifier="Account B"),
     ]
     subaccounts = [
         [
-            create_sub_account(
+            create_budget_subaccount(
                 budget=budget,
                 parent=accounts[0],
                 identifier="Sub Account A-A"
             ),
-            create_sub_account(
+            create_budget_subaccount(
                 budget=budget,
                 parent=accounts[0],
                 identifier="Sub Account A-B"
             ),
-            create_sub_account(
+            create_budget_subaccount(
                 budget=budget,
                 parent=accounts[0],
                 identifier="Sub Account A-C"
             )
         ],
         [
-            create_sub_account(
+            create_budget_subaccount(
                 budget=budget,
                 parent=accounts[1],
                 identifier="Sub Account B-A"
             ),
-            create_sub_account(
+            create_budget_subaccount(
                 budget=budget,
                 parent=accounts[1],
                 identifier="Sub Account B-B"
             ),
-            create_sub_account(
+            create_budget_subaccount(
                 budget=budget,
                 parent=accounts[1],
                 identifier="Sub Account B-C"
@@ -328,7 +454,6 @@ def test_get_budget_items_tree(api_client, user, create_budget, create_account,
     ]
     api_client.force_login(user)
     response = api_client.get("/v1/budgets/%s/items/tree/" % budget.pk)
-
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'] == [
@@ -342,6 +467,7 @@ def test_get_budget_items_tree(api_client, user, create_budget, create_account,
                     "id": subaccounts[0][0].pk,
                     "identifier": "Sub Account A-A",
                     "type": "subaccount",
+                    "name": subaccounts[0][0].name,
                     "description": subaccounts[0][0].description,
                     "children": []
                 },
@@ -349,6 +475,7 @@ def test_get_budget_items_tree(api_client, user, create_budget, create_account,
                     "id": subaccounts[0][1].pk,
                     "identifier": "Sub Account A-B",
                     "type": "subaccount",
+                    "name": subaccounts[0][1].name,
                     "description": subaccounts[0][1].description,
                     "children": []
                 },
@@ -356,6 +483,7 @@ def test_get_budget_items_tree(api_client, user, create_budget, create_account,
                     "id": subaccounts[0][2].pk,
                     "identifier": "Sub Account A-C",
                     "type": "subaccount",
+                    "name": subaccounts[0][2].name,
                     "description": subaccounts[0][2].description,
                     "children": []
                 }
@@ -371,6 +499,7 @@ def test_get_budget_items_tree(api_client, user, create_budget, create_account,
                     "id": subaccounts[1][0].pk,
                     "identifier": "Sub Account B-A",
                     "type": "subaccount",
+                    "name": subaccounts[1][0].name,
                     "description": subaccounts[1][0].description,
                     "children": []
                 },
@@ -378,6 +507,7 @@ def test_get_budget_items_tree(api_client, user, create_budget, create_account,
                     "id": subaccounts[1][1].pk,
                     "identifier": "Sub Account B-B",
                     "type": "subaccount",
+                    "name": subaccounts[1][1].name,
                     "description": subaccounts[1][1].description,
                     "children": []
                 },
@@ -385,6 +515,7 @@ def test_get_budget_items_tree(api_client, user, create_budget, create_account,
                     "id": subaccounts[1][2].pk,
                     "identifier": "Sub Account B-C",
                     "type": "subaccount",
+                    "name": subaccounts[1][2].name,
                     "description": subaccounts[1][2].description,
                     "children": []
                 }
@@ -395,12 +526,12 @@ def test_get_budget_items_tree(api_client, user, create_budget, create_account,
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_bulk_update_budget_accounts(api_client, user, create_budget,
-        create_account):
+        create_budget_account):
     api_client.force_login(user)
     budget = create_budget()
     accounts = [
-        create_account(budget=budget),
-        create_account(budget=budget)
+        create_budget_account(budget=budget),
+        create_budget_account(budget=budget)
     ]
     response = api_client.patch(
         "/v1/budgets/%s/bulk-update-accounts/" % budget.pk,
@@ -427,13 +558,13 @@ def test_bulk_update_budget_accounts(api_client, user, create_budget,
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_bulk_update_budget_accounts_outside_budget(api_client, user,
-        create_budget, create_account):
+        create_budget, create_budget_account):
     api_client.force_login(user)
     budget = create_budget()
     another_budget = create_budget()
     accounts = [
-        create_account(budget=budget),
-        create_account(budget=another_budget)
+        create_budget_account(budget=budget),
+        create_budget_account(budget=another_budget)
     ]
     response = api_client.patch(
         "/v1/budgets/%s/bulk-update-accounts/" % budget.pk,
@@ -491,10 +622,10 @@ def test_bulk_create_budget_accounts(api_client, user, create_budget):
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_bulk_update_budget_actuals(api_client, user, create_budget,
-        create_account, create_actual):
+        create_budget_account, create_actual):
     api_client.force_login(user)
     budget = create_budget()
-    account = create_account(budget=budget)
+    account = create_budget_account(budget=budget)
     actuals = [
         create_actual(parent=account, budget=budget),
         create_actual(parent=account, budget=budget)

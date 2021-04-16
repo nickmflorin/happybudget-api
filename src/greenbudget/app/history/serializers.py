@@ -1,7 +1,12 @@
+from generic_relations.relations import GenericRelatedField
+
 from rest_framework import serializers
 from rest_polymorphic.serializers import PolymorphicSerializer
 
-from greenbudget.app.budget_item.serializers import BudgetItemSerializer
+from greenbudget.app.account.models import BudgetAccount
+from greenbudget.app.account.serializers import AccountSimpleSerializer
+from greenbudget.app.subaccount.models import BudgetSubAccount
+from greenbudget.app.subaccount.serializers import SubAccountSimpleSerializer
 from greenbudget.app.user.serializers import SimpleUserSerializer
 
 from .models import Event, FieldAlterationEvent, CreateEvent
@@ -11,11 +16,10 @@ class EventSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
     user = SimpleUserSerializer(read_only=True)
-    # Note: The BudgetItemSerializer is Polymorphic wrt Account/SubAccount.
-    # It will still work for Actual - but will omit the `identifier` field.
-    # This is kind of a hacky way to do this, and should be resolved with a
-    # separate dedicated serializer in the future.
-    content_object = BudgetItemSerializer(read_only=True)
+    content_object = GenericRelatedField({
+        BudgetAccount: AccountSimpleSerializer(),
+        BudgetSubAccount: SubAccountSimpleSerializer()
+    })
 
     class Meta:
         model = FieldAlterationEvent

@@ -12,13 +12,17 @@ class SubAccountNestedMixin(object):
     def subaccount_lookup_field(self):
         raise NotImplementedError()
 
+    @property
+    def subaccount_polymorphic_instance(self):
+        return None
+
     @cached_property
     def subaccount(self):
         params = {
             self.subaccount_lookup_field[0]: (
                 self.kwargs[self.subaccount_lookup_field[1]])
         }
-        # TODO: How do we filter for only subaccounts whose budget is not
-        # in the trash?  Because the parent can be both a budget and a
-        # subaccount.
-        return get_object_or_404(SubAccount.objects.all(), **params)
+        qs = SubAccount.objects.filter(budget__trash=False)
+        if self.subaccount_polymorphic_instance is not None:
+            qs = qs.instance_of(self.subaccount_polymorphic_instance)
+        return get_object_or_404(qs, **params)

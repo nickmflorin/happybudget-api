@@ -1035,6 +1035,17 @@ tests = ["coverage (>=3.7.1,<6.0.0)", "pytest-cov", "pytest-localserver", "flake
 
 [[package]]
 category = "main"
+description = "Generic Relations for Django Rest Framework"
+name = "rest-framework-generic-relations"
+optional = false
+python-versions = ">=3.4"
+version = "2.0.0"
+
+[package.dependencies]
+djangorestframework = ">=3.8.0"
+
+[[package]]
+category = "main"
 description = "An Amazon S3 Transfer Manager"
 name = "s3transfer"
 optional = false
@@ -1191,7 +1202,7 @@ debug = []
 docs = []
 
 [metadata]
-content-hash = "0bb678dea82f504ca411b6b7beb2f651c7792769d4c65ea92abbf68fba45ab9e"
+content-hash = "ed7097cb123691047bdaf73d8e0a1a283daf5a5988f9063d016563e651f838c9"
 lock-version = "1.0"
 python-versions = "^3.8"
 
@@ -1743,6 +1754,10 @@ requests = [
 responses = [
     {file = "responses-0.12.1-py2.py3-none-any.whl", hash = "sha256:ef265bd3200bdef5ec17912fc64a23570ba23597fd54ca75c18650fa1699213d"},
     {file = "responses-0.12.1.tar.gz", hash = "sha256:2e5764325c6b624e42b428688f2111fea166af46623cb0127c05f6afb14d3457"},
+]
+rest-framework-generic-relations = [
+    {file = "rest-framework-generic-relations-2.0.0.tar.gz", hash = "sha256:0801bc3d11fa4a6e3fcfcc1e89bfe827718ca9629a07b594fccc8f67d4ddafee"},
+    {file = "rest_framework_generic_relations-2.0.0-py2.py3-none-any.whl", hash = "sha256:d78c58307667ffd6f941c0d7a10343e026e3cb7e1737b8ada30ee0d4914bc16d"},
 ]
 s3transfer = [
     {file = "s3transfer-0.3.6-py2.py3-none-any.whl", hash = "sha256:5d48b1fd2232141a9d5fb279709117aaba506cacea7f86f11bc392f06bfa8fc2"},

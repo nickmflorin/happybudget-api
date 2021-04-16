@@ -49,8 +49,10 @@ def test_get_budget_comment(api_client, user, create_comment, create_budget):
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_account_comment(api_client, user, create_comment, create_account):
-    account = create_account()
+def test_get_account_comment(api_client, user, create_comment,
+        create_budget_account, create_budget):
+    budget = create_budget()
+    account = create_budget_account(budget=budget)
     comment = create_comment(user=user, content_object=account)
     nested_comment = create_comment(content_object=comment, user=user)
     api_client.force_login(user)
@@ -95,8 +97,10 @@ def test_get_account_comment(api_client, user, create_comment, create_account):
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_get_subaccount_comment(api_client, user, create_comment,
-        create_sub_account):
-    sub_account = create_sub_account()
+        create_budget, create_budget_account, create_budget_subaccount):
+    budget = create_budget()
+    account = create_budget_account(budget=budget)
+    sub_account = create_budget_subaccount(budget=budget, parent=account)
     comment = create_comment(user=user, content_object=sub_account)
     nested_comment = create_comment(content_object=comment, user=user)
     api_client.force_login(user)
@@ -173,9 +177,10 @@ def test_create_budget_comment(api_client, user, create_budget):
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_account_comment(api_client, user, create_budget, create_account):  # noqa
+def test_create_budget_account_comment(api_client, user, create_budget,
+        create_budget_account):
     budget = create_budget()
-    account = create_account(budget=budget)
+    account = create_budget_account(budget=budget)
     api_client.force_login(user)
     response = api_client.post("/v1/accounts/%s/comments/" % account.pk, data={
         "text": "This is a fake comment."
@@ -207,11 +212,11 @@ def test_create_account_comment(api_client, user, create_budget, create_account)
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_sub_account_comment(api_client, user, create_budget,
-        create_account, create_sub_account):
+def test_create_budget_subaccount_comment(api_client, user, create_budget,
+        create_budget_account, create_budget_subaccount):
     budget = create_budget()
-    account = create_account(budget=budget)
-    subaccount = create_sub_account(parent=account, budget=budget)
+    account = create_budget_account(budget=budget)
+    subaccount = create_budget_subaccount(parent=account, budget=budget)
     api_client.force_login(user)
     response = api_client.post(
         "/v1/subaccounts/%s/comments/" % subaccount.pk,

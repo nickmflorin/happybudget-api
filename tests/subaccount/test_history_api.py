@@ -6,11 +6,11 @@ from greenbudget.app.history.models import FieldAlterationEvent
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_get_account_subaccounts_history(api_client, create_budget, user,
-        create_sub_account, create_account):
+        create_budget_subaccount, create_budget_account):
     api_client.force_login(user)
     budget = create_budget()
-    account = create_account(budget=budget)
-    subaccount = create_sub_account(
+    account = create_budget_account(budget=budget)
+    subaccount = create_budget_subaccount(
         parent=account,
         name="Original Name",
         description="Original Description",
@@ -43,7 +43,8 @@ def test_get_account_subaccounts_history(api_client, create_budget, user,
                 'id': subaccount.pk,
                 'identifier': 'new_identifier',
                 'type': 'subaccount',
-                'description': 'New Description'
+                'name': 'New Name',
+                'description': 'New Description',
             },
             "user": {
                 "id": user.pk,
@@ -64,7 +65,8 @@ def test_get_account_subaccounts_history(api_client, create_budget, user,
                 'id': subaccount.pk,
                 'identifier': 'new_identifier',
                 'type': 'subaccount',
-                'description': 'New Description'
+                'name': 'New Name',
+                'description': 'New Description',
             },
             "user": {
                 "id": user.pk,
@@ -85,7 +87,8 @@ def test_get_account_subaccounts_history(api_client, create_budget, user,
                 'id': subaccount.pk,
                 'identifier': 'new_identifier',
                 'type': 'subaccount',
-                'description': 'New Description'
+                'name': 'New Name',
+                'description': 'New Description',
             },
             "user": {
                 "id": user.pk,
@@ -106,7 +109,8 @@ def test_get_account_subaccounts_history(api_client, create_budget, user,
                 'id': subaccount.pk,
                 'identifier': 'new_identifier',
                 'type': 'subaccount',
-                'description': 'New Description'
+                'name': 'New Name',
+                'description': 'New Description',
             },
             "user": {
                 "id": user.pk,
@@ -127,7 +131,8 @@ def test_get_account_subaccounts_history(api_client, create_budget, user,
                 'id': subaccount.pk,
                 'identifier': 'new_identifier',
                 'type': 'subaccount',
-                'description': 'New Description'
+                'name': 'New Name',
+                'description': 'New Description',
             },
             "user": {
                 "id": user.pk,
@@ -147,16 +152,16 @@ def test_get_account_subaccounts_history(api_client, create_budget, user,
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_get_subaccount_subaccounts_history(api_client, create_budget, user,
-        create_sub_account, create_account):
+        create_budget_subaccount, create_budget_account):
     api_client.force_login(user)
     budget = create_budget()
-    account = create_account(budget=budget)
-    parent_subaccount = create_sub_account(
+    account = create_budget_account(budget=budget)
+    parent_subaccount = create_budget_subaccount(
         parent=account,
         budget=budget,
         identifier="subaccount-a"
     )
-    subaccount = create_sub_account(
+    subaccount = create_budget_subaccount(
         parent=parent_subaccount,
         name="Original Name",
         description="Original Description",
@@ -190,7 +195,8 @@ def test_get_subaccount_subaccounts_history(api_client, create_budget, user,
                 'id': subaccount.pk,
                 'identifier': 'new_identifier',
                 'type': 'subaccount',
-                'description': 'New Description'
+                'name': 'New Name',
+                'description': 'New Description',
             },
             "user": {
                 "id": user.pk,
@@ -211,7 +217,8 @@ def test_get_subaccount_subaccounts_history(api_client, create_budget, user,
                 'id': subaccount.pk,
                 'identifier': 'new_identifier',
                 'type': 'subaccount',
-                'description': 'New Description'
+                'name': 'New Name',
+                'description': 'New Description',
             },
             "user": {
                 "id": user.pk,
@@ -232,7 +239,8 @@ def test_get_subaccount_subaccounts_history(api_client, create_budget, user,
                 'id': subaccount.pk,
                 'identifier': 'new_identifier',
                 'type': 'subaccount',
-                'description': 'New Description'
+                'name': 'New Name',
+                'description': 'New Description',
             },
             "user": {
                 "id": user.pk,
@@ -253,7 +261,8 @@ def test_get_subaccount_subaccounts_history(api_client, create_budget, user,
                 'id': subaccount.pk,
                 'identifier': 'new_identifier',
                 'type': 'subaccount',
-                'description': 'New Description'
+                'name': 'New Name',
+                'description': 'New Description',
             },
             "user": {
                 "id": user.pk,
@@ -274,7 +283,8 @@ def test_get_subaccount_subaccounts_history(api_client, create_budget, user,
                 'id': subaccount.pk,
                 'identifier': 'new_identifier',
                 'type': 'subaccount',
-                'description': 'New Description'
+                'name': 'New Name',
+                'description': 'New Description',
             },
             "user": {
                 "id": user.pk,
@@ -293,12 +303,12 @@ def test_get_subaccount_subaccounts_history(api_client, create_budget, user,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_subaccount_history(api_client, create_budget, create_account,
-        create_sub_account, user):
+def test_get_subaccount_history(api_client, create_budget, user,
+        create_budget_account, create_budget_subaccount):
     api_client.force_login(user)
     budget = create_budget()
-    account = create_account(budget=budget)
-    subaccount = create_sub_account(
+    account = create_budget_account(budget=budget)
+    subaccount = create_budget_subaccount(
         parent=account,
         name="Original Name",
         description="Original Description",
@@ -315,9 +325,7 @@ def test_get_subaccount_history(api_client, create_budget, create_account,
     })
     response = api_client.get("/v1/subaccounts/%s/history/" % subaccount.pk)
     assert response.status_code == 200
-
     assert FieldAlterationEvent.objects.count() == 5
-
     assert response.json()['count'] == 5
     serialized_events = [
         {
@@ -330,7 +338,8 @@ def test_get_subaccount_history(api_client, create_budget, create_account,
                 'id': subaccount.pk,
                 'identifier': 'new_identifier',
                 'type': 'subaccount',
-                'description': 'New Description'
+                'name': 'New Name',
+                'description': 'New Description',
             },
             "user": {
                 "id": user.pk,
@@ -351,7 +360,8 @@ def test_get_subaccount_history(api_client, create_budget, create_account,
                 'id': subaccount.pk,
                 'identifier': 'new_identifier',
                 'type': 'subaccount',
-                'description': 'New Description'
+                'name': 'New Name',
+                'description': 'New Description',
             },
             "user": {
                 "id": user.pk,
@@ -372,7 +382,8 @@ def test_get_subaccount_history(api_client, create_budget, create_account,
                 'id': subaccount.pk,
                 'identifier': 'new_identifier',
                 'type': 'subaccount',
-                'description': 'New Description'
+                'name': 'New Name',
+                'description': 'New Description',
             },
             "user": {
                 "id": user.pk,
@@ -393,7 +404,8 @@ def test_get_subaccount_history(api_client, create_budget, create_account,
                 'id': subaccount.pk,
                 'identifier': 'new_identifier',
                 'type': 'subaccount',
-                'description': 'New Description'
+                'name': 'New Name',
+                'description': 'New Description',
             },
             "user": {
                 "id": user.pk,
@@ -414,7 +426,8 @@ def test_get_subaccount_history(api_client, create_budget, create_account,
                 'id': subaccount.pk,
                 'identifier': 'new_identifier',
                 'type': 'subaccount',
-                'description': 'New Description'
+                'name': 'New Name',
+                'description': 'New Description',
             },
             "user": {
                 "id": user.pk,

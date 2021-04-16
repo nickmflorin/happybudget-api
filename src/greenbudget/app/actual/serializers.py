@@ -7,6 +7,8 @@ from greenbudget.lib.rest_framework_utils.serializers import (
     EnhancedModelSerializer)
 
 from greenbudget.app.account.models import Account
+from greenbudget.app.budget.models import Budget
+from greenbudget.app.common.serializers import AbstractBulkUpdateSerializer
 from greenbudget.app.subaccount.models import SubAccount
 
 from .models import Actual
@@ -111,4 +113,24 @@ class ActualBulkChangeSerializer(ActualSerializer):
                 "The actual %s does not belong to budget %s."
                 % (instance.pk, budget.pk)
             )
+        return instance
+
+
+class BulkUpdateActualsSerializer(AbstractBulkUpdateSerializer):
+    data = ActualBulkChangeSerializer(many=True, nested=True)
+
+    class Meta:
+        model = Budget
+        fields = ('data', )
+
+    def update(self, instance, validated_data):
+        for actual, change in validated_data['data']:
+            serializer = ActualSerializer(
+                instance=actual,
+                data=change,
+                partial=True,
+                context={'request': self.context['request']}
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save(updated_by=validated_data['updated_by'])
         return instance

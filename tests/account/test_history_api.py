@@ -93,9 +93,10 @@ def test_get_accounts_history(api_client, create_budget, user):
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_account_history(api_client, create_budget, create_account, user):
+def test_get_account_history(api_client, create_budget, create_budget_account,
+        user):
     budget = create_budget()
-    account = create_account(
+    account = create_budget_account(
         budget=budget,
         identifier="original_identifier"
     )

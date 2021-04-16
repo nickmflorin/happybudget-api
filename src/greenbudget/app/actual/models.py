@@ -5,21 +5,9 @@ from django.contrib.contenttypes.fields import (
 from django.contrib.contenttypes.models import ContentType
 from django.db import models, IntegrityError
 
-from greenbudget.lib.model_tracker import track_model
-
-from greenbudget.app.budget_item.hooks import on_create, on_field_change
 from greenbudget.app.comment.models import Comment
-from greenbudget.app.history.models import Event
 
 
-@track_model(
-    on_create=on_create,
-    user_field='updated_by',
-    on_field_change=on_field_change,
-    track_changes_to_fields=[
-        'description', 'vendor', 'purchase_order', 'date', 'payment_id',
-        'value', 'payment_method'],
-)
 class Actual(models.Model):
     type = "actual"
     created_at = models.DateTimeField(auto_now_add=True)
@@ -40,7 +28,7 @@ class Actual(models.Model):
     vendor = models.CharField(null=True, max_length=128)
     purchase_order = models.CharField(null=True, max_length=128)
     date = models.DateTimeField(null=True)
-    # TODO: Should we make this unique across the budget?
+    # TODO: Should we make this unique across the budget/template?
     payment_id = models.CharField(max_length=50, null=True)
     value = models.FloatField(null=True)
     PAYMENT_METHODS = Choices(
@@ -51,21 +39,18 @@ class Actual(models.Model):
     payment_method = models.IntegerField(choices=PAYMENT_METHODS, null=True)
     budget = models.ForeignKey(
         to='budget.Budget',
-        related_name="actuals",
         on_delete=models.CASCADE,
-        db_index=True,
+        related_name='actuals'
     )
     content_type = models.ForeignKey(
         to=ContentType,
         on_delete=models.CASCADE,
-        limit_choices_to=models.Q(app_label='account', model='Account')
-        | models.Q(app_label='subaccount', model='SubAccount')
+        limit_choices_to=models.Q(app_label='account', model='BudgetAccount')
+        | models.Q(app_label='subaccount', model='BudgetSubAccount')
     )
     object_id = models.PositiveIntegerField()
     parent = GenericForeignKey('content_type', 'object_id')
-
     comments = GenericRelation(Comment)
-    events = GenericRelation(Event)
 
     class Meta:
         get_latest_by = "updated_at"

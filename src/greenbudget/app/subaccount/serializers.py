@@ -2,21 +2,36 @@ from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers, exceptions
 
 from greenbudget.lib.rest_framework_utils.fields import ModelChoiceField
+from greenbudget.lib.rest_framework_utils.serializers import (
+    EnhancedModelSerializer)
 
-from greenbudget.app.budget.models import Fringe
-from greenbudget.app.budget_item.serializers import (
-    BudgetItemGroupSerializer,
-    BudgetItemSimpleSerializer
-)
+from greenbudget.app.budget.models import BaseBudget
 from greenbudget.app.common.serializers import (
     EntitySerializer,
     AbstractBulkUpdateSerializer
 )
+from greenbudget.app.fringe.models import Fringe
+from greenbudget.app.group.models import (
+    BudgetSubAccountGroup,
+    TemplateSubAccountGroup
+)
 
-from .models import SubAccount, SubAccountGroup
+from .models import SubAccount, BudgetSubAccount, TemplateSubAccount
 
 
-class SubAccountSimpleSerializer(BudgetItemSimpleSerializer):
+class SubAccountSimpleSerializer(EnhancedModelSerializer):
+    id = serializers.IntegerField(read_only=True)
+    type = serializers.CharField(read_only=True)
+    identifier = serializers.CharField(
+        required=True,
+        allow_blank=False,
+        allow_null=False
+    )
+    description = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        allow_null=False
+    )
     name = serializers.CharField(
         required=False,
         allow_blank=True,
@@ -25,47 +40,10 @@ class SubAccountSimpleSerializer(BudgetItemSimpleSerializer):
 
     class Meta:
         model = SubAccount
-        fields = BudgetItemSimpleSerializer.Meta.fields + ('name',)
-
-
-class SubAccountGroupSerializer(BudgetItemGroupSerializer):
-    children = serializers.PrimaryKeyRelatedField(
-        many=True,
-        required=False,
-        queryset=SubAccount.objects.all()
-    )
-
-    class Meta:
-        model = SubAccountGroup
-        nested_fields = BudgetItemGroupSerializer.Meta.fields
-        fields = nested_fields + ('children', )
-        response = {
-            'children': (
-                SubAccountSimpleSerializer, {'many': True, 'nested': True})
-        }
-
-    def validate_children(self, value):
-        # In the case of a POST request, the parent will be in the context. In
-        # the case of a PATCH request, the instance will be non-null.
-        parent = self.context.get('parent')
-        if parent is None:
-            parent = self.instance.parent
-        for subaccount in value:
-            if subaccount.parent != parent:
-                raise exceptions.ValidationError(
-                    "The subaccount %s does not belong to the same parent "
-                    "that the group does (%s)." % (subaccount.pk, parent.pk)
-                )
-        return value
+        fields = ('id', 'name', 'identifier', 'type', 'description')
 
 
 class SubAccountSerializer(SubAccountSimpleSerializer):
-    type = serializers.CharField(read_only=True)
-    description = serializers.CharField(
-        required=False,
-        allow_blank=True,
-        allow_null=False
-    )
     created_by = serializers.PrimaryKeyRelatedField(read_only=True)
     updated_by = serializers.PrimaryKeyRelatedField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
@@ -77,14 +55,13 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
     rate = serializers.FloatField(required=False, allow_null=True)
     multiplier = serializers.FloatField(required=False, allow_null=True)
     estimated = serializers.FloatField(read_only=True)
-    actual = serializers.FloatField(read_only=True)
-    variance = serializers.FloatField(read_only=True)
     unit = ModelChoiceField(
         required=False,
         choices=SubAccount.UNITS,
         allow_null=True
     )
     budget = serializers.PrimaryKeyRelatedField(read_only=True)
+    subaccounts = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     ancestors = EntitySerializer(many=True, read_only=True)
     siblings = EntitySerializer(many=True, read_only=True)
     account = serializers.IntegerField(read_only=True, source='account.pk')
@@ -92,12 +69,6 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
     parent_type = serializers.ChoiceField(
         choices=["account", "subaccount"],
         read_only=True
-    )
-    subaccounts = SubAccountSimpleSerializer(many=True, read_only=True)
-    group = serializers.PrimaryKeyRelatedField(
-        required=False,
-        queryset=SubAccountGroup.objects.all(),
-        allow_null=True
     )
     fringes = serializers.PrimaryKeyRelatedField(
         many=True,
@@ -108,11 +79,10 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
     class Meta:
         model = SubAccount
         fields = SubAccountSimpleSerializer.Meta.fields + (
-            'identifier', 'name', 'description', 'created_by', 'updated_by',
-            'created_at', 'updated_at', 'quantity', 'rate', 'multiplier',
-            'unit', 'account', 'object_id', 'parent_type', 'ancestors',
-            'estimated', 'subaccounts', 'actual', 'variance', 'budget', 'type',
-            'group', 'siblings', 'fringes')
+            'identifier', 'name', 'created_by', 'updated_by', 'created_at',
+            'updated_at', 'quantity', 'rate', 'multiplier', 'unit', 'account',
+            'object_id', 'parent_type', 'ancestors', 'estimated', 'subaccounts',
+            'budget', 'siblings', 'fringes')
 
     def validate_identifier(self, value):
         # In the case that the serializer is nested and being used in a write
@@ -123,8 +93,10 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
             parent = self.context.get('parent')
             if parent is None:
                 parent = self.instance.parent
+            # TODO: Eventually, we want to make this unique across all
+            # subaccounts in the budget/template.  But for now, this will do.
             validator = serializers.UniqueTogetherValidator(
-                queryset=parent.budget.items.all(),
+                queryset=parent.subaccounts.all(),
                 fields=('identifier', ),
             )
             validator({'identifier': value}, self)
@@ -140,81 +112,107 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
         return super().validate(attrs)
 
 
-class SubAccountBulkChangeSerializer(SubAccountSerializer):
-    id = serializers.PrimaryKeyRelatedField(
-        required=True,
-        queryset=SubAccount.objects.all()
+class BudgetSubAccountSerializer(SubAccountSerializer):
+    actual = serializers.FloatField(read_only=True)
+    variance = serializers.FloatField(read_only=True)
+    group = serializers.PrimaryKeyRelatedField(
+        required=False,
+        allow_null=True,
+        queryset=BudgetSubAccountGroup.objects.all()
     )
 
-    def validate_id(self, instance):
-        account = self.parent.parent.instance
-        if account != instance.parent:
-            raise exceptions.ValidationError(
-                "The sub-account %s does not belong to account %s."
-                % (instance.pk, account.pk)
-            )
-        return instance
+    class Meta:
+        model = BudgetSubAccount
+        fields = SubAccountSerializer.Meta.fields + (
+            'actual', 'variance', 'group')
 
 
-class AbstractBulkCreateSubAccountsSerializer(serializers.ModelSerializer):
-    data = SubAccountSerializer(many=True, nested=True)
+class TemplateSubAccountSerializer(SubAccountSerializer):
+    group = serializers.PrimaryKeyRelatedField(
+        required=False,
+        allow_null=True,
+        queryset=TemplateSubAccountGroup.objects.all()
+    )
 
     class Meta:
-        abstract = True
-        fields = ('data', )
-
-    def update(self, instance, validated_data):
-        subaccounts = []
-        for payload in validated_data['data']:
-            serializer = SubAccountSerializer(data=payload, context={
-                'parent': instance
-            })
-            serializer.is_valid(raise_exception=True)
-            # Note that the updated_by argument is the user updating the
-            # Account by adding new SubAccount(s), so the SubAccount(s) should
-            # be denoted as having been created by this user.
-            subaccount = serializer.save(
-                updated_by=validated_data['updated_by'],
-                created_by=validated_data['updated_by'],
-                object_id=instance.pk,
-                content_type=ContentType.objects.get_for_model(SubAccount),
-                parent=instance,
-                budget=instance.budget
-            )
-            subaccounts.append(subaccount)
-        return subaccounts
+        model = TemplateSubAccount
+        fields = SubAccountSerializer.Meta.fields + ('group', )
 
 
-class AbstractBulkUpdateSubAccountsSerializer(AbstractBulkUpdateSerializer):
-    data = SubAccountBulkChangeSerializer(many=True, nested=True)
+def create_bulk_create_subaccounts_serializer(model_cls):
+    data_serializer = BudgetSubAccountSerializer
+    if model_cls is TemplateSubAccount:
+        data_serializer = TemplateSubAccountSerializer
 
-    class Meta:
-        abstract = True
-        fields = ('data', )
+    class BulkCreateSubAccountsSerializer(serializers.ModelSerializer):
+        data = data_serializer(many=True, nested=True)
 
-    def update(self, instance, validated_data):
-        for subaccount, change in validated_data['data']:
-            serializer = SubAccountSerializer(
-                instance=subaccount,
-                data=change,
-                partial=True
-            )
-            serializer.is_valid(raise_exception=True)
-            serializer.save(updated_by=validated_data['updated_by'])
-        return instance
+        class Meta:
+            model = BaseBudget
+            fields = ('data', )
+
+        def update(self, instance, validated_data):
+            subaccounts = []
+            for payload in validated_data['data']:
+                serializer = data_serializer(data=payload, context={
+                    'parent': instance
+                })
+                serializer.is_valid(raise_exception=True)
+                # Note that the updated_by argument is the user updating the
+                # Account by adding new SubAccount(s), so the SubAccount(s)
+                # should be denoted as having been created by this user.
+                subaccount = serializer.save(
+                    updated_by=validated_data['updated_by'],
+                    created_by=validated_data['updated_by'],
+                    object_id=instance.pk,
+                    content_type=ContentType.objects.get_for_model(model_cls),
+                    parent=instance,
+                    budget=instance.budget
+                )
+                subaccounts.append(subaccount)
+            return subaccounts
+    return BulkCreateSubAccountsSerializer
 
 
-class SubAccountBulkCreateSubAccountsSerializer(
-        AbstractBulkCreateSubAccountsSerializer):
+def create_subaccount_bulk_change_serializer(model_cls):
+    base_serializer = BudgetSubAccountSerializer
+    if model_cls is TemplateSubAccount:
+        base_serializer = TemplateSubAccountSerializer
 
-    class Meta:
-        model = SubAccount
-        fields = AbstractBulkCreateSubAccountsSerializer.Meta.fields
+    class SubAccountBulkChangeSerializer(base_serializer):
+        id = serializers.PrimaryKeyRelatedField(
+            required=True,
+            queryset=model_cls.objects.all()
+        )
+
+        def validate_id(self, instance):
+            account = self.parent.parent.instance
+            if account != instance.parent:
+                raise exceptions.ValidationError(
+                    "The sub-account %s does not belong to account %s."
+                    % (instance.pk, account.pk)
+                )
+            return instance
+    return SubAccountBulkChangeSerializer
 
 
-class SubAccountBulkUpdateSubAccountsSerializer(
-        AbstractBulkUpdateSubAccountsSerializer):
+def create_bulk_update_subaccounts_serializer(model_cls):
+    class BulkUpdateSubAccountsSerializer(AbstractBulkUpdateSerializer):
+        data = create_subaccount_bulk_change_serializer(model_cls)(
+            many=True, nested=True)
 
-    class Meta:
-        model = SubAccount
-        fields = AbstractBulkUpdateSubAccountsSerializer.Meta.fields
+        class Meta:
+            model = BaseBudget
+            fields = ('data', )
+
+        def update(self, instance, validated_data):
+            for subaccount, change in validated_data['data']:
+                serializer = SubAccountSerializer(
+                    instance=subaccount,
+                    data=change,
+                    partial=True
+                )
+                serializer.is_valid(raise_exception=True)
+                serializer.save(updated_by=validated_data['updated_by'])
+            return instance
+    return BulkUpdateSubAccountsSerializer

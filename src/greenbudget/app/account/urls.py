@@ -11,38 +11,41 @@ from .views import (
     BudgetAccountViewSet,
     AccountViewSet,
     AccountGroupViewSet,
-    AccountSubAccountGroupViewSet
+    TemplateAccountViewSet
 )
 
 
 app_name = "account"
 
 budget_accounts_router = routers.SimpleRouter()
-budget_accounts_router.register(r'', BudgetAccountViewSet, basename='account')
+budget_accounts_router.register(
+    r'', BudgetAccountViewSet, basename='budget-account')
 budget_accounts_urlpatterns = [
     path('history/', include(accounts_history_urlpatterns)),
 ] + budget_accounts_router.urls
 
+template_accounts_router = routers.SimpleRouter()
+template_accounts_router.register(
+    r'', TemplateAccountViewSet, basename='template-account')
+
 account_groups_router = routers.SimpleRouter()
 account_groups_router.register(
-    r'', AccountSubAccountGroupViewSet,
+    r'', AccountGroupViewSet,
     basename='account-subaccount-group'
 )
-account_subaccounts_groups_urlpatterns = account_groups_router.urls
 
 router = routers.SimpleRouter()
 router.register(r'', AccountViewSet, basename='account')
-router.register(
-    r'groups',
-    AccountGroupViewSet,
-    basename='account-group'
-)
+
 urlpatterns = router.urls + [
     path('<int:account_pk>/', include([
+        path('groups/', include(account_groups_router.urls)),
+        path('subaccounts/', include(account_subaccounts_urlpatterns)),
+        # Note: These three endpoints will not work for an Account that belongs
+        # to a template.  Is there a better way to do this to make that
+        # distinction more clear in the URLs?
         path('actuals/', include(account_actuals_urlpatterns)),
         path('comments/', include(account_comments_urlpatterns)),
         path('history/', include(account_history_urlpatterns)),
-        path('groups/', include(account_subaccounts_groups_urlpatterns)),
-        path('subaccounts/', include(account_subaccounts_urlpatterns)),
     ]))
 ]

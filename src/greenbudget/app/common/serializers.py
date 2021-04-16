@@ -1,36 +1,33 @@
-import functools
 from rest_framework import serializers
 
+from greenbudget.lib.rest_framework_utils.serializers import (
+    PolymorphicNonPolymorphicSerializer)
 
-def flexible_getter(field):
-    def decorator(func):
-        @functools.wraps(func)
-        def method(serializer, instance):
-            if hasattr(instance, field):
-                return getattr(instance, field)
-            return None
-        return method
-    return decorator
+from greenbudget.app.account.models import Account
+from greenbudget.app.budget.models import Budget
+from greenbudget.app.subaccount.models import SubAccount
+from greenbudget.app.template.models import Template
 
 
-class EntitySerializer(serializers.Serializer):
-    id = serializers.IntegerField(read_only=True)
-    identifier = serializers.SerializerMethodField()
-    name = serializers.SerializerMethodField()
-    type = serializers.CharField(read_only=True)
-    description = serializers.SerializerMethodField()
-
-    @flexible_getter('description')
-    def get_description(self, instance):
-        pass
-
-    @flexible_getter('name')
-    def get_name(self, instance):
-        pass
-
-    @flexible_getter('identifier')
-    def get_identifier(self, instance):
-        pass
+class EntitySerializer(PolymorphicNonPolymorphicSerializer):
+    choices = {
+        Account: (
+            "greenbudget.app.account.serializers.AccountSimpleSerializer",
+            "account"
+        ),
+        SubAccount: (
+            "greenbudget.app.subaccount.serializers.SubAccountSimpleSerializer",
+            "subaccount"
+        ),
+        Budget: (
+            "greenbudget.app.budget.serializers.BaseBudgetSimpleSerializer",
+            "budget"
+        ),
+        Template: (
+            "greenbudget.app.budget.serializers.BaseBudgetSimpleSerializer",
+            "template"
+        )
+    }
 
 
 class AbstractBulkUpdateSerializer(serializers.ModelSerializer):

@@ -1,24 +1,70 @@
 from django.http import HttpResponse
 from rest_framework import viewsets, mixins, response, status, decorators
 
-from greenbudget.app.account.models import AccountGroup
+from greenbudget.app.account.models import BudgetAccount
 from greenbudget.app.account.serializers import (
-    AccountSerializer, AccountGroupSerializer)
-
-from .models import Fringe
-from .mixins import BudgetNestedMixin
-from .serializers import (
-    BudgetSerializer,
-    BudgetBulkCreateAccountsSerializer,
-    BudgetBulkUpdateAccountsSerializer,
-    BudgetBulkUpdateActualsSerializer,
-    BudgetBulkUpdateFringesSerializer,
-    BudgetBulkCreateFringesSerializer,
-    FringeSerializer
+    BudgetAccountSerializer,
+    create_bulk_create_accounts_serializer,
+    create_bulk_update_accounts_serializer
 )
+from greenbudget.app.actual.serializers import BulkUpdateActualsSerializer
+from greenbudget.app.common.serializers import EntitySerializer
+from greenbudget.app.fringe.serializers import (
+    FringeSerializer,
+    BulkCreateFringesSerializer,
+    BulkUpdateFringesSerializer
+)
+from greenbudget.app.group.models import BudgetAccountGroup
+from greenbudget.app.group.serializers import BudgetAccountGroupSerializer
+from greenbudget.app.subaccount.models import BudgetSubAccount
+
+from .models import Budget
+from .mixins import BudgetNestedMixin, TrashModelMixin
+from .serializers import BudgetSerializer, TreeNodeSerializer
 
 
-class BudgetAccountGroupViewSet(
+class LineItemViewSet(
+    mixins.ListModelMixin,
+    BudgetNestedMixin,
+    viewsets.GenericViewSet
+):
+    """
+    Viewset to handle requests to the following endpoints:
+
+    (1) GET /budgets/<pk>/items/
+    """
+    serializer_class = EntitySerializer
+    budget_lookup_field = ("pk", "budget_pk")
+    search_fields = ['identifier']
+
+    def list(self, request, *args, **kwargs):
+        qs1 = self.filter_queryset(self.budget.accounts.all())
+        qs2 = self.filter_queryset(
+            BudgetSubAccount.objects.filter(budget=self.budget))
+        qs = self.paginate_queryset(list(qs1) + list(qs2))
+        serializer = EntitySerializer(qs, many=True)
+        return self.get_paginated_response(serializer.data)
+
+
+class LineItemTreeViewSet(
+    mixins.ListModelMixin,
+    BudgetNestedMixin,
+    viewsets.GenericViewSet
+):
+    """
+    Viewset to handle requests to the following endpoints:
+
+    (1) GET /budgets/<pk>/items/tree/
+    """
+    serializer_class = TreeNodeSerializer
+    budget_lookup_field = ("pk", "budget_pk")
+    search_fields = ['identifier']
+
+    def get_queryset(self):
+        return self.budget.accounts.all()
+
+
+class BudgetGroupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
     BudgetNestedMixin,
@@ -31,11 +77,11 @@ class BudgetAccountGroupViewSet(
     (2) GET /budgets/<pk>/groups/
     """
     lookup_field = 'pk'
-    serializer_class = AccountGroupSerializer
+    serializer_class = BudgetAccountGroupSerializer
     budget_lookup_field = ("pk", "budget_pk")
 
     def get_queryset(self):
-        return AccountGroup.objects.filter(budget=self.budget)
+        return BudgetAccountGroup.objects.filter(parent=self.budget)
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -45,40 +91,15 @@ class BudgetAccountGroupViewSet(
     def perform_create(self, serializer):
         serializer.save(
             created_by=self.request.user,
-            budget=self.budget
+            parent=self.budget
         )
 
 
-class GenericFringesViewSet(BudgetNestedMixin, viewsets.GenericViewSet):
-    lookup_field = 'pk'
-    serializer_class = FringeSerializer
-
-
-class FringesViewSet(
-    mixins.UpdateModelMixin,
-    mixins.RetrieveModelMixin,
-    mixins.DestroyModelMixin,
-    GenericFringesViewSet
-):
-    """
-    ViewSet to handle requests to the following endpoints:
-
-    (1) GET /fringes/<pk>/
-    (2) PATCH /fringes/<pk>/
-    (3) DELETE /fringes/<pk>/
-    """
-
-    def get_queryset(self):
-        return Fringe.objects.filter(budget__trash=False)
-
-    def perform_update(self, serializer):
-        serializer.save(updated_by=self.request.user)
-
-
-class BudgetFringesViewSet(
+class BudgetFringeViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
-    GenericFringesViewSet
+    BudgetNestedMixin,
+    viewsets.GenericViewSet
 ):
     """
     ViewSet to handle requests to the following endpoints:
@@ -86,6 +107,8 @@ class BudgetFringesViewSet(
     (1) GET /budgets/<pk>/fringes/
     (2) POST /budgets/<pk>/fringes/
     """
+    lookup_field = 'pk'
+    serializer_class = FringeSerializer
     budget_lookup_field = ("pk", "budget_pk")
 
     def get_serializer_context(self):
@@ -109,11 +132,6 @@ class GenericBudgetViewSet(viewsets.GenericViewSet):
     serializer_class = BudgetSerializer
     ordering_fields = ['updated_at', 'name', 'created_at']
     search_fields = ['name']
-
-    def get_object(self):
-        instance = super().get_object()
-        instance.raise_no_access(self.request.user)
-        return instance
 
 
 class BudgetViewSet(
@@ -149,27 +167,31 @@ class BudgetViewSet(
         return context
 
     def get_queryset(self):
-        return self.request.user.budgets.active()
+        return self.request.user.budgets.instance_of(Budget).active()
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         instance.to_trash()
-        return response.Response(status=204)
+        return response.Response(status=status.HTTP_204_NO_CONTENT)
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
 
-    @decorators.action(
-        detail=True, url_path='bulk-update-accounts', methods=["PATCH"])
-    def bulk_update_accounts(self, request, *args, **kwargs):
+    def perform_bulk_accounts_change(self, serializer_cls, request):
         instance = self.get_object()
-        serializer = BudgetBulkUpdateAccountsSerializer(
+        serializer = serializer_cls(
             instance=instance,
             data=request.data,
             partial=True
         )
         serializer.is_valid(raise_exception=True)
-        instance = serializer.save(updated_by=request.user)
+        return serializer.save(updated_by=request.user)
+
+    @decorators.action(
+        detail=True, url_path='bulk-update-accounts', methods=["PATCH"])
+    def bulk_update_accounts(self, request, *args, **kwargs):
+        serializer_cls = create_bulk_update_accounts_serializer(BudgetAccount)
+        instance = self.perform_bulk_accounts_change(serializer_cls, request)
         return response.Response(
             self.serializer_class(instance).data,
             status=status.HTTP_200_OK
@@ -177,17 +199,11 @@ class BudgetViewSet(
 
     @decorators.action(
         detail=True, url_path='bulk-create-accounts', methods=["PATCH"])
-    def bulk_create_accounts(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = BudgetBulkCreateAccountsSerializer(
-            instance=instance,
-            data=request.data,
-            partial=True
-        )
-        serializer.is_valid(raise_exception=True)
-        subaccounts = serializer.save(updated_by=request.user)
+    def bulk_create_budget_accounts(self, request, *args, **kwargs):
+        serializer_cls = create_bulk_create_accounts_serializer(BudgetAccount)
+        accounts = self.perform_bulk_accounts_change(serializer_cls, request)
         return response.Response(
-            {'data': AccountSerializer(subaccounts, many=True).data},
+            {'data': BudgetAccountSerializer(accounts, many=True).data},
             status=status.HTTP_201_CREATED
         )
 
@@ -195,7 +211,7 @@ class BudgetViewSet(
         detail=True, url_path='bulk-update-actuals', methods=["PATCH"])
     def bulk_update_actuals(self, request, *args, **kwargs):
         instance = self.get_object()
-        serializer = BudgetBulkUpdateActualsSerializer(
+        serializer = BulkUpdateActualsSerializer(
             instance=instance,
             data=request.data,
             partial=True,
@@ -212,7 +228,7 @@ class BudgetViewSet(
         detail=True, url_path='bulk-update-fringes', methods=["PATCH"])
     def bulk_update_fringes(self, request, *args, **kwargs):
         instance = self.get_object()
-        serializer = BudgetBulkUpdateFringesSerializer(
+        serializer = BulkUpdateFringesSerializer(
             instance=instance,
             data=request.data,
             partial=True,
@@ -229,7 +245,7 @@ class BudgetViewSet(
         detail=True, url_path='bulk-create-fringes', methods=["PATCH"])
     def bulk_create_fringes(self, request, *args, **kwargs):
         instance = self.get_object()
-        serializer = BudgetBulkCreateFringesSerializer(
+        serializer = BulkCreateFringesSerializer(
             instance=instance,
             data=request.data,
             partial=True
@@ -248,12 +264,7 @@ class BudgetViewSet(
         return HttpResponse(pdf.getvalue(), content_type='application/pdf')
 
 
-class BudgetTrashViewSet(
-    mixins.DestroyModelMixin,
-    mixins.RetrieveModelMixin,
-    mixins.ListModelMixin,
-    GenericBudgetViewSet,
-):
+class BudgetTrashViewSet(TrashModelMixin, GenericBudgetViewSet):
     """
     ViewSet to handle requests to the following endpoints:
 
@@ -264,24 +275,4 @@ class BudgetTrashViewSet(
     """
 
     def get_queryset(self):
-        return self.request.user.budgets.inactive()
-
-    @decorators.action(detail=True, methods=["PATCH"])
-    def restore(self, request, *args, **kwargs):
-        """
-        Moves the :obj:`Budget`that is in the trash out of the trash
-        to the main set of `obj:Budget`(s).
-
-        PATCH /budgets/trash/<pk>/restore/
-        """
-        instance = self.get_object()
-        instance.restore()
-        return response.Response(
-            self.serializer_class(instance).data,
-            status=status.HTTP_201_CREATED
-        )
-
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        instance.delete()
-        return response.Response(status=status.HTTP_204_NO_CONTENT)
+        return self.request.user.budgets.instance_of(Budget).inactive()

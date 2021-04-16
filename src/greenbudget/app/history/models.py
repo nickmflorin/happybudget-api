@@ -24,9 +24,8 @@ class Event(PolymorphicModel):
     content_type = models.ForeignKey(
         to=ContentType,
         on_delete=models.CASCADE,
-        limit_choices_to=models.Q(app_label='account', model='account')
-        | models.Q(app_label='subaccount', model='subaccount')
-        | models.Q(app_label='actual', model='actual')
+        limit_choices_to=models.Q(app_label='account', model='budgetaccount')
+        | models.Q(app_label='subaccount', model='budgetsubaccount')
     )
     object_id = models.PositiveIntegerField(db_index=True)
     content_object = GenericForeignKey('content_type', 'object_id')

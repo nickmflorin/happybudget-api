@@ -1,64 +1,115 @@
 from django.db import IntegrityError
 import pytest
 
-from greenbudget.app.subaccount.models import SubAccount, SubAccountGroup
+from greenbudget.app.group.models import (
+    BudgetSubAccountGroup, TemplateSubAccountGroup)
+from greenbudget.app.subaccount.models import (
+    BudgetSubAccount, TemplateSubAccount)
 from greenbudget.app.history.models import (
     Event, FieldAlterationEvent, CreateEvent)
 
 
-@pytest.mark.freeze_time('2020-01-01')
-def test_group_parent_constraint(create_sub_account, create_account,
-        create_budget, create_sub_account_group):
+def test_budget_group_parent_constraint(create_budget_subaccount,
+        create_budget_account, create_budget, create_budget_subaccount_group):
     budget = create_budget()
-    account = create_account(budget=budget)
-    another_account = create_account(budget=budget)
-    group = create_sub_account_group(parent=account)
+    account = create_budget_account(budget=budget)
+    another_account = create_budget_account(budget=budget)
+    group = create_budget_subaccount_group(parent=account)
     with pytest.raises(IntegrityError):
-        create_sub_account(
+        create_budget_subaccount(
             parent=another_account,
             budget=budget,
             group=group
         )
 
 
-def test_remove_from_group_group_deleted(create_account, create_budget,
-        create_sub_account_group, user):
+def test_template_group_parent_constraint(create_budget_subaccount,
+        create_budget_account, create_budget, create_budget_subaccount_group):
     budget = create_budget()
-    account = create_account(budget=budget)
-    group = create_sub_account_group(parent=account)
+    account = create_budget_account(budget=budget)
+    another_account = create_budget_account(budget=budget)
+    group = create_budget_subaccount_group(parent=account)
+    with pytest.raises(IntegrityError):
+        create_budget_subaccount(
+            parent=another_account,
+            budget=budget,
+            group=group
+        )
 
-    subaccount = SubAccount.objects.create(
+
+def test_remove_budget_subaccount_from_group_group_deleted(user, create_budget,
+        create_budget_account, create_budget_subaccount_group):
+    budget = create_budget()
+    account = create_budget_account(budget=budget)
+    group = create_budget_subaccount_group(parent=account)
+    subaccount = BudgetSubAccount.objects.create(
         budget=budget,
         parent=account,
         identifier="Identifier",
         group=group,
         updated_by=user,
     )
-
     subaccount.group = None
     subaccount.save()
+    assert BudgetSubAccountGroup.objects.first() is None
 
-    assert SubAccountGroup.objects.first() is None
 
-
-def test_remove_from_group_group_not_deleted(create_sub_account, create_account,
-        create_budget, create_sub_account_group):
-    budget = create_budget()
-    account = create_account(budget=budget)
-    group = create_sub_account_group(parent=account)
-    subaccount = create_sub_account(budget=budget, parent=account, group=group)
-    create_sub_account(budget=budget, parent=account, group=group)
-
+def test_remove_template_subaccount_from_group_group_deleted(user,
+        create_template, create_template_account,
+        create_template_subaccount_group):
+    template = create_template()
+    account = create_template_account(budget=template)
+    group = create_template_subaccount_group(parent=account)
+    subaccount = TemplateSubAccount.objects.create(
+        budget=template,
+        parent=account,
+        identifier="Identifier",
+        group=group,
+        updated_by=user,
+    )
     subaccount.group = None
     subaccount.save()
+    assert TemplateSubAccountGroup.objects.first() is None
 
-    assert SubAccountGroup.objects.first() == group
 
-
-def test_record_create_history(create_budget, create_account, user):
+def test_remove_budget_subaccount_from_group_group_not_deleted(create_budget,
+        create_budget_subaccount, create_budget_account,
+        create_budget_subaccount_group):
     budget = create_budget()
-    account = create_account(budget=budget)
-    subaccount = SubAccount.objects.create(
+    account = create_budget_account(budget=budget)
+    group = create_budget_subaccount_group(parent=account)
+    subaccount = create_budget_subaccount(
+        budget=budget,
+        parent=account,
+        group=group
+    )
+    create_budget_subaccount(budget=budget, parent=account, group=group)
+    subaccount.group = None
+    subaccount.save()
+    assert BudgetSubAccountGroup.objects.first() == group
+
+
+def test_remove_template_subaccount_from_group_group_not_deleted(
+        create_template, create_template_subaccount, create_template_account,
+        create_template_subaccount_group):
+    budget = create_template()
+    account = create_template_account(budget=budget)
+    group = create_template_subaccount_group(parent=account)
+    subaccount = create_template_subaccount(
+        budget=budget,
+        parent=account,
+        group=group
+    )
+    create_template_subaccount(budget=budget, parent=account, group=group)
+    subaccount.group = None
+    subaccount.save()
+    assert TemplateSubAccountGroup.objects.first() == group
+
+
+def test_record_create_history(create_budget, create_budget_account, user):
+    budget = create_budget()
+    account = create_budget_account(budget=budget)
+    subaccount = BudgetSubAccount.objects.create(
         description="Description",
         identifier="Identifier",
         budget=budget,
@@ -72,10 +123,11 @@ def test_record_create_history(create_budget, create_account, user):
     assert event.content_object == subaccount
 
 
-def test_record_field_change_history(create_budget, create_account, user):
+def test_record_field_change_history(create_budget, create_budget_account,
+        user):
     budget = create_budget()
-    account = create_account(budget=budget)
-    subaccount = SubAccount(
+    account = create_budget_account(budget=budget)
+    subaccount = BudgetSubAccount(
         description="Description",
         identifier="Identifier",
         budget=budget,
@@ -96,10 +148,11 @@ def test_record_field_change_history(create_budget, create_account, user):
     assert alteration.new_value == "New Description"
 
 
-def test_dont_record_field_change_history(create_budget, create_account, user):
+def test_dont_record_field_change_history(create_budget, create_budget_account,
+        user):
     budget = create_budget()
-    account = create_account(budget=budget)
-    subaccount = SubAccount(
+    account = create_budget_account(budget=budget)
+    subaccount = BudgetSubAccount(
         description="Description",
         identifier="Identifier",
         budget=budget,
@@ -115,10 +168,10 @@ def test_dont_record_field_change_history(create_budget, create_account, user):
 
 
 def test_record_field_change_history_null_at_start(create_budget,
-        create_account, user):
+        create_budget_account, user):
     budget = create_budget()
-    account = create_account(budget=budget)
-    subaccount = SubAccount(
+    account = create_budget_account(budget=budget)
+    subaccount = BudgetSubAccount(
         description=None,
         identifier="Identifier",
         budget=budget,

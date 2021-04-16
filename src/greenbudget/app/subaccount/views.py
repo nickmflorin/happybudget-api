@@ -1,43 +1,25 @@
 from django.contrib.contenttypes.models import ContentType
+from django.utils.functional import cached_property
 from rest_framework import viewsets, mixins, decorators, response, status
 
-from greenbudget.app.account.models import Account
+from greenbudget.app.account.models import BudgetAccount
 from greenbudget.app.account.mixins import AccountNestedMixin
+from greenbudget.app.group.serializers import (
+    BudgetSubAccountGroupSerializer,
+    TemplateSubAccountGroupSerializer
+)
 
 from .mixins import SubAccountNestedMixin
-from .models import SubAccount, SubAccountGroup
+from .models import SubAccount, BudgetSubAccount, TemplateSubAccount
 from .serializers import (
-    SubAccountSerializer,
-    SubAccountGroupSerializer,
-    SubAccountBulkCreateSubAccountsSerializer,
-    SubAccountBulkUpdateSubAccountsSerializer
+    TemplateSubAccountSerializer,
+    BudgetSubAccountSerializer,
+    create_bulk_create_subaccounts_serializer,
+    create_bulk_update_subaccounts_serializer
 )
 
 
 class SubAccountGroupViewSet(
-    mixins.UpdateModelMixin,
-    mixins.RetrieveModelMixin,
-    mixins.DestroyModelMixin,
-    viewsets.GenericViewSet
-):
-    """
-    Viewset to handle requests to the following endpoints:
-
-    (1) PATCH /subaccounts/groups/<pk>/
-    (2) GET /subaccounts/groups/<pk>/
-    (3) DELETE /subaccounts/groups/<pk>/
-    """
-    lookup_field = 'pk'
-    serializer_class = SubAccountGroupSerializer
-
-    def get_queryset(self):
-        return SubAccountGroup.objects.all()
-
-    def perform_update(self, serializer):
-        serializer.save(updated_by=self.request.user)
-
-
-class SubAccountSubAccountGroupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
     SubAccountNestedMixin,
@@ -50,12 +32,22 @@ class SubAccountSubAccountGroupViewSet(
     (2) GET /subaccounts/<pk>/groups/
     """
     lookup_field = 'pk'
-    serializer_class = SubAccountGroupSerializer
     subaccount_lookup_field = ("pk", "subaccount_pk")
 
+    @cached_property
+    def instance_cls(self):
+        return type(self.subaccount)
+
+    def get_serializer_class(self):
+        mapping = {
+            BudgetSubAccount: BudgetSubAccountGroupSerializer,
+            TemplateSubAccount: TemplateSubAccountGroupSerializer
+        }
+        return mapping[self.instance_cls]
+
     def get_queryset(self):
-        return SubAccountGroup.objects.filter(
-            content_type=ContentType.objects.get_for_model(SubAccount),
+        return self.instance_cls.objects.filter(
+            content_type=ContentType.objects.get_for_model(type(self.subaccount)),  # noqa
             object_id=self.subaccount.pk,
         )
 
@@ -68,14 +60,13 @@ class SubAccountSubAccountGroupViewSet(
         serializer.save(
             created_by=self.request.user,
             object_id=self.subaccount.pk,
-            content_type=ContentType.objects.get_for_model(SubAccount),
+            content_type=ContentType.objects.get_for_model(self.instance_cls),
             parent=self.subaccount
         )
 
 
 class GenericSubAccountViewSet(viewsets.GenericViewSet):
     lookup_field = 'pk'
-    serializer_class = SubAccountSerializer
     ordering_fields = ['updated_at', 'name', 'created_at']
     search_fields = ['name']
 
@@ -95,42 +86,51 @@ class SubAccountViewSet(
     (4) PATCH /subaccounts/<pk>/bulk-update-subaccounts/
     (5) PATCH /subaccounts/<pk>/bulk-create-subaccounts/
     """
+    @cached_property
+    def instance_cls(self):
+        instance = self.get_object()
+        return type(instance)
 
     def get_queryset(self):
         return SubAccount.objects.filter(budget__trash=False)
 
+    def get_serializer_class(self):
+        if self.instance_cls is TemplateSubAccount:
+            return TemplateSubAccountSerializer
+        return BudgetSubAccountSerializer
+
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
 
-    @decorators.action(
-        detail=True, url_path='bulk-update-subaccounts', methods=["PATCH"])
-    def bulk_update(self, request, *args, **kwargs):
+    def perform_bulk_change(self, serializer_cls, request):
         instance = self.get_object()
-        serializer = SubAccountBulkUpdateSubAccountsSerializer(
+        serializer = serializer_cls(
             instance=instance,
             data=request.data,
             partial=True
         )
         serializer.is_valid(raise_exception=True)
-        instance = serializer.save(updated_by=request.user)
+        return serializer.save(updated_by=request.user)
+
+    @decorators.action(
+        detail=True, url_path='bulk-update-subaccounts', methods=["PATCH"])
+    def bulk_update_subaccounts(self, request, *args, **kwargs):
+        serializer_cls = create_bulk_update_subaccounts_serializer(self.instance_cls)  # noqa
+        instance = self.perform_bulk_change(serializer_cls, request)
+        response_serializer_class = self.get_serializer_class()
         return response.Response(
-            self.serializer_class(instance).data,
+            response_serializer_class(instance).data,
             status=status.HTTP_200_OK
         )
 
     @decorators.action(
         detail=True, url_path='bulk-create-subaccounts', methods=["PATCH"])
-    def bulk_create(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = SubAccountBulkCreateSubAccountsSerializer(
-            instance=instance,
-            data=request.data,
-            partial=True
-        )
-        serializer.is_valid(raise_exception=True)
-        subaccounts = serializer.save(updated_by=request.user)
+    def bulk_create_subaccounts(self, request, *args, **kwargs):
+        serializer_cls = create_bulk_create_subaccounts_serializer(self.instance_cls)  # noqa
+        subaccounts = self.perform_bulk_change(serializer_cls, request)
+        response_serializer_cls = self.get_serializer_class()
         return response.Response(
-            {'data': SubAccountSerializer(subaccounts, many=True).data},
+            {'data': response_serializer_cls(subaccounts, many=True).data},
             status=status.HTTP_201_CREATED
         )
 
@@ -149,19 +149,25 @@ class SubAccountRecursiveViewSet(
     """
     subaccount_lookup_field = ("pk", "subaccount_pk")
 
+    @cached_property
+    def instance_cls(self):
+        return type(self.subaccount)
+
+    def get_serializer_class(self):
+        if self.instance_cls is TemplateSubAccount:
+            return TemplateSubAccountSerializer
+        return BudgetSubAccountSerializer
+
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context.update(
-            parent=self.subaccount,
-            # budget=self.subaccount.budget
-        )
+        context.update(parent=self.subaccount)
         return context
 
     def get_queryset(self):
-        content_type = ContentType.objects.get_for_model(SubAccount)
-        return SubAccount.objects.filter(
+        content_type = ContentType.objects.get_for_model(type(self.subaccount))
+        return type(self.subaccount).objects.filter(
             object_id=self.subaccount.pk,
-            content_type=content_type
+            content_type=content_type,
         )
 
     def perform_create(self, serializer):
@@ -169,7 +175,7 @@ class SubAccountRecursiveViewSet(
             updated_by=self.request.user,
             created_by=self.request.user,
             object_id=self.subaccount.pk,
-            content_type=ContentType.objects.get_for_model(SubAccount),
+            content_type=ContentType.objects.get_for_model(type(self.subaccount)),  # noqa
             parent=self.subaccount,
             budget=self.subaccount.budget
         )
@@ -189,14 +195,29 @@ class AccountSubAccountViewSet(
     """
     account_lookup_field = ("pk", "account_pk")
 
+    @cached_property
+    def instance_cls(self):
+        return type(self.account)
+
+    @property
+    def child_instance_cls(self):
+        if self.instance_cls is BudgetAccount:
+            return BudgetSubAccount
+        return TemplateSubAccount
+
+    def get_serializer_class(self):
+        if self.child_instance_cls is TemplateSubAccount:
+            return TemplateSubAccountSerializer
+        return BudgetSubAccountSerializer
+
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context.update(parent=self.account)
         return context
 
     def get_queryset(self):
-        content_type = ContentType.objects.get_for_model(Account)
-        return SubAccount.objects.filter(
+        content_type = ContentType.objects.get_for_model(type(self.account))
+        return self.child_instance_cls.objects.filter(
             object_id=self.account.pk,
             content_type=content_type,
         )
@@ -209,7 +230,7 @@ class AccountSubAccountViewSet(
             updated_by=self.request.user,
             created_by=self.request.user,
             object_id=self.account.pk,
-            content_type=ContentType.objects.get_for_model(Account),
+            content_type=ContentType.objects.get_for_model(type(self.account)),
             parent=self.account,
             budget=self.account.budget
         )

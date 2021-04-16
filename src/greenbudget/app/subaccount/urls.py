@@ -12,7 +12,6 @@ from .views import (
     SubAccountViewSet,
     AccountSubAccountViewSet,
     SubAccountRecursiveViewSet,
-    SubAccountSubAccountGroupViewSet,
     SubAccountGroupViewSet
 )
 
@@ -35,17 +34,12 @@ subaccount_subaccounts_urlpatterns = subaccount_subaccounts_router.urls + [
 
 subaccount_groups_router = routers.SimpleRouter()
 subaccount_groups_router.register(
-    r'', SubAccountSubAccountGroupViewSet,
-    basename='subaccount-subaccount-group'
+    r'', SubAccountGroupViewSet,
+    basename='subaccount-group'
 )
 
 router = routers.SimpleRouter()
 router.register(r'', SubAccountViewSet, basename='subaccount')
-router.register(
-    r'groups',
-    SubAccountGroupViewSet,
-    basename='subaccount-group'
-)
 
 urlpatterns = router.urls + [
     path('<int:subaccount_pk>/', include([
