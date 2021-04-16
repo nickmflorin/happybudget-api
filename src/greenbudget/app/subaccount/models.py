@@ -59,6 +59,11 @@ class SubAccount(BudgetItem):
         (3, "months", "Months"),
         (4, "days", "Days"),
         (5, "nights", "Nights"),
+        (6, "allow", "Allow"),
+        (7, "flat", "Flat"),
+        (8, "feet", "Feet"),
+        (9, "fare", "Fare"),
+        (10, "units", "Units"),
     )
     unit = models.IntegerField(choices=UNITS, null=True)
     content_type = models.ForeignKey(
