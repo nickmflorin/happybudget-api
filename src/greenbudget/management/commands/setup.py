@@ -67,7 +67,6 @@ class Command(CustomCommand):
     def create_superuser(self, **options):
         management.call_command("createsuperuser")
 
-    @debug_only
     @management.base.no_translations
     def handle(self, *args, **options):
         database_reset = self.reset_db(**options)
