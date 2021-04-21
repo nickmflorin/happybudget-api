@@ -89,7 +89,7 @@ def test_update_template(api_client, user, create_template):
     assert template.name == "New Name"
     assert response.json() == {
         "id": template.pk,
-        "name": "Test Name",
+        "name": "New Name",
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
         'trash': False,

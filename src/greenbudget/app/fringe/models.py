@@ -2,6 +2,8 @@ from model_utils import Choices
 
 from django.db import models
 
+from .managers import FringeManager
+
 
 class Fringe(models.Model):
     name = models.CharField(max_length=128)
@@ -32,6 +34,8 @@ class Fringe(models.Model):
         on_delete=models.SET_NULL,
         null=True
     )
+    MAP_FIELDS_FROM_TEMPLATE = ('name', 'description', 'cutoff', 'rate', 'unit')
+    objects = FringeManager()
 
     class Meta:
         get_latest_by = "updated_at"

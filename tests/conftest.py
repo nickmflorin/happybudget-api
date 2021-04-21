@@ -68,5 +68,22 @@ def user(db):
 
 
 @pytest.fixture
+def admin_user(db):
+    user = User.objects.create(
+        email="admin+user@gmail.com",
+        username="admin+user@gmail.com",
+        first_name="Admin",
+        last_name="User",
+        is_active=True,
+        is_admin=True,
+        is_staff=False,
+        is_superuser=False,
+    )
+    user.set_password("test-password")
+    user.save()
+    return user
+
+
+@pytest.fixture
 def login_user(api_client, user):
     api_client.force_login(user)

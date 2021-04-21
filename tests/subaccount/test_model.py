@@ -23,6 +23,18 @@ def test_budget_group_parent_constraint(create_budget_subaccount,
         )
 
 
+def test_fringes_constraint(create_budget_subaccount, create_budget_account,
+        create_budget, create_fringe):
+    budget = create_budget()
+    another_budget = create_budget()
+    account = create_budget_account(budget=budget)
+    subaccount = create_budget_subaccount(budget=budget, parent=account)
+    fringe = create_fringe(budget=another_budget)
+    subaccount.fringes.add(fringe)
+    with pytest.raises(IntegrityError):
+        subaccount.save()
+
+
 def test_template_group_parent_constraint(create_budget_subaccount,
         create_budget_account, create_budget, create_budget_subaccount_group):
     budget = create_budget()

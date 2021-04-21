@@ -7,7 +7,7 @@ from django.utils import timezone
 
 from greenbudget.app.comment.models import Comment
 
-from .managers import BudgetManager
+from .managers import BudgetManager, BaseBudgetManager
 from .utils import render_budget_as_pdf
 
 
@@ -21,7 +21,7 @@ class BaseBudget(PolymorphicModel):
         on_delete=models.CASCADE,
     )
     trash = models.BooleanField(default=False)
-    objects = BudgetManager()
+    objects = BaseBudgetManager()
 
     class Meta:
         get_latest_by = "updated_at"
@@ -79,6 +79,7 @@ class Budget(BaseBudget):
     location_days = models.IntegerField(default=0)
 
     comments = GenericRelation(Comment)
+    objects = BudgetManager()
     MAP_FIELDS_FROM_TEMPLATE = ()
 
     class Meta(BaseBudget.Meta):

@@ -17,7 +17,7 @@ from greenbudget.app.group.models import (
 from greenbudget.app.history.models import Event
 from greenbudget.app.history.hooks import on_create, on_field_change
 
-from .managers import SubAccountManager
+from .managers import SubAccountManager, BudgetSubAccountManager
 
 # Right now, we still need to iron out a discrepancy in the UI: whether or not
 # the actuals for parent line items should be determined from the sum of the
@@ -182,6 +182,7 @@ class BudgetSubAccount(SubAccount):
     comments = GenericRelation(Comment)
     events = GenericRelation(Event)
     groups = GenericRelation(BudgetSubAccountGroup)
+    objects = BudgetSubAccountManager()
 
     MAP_FIELDS_FROM_TEMPLATE = (
         'identifier', 'description', 'name', 'rate', 'quantity', 'multiplier',

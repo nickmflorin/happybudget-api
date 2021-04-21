@@ -169,19 +169,60 @@ def test_create_budget(api_client, user):
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_create_budget_from_template(api_client, user, create_template,
-        create_template_account, create_template_subaccount):
-    template = create_template()
+        create_template_account, create_template_subaccount, admin_user,
+        create_fringe):
+    template = create_template(created_by=admin_user)
+    fringes = [
+        create_fringe(
+            budget=template,
+            created_by=admin_user,
+            updated_by=admin_user
+        ),
+        create_fringe(
+            budget=template,
+            created_by=admin_user,
+            updated_by=admin_user
+        ),
+    ]
     accounts = [
-        create_template_account(budget=template),
-        create_template_account(budget=template)
+        create_template_account(
+            budget=template,
+            created_by=admin_user,
+            updated_by=admin_user
+        ),
+        create_template_account(
+            budget=template,
+            created_by=admin_user,
+            updated_by=admin_user
+        )
     ]
     subaccounts = [
-        create_template_subaccount(parent=accounts[0], budget=template),
-        create_template_subaccount(parent=accounts[1], budget=template)
+        create_template_subaccount(
+            parent=accounts[0],
+            budget=template,
+            created_by=admin_user,
+            updated_by=admin_user
+        ),
+        create_template_subaccount(
+            parent=accounts[1],
+            budget=template,
+            created_by=admin_user,
+            updated_by=admin_user
+        )
     ]
     child_subaccounts = [
-        create_template_subaccount(parent=subaccounts[0], budget=template),
-        create_template_subaccount(parent=subaccounts[1], budget=template)
+        create_template_subaccount(
+            parent=subaccounts[0],
+            budget=template,
+            created_by=admin_user,
+            updated_by=admin_user
+        ),
+        create_template_subaccount(
+            parent=subaccounts[1],
+            budget=template,
+            created_by=admin_user,
+            updated_by=admin_user
+        )
     ]
     api_client.force_login(user)
     response = api_client.post("/v1/budgets/", data={
@@ -200,13 +241,38 @@ def test_create_budget_from_template(api_client, user, create_template,
     assert budget is not None
     assert budget.name == "Test Name"
     assert budget.accounts.count() == 2
+    assert budget.created_by == user
+
+    assert budget.fringes.count() == 2
+
+    first_fringe = budget.fringes.first()
+    assert first_fringe.created_by == user
+    assert first_fringe.updated_by == user
+    assert first_fringe.name == fringes[0].name
+    assert first_fringe.description == fringes[0].description
+    assert first_fringe.cutoff == fringes[0].cutoff
+    assert first_fringe.rate == fringes[0].rate
+    assert first_fringe.unit == fringes[0].unit
+
+    second_fringe = budget.fringes.all()[1]
+    assert second_fringe.created_by == user
+    assert second_fringe.updated_by == user
+    assert second_fringe.name == fringes[1].name
+    assert second_fringe.description == fringes[1].description
+    assert second_fringe.cutoff == fringes[1].cutoff
+    assert second_fringe.rate == fringes[1].rate
+    assert second_fringe.unit == fringes[1].unit
 
     first_account = budget.accounts.first()
     assert first_account.identifier == accounts[0].identifier
     assert first_account.description == accounts[0].description
+    assert first_account.created_by == user
+    assert first_account.updated_by == user
 
     assert first_account.subaccounts.count() == 1
     first_account_subaccount = first_account.subaccounts.first()
+    assert first_account_subaccount.created_by == user
+    assert first_account_subaccount.updated_by == user
     assert first_account_subaccount.identifier == subaccounts[0].identifier
     assert first_account_subaccount.description == subaccounts[0].description
     assert first_account_subaccount.name == subaccounts[0].name
@@ -218,6 +284,8 @@ def test_create_budget_from_template(api_client, user, create_template,
 
     assert first_account_subaccount.subaccounts.count() == 1
     first_account_subaccount_subaccount = first_account_subaccount.subaccounts.first()  # noqa
+    assert first_account_subaccount_subaccount.created_by == user
+    assert first_account_subaccount_subaccount.updated_by == user
     assert first_account_subaccount_subaccount.identifier == child_subaccounts[0].identifier  # noqa
     assert first_account_subaccount_subaccount.description == child_subaccounts[0].description  # noqa
     assert first_account_subaccount_subaccount.name == child_subaccounts[0].name  # noqa
@@ -230,9 +298,13 @@ def test_create_budget_from_template(api_client, user, create_template,
     second_account = budget.accounts.all()[1]
     assert second_account.identifier == accounts[1].identifier
     assert second_account.description == accounts[1].description
+    assert second_account.created_by == user
+    assert second_account.updated_by == user
 
     assert second_account.subaccounts.count() == 1
     second_account_subaccount = second_account.subaccounts.first()
+    assert second_account_subaccount.created_by == user
+    assert second_account_subaccount.updated_by == user
     assert second_account_subaccount.identifier == subaccounts[1].identifier
     assert second_account_subaccount.description == subaccounts[1].description
     assert second_account_subaccount.name == subaccounts[1].name
@@ -244,6 +316,8 @@ def test_create_budget_from_template(api_client, user, create_template,
 
     assert second_account_subaccount.subaccounts.count() == 1
     second_account_subaccount_subaccount = second_account_subaccount.subaccounts.first()  # noqa
+    assert second_account_subaccount_subaccount.created_by == user
+    assert second_account_subaccount_subaccount.updated_by == user
     assert second_account_subaccount_subaccount.identifier == child_subaccounts[1].identifier  # noqa
     assert second_account_subaccount_subaccount.description == child_subaccounts[1].description  # noqa
     assert second_account_subaccount_subaccount.name == child_subaccounts[1].name  # noqa
