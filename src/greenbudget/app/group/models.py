@@ -5,6 +5,8 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
+from .managers import BudgetAccountGroupManager, BudgetSubAccountGroupManager
+
 
 class Group(PolymorphicModel):
     created_at = models.DateTimeField(auto_now_add=True)
@@ -68,6 +70,8 @@ class BudgetAccountGroup(Group):
         on_delete=models.CASCADE,
         related_name='groups'
     )
+    objects = BudgetAccountGroupManager()
+    MAP_FIELDS_FROM_TEMPLATE = ("name", "color")
 
     class Meta(Group.Meta):
         verbose_name = "Budget Account Group"
@@ -116,6 +120,8 @@ class BudgetSubAccountGroup(Group):
     )
     object_id = models.PositiveIntegerField(db_index=True)
     parent = GenericForeignKey('content_type', 'object_id')
+    objects = BudgetSubAccountGroupManager()
+    MAP_FIELDS_FROM_TEMPLATE = ("name", "color")
 
     class Meta(Group.Meta):
         verbose_name = "Budget Sub Account Group"

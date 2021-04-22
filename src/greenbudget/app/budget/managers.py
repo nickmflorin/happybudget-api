@@ -41,6 +41,12 @@ def ModelTemplateManager(*bases):
                     kwargs[field] = getattr(template, field)
 
             return super().create(*args, **kwargs)
+
+        def create(self, *args, **kwargs):
+            if 'template' in kwargs:
+                return self.create_from_template(*args, **kwargs)
+            return super().create(*args, **kwargs)
+
     return FromTemplateManagerMixin
 
 
@@ -72,14 +78,15 @@ class BudgetManager(ModelTemplateManager(BaseBudgetManager)):
     def create_from_template(self, *args, **kwargs):
         from greenbudget.app.account.models import BudgetAccount
         from greenbudget.app.fringe.models import Fringe
+        from greenbudget.app.group.models import BudgetAccountGroup
 
         instance = super().create_from_template(*args, **kwargs)
 
         # When creating a Budget from a Template, not only do we need to
         # create parallels for the Fringes that are associated with the Template
-        # such that they are associated wtih the Budget, but we need to make
+        # such that they are associated with the Budget, but we need to make
         # sure those Fringes are also correctly associated with the new
-        # SubAccounts of this Budget.  In orer to do this, we need to provide
+        # SubAccounts of this Budget.  In order to do this, we need to provide
         # a mapping of Fringe IDs to the manager responsible for creating the
         # SubAccounts.
         fringe_map = {}
@@ -91,17 +98,31 @@ class BudgetManager(ModelTemplateManager(BaseBudgetManager)):
                 budget=instance
             )
             fringe_map[template_fringe.id] = fringe.id
+
+        # When creating a Budget from a Template, not only do we need to
+        # create parallels for the Groups that are associated with the Template
+        # such that they are associated with the Budget, but we need to make
+        # sure those Groups are also correctly associated with the new
+        # Accounts of this Budget.  In order to do this, we need to provide a
+        # mapping of Group IDs to the manager responsible for creating the
+        # Accounts.
+        group_map = {}
+        for template_account_group in kwargs['template'].groups.all():
+            group = BudgetAccountGroup.objects.create(
+                created_by=instance.created_by,
+                updated_by=instance.created_by,
+                parent=instance,
+                template=template_account_group
+            )
+            group_map[template_account_group.pk] = group.pk
+
         for template_account in kwargs['template'].accounts.all():
             BudgetAccount.objects.create(
                 created_by=instance.created_by,
                 updated_by=instance.created_by,
                 template=template_account,
                 budget=instance,
-                fringe_map=fringe_map
+                fringe_map=fringe_map,
+                group_map=group_map
             )
         return instance
-
-    def create(self, *args, **kwargs):
-        if 'template' in kwargs:
-            return self.create_from_template(*args, **kwargs)
-        return super().create(*args, **kwargs)

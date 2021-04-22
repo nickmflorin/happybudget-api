@@ -109,6 +109,7 @@ class track_model:
             """
             Returns a boolean to indicate whether or not the provided field
             has changed since the last time the model was saved.
+
             Parameters:
             ----------
             field: :obj:`str`
@@ -120,6 +121,20 @@ class track_model:
                 raise ValueError("The instance has not yet been saved.")
             if instance.__data[field] != getattr(instance, field):
                 return True
+            return False
+
+        def field_removed(instance, field):
+            """
+            Returns a boolean to indicate whether or not the provided field
+            has been set to None since the last time the model was saved.
+
+            Parameters:
+            ----------
+            field: :obj:`str`
+                The name of the field on the model.
+            """
+            if instance.field_changed(field):
+                return getattr(instance, field) is None
             return False
 
         def previous_value(instance, field):
@@ -226,6 +241,7 @@ class track_model:
                                     'new_value': getattr(instance, k),
                                     'user': self.get_user(instance),
                                 })
+                    if instance.field_removed(k):
                         # Call either the specifically provided hook for the
                         # field or the general hook for the case when the field
                         # has been removed.
@@ -261,6 +277,7 @@ class track_model:
         # Expose helper methods on the model class.
         cls.changed_fields = changed_fields
         cls.field_changed = field_changed
+        cls.field_removed = field_removed
         cls.previous_value = previous_value
 
         # Replace the model save method with the overridden one, but keep track
