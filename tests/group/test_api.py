@@ -428,7 +428,6 @@ def test_update_template_subaccount_group_duplicate_name(api_client, user,
     }
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_budget_account_group_account_already_in_group(api_client, user,
         create_budget_account, create_budget, create_budget_account_group):
     budget = create_budget()
@@ -443,11 +442,10 @@ def test_budget_account_group_account_already_in_group(api_client, user,
     assert response.status_code == 200
     account.refresh_from_db()
     assert account.group == another_group
-    group.refresh_from_db()
-    assert group.children.count() == 0
+    # The group should be deleted since it has become empty.
+    assert Group.objects.count() == 1
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_template_account_group_account_already_in_group(api_client, user,
         create_template_account, create_template,
         create_template_account_group):
@@ -463,8 +461,50 @@ def test_template_account_group_account_already_in_group(api_client, user,
     assert response.status_code == 200
     account.refresh_from_db()
     assert account.group == another_group
-    group.refresh_from_db()
-    assert group.children.count() == 0
+    # The group should be deleted since it has become empty.
+    assert Group.objects.count() == 1
+
+
+def test_budget_subaccount_group_account_already_in_group(api_client, user,
+        create_budget_account, create_budget, create_budget_subaccount_group,
+        create_budget_subaccount):
+    budget = create_budget()
+    account = create_budget_account(budget=budget)
+    group = create_budget_subaccount_group(parent=account)
+    subaccount = create_budget_subaccount(
+        budget=budget, parent=account, group=group)
+    another_group = create_budget_subaccount_group(parent=account)
+
+    api_client.force_login(user)
+    response = api_client.patch("/v1/groups/%s/" % another_group.pk, data={
+        'children': [subaccount.pk]
+    })
+    assert response.status_code == 200
+    subaccount.refresh_from_db()
+    assert subaccount.group == another_group
+    # The group should be deleted since it has become empty.
+    assert Group.objects.count() == 1
+
+
+def test_template_subaccount_group_account_already_in_group(api_client, user,
+        create_template_account, create_template, create_template_subaccount,
+        create_template_subaccount_group):
+    template = create_template()
+    account = create_template_account(budget=template)
+    group = create_template_subaccount_group(parent=account)
+    subaccount = create_template_subaccount(
+        budget=template, parent=account, group=group)
+    another_group = create_template_subaccount_group(parent=account)
+
+    api_client.force_login(user)
+    response = api_client.patch("/v1/groups/%s/" % another_group.pk, data={
+        'children': [subaccount.pk]
+    })
+    assert response.status_code == 200
+    subaccount.refresh_from_db()
+    assert subaccount.group == another_group
+    # The group should be deleted since it has become empty.
+    assert Group.objects.count() == 1
 
 
 def test_delete_budget_account_group(api_client, user, create_budget,

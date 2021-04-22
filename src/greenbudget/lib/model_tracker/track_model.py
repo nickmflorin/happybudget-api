@@ -277,7 +277,11 @@ class track_model:
     @property
     def provided_fields(self):
         return list(set(
-            self._track_removal_of_fields + self._track_changes_to_fields))
+            self._track_removal_of_fields
+            + self._track_changes_to_fields
+            + list(self._on_field_change_hooks.keys())
+            + list(self._on_field_removal_hooks.keys())
+        ))
 
     def validate_field(self, klass, field):
         try:

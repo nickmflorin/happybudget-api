@@ -177,9 +177,13 @@ def exception_handler(exc, context):
     # { "detail": "Not found." }.  We want to include a code for the frontend.
     if isinstance(exc, Http404):
         message = str(exc) or 'The requested resource could not be found.'
-        data = [{'message': message, 'error_type': 'http', 'code': 'not_found'}]
-        logger.warning("There was a user error", extra=data)
-        return Response(data, status=404)
+        logger.warning("There was a user error", extra={
+            'error_type': 'http',
+            'code': 'not_found'
+        })
+        return Response({'errors': [
+            {'message': message, 'error_type': 'http', 'code': 'not_found'}
+        ]}, status=404)
 
     # If the exception is not an instance of exceptions.APIException, allow
     # the original django-rest-framework exception handler to handle the

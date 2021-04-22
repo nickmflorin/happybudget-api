@@ -42,6 +42,14 @@ class Group(PolymorphicModel):
         verbose_name = "Group"
         verbose_name_plural = "Groups"
 
+    def __str__(self):
+        return "<{cls} id={id} name={name}, parent={parent}>".format(
+            cls=self.__class__.__name__,
+            id=self.pk,
+            name=self.name,
+            parent=self.parent.pk
+        )
+
     @property
     def estimated(self):
         estimated = []
