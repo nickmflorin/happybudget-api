@@ -4,6 +4,29 @@ from greenbudget.app.group.models import TemplateAccountGroup
 
 
 @pytest.mark.freeze_time('2020-01-01')
+def test_get_template_account_groups(api_client, user, create_template,
+        create_template_account, create_template_account_group):
+    template = create_template()
+    group = create_template_account_group(parent=template)
+    account = create_template_account(budget=template, group=group)
+    api_client.force_login(user)
+    response = api_client.get("/v1/templates/%s/groups/" % template.pk)
+    assert response.status_code == 200
+    assert response.json()['count'] == 1
+    assert response.json()['data'] == [{
+        "id": group.pk,
+        "name": group.name,
+        "created_at": "2020-01-01 00:00:00",
+        "updated_at": "2020-01-01 00:00:00",
+        "color": group.color,
+        "updated_by": user.pk,
+        "estimated": None,
+        "created_by": user.pk,
+        "children": [account.pk]
+    }]
+
+
+@pytest.mark.freeze_time('2020-01-01')
 def test_create_template_account_group(api_client, user, create_template,
         create_template_account):
     template = create_template()

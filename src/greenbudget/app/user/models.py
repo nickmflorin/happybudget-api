@@ -10,7 +10,7 @@ from .utils import get_user_from_social_token
 def upload_to(instance, filename):
     ext = filename.split('.')[-1]
     filename = f"profile_image_{instance.email.lower().replace(' ','')}.{ext}"
-    return f'users/{instance.email.lower()}/{filename}'
+    return f'users/{instance.email.lower()}/profile/{filename}'
 
 
 class User(AbstractUser):

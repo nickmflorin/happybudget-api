@@ -36,7 +36,8 @@ def test_get_budgets(api_client, user, create_budget):
             "actual": None,
             'trash': False,
             "created_by": user.pk,
-            "type": "budget"
+            "type": "budget",
+            "image": None,
         },
         {
             "id": budgets[1].pk,
@@ -59,7 +60,8 @@ def test_get_budgets(api_client, user, create_budget):
             "actual": None,
             'trash': False,
             "created_by": user.pk,
-            "type": "budget"
+            "type": "budget",
+            "image": None,
         }
     ]
 
@@ -91,7 +93,8 @@ def test_get_budget(api_client, user, create_budget):
         "variance": None,
         "actual": None,
         "created_by": user.pk,
-        "type": "budget"
+        "type": "budget",
+        "image": None,
     }
 
 
@@ -126,7 +129,8 @@ def test_update_budget(api_client, user, create_budget):
         "variance": None,
         "actual": None,
         "created_by": user.pk,
-        "type": "budget"
+        "type": "budget",
+        "image": None,
     }
 
 
@@ -163,7 +167,8 @@ def test_create_budget(api_client, user):
         "variance": None,
         "actual": None,
         "created_by": user.pk,
-        "type": "budget"
+        "type": "budget",
+        "image": None,
     }
 
 
@@ -396,7 +401,8 @@ def test_get_budgets_in_trash(api_client, user, create_budget, db):
             "variance": None,
             "actual": None,
             "created_by": user.pk,
-            "type": "budget"
+            "type": "budget",
+            "image": None,
         },
         {
             "id": budgets[1].pk,
@@ -419,7 +425,8 @@ def test_get_budgets_in_trash(api_client, user, create_budget, db):
             "variance": None,
             "actual": None,
             "created_by": user.pk,
-            "type": "budget"
+            "type": "budget",
+            "image": None,
         }
     ]
 
@@ -451,7 +458,8 @@ def test_get_budget_in_trash(api_client, user, create_budget):
         "variance": None,
         "actual": None,
         "created_by": user.pk,
-        "type": "budget"
+        "type": "budget",
+        "image": None,
     }
 
 

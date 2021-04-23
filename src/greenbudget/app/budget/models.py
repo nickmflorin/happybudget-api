@@ -11,6 +11,12 @@ from .managers import BudgetManager, BaseBudgetManager
 from .utils import render_budget_as_pdf
 
 
+def upload_to(instance, filename):
+    ext = filename.split('.')[-1]
+    filename = f"{instance.type}_image_{instance.pk}.{ext}"
+    return f'users/{instance.created_by.email.lower()}/{instance.type}s/{filename}'  # noqa
+
+
 class BaseBudget(PolymorphicModel):
     name = models.CharField(max_length=256)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -21,6 +27,7 @@ class BaseBudget(PolymorphicModel):
         on_delete=models.CASCADE
     )
     trash = models.BooleanField(default=False)
+    image = models.ImageField(upload_to=upload_to, null=True)
     objects = BaseBudgetManager()
 
     class Meta:

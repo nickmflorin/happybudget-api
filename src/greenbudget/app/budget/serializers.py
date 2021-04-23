@@ -43,11 +43,16 @@ class BaseBudgetSerializer(BaseBudgetSimpleSerializer):
     updated_at = serializers.DateTimeField(read_only=True)
     trash = serializers.BooleanField(read_only=True)
     estimated = serializers.FloatField(read_only=True)
+    image = serializers.ImageField(
+        required=False,
+        allow_empty_file=False
+    )
 
     class Meta(BaseBudgetSimpleSerializer.Meta):
         model = BaseBudget
         fields = BaseBudgetSimpleSerializer.Meta.fields + (
-            'created_by', 'created_at', 'updated_at', 'trash', 'estimated')
+            'created_by', 'created_at', 'updated_at', 'trash', 'estimated',
+            'image')
 
     def validate_name(self, value):
         user = self.context['user']
