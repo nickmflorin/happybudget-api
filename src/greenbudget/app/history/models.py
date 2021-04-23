@@ -18,8 +18,7 @@ class Event(PolymorphicModel):
     user = models.ForeignKey(
         to='user.User',
         related_name='events',
-        on_delete=models.CASCADE,
-        db_index=True
+        on_delete=models.CASCADE
     )
     content_type = models.ForeignKey(
         to=ContentType,

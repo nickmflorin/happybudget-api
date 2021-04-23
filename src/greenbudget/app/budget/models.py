@@ -18,7 +18,7 @@ class BaseBudget(PolymorphicModel):
     created_by = models.ForeignKey(
         to='user.User',
         related_name='budgets',
-        on_delete=models.CASCADE,
+        on_delete=models.CASCADE
     )
     trash = models.BooleanField(default=False)
     objects = BaseBudgetManager()

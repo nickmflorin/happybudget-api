@@ -117,7 +117,6 @@ def test_create_template_subaccount_subaccount_group(api_client, user,
         parent=subaccount,
         budget=template
     )
-
     api_client.force_login(user)
     response = api_client.post(
         "/v1/subaccounts/%s/groups/" % subaccount.pk, data={
