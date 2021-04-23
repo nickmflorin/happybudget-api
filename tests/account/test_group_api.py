@@ -5,6 +5,66 @@ from greenbudget.app.group.models import (
 
 
 @pytest.mark.freeze_time('2020-01-01')
+def test_get_budget_account_subaccount_groups(api_client, user,
+        create_budget_subaccount, create_budget_account, create_budget,
+        create_budget_subaccount_group):
+    budget = create_budget()
+    account = create_budget_account(budget=budget)
+    group = create_budget_subaccount_group(parent=account)
+    subaccount = create_budget_subaccount(
+        parent=account,
+        budget=budget,
+        group=group
+    )
+    api_client.force_login(user)
+    response = api_client.get("/v1/accounts/%s/groups/" % account.pk)
+    assert response.status_code == 200
+    assert response.json()['count'] == 1
+    assert response.json()['data'] == [{
+        "id": group.pk,
+        "name": group.name,
+        "created_at": "2020-01-01 00:00:00",
+        "updated_at": "2020-01-01 00:00:00",
+        "color": group.color,
+        "updated_by": user.pk,
+        "actual": None,
+        "variance": None,
+        "estimated": None,
+        "created_by": user.pk,
+        "children": [subaccount.pk]
+    }]
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_get_template_account_subaccount_groups(api_client, user,
+        create_template_subaccount, create_template_account, create_template,
+        create_template_subaccount_group):
+    template = create_template()
+    account = create_template_account(budget=template)
+    group = create_template_subaccount_group(parent=account)
+    subaccount = create_template_subaccount(
+        parent=account,
+        budget=template,
+        group=group
+    )
+    api_client.force_login(user)
+    response = api_client.get("/v1/accounts/%s/groups/" % account.pk)
+    assert response.status_code == 200
+    assert response.json()['count'] == 1
+    assert response.json()['data'] == [{
+        "id": group.pk,
+        "name": group.name,
+        "created_at": "2020-01-01 00:00:00",
+        "updated_at": "2020-01-01 00:00:00",
+        "color": group.color,
+        "updated_by": user.pk,
+        "estimated": None,
+        "created_by": user.pk,
+        "children": [subaccount.pk]
+    }]
+
+
+@pytest.mark.freeze_time('2020-01-01')
 def test_create_budget_account_subaccount_group(api_client, user,
         create_budget_subaccount, create_budget_account, create_budget):
     budget = create_budget()

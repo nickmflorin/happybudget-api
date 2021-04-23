@@ -4,6 +4,10 @@ from rest_framework import viewsets, mixins, decorators, response, status
 
 from greenbudget.app.account.models import BudgetAccount
 from greenbudget.app.account.mixins import AccountNestedMixin
+from greenbudget.app.group.models import (
+    BudgetSubAccountGroup,
+    TemplateSubAccountGroup
+)
 from greenbudget.app.group.serializers import (
     BudgetSubAccountGroupSerializer,
     TemplateSubAccountGroupSerializer
@@ -36,12 +40,16 @@ class SubAccountGroupViewSet(
 
     @cached_property
     def instance_cls(self):
-        return type(self.subaccount)
+        mapping = {
+            BudgetSubAccount: BudgetSubAccountGroup,
+            TemplateSubAccount: TemplateSubAccountGroup
+        }
+        return mapping[type(self.subaccount)]
 
     def get_serializer_class(self):
         mapping = {
-            BudgetSubAccount: BudgetSubAccountGroupSerializer,
-            TemplateSubAccount: TemplateSubAccountGroupSerializer
+            BudgetSubAccountGroup: BudgetSubAccountGroupSerializer,
+            TemplateSubAccountGroup: TemplateSubAccountGroupSerializer
         }
         return mapping[self.instance_cls]
 
