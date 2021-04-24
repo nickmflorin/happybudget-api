@@ -104,15 +104,6 @@ def test_update_template(api_client, user, create_template):
     }
 
 
-def test_create_template_non_unique_name(api_client, user, create_template):
-    existing = create_template()
-    api_client.force_login(user)
-    response = api_client.post("/v1/templates/", data={
-        "name": existing.name,
-    })
-    assert response.status_code == 400
-
-
 @pytest.mark.freeze_time('2020-01-01')
 def test_get_templates_in_trash(api_client, user, create_template):
     api_client.force_login(user)

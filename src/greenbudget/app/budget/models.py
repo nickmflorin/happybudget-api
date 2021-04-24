@@ -35,9 +35,6 @@ class BaseBudget(PolymorphicModel):
         ordering = ('-updated_at', )
         verbose_name = "Base Budget"
         verbose_name_plural = "Base Budgets"
-        unique_together = (
-            ('created_by', 'name', 'polymorphic_ctype_id', 'trash'),
-        )
 
     def __str__(self):
         return "<{cls} id={id}, name={name}>".format(

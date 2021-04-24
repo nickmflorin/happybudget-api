@@ -54,15 +54,6 @@ class BaseBudgetSerializer(BaseBudgetSimpleSerializer):
             'created_by', 'created_at', 'updated_at', 'trash', 'estimated',
             'image')
 
-    def validate_name(self, value):
-        user = self.context['user']
-        validator = serializers.UniqueTogetherValidator(
-            queryset=self.Meta.model.objects.filter(created_by=user),
-            fields=('name', ),
-        )
-        validator({'name': value, 'user': user}, self)
-        return value
-
 
 class BudgetSerializer(BaseBudgetSerializer):
     project_number = serializers.IntegerField(read_only=True)

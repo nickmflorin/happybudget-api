@@ -358,17 +358,6 @@ def test_create_budget_from_template(api_client, user, create_template,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_budget_non_unique_name(api_client, user, create_budget, db):
-    existing = create_budget()
-    api_client.force_login(user)
-    response = api_client.post("/v1/budgets/", data={
-        "name": existing.name,
-        "production_type": 1,
-    })
-    assert response.status_code == 400
-
-
-@pytest.mark.freeze_time('2020-01-01')
 def test_get_budgets_in_trash(api_client, user, create_budget, db):
     api_client.force_login(user)
     budgets = [
