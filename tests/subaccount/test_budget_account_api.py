@@ -187,28 +187,3 @@ def test_create_budget_subaccount(api_client, user, create_budget_account,
             }
         ]
     }
-
-
-def test_create_budget_subaccount_duplicate_identifier(api_client, user,
-        create_budget_account, create_budget, create_budget_subaccount):
-    budget = create_budget()
-    account = create_budget_account(budget=budget)
-    create_budget_subaccount(
-        parent=account,
-        identifier="identifier Number",
-        budget=budget
-    )
-    api_client.force_login(user)
-    response = api_client.post(
-        "/v1/accounts/%s/subaccounts/" % account.pk,
-        data={'name': 'New Subaccount', 'identifier': 'identifier Number'}
-    )
-    assert response.status_code == 400
-    assert response.json() == {
-        'errors': [{
-            'field': 'identifier',
-            'message': 'The fields identifier must make a unique set.',
-            'code': 'unique',
-            'error_type': 'field'
-        }]
-    }

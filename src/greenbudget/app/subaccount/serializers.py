@@ -84,24 +84,6 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
             'object_id', 'parent_type', 'ancestors', 'estimated', 'subaccounts',
             'budget', 'siblings', 'fringes')
 
-    def validate_identifier(self, value):
-        # In the case that the serializer is nested and being used in a write
-        # context, we do not have access to the context.  Validation will
-        # have to be done by the serializer using this serializer in its nested
-        # form.
-        if self._nested is not True:
-            parent = self.context.get('parent')
-            if parent is None:
-                parent = self.instance.parent
-            # TODO: Eventually, we want to make this unique across all
-            # subaccounts in the budget/template.  But for now, this will do.
-            validator = serializers.UniqueTogetherValidator(
-                queryset=parent.subaccounts.all(),
-                fields=('identifier', ),
-            )
-            validator({'identifier': value}, self)
-        return value
-
     def validate(self, attrs):
         if self.instance is not None and self.instance.subaccounts.count() != 0:
             if any([field in attrs for field in self.instance.DERIVING_FIELDS]):

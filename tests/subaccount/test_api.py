@@ -73,7 +73,7 @@ def test_get_template_subaccount(api_client, user, create_template_subaccount,
     assert response.json() == {
         "id": subaccount.pk,
         "name": subaccount.name,
-        "identifier": "%s" % subaccount.identifier,
+        "identifier": subaccount.identifier,
         "description": subaccount.description,
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
@@ -252,66 +252,6 @@ def test_update_template_subaccount(api_client, user, create_template_account,
     assert subaccount.rate == 1.5
 
 
-def test_update_budget_subaccount_duplicate_identifier(api_client, user,
-        create_budget_account, create_budget, create_budget_subaccount):
-    budget = create_budget()
-    account = create_budget_account(budget=budget)
-    create_budget_subaccount(
-        parent=account,
-        identifier="Identifier",
-        budget=budget
-    )
-    sub_account = create_budget_subaccount(
-        parent=account,
-        identifier="Identifier 2",
-        budget=budget
-    )
-    api_client.force_login(user)
-    response = api_client.patch(
-        "/v1/subaccounts/%s/" % sub_account.pk,
-        data={'identifier': 'Identifier'}
-    )
-    assert response.status_code == 400
-    assert response.json() == {
-        'errors': [{
-            'field': 'identifier',
-            'message': 'The fields identifier must make a unique set.',
-            'code': 'unique',
-            'error_type': 'field'
-        }]
-    }
-
-
-def test_update_template_subaccount_duplicate_identifier(api_client, user,
-        create_template_account, create_template, create_template_subaccount):
-    template = create_template()
-    account = create_template_account(budget=template)
-    create_template_subaccount(
-        parent=account,
-        identifier="Identifier",
-        budget=template
-    )
-    sub_account = create_template_subaccount(
-        parent=account,
-        identifier="Identifier 2",
-        budget=template
-    )
-    api_client.force_login(user)
-    response = api_client.patch(
-        "/v1/subaccounts/%s/" % sub_account.pk,
-        data={'identifier': 'Identifier'}
-    )
-    assert response.status_code == 400
-    assert response.json() == {
-        'errors': [{
-            'field': 'identifier',
-            'message': 'The fields identifier must make a unique set.',
-            'code': 'unique',
-            'error_type': 'field'
-        }]
-    }
-
-
 @pytest.mark.freeze_time('2020-01-01')
 def test_get_budget_subaccount_subaccounts(api_client, user, create_budget,
         create_budget_subaccount, create_budget_account):
@@ -478,7 +418,7 @@ def test_get_template_subaccount_subaccounts(api_client, user, create_template,
         {
             "id": subaccounts[0].pk,
             "name": subaccounts[0].name,
-            "identifier": "%s" % subaccounts[0].identifier,
+            "identifier": subaccounts[0].identifier,
             "description": subaccounts[0].description,
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",

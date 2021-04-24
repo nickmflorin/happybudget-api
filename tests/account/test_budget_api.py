@@ -110,15 +110,3 @@ def test_create_budget_account(api_client, user, create_budget):
         }],
         "siblings": []
     }
-
-
-@pytest.mark.freeze_time('2020-01-01')
-def test_create_budget_account_duplicate_number(api_client, user, create_budget,
-        create_budget_account):
-    api_client.force_login(user)
-    budget = create_budget()
-    create_budget_account(budget=budget, identifier="new_account")
-    response = api_client.post("/v1/budgets/%s/accounts/" % budget.pk, data={
-        'identifier': 'new_account'
-    })
-    assert response.status_code == 400

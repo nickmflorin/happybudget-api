@@ -102,16 +102,3 @@ def test_create_template_account(api_client, user, create_template):
             "name": template.name
         }]
     }
-
-
-@pytest.mark.freeze_time('2020-01-01')
-def test_create_budget_account_duplicate_number(api_client, user,
-        create_template, create_template_account):
-    template = create_template()
-    create_template_account(budget=template, identifier="new_account")
-    api_client.force_login(user)
-    response = api_client.post(
-        "/v1/templates/%s/accounts/" % template.pk, data={
-            'identifier': 'new_account'
-        })
-    assert response.status_code == 400

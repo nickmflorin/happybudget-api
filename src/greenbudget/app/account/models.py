@@ -27,7 +27,7 @@ class Account(PolymorphicModel):
     type = "account"
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    identifier = models.CharField(max_length=128)
+    identifier = models.CharField(null=True, max_length=128)
     description = models.CharField(null=True, max_length=128)
     budget = models.ForeignKey(
         to='budget.BaseBudget',
@@ -42,7 +42,6 @@ class Account(PolymorphicModel):
         ordering = ('created_at', )
         verbose_name = "Account"
         verbose_name_plural = "Accounts"
-        unique_together = (('budget', 'identifier'), )
 
     def __str__(self):
         return "<{cls} id={id}, identifier={identifier}>".format(

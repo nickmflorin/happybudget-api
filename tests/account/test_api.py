@@ -150,40 +150,6 @@ def test_update_template_account(api_client, user, create_template,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_update_budget_account_duplicate_identifier(api_client, user,
-        create_budget, create_budget_account):
-    budget = create_budget()
-    create_budget_account(identifier="identifier", budget=budget)
-    account = create_budget_account(
-        budget=budget,
-        identifier="original_identifier"
-    )
-    api_client.force_login(user)
-    response = api_client.patch("/v1/accounts/%s/" % account.pk, data={
-        'identifier': 'identifier',
-        'description': 'Account description',
-    })
-    assert response.status_code == 400
-
-
-@pytest.mark.freeze_time('2020-01-01')
-def test_update_template_account_duplicate_identifier(api_client, user,
-        create_template, create_template_account):
-    template = create_template()
-    create_template_account(identifier="identifier", budget=template)
-    account = create_template_account(
-        budget=template,
-        identifier="original_identifier"
-    )
-    api_client.force_login(user)
-    response = api_client.patch("/v1/accounts/%s/" % account.pk, data={
-        'identifier': 'identifier',
-        'description': 'Account description',
-    })
-    assert response.status_code == 400
-
-
-@pytest.mark.freeze_time('2020-01-01')
 def test_bulk_update_budget_account_subaccounts(api_client, user, create_budget,
         create_budget_account, create_budget_subaccount):
     budget = create_budget()

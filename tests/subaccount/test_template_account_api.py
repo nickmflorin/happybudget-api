@@ -181,29 +181,3 @@ def test_create_template_subaccount(api_client, user, create_template_account,
             }
         ]
     }
-
-
-@pytest.mark.freeze_time('2020-01-01')
-def test_create_template_subaccount_duplicate_identifier(api_client, user,
-        create_template_account, create_template, create_template_subaccount):
-    template = create_template()
-    account = create_template_account(budget=template)
-    create_template_subaccount(
-        parent=account,
-        identifier="identifier Number",
-        budget=template
-    )
-    api_client.force_login(user)
-    response = api_client.post(
-        "/v1/accounts/%s/subaccounts/" % account.pk,
-        data={'name': 'New Subaccount', 'identifier': 'identifier Number'}
-    )
-    assert response.status_code == 400
-    assert response.json() == {
-        'errors': [{
-            'field': 'identifier',
-            'message': 'The fields identifier must make a unique set.',
-            'code': 'unique',
-            'error_type': 'field'
-        }]
-    }
