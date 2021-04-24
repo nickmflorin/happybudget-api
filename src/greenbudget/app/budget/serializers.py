@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
-from greenbudget.lib.rest_framework_utils.fields import ModelChoiceField
+from greenbudget.lib.rest_framework_utils.fields import (
+    ModelChoiceField, Base64ImageField)
 from greenbudget.lib.rest_framework_utils.serializers import (
     EnhancedModelSerializer)
 
@@ -43,10 +44,7 @@ class BaseBudgetSerializer(BaseBudgetSimpleSerializer):
     updated_at = serializers.DateTimeField(read_only=True)
     trash = serializers.BooleanField(read_only=True)
     estimated = serializers.FloatField(read_only=True)
-    image = serializers.ImageField(
-        required=False,
-        allow_empty_file=False
-    )
+    image = Base64ImageField(required=False)
 
     class Meta(BaseBudgetSimpleSerializer.Meta):
         model = BaseBudget
