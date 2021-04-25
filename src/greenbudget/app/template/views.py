@@ -1,4 +1,5 @@
-from rest_framework import viewsets, mixins, response, status, decorators
+from rest_framework import (
+    viewsets, mixins, response, status, decorators, permissions)
 
 from greenbudget.app.account.models import TemplateAccount
 from greenbudget.app.account.serializers import (
@@ -17,6 +18,7 @@ from greenbudget.app.group.serializers import TemplateAccountGroupSerializer
 
 from .models import Template
 from .mixins import TemplateNestedMixin
+from .permissions import CommunityTemplatePermission
 from .serializers import TemplateSerializer
 
 
@@ -89,6 +91,14 @@ class GenericTemplateViewSet(viewsets.GenericViewSet):
     ordering_fields = ['updated_at', 'name', 'created_at']
     search_fields = ['name']
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update(
+            request=self.request,
+            user=self.request.user,
+        )
+        return context
+
 
 class TemplateViewSet(
     mixins.CreateModelMixin,
@@ -112,25 +122,24 @@ class TemplateViewSet(
     (9) PATCH /templates/<pk>/bulk-update-fringes/
     (10) PATCH /templates/<pk>/bulk-create-fringes/
     """
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context.update(
-            request=self.request,
-            user=self.request.user,
-        )
-        return context
+    permission_classes = (
+        permissions.IsAuthenticated,
+        CommunityTemplatePermission
+    )
 
     def get_queryset(self):
-        return self.request.user.budgets.instance_of(Template).active()
+        qs = Template.objects.active()
+        if self.action in ('list', 'create'):
+            return qs.user(self.request.user)
+        return qs
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         instance.to_trash()
         return response.Response(status=204)
-
-    def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
 
     def perform_bulk_accounts_change(self, serializer_cls, request):
         instance = self.get_object()
@@ -196,6 +205,33 @@ class TemplateViewSet(
         )
 
 
+class TemplateCommunityViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    GenericTemplateViewSet
+):
+    """
+    ViewSet to handle requests to the following endpoints:
+
+    (1) GET /templates/community/
+    (2) POST /templates/community/
+    """
+
+    def get_permissions(self):
+        if self.action == 'create':
+            return (permissions.IsAuthenticated(), permissions.IsAdminUser())
+        return (permissions.IsAuthenticated(),)
+
+    def get_queryset(self):
+        return Template.objects.active().community()
+
+    def perform_create(self, serializer):
+        serializer.save(
+            created_by=self.request.user,
+            community=True
+        )
+
+
 class TemplateTrashViewSet(TrashModelMixin, GenericTemplateViewSet):
     """
     ViewSet to handle requests to the following endpoints:
@@ -207,4 +243,4 @@ class TemplateTrashViewSet(TrashModelMixin, GenericTemplateViewSet):
     """
 
     def get_queryset(self):
-        return self.request.user.budgets.instance_of(Template).inactive()
+        return Template.objects.inactive().user(self.request.user)

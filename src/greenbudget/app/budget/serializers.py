@@ -42,15 +42,13 @@ class BaseBudgetSerializer(BaseBudgetSimpleSerializer):
     created_by = serializers.PrimaryKeyRelatedField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
-    trash = serializers.BooleanField(read_only=True)
     estimated = serializers.FloatField(read_only=True)
     image = Base64ImageField(required=False)
 
     class Meta(BaseBudgetSimpleSerializer.Meta):
         model = BaseBudget
         fields = BaseBudgetSimpleSerializer.Meta.fields + (
-            'created_by', 'created_at', 'updated_at', 'trash', 'estimated',
-            'image')
+            'created_by', 'created_at', 'updated_at', 'estimated', 'image')
 
 
 class BudgetSerializer(BaseBudgetSerializer):
@@ -67,7 +65,6 @@ class BudgetSerializer(BaseBudgetSerializer):
     prelight_days = serializers.IntegerField(read_only=True)
     studio_shoot_days = serializers.IntegerField(read_only=True)
     location_days = serializers.IntegerField(read_only=True)
-    trash = serializers.BooleanField(read_only=True)
     estimated = serializers.FloatField(read_only=True)
     actual = serializers.FloatField(read_only=True)
     variance = serializers.FloatField(read_only=True)

@@ -7,12 +7,15 @@ from .views import (
     TemplateViewSet,
     TemplateTrashViewSet,
     TemplateFringeViewSet,
-    TemplateGroupViewSet
+    TemplateGroupViewSet,
+    TemplateCommunityViewSet
 )
 
 app_name = "template"
 
 router = routers.SimpleRouter()
+router.register(
+    r'community', TemplateCommunityViewSet, basename='template-community')
 router.register(r'trash', TemplateTrashViewSet, basename='template-trash')
 router.register(r'', TemplateViewSet, basename='template')
 

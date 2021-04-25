@@ -12,6 +12,14 @@ class TemplateQuerier(object):
         # pylint: disable=no-member
         return self.filter(trash=True)
 
+    def user(self, user):
+        # pylint: disable=no-member
+        return self.filter(community=False, created_by=user)
+
+    def community(self):
+        # pylint: disable=no-member
+        return self.filter(community=True)
+
 
 class TemplateQuery(TemplateQuerier, PolymorphicQuerySet):
     pass
