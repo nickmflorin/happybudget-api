@@ -270,6 +270,29 @@ def test_update_community_template(api_client, staff_user, create_template):
 
 
 @pytest.mark.freeze_time('2020-01-01')
+def test_make_template_community(api_client, staff_user, create_template):
+    template = create_template(created_by=staff_user)
+    api_client.force_login(staff_user)
+    response = api_client.patch("/v1/templates/%s/" % template.pk, data={
+         "community": True
+    })
+    assert response.status_code == 200
+    template.refresh_from_db()
+    assert template.community is True
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_make_template_community_requires_staff(api_client, staff_user, user,
+        create_template):
+    template = create_template(created_by=staff_user)
+    api_client.force_login(user)
+    response = api_client.patch("/v1/templates/%s/" % template.pk, data={
+         "community": True
+    })
+    assert response.status_code == 403
+
+
+@pytest.mark.freeze_time('2020-01-01')
 def test_update_community_template_non_staff_user(api_client, staff_user,
         create_template, user):
     template = create_template(created_by=staff_user, community=True)
