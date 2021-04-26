@@ -14,7 +14,8 @@ from greenbudget.app.history.models import Event
 from greenbudget.app.history.hooks import on_create, on_field_change
 from greenbudget.app.subaccount.models import SubAccount
 
-from .managers import AccountManager, BudgetAccountManager
+from .managers import (
+    AccountManager, BudgetAccountManager, TemplateAccountManager)
 
 # Right now, we still need to iron out a discrepancy in the UI: whether or not
 # the actuals for parent line items should be determined from the sum of the
@@ -117,6 +118,7 @@ class BudgetAccount(Account):
     groups = GenericRelation(BudgetSubAccountGroup)
 
     MAP_FIELDS_FROM_TEMPLATE = ('identifier', 'description')
+    MAP_FIELDS_FROM_ORIGINAL = ('identifier', 'description')
     objects = BudgetAccountManager()
 
     class Meta(Account.Meta):
@@ -169,6 +171,8 @@ class TemplateAccount(Account):
         related_name='children'
     )
     groups = GenericRelation(TemplateSubAccountGroup)
+    objects = TemplateAccountManager()
+    MAP_FIELDS_FROM_ORIGINAL = ('identifier', 'description')
 
     class Meta(Account.Meta):
         verbose_name = "Template Account"

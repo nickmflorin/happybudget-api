@@ -1,53 +1,8 @@
-from django.apps import apps
-
 from polymorphic.managers import PolymorphicManager
 from polymorphic.query import PolymorphicQuerySet
 
-
-def ModelTemplateManager(*bases):
-    class FromTemplateManagerMixin(*bases):
-        def _get_template_cls(self):
-            assert getattr(self, 'template_cls', None) is not None, \
-                "The manager %s must define the `template_cls` attribute if "\
-                "using the %s mixin." % (
-                    self.__class__.__name__, ModelTemplateManager.__name__)
-            template_cls = getattr(self, 'template_cls')
-            if isinstance(template_cls, str):
-                try:
-                    return apps.get_model(
-                        app_label=template_cls.split('.')[0],
-                        model_name=template_cls.split('.')[1]
-                    )
-                except IndexError:
-                    raise LookupError(
-                        'Invalid `template_cls`: %s.' % template_cls)
-            return template_cls
-
-        def create_from_template(self, *args, **kwargs):
-            template = kwargs.pop('template')
-            template_cls = self._get_template_cls()
-
-            assert isinstance(template, template_cls), \
-                "When creating %s from a template model, the template model" \
-                "must be of type %s." \
-                % (self.model.__name__, type(template_cls))
-
-            assert hasattr(self.model, 'MAP_FIELDS_FROM_TEMPLATE'), \
-                "The model %s must define the `MAP_FIELDS_FROM_TEMPLATE`." \
-                % self.model.__name__
-
-            for field in getattr(self.model, 'MAP_FIELDS_FROM_TEMPLATE'):
-                if field not in kwargs:
-                    kwargs[field] = getattr(template, field)
-
-            return super().create(*args, **kwargs)
-
-        def create(self, *args, **kwargs):
-            if 'template' in kwargs:
-                return self.create_from_template(*args, **kwargs)
-            return super().create(*args, **kwargs)
-
-    return FromTemplateManagerMixin
+from greenbudget.app.common.managers import (
+    ModelTemplateManager, ModelDuplicateManager)
 
 
 class BudgetQuerier(object):
@@ -72,57 +27,90 @@ class BaseBudgetManager(BudgetQuerier, PolymorphicManager):
         return self.queryset_class(self.model)
 
 
-class BudgetManager(ModelTemplateManager(BaseBudgetManager)):
+class BudgetManager(
+        ModelDuplicateManager(ModelTemplateManager(BaseBudgetManager))):
     template_cls = 'template.Template'
 
-    def create_from_template(self, *args, **kwargs):
-        from greenbudget.app.account.models import BudgetAccount
+    def _create_fringe_map(self, instance, ancestor, kwarg_name):
+        """
+        When either duplicating a :obj:`Budget` or deriving a :obj:`Budget`
+        from a :obj:`Template`, not only do we need to create parallels for
+        the :obj:`Fringe`(s) that are associated with the original :obj:`Budget`
+        (in the case of duplication) or the :obj:`Template` (in the case of
+        deriving), but we need to make sure that those :obj:`Fringe`(s) are
+        also correctly associated with the new :obj:`SubAccount`(s) of the
+        new :obj:`Budget`.  In order to do this, we need to provide a mapping
+        of :obj:`Fringe` IDs.
+        """
         from greenbudget.app.fringe.models import Fringe
+
+        fringe_map = {}
+        for fringe in ancestor.fringes.all():
+            kwargs = {
+                'created_by': instance.created_by,
+                'updated_by': instance.created_by,
+                'budget': instance,
+                kwarg_name: fringe
+            }
+            fringe = Fringe.objects.create(**kwargs)
+            fringe_map[fringe.id] = fringe.id
+        return fringe_map
+
+    def _create_group_map(self, instance, ancestor, kwarg_name):
+        """
+        When either duplicating a :obj:`Budget` or deriving a :obj:`Budget`
+        from a :obj:`Template`, not only do we need to create parallels for
+        the :obj:`Group`(s) that are associated with the original :obj:`Budget`
+        (in the case of duplication) or the :obj:`Template` (in the case of
+        deriving), but we need to make sure that those :obj:`Group`(s) are
+        also correctly associated with the new :obj:`Account`(s) of the
+        new :obj:`Budget`.  In order to do this, we need to provide a mapping
+        of :obj:`Group` IDs.
+        """
         from greenbudget.app.group.models import BudgetAccountGroup
 
-        instance = super().create_from_template(*args, **kwargs)
-
-        # When creating a Budget from a Template, not only do we need to
-        # create parallels for the Fringes that are associated with the Template
-        # such that they are associated with the Budget, but we need to make
-        # sure those Fringes are also correctly associated with the new
-        # SubAccounts of this Budget.  In order to do this, we need to provide
-        # a mapping of Fringe IDs to the manager responsible for creating the
-        # SubAccounts.
-        fringe_map = {}
-        for template_fringe in kwargs['template'].fringes.all():
-            fringe = Fringe.objects.create(
-                created_by=instance.created_by,
-                updated_by=instance.created_by,
-                template=template_fringe,
-                budget=instance
-            )
-            fringe_map[template_fringe.id] = fringe.id
-
-        # When creating a Budget from a Template, not only do we need to
-        # create parallels for the Groups that are associated with the Template
-        # such that they are associated with the Budget, but we need to make
-        # sure those Groups are also correctly associated with the new
-        # Accounts of this Budget.  In order to do this, we need to provide a
-        # mapping of Group IDs to the manager responsible for creating the
-        # Accounts.
         group_map = {}
-        for template_account_group in kwargs['template'].groups.all():
-            group = BudgetAccountGroup.objects.create(
-                created_by=instance.created_by,
-                updated_by=instance.created_by,
-                parent=instance,
-                template=template_account_group
-            )
-            group_map[template_account_group.pk] = group.pk
+        for account_group in ancestor.groups.all():
+            kwargs = {
+                'created_by': instance.created_by,
+                'updated_by': instance.created_by,
+                'parent': instance,
+                kwarg_name: account_group
+            }
+            group = BudgetAccountGroup.objects.create(**kwargs)
+            group_map[account_group.pk] = group.pk
+        return group_map
 
-        for template_account in kwargs['template'].accounts.all():
-            BudgetAccount.objects.create(
-                created_by=instance.created_by,
-                updated_by=instance.created_by,
-                template=template_account,
-                budget=instance,
-                fringe_map=fringe_map,
-                group_map=group_map
-            )
+    def _create_children(self, instance, ancestor, kwarg_name, **kwargs):
+        from greenbudget.app.account.models import BudgetAccount
+
+        fringe_map = self._create_fringe_map(instance, ancestor, kwarg_name)
+        group_map = self._create_group_map(instance, ancestor, kwarg_name)
+        for account in ancestor.accounts.all():
+            model_kwargs = {
+                'created_by': instance.created_by,
+                'updated_by': instance.created_by,
+                'budget': instance,
+                'group_map': group_map,
+                'fringe_map': fringe_map,
+                kwarg_name: account
+            }
+            BudgetAccount.objects.create(**kwargs, **model_kwargs)
+
+    def create_duplicate(self, original, *args, **kwargs):
+        """
+        Creates a duplicate of the :obj:`Budget` object by deriving all of the
+        properties and structure from another :obj:`Budget` instance.
+        """
+        instance = super().create_duplicate(original, *args, **kwargs)
+        self._create_children(instance, original, 'original')
+        return instance
+
+    def create_from_template(self, template, *args, **kwargs):
+        """
+        Creates a new :obj:`Budget` object by deriving all of the properties
+        and structure from a :obj:`Template` instance.
+        """
+        instance = super().create_from_template(template, *args, **kwargs)
+        self._create_children(instance, template, 'template')
         return instance

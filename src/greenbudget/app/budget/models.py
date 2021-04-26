@@ -87,6 +87,11 @@ class Budget(BaseBudget):
     comments = GenericRelation(Comment)
     objects = BudgetManager()
     MAP_FIELDS_FROM_TEMPLATE = ()
+    MAP_FIELDS_FROM_ORIGINAL = (
+        'project_number', 'production_type', 'shoot_date', 'delivery_date',
+        'build_days', 'prelight_days', 'studio_shoot_days', 'location_days',
+        'image', 'name'
+    )
 
     class Meta(BaseBudget.Meta):
         verbose_name = "Budget"

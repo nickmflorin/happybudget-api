@@ -17,7 +17,8 @@ from greenbudget.app.group.models import (
 from greenbudget.app.history.models import Event
 from greenbudget.app.history.hooks import on_create, on_field_change
 
-from .managers import SubAccountManager, BudgetSubAccountManager
+from .managers import (
+    SubAccountManager, BudgetSubAccountManager, TemplateSubAccountManager)
 
 # Right now, we still need to iron out a discrepancy in the UI: whether or not
 # the actuals for parent line items should be determined from the sum of the
@@ -80,14 +81,6 @@ class SubAccount(PolymorphicModel):
         ordering = ('created_at', )
         verbose_name = "Sub Account"
         verbose_name_plural = "Sub Accounts"
-
-    def __str__(self):
-        return "<{cls} id={id}, name={name}, identifier={identifier}>".format(
-            cls=self.__class__.__name__,
-            id=self.pk,
-            name=self.name,
-            identifier=self.identifier,
-        )
 
     @property
     def siblings(self):
@@ -186,10 +179,21 @@ class BudgetSubAccount(SubAccount):
     MAP_FIELDS_FROM_TEMPLATE = (
         'identifier', 'description', 'name', 'rate', 'quantity', 'multiplier',
         'unit')
+    MAP_FIELDS_FROM_ORIGINAL = (
+        'identifier', 'description', 'name', 'rate', 'quantity', 'multiplier',
+        'unit')
 
     class Meta(SubAccount.Meta):
         verbose_name = "Budget Sub Account"
         verbose_name_plural = "Budget Sub Accounts"
+
+    def __str__(self):
+        return "<{cls} id={id}, name={name}, identifier={identifier}>".format(
+            cls=self.__class__.__name__,
+            id=self.pk,
+            name=self.name,
+            identifier=self.identifier,
+        )
 
     @property
     def variance(self):
@@ -237,7 +241,19 @@ class TemplateSubAccount(SubAccount):
         related_name='children'
     )
     groups = GenericRelation(TemplateSubAccountGroup)
+    objects = TemplateSubAccountManager()
+    MAP_FIELDS_FROM_ORIGINAL = (
+        'identifier', 'description', 'name', 'rate', 'quantity', 'multiplier',
+        'unit')
 
     class Meta(SubAccount.Meta):
         verbose_name = "Template Sub Account"
         verbose_name_plural = "Template Sub Accounts"
+
+    def __str__(self):
+        return "<{cls} id={id}, name={name}, identifier={identifier}>".format(
+            cls=self.__class__.__name__,
+            id=self.pk,
+            name=self.name,
+            identifier=self.identifier,
+        )

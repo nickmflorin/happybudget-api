@@ -156,6 +156,7 @@ class BudgetViewSet(
     (9) PATCH /budgets/<pk>/bulk-update-fringes/
     (10) PATCH /budgets/<pk>/bulk-create-fringes/
     (11) GET /budgets/<pk>/pdf/
+    (12) POST /budgets/<pk>/duplicate/
     """
 
     def get_serializer_context(self):
@@ -262,6 +263,16 @@ class BudgetViewSet(
         instance = self.get_object()
         pdf = instance.to_pdf()
         return HttpResponse(pdf.getvalue(), content_type='application/pdf')
+
+    @decorators.action(detail=True, methods=["POST"])
+    def duplicate(self, request, *args, **kwargs):
+        instance = self.get_object()
+        duplicated = Budget.objects.create(
+            original=instance, created_by=request.user)
+        return response.Response(
+            self.serializer_class(duplicated).data,
+            status=status.HTTP_201_CREATED
+        )
 
 
 class BudgetTrashViewSet(TrashModelMixin, GenericBudgetViewSet):

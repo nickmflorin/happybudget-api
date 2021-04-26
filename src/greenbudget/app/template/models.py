@@ -9,6 +9,7 @@ class Template(BaseBudget):
     type = "template"
     community = models.BooleanField(default=False)
     objects = TemplateManager()
+    MAP_FIELDS_FROM_ORIGINAL = ('image', 'name')
 
     class Meta(BaseBudget.Meta):
         verbose_name = "Template"

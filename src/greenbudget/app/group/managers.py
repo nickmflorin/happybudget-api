@@ -1,11 +1,22 @@
 from polymorphic.managers import PolymorphicManager
 
-from greenbudget.app.budget.managers import ModelTemplateManager
+from greenbudget.app.budget.managers import (
+    ModelTemplateManager, ModelDuplicateManager)
 
 
-class BudgetAccountGroupManager(ModelTemplateManager(PolymorphicManager)):
+class BudgetAccountGroupManager(
+        ModelDuplicateManager(ModelTemplateManager(PolymorphicManager))):
     template_cls = 'group.TemplateAccountGroup'
 
 
-class BudgetSubAccountGroupManager(ModelTemplateManager(PolymorphicManager)):
+class BudgetSubAccountGroupManager(
+        ModelDuplicateManager(ModelTemplateManager(PolymorphicManager))):
     template_cls = 'group.TemplateSubAccountGroup'
+
+
+class TemplateAccountGroupManager(ModelDuplicateManager(PolymorphicManager)):
+    pass
+
+
+class TemplateSubAccountGroupManager(ModelDuplicateManager(PolymorphicManager)):
+    pass

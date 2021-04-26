@@ -16,7 +16,13 @@ class TemplateSerializer(BaseBudgetSerializer):
 
     def validate(self, attrs):
         request = self.context["request"]
-        if "community" in attrs and not request.user.is_staff:
+        if self.instance is not None and self.instance.community is True \
+                and not request.user.is_staff:
+            raise exceptions.PermissionDenied(
+                "Only staff users can modify community templates."
+            )
+        elif attrs.get("community", False) is True \
+                and not request.user.is_staff:
             raise exceptions.PermissionDenied(
                 "Only staff users can modify community templates."
             )

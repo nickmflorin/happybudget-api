@@ -35,6 +35,7 @@ class Fringe(models.Model):
         null=True
     )
     MAP_FIELDS_FROM_TEMPLATE = ('name', 'description', 'cutoff', 'rate', 'unit')
+    MAP_FIELDS_FROM_ORIGINAL = ('name', 'description', 'cutoff', 'rate', 'unit')
     objects = FringeManager()
 
     class Meta:

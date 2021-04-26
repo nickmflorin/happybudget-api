@@ -204,6 +204,16 @@ class TemplateViewSet(
             status=status.HTTP_201_CREATED
         )
 
+    @decorators.action(detail=True, methods=["POST"])
+    def duplicate(self, request, *args, **kwargs):
+        instance = self.get_object()
+        duplicated = Template.objects.create(
+            original=instance, created_by=request.user)
+        return response.Response(
+            self.serializer_class(duplicated).data,
+            status=status.HTTP_201_CREATED
+        )
+
 
 class TemplateCommunityViewSet(
     mixins.CreateModelMixin,

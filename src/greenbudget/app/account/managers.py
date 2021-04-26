@@ -1,7 +1,8 @@
 from polymorphic.managers import PolymorphicManager
 from polymorphic.query import PolymorphicQuerySet
 
-from greenbudget.app.budget.managers import ModelTemplateManager
+from greenbudget.app.common.managers import (
+    ModelTemplateManager, ModelDuplicateManager)
 
 
 class AccountQuerier(object):
@@ -26,13 +27,88 @@ class AccountManager(AccountQuerier, PolymorphicManager):
         return self.queryset_class(self.model)
 
 
-class BudgetAccountManager(ModelTemplateManager(AccountManager)):
+class AbstractAccountManager(ModelDuplicateManager(AccountManager)):
+
+    def create_duplicate(self, original, *args, **kwargs):
+        """
+        Creates a duplicate of the :obj:`BudgetAccount` or
+        :obj:`TemplateAccount` object by deriving all of the properties and
+        structure from another :obj:`BudgetAccount` or :obj:`TemplateAccount`
+        instance.
+        """
+        fringe_map = kwargs.pop('fringe_map', None)
+        assert fringe_map is not None, \
+            "When duplicating %s from an original model, a mapping of " \
+            "fringes must be provided." % self.model.__name__
+
+        group_map = kwargs.pop('group_map', None)
+        assert group_map is not None, \
+            "When duplicating %s from an original model, a mapping of groups " \
+            "must be provided." % self.model.__name__
+
+        # If the Account belongs to a Group, use the previously created mapping
+        # to associate the new Account with the copied Group.
+        instance = super().create_duplicate(original, *args, **kwargs)
+        if original.group is not None:
+            instance.group = instance.budget.groups.get(
+                pk=group_map[original.group.pk])
+            instance.save()
+
+        self._create_children(
+            instance, original, 'original', fringe_map=fringe_map)
+        return instance
+
+    def _create_group_map(self, instance, ancestor, kwarg_name):
+        """
+        When either duplicating a :obj:`BudgetAccount`/:obj:`TemplateAccount`
+        or deriving a :obj:`BudgetAccount` from a :obj:`TemplateAccount`, not
+        only do we need to create parallels for the :obj:`Group`(s) that are
+        associated with the original :obj:`BudgetAccount`/:obj:`TemplateAccount`
+        (in the case of duplication) or the :obj:`TemplateAccount` (in the case
+        of deriving), but we need to make sure that those :obj:`Group`(s) are
+        also correctly associated with the new
+        :obj:`BudgetSubAccount`(s)/:obj:`TemplateSubAccount`(s) of the new
+        :obj:`BudgetAccount`/:obj:`TemplateAccount`.  In order to do this, we
+        need to provide a mapping of :obj:`Group` IDs.
+        """
+        group_cls = self._get_model_definition_cls('group_cls')
+        group_map = {}
+        for subaccount_group in ancestor.groups.all():
+            kwargs = {
+                'created_by': instance.created_by,
+                'updated_by': instance.updated_by,
+                'parent': instance,
+                kwarg_name: subaccount_group
+            }
+            group = group_cls.objects.create(**kwargs)
+            group_map[subaccount_group.pk] = group.pk
+        return group_map
+
+    def _create_children(self, instance, ancestor, kwarg_name, **kwargs):
+        group_map = self._create_group_map(instance, ancestor, kwarg_name)
+        child_cls = self._get_model_definition_cls('child_cls')
+        for subaccount in ancestor.subaccounts.all():
+            model_kwargs = {
+                'created_by': instance.created_by,
+                'updated_by': instance.updated_by,
+                'budget': instance.budget,
+                'parent': instance,
+                'group_map': group_map,
+                kwarg_name: subaccount
+            }
+            child_cls.objects.create(**kwargs, **model_kwargs)
+
+
+class BudgetAccountManager(ModelTemplateManager(AbstractAccountManager)):
     template_cls = 'account.TemplateAccount'
+    child_cls = 'subaccount.BudgetSubAccount'
+    group_cls = 'group.BudgetSubAccountGroup'
 
-    def create_from_template(self, *args, **kwargs):
-        from greenbudget.app.group.models import BudgetSubAccountGroup
-        from greenbudget.app.subaccount.models import BudgetSubAccount
-
+    def create_from_template(self, template, *args, **kwargs):
+        """
+        Creates a new :obj:`BudgetAccount` object by deriving all of the
+        properties and structure from a :obj:`TemplateAccount` instance.
+        """
         fringe_map = kwargs.pop('fringe_map', None)
         assert fringe_map is not None, \
             "When creating %s from a template model, a mapping of fringes " \
@@ -43,37 +119,19 @@ class BudgetAccountManager(ModelTemplateManager(AccountManager)):
             "When creating %s from a template model, a mapping of groups " \
             "must be provided." % self.model.__name__
 
-        instance = super().create_from_template(*args, **kwargs)
-        if kwargs['template'].group is not None:
+        # If the Account belongs to a Group, use the previously created mapping
+        # to associate the new Account with the derived Group.
+        instance = super().create_from_template(template, *args, **kwargs)
+        if template.group is not None:
             instance.group = instance.budget.groups.get(
-                pk=group_map[kwargs['template'].group.pk])
+                pk=group_map[template.group.pk])
             instance.save()
 
-        # When creating an Account from a Template, not only do we need to
-        # create parallels for the Groups that are associated with the Template
-        # Account such that they are associated with the Budget Account, but we
-        # need to make sure those Groups are also correctly associated with the
-        # new SubAccounts of this Account.  In order to do this, we need to
-        # provide a mapping of Group IDs to the manager responsible for creating
-        # the SubAccounts.
-        group_map = {}
-        for template_subaccount_group in kwargs['template'].groups.all():
-            group = BudgetSubAccountGroup.objects.create(
-                created_by=instance.created_by,
-                updated_by=instance.created_by,
-                parent=instance,
-                template=template_subaccount_group
-            )
-            group_map[template_subaccount_group.pk] = group.pk
-
-        for nested_template_subaccount in kwargs['template'].subaccounts.all():
-            BudgetSubAccount.objects.create(
-                parent=instance,
-                budget=instance.budget,
-                template=nested_template_subaccount,
-                created_by=instance.budget.created_by,
-                updated_by=instance.budget.created_by,
-                fringe_map=fringe_map,
-                group_map=group_map
-            )
+        self._create_children(
+            instance, template, 'template', fringe_map=fringe_map)
         return instance
+
+
+class TemplateAccountManager(AbstractAccountManager):
+    child_cls = 'subaccount.TemplateSubAccount'
+    group_cls = 'group.TemplateSubAccountGroup'
