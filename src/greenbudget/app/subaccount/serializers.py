@@ -8,7 +8,8 @@ from greenbudget.lib.rest_framework_utils.serializers import (
 from greenbudget.app.budget.models import BaseBudget
 from greenbudget.app.common.serializers import (
     EntitySerializer,
-    AbstractBulkUpdateSerializer
+    AbstractBulkUpdateSerializer,
+    create_bulk_create_serializer
 )
 from greenbudget.app.fringe.models import Fringe
 from greenbudget.app.group.models import (
@@ -23,7 +24,7 @@ class SubAccountSimpleSerializer(EnhancedModelSerializer):
     id = serializers.IntegerField(read_only=True)
     type = serializers.CharField(read_only=True)
     identifier = serializers.CharField(
-        required=True,
+        required=False,
         allow_blank=False,
         allow_null=False
     )
@@ -126,33 +127,29 @@ def create_bulk_create_subaccounts_serializer(model_cls):
     if model_cls is TemplateSubAccount:
         data_serializer = TemplateSubAccountSerializer
 
-    class BulkCreateSubAccountsSerializer(serializers.ModelSerializer):
-        data = data_serializer(many=True, nested=True)
+    base_serializer = create_bulk_create_serializer(data_serializer)
 
-        class Meta:
+    class BulkCreateSubAccountsSerializer(base_serializer):
+
+        class Meta(base_serializer.Meta):
             model = BaseBudget
-            fields = ('data', )
 
-        def update(self, instance, validated_data):
-            subaccounts = []
-            for payload in validated_data['data']:
-                serializer = data_serializer(data=payload, context={
-                    'parent': instance
-                })
-                serializer.is_valid(raise_exception=True)
-                # Note that the updated_by argument is the user updating the
-                # Account by adding new SubAccount(s), so the SubAccount(s)
-                # should be denoted as having been created by this user.
-                subaccount = serializer.save(
-                    updated_by=validated_data['updated_by'],
-                    created_by=validated_data['updated_by'],
-                    object_id=instance.pk,
-                    content_type=ContentType.objects.get_for_model(model_cls),
-                    parent=instance,
-                    budget=instance.budget
-                )
-                subaccounts.append(subaccount)
-            return subaccounts
+        def get_serializer_context(self, instance):
+            return {'parent': instance}
+
+        def perform_save(self, serializer, instance, validated_data):
+            # Note that the updated_by argument is the user updating the
+            # Account by adding new SubAccount(s), so the SubAccount(s)
+            # should be denoted as having been created by this user.
+            return serializer.save(
+                updated_by=validated_data['updated_by'],
+                created_by=validated_data['updated_by'],
+                object_id=instance.pk,
+                content_type=ContentType.objects.get_for_model(model_cls),
+                parent=instance,
+                budget=instance.budget
+            )
+
     return BulkCreateSubAccountsSerializer
 
 

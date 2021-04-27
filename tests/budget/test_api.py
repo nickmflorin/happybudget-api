@@ -907,6 +907,22 @@ def test_bulk_create_budget_accounts(api_client, user, create_budget):
 
 
 @pytest.mark.freeze_time('2020-01-01')
+def test_bulk_create_budget_accounts_count(api_client, user, create_budget):
+    api_client.force_login(user)
+    budget = create_budget()
+    response = api_client.patch(
+        "/v1/budgets/%s/bulk-create-accounts/" % budget.pk,
+        format='json',
+        data={'count': 2}
+    )
+    assert response.status_code == 201
+
+    accounts = Account.objects.all()
+    assert len(accounts) == 2
+    assert len(response.json()['data']) == 2
+
+
+@pytest.mark.freeze_time('2020-01-01')
 def test_bulk_update_budget_actuals(api_client, user, create_budget,
         create_budget_account, create_actual):
     api_client.force_login(user)

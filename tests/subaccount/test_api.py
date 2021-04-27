@@ -688,6 +688,25 @@ def test_bulk_create_budget_subaccount_subaccounts(api_client, user,
 
 
 @pytest.mark.freeze_time('2020-01-01')
+def test_bulk_create_budget_subaccount_subaccounts_count(api_client, user,
+        create_budget, create_budget_account, create_budget_subaccount):
+    budget = create_budget()
+    account = create_budget_account(budget=budget)
+    subaccount = create_budget_subaccount(parent=account, budget=budget)
+    api_client.force_login(user)
+    response = api_client.patch(
+        "/v1/subaccounts/%s/bulk-create-subaccounts/" % subaccount.pk,
+        format='json',
+        data={'count': 2}
+    )
+    assert response.status_code == 201
+
+    subaccounts = BudgetSubAccount.objects.all()
+    assert len(subaccounts) == 3
+    assert len(response.json()['data']) == 2
+
+
+@pytest.mark.freeze_time('2020-01-01')
 def test_bulk_create_template_subaccount_subaccounts(api_client, user,
         create_template, create_template_account, create_template_subaccount):
     template = create_template()
@@ -726,3 +745,22 @@ def test_bulk_create_template_subaccount_subaccounts(api_client, user,
     assert response.json()['data'][0]['name'] == 'New Name 1'
     assert response.json()['data'][1]['identifier'] == 'subaccount-b'
     assert response.json()['data'][1]['name'] == 'New Name 2'
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_bulk_create_template_subaccount_subaccounts_count(api_client, user,
+        create_template, create_template_account, create_template_subaccount):
+    template = create_template()
+    account = create_template_account(budget=template)
+    subaccount = create_template_subaccount(parent=account, budget=template)
+    api_client.force_login(user)
+    response = api_client.patch(
+        "/v1/subaccounts/%s/bulk-create-subaccounts/" % subaccount.pk,
+        format='json',
+        data={'count': 2}
+    )
+    assert response.status_code == 201
+
+    subaccounts = TemplateSubAccount.objects.all()
+    assert len(subaccounts) == 3
+    assert len(response.json()['data']) == 2

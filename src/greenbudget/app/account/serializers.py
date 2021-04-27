@@ -5,7 +5,10 @@ from greenbudget.lib.rest_framework_utils.serializers import (
 
 from greenbudget.app.budget.models import BaseBudget
 from greenbudget.app.common.serializers import (
-    EntitySerializer, AbstractBulkUpdateSerializer)
+    EntitySerializer,
+    AbstractBulkUpdateSerializer,
+    create_bulk_create_serializer
+)
 from greenbudget.app.group.models import (
     BudgetAccountGroup,
     TemplateAccountGroup
@@ -18,7 +21,7 @@ from .models import Account, BudgetAccount, TemplateAccount
 class AccountSimpleSerializer(EnhancedModelSerializer):
     id = serializers.IntegerField(read_only=True)
     identifier = serializers.CharField(
-        required=True,
+        required=False,
         allow_blank=False,
         allow_null=False
     )
@@ -35,13 +38,6 @@ class AccountSimpleSerializer(EnhancedModelSerializer):
 
 
 class AccountSerializer(AccountSimpleSerializer):
-    id = serializers.IntegerField(read_only=True)
-    type = serializers.CharField(read_only=True)
-    identifier = serializers.CharField(
-        required=True,
-        allow_blank=False,
-        allow_null=False
-    )
     created_by = serializers.PrimaryKeyRelatedField(read_only=True)
     updated_by = serializers.PrimaryKeyRelatedField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
@@ -95,30 +91,23 @@ def create_bulk_create_accounts_serializer(model_cls):
     if model_cls is TemplateAccount:
         data_serializer = TemplateAccountSerializer
 
-    class BulkCreateAccountsSerializer(serializers.ModelSerializer):
-        data = data_serializer(many=True, nested=True)
+    base_serializer = create_bulk_create_serializer(data_serializer)
 
-        class Meta:
+    class BulkCreateAccountsSerializer(base_serializer):
+
+        class Meta(base_serializer.Meta):
             model = BaseBudget
-            fields = ('data', )
 
-        def update(self, instance, validated_data):
-            subaccounts = []
-            for payload in validated_data['data']:
-                serializer = data_serializer(data=payload, context={
-                    'budget': instance
-                })
-                serializer.is_valid(raise_exception=True)
-                # Note that the updated_by argument is the user updating the
-                # Budget by adding new Account(s), so the Account(s) should
-                # be denoted as having been created by this user.
-                subaccount = serializer.save(
-                    updated_by=validated_data['updated_by'],
-                    created_by=validated_data['updated_by'],
-                    budget=instance
-                )
-                subaccounts.append(subaccount)
-            return subaccounts
+        def get_serializer_context(self, instance):
+            return {'budget': instance}
+
+        def perform_save(self, serializer, instance, validated_data):
+            return serializer.save(
+                updated_by=validated_data['updated_by'],
+                created_by=validated_data['updated_by'],
+                budget=instance
+            )
+
     return BulkCreateAccountsSerializer
 
 

@@ -1,4 +1,4 @@
-from rest_framework import serializers
+from rest_framework import serializers, exceptions
 
 from greenbudget.lib.rest_framework_utils.serializers import (
     PolymorphicNonPolymorphicSerializer)
@@ -28,6 +28,49 @@ class EntitySerializer(PolymorphicNonPolymorphicSerializer):
             "template"
         )
     }
+
+
+def create_bulk_create_serializer(data_serializer):
+    class AbstractBulkCreateSerializer(serializers.ModelSerializer):
+        data = data_serializer(many=True, nested=True, required=False)
+        count = serializers.IntegerField(required=False)
+
+        class Meta:
+            abstract = True
+            fields = ('data', 'count')
+
+        def validate(self, attrs):
+            if 'data' not in attrs and 'count' not in attrs:
+                raise exceptions.ValidationError(
+                    "Either the `data` or `count` parameters must be provided."
+                )
+            return attrs
+
+        def perform_save(self, serializer, instance, validated_data):
+            raise NotImplementedError()
+
+        def get_serializer_context(self, instance):
+            raise NotImplementedError()
+
+        def update(self, instance, validated_data):
+            models = []
+            context = self.get_serializer_context(instance)
+            if 'data' in validated_data:
+                for payload in validated_data['data']:
+                    serializer = data_serializer(data=payload, context=context)
+                    serializer.is_valid(raise_exception=True)
+                    model = self.perform_save(
+                        serializer, instance, validated_data)
+                    models.append(model)
+            else:
+                for _ in range(validated_data['count']):
+                    serializer = data_serializer(data={}, context=context)
+                    serializer.is_valid(raise_exception=True)
+                    model = self.perform_save(
+                        serializer, instance, validated_data)
+                    models.append(model)
+            return models
+    return AbstractBulkCreateSerializer
 
 
 class AbstractBulkUpdateSerializer(serializers.ModelSerializer):

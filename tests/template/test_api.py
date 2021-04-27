@@ -677,6 +677,22 @@ def test_bulk_create_template_accounts(api_client, user, create_template):
 
 
 @pytest.mark.freeze_time('2020-01-01')
+def test_bulk_create_template_accounts_count(api_client, user, create_template):
+    api_client.force_login(user)
+    template = create_template()
+    response = api_client.patch(
+        "/v1/templates/%s/bulk-create-accounts/" % template.pk,
+        format='json',
+        data={'count': 2}
+    )
+    assert response.status_code == 201
+
+    accounts = TemplateAccount.objects.all()
+    assert len(accounts) == 2
+    assert len(response.json()['data']) == 2
+
+
+@pytest.mark.freeze_time('2020-01-01')
 def test_bulk_create_template_fringes(api_client, user, create_template):
     api_client.force_login(user)
     template = create_template()

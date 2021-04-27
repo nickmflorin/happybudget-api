@@ -276,6 +276,24 @@ def test_bulk_create_budget_account_subaccounts(api_client, user, create_budget,
 
 
 @pytest.mark.freeze_time('2020-01-01')
+def test_bulk_create_budget_account_subaccounts_count(api_client, user,
+        create_budget, create_budget_account):
+    api_client.force_login(user)
+    budget = create_budget()
+    account = create_budget_account(budget=budget)
+    response = api_client.patch(
+        "/v1/accounts/%s/bulk-create-subaccounts/" % account.pk,
+        format='json',
+        data={'count': 2}
+    )
+    assert response.status_code == 201
+
+    subaccounts = BudgetSubAccount.objects.all()
+    assert len(subaccounts) == 2
+    assert len(response.json()['data']) == 2
+
+
+@pytest.mark.freeze_time('2020-01-01')
 def test_bulk_create_template_account_subaccounts(api_client, user,
         create_template, create_template_account):
     api_client.force_login(user)
@@ -313,3 +331,21 @@ def test_bulk_create_template_account_subaccounts(api_client, user,
     assert response.json()['data'][0]['name'] == 'New Name 1'
     assert response.json()['data'][1]['identifier'] == 'subaccount-b'
     assert response.json()['data'][1]['name'] == 'New Name 2'
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_bulk_create_template_account_subaccounts_count(api_client, user,
+        create_template, create_template_account):
+    api_client.force_login(user)
+    template = create_template()
+    account = create_template_account(budget=template)
+    response = api_client.patch(
+        "/v1/accounts/%s/bulk-create-subaccounts/" % account.pk,
+        format='json',
+        data={'count': 2}
+    )
+    assert response.status_code == 201
+
+    subaccounts = TemplateSubAccount.objects.all()
+    assert len(subaccounts) == 2
+    assert len(response.json()['data']) == 2
