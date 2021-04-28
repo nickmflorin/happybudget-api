@@ -2,6 +2,7 @@
 from django.contrib.auth import authenticate
 from rest_framework import serializers, exceptions, validators
 
+from greenbudget.lib.rest_framework_utils.fields import Base64ImageField
 from greenbudget.lib.rest_framework_utils.serializers import (
     EnhancedModelSerializer)
 
@@ -117,10 +118,7 @@ class UserSerializer(EnhancedModelSerializer):
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
     timezone = serializers.SerializerMethodField(read_only=True)
-    profile_image = serializers.ImageField(
-        required=False,
-        allow_empty_file=False
-    )
+    profile_image = Base64ImageField(required=False)
 
     class Meta:
         model = User
