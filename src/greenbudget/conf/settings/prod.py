@@ -11,7 +11,7 @@ from .base import *  # noqa
 ENVIRONMENT = Environments.PROD
 
 sentry_sdk.init(
-    dsn="https://9eeab5e26f804bd582385ffc5eda991d@o591585.ingest.sentry.io/5740484",
+    dsn="https://9eeab5e26f804bd582385ffc5eda991d@o591585.ingest.sentry.io/5740484",  # noqa
     integrations=[DjangoIntegration()],
 
     # Set traces_sample_rate to 1.0 to capture 100% of transactions for
