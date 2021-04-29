@@ -32,11 +32,35 @@ class UserManager(UserQuerier, DjangoUserManager):
         except InvalidSocialToken:
             raise self.model.DoesNotExist()
         else:
-            return self.get(email=google_user.email)
+            user = self.get(email=google_user.email)
+            user.sync_with_social_provider(social_user=google_user)
+            return user
+
+    def create_from_google_token(self, token):
+        google_user = get_google_user_from_token(token)
+        return self.create(
+            google_user.email,
+            first_name=google_user.first_name,
+            last_name=google_user.last_name
+        )
+
+    def get_or_create_from_google_token(self, token):
+        try:
+            return self.get_from_google_token(token)
+        except self.model.DoesNotExist:
+            return self.create_from_google_token(token)
 
     def get_from_social_token(self, token, provider):
         assert provider == "google", "Provider %s not supported." % provider
         return self.get_from_google_token(token)
+
+    def create_from_social_token(self, token, provider):
+        assert provider == "google", "Provider %s not supported." % provider
+        return self.create_from_google_token(token)
+
+    def get_or_create_from_social_token(self, token, provider):
+        assert provider == "google", "Provider %s not supported." % provider
+        return self.get_or_create_from_google_token(token)
 
     def create(self, email, password=None, **kwargs):
         kwargs['username'] = email

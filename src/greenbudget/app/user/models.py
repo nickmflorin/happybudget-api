@@ -40,11 +40,17 @@ class User(AbstractUser):
     def full_name(self):
         return self.first_name + " " + self.last_name
 
-    def sync_with_social_provider(self, token, provider):
-        assert provider == "google", \
-            "Unsupported social provider %s." % provider
-        social_user = get_user_from_social_token(token, provider)
+    def sync_with_social_provider(self, social_user=None, token=None,
+            provider=None):
+        assert social_user is not None \
+            or (token is not None and provider is not None), \
+            "Must provide either the social user or the token/provider."
+        if social_user is None:
+            assert provider == "google", \
+                "Unsupported social provider %s." % provider
+            social_user = get_user_from_social_token(token, provider)
         if self.first_name is None or self.first_name == "":
             self.first_name = social_user.first_name
         if self.last_name is None or self.last_name == "":
             self.last_name = social_user.last_name
+        self.save()

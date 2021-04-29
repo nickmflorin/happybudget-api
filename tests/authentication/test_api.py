@@ -7,6 +7,7 @@ from django.test import override_settings
 
 from greenbudget.lib.utils.dateutils import api_datetime_string
 from greenbudget.app.authentication.models import ResetUID
+from greenbudget.app.user.models import User
 
 
 def test_login(user, api_client):
@@ -78,7 +79,7 @@ def test_logout(user, api_client):
 
 @responses.activate
 @override_settings(GOOGLE_OAUTH_API_URL="https://www.test-validate-user-token/")
-def test_social_login(api_client, create_user, db):
+def test_social_login_user_exists(api_client, create_user):
     create_user(email="jjohnson@gmail.com")
     responses.add(
         method=responses.GET,
@@ -93,6 +94,32 @@ def test_social_login(api_client, create_user, db):
         "token_id": "testtoken",
         'provider': 'google',
     })
+    assert response.status_code == 201
+    assert response.json() == {'detail': 'Successfully logged in.'}
+    assert 'greenbudgetjwt' in response.cookies
+
+
+@responses.activate
+@override_settings(GOOGLE_OAUTH_API_URL="https://www.test-validate-user-token/")
+def test_social_login_user_does_not_exist(api_client, db):
+    responses.add(
+        method=responses.GET,
+        url="https://www.test-validate-user-token/?id_token=testtoken",
+        json={
+            "family_name": "Johnson",
+            "given_name": "Jack",
+            "email": "jjohnson@gmail.com"
+        }
+    )
+    response = api_client.post("/v1/auth/social-login/", data={
+        "token_id": "testtoken",
+        'provider': 'google',
+    })
+    user = User.objects.filter(email="jjohnson@gmail.com").first()
+    assert user is not None
+    assert user.first_name == "Jack"
+    assert user.last_name == "Johnson"
+
     assert response.status_code == 201
     assert response.json() == {'detail': 'Successfully logged in.'}
     assert 'greenbudgetjwt' in response.cookies

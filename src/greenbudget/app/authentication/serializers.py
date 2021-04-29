@@ -9,7 +9,6 @@ from rest_framework import serializers
 from greenbudget.lib.rest_framework_utils.exceptions import InvalidFieldError
 
 from greenbudget.app.user.models import User
-from greenbudget.app.user.exceptions import InvalidSocialToken
 
 from .exceptions import (
     AccountDisabledError, InvalidCredentialsError, EmailDoesNotExist,
@@ -31,18 +30,10 @@ class SocialLoginSerializer(AbstractLoginSerializer):
     provider = serializers.ChoiceField(choices=["google"])
 
     def validate(self, attrs):
-        try:
-            user = User.objects.get_from_social_token(
-                token=attrs['token_id'],
-                provider=attrs['provider']
-            )
-        except User.DoesNotExist:
-            raise InvalidSocialToken()
-        user.sync_with_social_provider(
+        user = User.objects.get_or_create_from_social_token(
             token=attrs['token_id'],
             provider=attrs['provider']
         )
-        user.save()
         return super().validate(user)
 
 
