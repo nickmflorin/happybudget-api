@@ -161,6 +161,18 @@ def test_get_community_template(api_client, staff_user, create_template,
 
 
 @pytest.mark.freeze_time('2020-01-01')
+def test_get_another_users_community_template(api_client, staff_user,
+        create_template, create_user):
+    user = create_user(is_staff=True)
+    template = create_template(created_by=user, community=True)
+    api_client.force_login(staff_user)
+    response = api_client.get("/v1/templates/%s/" % template.pk, data={
+         "name": "New Name"
+    })
+    assert response.status_code == 200
+
+
+@pytest.mark.freeze_time('2020-01-01')
 def test_get_community_template_non_staff_user(api_client, staff_user, user,
         create_template):
     api_client.force_login(user)
@@ -265,6 +277,30 @@ def test_update_community_template(api_client, staff_user, create_template):
         "estimated": None,
         "type": "template",
         "created_by": staff_user.pk,
+        "image": None,
+    }
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_update_another_users_community_template(api_client, staff_user,
+        create_template, create_user):
+    user = create_user(is_staff=True)
+    template = create_template(created_by=user, community=True)
+    api_client.force_login(staff_user)
+    response = api_client.patch("/v1/templates/%s/" % template.pk, data={
+         "name": "New Name"
+    })
+    assert response.status_code == 200
+    template.refresh_from_db()
+    assert template.name == "New Name"
+    assert response.json() == {
+        "id": template.pk,
+        "name": "New Name",
+        "created_at": "2020-01-01 00:00:00",
+        "updated_at": "2020-01-01 00:00:00",
+        "estimated": None,
+        "type": "template",
+        "created_by": user.pk,
         "image": None,
     }
 

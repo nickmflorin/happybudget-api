@@ -70,6 +70,34 @@ def test_get_template_accounts(api_client, user, create_template_account,
 
 
 @pytest.mark.freeze_time('2020-01-01')
+def test_get_community_template_accounts(api_client, user, staff_user,
+        create_template_account, create_template):
+    template = create_template(community=True, created_by=staff_user)
+    [
+        create_template_account(budget=template),
+        create_template_account(budget=template)
+    ]
+    api_client.force_login(user)
+    response = api_client.get("/v1/templates/%s/accounts/" % template.pk)
+    assert response.status_code == 403
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_get_another_users_community_template_accounts(api_client, staff_user,
+        create_template_account, create_template, create_user):
+    user = create_user(is_staff=True)
+    template = create_template(created_by=user, community=True)
+    [
+        create_template_account(budget=template),
+        create_template_account(budget=template)
+    ]
+    api_client.force_login(staff_user)
+    response = api_client.get("/v1/templates/%s/accounts/" % template.pk)
+    assert response.status_code == 200
+    assert response.json()['count'] == 2
+
+
+@ pytest.mark.freeze_time('2020-01-01')
 def test_create_template_account(api_client, user, create_template):
     template = create_template()
     api_client.force_login(user)

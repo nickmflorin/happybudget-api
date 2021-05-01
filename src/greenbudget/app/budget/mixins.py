@@ -1,27 +1,20 @@
-from django.shortcuts import get_object_or_404
-from django.utils.functional import cached_property
-
 from rest_framework import decorators, response, status, mixins
 
+from greenbudget.app.common.mixins import NestedObjectViewMixin
+
 from .models import Budget
+from .permissions import BudgetObjPermission
 
 
-class BudgetNestedMixin(object):
+class BudgetNestedMixin(NestedObjectViewMixin):
     """
     A mixin for views that extend off of a budget's detail endpoint.
     """
-    @property
-    def budget_lookup_field(self):
-        raise NotImplementedError()
+    budget_permission_classes = [BudgetObjPermission]
+    view_name = "budget"
 
-    @cached_property
-    def budget(self):
-        params = {
-            self.budget_lookup_field[0]: (
-                self.kwargs[self.budget_lookup_field[1]])
-        }
-        return get_object_or_404(
-            self.request.user.budgets.instance_of(Budget).active(), **params)
+    def get_budget_queryset(self, request):
+        return request.user.budgets.instance_of(Budget).active()
 
 
 class TrashModelMixin(

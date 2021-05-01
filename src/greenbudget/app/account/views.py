@@ -1,6 +1,7 @@
 from django.contrib.contenttypes.models import ContentType
 from django.utils.functional import cached_property
-from rest_framework import viewsets, mixins, decorators, response, status
+from rest_framework import (
+    viewsets, mixins, decorators, response, status, permissions)
 
 from greenbudget.app.account.models import Account
 from greenbudget.app.account.mixins import AccountNestedMixin
@@ -24,6 +25,7 @@ from greenbudget.app.subaccount.serializers import (
 from greenbudget.app.template.mixins import TemplateNestedMixin
 
 from .models import BudgetAccount, TemplateAccount
+from .permissions import AccountObjPermission
 from .serializers import BudgetAccountSerializer, TemplateAccountSerializer
 
 
@@ -106,6 +108,11 @@ class AccountViewSet(
     (4) PATCH /accounts/<pk>/bulk-update-subaccounts/
     (5) PATCH /accounts/<pk>/bulk-create-subaccounts/
     """
+    permission_classes = (
+        permissions.IsAuthenticated,
+        AccountObjPermission,
+    )
+
     @cached_property
     def instance_cls(self):
         instance = self.get_object()

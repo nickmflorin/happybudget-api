@@ -8,6 +8,7 @@ from greenbudget.app.account.serializers import (
     create_bulk_update_accounts_serializer
 )
 from greenbudget.app.budget.mixins import TrashModelMixin
+from greenbudget.app.common.permissions import IsAdminOrReadOnly
 from greenbudget.app.fringe.serializers import (
     FringeSerializer,
     BulkCreateFringesSerializer,
@@ -18,7 +19,7 @@ from greenbudget.app.group.serializers import TemplateAccountGroupSerializer
 
 from .models import Template
 from .mixins import TemplateNestedMixin
-from .permissions import CommunityTemplatePermission
+from .permissions import TemplateObjPermission
 from .serializers import TemplateSerializer
 
 
@@ -124,7 +125,7 @@ class TemplateViewSet(
     """
     permission_classes = (
         permissions.IsAuthenticated,
-        CommunityTemplatePermission
+        TemplateObjPermission
     )
 
     def get_queryset(self):
@@ -226,11 +227,10 @@ class TemplateCommunityViewSet(
     (1) GET /templates/community/
     (2) POST /templates/community/
     """
-
-    def get_permissions(self):
-        if self.action == 'create':
-            return (permissions.IsAuthenticated(), permissions.IsAdminUser())
-        return (permissions.IsAuthenticated(),)
+    permission_classes = (
+        permissions.IsAuthenticated,
+        IsAdminOrReadOnly
+    )
 
     def get_queryset(self):
         return Template.objects.active().community()

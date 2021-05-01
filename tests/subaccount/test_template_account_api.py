@@ -124,6 +124,54 @@ def test_get_template_account_subaccounts(api_client, user, create_template,
 
 
 @pytest.mark.freeze_time('2020-01-01')
+def test_get_community_template_account_subaccounts(api_client, user,
+        staff_user, create_template, create_template_account,
+        create_template_subaccount):
+    template = create_template(community=True, created_by=staff_user)
+    account = create_template_account(budget=template)
+    [
+        create_template_subaccount(
+            parent=account,
+            budget=template,
+            created_at=datetime.datetime(2020, 1, 1)
+        ),
+        create_template_subaccount(
+            parent=account,
+            budget=template,
+            created_at=datetime.datetime(2020, 1, 2)
+        )
+    ]
+    api_client.force_login(user)
+    response = api_client.get("/v1/accounts/%s/subaccounts/" % account.pk)
+    assert response.status_code == 403
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_get_another_users_community_template_account_subaccounts(api_client,
+        create_user, staff_user, create_template, create_template_account,
+        create_template_subaccount):
+    user = create_user(is_staff=True)
+    template = create_template(community=True, created_by=user)
+    account = create_template_account(budget=template)
+    [
+        create_template_subaccount(
+            parent=account,
+            budget=template,
+            created_at=datetime.datetime(2020, 1, 1)
+        ),
+        create_template_subaccount(
+            parent=account,
+            budget=template,
+            created_at=datetime.datetime(2020, 1, 2)
+        )
+    ]
+    api_client.force_login(staff_user)
+    response = api_client.get("/v1/accounts/%s/subaccounts/" % account.pk)
+    assert response.status_code == 200
+    assert response.json()['count'] == 2
+
+
+@pytest.mark.freeze_time('2020-01-01')
 def test_create_template_subaccount(api_client, user, create_template_account,
         create_template):
     template = create_template()
