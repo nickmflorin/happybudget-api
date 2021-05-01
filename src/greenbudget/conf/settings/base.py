@@ -50,7 +50,7 @@ SESSION_COOKIE_NAME = 'greenbudgetsessionid'
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_DOMAIN = ".greenbudget.cloud"
-SESSION_COOKIE_AGE = 60 * 60
+SESSION_COOKIE_AGE = 60 * 60 * 24
 #: Extend the session on every request
 SESSION_SAVE_EVERY_REQUEST = True
 
