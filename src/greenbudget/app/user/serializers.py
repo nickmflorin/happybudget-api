@@ -117,7 +117,7 @@ class UserSerializer(EnhancedModelSerializer):
     date_joined = serializers.DateTimeField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
-    timezone = serializers.SerializerMethodField(read_only=True)
+    timezone = serializers.CharField()
     profile_image = Base64ImageField(required=False)
 
     class Meta:
@@ -127,6 +127,3 @@ class UserSerializer(EnhancedModelSerializer):
             'profile_image')
         fields = nested_fields + (
             'created_at', 'updated_at', 'last_login', 'date_joined', 'timezone')
-
-    def get_timezone(self, instance):
-        return str(instance.timezone)
