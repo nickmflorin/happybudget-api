@@ -5,6 +5,8 @@ from django.core.validators import RegexValidator
 from django.contrib.contenttypes.models import ContentType
 from django.db import models, IntegrityError
 
+from .managers import ColorManager
+
 
 class Color(models.Model):
     code = RGBColorField(
@@ -21,6 +23,8 @@ class Color(models.Model):
         limit_choices_to=models.Q(app_label='group', model='group')
         | models.Q(app_label='fringe', model='fringe')
     )
+
+    objects = ColorManager()
 
     class Meta:
         get_latest_by = "created_at"
