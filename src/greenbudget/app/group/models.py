@@ -28,6 +28,15 @@ class Group(PolymorphicModel):
         on_delete=models.SET_NULL,
         null=True
     )
+    color_new = models.ForeignKey(
+        to='tagging.Color',
+        on_delete=models.SET_NULL,
+        null=True,
+        limit_choices_to=models.Q(
+            content_types__model='group',
+            content_types__app_label='group'
+        )
+    )
     color = RGBColorField(colors=[
         "#797695",
         "#ff7165",

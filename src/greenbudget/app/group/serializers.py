@@ -4,6 +4,7 @@ from greenbudget.lib.rest_framework_utils.serializers import (
     EnhancedModelSerializer)
 
 from greenbudget.app.account.models import BudgetAccount, TemplateAccount
+from greenbudget.app.tagging.serializers import ColorField
 from greenbudget.app.subaccount.models import (
     BudgetSubAccount, TemplateSubAccount)
 
@@ -28,6 +29,9 @@ class GroupSerializer(EnhancedModelSerializer):
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
     estimated = serializers.FloatField(read_only=True)
+
+    color_new = ColorField(content_type_model=Group)
+
     color = serializers.ChoiceField(
         required=True,
         choices=[
@@ -50,7 +54,7 @@ class GroupSerializer(EnhancedModelSerializer):
         model = Group
         fields = (
             'id', 'name', 'created_by', 'created_at', 'updated_by',
-            'updated_at', 'color', 'estimated')
+            'updated_at', 'color', 'estimated', 'color_new')
 
     def validate_name(self, value):
         parent = self.context.get('parent')

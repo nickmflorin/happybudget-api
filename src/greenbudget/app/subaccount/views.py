@@ -94,6 +94,8 @@ class SubAccountViewSet(
     (4) PATCH /subaccounts/<pk>/bulk-update-subaccounts/
     (5) PATCH /subaccounts/<pk>/bulk-create-subaccounts/
     """
+    throttle_classes = []
+
     @cached_property
     def instance_cls(self):
         instance = self.get_object()

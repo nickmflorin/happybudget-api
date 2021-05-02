@@ -8,13 +8,16 @@ from django.db import models, IntegrityError
 from .managers import ColorManager
 
 
+ColorCodeValidator = RegexValidator(
+    r'^#(?:[0-9a-fA-F]{3}){1,2}$',
+    message="Enter a valid color hexadecimal code."
+)
+
+
 class Color(models.Model):
     code = RGBColorField(
         unique=True,
-        validators=[RegexValidator(
-            r'^#(?:[0-9a-fA-F]{3}){1,2}$',
-            message="Enter a valid color hexadecimal code."
-        )],
+        validators=[ColorCodeValidator],
     )
     created_at = models.DateTimeField(auto_now_add=True)
     content_types = models.ManyToManyField(
