@@ -144,6 +144,7 @@ INSTALLED_APPS = [
     'greenbudget.app.group',
     'greenbudget.app.history',
     'greenbudget.app.subaccount',
+    'greenbudget.app.tagging',
     'greenbudget.app.template',
     'greenbudget.app.user',
     'greenbudget.app.jwt'
