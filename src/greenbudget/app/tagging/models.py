@@ -34,6 +34,9 @@ class Color(models.Model):
             )
         ]
 
+    def __str__(self):
+        return self.code
+
     def save(self, *args, **kwargs):
         try:
             self.full_clean()
