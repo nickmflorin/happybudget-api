@@ -10,6 +10,7 @@ from pathlib import Path
 
 from greenbudget.conf import Environments, config
 
+from .admin import *  # noqa
 from .aws import *  # noqa
 from .logging import *  # noqa
 
@@ -63,7 +64,6 @@ CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_DOMAIN = ".greenbudget.cloud"
 CSRF_TRUSTED_ORIGINS = [
     'https://app.greenbudget.cloud',
-    'https://app.dev.greenbudget.cloud',
 ]
 CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_ALLOW_ALL = False
@@ -76,6 +76,7 @@ ALLOWED_HOSTS = [
     'gb-dev-lb-563148772.us-east-1.elb.amazonaws.com',  # Load Balancer
     '172.31.88.83',  # EB Health Check
     '54.236.237.215',
+    'localhost'  # Required for Admin access locally.
 ]
 
 # JWT Configuration
