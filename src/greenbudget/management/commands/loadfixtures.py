@@ -2,7 +2,7 @@ from django.core import management
 from greenbudget.management.base import CustomCommand
 
 
-FIXTURES = []
+FIXTURES = ['colors.json']
 
 
 class Command(CustomCommand):
