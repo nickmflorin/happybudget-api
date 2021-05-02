@@ -17,6 +17,7 @@ from greenbudget.app.group.models import (
 )
 from greenbudget.app.subaccount.models import (
     BudgetSubAccount, TemplateSubAccount)
+from greenbudget.app.tagging.models import Color
 from greenbudget.app.template.models import Template
 from greenbudget.app.user.models import User
 
@@ -48,6 +49,28 @@ def ConstantTimeMixin(*fields):
             instance.refresh_from_db()
             return instance
     return DynamicConstantTimeMixin
+
+
+class ColorFactory(CustomModelFactory):
+    """
+    A DjangoModelFactory to create instances of :obj:`User`.
+    """
+    code = factory.Faker('color')
+
+    class Meta:
+        model = Color
+
+    @factory.post_generation
+    def content_types(self, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for content_type in extracted:
+                if isinstance(content_type, ContentType):
+                    self.content_types.add(content_type)
+                else:
+                    ct = ContentType.objects.get_for_model(content_type)
+                    self.content_types.add(ct)
 
 
 class UserFactory(CustomModelFactory):
