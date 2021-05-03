@@ -323,7 +323,7 @@ def create_contact(user, db):
 
 
 @pytest.fixture
-def models():
+def models(db):
     class Models:
         def __init__(self):
             for model in django.apps.apps.get_models():

@@ -1,8 +1,13 @@
 import logging
 import pytest
 import requests
+
+from django.contrib.contenttypes.models import ContentType
 from rest_framework.test import APIClient
 
+from greenbudget.app.fringe.models import Fringe
+from greenbudget.app.group.models import Group
+from greenbudget.app.tagging.models import Color
 from greenbudget.app.user.models import User
 
 from .fixtures import *  # noqa
@@ -104,3 +109,18 @@ def staff_user(db):
 @pytest.fixture
 def login_user(api_client, user):
     api_client.force_login(user)
+
+
+@pytest.fixture(autouse=True)
+def colors(db):
+    color_list = ['#a1887f', '#EFEFEF']
+    content_types = [
+        ContentType.objects.get_for_model(m) for m in [Group, Fringe]
+    ]
+    colors = []
+    for code in color_list:
+        color_obj = Color.objects.create(code=code)
+        color_obj.content_types.set(content_types)
+        color_obj.save()
+        colors.append(color_obj)
+    yield colors

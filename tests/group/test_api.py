@@ -1,7 +1,5 @@
 import pytest
 
-from greenbudget.app.group.models import Group
-
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_get_budget_account_group(api_client, user, create_budget_account,
@@ -18,7 +16,7 @@ def test_get_budget_account_group(api_client, user, create_budget_account,
         "name": group.name,
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
-        "color": '#EFEFEF',
+        "color": None,
         "actual": None,
         "variance": None,
         "estimated": None,
@@ -43,7 +41,7 @@ def test_get_template_account_group(api_client, user, create_template,
         "name": group.name,
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
-        "color": '#EFEFEF',
+        "color": None,
         "estimated": None,
         "created_by": user.pk,
         "updated_by": user.pk,
@@ -71,7 +69,7 @@ def test_get_budget_subaccount_group(api_client, user, create_budget_account,
         "name": group.name,
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
-        "color": '#EFEFEF',
+        "color": None,
         "actual": None,
         "variance": None,
         "estimated": None,
@@ -101,7 +99,7 @@ def test_get_template_subaccount_group(api_client, user, create_template,
         "name": group.name,
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
-        "color": '#EFEFEF',
+        "color": None,
         "estimated": None,
         "updated_by": user.pk,
         "created_by": user.pk,
@@ -132,7 +130,7 @@ def test_update_budget_account_group(api_client, user, create_budget_account,
         "name": "Group Name",
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
-        "color": '#EFEFEF',
+        "color": None,
         "actual": None,
         "variance": None,
         "estimated": None,
@@ -165,7 +163,7 @@ def test_update_template_account_group(api_client, user, create_template,
         "name": "Group Name",
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
-        "color": '#EFEFEF',
+        "color": None,
         "estimated": None,
         "created_by": user.pk,
         "updated_by": user.pk,
@@ -200,7 +198,7 @@ def test_update_budget_subaccount_group(api_client, user, create_budget_account,
         "name": "Group Name",
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
-        "color": '#EFEFEF',
+        "color": None,
         "actual": None,
         "variance": None,
         "estimated": None,
@@ -237,7 +235,7 @@ def test_update_template_subaccount_group(api_client, user, create_template,
         "name": "Group Name",
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
-        "color": '#EFEFEF',
+        "color": None,
         "estimated": None,
         "updated_by": user.pk,
         "created_by": user.pk,
@@ -429,7 +427,8 @@ def test_update_template_subaccount_group_duplicate_name(api_client, user,
 
 
 def test_budget_account_group_account_already_in_group(api_client, user,
-        create_budget_account, create_budget, create_budget_account_group):
+        create_budget_account, create_budget, create_budget_account_group,
+        models):
     budget = create_budget()
     group = create_budget_account_group(parent=budget)
     account = create_budget_account(budget=budget, group=group)
@@ -443,11 +442,11 @@ def test_budget_account_group_account_already_in_group(api_client, user,
     account.refresh_from_db()
     assert account.group == another_group
     # The group should be deleted since it has become empty.
-    assert Group.objects.count() == 1
+    assert models.Group.objects.count() == 1
 
 
 def test_template_account_group_account_already_in_group(api_client, user,
-        create_template_account, create_template,
+        create_template_account, create_template, models,
         create_template_account_group):
     template = create_template()
     group = create_template_account_group(parent=template)
@@ -462,12 +461,12 @@ def test_template_account_group_account_already_in_group(api_client, user,
     account.refresh_from_db()
     assert account.group == another_group
     # The group should be deleted since it has become empty.
-    assert Group.objects.count() == 1
+    assert models.Group.objects.count() == 1
 
 
 def test_budget_subaccount_group_account_already_in_group(api_client, user,
         create_budget_account, create_budget, create_budget_subaccount_group,
-        create_budget_subaccount):
+        create_budget_subaccount, models):
     budget = create_budget()
     account = create_budget_account(budget=budget)
     group = create_budget_subaccount_group(parent=account)
@@ -483,12 +482,12 @@ def test_budget_subaccount_group_account_already_in_group(api_client, user,
     subaccount.refresh_from_db()
     assert subaccount.group == another_group
     # The group should be deleted since it has become empty.
-    assert Group.objects.count() == 1
+    assert models.Group.objects.count() == 1
 
 
 def test_template_subaccount_group_account_already_in_group(api_client, user,
         create_template_account, create_template, create_template_subaccount,
-        create_template_subaccount_group):
+        create_template_subaccount_group, models):
     template = create_template()
     account = create_template_account(budget=template)
     group = create_template_subaccount_group(parent=account)
@@ -504,11 +503,11 @@ def test_template_subaccount_group_account_already_in_group(api_client, user,
     subaccount.refresh_from_db()
     assert subaccount.group == another_group
     # The group should be deleted since it has become empty.
-    assert Group.objects.count() == 1
+    assert models.Group.objects.count() == 1
 
 
 def test_delete_budget_account_group(api_client, user, create_budget,
-        create_budget_account_group):
+        create_budget_account_group, models):
     budget = create_budget()
     group = create_budget_account_group(parent=budget)
 
@@ -516,11 +515,11 @@ def test_delete_budget_account_group(api_client, user, create_budget,
     response = api_client.delete("/v1/groups/%s/" % group.pk)
     assert response.status_code == 204
 
-    assert Group.objects.count() == 0
+    assert models.Group.objects.count() == 0
 
 
 def test_delete_template_account_group(api_client, user, create_template,
-        create_template_account_group):
+        create_template_account_group, models):
     template = create_template()
     group = create_template_account_group(parent=template)
 
@@ -528,11 +527,11 @@ def test_delete_template_account_group(api_client, user, create_template,
     response = api_client.delete("/v1/groups/%s/" % group.pk)
     assert response.status_code == 204
 
-    assert Group.objects.count() == 0
+    assert models.Group.objects.count() == 0
 
 
 def test_delete_budget_subaccount_group(api_client, user, create_budget_account,
-        create_budget, create_budget_subaccount_group):
+        create_budget, create_budget_subaccount_group, models):
     budget = create_budget()
     account = create_budget_account(budget=budget)
     group = create_budget_subaccount_group(parent=account)
@@ -541,11 +540,12 @@ def test_delete_budget_subaccount_group(api_client, user, create_budget_account,
     response = api_client.delete("/v1/groups/%s/" % group.pk)
     assert response.status_code == 204
 
-    assert Group.objects.count() == 0
+    assert models.Group.objects.count() == 0
 
 
 def test_delete_template_subaccount_group(api_client, user, create_template,
-        create_template_account, create_template_subaccount_group):
+        create_template_account, create_template_subaccount_group,
+        models):
     template = create_template()
     account = create_template_account(budget=template)
     group = create_template_subaccount_group(parent=account)
@@ -554,4 +554,4 @@ def test_delete_template_subaccount_group(api_client, user, create_template,
     response = api_client.delete("/v1/groups/%s/" % group.pk)
     assert response.status_code == 204
 
-    assert Group.objects.count() == 0
+    assert models.Group.objects.count() == 0

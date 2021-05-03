@@ -1,10 +1,8 @@
 import pytest
 
-from greenbudget.app.user.models import User
-
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_registration(api_client, db):
+def test_registration(api_client, models):
     response = api_client.post("/v1/users/registration/", data={
         "first_name": "Jack",
         "last_name": "Johnson",
@@ -30,7 +28,7 @@ def test_registration(api_client, db):
         "profile_image": None,
         "timezone": "America/New_York"
     }
-    user = User.objects.get(pk=response.json()['id'])
+    user = models.User.objects.get(pk=response.json()['id'])
     assert user.first_name == "Jack"
     assert user.last_name == "Johnson"
     assert user.email == "jjohnson@gmail.com"

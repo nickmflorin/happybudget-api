@@ -1,7 +1,5 @@
 import pytest
 
-from greenbudget.app.group.models import TemplateAccountGroup
-
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_get_template_account_groups(api_client, user, create_template,
@@ -28,7 +26,7 @@ def test_get_template_account_groups(api_client, user, create_template,
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_create_template_account_group(api_client, user, create_template,
-        create_template_account):
+        create_template_account, models):
     template = create_template()
     account = create_template_account(budget=template)
 
@@ -40,7 +38,7 @@ def test_create_template_account_group(api_client, user, create_template,
     })
     assert response.status_code == 201
 
-    group = TemplateAccountGroup.objects.first()
+    group = models.TemplateAccountGroup.objects.first()
     assert group is not None
     assert group.name == "Group Name"
     assert group.children.count() == 1

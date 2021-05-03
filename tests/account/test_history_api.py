@@ -1,11 +1,9 @@
 from copy import deepcopy
 import pytest
 
-from greenbudget.app.history.models import FieldAlterationEvent, CreateEvent
-
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_accounts_history(api_client, create_budget, user):
+def test_get_accounts_history(api_client, create_budget, user, models):
     budget = create_budget()
     api_client.force_login(user)
     response = api_client.post("/v1/budgets/%s/accounts/" % budget.pk, data={
@@ -21,8 +19,8 @@ def test_get_accounts_history(api_client, create_budget, user):
     response = api_client.get("/v1/budgets/%s/accounts/history/" % budget.pk)
     assert response.status_code == 200
 
-    assert CreateEvent.objects.count() == 1
-    assert FieldAlterationEvent.objects.count() == 2
+    assert models.CreateEvent.objects.count() == 1
+    assert models.FieldAlterationEvent.objects.count() == 2
     assert response.json()['count'] == 3
     serialized_events = [
         {
@@ -94,7 +92,7 @@ def test_get_accounts_history(api_client, create_budget, user):
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_get_account_history(api_client, create_budget, create_budget_account,
-        user):
+        user, models):
     budget = create_budget()
     account = create_budget_account(
         budget=budget,
@@ -108,7 +106,7 @@ def test_get_account_history(api_client, create_budget, create_budget_account,
     response = api_client.get("/v1/accounts/%s/history/" % account.pk)
     assert response.status_code == 200
 
-    assert FieldAlterationEvent.objects.count() == 2
+    assert models.FieldAlterationEvent.objects.count() == 2
     assert response.json()['count'] == 2
     serialized_events = [
         {

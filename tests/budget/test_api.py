@@ -2,13 +2,9 @@ import pytest
 
 from greenbudget.lib.utils.dateutils import api_datetime_string
 
-from greenbudget.app.account.models import Account
-from greenbudget.app.budget.models import Budget
-from greenbudget.app.fringe.models import Fringe
-
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_budgets(api_client, user, create_budget):
+def test_get_budgets(api_client, user, create_budget, models):
     api_client.force_login(user)
     budgets = [create_budget(), create_budget()]
     response = api_client.get("/v1/budgets/")
@@ -21,7 +17,8 @@ def test_get_budgets(api_client, user, create_budget):
             "project_number": budgets[0].project_number,
             "production_type": {
                 "id": budgets[0].production_type,
-                "name": Budget.PRODUCTION_TYPES[budgets[0].production_type]
+                "name": models.Budget.PRODUCTION_TYPES[
+                    budgets[0].production_type]
             },
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
@@ -44,7 +41,8 @@ def test_get_budgets(api_client, user, create_budget):
             "project_number": budgets[1].project_number,
             "production_type": {
                 "id": budgets[1].production_type,
-                "name": Budget.PRODUCTION_TYPES[budgets[1].production_type]
+                "name": models.Budget.PRODUCTION_TYPES[
+                    budgets[1].production_type]
             },
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
@@ -65,7 +63,7 @@ def test_get_budgets(api_client, user, create_budget):
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_budget(api_client, user, create_budget):
+def test_get_budget(api_client, user, create_budget, models):
     api_client.force_login(user)
     budget = create_budget()
     response = api_client.get("/v1/budgets/%s/" % budget.pk)
@@ -76,7 +74,7 @@ def test_get_budget(api_client, user, create_budget):
         "project_number": budget.project_number,
         "production_type": {
             "id": budget.production_type,
-            "name": Budget.PRODUCTION_TYPES[budget.production_type]
+            "name": models.Budget.PRODUCTION_TYPES[budget.production_type]
         },
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
@@ -96,7 +94,7 @@ def test_get_budget(api_client, user, create_budget):
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_update_budget(api_client, user, create_budget):
+def test_update_budget(api_client, user, create_budget, models):
     budget = create_budget()
     api_client.force_login(user)
     response = api_client.patch("/v1/budgets/%s/" % budget.pk, data={
@@ -111,7 +109,7 @@ def test_update_budget(api_client, user, create_budget):
         "project_number": budget.project_number,
         "production_type": {
             "id": budget.production_type,
-            "name": Budget.PRODUCTION_TYPES[budget.production_type]
+            "name": models.Budget.PRODUCTION_TYPES[budget.production_type]
         },
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
@@ -131,7 +129,7 @@ def test_update_budget(api_client, user, create_budget):
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_budget(api_client, user):
+def test_create_budget(api_client, user, models):
     api_client.force_login(user)
     response = api_client.post("/v1/budgets/", data={
         "name": "Test Name",
@@ -139,7 +137,7 @@ def test_create_budget(api_client, user):
     })
     assert response.status_code == 201
 
-    budget = Budget.objects.first()
+    budget = models.Budget.objects.first()
     assert budget is not None
 
     assert response.json() == {
@@ -148,7 +146,7 @@ def test_create_budget(api_client, user):
         "project_number": budget.project_number,
         "production_type": {
             "id": 1,
-            "name": Budget.PRODUCTION_TYPES[1],
+            "name": models.Budget.PRODUCTION_TYPES[1],
         },
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
@@ -170,7 +168,7 @@ def test_create_budget(api_client, user):
 @pytest.mark.freeze_time('2020-01-01')
 def test_create_budget_from_template(api_client, user, create_template,
         create_template_account, create_template_subaccount, admin_user,
-        create_fringe, create_template_account_group,
+        create_fringe, create_template_account_group, models,
         create_template_subaccount_group):
     template = create_template(created_by=admin_user)
     fringes = [
@@ -240,10 +238,10 @@ def test_create_budget_from_template(api_client, user, create_template,
     assert response.json()['name'] == 'Test Name'
     assert response.json()['production_type'] == {
         "id": 1,
-        "name": Budget.PRODUCTION_TYPES[1],
+        "name": models.Budget.PRODUCTION_TYPES[1],
     }
 
-    budget = Budget.objects.first()
+    budget = models.Budget.objects.first()
     assert budget is not None
     assert budget.name == "Test Name"
     assert budget.accounts.count() == 2
@@ -355,7 +353,7 @@ def test_create_budget_from_template(api_client, user, create_template,
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_duplicate_budget(api_client, user, create_budget, create_fringe,
-        create_budget_account, create_budget_subaccount,
+        create_budget_account, create_budget_subaccount, models,
         create_budget_account_group, create_budget_subaccount_group):
     original = create_budget(created_by=user)
     fringes = [
@@ -418,8 +416,8 @@ def test_duplicate_budget(api_client, user, create_budget, create_fringe,
     api_client.force_login(user)
     response = api_client.post("/v1/budgets/%s/duplicate/" % original.pk)
 
-    assert Budget.objects.count() == 2
-    budget = Budget.objects.all()[1]
+    assert models.Budget.objects.count() == 2
+    budget = models.Budget.objects.all()[1]
 
     assert response.status_code == 201
     assert response.json() == {
@@ -428,7 +426,7 @@ def test_duplicate_budget(api_client, user, create_budget, create_fringe,
         "project_number": original.project_number,
         "production_type": {
             "id": original.production_type,
-            "name": Budget.PRODUCTION_TYPES[original.production_type]
+            "name": models.Budget.PRODUCTION_TYPES[original.production_type]
         },
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
@@ -555,7 +553,7 @@ def test_duplicate_budget(api_client, user, create_budget, create_fringe,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_budgets_in_trash(api_client, user, create_budget, db):
+def test_get_budgets_in_trash(api_client, user, create_budget, models):
     api_client.force_login(user)
     budgets = [
         create_budget(trash=True),
@@ -572,7 +570,8 @@ def test_get_budgets_in_trash(api_client, user, create_budget, db):
             "project_number": budgets[0].project_number,
             "production_type": {
                 "id": budgets[0].production_type,
-                "name": Budget.PRODUCTION_TYPES[budgets[0].production_type]
+                "name": models.Budget.PRODUCTION_TYPES[
+                    budgets[0].production_type]
             },
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
@@ -595,7 +594,8 @@ def test_get_budgets_in_trash(api_client, user, create_budget, db):
             "project_number": budgets[1].project_number,
             "production_type": {
                 "id": budgets[1].production_type,
-                "name": Budget.PRODUCTION_TYPES[budgets[1].production_type]
+                "name": models.Budget.PRODUCTION_TYPES[
+                    budgets[1].production_type]
             },
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
@@ -616,7 +616,7 @@ def test_get_budgets_in_trash(api_client, user, create_budget, db):
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_budget_in_trash(api_client, user, create_budget):
+def test_get_budget_in_trash(api_client, user, create_budget, models):
     api_client.force_login(user)
     budget = create_budget(trash=True)
     response = api_client.get("/v1/budgets/trash/%s/" % budget.pk)
@@ -627,7 +627,7 @@ def test_get_budget_in_trash(api_client, user, create_budget):
         "project_number": budget.project_number,
         "production_type": {
                 "id": budget.production_type,
-                "name": Budget.PRODUCTION_TYPES[budget.production_type]
+                "name": models.Budget.PRODUCTION_TYPES[budget.production_type]
         },
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
@@ -667,12 +667,12 @@ def test_restore_budget(api_client, user, create_budget):
     assert budget.trash is False
 
 
-def test_permanently_delete_budget(api_client, user, create_budget):
+def test_permanently_delete_budget(api_client, user, create_budget, models):
     api_client.force_login(user)
     budget = create_budget(trash=True)
     response = api_client.delete("/v1/budgets/trash/%s/" % budget.pk)
     assert response.status_code == 204
-    assert Budget.objects.first() is None
+    assert models.Budget.objects.first() is None
 
 
 def test_get_budget_items(api_client, user, create_budget,
@@ -871,7 +871,7 @@ def test_bulk_update_budget_accounts_outside_budget(api_client, user,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_bulk_create_budget_accounts(api_client, user, create_budget):
+def test_bulk_create_budget_accounts(api_client, user, create_budget, models):
     api_client.force_login(user)
     budget = create_budget()
     response = api_client.patch(
@@ -891,7 +891,7 @@ def test_bulk_create_budget_accounts(api_client, user, create_budget):
         })
     assert response.status_code == 201
 
-    accounts = Account.objects.all()
+    accounts = models.Account.objects.all()
     assert len(accounts) == 2
     assert accounts[0].identifier == "account-a"
     assert accounts[0].description == "New Description 1"
@@ -907,7 +907,8 @@ def test_bulk_create_budget_accounts(api_client, user, create_budget):
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_bulk_create_budget_accounts_count(api_client, user, create_budget):
+def test_bulk_create_budget_accounts_count(api_client, user, create_budget,
+        models):
     api_client.force_login(user)
     budget = create_budget()
     response = api_client.patch(
@@ -917,7 +918,7 @@ def test_bulk_create_budget_accounts_count(api_client, user, create_budget):
     )
     assert response.status_code == 201
 
-    accounts = Account.objects.all()
+    accounts = models.Account.objects.all()
     assert len(accounts) == 2
     assert len(response.json()['data']) == 2
 
@@ -956,7 +957,7 @@ def test_bulk_update_budget_actuals(api_client, user, create_budget,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_bulk_create_budget_fringes(api_client, user, create_budget):
+def test_bulk_create_budget_fringes(api_client, user, create_budget, models):
     api_client.force_login(user)
     budget = create_budget()
     response = api_client.patch(
@@ -976,7 +977,7 @@ def test_bulk_create_budget_fringes(api_client, user, create_budget):
         })
     assert response.status_code == 201
 
-    fringes = Fringe.objects.all()
+    fringes = models.Fringe.objects.all()
     assert len(fringes) == 2
     assert fringes[0].name == "fringe-a"
     assert fringes[0].rate == 1.2

@@ -1,10 +1,8 @@
 import pytest
 
-from greenbudget.app.fringe.models import Fringe
-
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_update_fringe(api_client, user, create_budget, create_fringe):
+def test_update_fringe(api_client, user, create_budget, create_fringe, models):
     api_client.force_login(user)
     budget = create_budget()
     fringe = create_fringe(budget=budget)
@@ -29,7 +27,7 @@ def test_update_fringe(api_client, user, create_budget, create_fringe):
         "num_times_used": fringe.num_times_used,
         "unit": {
             "id": 1,
-            "name": Fringe.UNITS[1]
+            "name": models.Fringe.UNITS[1]
         }
     }
     assert fringe.name == "Test Fringe"
@@ -39,7 +37,7 @@ def test_update_fringe(api_client, user, create_budget, create_fringe):
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_fringe(api_client, user, create_budget, create_fringe):
+def test_get_fringe(api_client, user, create_budget, create_fringe, models):
     api_client.force_login(user)
     budget = create_budget()
     fringe = create_fringe(budget=budget)
@@ -57,17 +55,17 @@ def test_get_fringe(api_client, user, create_budget, create_fringe):
         "cutoff": fringe.cutoff,
         "unit": {
             "id": fringe.unit,
-            "name": Fringe.UNITS[fringe.unit]
+            "name": models.Fringe.UNITS[fringe.unit]
         },
         "num_times_used": fringe.num_times_used
     }
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_delete_fringe(api_client, user, create_budget, create_fringe):
+def test_delete_fringe(api_client, user, create_budget, create_fringe, models):
     api_client.force_login(user)
     budget = create_budget()
     fringe = create_fringe(budget=budget)
     response = api_client.delete("/v1/fringes/%s/" % fringe.pk)
     assert response.status_code == 204
-    assert Fringe.objects.first() is None
+    assert models.Fringe.objects.first() is None

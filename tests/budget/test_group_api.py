@@ -1,7 +1,5 @@
 import pytest
 
-from greenbudget.app.group.models import BudgetAccountGroup
-
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_get_budget_account_groups(api_client, user,
@@ -30,7 +28,7 @@ def test_get_budget_account_groups(api_client, user,
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_create_budget_account_group(api_client, user, create_budget_account,
-        create_budget):
+        create_budget, models):
     budget = create_budget()
     account = create_budget_account(budget=budget)
 
@@ -42,7 +40,7 @@ def test_create_budget_account_group(api_client, user, create_budget_account,
     })
     assert response.status_code == 201
 
-    group = BudgetAccountGroup.objects.first()
+    group = models.BudgetAccountGroup.objects.first()
     assert group is not None
     assert group.name == "Group Name"
     assert group.children.count() == 1

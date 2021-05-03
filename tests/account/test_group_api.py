@@ -1,8 +1,5 @@
 import pytest
 
-from greenbudget.app.group.models import (
-    BudgetSubAccountGroup, TemplateSubAccountGroup)
-
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_get_budget_account_subaccount_groups(api_client, user,
@@ -66,7 +63,8 @@ def test_get_template_account_subaccount_groups(api_client, user,
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_create_budget_account_subaccount_group(api_client, user,
-        create_budget_subaccount, create_budget_account, create_budget):
+        create_budget_subaccount, create_budget_account, create_budget,
+        models):
     budget = create_budget()
     account = create_budget_account(budget=budget)
     subaccount = create_budget_subaccount(parent=account, budget=budget)
@@ -79,7 +77,7 @@ def test_create_budget_account_subaccount_group(api_client, user,
     })
     assert response.status_code == 201
 
-    group = BudgetSubAccountGroup.objects.first()
+    group = models.BudgetSubAccountGroup.objects.first()
     assert group is not None
     assert group.name == "Group Name"
     assert group.children.count() == 1
@@ -103,7 +101,8 @@ def test_create_budget_account_subaccount_group(api_client, user,
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_create_template_account_subaccount_group(api_client, user,
-        create_template_subaccount, create_template_account, create_template):
+        create_template_subaccount, create_template_account, create_template,
+        models):
     template = create_template()
     account = create_template_account(budget=template)
     subaccount = create_template_subaccount(parent=account, budget=template)
@@ -116,7 +115,7 @@ def test_create_template_account_subaccount_group(api_client, user,
     })
     assert response.status_code == 201
 
-    group = TemplateSubAccountGroup.objects.first()
+    group = models.TemplateSubAccountGroup.objects.first()
     assert group is not None
     assert group.name == "Group Name"
     assert group.children.count() == 1

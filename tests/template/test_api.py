@@ -1,9 +1,5 @@
 import pytest
 
-from greenbudget.app.account.models import TemplateAccount
-from greenbudget.app.fringe.models import Fringe
-from greenbudget.app.template.models import Template
-
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_get_templates(api_client, user, create_template, staff_user):
@@ -182,14 +178,14 @@ def test_get_community_template_non_staff_user(api_client, staff_user, user,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_template(api_client, user):
+def test_create_template(api_client, user, models):
     api_client.force_login(user)
     response = api_client.post("/v1/templates/", data={
         "name": "Test Name",
     })
     assert response.status_code == 201
 
-    template = Template.objects.first()
+    template = models.Template.objects.first()
     assert template is not None
     assert template.name == "Test Name"
     assert response.json() == {
@@ -205,14 +201,14 @@ def test_create_template(api_client, user):
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_community_template(api_client, staff_user):
+def test_create_community_template(api_client, staff_user, models):
     api_client.force_login(staff_user)
     response = api_client.post("/v1/templates/community/", data={
         "name": "Test Name",
     })
     assert response.status_code == 201
 
-    template = Template.objects.first()
+    template = models.Template.objects.first()
     assert template is not None
     assert template.name == "Test Name"
     assert template.community is True
@@ -340,7 +336,7 @@ def test_update_community_template_non_staff_user(api_client, staff_user,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_duplicate_template(api_client, user, create_template,
+def test_duplicate_template(api_client, user, create_template, models,
         create_template_account, create_template_subaccount,
         create_fringe, create_template_account_group,
         create_template_subaccount_group):
@@ -404,8 +400,8 @@ def test_duplicate_template(api_client, user, create_template,
     ]
     api_client.force_login(user)
     response = api_client.post("/v1/templates/%s/duplicate/" % original.pk)
-    assert Template.objects.count() == 2
-    template = Template.objects.all()[1]
+    assert models.Template.objects.count() == 2
+    template = models.Template.objects.all()[1]
 
     assert response.status_code == 201
     assert response.json() == {
@@ -611,12 +607,12 @@ def test_restore_template(api_client, user, create_template):
     assert template.trash is False
 
 
-def test_permanently_delete_template(api_client, user, create_template):
+def test_permanently_delete_template(api_client, user, create_template, models):
     api_client.force_login(user)
     template = create_template(trash=True)
     response = api_client.delete("/v1/templates/trash/%s/" % template.pk)
     assert response.status_code == 204
-    assert Template.objects.first() is None
+    assert models.Template.objects.first() is None
 
 
 def test_bulk_update_template_accounts(api_client, user, create_template,
@@ -677,7 +673,8 @@ def test_bulk_update_template_accounts_outside_template(api_client, user,
     assert response.status_code == 400
 
 
-def test_bulk_create_template_accounts(api_client, user, create_template):
+def test_bulk_create_template_accounts(api_client, user, create_template,
+        models):
     api_client.force_login(user)
     template = create_template()
     response = api_client.patch(
@@ -697,7 +694,7 @@ def test_bulk_create_template_accounts(api_client, user, create_template):
         })
     assert response.status_code == 201
 
-    accounts = TemplateAccount.objects.all()
+    accounts = models.TemplateAccount.objects.all()
     assert len(accounts) == 2
     assert accounts[0].identifier == "account-a"
     assert accounts[0].description == "New Description 1"
@@ -713,7 +710,8 @@ def test_bulk_create_template_accounts(api_client, user, create_template):
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_bulk_create_template_accounts_count(api_client, user, create_template):
+def test_bulk_create_template_accounts_count(api_client, user, create_template,
+        models):
     api_client.force_login(user)
     template = create_template()
     response = api_client.patch(
@@ -723,13 +721,14 @@ def test_bulk_create_template_accounts_count(api_client, user, create_template):
     )
     assert response.status_code == 201
 
-    accounts = TemplateAccount.objects.all()
+    accounts = models.TemplateAccount.objects.all()
     assert len(accounts) == 2
     assert len(response.json()['data']) == 2
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_bulk_create_template_fringes(api_client, user, create_template):
+def test_bulk_create_template_fringes(api_client, user, create_template,
+        models):
     api_client.force_login(user)
     template = create_template()
     response = api_client.patch(
@@ -749,7 +748,7 @@ def test_bulk_create_template_fringes(api_client, user, create_template):
         })
     assert response.status_code == 201
 
-    fringes = Fringe.objects.all()
+    fringes = models.Fringe.objects.all()
     assert len(fringes) == 2
     assert fringes[0].name == "fringe-a"
     assert fringes[0].rate == 1.2

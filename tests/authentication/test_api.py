@@ -7,7 +7,6 @@ from django.test import override_settings
 
 from greenbudget.lib.utils.dateutils import api_datetime_string
 from greenbudget.app.authentication.models import ResetUID
-from greenbudget.app.user.models import User
 
 
 def test_login(user, api_client):
@@ -101,7 +100,7 @@ def test_social_login_user_exists(api_client, create_user):
 
 @responses.activate
 @override_settings(GOOGLE_OAUTH_API_URL="https://www.test-validate-user-token/")
-def test_social_login_user_does_not_exist(api_client, db):
+def test_social_login_user_does_not_exist(api_client, models):
     responses.add(
         method=responses.GET,
         url="https://www.test-validate-user-token/?id_token=testtoken",
@@ -115,7 +114,7 @@ def test_social_login_user_does_not_exist(api_client, db):
         "token_id": "testtoken",
         'provider': 'google',
     })
-    user = User.objects.filter(email="jjohnson@gmail.com").first()
+    user = models.User.objects.filter(email="jjohnson@gmail.com").first()
     assert user is not None
     assert user.first_name == "Jack"
     assert user.last_name == "Johnson"
@@ -127,7 +126,7 @@ def test_social_login_user_does_not_exist(api_client, db):
 
 @responses.activate
 @override_settings(GOOGLE_OAUTH_API_URL="https://www.test-validate-user-token/")
-def test_social_login_invalid_token(api_client, create_user, db):
+def test_social_login_invalid_token(api_client, create_user):
     create_user(email="jjohnson@gmail.com")
     responses.add(
         method=responses.GET,
@@ -218,7 +217,7 @@ def test_reset_password_invalid_token(api_client, db):
 
 @override_settings(PWD_RESET_LINK_EXPIRY_TIME_IN_HRS=48)
 @pytest.mark.freeze_time('2020-01-01')
-def test_reset_password_token_expired(user, api_client, freezer, db):
+def test_reset_password_token_expired(user, api_client, freezer):
     reset_uid = ResetUID.objects.create(
         token="token1234567",
         used=False,
@@ -249,7 +248,7 @@ def test_reset_password_token_expired(user, api_client, freezer, db):
     FROM_EMAIL="greenbudget@gmail.com"
 )
 @pytest.mark.freeze_time('2020-01-01')
-def test_forgot_password(user, api_client, db):
+def test_forgot_password(user, api_client):
     # Mock the Email Generation
     # Note that we cannot mock the email sending to test the contents of the
     # email because the email contents are supplied as arguments in the

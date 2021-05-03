@@ -1,12 +1,10 @@
 import datetime
 import pytest
 
-from greenbudget.app.subaccount.models import BudgetSubAccount
-
 
 @pytest.mark.freeze_time('2020-01-03')
 def test_get_budget_account_subaccounts(api_client, user, create_budget_account,
-        create_budget, create_budget_subaccount):
+        create_budget, create_budget_subaccount, models):
     budget = create_budget()
     account = create_budget_account(budget=budget)
     another_account = create_budget_account(budget=budget)
@@ -53,7 +51,7 @@ def test_get_budget_account_subaccounts(api_client, user, create_budget_account,
             "group": None,
             "unit": {
                 "id": subaccounts[0].unit,
-                "name": BudgetSubAccount.UNITS[subaccounts[0].unit]
+                "name": models.BudgetSubAccount.UNITS[subaccounts[0].unit]
             },
             "ancestors": [
                 {
@@ -101,7 +99,7 @@ def test_get_budget_account_subaccounts(api_client, user, create_budget_account,
             "updated_by": user.pk,
             "unit": {
                 "id": subaccounts[1].unit,
-                "name": BudgetSubAccount.UNITS[subaccounts[1].unit]
+                "name": models.BudgetSubAccount.UNITS[subaccounts[1].unit]
             },
             "ancestors": [
                 {
@@ -129,7 +127,7 @@ def test_get_budget_account_subaccounts(api_client, user, create_budget_account,
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_create_budget_subaccount(api_client, user, create_budget_account,
-        create_budget):
+        create_budget, models):
     budget = create_budget()
     account = create_budget_account(budget=budget)
     api_client.force_login(user)
@@ -142,7 +140,7 @@ def test_create_budget_subaccount(api_client, user, create_budget_account,
         }
     )
     assert response.status_code == 201
-    subaccount = BudgetSubAccount.objects.first()
+    subaccount = models.BudgetSubAccount.objects.first()
     assert subaccount.name == "New Subaccount"
     assert subaccount.description == "Test"
     assert subaccount.identifier == "100"

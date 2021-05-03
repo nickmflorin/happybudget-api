@@ -1,12 +1,10 @@
 from copy import deepcopy
 import pytest
 
-from greenbudget.app.history.models import FieldAlterationEvent
-
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_get_account_subaccounts_history(api_client, create_budget, user,
-        create_budget_subaccount, create_budget_account):
+        create_budget_subaccount, create_budget_account, models):
     api_client.force_login(user)
     budget = create_budget()
     account = create_budget_account(budget=budget)
@@ -29,7 +27,7 @@ def test_get_account_subaccounts_history(api_client, create_budget, user,
         "/v1/accounts/%s/subaccounts/history/" % account.pk)
     assert response.status_code == 200
 
-    assert FieldAlterationEvent.objects.count() == 5
+    assert models.FieldAlterationEvent.objects.count() == 5
 
     assert response.json()['count'] == 5
     serialized_events = [
@@ -152,7 +150,7 @@ def test_get_account_subaccounts_history(api_client, create_budget, user,
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_get_subaccount_subaccounts_history(api_client, create_budget, user,
-        create_budget_subaccount, create_budget_account):
+        create_budget_subaccount, create_budget_account, models):
     api_client.force_login(user)
     budget = create_budget()
     account = create_budget_account(budget=budget)
@@ -181,7 +179,7 @@ def test_get_subaccount_subaccounts_history(api_client, create_budget, user,
         % parent_subaccount.pk
     )
     assert response.status_code == 200
-    assert FieldAlterationEvent.objects.count() == 5
+    assert models.FieldAlterationEvent.objects.count() == 5
 
     assert response.json()['count'] == 5
     serialized_events = [
@@ -304,7 +302,7 @@ def test_get_subaccount_subaccounts_history(api_client, create_budget, user,
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_get_subaccount_history(api_client, create_budget, user,
-        create_budget_account, create_budget_subaccount):
+        create_budget_account, create_budget_subaccount, models):
     api_client.force_login(user)
     budget = create_budget()
     account = create_budget_account(budget=budget)
@@ -325,7 +323,7 @@ def test_get_subaccount_history(api_client, create_budget, user,
     })
     response = api_client.get("/v1/subaccounts/%s/history/" % subaccount.pk)
     assert response.status_code == 200
-    assert FieldAlterationEvent.objects.count() == 5
+    assert models.FieldAlterationEvent.objects.count() == 5
     assert response.json()['count'] == 5
     serialized_events = [
         {

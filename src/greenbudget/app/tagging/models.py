@@ -48,5 +48,5 @@ class Color(models.Model):
         try:
             self.full_clean()
         except ValidationError as e:
-            raise IntegrityError(e.error_dict['code'][1].message)
+            raise IntegrityError(str(e))
         return super().save(*args, **kwargs)

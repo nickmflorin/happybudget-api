@@ -1,7 +1,5 @@
 import pytest
 
-from greenbudget.app.account.models import BudgetAccount
-
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_get_budget_accounts(api_client, user, create_budget_account,
@@ -76,7 +74,7 @@ def test_get_budget_accounts(api_client, user, create_budget_account,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_budget_account(api_client, user, create_budget):
+def test_create_budget_account(api_client, user, create_budget, models):
     api_client.force_login(user)
     budget = create_budget()
     response = api_client.post("/v1/budgets/%s/accounts/" % budget.pk, data={
@@ -84,7 +82,7 @@ def test_create_budget_account(api_client, user, create_budget):
     })
     assert response.status_code == 201
 
-    account = BudgetAccount.objects.first()
+    account = models.BudgetAccount.objects.first()
     assert account is not None
 
     assert response.json() == {

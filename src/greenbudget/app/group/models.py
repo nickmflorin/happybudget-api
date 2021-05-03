@@ -1,4 +1,3 @@
-from colorful.fields import RGBColorField
 from polymorphic.models import PolymorphicModel
 
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -28,7 +27,7 @@ class Group(PolymorphicModel):
         on_delete=models.SET_NULL,
         null=True
     )
-    color_new = models.ForeignKey(
+    color = models.ForeignKey(
         to='tagging.Color',
         on_delete=models.SET_NULL,
         null=True,
@@ -37,20 +36,6 @@ class Group(PolymorphicModel):
             content_types__app_label='group'
         )
     )
-    color = RGBColorField(colors=[
-        "#797695",
-        "#ff7165",
-        "#80cbc4",
-        "#ce93d8",
-        "#fed835",
-        "#c87987",
-        "#69f0ae",
-        "#a1887f",
-        "#81d4fa",
-        "#f75776",
-        "#66bb6a",
-        "#58add6"
-    ], default='#EFEFEF')
 
     class Meta:
         get_latest_by = "created_at"

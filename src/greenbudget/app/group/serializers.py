@@ -29,32 +29,13 @@ class GroupSerializer(EnhancedModelSerializer):
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
     estimated = serializers.FloatField(read_only=True)
-
-    color_new = ColorField(content_type_model=Group)
-
-    color = serializers.ChoiceField(
-        required=True,
-        choices=[
-            "#797695",
-            "#ff7165",
-            "#80cbc4",
-            "#ce93d8",
-            "#fed835",
-            "#c87987",
-            "#69f0ae",
-            "#a1887f",
-            "#81d4fa",
-            "#f75776",
-            "#66bb6a",
-            "#58add6"
-        ]
-    )
+    color = ColorField(content_type_model=Group)
 
     class Meta:
         model = Group
         fields = (
             'id', 'name', 'created_by', 'created_at', 'updated_by',
-            'updated_at', 'color', 'estimated', 'color_new')
+            'updated_at', 'color', 'estimated')
 
     def validate_name(self, value):
         parent = self.context.get('parent')

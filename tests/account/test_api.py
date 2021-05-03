@@ -1,9 +1,6 @@
 import datetime
 import pytest
 
-from greenbudget.app.subaccount.models import (
-    BudgetSubAccount, TemplateSubAccount)
-
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_get_budget_account(api_client, user, create_budget_account,
@@ -237,7 +234,7 @@ def test_bulk_update_template_account_subaccounts(api_client, user,
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_bulk_create_budget_account_subaccounts(api_client, user, create_budget,
-        create_budget_account):
+        create_budget_account, models):
     api_client.force_login(user)
     budget = create_budget()
     account = create_budget_account(budget=budget)
@@ -258,7 +255,7 @@ def test_bulk_create_budget_account_subaccounts(api_client, user, create_budget,
         })
     assert response.status_code == 201
 
-    subaccounts = BudgetSubAccount.objects.all()
+    subaccounts = models.BudgetSubAccount.objects.all()
     assert len(subaccounts) == 2
     assert subaccounts[0].identifier == "subaccount-a"
     assert subaccounts[0].name == "New Name 1"
@@ -277,7 +274,7 @@ def test_bulk_create_budget_account_subaccounts(api_client, user, create_budget,
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_bulk_create_budget_account_subaccounts_count(api_client, user,
-        create_budget, create_budget_account):
+        create_budget, create_budget_account, models):
     api_client.force_login(user)
     budget = create_budget()
     account = create_budget_account(budget=budget)
@@ -288,14 +285,14 @@ def test_bulk_create_budget_account_subaccounts_count(api_client, user,
     )
     assert response.status_code == 201
 
-    subaccounts = BudgetSubAccount.objects.all()
+    subaccounts = models.BudgetSubAccount.objects.all()
     assert len(subaccounts) == 2
     assert len(response.json()['data']) == 2
 
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_bulk_create_template_account_subaccounts(api_client, user,
-        create_template, create_template_account):
+        create_template, create_template_account, models):
     api_client.force_login(user)
     template = create_template()
     account = create_template_account(budget=template)
@@ -316,7 +313,7 @@ def test_bulk_create_template_account_subaccounts(api_client, user,
         })
     assert response.status_code == 201
 
-    subaccounts = TemplateSubAccount.objects.all()
+    subaccounts = models.TemplateSubAccount.objects.all()
     assert len(subaccounts) == 2
     assert subaccounts[0].identifier == "subaccount-a"
     assert subaccounts[0].name == "New Name 1"
@@ -335,7 +332,7 @@ def test_bulk_create_template_account_subaccounts(api_client, user,
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_bulk_create_template_account_subaccounts_count(api_client, user,
-        create_template, create_template_account):
+        create_template, create_template_account, models):
     api_client.force_login(user)
     template = create_template()
     account = create_template_account(budget=template)
@@ -346,6 +343,6 @@ def test_bulk_create_template_account_subaccounts_count(api_client, user,
     )
     assert response.status_code == 201
 
-    subaccounts = TemplateSubAccount.objects.all()
+    subaccounts = models.TemplateSubAccount.objects.all()
     assert len(subaccounts) == 2
     assert len(response.json()['data']) == 2

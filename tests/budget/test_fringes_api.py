@@ -1,10 +1,9 @@
 import pytest
 
-from greenbudget.app.fringe.models import Fringe
-
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_budget_fringes(api_client, user, create_budget, create_fringe):
+def test_get_budget_fringes(api_client, user, create_budget, create_fringe,
+        models):
     api_client.force_login(user)
     budget = create_budget()
     fringes = [
@@ -28,7 +27,7 @@ def test_get_budget_fringes(api_client, user, create_budget, create_fringe):
             "num_times_used": fringes[0].num_times_used,
             "unit": {
                 "id": fringes[0].unit,
-                "name": Fringe.UNITS[fringes[0].unit]
+                "name": models.Fringe.UNITS[fringes[0].unit]
             }
         },
         {
@@ -44,14 +43,14 @@ def test_get_budget_fringes(api_client, user, create_budget, create_fringe):
             "num_times_used": fringes[1].num_times_used,
             "unit": {
                 "id": fringes[1].unit,
-                "name": Fringe.UNITS[fringes[1].unit]
+                "name": models.Fringe.UNITS[fringes[1].unit]
             }
         },
     ]
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_budget_fringe(api_client, user, create_budget):
+def test_create_budget_fringe(api_client, user, create_budget, models):
     api_client.force_login(user)
     budget = create_budget()
     response = api_client.post("/v1/budgets/%s/fringes/" % budget.pk, data={
@@ -61,7 +60,7 @@ def test_create_budget_fringe(api_client, user, create_budget):
         'unit': 1,
     })
     assert response.status_code == 201
-    fringe = Fringe.objects.first()
+    fringe = models.Fringe.objects.first()
     assert fringe is not None
     assert response.json() == {
         "id": fringe.pk,
@@ -76,7 +75,7 @@ def test_create_budget_fringe(api_client, user, create_budget):
         "num_times_used": fringe.num_times_used,
         "unit": {
             "id": 1,
-            "name": Fringe.UNITS[1]
+            "name": models.Fringe.UNITS[1]
         }
     }
     assert fringe.name == "Test Fringe"

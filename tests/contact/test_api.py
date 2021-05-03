@@ -1,10 +1,8 @@
 import pytest
 
-from greenbudget.app.contact.models import Contact
-
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_contact(api_client, user, create_contact):
+def test_get_contact(api_client, user, create_contact, models):
     contact = create_contact()
     api_client.force_login(user)
     response = api_client.get("/v1/contacts/%s/" % contact.pk)
@@ -22,13 +20,13 @@ def test_get_contact(api_client, user, create_contact):
         "full_name": contact.full_name,
         "role": {
             "id": contact.role,
-            "name": Contact.ROLES[contact.role]
+            "name": models.Contact.ROLES[contact.role]
         }
     }
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_contacts(api_client, user, create_contact):
+def test_get_contacts(api_client, user, create_contact, models):
     contacts = [create_contact(), create_contact()]
     api_client.force_login(user)
     response = api_client.get("/v1/contacts/")
@@ -48,7 +46,7 @@ def test_get_contacts(api_client, user, create_contact):
             "full_name": contacts[0].full_name,
             "role": {
                 "id": contacts[0].role,
-                "name": Contact.ROLES[contacts[0].role]
+                "name": models.Contact.ROLES[contacts[0].role]
             }
         },
         {
@@ -64,14 +62,14 @@ def test_get_contacts(api_client, user, create_contact):
             "full_name": contacts[1].full_name,
             "role": {
                 "id": contacts[1].role,
-                "name": Contact.ROLES[contacts[1].role]
+                "name": models.Contact.ROLES[contacts[1].role]
             }
         }
     ]
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_contact(api_client, user):
+def test_create_contact(api_client, user, models):
     api_client.force_login(user)
     response = api_client.post("/v1/contacts/", data={
         'city': 'New York',
@@ -83,7 +81,7 @@ def test_create_contact(api_client, user):
         'email': 'jjohnson@gmail.com',
     })
     assert response.status_code == 201
-    contact = Contact.objects.first()
+    contact = models.Contact.objects.first()
 
     assert contact is not None
     assert contact.city == "New York"
@@ -107,13 +105,13 @@ def test_create_contact(api_client, user):
         "full_name": "Jack Johnson",
         "role": {
             "id": 1,
-            "name": Contact.ROLES[1]
+            "name": models.Contact.ROLES[1]
         }
     }
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_update_contact(api_client, user, create_contact):
+def test_update_contact(api_client, user, create_contact, models):
     contact = create_contact()
     api_client.force_login(user)
     response = api_client.patch("/v1/contacts/%s/" % contact.pk, data={
@@ -143,15 +141,15 @@ def test_update_contact(api_client, user, create_contact):
         "full_name": contact.full_name,
         "role": {
             "id": contact.role,
-            "name": Contact.ROLES[contact.role]
+            "name": models.Contact.ROLES[contact.role]
         }
     }
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_delete_contact(api_client, user, create_contact):
+def test_delete_contact(api_client, user, create_contact, models):
     contact = create_contact()
     api_client.force_login(user)
     response = api_client.delete("/v1/contacts/%s/" % contact.pk)
     assert response.status_code == 204
-    assert Contact.objects.first() is None
+    assert models.Contact.objects.first() is None

@@ -1,7 +1,5 @@
 import pytest
 
-from greenbudget.app.comment.models import Comment
-
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_get_budget_comment(api_client, user, create_comment, create_budget):
@@ -144,7 +142,7 @@ def test_get_subaccount_comment(api_client, user, create_comment,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_budget_comment(api_client, user, create_budget):
+def test_create_budget_comment(api_client, user, create_budget, models):
     budget = create_budget()
     api_client.force_login(user)
     response = api_client.post("/v1/budgets/%s/comments/" % budget.pk, data={
@@ -169,7 +167,7 @@ def test_create_budget_comment(api_client, user, create_budget):
             "profile_image": None,
         }
     }
-    comment = Comment.objects.first()
+    comment = models.Comment.objects.first()
     assert comment is not None
     assert comment.text == "This is a fake comment."
     assert comment.content_object == budget
@@ -178,7 +176,7 @@ def test_create_budget_comment(api_client, user, create_budget):
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_create_budget_account_comment(api_client, user, create_budget,
-        create_budget_account):
+        create_budget_account, models):
     budget = create_budget()
     account = create_budget_account(budget=budget)
     api_client.force_login(user)
@@ -204,7 +202,7 @@ def test_create_budget_account_comment(api_client, user, create_budget,
             "profile_image": None,
         }
     }
-    comment = Comment.objects.first()
+    comment = models.Comment.objects.first()
     assert comment is not None
     assert comment.text == "This is a fake comment."
     assert comment.content_object == account
@@ -213,7 +211,7 @@ def test_create_budget_account_comment(api_client, user, create_budget,
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_create_budget_subaccount_comment(api_client, user, create_budget,
-        create_budget_account, create_budget_subaccount):
+        create_budget_account, create_budget_subaccount, models):
     budget = create_budget()
     account = create_budget_account(budget=budget)
     subaccount = create_budget_subaccount(parent=account, budget=budget)
@@ -241,7 +239,7 @@ def test_create_budget_subaccount_comment(api_client, user, create_budget,
             "profile_image": None,
         }
     }
-    comment = Comment.objects.first()
+    comment = models.Comment.objects.first()
     assert comment is not None
     assert comment.text == "This is a fake comment."
     assert comment.content_object == subaccount

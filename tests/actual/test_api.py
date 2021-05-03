@@ -1,11 +1,9 @@
 import pytest
 
-from greenbudget.app.actual.models import Actual
-
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_create_actual(api_client, user, create_budget_account,
-        create_budget):
+        create_budget, models):
     budget = create_budget()
     account = create_budget_account(budget=budget)
     api_client.force_login(user)
@@ -30,7 +28,7 @@ def test_create_actual(api_client, user, create_budget_account,
         "created_by": user.pk,
         "updated_by": user.pk
     }
-    actual = Actual.objects.first()
+    actual = models.Actual.objects.first()
     assert actual is not None
     assert actual.budget == budget
     assert actual.parent == account
