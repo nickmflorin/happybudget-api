@@ -24,7 +24,8 @@ def assign_to_factory(model_cls):
 
 
 class ColorAdmin(admin.ModelAdmin):
-    list_display = ("name", "code", "created_at", "get_usage")
+    list_display = (
+        "get_color_for_admin", "name", "code", "created_at", "get_usage")
     form = ColorAdminForm
 
     def get_usage(self, obj):
@@ -53,6 +54,21 @@ class ColorAdmin(admin.ModelAdmin):
             )
 
         return actions
+
+    def get_color_for_admin(self, obj):
+        from django.utils.html import mark_safe
+        if obj.code:
+            return mark_safe(u"""
+            <svg style="display: inline-block;
+                vertical-align: middle;" height="12" width="12">
+              <circle cx="6" cy="6" r="5" stroke="{color}" stroke-width="1"
+                    fill="{color}" />
+            </svg>
+            """.format(color=obj.code))
+        return u''
+
+    get_color_for_admin.allow_tags = True
+    get_color_for_admin.short_description = 'Color'
 
 
 admin.site.register(Color, ColorAdmin)
