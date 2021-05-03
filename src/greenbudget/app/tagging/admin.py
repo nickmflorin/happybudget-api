@@ -24,7 +24,7 @@ def assign_to_factory(model_cls):
 
 
 class ColorAdmin(admin.ModelAdmin):
-    list_display = ("id", "code", "created_at", "get_usage")
+    list_display = ("name", "code", "created_at", "get_usage")
     form = ColorAdminForm
 
     def get_usage(self, obj):

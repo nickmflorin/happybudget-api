@@ -19,6 +19,7 @@ class Color(models.Model):
         unique=True,
         validators=[ColorCodeValidator],
     )
+    name = models.CharField(max_length=32, null=True, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
     content_types = models.ManyToManyField(
         to=ContentType,
