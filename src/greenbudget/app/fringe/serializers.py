@@ -6,6 +6,7 @@ from greenbudget.lib.rest_framework_utils.serializers import (
 
 from greenbudget.app.budget.models import BaseBudget
 from greenbudget.app.common.serializers import AbstractBulkUpdateSerializer
+from greenbudget.app.tagging.serializers import ColorField
 
 from .models import Fringe
 
@@ -34,13 +35,14 @@ class FringeSerializer(EnhancedModelSerializer):
         allow_null=True
     )
     num_times_used = serializers.IntegerField(read_only=True)
+    color = ColorField(content_type_model=Fringe, required=False)
 
     class Meta:
         model = Fringe
         fields = (
             'id', 'name', 'description', 'created_by', 'created_at',
             'updated_by', 'updated_at', 'rate', 'cutoff', 'unit',
-            'num_times_used')
+            'num_times_used', 'color')
 
     def validate_name(self, value):
         # In the case that the serializer is nested and being used in a write

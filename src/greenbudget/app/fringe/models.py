@@ -34,8 +34,17 @@ class Fringe(models.Model):
         on_delete=models.SET_NULL,
         null=True
     )
-    MAP_FIELDS_FROM_TEMPLATE = ('name', 'description', 'cutoff', 'rate', 'unit')
+    color = models.ForeignKey(
+        to='tagging.Color',
+        on_delete=models.SET_NULL,
+        null=True,
+        limit_choices_to=models.Q(
+            content_types__model='fringe',
+            content_types__app_label='fringe'
+        )
+    )
     MAP_FIELDS_FROM_ORIGINAL = ('name', 'description', 'cutoff', 'rate', 'unit')
+    MAP_FIELDS_FROM_TEMPLATE = MAP_FIELDS_FROM_ORIGINAL
     objects = FringeManager()
 
     class Meta:

@@ -1,9 +1,6 @@
 from django.utils.functional import cached_property
 from rest_framework import viewsets, mixins
 
-from greenbudget.app.tagging.models import Color
-from greenbudget.app.tagging.serializers import ColorSerializer
-
 from .models import (
     Group,
     BudgetAccountGroup,
@@ -17,21 +14,6 @@ from .serializers import (
     TemplateAccountGroupSerializer,
     TemplateSubAccountGroupSerializer
 )
-
-
-class GroupColorsViewSet(
-    mixins.ListModelMixin,
-    viewsets.GenericViewSet
-):
-    """
-    Viewset to handle requests to the following endpoints:
-
-    (1) GET /groups/colors/
-    """
-    serializer_class = ColorSerializer
-
-    def get_queryset(self):
-        return Color.objects.for_model(Group).all()
 
 
 class GroupViewSet(

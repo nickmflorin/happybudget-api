@@ -25,6 +25,7 @@ def test_get_template_fringes(api_client, user, create_template, create_fringe,
             "rate": fringes[0].rate,
             "cutoff": fringes[0].cutoff,
             "num_times_used": fringes[0].num_times_used,
+            "color": None,
             "unit": {
                 "id": fringes[0].unit,
                 "name": models.Fringe.UNITS[fringes[0].unit]
@@ -41,6 +42,7 @@ def test_get_template_fringes(api_client, user, create_template, create_fringe,
             "rate": fringes[1].rate,
             "cutoff": fringes[1].cutoff,
             "num_times_used": fringes[1].num_times_used,
+            "color": None,
             "unit": {
                 "id": fringes[1].unit,
                 "name": models.Fringe.UNITS[fringes[1].unit]
@@ -73,6 +75,7 @@ def test_create_template_fringe(api_client, user, create_template, models):
         "rate": 5.5,
         "cutoff": None,
         "num_times_used": fringe.num_times_used,
+        "color": None,
         "unit": {
             "id": 1,
             "name": models.Fringe.UNITS[1]

@@ -25,6 +25,7 @@ def test_update_fringe(api_client, user, create_budget, create_fringe, models):
         "rate": 5.5,
         "cutoff": None,
         "num_times_used": fringe.num_times_used,
+        "color": None,
         "unit": {
             "id": 1,
             "name": models.Fringe.UNITS[1]
@@ -53,6 +54,7 @@ def test_get_fringe(api_client, user, create_budget, create_fringe, models):
         "updated_at": "2020-01-01 00:00:00",
         "rate": fringe.rate,
         "cutoff": fringe.cutoff,
+        "color": None,
         "unit": {
             "id": fringe.unit,
             "name": models.Fringe.UNITS[fringe.unit]

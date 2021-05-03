@@ -29,7 +29,7 @@ class GroupSerializer(EnhancedModelSerializer):
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
     estimated = serializers.FloatField(read_only=True)
-    color = ColorField(content_type_model=Group)
+    color = ColorField(content_type_model=Group, required=False)
 
     class Meta:
         model = Group
