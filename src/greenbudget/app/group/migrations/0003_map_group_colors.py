@@ -10,7 +10,7 @@ def map_group_colors(apps, schema_editor):
         try:
             color_obj = Color.objects.get(code=group.color)
         except Color.DoesNotExist:
-            Color.objects.create(code=group.color)
+            color_obj = Color.objects.create(code=group.color)
         color_obj.content_types.add(Group)
 
 
