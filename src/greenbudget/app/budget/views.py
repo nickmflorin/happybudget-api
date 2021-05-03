@@ -20,7 +20,8 @@ from greenbudget.app.subaccount.models import BudgetSubAccount
 
 from .models import Budget
 from .mixins import BudgetNestedMixin, TrashModelMixin
-from .serializers import BudgetSerializer, TreeNodeSerializer
+from .serializers import (
+    BudgetSerializer, TreeNodeSerializer, BudgetSimpleSerializer)
 
 
 class LineItemViewSet(
@@ -129,9 +130,17 @@ class BudgetFringeViewSet(
 
 class GenericBudgetViewSet(viewsets.GenericViewSet):
     lookup_field = 'pk'
-    serializer_class = BudgetSerializer
     ordering_fields = ['updated_at', 'name', 'created_at']
     search_fields = ['name']
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return BudgetSimpleSerializer
+        return BudgetSerializer
+
+    @property
+    def serializer_class(self):
+        return self.get_serializer_class()
 
 
 class BudgetViewSet(

@@ -20,7 +20,7 @@ from greenbudget.app.group.serializers import TemplateAccountGroupSerializer
 from .models import Template
 from .mixins import TemplateNestedMixin
 from .permissions import TemplateObjPermission
-from .serializers import TemplateSerializer
+from .serializers import TemplateSerializer, TemplateSimpleSerializer
 
 
 class TemplateGroupViewSet(
@@ -99,6 +99,11 @@ class GenericTemplateViewSet(viewsets.GenericViewSet):
             user=self.request.user,
         )
         return context
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return TemplateSimpleSerializer
+        return TemplateSerializer
 
 
 class TemplateViewSet(

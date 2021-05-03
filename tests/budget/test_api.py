@@ -14,23 +14,8 @@ def test_get_budgets(api_client, user, create_budget, models):
         {
             "id": budgets[0].pk,
             "name": budgets[0].name,
-            "project_number": budgets[0].project_number,
-            "production_type": {
-                "id": budgets[0].production_type,
-                "name": models.Budget.PRODUCTION_TYPES[
-                    budgets[0].production_type]
-            },
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
-            "shoot_date": api_datetime_string(budgets[0].shoot_date),
-            "delivery_date": api_datetime_string(budgets[0].delivery_date),
-            "build_days": budgets[0].build_days,
-            "prelight_days": budgets[0].prelight_days,
-            "studio_shoot_days": budgets[0].studio_shoot_days,
-            "location_days": budgets[0].location_days,
-            "estimated": None,
-            "variance": None,
-            "actual": None,
             "created_by": user.pk,
             "type": "budget",
             "image": None,
@@ -38,23 +23,8 @@ def test_get_budgets(api_client, user, create_budget, models):
         {
             "id": budgets[1].pk,
             "name": budgets[1].name,
-            "project_number": budgets[1].project_number,
-            "production_type": {
-                "id": budgets[1].production_type,
-                "name": models.Budget.PRODUCTION_TYPES[
-                    budgets[1].production_type]
-            },
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
-            "shoot_date": api_datetime_string(budgets[1].shoot_date),
-            "delivery_date": api_datetime_string(budgets[1].delivery_date),
-            "build_days": budgets[1].build_days,
-            "prelight_days": budgets[1].prelight_days,
-            "studio_shoot_days": budgets[1].studio_shoot_days,
-            "location_days": budgets[1].location_days,
-            "estimated": None,
-            "variance": None,
-            "actual": None,
             "created_by": user.pk,
             "type": "budget",
             "image": None,
@@ -567,23 +537,8 @@ def test_get_budgets_in_trash(api_client, user, create_budget, models):
         {
             "id": budgets[0].pk,
             "name": budgets[0].name,
-            "project_number": budgets[0].project_number,
-            "production_type": {
-                "id": budgets[0].production_type,
-                "name": models.Budget.PRODUCTION_TYPES[
-                    budgets[0].production_type]
-            },
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
-            "shoot_date": api_datetime_string(budgets[0].shoot_date),
-            "delivery_date": api_datetime_string(budgets[0].delivery_date),
-            "build_days": budgets[0].build_days,
-            "prelight_days": budgets[0].prelight_days,
-            "studio_shoot_days": budgets[0].studio_shoot_days,
-            "location_days": budgets[0].location_days,
-            "estimated": None,
-            "variance": None,
-            "actual": None,
             "created_by": user.pk,
             "type": "budget",
             "image": None,
@@ -591,23 +546,8 @@ def test_get_budgets_in_trash(api_client, user, create_budget, models):
         {
             "id": budgets[1].pk,
             "name": budgets[1].name,
-            "project_number": budgets[1].project_number,
-            "production_type": {
-                "id": budgets[1].production_type,
-                "name": models.Budget.PRODUCTION_TYPES[
-                    budgets[1].production_type]
-            },
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
-            "shoot_date": api_datetime_string(budgets[1].shoot_date),
-            "delivery_date": api_datetime_string(budgets[1].delivery_date),
-            "build_days": budgets[1].build_days,
-            "prelight_days": budgets[1].prelight_days,
-            "studio_shoot_days": budgets[1].studio_shoot_days,
-            "location_days": budgets[1].location_days,
-            "estimated": None,
-            "variance": None,
-            "actual": None,
             "created_by": user.pk,
             "type": "budget",
             "image": None,

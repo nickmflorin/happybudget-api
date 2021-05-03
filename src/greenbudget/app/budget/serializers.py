@@ -24,7 +24,7 @@ class TreeNodeSerializer(EntitySerializer):
         return rep
 
 
-class BaseBudgetSimpleSerializer(EnhancedModelSerializer):
+class BaseBudgetSerializer(EnhancedModelSerializer):
     id = serializers.IntegerField(read_only=True)
     name = serializers.CharField(
         required=True,
@@ -38,36 +38,11 @@ class BaseBudgetSimpleSerializer(EnhancedModelSerializer):
         fields = ('id', 'name', 'type')
 
 
-class BaseBudgetSerializer(BaseBudgetSimpleSerializer):
+class BudgetSimpleSerializer(BaseBudgetSerializer):
     created_by = serializers.PrimaryKeyRelatedField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
-    estimated = serializers.FloatField(read_only=True)
     image = Base64ImageField(required=False)
-
-    class Meta(BaseBudgetSimpleSerializer.Meta):
-        model = BaseBudget
-        fields = BaseBudgetSimpleSerializer.Meta.fields + (
-            'created_by', 'created_at', 'updated_at', 'estimated', 'image')
-
-
-class BudgetSerializer(BaseBudgetSerializer):
-    project_number = serializers.IntegerField(read_only=True)
-    production_type = ModelChoiceField(
-        choices=Budget.PRODUCTION_TYPES,
-        required=False
-    )
-    created_at = serializers.DateTimeField(read_only=True)
-    updated_at = serializers.DateTimeField(read_only=True)
-    shoot_date = serializers.DateTimeField(read_only=True)
-    delivery_date = serializers.DateTimeField(read_only=True)
-    build_days = serializers.IntegerField(read_only=True)
-    prelight_days = serializers.IntegerField(read_only=True)
-    studio_shoot_days = serializers.IntegerField(read_only=True)
-    location_days = serializers.IntegerField(read_only=True)
-    estimated = serializers.FloatField(read_only=True)
-    actual = serializers.FloatField(read_only=True)
-    variance = serializers.FloatField(read_only=True)
     template = serializers.PrimaryKeyRelatedField(
         write_only=True,
         required=False,
@@ -78,6 +53,28 @@ class BudgetSerializer(BaseBudgetSerializer):
     class Meta:
         model = Budget
         fields = BaseBudgetSerializer.Meta.fields + (
+            'created_by', 'updated_at', 'created_at', 'template', 'image')
+
+
+class BudgetSerializer(BudgetSimpleSerializer):
+    project_number = serializers.IntegerField(read_only=True)
+    production_type = ModelChoiceField(
+        choices=Budget.PRODUCTION_TYPES,
+        required=False
+    )
+    shoot_date = serializers.DateTimeField(read_only=True)
+    delivery_date = serializers.DateTimeField(read_only=True)
+    build_days = serializers.IntegerField(read_only=True)
+    prelight_days = serializers.IntegerField(read_only=True)
+    studio_shoot_days = serializers.IntegerField(read_only=True)
+    location_days = serializers.IntegerField(read_only=True)
+    estimated = serializers.FloatField(read_only=True)
+    actual = serializers.FloatField(read_only=True)
+    variance = serializers.FloatField(read_only=True)
+
+    class Meta:
+        model = Budget
+        fields = BudgetSimpleSerializer.Meta.fields + (
             'project_number', 'production_type', 'shoot_date', 'delivery_date',
             'build_days', 'prelight_days', 'studio_shoot_days', 'location_days',
-            'actual', 'variance', 'template')
+            'actual', 'variance', 'estimated')

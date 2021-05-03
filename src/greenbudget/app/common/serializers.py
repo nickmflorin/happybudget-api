@@ -20,11 +20,11 @@ class EntitySerializer(PolymorphicNonPolymorphicSerializer):
             "subaccount"
         ),
         Budget: (
-            "greenbudget.app.budget.serializers.BaseBudgetSimpleSerializer",
+            "greenbudget.app.budget.serializers.BaseBudgetSerializer",
             "budget"
         ),
         Template: (
-            "greenbudget.app.budget.serializers.BaseBudgetSimpleSerializer",
+            "greenbudget.app.budget.serializers.BaseBudgetSerializer",
             "template"
         )
     }
