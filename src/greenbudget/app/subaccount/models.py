@@ -49,6 +49,8 @@ class SubAccount(PolymorphicModel):
         (8, "feet", "Feet"),
         (9, "fare", "Fare"),
         (10, "units", "Units"),
+        (11, "person", "Person"),
+        (12, "each", "Each"),
     )
     unit = models.IntegerField(choices=UNITS, null=True)
     fringes = models.ManyToManyField(to='fringe.Fringe')
