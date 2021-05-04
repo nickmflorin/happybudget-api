@@ -35,7 +35,11 @@ class FringeSerializer(EnhancedModelSerializer):
         allow_null=True
     )
     num_times_used = serializers.IntegerField(read_only=True)
-    color = ColorField(content_type_model=Fringe, required=False)
+    color = ColorField(
+        content_type_model=Fringe,
+        required=False,
+        allow_null=True
+    )
 
     class Meta:
         model = Fringe
