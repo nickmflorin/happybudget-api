@@ -2,6 +2,7 @@ from django import forms
 from django.apps import apps
 from django.contrib import admin
 from django.contrib.contenttypes.models import ContentType
+from django.utils.html import mark_safe
 
 from .models import Color
 
@@ -56,7 +57,6 @@ class ColorAdmin(admin.ModelAdmin):
         return actions
 
     def get_color_for_admin(self, obj):
-        from django.utils.html import mark_safe
         if obj.code:
             return mark_safe(u"""
             <svg style="display: inline-block;
