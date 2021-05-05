@@ -2,7 +2,7 @@ from greenbudget.conf import Environments, config
 
 AWS_ACCESS_KEY_ID = config(
     name='AWS_ACCESS_KEY_ID',
-    required=[Environments.PROD, Environments.DEV],
+    required=[Environments.PROD, Environments.DEV, Environments.LOCAL],
     default={
         Environments.TEST: '',
     }
@@ -10,7 +10,7 @@ AWS_ACCESS_KEY_ID = config(
 
 AWS_SECRET_ACCESS_KEY = config(
     name='AWS_SECRET_ACCESS_KEY',
-    required=[Environments.PROD, Environments.DEV],
+    required=[Environments.PROD, Environments.DEV, Environments.LOCAL],
     default={
         Environments.TEST: '',
     }
@@ -18,7 +18,7 @@ AWS_SECRET_ACCESS_KEY = config(
 
 AWS_STORAGE_BUCKET_NAME = config(
     name='AWS_STORAGE_BUCKET_NAME',
-    required=[Environments.PROD, Environments.DEV],
+    required=[Environments.PROD, Environments.DEV, Environments.LOCAL],
     default={
         Environments.TEST: '',
     }
@@ -26,7 +26,7 @@ AWS_STORAGE_BUCKET_NAME = config(
 
 AWS_S3_REGION_NAME = config(
     name='AWS_S3_REGION_NAME',
-    required=[Environments.PROD, Environments.DEV],
+    required=[Environments.PROD, Environments.DEV, Environments.LOCAL],
     default={
         Environments.TEST: '',
     }
