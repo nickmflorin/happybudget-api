@@ -26,17 +26,20 @@ class SubAccountSimpleSerializer(EnhancedModelSerializer):
     identifier = serializers.CharField(
         required=False,
         allow_blank=False,
-        allow_null=False
+        allow_null=False,
+        trim_whitespace=False
     )
     description = serializers.CharField(
         required=False,
         allow_blank=True,
-        allow_null=False
+        allow_null=False,
+        trim_whitespace=False
     )
     name = serializers.CharField(
         required=False,
         allow_blank=True,
-        allow_null=False
+        allow_null=False,
+        trim_whitespace=False
     )
 
     class Meta:
