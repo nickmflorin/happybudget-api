@@ -117,6 +117,7 @@ AUTH_USER_MODEL = 'user.User'
 TRACK_MODEL_HISTORY = True
 
 INSTALLED_APPS = [
+    'grappelli',
     'greenbudget',  # Must be before django authentication.
     'polymorphic',
     'django.contrib.admin',

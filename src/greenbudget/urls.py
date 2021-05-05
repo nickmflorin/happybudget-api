@@ -9,6 +9,7 @@ admin.site.site_title = settings.ADMIN_SITE_TITLE
 admin.site.index_title = settings.ADMIN_INDEX_TITLE
 
 urlpatterns = [
+    path('grappelli/', include('grappelli.urls')),
     path('admin/', admin.site.urls),
     path('v1/', include('greenbudget.app.urls')),
     path('', lambda request: JsonResponse({'status': '200'})),
