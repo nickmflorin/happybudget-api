@@ -120,23 +120,16 @@ $ python src/manage.py runserver
 #### Both Services Outside the Container
 
 If we wish to use a lighter weight `sqlite` option for the application database, we can do so as well.  In order
-to do these, we need to create a `local.py` file in `src/conf/settings/local.py`.  When we create a `local.py` file,
-any settings specified in the file will override those in the `src/config/settings/dev.py` file.  The file should look
-something like this:
+to do these, we need to create a `local.override.py` file in `src/conf/settings/local.override.py`.  When we create a `local.override.py` file,
+any settings specified in the file will override those in the `src/config/settings/local.py` file.  To use a ligher
+weight `sqlite` application database,  the file should look something like this:
 
 ```python
 import dj_database_url
-from .dev import *
 
 DATABASES = {
     'default': dj_database_url.parse('sqlite:///%s/db.sqlite3' % BASE_DIR)  # noqa
 }
-```
-
-Then, we need to set the `DJANGO_SETTINGS_MODULE` environment variable to point to this settings file:
-
-```bash
-$ export DJANGO_SETTINGS_MODULE=greenbudget.conf.settings.local.py
 ```
 
 Now, we can just run the `Django` web server and it will use the local `sqlite` file as it's database:

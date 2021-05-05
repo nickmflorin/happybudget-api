@@ -30,10 +30,10 @@ APP_V1_URL = os.path.join(APP_URL, "v1")
 
 SECRET_KEY = config(
     name='DJANGO_SECRET_KEY',
-    required=[Environments.PROD],
+    required=[Environments.PROD, Environments.DEV],
     default={
         Environments.TEST: 'thefoxjumpedoverthelog',
-        Environments.DEV: 'thefoxjumpedoverthelog'
+        Environments.LOCAL: 'thefoxjumpedoverthelog'
     }
 )
 
@@ -63,6 +63,7 @@ CSRF_COOKIE_NAME = 'greenbudgetcsrftoken'
 CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_DOMAIN = ".greenbudget.cloud"
 CSRF_TRUSTED_ORIGINS = [
+    'https://greenbudget.cloud',
     'https://app.greenbudget.cloud',
 ]
 CORS_ALLOW_CREDENTIALS = True
@@ -74,9 +75,6 @@ CORS_ORIGIN_REGEX_WHITELIST = (
 ALLOWED_HOSTS = [
     'api.greenbudget.cloud',
     'gb-dev-lb-563148772.us-east-1.elb.amazonaws.com',  # Load Balancer
-    '172.31.88.83',  # EB Health Check
-    '54.236.237.215',
-    'localhost'  # Required for Admin access locally.
 ]
 
 # JWT Configuration
@@ -188,42 +186,42 @@ WSGI_APPLICATION = 'greenbudget.wsgi.application'
 
 DATABASE_NAME = config(
     name='DATABASE_NAME',
-    required=[Environments.PROD],
+    required=[Environments.PROD, Environments.DEV],
     default={
         Environments.TEST: 'postgres',
-        Environments.DEV: 'postgres'
+        Environments.LOCAL: 'postgres'
     }
 )
 DATABASE_USER = config(
     name='DATABASE_USER',
-    required=[Environments.PROD],
+    required=[Environments.PROD, Environments.DEV],
     default={
         Environments.TEST: 'postgres',
-        Environments.DEV: 'postgres'
+        Environments.LOCAL: 'postgres'
     }
 )
 DATABASE_PASSWORD = config(
     name='DATABASE_PASSWORD',
-    required=[Environments.PROD],
+    required=[Environments.PROD, Environments.DEV],
     default={
         Environments.TEST: '',
-        Environments.DEV: ''
+        Environments.LOCAL: ''
     }
 )
 DATABASE_HOST = config(
     name='DATABASE_HOST',
-    required=[Environments.PROD],
+    required=[Environments.PROD, Environments.DEV],
     default={
         Environments.TEST: 'localhost',
-        Environments.DEV: 'localhost'
+        Environments.LOCAL: 'localhost'
     }
 )
 DATABASE_PORT = config(
     name='DATABASE_PORT',
-    required=[Environments.PROD],
+    required=[Environments.PROD, Environments.DEV],
     default={
         Environments.TEST: '5432',
-        Environments.DEV: '5432'
+        Environments.LOCAL: '5432'
     }
 )
 DATABASES = {

@@ -13,13 +13,13 @@ class Environments:
     PROD = "Production"
     DEV = "Development"
     TEST = "Test"
+    LOCAL = "Local"
 
 
 def get_environment():
     mapping = {
         'greenbudget.conf.settings.dev': Environments.DEV,
-        'greenbudget.conf.settings.local': Environments.DEV,
-        'greenbudget.conf.settings.gunicorn_dev': Environments.DEV,
+        'greenbudget.conf.settings.local': Environments.LOCAL,
         'greenbudget.conf.settings.prod': Environments.PROD,
         'greenbudget.conf.settings.test': Environments.TEST
     }

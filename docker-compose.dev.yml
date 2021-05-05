@@ -1,0 +1,24 @@
+version: "3.3"
+
+services:
+  web:
+    environment:
+      DJANGO_SETTINGS_MODULE: greenbudget.conf.settings.dev
+    build: .
+    command: bash -c "ls -al && gunicorn greenbudget.wsgi -c /app/greenbudget/conf/gunicorn_config.py"
+    restart: always
+    networks:
+      - greenbudget
+    ports:
+      - "8000:8000"
+    # Note if you have trouble with Windows try mounting volumes in this format
+    volumes:
+      - type: bind
+        source: ./src
+        target: /app
+    env_file:
+      - .env
+
+networks:
+  greenbudget:
+    driver: bridge

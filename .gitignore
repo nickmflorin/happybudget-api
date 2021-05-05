@@ -105,5 +105,5 @@ greenbudget/dump.rdb
 
 # Application Environment
 docker-compose.override.yml
-local.py
+local.override.py
 .env
