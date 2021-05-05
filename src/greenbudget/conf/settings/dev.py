@@ -21,7 +21,6 @@ CSRF_TRUSTED_ORIGINS = [
 
 ALLOWED_HOSTS = [
     'devapi.greenbudget.cloud',
-    # TODO: Change load balancer for dev instance!
     'gb-dev-lb-563148772.us-east-1.elb.amazonaws.com',  # Load Balancer
 ]
 
