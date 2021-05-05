@@ -120,7 +120,7 @@ $ python src/manage.py runserver
 #### Both Services Outside the Container
 
 If we wish to use a lighter weight `sqlite` option for the application database, we can do so as well.  In order
-to do these, we need to create a `local.override.py` file in `src/conf/settings/local.override.py`.  When we create a `local.override.py` file,
+to do these, we need to create a `local_override.py` file in `src/conf/settings/local_override.py`.  When we create a `local_override.py` file,
 any settings specified in the file will override those in the `src/config/settings/local.py` file.  To use a ligher
 weight `sqlite` application database,  the file should look something like this:
 

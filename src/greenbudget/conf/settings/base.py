@@ -63,7 +63,6 @@ CSRF_COOKIE_NAME = 'greenbudgetcsrftoken'
 CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_DOMAIN = ".greenbudget.cloud"
 CSRF_TRUSTED_ORIGINS = [
-    'https://greenbudget.cloud',
     'https://app.greenbudget.cloud',
 ]
 CORS_ALLOW_CREDENTIALS = True
