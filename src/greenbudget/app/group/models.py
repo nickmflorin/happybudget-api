@@ -27,6 +27,7 @@ class Group(PolymorphicModel):
         on_delete=models.SET_NULL,
         null=True
     )
+    name = models.CharField(max_length=128)
     color = models.ForeignKey(
         to='tagging.Color',
         on_delete=models.SET_NULL,
@@ -63,7 +64,6 @@ class Group(PolymorphicModel):
 
 
 class BudgetAccountGroup(Group):
-    name = models.CharField(max_length=128)
     parent = models.ForeignKey(
         to='budget.Budget',
         on_delete=models.CASCADE,
@@ -76,7 +76,6 @@ class BudgetAccountGroup(Group):
     class Meta(Group.Meta):
         verbose_name = "Budget Account Group"
         verbose_name_plural = "Budget Account Groups"
-        unique_together = (('parent', 'name'))
 
     @property
     def variance(self):
@@ -96,7 +95,6 @@ class BudgetAccountGroup(Group):
 
 
 class TemplateAccountGroup(Group):
-    name = models.CharField(max_length=128)
     parent = models.ForeignKey(
         to='template.Template',
         on_delete=models.CASCADE,
@@ -108,11 +106,9 @@ class TemplateAccountGroup(Group):
     class Meta(Group.Meta):
         verbose_name = "Template Account Group"
         verbose_name_plural = "Template Account Groups"
-        unique_together = (('parent', 'name'))
 
 
 class BudgetSubAccountGroup(Group):
-    name = models.CharField(max_length=128)
     content_type = models.ForeignKey(
         to=ContentType,
         on_delete=models.CASCADE,
@@ -129,7 +125,6 @@ class BudgetSubAccountGroup(Group):
     class Meta(Group.Meta):
         verbose_name = "Budget Sub Account Group"
         verbose_name_plural = "Budget Sub Account Groups"
-        unique_together = (('object_id', 'content_type', 'name'))
 
     @property
     def variance(self):
@@ -149,7 +144,6 @@ class BudgetSubAccountGroup(Group):
 
 
 class TemplateSubAccountGroup(Group):
-    name = models.CharField(max_length=128)
     content_type = models.ForeignKey(
         to=ContentType,
         on_delete=models.CASCADE,
@@ -165,4 +159,3 @@ class TemplateSubAccountGroup(Group):
     class Meta(Group.Meta):
         verbose_name = "Template Sub Account Group"
         verbose_name_plural = "Template Sub Account Groups"
-        unique_together = (('object_id', 'content_type', 'name'))
