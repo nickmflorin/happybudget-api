@@ -77,4 +77,6 @@ class Actual(models.Model):
         if self.parent.budget != self.budget:
             raise IntegrityError(
                 "The actual must belong to the same budget as it's parent.")
+        setattr(self, '_suppress_budget_update',
+            kwargs.pop('suppress_budget_update', False))
         return super().save(*args, **kwargs)

@@ -51,6 +51,9 @@ class BaseBudget(PolymorphicModel):
         self.trash = False
         self.save()
 
+    def mark_updated(self):
+        self.save(update_fields=['updated_at'])
+
     @property
     def estimated(self):
         estimated = []

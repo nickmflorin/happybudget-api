@@ -139,6 +139,7 @@ INSTALLED_APPS = [
     'greenbudget.app.budget',
     'greenbudget.app.comment',
     'greenbudget.app.contact',
+    'greenbudget.app.common',
     'greenbudget.app.fringe',
     'greenbudget.app.group',
     'greenbudget.app.history',

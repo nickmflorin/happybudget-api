@@ -62,6 +62,11 @@ class Group(PolymorphicModel):
             return sum(estimated)
         return None
 
+    def save(self, *args, **kwargs):
+        setattr(self, '_suppress_budget_update',
+            kwargs.pop('suppress_budget_update', False))
+        super().save(*args, **kwargs)
+
 
 class BudgetAccountGroup(Group):
     parent = models.ForeignKey(
@@ -76,6 +81,10 @@ class BudgetAccountGroup(Group):
     class Meta(Group.Meta):
         verbose_name = "Budget Account Group"
         verbose_name_plural = "Budget Account Groups"
+
+    @property
+    def budget(self):
+        return self.parent
 
     @property
     def variance(self):
@@ -103,6 +112,10 @@ class TemplateAccountGroup(Group):
     objects = TemplateAccountGroupManager()
     MAP_FIELDS_FROM_ORIGINAL = ("name", "color")
 
+    @property
+    def budget(self):
+        return self.parent
+
     class Meta(Group.Meta):
         verbose_name = "Template Account Group"
         verbose_name_plural = "Template Account Groups"
@@ -125,6 +138,10 @@ class BudgetSubAccountGroup(Group):
     class Meta(Group.Meta):
         verbose_name = "Budget Sub Account Group"
         verbose_name_plural = "Budget Sub Account Groups"
+
+    @property
+    def budget(self):
+        return self.parent.budget
 
     @property
     def variance(self):
@@ -159,3 +176,7 @@ class TemplateSubAccountGroup(Group):
     class Meta(Group.Meta):
         verbose_name = "Template Sub Account Group"
         verbose_name_plural = "Template Sub Account Groups"
+
+    @property
+    def budget(self):
+        return self.parent.budget

@@ -118,8 +118,8 @@ def colors(db):
         ContentType.objects.get_for_model(m) for m in [Group, Fringe]
     ]
     colors = []
-    for code in color_list:
-        color_obj = Color.objects.create(code=code)
+    for i, code in enumerate(color_list):
+        color_obj = Color.objects.create(code=code, name="Test Color %s" % i)
         color_obj.content_types.set(content_types)
         color_obj.save()
         colors.append(color_obj)

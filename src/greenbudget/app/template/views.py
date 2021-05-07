@@ -9,6 +9,7 @@ from greenbudget.app.account.serializers import (
 )
 from greenbudget.app.budget.mixins import TrashModelMixin
 from greenbudget.app.common.permissions import IsAdminOrReadOnly
+from greenbudget.app.common.signals import disable_budget_tracking
 from greenbudget.app.fringe.serializers import (
     FringeSerializer,
     BulkCreateFringesSerializer,
@@ -155,7 +156,10 @@ class TemplateViewSet(
             partial=True
         )
         serializer.is_valid(raise_exception=True)
-        return serializer.save(updated_by=request.user)
+        with disable_budget_tracking():
+            data = serializer.save(updated_by=request.user)
+        instance.mark_updated()
+        return data
 
     @decorators.action(
         detail=True, url_path='bulk-update-accounts', methods=["PATCH"])
@@ -188,9 +192,11 @@ class TemplateViewSet(
             context=self.get_serializer_context()
         )
         serializer.is_valid(raise_exception=True)
-        instance = serializer.save(updated_by=request.user)
+        with disable_budget_tracking():
+            data = serializer.save(updated_by=request.user)
+        instance.mark_updated()
         return response.Response(
-            self.serializer_class(instance).data,
+            self.serializer_class(data).data,
             status=status.HTTP_200_OK
         )
 
@@ -204,7 +210,9 @@ class TemplateViewSet(
             partial=True
         )
         serializer.is_valid(raise_exception=True)
-        fringes = serializer.save(updated_by=request.user)
+        with disable_budget_tracking():
+            fringes = serializer.save(updated_by=request.user)
+        instance.mark_updated()
         return response.Response(
             {'data': FringeSerializer(fringes, many=True).data},
             status=status.HTTP_201_CREATED

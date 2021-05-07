@@ -6,6 +6,7 @@ from rest_framework import (
 from greenbudget.app.account.models import Account
 from greenbudget.app.account.mixins import AccountNestedMixin
 from greenbudget.app.budget.mixins import BudgetNestedMixin
+from greenbudget.app.common.signals import disable_budget_tracking
 from greenbudget.app.group.models import (
     BudgetSubAccountGroup,
     TemplateSubAccountGroup
@@ -143,7 +144,13 @@ class AccountViewSet(
             partial=True
         )
         serializer.is_valid(raise_exception=True)
-        return serializer.save(updated_by=request.user)
+        with disable_budget_tracking():
+            data = serializer.save(
+                updated_by=request.user,
+                suppress_budget_update=True
+            )
+        instance.budget.mark_updated()
+        return data
 
     @decorators.action(
         detail=True, url_path='bulk-update-subaccounts', methods=["PATCH"])

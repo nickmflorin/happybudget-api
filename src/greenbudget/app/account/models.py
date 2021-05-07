@@ -78,6 +78,8 @@ class Account(PolymorphicModel):
                 "The group that an account belongs to must belong to the same "
                 "budget as that account."
             )
+        setattr(self, '_suppress_budget_update',
+            kwargs.pop('suppress_budget_update', False))
         return super().save(*args, **kwargs)
 
 

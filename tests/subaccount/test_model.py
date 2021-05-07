@@ -1,3 +1,5 @@
+import datetime
+from datetime import timezone
 from django.db import IntegrityError
 import pytest
 
@@ -40,6 +42,20 @@ def test_template_group_parent_constraint(create_budget_subaccount,
             budget=budget,
             group=group
         )
+
+
+@pytest.mark.freeze_time
+def test_saving_subaccount_saves_budget(create_budget, create_budget_account,
+        create_budget_subaccount, freezer):
+    freezer.move_to('2017-05-20')
+    budget = create_budget()
+    account = create_budget_account(budget=budget)
+    subaccount = create_budget_subaccount(parent=account, budget=budget)
+    freezer.move_to('2019-05-20')
+    subaccount.save()
+    budget.refresh_from_db()
+    assert budget.updated_at == datetime.datetime(
+        2019, 5, 20).replace(tzinfo=timezone.utc)
 
 
 def test_remove_budget_subaccount_from_group_group_deleted(user, create_budget,

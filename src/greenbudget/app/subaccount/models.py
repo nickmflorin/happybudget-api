@@ -140,6 +140,8 @@ class SubAccount(PolymorphicModel):
                         "The fringes that belong to a sub-account must belong "
                         "to the same budget as that sub-account."
                     )
+        setattr(self, '_suppress_budget_update',
+            kwargs.pop('suppress_budget_update', False))
         return super().save(*args, **kwargs)
 
 

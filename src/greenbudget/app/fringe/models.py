@@ -69,4 +69,6 @@ class Fringe(models.Model):
         # is irrelevant.
         if self.unit == self.UNITS.flat:
             self.cutoff = None
+        setattr(self, '_suppress_budget_update',
+            kwargs.pop('suppress_budget_update', False))
         super().save(*args, **kwargs)

@@ -56,6 +56,7 @@ class ColorFactory(CustomModelFactory):
     A DjangoModelFactory to create instances of :obj:`User`.
     """
     code = factory.Faker('color')
+    name = factory.Faker('first_name')
 
     class Meta:
         model = Color
@@ -202,6 +203,7 @@ class TemplateSubAccountGroupFactory(GroupFactory):
         model = TemplateSubAccountGroup
 
 
+@factory.django.mute_signals(models.signals.post_save, models.signals.post_init)
 class AccountFactory(CustomModelFactory):
     """
     A an abstract DjangoModelFactory to referencing the polymorphic base model
@@ -234,6 +236,7 @@ class TemplateAccountFactory(AccountFactory):
         model = TemplateAccount
 
 
+@factory.django.mute_signals(models.signals.post_save, models.signals.post_init)
 class SubAccountFactory(CustomModelFactory):
     """
     A an abstract DjangoModelFactory to referencing the polymorphic base model

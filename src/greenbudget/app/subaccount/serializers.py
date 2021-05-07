@@ -195,6 +195,11 @@ def create_bulk_update_subaccounts_serializer(model_cls):
                     partial=True
                 )
                 serializer.is_valid(raise_exception=True)
-                serializer.save(updated_by=validated_data['updated_by'])
+                serializer.save(
+                    updated_by=validated_data['updated_by'],
+                    suppress_budget_update=validated_data.get(
+                        'suppress_budget_update', False)
+                )
             return instance
+
     return BulkUpdateSubAccountsSerializer

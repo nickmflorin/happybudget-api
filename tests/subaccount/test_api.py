@@ -1,3 +1,6 @@
+import datetime
+from datetime import timezone
+import mock
 import pytest
 
 from greenbudget.app.group.models import (
@@ -574,8 +577,10 @@ def test_remove_template_subaccount_from_group(api_client, user,
     assert TemplateSubAccountGroup.objects.first() is None
 
 
+@pytest.mark.freeze_time('2020-01-01')
 def test_bulk_update_budget_subaccount_subaccounts(api_client, user,
-        create_budget, create_budget_account, create_budget_subaccount):
+        create_budget, create_budget_account, create_budget_subaccount,
+        freezer):
     budget = create_budget()
     account = create_budget_account(budget=budget)
     subaccount = create_budget_subaccount(
@@ -585,6 +590,7 @@ def test_bulk_update_budget_subaccount_subaccounts(api_client, user,
         create_budget_subaccount(budget=budget, parent=subaccount)
     ]
     api_client.force_login(user)
+    freezer.move_to("2021-01-01")
     response = api_client.patch(
         "/v1/subaccounts/%s/bulk-update-subaccounts/" % subaccount.pk,
         format='json',
@@ -609,9 +615,47 @@ def test_bulk_update_budget_subaccount_subaccounts(api_client, user,
     subaccounts[1].refresh_from_db()
     assert subaccounts[1].name == "New Name 2"
 
+    budget.refresh_from_db()
+    assert budget.updated_at == datetime.datetime(2021, 1, 1).replace(
+        tzinfo=timezone.utc)
 
+
+def test_bulk_update_budget_subaccount_subaccounts_budget_updated_once(
+        api_client, user, create_budget, create_budget_account,
+        create_budget_subaccount):
+    budget = create_budget()
+    account = create_budget_account(budget=budget)
+    subaccount = create_budget_subaccount(
+        parent=account, budget=budget, identifier="subaccount-a")
+    subaccounts = [
+        create_budget_subaccount(budget=budget, parent=subaccount),
+        create_budget_subaccount(budget=budget, parent=subaccount)
+    ]
+    api_client.force_login(user)
+    with mock.patch('greenbudget.app.budget.models.BaseBudget.save') as save:
+        response = api_client.patch(
+            "/v1/subaccounts/%s/bulk-update-subaccounts/" % subaccount.pk,
+            format='json',
+            data={
+                'data': [
+                    {
+                        'id': subaccounts[0].pk,
+                        'name': 'New Name 1',
+                    },
+                    {
+                        'id': subaccounts[1].pk,
+                        'name': 'New Name 2',
+                    }
+                ]
+            })
+    assert response.status_code == 200
+    assert save.call_count == 1
+
+
+@pytest.mark.freeze_time('2020-01-01')
 def test_bulk_update_template_subaccount_subaccounts(api_client, user,
-        create_template, create_template_account, create_template_subaccount):
+        create_template, create_template_account, create_template_subaccount,
+        freezer):
     template = create_template()
     account = create_template_account(budget=template)
     subaccount = create_template_subaccount(
@@ -621,6 +665,7 @@ def test_bulk_update_template_subaccount_subaccounts(api_client, user,
         create_template_subaccount(budget=template, parent=subaccount)
     ]
     api_client.force_login(user)
+    freezer.move_to("2021-01-01")
     response = api_client.patch(
         "/v1/subaccounts/%s/bulk-update-subaccounts/" % subaccount.pk,
         format='json',
@@ -645,14 +690,53 @@ def test_bulk_update_template_subaccount_subaccounts(api_client, user,
     subaccounts[1].refresh_from_db()
     assert subaccounts[1].name == "New Name 2"
 
+    template.refresh_from_db()
+    assert template.updated_at == datetime.datetime(2021, 1, 1).replace(
+        tzinfo=timezone.utc)
+
+
+def test_bulk_update_template_subaccount_subaccounts_template_updated_once(
+        api_client, user, create_template, create_template_account,
+        create_template_subaccount):
+    template = create_template()
+    account = create_template_account(budget=template)
+    subaccount = create_template_subaccount(
+        parent=account, budget=template, identifier="subaccount-a")
+    subaccounts = [
+        create_template_subaccount(budget=template, parent=subaccount),
+        create_template_subaccount(budget=template, parent=subaccount)
+    ]
+    api_client.force_login(user)
+    with mock.patch('greenbudget.app.budget.models.BaseBudget.save') as save:
+        response = api_client.patch(
+            "/v1/subaccounts/%s/bulk-update-subaccounts/" % subaccount.pk,
+            format='json',
+            data={
+                'data': [
+                    {
+                        'id': subaccounts[0].pk,
+                        'name': 'New Name 1',
+                    },
+                    {
+                        'id': subaccounts[1].pk,
+                        'name': 'New Name 2',
+                    }
+                ]
+            })
+    assert response.status_code == 200
+    assert save.call_count == 1
+
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_bulk_create_budget_subaccount_subaccounts(api_client, user,
-        create_budget, create_budget_account, create_budget_subaccount):
+        create_budget, create_budget_account, create_budget_subaccount,
+        freezer):
     budget = create_budget()
     account = create_budget_account(budget=budget)
     subaccount = create_budget_subaccount(parent=account, budget=budget)
     api_client.force_login(user)
+
+    freezer.move_to("2021-01-01")
     response = api_client.patch(
         "/v1/subaccounts/%s/bulk-create-subaccounts/" % subaccount.pk,
         format='json',
@@ -686,14 +770,21 @@ def test_bulk_create_budget_subaccount_subaccounts(api_client, user,
     assert response.json()['data'][1]['identifier'] == 'subaccount-b'
     assert response.json()['data'][1]['name'] == 'New Name 2'
 
+    budget.refresh_from_db()
+    assert budget.updated_at == datetime.datetime(2021, 1, 1).replace(
+        tzinfo=timezone.utc)
+
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_bulk_create_budget_subaccount_subaccounts_count(api_client, user,
-        create_budget, create_budget_account, create_budget_subaccount):
+        create_budget, create_budget_account, create_budget_subaccount,
+        freezer):
     budget = create_budget()
     account = create_budget_account(budget=budget)
     subaccount = create_budget_subaccount(parent=account, budget=budget)
     api_client.force_login(user)
+
+    freezer.move_to("2021-01-01")
     response = api_client.patch(
         "/v1/subaccounts/%s/bulk-create-subaccounts/" % subaccount.pk,
         format='json',
@@ -705,14 +796,21 @@ def test_bulk_create_budget_subaccount_subaccounts_count(api_client, user,
     assert len(subaccounts) == 3
     assert len(response.json()['data']) == 2
 
+    budget.refresh_from_db()
+    assert budget.updated_at == datetime.datetime(2021, 1, 1).replace(
+        tzinfo=timezone.utc)
+
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_bulk_create_template_subaccount_subaccounts(api_client, user,
-        create_template, create_template_account, create_template_subaccount):
+        create_template, create_template_account, create_template_subaccount,
+        freezer):
     template = create_template()
     account = create_template_account(budget=template)
     subaccount = create_template_subaccount(parent=account, budget=template)
     api_client.force_login(user)
+
+    freezer.move_to("2021-01-01")
     response = api_client.patch(
         "/v1/subaccounts/%s/bulk-create-subaccounts/" % subaccount.pk,
         format='json',
@@ -746,14 +844,21 @@ def test_bulk_create_template_subaccount_subaccounts(api_client, user,
     assert response.json()['data'][1]['identifier'] == 'subaccount-b'
     assert response.json()['data'][1]['name'] == 'New Name 2'
 
+    template.refresh_from_db()
+    assert template.updated_at == datetime.datetime(2021, 1, 1).replace(
+        tzinfo=timezone.utc)
+
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_bulk_create_template_subaccount_subaccounts_count(api_client, user,
-        create_template, create_template_account, create_template_subaccount):
+        create_template, create_template_account, create_template_subaccount,
+        freezer):
     template = create_template()
     account = create_template_account(budget=template)
     subaccount = create_template_subaccount(parent=account, budget=template)
     api_client.force_login(user)
+
+    freezer.move_to("2021-01-01")
     response = api_client.patch(
         "/v1/subaccounts/%s/bulk-create-subaccounts/" % subaccount.pk,
         format='json',
@@ -764,3 +869,7 @@ def test_bulk_create_template_subaccount_subaccounts_count(api_client, user,
     subaccounts = TemplateSubAccount.objects.all()
     assert len(subaccounts) == 3
     assert len(response.json()['data']) == 2
+
+    template.refresh_from_db()
+    assert template.updated_at == datetime.datetime(2021, 1, 1).replace(
+        tzinfo=timezone.utc)
