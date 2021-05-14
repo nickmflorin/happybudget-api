@@ -23,14 +23,14 @@ class AccountSimpleSerializer(EnhancedModelSerializer):
     identifier = serializers.CharField(
         required=False,
         allow_blank=False,
-        allow_null=False,
+        allow_null=True,
         trim_whitespace=False
     )
     type = serializers.CharField(read_only=True)
     description = serializers.CharField(
         required=False,
-        allow_blank=True,
-        allow_null=False,
+        allow_blank=False,
+        allow_null=True,
         trim_whitespace=False
     )
 
