@@ -8,7 +8,8 @@ from greenbudget.lib.rest_framework_utils.serializers import (
 
 from greenbudget.app.account.models import Account
 from greenbudget.app.budget.models import Budget
-from greenbudget.app.common.serializers import AbstractBulkUpdateSerializer
+from greenbudget.app.common.serializers import (
+    EntitySerializer, AbstractBulkUpdateSerializer)
 from greenbudget.app.subaccount.models import SubAccount
 
 from .models import Actual
@@ -49,8 +50,10 @@ class ActualSerializer(EnhancedModelSerializer):
         required=False,
         choices=Actual.PAYMENT_METHODS
     )
-    object_id = serializers.IntegerField(required=False)
+    account = EntitySerializer(read_only=True, source='parent')
+    object_id = serializers.IntegerField(write_only=True, required=False)
     parent_type = serializers.ChoiceField(
+        write_only=True,
         required=False,
         choices=["account", "subaccount"]
     )
@@ -60,7 +63,7 @@ class ActualSerializer(EnhancedModelSerializer):
         fields = (
             'id', 'description', 'created_by', 'updated_by', 'created_at',
             'updated_at', 'purchase_order', 'date', 'payment_id', 'value',
-            'payment_method', 'object_id', 'parent_type', 'vendor')
+            'payment_method', 'object_id', 'parent_type', 'vendor', 'account')
 
     def validate(self, attrs):
         # In the case that the serializer is nested and being used in a write

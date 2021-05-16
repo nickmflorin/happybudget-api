@@ -22,11 +22,15 @@ def test_create_actual(api_client, user, create_budget_account,
         "payment_id": None,
         "value": None,
         "payment_method": None,
-        "object_id": account.pk,
-        "parent_type": "account",
         "vendor": None,
         "created_by": user.pk,
-        "updated_by": user.pk
+        "updated_by": user.pk,
+        "account": {
+            "id": account.pk,
+            "type": "account",
+            "identifier": account.identifier,
+            "description": account.description
+        }
     }
     actual = models.Actual.objects.first()
     assert actual is not None
@@ -60,15 +64,19 @@ def test_update_actual(api_client, user, create_budget_account,
         "date": actual.date,
         "payment_id": "Payment ID",
         "value": actual.value,
+        "vendor": "Vendor Name",
+        "created_by": user.pk,
+        "updated_by": user.pk,
         "payment_method": {
             "id": 1,
             "name": actual.PAYMENT_METHODS[1]
         },
-        "object_id": account.pk,
-        "parent_type": "account",
-        "vendor": "Vendor Name",
-        "created_by": user.pk,
-        "updated_by": user.pk
+        "account": {
+            "id": account.pk,
+            "type": "account",
+            "identifier": account.identifier,
+            "description": account.description
+        }
     }
     actual.refresh_from_db()
     assert actual.payment_id == "Payment ID"
@@ -98,15 +106,19 @@ def test_change_actual_parent(api_client, user, create_budget_account,
         "date": actual.date,
         "payment_id": actual.payment_id,
         "value": actual.value,
+        "vendor": actual.vendor,
+        "created_by": user.pk,
+        "updated_by": user.pk,
         "payment_method": {
             "id": actual.payment_method,
             "name": actual.PAYMENT_METHODS[actual.payment_method]
         },
-        "object_id": another_account.pk,
-        "parent_type": "account",
-        "vendor": actual.vendor,
-        "created_by": user.pk,
-        "updated_by": user.pk
+        "account": {
+            "id": another_account.pk,
+            "type": "account",
+            "identifier": another_account.identifier,
+            "description": another_account.description
+        }
     }
     actual.refresh_from_db()
     assert actual.budget == budget
@@ -153,14 +165,18 @@ def test_get_account_actuals(api_client, user, create_budget_account,
             "date": actuals[0].date,
             "payment_id": actuals[0].payment_id,
             "value": actuals[0].value,
+            "created_by": user.pk,
+            "updated_by": user.pk,
             "payment_method": {
                 "id": actuals[0].payment_method,
                 "name": actuals[0].PAYMENT_METHODS[actuals[0].payment_method]
             },
-            "object_id": account.pk,
-            "parent_type": "account",
-            "created_by": user.pk,
-            "updated_by": user.pk
+            "account": {
+                "id": account.pk,
+                "type": "account",
+                "identifier": account.identifier,
+                "description": account.description
+            }
         },
         {
             "id": actuals[1].pk,
@@ -172,14 +188,18 @@ def test_get_account_actuals(api_client, user, create_budget_account,
             "date": actuals[1].date,
             "payment_id": actuals[1].payment_id,
             "value": actuals[1].value,
+            "created_by": user.pk,
+            "updated_by": user.pk,
             "payment_method": {
                 "id": actuals[1].payment_method,
                 "name": actuals[1].PAYMENT_METHODS[actuals[1].payment_method]
             },
-            "object_id": account.pk,
-            "parent_type": "account",
-            "created_by": user.pk,
-            "updated_by": user.pk
+            "account": {
+                "id": account.pk,
+                "type": "account",
+                "identifier": account.identifier,
+                "description": account.description
+            }
         },
     ]
 
@@ -209,14 +229,19 @@ def test_get_subaccount_actuals(api_client, user, create_budget_subaccount,
             "date": actuals[0].date,
             "payment_id": actuals[0].payment_id,
             "value": actuals[0].value,
+            "created_by": user.pk,
+            "updated_by": user.pk,
             "payment_method": {
                 "id": actuals[0].payment_method,
                 "name": actuals[0].PAYMENT_METHODS[actuals[0].payment_method]
             },
-            "object_id": sub_account.pk,
-            "parent_type": "subaccount",
-            "created_by": user.pk,
-            "updated_by": user.pk
+            "account": {
+                "id": sub_account.pk,
+                "type": "subaccount",
+                "name": sub_account.name,
+                "identifier": sub_account.identifier,
+                "description": sub_account.description
+            }
         },
         {
             "id": actuals[1].pk,
@@ -228,13 +253,18 @@ def test_get_subaccount_actuals(api_client, user, create_budget_subaccount,
             "date": actuals[1].date,
             "payment_id": actuals[1].payment_id,
             "value": actuals[1].value,
+            "created_by": user.pk,
+            "updated_by": user.pk,
             "payment_method": {
                 "id": actuals[1].payment_method,
                 "name": actuals[1].PAYMENT_METHODS[actuals[1].payment_method]
             },
-            "object_id": sub_account.pk,
-            "parent_type": "subaccount",
-            "created_by": user.pk,
-            "updated_by": user.pk
+            "account": {
+                "id": sub_account.pk,
+                "type": "subaccount",
+                "name": sub_account.name,
+                "identifier": sub_account.identifier,
+                "description": sub_account.description
+            }
         },
     ]

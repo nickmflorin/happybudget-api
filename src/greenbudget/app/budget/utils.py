@@ -70,8 +70,6 @@ def render_budget_as_pdf(budget):
 
     # pdf = pisa.pisaDocument(BytesIO(html.encode("ISO-8859-1")), result)
     if pdf.err:
-        import ipdb
-        ipdb.set_trace()
         logger.error(pdf.err)
         raise BudgetPdfError()
     return result

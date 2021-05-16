@@ -22,7 +22,7 @@ from greenbudget.app.subaccount.models import BudgetSubAccount
 from .models import Budget
 from .mixins import BudgetNestedMixin, TrashModelMixin
 from .serializers import (
-    BudgetSerializer, TreeNodeSerializer, BudgetSimpleSerializer)
+    BudgetSerializer, EntitySerializerWithChildren, BudgetSimpleSerializer)
 
 
 class LineItemViewSet(
@@ -37,7 +37,7 @@ class LineItemViewSet(
     """
     serializer_class = EntitySerializer
     budget_lookup_field = ("pk", "budget_pk")
-    search_fields = ['identifier']
+    search_fields = ['identifier', 'description']
 
     def list(self, request, *args, **kwargs):
         qs1 = self.filter_queryset(self.budget.accounts.all())
@@ -58,12 +58,44 @@ class LineItemTreeViewSet(
 
     (1) GET /budgets/<pk>/items/tree/
     """
-    serializer_class = TreeNodeSerializer
     budget_lookup_field = ("pk", "budget_pk")
-    search_fields = ['identifier']
+    search_fields = ['identifier', 'description']
 
-    def get_queryset(self):
-        return self.budget.accounts.all()
+    def list(self, request, *args, **kwargs):
+        qs1 = self.filter_queryset(self.budget.accounts.all())
+        qs2 = self.filter_queryset(
+            BudgetSubAccount.objects.filter(budget=self.budget))
+
+        def handle_nested_level(obj, search_qs, primary=None):
+            qs = []
+            primary = primary or search_qs
+            if obj in primary:
+                qs.append(obj)
+
+            for subaccount in obj.subaccounts.all():
+                sub_qs = handle_nested_level(subaccount, search_qs)
+                if len(sub_qs) != 0:
+                    if obj not in qs:
+                        qs.append(obj)
+                    qs.extend(sub_qs)
+            return qs
+
+        overall_qs = []
+        for account in self.budget.accounts.all():
+            overall_qs.extend(handle_nested_level(account, qs2, primary=qs1))
+
+        # Note: Since we are applying the pagination before the TreeSerializer,
+        # the `count` in the paginated response will not be the number of
+        # top-level accounts but will instead be the number of overall items
+        # returned for all levels of the tree.
+        qs = self.paginate_queryset(overall_qs)
+        accounts = [obj for obj in qs if isinstance(obj, BudgetAccount)]
+        subaccounts = [obj for obj in qs if isinstance(obj, BudgetSubAccount)]
+        data = [
+            EntitySerializerWithChildren(account, subset=subaccounts).data
+            for account in accounts
+        ]
+        return self.get_paginated_response(data)
 
 
 class BudgetGroupViewSet(

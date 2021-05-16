@@ -750,6 +750,133 @@ def test_get_budget_items_tree(api_client, user, create_budget,
     ]
 
 
+def test_search_budget_items_tree(api_client, user, create_budget,
+        create_budget_account, create_budget_subaccount):
+    budget = create_budget()
+    accounts = [
+        create_budget_account(budget=budget, identifier="Account A"),
+        create_budget_account(budget=budget, identifier="Account B"),
+        create_budget_account(budget=budget, identifier="Account Jack"),
+    ]
+    subaccounts_a_node = [
+        create_budget_subaccount(
+            budget=budget,
+            parent=accounts[0],
+            identifier="Sub Account A-A",
+            description="Jack",
+        ),
+        create_budget_subaccount(
+            budget=budget,
+            parent=accounts[0],
+            identifier="Sub Account A-B",
+            description="Peter",
+        ),
+        create_budget_subaccount(
+            budget=budget,
+            parent=accounts[0],
+            identifier="Sub Account A-C",
+            description="Jack",
+        )
+    ]
+    subaccounts_b_node = [
+        create_budget_subaccount(
+            budget=budget,
+            parent=accounts[1],
+            identifier="Sub Account B-A",
+            description="Jack",
+        ),
+        create_budget_subaccount(
+            budget=budget,
+            parent=accounts[1],
+            identifier="Sub Account B-B",
+            description="Peter",
+        ),
+        create_budget_subaccount(
+            budget=budget,
+            parent=accounts[1],
+            identifier="Sub Account B-C",
+            description="Peter",
+        )
+    ]
+    subaccounts_a_b_node = [
+        create_budget_subaccount(
+            budget=budget,
+            parent=subaccounts_a_node[1],
+            identifier="Sub Account A-B-A",
+            description="Jack",
+        )
+    ]
+    api_client.force_login(user)
+    response = api_client.get(
+        "/v1/budgets/%s/items/tree/?search=jack" % budget.pk)
+    assert response.status_code == 200
+    assert response.json()['data'] == [
+        {
+            "id": accounts[0].pk,
+            "identifier": "Account A",
+            "type": "account",
+            "description": accounts[0].description,
+            "children": [
+                {
+                    "id": subaccounts_a_node[0].pk,
+                    "identifier": "Sub Account A-A",
+                    "type": "subaccount",
+                    "name": subaccounts_a_node[0].name,
+                    "description": "Jack",
+                    "children": []
+                },
+                # Included because it has a SubAccount that matches the search.
+                {
+                    "id": subaccounts_a_node[1].pk,
+                    "identifier": "Sub Account A-B",
+                    "type": "subaccount",
+                    "name": subaccounts_a_node[1].name,
+                    "description": "Peter",
+                    "children": [{
+                        "id": subaccounts_a_b_node[0].pk,
+                        "name": subaccounts_a_b_node[0].name,
+                        "identifier": "Sub Account A-B-A",
+                        "type": "subaccount",
+                        "description": "Jack",
+                        "children": []
+                    }]
+                },
+                {
+                    "id": subaccounts_a_node[2].pk,
+                    "identifier": "Sub Account A-C",
+                    "type": "subaccount",
+                    "name": subaccounts_a_node[2].name,
+                    "description": "Jack",
+                    "children": []
+                }
+            ]
+        },
+        {
+            "id": accounts[1].pk,
+            "identifier": "Account B",
+            "type": "account",
+            "description": accounts[1].description,
+            "children": [
+                {
+                    "id": subaccounts_b_node[0].pk,
+                    "identifier": "Sub Account B-A",
+                    "type": "subaccount",
+                    "name": subaccounts_b_node[0].name,
+                    "description": "Jack",
+                    "children": []
+                }
+            ]
+        },
+        {
+            "id": accounts[2].pk,
+            "identifier": "Account Jack",
+            "type": "account",
+            "description": accounts[2].description,
+            "children": []
+        }
+    ]
+
+
 @pytest.mark.freeze_time('2020-01-01')
 def test_bulk_update_budget_accounts(api_client, user, create_budget,
         create_budget_account):
