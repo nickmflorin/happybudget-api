@@ -37,8 +37,8 @@ class SubAccountSimpleSerializer(EnhancedModelSerializer):
     )
     name = serializers.CharField(
         required=False,
-        allow_blank=True,
-        allow_null=False,
+        allow_blank=False,
+        allow_null=True,
         trim_whitespace=False
     )
 
