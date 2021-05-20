@@ -266,7 +266,7 @@
                       <td class="quantity"></td>
                     {% endif %}
                     {% if subaccount.unit != None %}
-                      <td class="unit">{{subaccount.unit}}</td>
+                      <td class="unit">{{subaccount.unit|format_unit}}</td>
                     {% else %}
                       <td class="unit"></td>
                     {% endif %}
@@ -315,7 +315,7 @@
                         <td class="quantity"></td>
                       {% endif %}
                       {% if detail.unit != None %}
-                        <td class="unit">{{detail.unit}}</td>
+                        <td class="unit">{{detail.unit|format_unit}}</td>
                       {% else %}
                         <td class="unit"></td>
                       {% endif %}
