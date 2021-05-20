@@ -215,6 +215,15 @@
                 {% endif %}
               </tr>
             {% endfor %}
+            <tr>
+              <td class="border-both identifier">Total</td>
+              <td class="description"></td>
+              {% if budget.estimated != None %}
+              <td class="border-both estimated">{{budget.estimated|format_as_dollar}}</td>
+              {% else %}
+              <td class="border-both estimated">{{0.00|format_as_dollar}}</td>
+              {% endif %}
+            </tr>
           </tbody>
         </table>
 
