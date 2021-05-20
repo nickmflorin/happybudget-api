@@ -101,6 +101,11 @@
             }
             .account-table tbody tr.subaccount > td.description {
               font-family: 'Nunito-SemiBold';
+              width: 30%;
+            }
+            .account-table tbody tr.subaccount > td.name {
+              font-family: 'Nunito-Light';
+              width: 10%;
             }
             .account-table tbody tr.subaccount > td.quantity {
               font-family: 'Nunito-Regular';
@@ -144,7 +149,11 @@
             .account-table tbody tr.detail > .description {
               padding-left: 20px;
               font-family: 'Nunito-Light';
-              width: 40%;
+              width: 30%;
+            }
+            .account-table tbody tr.detail > td.name {
+              font-family: 'Nunito-Light';
+              width: 10%;
             }
             .account-table tbody tr.detail > td.quantity {
               font-family: 'Nunito-Light';
@@ -213,7 +222,7 @@
           <table class="account-table">
             <thead>
               <tr>
-                <td scope="col"><span>Acct</span></td>
+                <td scope="col">Acct</td>
                 <td scope="col">Description</td>
                 <td scope="col">Name</td>
                 <td scope="col">Qty</td>
@@ -237,6 +246,11 @@
                     {% else %}
                       <td class="description"></td>
                     {% endif %}
+                    {% if subaccount.name != None %}
+                      <td class="name">{{subaccount.name}}</td>
+                    {% else %}
+                      <td class="name"></td>
+                    {% endif %}
                     {% if subaccount.quantity != None %}
                       <td class="quantity">{{subaccount.quantity}}</td>
                     {% else %}
@@ -253,7 +267,7 @@
                       <td class="multiplier"></td>
                     {% endif %}
                     {% if subaccount.rate != None %}
-                      <td class="rate">{{subaccount.rate|format_as_dollar}}</td>
+                      <td class="rate">{{subaccount.rate}}</td>
                     {% else %}
                       <td class="rate"></td>
                     {% endif %}
@@ -281,6 +295,11 @@
                       {% else %}
                         <td class="description"></td>
                       {% endif %}
+                      {% if detail.name != None %}
+                        <td class="name">{{detail.name}}</td>
+                      {% else %}
+                        <td class="name"></td>
+                      {% endif %}
                       {% if detail.quantity != None %}
                         <td class="quantity">{{detail.quantity}}</td>
                       {% else %}
@@ -297,7 +316,7 @@
                         <td class="multiplier"></td>
                       {% endif %}
                       {% if detail.rate != None %}
-                        <td class="rate">{{detail.rate|format_as_dollar}}</td>
+                        <td class="rate">{{detail.rate}}</td>
                       {% else %}
                         <td class="rate"></td>
                       {% endif %}
