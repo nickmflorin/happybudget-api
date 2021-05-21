@@ -681,7 +681,7 @@ def test_get_budget_items_tree(api_client, user, create_budget,
     api_client.force_login(user)
     response = api_client.get("/v1/budgets/%s/items/tree/" % budget.pk)
     assert response.status_code == 200
-    assert response.json()['count'] == 2
+    assert response.json()['count'] == 8
     assert response.json()['data'] == [
         {
             "id": accounts[0].pk,

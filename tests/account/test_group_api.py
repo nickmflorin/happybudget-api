@@ -136,40 +136,6 @@ def test_create_template_account_subaccount_group(api_client, user,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_budget_account_subaccount_group_duplicate_name(api_client, user,
-        create_budget_subaccount, create_budget_account, create_budget,
-        create_budget_subaccount_group):
-    budget = create_budget()
-    account = create_budget_account(budget=budget)
-    subaccount = create_budget_subaccount(parent=account, budget=budget)
-    create_budget_subaccount_group(name="Group Name", parent=account)
-
-    api_client.force_login(user)
-    response = api_client.post("/v1/accounts/%s/groups/" % subaccount.pk, data={
-        'name': 'Group Name',
-        'children': [subaccount.pk]
-    })
-    assert response.status_code == 400
-
-
-@pytest.mark.freeze_time('2020-01-01')
-def test_create_template_account_subaccount_group_duplicate_name(api_client,
-        user, create_template_subaccount, create_template_account,
-        create_template, create_template_subaccount_group):
-    template = create_template()
-    account = create_template_account(budget=template)
-    subaccount = create_template_subaccount(parent=account, budget=template)
-    create_template_subaccount_group(name="Group Name", parent=account)
-
-    api_client.force_login(user)
-    response = api_client.post("/v1/accounts/%s/groups/" % subaccount.pk, data={
-        'name': 'Group Name',
-        'children': [subaccount.pk]
-    })
-    assert response.status_code == 400
-
-
-@pytest.mark.freeze_time('2020-01-01')
 def test_create_budget_account_subaccount_group_invalid_child(api_client, user,
         create_budget_subaccount, create_budget_account, create_budget):
     budget = create_budget()

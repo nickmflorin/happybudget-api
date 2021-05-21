@@ -37,17 +37,6 @@ class GroupSerializer(EnhancedModelSerializer):
             'id', 'name', 'created_by', 'created_at', 'updated_by',
             'updated_at', 'color', 'estimated')
 
-    def validate_name(self, value):
-        parent = self.context.get('parent')
-        if parent is None:
-            parent = self.instance.parent
-        validator = serializers.UniqueTogetherValidator(
-            queryset=parent.groups.all(),
-            fields=('name', ),
-        )
-        validator({'name': value}, self)
-        return value
-
     def create(self, *args, **kwargs):
         """
         Overridden to perform cleanup of empty :obj:`Group` instances.

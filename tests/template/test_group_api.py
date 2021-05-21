@@ -75,20 +75,3 @@ def test_create_template_account_group_invalid_child(api_client, user,
         'color': '#a1887f',
     })
     assert response.status_code == 400
-
-
-@pytest.mark.freeze_time('2020-01-01')
-def test_create_template_account_group_duplicate_name(api_client, user,
-        create_template_account, create_template,
-        create_template_account_group):
-    template = create_template()
-    account = create_template_account(budget=template)
-    create_template_account_group(name="Group Name", parent=template)
-
-    api_client.force_login(user)
-    response = api_client.post("/v1/templates/%s/groups/" % template.pk, data={
-        'name': 'Group Name',
-        'children': [account.pk],
-        'color': '#a1887f'
-    })
-    assert response.status_code == 400
