@@ -12,10 +12,10 @@ jobs:
       #     keys:
       #       - deps-{{ checksum "poetry.lock" }}
 
-      # - run:
-      #     name: Install Dependencies
-      #     command: |
-      #       poetry install
+      - run:
+          name: Install Dependencies
+          command: |
+            pip install tox
 
       # Save's the specified path as a cache. This is the path Poetry uses to install the dependencies
       # So if you don't install anything new, this folder won't change and the cache will be effective
