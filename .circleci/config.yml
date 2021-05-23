@@ -37,7 +37,7 @@ jobs:
       - run:
           name: Run Tests
           command: >-
-            poetry run coverage run --parallel -m pytest --junit-xml=~/reports/test-results/pytest-{{ .Branch }}.xml
+            poetry run coverage run --parallel -m pytest --junit-xml=~/reports/test-results/pytest.xml
       - store_test_results:
           path: ~/reports/test-results
 
