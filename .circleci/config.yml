@@ -38,16 +38,20 @@ jobs:
       - run:
           name: Run Tests
           command: >-
+            mkdir -p ~/reports/test-results
             poetry run coverage erase
-            poetry run coverage run --parallel -m pytest
+            poetry run coverage run --parallel -m pytest --junit-xml=~/reports/test-results/pytest-{{ .Branch }}.xml
             poetry run coverage combine
             poetry run coverage report
             poetry run coverage xml
             poetry run coverage html
-
+      # - run:
+      #     name: Save Test Results
+      #     command: |
+      #       mkdir -p ~/test-results-{{ .Branch }}
+      #     when: always
       - store_test_results:
-          path: test-results
-
+          path: ~/reports/test-results
 
 workflows:
   version: 2
