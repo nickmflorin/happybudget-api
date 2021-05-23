@@ -42,7 +42,7 @@ jobs:
       - run:
           name: Run Tests
           command: >-
-            pytest --junit-xml=~/reports/test-results/pytest-{{ .Branch }}.xml
+            poetry run -m pytest --junit-xml=~/reports/test-results/pytest-{{ .Branch }}.xml
       - store_test_results:
           path: ~/reports/test-results
 
