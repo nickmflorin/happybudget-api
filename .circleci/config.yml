@@ -2,25 +2,28 @@ version: 2
 
 orbs:
   poetry: frameio/poetry@0.15.0
+  python: circleci/python@0.2.1
+  slack: circleci/slack@3.4.2
 
 jobs:
   build-and-test:
     docker:
       - image: circleci/python:3.8.8
-
+    # executor:
+    #   name: "python/default"
+    #   tag: "3.9"
     steps:
       - checkout
       - run: sudo chown -R circleci:circleci /usr/local/bin
       - run: sudo chown -R circleci:circleci /usr/local/lib/python3.8/site-packages
-
+      # - python/load-cache
       - restore_cache:
           key: deps9-{{ .Branch }}-{{ checksum "poetry.lock" }}
-
       - run:
           name: Install Dependencies
           command: |
             poetry install
-
+      # - python/save-cache
       - save_cache:
           key: deps9-{{ .Branch }}-{{ checksum "poetry.lock" }}
           paths:
@@ -28,12 +31,10 @@ jobs:
             - "/usr/local/bin"
             - "/usr/local/lib/python3.8/site-packages"
             - "/home/circleci/.cache/pypoetry/virtualenvs"
-
       - run:
           name: Run Linting Checks
           command: |
             poetry run flake8 src/greenbudget
-
       - run:
           name: Run Tests
           command: >-
@@ -43,6 +44,9 @@ jobs:
             poetry run coverage report
             poetry run coverage xml
             poetry run coverage html
+
+      - store_test_results:
+          path: test-results
 
 
 workflows:
