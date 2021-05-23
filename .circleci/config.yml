@@ -1,5 +1,8 @@
 version: 2
 
+orbs:
+  poetry: frameio/poetry@0.15.0
+
 jobs:
   build-and-test:
     docker:
@@ -7,35 +10,40 @@ jobs:
 
     steps:
       - checkout
+      - run: sudo chown -R circleci:circleci /usr/local/bin
+      - run: sudo chown -R circleci:circleci /usr/local/lib/python3.8/site-packages
 
-      # - restore_cache:
-      #     keys:
-      #       - deps-{{ checksum "poetry.lock" }}
+      - restore_cache:
+          key: deps9-{{ .Branch }}-{{ checksum "poetry.lock" }}
 
       - run:
           name: Install Dependencies
           command: |
-            pip install tox
+            poetry install
 
-      # Save's the specified path as a cache. This is the path Poetry uses to install the dependencies
-      # So if you don't install anything new, this folder won't change and the cache will be effective
-      # - save_cache:
-      #     key: deps-{{ checksum "poetry.lock" }}
-      #     paths:
-      #       - /home/circleci/.cache/pypoetry/virtualenvs
+      - save_cache:
+          key: deps9-{{ .Branch }}-{{ checksum "poetry.lock" }}
+          paths:
+            - ".venv"
+            - "/usr/local/bin"
+            - "/usr/local/lib/python3.8/site-packages"
+            - "/home/circleci/.cache/pypoetry/virtualenvs"
 
-      # Another step, run flake8
       - run:
           name: Run Linting Checks
           command: |
-            tox -e lint
+            poetry run flake8 src/greenbudget
 
-      # Last step, runs our tests ommiting the dependencies path (so we don't take their coverage into account)
-      # And send our coverage somewhere, in this case, coveralls
       - run:
           name: Run Tests
-          command: |
-            tox -e test
+          command: >-
+            poetry run coverage erase
+            poetry run coverage run --parallel -m pytest
+            poetry run coverage combine
+            poetry run coverage report
+            poetry run coverage xml
+            poetry run coverage html
+
 
 workflows:
   version: 2
