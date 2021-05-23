@@ -9,21 +9,16 @@ jobs:
   build-and-test:
     docker:
       - image: circleci/python:3.8.8
-    # executor:
-    #   name: "python/default"
-    #   tag: "3.9"
     steps:
       - checkout
       - run: sudo chown -R circleci:circleci /usr/local/bin
       - run: sudo chown -R circleci:circleci /usr/local/lib/python3.8/site-packages
-      # - python/load-cache
       - restore_cache:
           key: deps9-{{ .Branch }}-{{ checksum "poetry.lock" }}
       - run:
           name: Install Dependencies
           command: |
             poetry install
-      # - python/save-cache
       - save_cache:
           key: deps9-{{ .Branch }}-{{ checksum "poetry.lock" }}
           paths:
@@ -42,7 +37,7 @@ jobs:
       - run:
           name: Run Tests
           command: >-
-            poetry run -m pytest --junit-xml=~/reports/test-results/pytest-{{ .Branch }}.xml
+            poetry run coverage run --parallel -m pytest --junit-xml=~/reports/test-results/pytest-{{ .Branch }}.xml
       - store_test_results:
           path: ~/reports/test-results
 
