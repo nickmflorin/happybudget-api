@@ -40,7 +40,7 @@ jobs:
           command: >-
             mkdir -p ~/reports/test-results
             poetry run coverage erase
-            poetry run -m pytest --junit-xml=~/reports/test-results/pytest-{{ .Branch }}.xml
+            pytest --junit-xml=~/reports/test-results/pytest-{{ .Branch }}.xml
             poetry run coverage combine
             poetry run coverage report
             poetry run coverage xml
