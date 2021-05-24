@@ -1,4 +1,5 @@
 from colorful.fields import RGBColorField
+from polymorphic.models import PolymorphicModel
 
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
@@ -26,6 +27,7 @@ class Color(models.Model):
         blank=True,
         limit_choices_to=models.Q(app_label='group', model='group')
         | models.Q(app_label='fringe', model='fringe')
+        | models.Q(app_label='subaccount', model='subaccountunit')
     )
 
     objects = ColorManager()
@@ -51,3 +53,21 @@ class Color(models.Model):
         except ValidationError as e:
             raise IntegrityError(str(e))
         return super().save(*args, **kwargs)
+
+
+class Tag(PolymorphicModel):
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    title = models.CharField(max_length=32)
+    order = models.IntegerField(null=True)
+
+    class Meta:
+        get_latest_by = "created_at"
+        ordering = ("created_at",)
+        verbose_name = "Tag"
+        verbose_name_plural = "Tags"
+        unique_together = (('title', 'polymorphic_ctype_id'))
+
+    def save(self, *args, **kwargs):
+        setattr(self, '_ignore_reindex', kwargs.pop('ignore_reindex', False))
+        super().save(*args, **kwargs)

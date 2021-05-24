@@ -1,7 +1,6 @@
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers, exceptions
 
-from greenbudget.lib.rest_framework_utils.fields import ModelChoiceField
 from greenbudget.lib.rest_framework_utils.serializers import (
     EnhancedModelSerializer)
 
@@ -16,8 +15,19 @@ from greenbudget.app.group.models import (
     BudgetSubAccountGroup,
     TemplateSubAccountGroup
 )
+from greenbudget.app.tagging.serializers import (
+    TagField, TagSerializer, ColorSerializer)
 
-from .models import SubAccount, BudgetSubAccount, TemplateSubAccount
+from .models import (
+    SubAccount, BudgetSubAccount, TemplateSubAccount, SubAccountUnit)
+
+
+class SubAccountUnitSerializer(TagSerializer):
+    color = ColorSerializer(read_only=True)
+
+    class Meta:
+        model = SubAccountUnit
+        fields = TagSerializer.Meta.fields + ("color", )
 
 
 class SubAccountSimpleSerializer(EnhancedModelSerializer):
@@ -59,10 +69,10 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
     rate = serializers.FloatField(required=False, allow_null=True)
     multiplier = serializers.FloatField(required=False, allow_null=True)
     estimated = serializers.FloatField(read_only=True)
-    unit = ModelChoiceField(
-        required=False,
-        choices=SubAccount.UNITS,
-        allow_null=True
+    unit = TagField(
+        serializer_class=SubAccountUnitSerializer,
+        queryset=SubAccountUnit.objects.all(),
+        required=False
     )
     budget = serializers.PrimaryKeyRelatedField(read_only=True)
     subaccounts = serializers.PrimaryKeyRelatedField(many=True, read_only=True)

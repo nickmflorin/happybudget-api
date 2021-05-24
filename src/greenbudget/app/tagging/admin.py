@@ -1,10 +1,16 @@
+import logging
+
 from django import forms
 from django.apps import apps
 from django.contrib import admin
 from django.contrib.contenttypes.models import ContentType
-from django.utils.html import mark_safe
+from django.db import IntegrityError
 
+from greenbudget.app.common.admin import color_icon
 from .models import Color
+
+
+logger = logging.getLogger("greenbudget")
 
 
 class ColorAdminForm(forms.ModelForm):
@@ -18,7 +24,14 @@ def assign_to_factory(model_cls):
         ct = ContentType.objects.get_for_model(model_cls)
         for obj in queryset.all():
             obj.content_types.add(ct)
-            obj.save()
+            try:
+                obj.save()
+            # If there is a field that is required on the instance but not
+            # provided - the form for that instance is not in a state in which
+            # the instance can be saved without updating the field in the form.
+            # For this edge case, just ignore the action on that instance.
+            except IntegrityError as e:
+                logger.error("Cannot perform action on color: %s." % str(e))
 
     assign_to.short_description = 'Assign color to %s' % model_cls.__name__
     return assign_to
@@ -57,15 +70,7 @@ class ColorAdmin(admin.ModelAdmin):
         return actions
 
     def get_color_for_admin(self, obj):
-        if obj.code:
-            return mark_safe(u"""
-            <svg style="display: inline-block;
-                vertical-align: middle;" height="12" width="12">
-              <circle cx="6" cy="6" r="5" stroke="{color}" stroke-width="1"
-                    fill="{color}" />
-            </svg>
-            """.format(color=obj.code))
-        return u''
+        return color_icon(obj.code)
 
     get_color_for_admin.allow_tags = True
     get_color_for_admin.short_description = 'Color'

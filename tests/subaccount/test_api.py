@@ -10,6 +10,60 @@ from greenbudget.app.subaccount.models import (
 
 
 @pytest.mark.freeze_time('2020-01-01')
+def test_unit_properly_serializes(api_client, user, create_budget_subaccount,
+        create_budget_account, create_budget, create_subaccount_unit):
+    budget = create_budget()
+    account = create_budget_account(budget=budget)
+    unit = create_subaccount_unit()
+    subaccount = create_budget_subaccount(
+        parent=account,
+        budget=budget,
+        unit=unit
+    )
+    api_client.force_login(user)
+    response = api_client.get("/v1/subaccounts/%s/" % subaccount.pk)
+    assert response.status_code == 200
+    assert response.json()['unit'] == {
+        'id': unit.pk,
+        "created_at": "2020-01-01 00:00:00",
+        "updated_at": "2020-01-01 00:00:00",
+        'title': unit.title,
+        'order': unit.order,
+        'color': unit.color.code
+    }
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_update_subaccount_unit(api_client, user, create_budget_subaccount,
+        create_budget_account, create_budget, create_subaccount_unit):
+    budget = create_budget()
+    account = create_budget_account(budget=budget)
+    subaccount = create_budget_subaccount(
+        parent=account,
+        name="Original Name",
+        description="Original Description",
+        identifier="Original identifier",
+        budget=budget
+    )
+    unit = create_subaccount_unit()
+    api_client.force_login(user)
+    response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk, data={
+        "unit": unit.pk
+    })
+    assert response.status_code == 200
+    subaccount.refresh_from_db()
+    assert response.json()['unit'] == {
+        'id': unit.pk,
+        "created_at": "2020-01-01 00:00:00",
+        "updated_at": "2020-01-01 00:00:00",
+        'title': unit.title,
+        'order': unit.order,
+        'color': unit.color.code
+    }
+    assert subaccount.unit == unit
+
+
+@pytest.mark.freeze_time('2020-01-01')
 def test_get_budget_subaccount(api_client, user, create_budget_subaccount,
         create_budget_account, create_budget):
     budget = create_budget()
@@ -43,10 +97,7 @@ def test_get_budget_subaccount(api_client, user, create_budget_subaccount,
         "group": None,
         "created_by": user.pk,
         "updated_by": user.pk,
-        "unit": {
-            "id": subaccount.unit,
-            "name": BudgetSubAccount.UNITS[subaccount.unit]
-        },
+        "unit": None,
         "ancestors": [
             {
                 "type": "budget",
@@ -95,10 +146,7 @@ def test_get_template_subaccount(api_client, user, create_template_subaccount,
         "group": None,
         "created_by": user.pk,
         "updated_by": user.pk,
-        "unit": {
-            "id": subaccount.unit,
-            "name": TemplateSubAccount.UNITS[subaccount.unit]
-        },
+        "unit": None,
         "ancestors": [
             {
                 "type": "template",
@@ -161,10 +209,7 @@ def test_update_budget_subaccount(api_client, user, create_budget_subaccount,
         "group": None,
         "created_by": user.pk,
         "updated_by": user.pk,
-        "unit": {
-            "id": subaccount.unit,
-            "name": BudgetSubAccount.UNITS[subaccount.unit]
-        },
+        "unit": None,
         "ancestors": [
             {
                 "type": "budget",
@@ -230,10 +275,7 @@ def test_update_template_subaccount(api_client, user, create_template_account,
         "group": None,
         "created_by": user.pk,
         "updated_by": user.pk,
-        "unit": {
-            "id": subaccount.unit,
-            "name": TemplateSubAccount.UNITS[subaccount.unit]
-        },
+        "unit": None,
         "ancestors": [
             {
                 "type": "template",
@@ -299,10 +341,7 @@ def test_get_budget_subaccount_subaccounts(api_client, user, create_budget,
             "group": None,
             "created_by": user.pk,
             "updated_by": user.pk,
-            "unit": {
-                "id": subaccounts[0].unit,
-                "name": BudgetSubAccount.UNITS[subaccounts[0].unit]
-            },
+            "unit": None,
             "ancestors": [
                 {
                     "type": "budget",
@@ -354,10 +393,7 @@ def test_get_budget_subaccount_subaccounts(api_client, user, create_budget,
             "group": None,
             "created_by": user.pk,
             "updated_by": user.pk,
-            "unit": {
-                "id": subaccounts[1].unit,
-                "name": BudgetSubAccount.UNITS[subaccounts[1].unit]
-            },
+            "unit": None,
             "ancestors": [
                 {
                     "type": "budget",
@@ -439,10 +475,7 @@ def test_get_template_subaccount_subaccounts(api_client, user, create_template,
             "group": None,
             "created_by": user.pk,
             "updated_by": user.pk,
-            "unit": {
-                "id": subaccounts[0].unit,
-                "name": TemplateSubAccount.UNITS[subaccounts[0].unit]
-            },
+            "unit": None,
             "ancestors": [
                 {
                     "type": "template",
@@ -492,10 +525,7 @@ def test_get_template_subaccount_subaccounts(api_client, user, create_template,
             "group": None,
             "created_by": user.pk,
             "updated_by": user.pk,
-            "unit": {
-                "id": subaccounts[1].unit,
-                "name": TemplateSubAccount.UNITS[subaccounts[1].unit]
-            },
+            "unit": None,
             "ancestors": [
                 {
                     "type": "template",

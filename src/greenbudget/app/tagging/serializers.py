@@ -2,7 +2,7 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
-from .models import Color, ColorCodeValidator
+from .models import Color, ColorCodeValidator, Tag
 
 
 class ColorField(serializers.RelatedField):
@@ -53,3 +53,32 @@ class ColorSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         return instance.code
+
+
+class TagSerializer(serializers.ModelSerializer):
+    created_at = serializers.DateTimeField(read_only=True)
+    updated_at = serializers.DateTimeField(read_only=True)
+    title = serializers.CharField(read_only=True)
+    order = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Tag
+        fields = ('id', 'created_at', 'updated_at', 'title', 'order')
+
+
+class TagField(serializers.PrimaryKeyRelatedField):
+    """
+    A :obj:`rest_framework.serializers.PrimaryKeyRelatedField` that renders
+    the full serialized tag on read operations.
+    """
+
+    def __init__(self, *args, **kwargs):
+        self._serializer_class = kwargs.pop('serializer_class', TagSerializer)
+        super().__init__(*args, **kwargs)
+
+    def to_representation(self, instance):
+        if self.pk_field is not None:
+            return super().to_representation(instance)
+        queryset = self.get_queryset()
+        instance = queryset.get(pk=instance.pk)
+        return self._serializer_class(instance).data
