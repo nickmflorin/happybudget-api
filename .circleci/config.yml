@@ -41,9 +41,39 @@ jobs:
       - store_test_results:
           path: ~/reports/test-results
 
+  deploy_to_app:
+    docker:
+      - image: circleci/python:3.8.8
+    steps:
+      - run:
+          command: |
+            ./deploy_to_app.sh
+
+  deploy_to_app:
+    docker:
+      - image: circleci/python:3.8.8
+    steps:
+      - run:
+          command: |
+            ./deploy_to_dev.sh
+
 workflows:
   version: 2
 
   build-and-test-workflow:
     jobs:
       - build-and-test
+      - deploy_to_dev:
+        requires:
+          - build-and-test
+        filters:
+          branches:
+            only:
+              - develop
+      - deploy_to_app:
+        requires:
+          - build-and-test
+        filters:
+          branches:
+            only:
+              - master
