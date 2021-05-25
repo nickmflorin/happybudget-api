@@ -13,7 +13,7 @@ def reindex_tags(instance, **kwargs):
             not getattr(instance, '_ignore_reindex', False):
         all_instances = Tag.objects.filter(
             polymorphic_ctype_id=instance.polymorphic_ctype_id).order_by(
-                'order', 'updated_at').all()
+                'order', '-updated_at').all()
         for i, tag in enumerate(all_instances):
             tag.order = i
             tag.save(ignore_reindex=True)
