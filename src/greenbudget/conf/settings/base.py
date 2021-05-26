@@ -28,6 +28,8 @@ APP_DOMAIN = 'api.greenbudget.cloud/'
 APP_URL = 'https://%s' % APP_DOMAIN
 APP_V1_URL = os.path.join(APP_URL, "v1")
 
+FRONTEND_URL = "https://dev.greenbudget.cloud/"
+
 SECRET_KEY = config(
     name='DJANGO_SECRET_KEY',
     required=[Environments.PROD, Environments.DEV],
@@ -117,6 +119,7 @@ AUTH_USER_MODEL = 'user.User'
 TRACK_MODEL_HISTORY = True
 
 INSTALLED_APPS = [
+    'grappelli.dashboard',
     'grappelli',
     'greenbudget',  # Must be before django authentication.
     'polymorphic',
@@ -140,6 +143,7 @@ INSTALLED_APPS = [
     'greenbudget.app.comment',
     'greenbudget.app.contact',
     'greenbudget.app.common',
+    'greenbudget.app.custom_admin',
     'greenbudget.app.fringe',
     'greenbudget.app.group',
     'greenbudget.app.history',
@@ -172,7 +176,7 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [BASE_DIR / "templates"],
-        'APP_DIRS': True,
+        # 'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
@@ -180,6 +184,10 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
+            'loaders': [
+                'django.template.loaders.filesystem.Loader',
+                'django.template.loaders.app_directories.Loader'
+            ]
         },
     },
 ]
@@ -240,9 +248,6 @@ DATABASES = {
 
 STATIC_URL = '/static/'
 STATIC_ROOT = str(BASE_DIR / "static")
-
-DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
 REST_FRAMEWORK = {
     'DATETIME_FORMAT': '%Y-%m-%d %H:%M:%S',

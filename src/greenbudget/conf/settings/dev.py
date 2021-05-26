@@ -14,6 +14,7 @@ ENVIRONMENT = Environments.DEV
 APP_DOMAIN = '127.0.0.1:8000'
 APP_URL = 'http://%s' % APP_DOMAIN
 APP_V1_URL = os.path.join(APP_URL, "v1")
+FRONTEND_URL = "https://dev.greenbudget.cloud/"
 
 CSRF_TRUSTED_ORIGINS = [
     'https://dev.greenbudget.cloud',
@@ -23,6 +24,9 @@ ALLOWED_HOSTS = [
     'devapi.greenbudget.cloud',
     'gb-dev-lb-563148772.us-east-1.elb.amazonaws.com',  # Load Balancer
 ]
+
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
 sentry_sdk.init(
     dsn="https://9eeab5e26f804bd582385ffc5eda991d@o591585.ingest.sentry.io/5740484",  # noqa

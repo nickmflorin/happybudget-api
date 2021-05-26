@@ -4,9 +4,7 @@ from django.conf.urls.static import static
 from django.http import JsonResponse
 from django.urls import path, include
 
-admin.site.site_header = settings.ADMIN_SITE_HEADER
-admin.site.site_title = settings.ADMIN_SITE_TITLE
-admin.site.index_title = settings.ADMIN_INDEX_TITLE
+from greenbudget.conf import Environments
 
 urlpatterns = [
     path('grappelli/', include('grappelli.urls')),
@@ -15,4 +13,6 @@ urlpatterns = [
     path('', lambda request: JsonResponse({'status': '200'})),
 ]
 
-urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+if settings.ENVIRONMENT == Environments.LOCAL:
+    urlpatterns += static(
+        settings.STATIC_URL, document_root=settings.STATIC_ROOT)
