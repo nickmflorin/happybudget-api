@@ -45,7 +45,7 @@ class ActualSerializer(EnhancedModelSerializer):
         allow_blank=False,
         allow_null=True
     )
-    value = serializers.FloatField(required=False, allow_null=False)
+    value = serializers.FloatField(required=False, allow_null=True)
     payment_method = ModelChoiceField(
         required=False,
         choices=Actual.PAYMENT_METHODS,
