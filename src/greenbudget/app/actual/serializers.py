@@ -19,12 +19,12 @@ class ActualSerializer(EnhancedModelSerializer):
     vendor = serializers.CharField(
         required=False,
         allow_blank=False,
-        allow_null=False
+        allow_null=True
     )
     description = serializers.CharField(
         required=False,
         allow_blank=False,
-        allow_null=False
+        allow_null=True
     )
     created_by = serializers.PrimaryKeyRelatedField(read_only=True)
     updated_by = serializers.PrimaryKeyRelatedField(read_only=True)
@@ -33,22 +33,23 @@ class ActualSerializer(EnhancedModelSerializer):
     purchase_order = serializers.CharField(
         required=False,
         allow_blank=False,
-        allow_null=False
+        allow_null=True
     )
     date = serializers.DateTimeField(
         required=False,
-        allow_null=False
+        allow_null=True
     )
     # TODO: Should we make this unique across the budget?
     payment_id = serializers.CharField(
         required=False,
         allow_blank=False,
-        allow_null=False
+        allow_null=True
     )
     value = serializers.FloatField(required=False, allow_null=False)
     payment_method = ModelChoiceField(
         required=False,
-        choices=Actual.PAYMENT_METHODS
+        choices=Actual.PAYMENT_METHODS,
+        allow_null=True
     )
     account = EntitySerializer(read_only=True, source='parent')
     object_id = serializers.IntegerField(write_only=True, required=False)
