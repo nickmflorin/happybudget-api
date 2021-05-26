@@ -10,7 +10,8 @@ from greenbudget.app.account.serializers import (
     create_bulk_update_accounts_serializer
 )
 from greenbudget.app.actual.serializers import BulkUpdateActualsSerializer
-from greenbudget.app.common.serializers import EntitySerializer
+from greenbudget.app.common.serializers import (
+    EntitySerializer, IdTypeSerializer)
 from greenbudget.app.common.signals import disable_budget_tracking
 from greenbudget.app.fringe.serializers import (
     FringeSerializer,
@@ -27,39 +28,19 @@ from .serializers import (
     BudgetSerializer, EntitySerializerWithChildren, BudgetSimpleSerializer)
 
 
-class LineItemTreePagination(Pagination):
+class TreePagination(Pagination):
     """
     Paginatation class that includes the active search path in the paginated
     response.  See documentation of LineItemTreeViewSet.list for more context.
     """
-    page_size = 20
-    page_query_param = 'page'
-    page_size_query_param = 'page_size'
 
-    def paginate_queryset(self, queryset, request, view=None):
-        # Allow the pagination to be completely turned off on a per-request
-        # basis.
-        if 'no_pagination' in request.query_params:
-            self._no_pagination = True
-            return queryset
-        return super().paginate_queryset(queryset, request, view)
-
-    def get_paginated_response(self, data):
-        if getattr(self, '_no_pagination', False) is True:
-            return response.Response(
-                OrderedDict([
-                    ('count', len(data)),
-                    ('next', None),
-                    ('previous', None),
-                    ('data', data),
-                ])
-            )
-        return response.Response(OrderedDict([
-            ('count', self.page.paginator.count),
-            ('next', self.get_next_link()),
-            ('previous', self.get_previous_link()),
-            ('data', data)
-        ]))
+    def get_response_data(self, data, active_search_path):
+        response_data = super().get_response_data(data)
+        response_data.append((
+            'active_search_path',
+            IdTypeSerializer(active_search_path, many=True).data
+        ))
+        return response_data
 
 
 class LineItemViewSet(
@@ -97,28 +78,46 @@ class LineItemTreeViewSet(
     """
     budget_lookup_field = ("pk", "budget_pk")
     search_fields = ['identifier', 'description']
+    pagination_class = TreePagination
+
+    def get_paginated_response(self, data, **kwargs):
+        # Overridden to pass active search path into paginator.
+        assert self.paginator is not None
+        return self.paginator.get_paginated_response(data, **kwargs)
 
     def filter_tree_querysets(self, account_qs, subaccount_qs):
-        def filter_children_qs(obj, search_qs):
+        def handle_nested_level(obj, search_qs, primary=None):
             qs = []
-            active_path = []
+            search_path = []
+            primary = primary or search_qs
+            if obj in primary:
+                # Here, the element matches the search criteria, so we add it
+                # both to the overall queryset and to the search path.
+                qs.append(obj)
+                search_path.append(obj)
+
             for subaccount in obj.subaccounts.all():
-                sub_qs, sub_path = filter_children_qs(subaccount, search_qs)
+                sub_qs, sub_path = handle_nested_level(subaccount, search_qs)
                 if len(sub_qs) != 0:
                     if obj not in qs:
+                        # Here, we do not add the element to the search path
+                        # because if it met the search criteria, it would have
+                        # already been added in the block before the loop:
+                        # >>> if obj in primary:  search_path.append(obj).
+                        # The element here is only added because it has children
+                        # that match the search criteria, so it is needed to
+                        # maintain the shape of the tree.
                         qs.append(obj)
-
                     qs.extend(sub_qs)
-            return qs
+                    search_path.extend(sub_path)
+            return qs, search_path
+
         overall_qs = []
         active_search_path = []
+
         for account in self.budget.accounts.all():
-            if account in account_qs:
-                overall_qs.append(account)
-                # The account is in the filtered queryset, so it is on the
-                # active search path.
-                active_search_path.append(account)
-            qs_ext, path_ext = filter_children_qs(account, subaccount_qs)
+            qs_ext, path_ext = handle_nested_level(
+                account, subaccount_qs, primary=account_qs)
             overall_qs.extend(qs_ext)
             active_search_path.extend(path_ext)
         return overall_qs, active_search_path
@@ -165,10 +164,6 @@ class LineItemTreeViewSet(
             BudgetSubAccount.objects.filter(budget=self.budget))
         overall_qs, active_search_path = self.filter_tree_querysets(qs1, qs2)
 
-        # Note: Since we are applying the pagination before the TreeSerializer,
-        # the `count` in the paginated response will not be the number of
-        # top-level accounts but will instead be the number of overall items
-        # returned for all levels of the tree.
         qs = self.paginate_queryset(overall_qs)
         accounts = [obj for obj in qs if isinstance(obj, BudgetAccount)]
         subaccounts = [obj for obj in qs if isinstance(obj, BudgetSubAccount)]

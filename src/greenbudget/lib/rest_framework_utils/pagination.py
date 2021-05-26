@@ -68,19 +68,24 @@ class Pagination(pagination.PageNumberPagination):
             return queryset
         return super().paginate_queryset(queryset, request, view)
 
-    def get_paginated_response(self, data):
+    def get_response_data(self, data, **kwargs):
+        return [
+            ('count', len(data)),
+            ('data', data),
+        ]
+
+    def get_paginated_response(self, data, **kwargs):
         if getattr(self, '_no_pagination', False) is True:
             return response.Response(
-                OrderedDict([
-                    ('count', len(data)),
-                    ('next', None),
-                    ('previous', None),
-                    ('data', data),
-                ])
+                OrderedDict(
+                    self.get_response_data(data, **kwargs)
+                    + [('next', None), ('previous', None)]
+                )
             )
-        return response.Response(OrderedDict([
-            ('count', self.page.paginator.count),
-            ('next', self.get_next_link()),
-            ('previous', self.get_previous_link()),
-            ('data', data)
-        ]))
+        return response.Response(OrderedDict(
+            self.get_response_data(data, **kwargs)
+            + [
+                ('next', self.get_next_link()),
+                ('previous', self.get_previous_link()),
+            ])
+        )
