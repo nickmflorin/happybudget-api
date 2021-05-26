@@ -97,6 +97,7 @@ deploy.sh
 dump.rdb
 .project
 greenbudget/dump.rdb
+CACHE
 
 # Elastic Beanstalk Files
 .elasticbeanstalk/*

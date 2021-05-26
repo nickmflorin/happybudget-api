@@ -119,6 +119,7 @@ AUTH_USER_MODEL = 'user.User'
 TRACK_MODEL_HISTORY = True
 
 INSTALLED_APPS = [
+    'compressor',
     'grappelli.dashboard',
     'grappelli',
     'greenbudget',  # Must be before django authentication.
@@ -248,6 +249,15 @@ DATABASES = {
 
 STATIC_URL = '/static/'
 STATIC_ROOT = str(BASE_DIR / "static")
+STATICFILES_FINDERS = (
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+    'compressor.finders.CompressorFinder',
+)
+
+COMPRESS_PRECOMPILERS = (
+    ('text/x-scss', 'django_libsass.SassCompiler'),
+)
 
 REST_FRAMEWORK = {
     'DATETIME_FORMAT': '%Y-%m-%d %H:%M:%S',
