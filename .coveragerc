@@ -12,6 +12,8 @@ omit =
     */management/*
     src/greenbudget/conf/gunicorn_config.py
     *django_utils/cli.py
+    */logging/*
+    */conf/*
 
 [report]
 ignore_errors = True
