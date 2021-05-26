@@ -1,6 +1,8 @@
 from django.http import HttpResponse
 from rest_framework import viewsets, mixins, response, status, decorators
 
+from greenbudget.lib.rest_framework_utils.pagination import Pagination
+
 from greenbudget.app.account.models import BudgetAccount
 from greenbudget.app.account.serializers import (
     BudgetAccountSerializer,
@@ -23,6 +25,41 @@ from .models import Budget
 from .mixins import BudgetNestedMixin, TrashModelMixin
 from .serializers import (
     BudgetSerializer, EntitySerializerWithChildren, BudgetSimpleSerializer)
+
+
+class LineItemTreePagination(Pagination):
+    """
+    Paginatation class that includes the active search path in the paginated
+    response.  See documentation of LineItemTreeViewSet.list for more context.
+    """
+    page_size = 20
+    page_query_param = 'page'
+    page_size_query_param = 'page_size'
+
+    def paginate_queryset(self, queryset, request, view=None):
+        # Allow the pagination to be completely turned off on a per-request
+        # basis.
+        if 'no_pagination' in request.query_params:
+            self._no_pagination = True
+            return queryset
+        return super().paginate_queryset(queryset, request, view)
+
+    def get_paginated_response(self, data):
+        if getattr(self, '_no_pagination', False) is True:
+            return response.Response(
+                OrderedDict([
+                    ('count', len(data)),
+                    ('next', None),
+                    ('previous', None),
+                    ('data', data),
+                ])
+            )
+        return response.Response(OrderedDict([
+            ('count', self.page.paginator.count),
+            ('next', self.get_next_link()),
+            ('previous', self.get_previous_link()),
+            ('data', data)
+        ]))
 
 
 class LineItemViewSet(
@@ -61,28 +98,72 @@ class LineItemTreeViewSet(
     budget_lookup_field = ("pk", "budget_pk")
     search_fields = ['identifier', 'description']
 
-    def list(self, request, *args, **kwargs):
-        qs1 = self.filter_queryset(self.budget.accounts.all())
-        qs2 = self.filter_queryset(
-            BudgetSubAccount.objects.filter(budget=self.budget))
-
-        def handle_nested_level(obj, search_qs, primary=None):
+    def filter_tree_querysets(self, account_qs, subaccount_qs):
+        def filter_children_qs(obj, search_qs):
             qs = []
-            primary = primary or search_qs
-            if obj in primary:
-                qs.append(obj)
-
+            active_path = []
             for subaccount in obj.subaccounts.all():
-                sub_qs = handle_nested_level(subaccount, search_qs)
+                sub_qs, sub_path = filter_children_qs(subaccount, search_qs)
                 if len(sub_qs) != 0:
                     if obj not in qs:
                         qs.append(obj)
+
                     qs.extend(sub_qs)
             return qs
-
         overall_qs = []
+        active_search_path = []
         for account in self.budget.accounts.all():
-            overall_qs.extend(handle_nested_level(account, qs2, primary=qs1))
+            if account in account_qs:
+                overall_qs.append(account)
+                # The account is in the filtered queryset, so it is on the
+                # active search path.
+                active_search_path.append(account)
+            qs_ext, path_ext = filter_children_qs(account, subaccount_qs)
+            overall_qs.extend(qs_ext)
+            active_search_path.extend(path_ext)
+        return overall_qs, active_search_path
+
+    def list(self, request, *args, **kwargs):
+        """
+        Implements custom tree searching & pagination.
+
+        The problem that this method attempts to solve is how to return
+        results filtered for a search criteria when those results are in
+        a tree.
+
+        Consider the following tree:
+
+        -- foo
+        ---- bard
+        ---- barb
+        ------ bara
+        -- foob
+        ---- bara
+        -- fooc
+        ---- barc
+
+        When we are searching for "bara", we need to filter the tree such
+        that the results for "bara" are shown, but also maintain the shape
+        of the tree.  This will result in a tree like this:
+
+        -- foo
+        ---- barb
+        ------ bara
+        -- foob
+        ---- bara
+
+        However, we need to include information in the response about
+        specifically what points in the tree match the search criteria.  We
+        call this the "Active Search Path".  Since each node of the tree will
+        only be present in the tree at most 1 time, this "Active Search Path"
+        is a unique set of nodes, in this case:
+
+        ['foo.barb.bara', 'foob.bara']
+        """
+        qs1 = self.filter_queryset(self.budget.accounts.all())
+        qs2 = self.filter_queryset(
+            BudgetSubAccount.objects.filter(budget=self.budget))
+        overall_qs, active_search_path = self.filter_tree_querysets(qs1, qs2)
 
         # Note: Since we are applying the pagination before the TreeSerializer,
         # the `count` in the paginated response will not be the number of
@@ -95,7 +176,8 @@ class LineItemTreeViewSet(
             EntitySerializerWithChildren(account, subset=subaccounts).data
             for account in accounts
         ]
-        return self.get_paginated_response(data)
+        return self.get_paginated_response(
+            data, active_search_path=active_search_path)
 
 
 class BudgetGroupViewSet(
