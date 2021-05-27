@@ -45,22 +45,13 @@ def test_get_budget_items_tree(api_client, user, create_budget,
     response = api_client.get("/v1/budgets/%s/items/tree/" % budget.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
-    assert response.json()['active_search_path'] == [
-        {'id': accounts[0].pk, 'type': 'account'},
-        {'id': subaccounts[0][0].pk, 'type': 'subaccount'},
-        {'id': subaccounts[0][1].pk, 'type': 'subaccount'},
-        {'id': subaccounts[0][2].pk, 'type': 'subaccount'},
-        {'id': accounts[1].pk, 'type': 'account'},
-        {'id': subaccounts[1][0].pk, 'type': 'subaccount'},
-        {'id': subaccounts[1][1].pk, 'type': 'subaccount'},
-        {'id': subaccounts[1][2].pk, 'type': 'subaccount'},
-    ]
     assert response.json()['data'] == [
         {
             "id": accounts[0].pk,
             "identifier": "Account A",
             "type": "account",
             "description": accounts[0].description,
+            "in_search_path": True,
             "children": [
                 {
                     "id": subaccounts[0][0].pk,
@@ -68,7 +59,8 @@ def test_get_budget_items_tree(api_client, user, create_budget,
                     "type": "subaccount",
                     "name": subaccounts[0][0].name,
                     "description": subaccounts[0][0].description,
-                    "children": []
+                    "children": [],
+                    "in_search_path": True,
                 },
                 {
                     "id": subaccounts[0][1].pk,
@@ -76,7 +68,8 @@ def test_get_budget_items_tree(api_client, user, create_budget,
                     "type": "subaccount",
                     "name": subaccounts[0][1].name,
                     "description": subaccounts[0][1].description,
-                    "children": []
+                    "children": [],
+                    "in_search_path": True,
                 },
                 {
                     "id": subaccounts[0][2].pk,
@@ -84,7 +77,8 @@ def test_get_budget_items_tree(api_client, user, create_budget,
                     "type": "subaccount",
                     "name": subaccounts[0][2].name,
                     "description": subaccounts[0][2].description,
-                    "children": []
+                    "children": [],
+                    "in_search_path": True,
                 }
             ]
         },
@@ -93,6 +87,7 @@ def test_get_budget_items_tree(api_client, user, create_budget,
             "identifier": "Account B",
             "type": "account",
             "description": accounts[1].description,
+            "in_search_path": True,
             "children": [
                 {
                     "id": subaccounts[1][0].pk,
@@ -100,7 +95,8 @@ def test_get_budget_items_tree(api_client, user, create_budget,
                     "type": "subaccount",
                     "name": subaccounts[1][0].name,
                     "description": subaccounts[1][0].description,
-                    "children": []
+                    "children": [],
+                    "in_search_path": True,
                 },
                 {
                     "id": subaccounts[1][1].pk,
@@ -108,7 +104,8 @@ def test_get_budget_items_tree(api_client, user, create_budget,
                     "type": "subaccount",
                     "name": subaccounts[1][1].name,
                     "description": subaccounts[1][1].description,
-                    "children": []
+                    "children": [],
+                    "in_search_path": True,
                 },
                 {
                     "id": subaccounts[1][2].pk,
@@ -116,7 +113,8 @@ def test_get_budget_items_tree(api_client, user, create_budget,
                     "type": "subaccount",
                     "name": subaccounts[1][2].name,
                     "description": subaccounts[1][2].description,
-                    "children": []
+                    "children": [],
+                    "in_search_path": True,
                 }
             ]
         }
@@ -183,19 +181,13 @@ def test_search_budget_items_tree(api_client, user, create_budget,
     response = api_client.get(
         "/v1/budgets/%s/items/tree/?search=jack" % budget.pk)
     assert response.status_code == 200
-    assert response.json()['active_search_path'] == [
-        {'id': subaccounts_a_node[0].pk, 'type': 'subaccount'},
-        {'id': subaccounts_a_b_node[0].pk, 'type': 'subaccount'},
-        {'id': subaccounts_a_node[2].pk, 'type': 'subaccount'},
-        {'id': subaccounts_b_node[0].pk, 'type': 'subaccount'},
-        {'id': accounts[2].pk, 'type': 'account'},
-    ]
     assert response.json()['data'] == [
         {
             "id": accounts[0].pk,
             "identifier": "Account A",
             "type": "account",
             "description": accounts[0].description,
+            "in_search_path": False,
             "children": [
                 {
                     "id": subaccounts_a_node[0].pk,
@@ -203,7 +195,8 @@ def test_search_budget_items_tree(api_client, user, create_budget,
                     "type": "subaccount",
                     "name": subaccounts_a_node[0].name,
                     "description": "Jack",
-                    "children": []
+                    "children": [],
+                    "in_search_path": True,
                 },
                 # Included because it has a SubAccount that matches the search.
                 {
@@ -212,13 +205,15 @@ def test_search_budget_items_tree(api_client, user, create_budget,
                     "type": "subaccount",
                     "name": subaccounts_a_node[1].name,
                     "description": "Peter",
+                    "in_search_path": False,
                     "children": [{
                         "id": subaccounts_a_b_node[0].pk,
                         "name": subaccounts_a_b_node[0].name,
                         "identifier": "Sub Account A-B-A",
                         "type": "subaccount",
                         "description": "Jack",
-                        "children": []
+                        "children": [],
+                        "in_search_path": True,
                     }]
                 },
                 {
@@ -227,7 +222,8 @@ def test_search_budget_items_tree(api_client, user, create_budget,
                     "type": "subaccount",
                     "name": subaccounts_a_node[2].name,
                     "description": "Jack",
-                    "children": []
+                    "children": [],
+                    "in_search_path": True,
                 }
             ]
         },
@@ -236,6 +232,7 @@ def test_search_budget_items_tree(api_client, user, create_budget,
             "identifier": "Account B",
             "type": "account",
             "description": accounts[1].description,
+            "in_search_path": False,
             "children": [
                 {
                     "id": subaccounts_b_node[0].pk,
@@ -243,7 +240,8 @@ def test_search_budget_items_tree(api_client, user, create_budget,
                     "type": "subaccount",
                     "name": subaccounts_b_node[0].name,
                     "description": "Jack",
-                    "children": []
+                    "children": [],
+                    "in_search_path": True,
                 }
             ]
         },
@@ -252,6 +250,7 @@ def test_search_budget_items_tree(api_client, user, create_budget,
             "identifier": "Account Jack",
             "type": "account",
             "description": accounts[2].description,
-            "children": []
+            "children": [],
+            "in_search_path": True,
         }
     ]

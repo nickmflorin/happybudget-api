@@ -1,8 +1,6 @@
 from django.http import HttpResponse
 from rest_framework import viewsets, mixins, response, status, decorators
 
-from greenbudget.lib.rest_framework_utils.pagination import Pagination
-
 from greenbudget.app.account.models import BudgetAccount
 from greenbudget.app.account.serializers import (
     BudgetAccountSerializer,
@@ -25,22 +23,7 @@ from greenbudget.app.subaccount.models import BudgetSubAccount
 from .models import Budget
 from .mixins import BudgetNestedMixin, TrashModelMixin
 from .serializers import (
-    BudgetSerializer, EntitySerializerWithChildren, BudgetSimpleSerializer)
-
-
-class TreePagination(Pagination):
-    """
-    Paginatation class that includes the active search path in the paginated
-    response.  See documentation of LineItemTreeViewSet.list for more context.
-    """
-
-    def get_response_data(self, data, active_search_path):
-        response_data = super().get_response_data(data)
-        response_data.append((
-            'active_search_path',
-            IdTypeSerializer(active_search_path, many=True).data
-        ))
-        return response_data
+    BudgetSerializer, TreeNodeSerializer, BudgetSimpleSerializer)
 
 
 class LineItemViewSet(
@@ -78,12 +61,6 @@ class LineItemTreeViewSet(
     """
     budget_lookup_field = ("pk", "budget_pk")
     search_fields = ['identifier', 'description']
-    pagination_class = TreePagination
-
-    def get_paginated_response(self, data, **kwargs):
-        # Overridden to pass active search path into paginator.
-        assert self.paginator is not None
-        return self.paginator.get_paginated_response(data, **kwargs)
 
     def filter_tree_querysets(self, account_qs, subaccount_qs):
         def handle_nested_level(obj, search_qs, primary=None):
@@ -113,14 +90,14 @@ class LineItemTreeViewSet(
             return qs, search_path
 
         overall_qs = []
-        active_search_path = []
+        overall_search_path = []
 
         for account in self.budget.accounts.all():
             qs_ext, path_ext = handle_nested_level(
                 account, subaccount_qs, primary=account_qs)
             overall_qs.extend(qs_ext)
-            active_search_path.extend(path_ext)
-        return overall_qs, active_search_path
+            overall_search_path.extend(path_ext)
+        return overall_qs, overall_search_path
 
     def list(self, request, *args, **kwargs):
         """
@@ -153,26 +130,26 @@ class LineItemTreeViewSet(
 
         However, we need to include information in the response about
         specifically what points in the tree match the search criteria.  We
-        call this the "Active Search Path".  Since each node of the tree will
-        only be present in the tree at most 1 time, this "Active Search Path"
-        is a unique set of nodes, in this case:
+        call this the "Search Path".  Since each node of the tree will only be
+        present in the tree at most 1 time, this "Search Path" is a unique set
+        of nodes, in this case:
 
         ['foo.barb.bara', 'foob.bara']
         """
         qs1 = self.filter_queryset(self.budget.accounts.all())
         qs2 = self.filter_queryset(
             BudgetSubAccount.objects.filter(budget=self.budget))
-        overall_qs, active_search_path = self.filter_tree_querysets(qs1, qs2)
+        overall_qs, search_path = self.filter_tree_querysets(qs1, qs2)
 
         qs = self.paginate_queryset(overall_qs)
         accounts = [obj for obj in qs if isinstance(obj, BudgetAccount)]
         subaccounts = [obj for obj in qs if isinstance(obj, BudgetSubAccount)]
         data = [
-            EntitySerializerWithChildren(account, subset=subaccounts).data
+            TreeNodeSerializer(
+                account, subset=subaccounts, search_path=search_path).data
             for account in accounts
         ]
-        return self.get_paginated_response(
-            data, active_search_path=active_search_path)
+        return self.get_paginated_response(data)
 
 
 class BudgetGroupViewSet(
