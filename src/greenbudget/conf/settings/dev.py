@@ -5,7 +5,7 @@ import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 import os
 
-from greenbudget.conf import Environments
+from greenbudget.conf import Environments, config
 
 from .base import *  # noqa
 
@@ -27,6 +27,11 @@ ALLOWED_HOSTS = [
 
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+STATIC_URL = config(
+    name='AWS_STORAGE_BUCKET_URL',
+    required=True
+)
 
 sentry_sdk.init(
     dsn="https://9eeab5e26f804bd582385ffc5eda991d@o591585.ingest.sentry.io/5740484",  # noqa
