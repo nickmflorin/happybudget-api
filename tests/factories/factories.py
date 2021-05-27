@@ -100,6 +100,7 @@ class UserFactory(CustomModelFactory):
     is_admin = False
     is_superuser = False
     is_active = True
+    is_first_time = False
 
     class Meta:
         model = User

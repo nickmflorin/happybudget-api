@@ -22,6 +22,7 @@ class User(AbstractUser):
     updated_at = models.DateTimeField(auto_now=True)
     timezone = TimeZoneField(default='America/New_York')
     profile_image = models.ImageField(upload_to=upload_to, null=True)
+    is_first_time = models.BooleanField(default=True)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']

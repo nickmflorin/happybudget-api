@@ -43,6 +43,7 @@ def test_validate_token(api_client, settings, user):
             'last_login': '2020-01-01 00:00:00',
             'timezone': str(user.timezone),
             "profile_image": None,
+            "is_first_time": False
         }
     }
 

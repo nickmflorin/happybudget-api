@@ -64,10 +64,13 @@ class UserRegistrationView(mixins.CreateModelMixin, viewsets.GenericViewSet):
         login(request, instance,
             backend='django.contrib.auth.backends.ModelBackend')
 
-        return response.Response(
+        resp = response.Response(
             UserSerializer(instance).data,
             status=status.HTTP_201_CREATED
         )
+        instance.is_first_time = False
+        instance.save()
+        return resp
 
 
 class ActiveUserViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
