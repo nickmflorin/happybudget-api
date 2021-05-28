@@ -9,11 +9,6 @@ from greenbudget.app.subaccount.models import SubAccount
 from greenbudget.app.template.models import Template
 
 
-class IdTypeSerializer(serializers.Serializer):
-    id = serializers.IntegerField(read_only=True)
-    type = serializers.CharField(read_only=True)
-
-
 class EntitySerializer(PolymorphicNonPolymorphicSerializer):
     choices = {
         Account: (

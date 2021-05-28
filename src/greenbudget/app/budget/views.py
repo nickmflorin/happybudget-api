@@ -8,8 +8,7 @@ from greenbudget.app.account.serializers import (
     create_bulk_update_accounts_serializer
 )
 from greenbudget.app.actual.serializers import BulkUpdateActualsSerializer
-from greenbudget.app.common.serializers import (
-    EntitySerializer, IdTypeSerializer)
+from greenbudget.app.common.serializers import EntitySerializer
 from greenbudget.app.common.signals import disable_budget_tracking
 from greenbudget.app.fringe.serializers import (
     FringeSerializer,
