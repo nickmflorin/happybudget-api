@@ -47,7 +47,7 @@ jobs:
     steps:
       - run:
           command: |
-            ./deploy_to_app.sh
+            . ./deploy_to_app.sh
 
   deploy_to_dev:
     docker:
@@ -55,7 +55,7 @@ jobs:
     steps:
       - run:
           command: |
-            ./deploy_to_dev.sh
+            . ./deploy_to_dev.sh
 
 workflows:
   version: 2
