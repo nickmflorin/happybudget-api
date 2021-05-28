@@ -119,6 +119,7 @@ class UserSerializer(EnhancedModelSerializer):
     updated_at = serializers.DateTimeField(read_only=True)
     timezone = serializers.CharField()
     profile_image = Base64ImageField(required=False)
+    is_first_time = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = User
@@ -126,4 +127,5 @@ class UserSerializer(EnhancedModelSerializer):
             'is_active', 'is_admin', 'is_superuser', 'is_staff', 'full_name',
             'profile_image')
         fields = nested_fields + (
-            'created_at', 'updated_at', 'last_login', 'date_joined', 'timezone')
+            'created_at', 'updated_at', 'last_login', 'date_joined', 'timezone',
+            'is_first_time')

@@ -1,0 +1,27 @@
+{% load i18n grp_tags %}
+<ul class="panel">
+    <!-- Profile -->
+    <li class="category">My Account</li>
+    {% url 'account-edit-profile' as account_edit_profile_url %}
+    {% if account_edit_profile_url %}
+    <li>
+        <a href="{% url 'account-edit-profile' %}">Edit Account Profile</a>
+    </li>
+    {% endif %}
+
+    <!-- Change Password -->
+    <li><a href="{% url 'admin:password_change' %}">
+    Change password</a></li>
+
+    <!-- Reference -->
+    <li class="category">Reference</li>
+    <li><a href="https://docs.google.com/document/d/17jPM7tqO3XS1ziJpNd4joncuhtsrL8Uun_TZJF40dEs/edit">Ollie User's Guide</a></li>
+
+    <!-- Logout -->
+    <li class="new-group">
+    <a href="{% url 'admin:logout' %}">
+        Log out</a>
+    </li>
+    <!-- Switch -->
+    {% switch_user_dropdown %}
+</ul>

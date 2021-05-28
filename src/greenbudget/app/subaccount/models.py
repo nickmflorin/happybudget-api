@@ -1,5 +1,4 @@
 from polymorphic.models import PolymorphicModel
-from model_utils import Choices
 
 from django.contrib.contenttypes.fields import (
     GenericForeignKey, GenericRelation)
@@ -16,6 +15,7 @@ from greenbudget.app.group.models import (
     BudgetSubAccountGroup, TemplateSubAccountGroup)
 from greenbudget.app.history.models import Event
 from greenbudget.app.history.hooks import on_create, on_field_change
+from greenbudget.app.tagging.models import Tag
 
 from .managers import (
     SubAccountManager, BudgetSubAccountManager, TemplateSubAccountManager)
@@ -25,6 +25,32 @@ from .managers import (
 # actuals of it's children, or the sum of the actuals tied to the parent.  This
 # is a temporary toggle to switch between the two.
 DETERMINE_ACTUAL_FROM_UNDERLYINGS = False
+
+
+class SubAccountUnit(Tag):
+    color = models.ForeignKey(
+        to="tagging.Color",
+        on_delete=models.SET_NULL,
+        null=True,
+        limit_choices_to=models.Q(
+            content_types__model="subaccountunit",
+            content_types__app_label="subaccount"
+        ))
+
+    class Meta:
+        get_latest_by = "created_at"
+        ordering = ("order",)
+        verbose_name = "Sub Account Unit"
+        verbose_name_plural = "Sub Account Units"
+
+    def __str__(self):
+        color_string = None if self.color is None else self.color.code
+        return "<{cls} id={id}, color={color}, title={title}>".format(
+            cls=self.__class__.__name__,
+            id=self.pk,
+            color=color_string,
+            title=self.title
+        )
 
 
 class SubAccount(PolymorphicModel):
@@ -37,22 +63,11 @@ class SubAccount(PolymorphicModel):
     quantity = models.IntegerField(null=True)
     rate = models.FloatField(null=True)
     multiplier = models.IntegerField(null=True)
-    UNITS = Choices(
-        (0, "minutes", "Minutes"),
-        (1, "hours", "Hours"),
-        (2, "weeks", "Weeks"),
-        (3, "months", "Months"),
-        (4, "days", "Days"),
-        (5, "nights", "Nights"),
-        (6, "allow", "Allow"),
-        (7, "flat", "Flat"),
-        (8, "feet", "Feet"),
-        (9, "fare", "Fare"),
-        (10, "units", "Units"),
-        (11, "person", "Person"),
-        (12, "each", "Each"),
+    unit = models.ForeignKey(
+        to='subaccount.SubAccountUnit',
+        on_delete=models.SET_NULL,
+        null=True
     )
-    unit = models.IntegerField(choices=UNITS, null=True)
     fringes = models.ManyToManyField(to='fringe.Fringe')
     budget = models.ForeignKey(
         to='budget.BaseBudget',
@@ -151,9 +166,10 @@ class SubAccount(PolymorphicModel):
     user_field='updated_by',
     on_field_removal_hooks={'group': on_group_removal},
     on_field_change=on_field_change,
+    # We are temporarily removing the track changes to `unit` field until
+    # `model_tracker` is built to support FK fields.
     track_changes_to_fields=[
-        'description', 'identifier', 'name', 'rate', 'quantity', 'multiplier',
-        'unit'],
+        'description', 'identifier', 'name', 'rate', 'quantity', 'multiplier'],
 )
 class BudgetSubAccount(SubAccount):
     updated_by = models.ForeignKey(

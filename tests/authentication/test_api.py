@@ -9,6 +9,7 @@ from greenbudget.lib.utils.dateutils import api_datetime_string
 from greenbudget.app.authentication.models import ResetUID
 
 
+@pytest.mark.freeze_time('2020-01-01')
 def test_login(user, api_client):
     user.set_password("testpassword123")
     user.save()
@@ -17,8 +18,26 @@ def test_login(user, api_client):
         "password": "testpassword123"
     })
     assert response.status_code == 201
-    assert response.json() == {'detail': 'Successfully logged in.'}
     assert 'greenbudgetjwt' in response.cookies
+    assert response.json() == {
+        "id": 1,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "email": user.email,
+        "username": user.username,
+        "is_active": True,
+        "is_admin": False,
+        "is_superuser": False,
+        "is_staff": False,
+        "full_name": user.full_name,
+        "created_at": "2020-01-01 00:00:00",
+        "updated_at": "2020-01-01 00:00:00",
+        "last_login": "2020-01-01 00:00:00",
+        "date_joined": "2020-01-01 00:00:00",
+        "profile_image": None,
+        "timezone": "America/New_York",
+        "is_first_time": False,
+    }
 
 
 def test_login_missing_password(user, api_client):
@@ -77,9 +96,10 @@ def test_logout(user, api_client):
 
 
 @responses.activate
+@pytest.mark.freeze_time('2020-01-01')
 @override_settings(GOOGLE_OAUTH_API_URL="https://www.test-validate-user-token/")
 def test_social_login_user_exists(api_client, create_user):
-    create_user(email="jjohnson@gmail.com")
+    user = create_user(email="jjohnson@gmail.com")
     responses.add(
         method=responses.GET,
         url="https://www.test-validate-user-token/?id_token=testtoken",
@@ -94,11 +114,30 @@ def test_social_login_user_exists(api_client, create_user):
         'provider': 'google',
     })
     assert response.status_code == 201
-    assert response.json() == {'detail': 'Successfully logged in.'}
     assert 'greenbudgetjwt' in response.cookies
+    assert response.json() == {
+        "id": 1,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "email": user.email,
+        "username": user.username,
+        "is_active": True,
+        "is_admin": False,
+        "is_superuser": False,
+        "is_staff": False,
+        "full_name": user.full_name,
+        "created_at": "2020-01-01 00:00:00",
+        "updated_at": "2020-01-01 00:00:00",
+        "last_login": "2020-01-01 00:00:00",
+        "date_joined": "2020-01-01 00:00:00",
+        "profile_image": None,
+        "timezone": "America/New_York",
+        "is_first_time": False,
+    }
 
 
 @responses.activate
+@pytest.mark.freeze_time('2020-01-01')
 @override_settings(GOOGLE_OAUTH_API_URL="https://www.test-validate-user-token/")
 def test_social_login_user_does_not_exist(api_client, models):
     responses.add(
@@ -120,8 +159,26 @@ def test_social_login_user_does_not_exist(api_client, models):
     assert user.last_name == "Johnson"
 
     assert response.status_code == 201
-    assert response.json() == {'detail': 'Successfully logged in.'}
     assert 'greenbudgetjwt' in response.cookies
+    assert response.json() == {
+        "id": 1,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "email": user.email,
+        "username": user.username,
+        "is_active": True,
+        "is_admin": False,
+        "is_superuser": False,
+        "is_staff": False,
+        "full_name": user.full_name,
+        "created_at": "2020-01-01 00:00:00",
+        "updated_at": "2020-01-01 00:00:00",
+        "last_login": "2020-01-01 00:00:00",
+        "date_joined": "2020-01-01 00:00:00",
+        "profile_image": None,
+        "timezone": "America/New_York",
+        "is_first_time": True,
+    }
 
 
 @responses.activate
@@ -196,6 +253,7 @@ def test_reset_password(user, api_client, db):
         'last_login': None,
         'timezone': str(user.timezone),
         "profile_image": None,
+        "is_first_time": False,
     }
 
 

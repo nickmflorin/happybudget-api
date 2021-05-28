@@ -3,7 +3,6 @@ from ratelimit.decorators import ratelimit
 from django.conf import settings
 from django.contrib.auth import logout, login as django_login
 from django.utils.decorators import method_decorator
-from django.utils.translation import gettext_lazy as _
 from django.views.decorators.debug import sensitive_post_parameters
 
 from rest_framework import views, response, generics, status
@@ -57,9 +56,14 @@ class AbstractLoginView(generics.GenericAPIView):
         django_login(
             request, user, backend='django.contrib.auth.backends.ModelBackend')
 
-        return response.Response({
-            "detail": _("Successfully logged in."),
-        }, status=status.HTTP_201_CREATED)
+        resp = response.Response(
+            UserSerializer(user).data,
+            status=status.HTTP_201_CREATED
+        )
+        if user.is_first_time is True:
+            user.is_first_time = False
+            user.save()
+        return resp
 
 
 class SocialLoginView(AbstractLoginView):

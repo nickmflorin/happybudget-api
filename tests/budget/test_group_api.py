@@ -78,19 +78,3 @@ def test_create_budget_account_group_invalid_child(api_client, user,
         'color': '#a1887f',
     })
     assert response.status_code == 400
-
-
-@pytest.mark.freeze_time('2020-01-01')
-def test_create_budget_account_group_duplicate_name(api_client, user,
-        create_budget_account, create_budget, create_budget_account_group):
-    budget = create_budget()
-    account = create_budget_account(budget=budget)
-    create_budget_account_group(name="Group Name", parent=budget)
-
-    api_client.force_login(user)
-    response = api_client.post("/v1/budgets/%s/groups/" % budget.pk, data={
-        'name': 'Group Name',
-        'children': [account.pk],
-        'color': '#a1887f'
-    })
-    assert response.status_code == 400

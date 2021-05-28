@@ -22,7 +22,7 @@ from greenbudget.app.subaccount.models import BudgetSubAccount
 from .models import Budget
 from .mixins import BudgetNestedMixin, TrashModelMixin
 from .serializers import (
-    BudgetSerializer, EntitySerializerWithChildren, BudgetSimpleSerializer)
+    BudgetSerializer, TreeNodeSerializer, BudgetSimpleSerializer)
 
 
 class LineItemViewSet(
@@ -61,38 +61,91 @@ class LineItemTreeViewSet(
     budget_lookup_field = ("pk", "budget_pk")
     search_fields = ['identifier', 'description']
 
+    def filter_tree_querysets(self, account_qs, subaccount_qs):
+        def handle_nested_level(obj, search_qs, primary=None):
+            qs = []
+            search_path = []
+            primary = primary or search_qs
+            if obj in primary:
+                # Here, the element matches the search criteria, so we add it
+                # both to the overall queryset and to the search path.
+                qs.append(obj)
+                search_path.append(obj)
+
+            for subaccount in obj.subaccounts.all():
+                sub_qs, sub_path = handle_nested_level(subaccount, search_qs)
+                if len(sub_qs) != 0:
+                    if obj not in qs:
+                        # Here, we do not add the element to the search path
+                        # because if it met the search criteria, it would have
+                        # already been added in the block before the loop:
+                        # >>> if obj in primary:  search_path.append(obj).
+                        # The element here is only added because it has children
+                        # that match the search criteria, so it is needed to
+                        # maintain the shape of the tree.
+                        qs.append(obj)
+                    qs.extend(sub_qs)
+                    search_path.extend(sub_path)
+            return qs, search_path
+
+        overall_qs = []
+        overall_search_path = []
+
+        for account in self.budget.accounts.all():
+            qs_ext, path_ext = handle_nested_level(
+                account, subaccount_qs, primary=account_qs)
+            overall_qs.extend(qs_ext)
+            overall_search_path.extend(path_ext)
+        return overall_qs, overall_search_path
+
     def list(self, request, *args, **kwargs):
+        """
+        Implements custom tree searching & pagination.
+
+        The problem that this method attempts to solve is how to return
+        results filtered for a search criteria when those results are in
+        a tree.
+
+        Consider the following tree:
+
+        -- foo
+        ---- bard
+        ---- barb
+        ------ bara
+        -- foob
+        ---- bara
+        -- fooc
+        ---- barc
+
+        When we are searching for "bara", we need to filter the tree such
+        that the results for "bara" are shown, but also maintain the shape
+        of the tree.  This will result in a tree like this:
+
+        -- foo
+        ---- barb
+        ------ bara
+        -- foob
+        ---- bara
+
+        However, we need to include information in the response about
+        specifically what points in the tree match the search criteria.  We
+        call this the "Search Path".  Since each node of the tree will only be
+        present in the tree at most 1 time, this "Search Path" is a unique set
+        of nodes, in this case:
+
+        ['foo.barb.bara', 'foob.bara']
+        """
         qs1 = self.filter_queryset(self.budget.accounts.all())
         qs2 = self.filter_queryset(
             BudgetSubAccount.objects.filter(budget=self.budget))
+        overall_qs, search_path = self.filter_tree_querysets(qs1, qs2)
 
-        def handle_nested_level(obj, search_qs, primary=None):
-            qs = []
-            primary = primary or search_qs
-            if obj in primary:
-                qs.append(obj)
-
-            for subaccount in obj.subaccounts.all():
-                sub_qs = handle_nested_level(subaccount, search_qs)
-                if len(sub_qs) != 0:
-                    if obj not in qs:
-                        qs.append(obj)
-                    qs.extend(sub_qs)
-            return qs
-
-        overall_qs = []
-        for account in self.budget.accounts.all():
-            overall_qs.extend(handle_nested_level(account, qs2, primary=qs1))
-
-        # Note: Since we are applying the pagination before the TreeSerializer,
-        # the `count` in the paginated response will not be the number of
-        # top-level accounts but will instead be the number of overall items
-        # returned for all levels of the tree.
         qs = self.paginate_queryset(overall_qs)
         accounts = [obj for obj in qs if isinstance(obj, BudgetAccount)]
         subaccounts = [obj for obj in qs if isinstance(obj, BudgetSubAccount)]
         data = [
-            EntitySerializerWithChildren(account, subset=subaccounts).data
+            TreeNodeSerializer(
+                account, subset=subaccounts, search_path=search_path).data
             for account in accounts
         ]
         return self.get_paginated_response(data)

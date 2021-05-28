@@ -47,10 +47,7 @@ def test_get_template_account_subaccounts(api_client, user, create_template,
             "created_by": user.pk,
             "updated_by": user.pk,
             "group": None,
-            "unit": {
-                "id": subaccounts[0].unit,
-                "name": models.TemplateSubAccount.UNITS[subaccounts[0].unit]
-            },
+            "unit": None,
             "ancestors": [
                 {
                     "type": "template",
@@ -93,10 +90,7 @@ def test_get_template_account_subaccounts(api_client, user, create_template,
             "group": None,
             "created_by": user.pk,
             "updated_by": user.pk,
-            "unit": {
-                "id": subaccounts[1].unit,
-                "name": models.TemplateSubAccount.UNITS[subaccounts[1].unit]
-            },
+            "unit": None,
             "ancestors": [
                 {
                     "type": "template",

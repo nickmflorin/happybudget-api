@@ -16,7 +16,10 @@ from greenbudget.app.group.models import (
     TemplateSubAccountGroup
 )
 from greenbudget.app.subaccount.models import (
-    BudgetSubAccount, TemplateSubAccount)
+    BudgetSubAccount,
+    TemplateSubAccount,
+    SubAccountUnit
+)
 from greenbudget.app.tagging.models import Color
 from greenbudget.app.template.models import Template
 from greenbudget.app.user.models import User
@@ -74,6 +77,17 @@ class ColorFactory(CustomModelFactory):
                     self.content_types.add(ct)
 
 
+class TagFactory(CustomModelFactory):
+    """
+    A DjangoModelFactory to create instances of :obj:`User`.
+    """
+    order = factory.Sequence(lambda n: n + 1)
+    title = factory.Faker('first_name')
+
+    class Meta:
+        abstract = True
+
+
 class UserFactory(CustomModelFactory):
     """
     A DjangoModelFactory to create instances of :obj:`User`.
@@ -86,6 +100,7 @@ class UserFactory(CustomModelFactory):
     is_admin = False
     is_superuser = False
     is_active = True
+    is_first_time = False
 
     class Meta:
         model = User
@@ -236,6 +251,18 @@ class TemplateAccountFactory(AccountFactory):
         model = TemplateAccount
 
 
+@factory.django.mute_signals(models.signals.post_save)
+class SubAccountUnitFactory(
+        ConstantTimeMixin('created_at', 'updated_at'), TagFactory):
+    """
+    A DjangoModelFactory to create instances of :obj:`SubAccountUnit`.
+    """
+    color = factory.SubFactory(ColorFactory)
+
+    class Meta:
+        model = SubAccountUnit
+
+
 @factory.django.mute_signals(models.signals.post_save, models.signals.post_init)
 class SubAccountFactory(CustomModelFactory):
     """
@@ -269,7 +296,6 @@ class BudgetSubAccountFactory(
     """
     A DjangoModelFactory to create instances of :obj:`BudgetSubAccount`.
     """
-    unit = BudgetSubAccount.UNITS.days
     parent = factory.SubFactory(BudgetAccountFactory)
     content_type = factory.LazyAttribute(
         lambda o: ContentType.objects.get_for_model(o.parent))
@@ -285,7 +311,6 @@ class TemplateSubAccountFactory(
     """
     A DjangoModelFactory to create instances of :obj:`TemplateSubAccount`.
     """
-    unit = BudgetSubAccount.UNITS.days
     parent = factory.SubFactory(BudgetAccountFactory)
     content_type = factory.LazyAttribute(
         lambda o: ContentType.objects.get_for_model(o.parent))

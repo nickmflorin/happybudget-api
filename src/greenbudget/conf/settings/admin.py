@@ -1,3 +1,2 @@
-ADMIN_SITE_HEADER = "Greenbudget Admin"
-ADMIN_SITE_TITLE = "Greenbudget"
-ADMIN_INDEX_TITLE = "Greenbudget"
+GRAPPELLI_ADMIN_TITLE = GRAPPELLI_ADMIN_HEADLINE = 'Greenbudget'
+GRAPPELLI_INDEX_DASHBOARD = 'greenbudget.app.custom_admin.dashboard.Dashboard'

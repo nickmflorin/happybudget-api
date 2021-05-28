@@ -26,7 +26,8 @@ def test_registration(api_client, models):
         "last_login": "2020-01-01 00:00:00",
         "date_joined": "2020-01-01 00:00:00",
         "profile_image": None,
-        "timezone": "America/New_York"
+        "timezone": "America/New_York",
+        "is_first_time": True,
     }
     user = models.User.objects.get(pk=response.json()['id'])
     assert user.first_name == "Jack"
@@ -38,6 +39,10 @@ def test_registration(api_client, models):
     assert user.is_superuser is False
     assert user.is_active is True
     assert user.check_password("Hoopla") is True
+
+    # The user should be saved as not being first time anymore, but the response
+    # should indicate that it was their first time logging in.
+    assert user.is_first_time is False
 
 
 @pytest.mark.freeze_time('2020-01-01')
@@ -64,7 +69,8 @@ def test_update_logged_in_user(api_client, user):
         "last_login": "2020-01-01 00:00:00",
         "date_joined": "2020-01-01 00:00:00",
         "profile_image": None,
-        "timezone": str(user.timezone)
+        "timezone": str(user.timezone),
+        "is_first_time": False,
     }
 
     user.refresh_from_db()

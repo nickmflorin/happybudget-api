@@ -49,10 +49,7 @@ def test_get_budget_account_subaccounts(api_client, user, create_budget_account,
             "created_by": user.pk,
             "updated_by": user.pk,
             "group": None,
-            "unit": {
-                "id": subaccounts[0].unit,
-                "name": models.BudgetSubAccount.UNITS[subaccounts[0].unit]
-            },
+            "unit": None,
             "ancestors": [
                 {
                     "type": "budget",
@@ -97,10 +94,7 @@ def test_get_budget_account_subaccounts(api_client, user, create_budget_account,
             "group": None,
             "created_by": user.pk,
             "updated_by": user.pk,
-            "unit": {
-                "id": subaccounts[1].unit,
-                "name": models.BudgetSubAccount.UNITS[subaccounts[1].unit]
-            },
+            "unit": None,
             "ancestors": [
                 {
                     "type": "budget",

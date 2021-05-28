@@ -15,13 +15,34 @@ from greenbudget.app.group.serializers import (
 )
 
 from .mixins import SubAccountNestedMixin
-from .models import SubAccount, BudgetSubAccount, TemplateSubAccount
+from .models import (
+    SubAccount,
+    BudgetSubAccount,
+    TemplateSubAccount,
+    SubAccountUnit
+)
 from .serializers import (
     TemplateSubAccountSerializer,
     BudgetSubAccountSerializer,
+    SubAccountUnitSerializer,
     create_bulk_create_subaccounts_serializer,
     create_bulk_update_subaccounts_serializer
 )
+
+
+class SubAccountUnitViewSet(
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet
+):
+    """
+    Viewset to handle requests to the following endpoints:
+
+    (1) GET /subaccounts/units/
+    """
+    serializer_class = SubAccountUnitSerializer
+
+    def get_queryset(self):
+        return SubAccountUnit.objects.all()
 
 
 class SubAccountGroupViewSet(
