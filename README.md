@@ -2,11 +2,13 @@
 
 ### System Requirements
 
-- Docker
 - pyenv
 - homebrew
-- MacOSX (Docker is still rocky on a Windows machine but it can be done).
 - poetry
+
+Note that this documentation describes how to setup/configure the application for local development
+on MacOSX.  The steps outlined here can be done on a Windows/Ubuntu machine as well, but the steps
+will not be exactly as they are here (for obvious reasons).
 
 ## Getting Started
 
@@ -70,74 +72,59 @@ $ poetry install
 Note that [`poetry`](https://python-poetry.org/docs/) has the ability to manage virtual environments for you, so
 there is also that option if you do not feel like managing it yourself.
 
-##### Docker Environment
-
-Now, we need to configure our `docker-compose` environment. Copy the `docker-compose.override-options.yml`
-file to `docker-compose.override.yml` in the project root.
-
-```bash
-$ cp docker-compose.override-options.yml docker-compose.override.yml
-```
-
-Then, edit `docker-compose.override.yml` to make sure all services are active (`celery`, `celery-beat`, ...).
-
 ##### ENV File
 
 Finally, we need to create and edit a `.env` file in the project root to include configuration values and
 sensitive information. Ask another team member for help with this.  In order to run the application locally,
-the `.env` file must specify the `DJANGO_SECRET_KEY`.
+the `.env` file must specify the `DJANGO_SECRET_KEY`.  The other ENV variables pertain to AWS configuration that
+should not be needed when running locally.
 
 ## Running Locally
 
-Right now, there are two primary services required to operate the application: `db` and `web`.  Each of these
-can be run separately, inside or outside of a `docker` container.  Inside of the container, the `db` service
-will run as a `PostgreSQL` server and the `web` service will run via a `gunicorn` web server.  Outside of the
-container, the `db` service will be run as a simple `sqlite3` file and the `web` service will be run via a simple
-`Django` web server.
-
-#### All Services Inside Container
-
-The simplest way to get the application running locally is to bring up both services inside the `docker` container:
+To run the application locally, simply activate the virtual environment and start the Django web server:
 
 ```bash
-$ docker-compose up
-```
-
-This will bring up both the `db` service and the `web` service.  However, this is usually not the most productive way
-to develop locally, since the `web` service will not change when code changes are made.
-
-#### `db` Service Inside Container, `web` Service Outside Container
-
-In order to improve the local development process, we can run the `db` service inside the `docker` container
-while using the `Django` web server to run the `web` service.  We can do this as follows:
-
-```bash
-$ docker-compose up -d db
 $ . ./env/bin/activate
 $ python src/manage.py runserver
 ```
 
-#### Both Services Outside the Container
+Then, migrate to the domain/port serving the Frontend (assuming that the Frontend server is running, this
+is usually at `127.0.0.1:3000`.
 
-If we wish to use a lighter weight `sqlite` option for the application database, we can do so as well.  In order
-to do these, we need to create a `local_override.py` file in `src/conf/settings/local_override.py`.  When we create a `local_override.py` file,
-any settings specified in the file will override those in the `src/config/settings/local.py` file.  To use a ligher
-weight `sqlite` application database,  the file should look something like this:
+#### Local Domain Caveat
+
+Our authentication protocols rely on the ability to set cookies in the response that dictate user sessions and
+information.  Recent Google Chrome security improvements have introduced the caveat that the browser no longer
+considers `localhost` a valid domain, so setting cookies in the backend for the frontend application no longer
+works when running the application on `localhost`.  For this reason, the application is configured locally to
+**only** work on `127.0.0.1:8000`, not `localhost:8000`.
+
+#### Django Settings
+
+By default, the Django settings module used when running locally (toggled via the `DJANGO_SETTINGS_MODULE` environment
+variable) is `greenbudget.conf.settings.local`.  If you need to override certain settings for your own personal
+local development, `greenbudget.conf.settings.local` should not be edited but instead a `greenbudget.conf.settings.local_override`
+Python file should be created.
+
+##### Local Override Use Case
+
+A common use case for overriding the local settings configuration might be to run the application using an `sqlite`
+database (not the default `postgresql` database).  To do this, create `greenbudget.conf.settings.local` as
+follows:
 
 ```python
 import dj_database_url
+from .base import BASE_DIR
 
 DATABASES = {
     'default': dj_database_url.parse('sqlite:///%s/db.sqlite3' % BASE_DIR)  # noqa
 }
 ```
 
-Now, we can just run the `Django` web server and it will use the local `sqlite` file as it's database:
+When `greenbudget.conf.settings.local` is loaded, it will look for a `local_override` file in the same
+directory, and if it exists, will import the settings configurations in that file after the configurations
+in the local file are loaded.
 
-```bash
-$ . ./env/bin/activate
-$ python src/manage.py runserver
-```
 
 ## Testing
 
