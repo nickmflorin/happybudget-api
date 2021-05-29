@@ -72,7 +72,8 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
     unit = TagField(
         serializer_class=SubAccountUnitSerializer,
         queryset=SubAccountUnit.objects.all(),
-        required=False
+        required=False,
+        allow_null=True
     )
     budget = serializers.PrimaryKeyRelatedField(read_only=True)
     subaccounts = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
