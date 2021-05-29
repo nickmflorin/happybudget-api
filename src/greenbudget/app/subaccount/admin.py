@@ -3,7 +3,8 @@ from django.contrib import admin
 from django.contrib.contenttypes.models import ContentType
 
 from greenbudget.app.common.admin import color_icon
-from .models import SubAccountUnit
+from .models import (
+    SubAccountUnit, BudgetSubAccount, TemplateSubAccount)
 
 
 class SubAccountUnitForm(forms.ModelForm):
@@ -37,4 +38,31 @@ class SubAccountUnitAdmin(admin.ModelAdmin):
     get_color_for_admin.short_description = 'Color'
 
 
+class AccountAdmin(admin.ModelAdmin):
+    list_display = (
+        "identifier", "description", "budget", "created_by", "created_at")
+
+
+class BudgetSubAccountAdminForm(forms.ModelForm):
+    class Meta:
+        model = BudgetSubAccount
+        fields = '__all__'
+
+
+class TemplateSubAccountAdminForm(forms.ModelForm):
+    class Meta:
+        model = TemplateSubAccount
+        fields = '__all__'
+
+
+class BudgetSubAccountAdmin(AccountAdmin):
+    form = BudgetSubAccountAdminForm
+
+
+class TemplateSubAccountAdmin(AccountAdmin):
+    form = TemplateSubAccountAdminForm
+
+
+admin.site.register(BudgetSubAccount, BudgetSubAccountAdmin)
+admin.site.register(TemplateSubAccount, TemplateSubAccountAdmin)
 admin.site.register(SubAccountUnit, SubAccountUnitAdmin)
