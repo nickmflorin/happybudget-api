@@ -73,6 +73,9 @@ jobs:
             # 4 - SG ID
             SG_ID=${AWS_PROD_SECURITY_GROUP_ID}
 
+            echo "TEST"
+            echo ${AWS_DEFAULT_REGION}
+
             # 5 - Add an ingress rule to the security group.  The AWS CLI is
             # configured/authenticated via environment variables in CircleCI.
             ~/bin/aws ec2 authorize-security-group-ingress --region $AWS_REGION --group-id $SG_ID \
