@@ -54,8 +54,6 @@ jobs:
       - image: circleci/python:3.8.8
     steps:
       - checkout
-      - run: chmod +x ./deploy_to_dev.sh
-      - run: ./deploy_to_dev.sh
       - run:
           name: "Deploy"
           command: |
