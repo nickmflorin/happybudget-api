@@ -38,7 +38,13 @@ class Group(PolymorphicModel):
         )
     )
 
+    non_polymorphic = models.Manager()
+
     class Meta:
+        # See https://code.djangoproject.com/ticket/23076 - this addresses
+        # a bug with the Django-polymorphic package in regard to deleting parent
+        # models.
+        base_manager_name = 'non_polymorphic'
         get_latest_by = "created_at"
         ordering = ('created_at', )
         verbose_name = "Group"
