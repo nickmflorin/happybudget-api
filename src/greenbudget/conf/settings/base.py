@@ -77,6 +77,7 @@ ALLOWED_HOSTS = [
     'api.greenbudget.cloud',
     '172.31.88.83',
     'gb-dev-lb-563148772.us-east-1.elb.amazonaws.com',  # Load Balancer
+    'django-env.eba-ijb6ap26.us-east-2.elasticbeanstalk.com',  # Prod EB
 ]
 
 # JWT Configuration

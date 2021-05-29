@@ -85,8 +85,8 @@ class BudgetAccountGroup(Group):
     MAP_FIELDS_FROM_ORIGINAL = ("name", "color")
 
     class Meta(Group.Meta):
-        verbose_name = "Budget Account Group"
-        verbose_name_plural = "Budget Account Groups"
+        verbose_name = "Account Group"
+        verbose_name_plural = "Account Groups"
 
     @property
     def budget(self):
@@ -123,8 +123,8 @@ class TemplateAccountGroup(Group):
         return self.parent
 
     class Meta(Group.Meta):
-        verbose_name = "Template Account Group"
-        verbose_name_plural = "Template Account Groups"
+        verbose_name = "Account Group"
+        verbose_name_plural = "Account Groups"
 
 
 class BudgetSubAccountGroup(Group):
@@ -142,8 +142,8 @@ class BudgetSubAccountGroup(Group):
     MAP_FIELDS_FROM_ORIGINAL = ("name", "color")
 
     class Meta(Group.Meta):
-        verbose_name = "Budget Sub Account Group"
-        verbose_name_plural = "Budget Sub Account Groups"
+        verbose_name = "Sub Account Group"
+        verbose_name_plural = "Sub Account Groups"
 
     @property
     def budget(self):
@@ -180,8 +180,8 @@ class TemplateSubAccountGroup(Group):
     MAP_FIELDS_FROM_ORIGINAL = ("name", "color")
 
     class Meta(Group.Meta):
-        verbose_name = "Template Sub Account Group"
-        verbose_name_plural = "Template Sub Account Groups"
+        verbose_name = "Sub Account Group"
+        verbose_name_plural = "Sub Account Groups"
 
     @property
     def budget(self):

@@ -204,8 +204,8 @@ class BudgetSubAccount(SubAccount):
         'unit')
 
     class Meta(SubAccount.Meta):
-        verbose_name = "Budget Sub Account"
-        verbose_name_plural = "Budget Sub Accounts"
+        verbose_name = "Sub Account"
+        verbose_name_plural = "Sub Accounts"
 
     def __str__(self):
         return "<{cls} id={id}, name={name}, identifier={identifier}>".format(
@@ -267,8 +267,8 @@ class TemplateSubAccount(SubAccount):
         'unit')
 
     class Meta(SubAccount.Meta):
-        verbose_name = "Template Sub Account"
-        verbose_name_plural = "Template Sub Accounts"
+        verbose_name = "Sub Account"
+        verbose_name_plural = "Sub Accounts"
 
     def __str__(self):
         return "<{cls} id={id}, name={name}, identifier={identifier}>".format(

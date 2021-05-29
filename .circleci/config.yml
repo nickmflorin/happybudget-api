@@ -11,6 +11,8 @@ jobs:
       - image: circleci/python:3.8.8
     steps:
       - checkout
+      # - run: sudo chmod 744 ./deploy_to_dev.sh
+      - run: chmod +x ./deploy_to_dev.sh
       - run: sudo chown -R circleci:circleci /usr/local/bin
       - run: sudo chown -R circleci:circleci /usr/local/lib/python3.8/site-packages
       - restore_cache:

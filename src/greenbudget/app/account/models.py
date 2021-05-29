@@ -124,8 +124,8 @@ class BudgetAccount(Account):
     objects = BudgetAccountManager()
 
     class Meta(Account.Meta):
-        verbose_name = "Budget Account"
-        verbose_name_plural = "Budget Accounts"
+        verbose_name = "Account"
+        verbose_name_plural = "Accounts"
 
     @property
     def variance(self):
@@ -177,5 +177,5 @@ class TemplateAccount(Account):
     MAP_FIELDS_FROM_ORIGINAL = ('identifier', 'description')
 
     class Meta(Account.Meta):
-        verbose_name = "Template Account"
-        verbose_name_plural = "Template Accounts"
+        verbose_name = "Account"
+        verbose_name_plural = "Accounts"

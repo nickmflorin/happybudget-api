@@ -2,7 +2,7 @@ from model_utils import Choices
 
 from django.db import models
 
-from .managers import FringeManager
+from .managers import FringeManager, BudgetFringeManager, TemplateFringeManager
 
 
 class Fringe(models.Model):
@@ -54,6 +54,12 @@ class Fringe(models.Model):
         verbose_name_plural = "Fringes"
         unique_together = (('budget', 'name'), )
 
+    def __str__(self):
+        return "<{cls} name={name}>".format(
+            cls=self.__class__.__name__,
+            name=self.name
+        )
+
     @property
     def num_times_used(self):
         return 1  # Temporary - needs to be built in.
@@ -72,3 +78,21 @@ class Fringe(models.Model):
         setattr(self, '_suppress_budget_update',
             kwargs.pop('suppress_budget_update', False))
         super().save(*args, **kwargs)
+
+
+class BudgetFringe(Fringe):
+    objects = BudgetFringeManager()
+
+    class Meta:
+        proxy = True
+        verbose_name = "Fringe"
+        verbose_name_plural = "Fringes"
+
+
+class TemplateFringe(Fringe):
+    objects = TemplateFringeManager()
+
+    class Meta:
+        proxy = True
+        verbose_name = "Fringe"
+        verbose_name_plural = "Fringes"
