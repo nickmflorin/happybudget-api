@@ -88,6 +88,9 @@ $ . ./env/bin/activate
 $ python src/manage.py runserver
 ```
 
+Then, migrate to the domain/port serving the Frontend (assuming that the Frontend server is running, this
+is usually at `127.0.0.1:3000`.
+
 #### Local Domain Caveat
 
 Our authentication protocols rely on the ability to set cookies in the response that dictate user sessions and
@@ -121,7 +124,6 @@ DATABASES = {
 When `greenbudget.conf.settings.local` is loaded, it will look for a `local_override` file in the same
 directory, and if it exists, will import the settings configurations in that file after the configurations
 in the local file are loaded.
-
 
 
 ## Testing
