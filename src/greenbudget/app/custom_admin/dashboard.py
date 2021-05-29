@@ -12,6 +12,8 @@ class Dashboard(BaseDashboard):
             collapsible=False,
             models=(
                 'greenbudget.app.budget.models.Budget',
+                'greenbudget.app.group.models.BudgetAccountGroup',
+                'greenbudget.app.group.models.BudgetSubAccountGroup'
             )
         ))
 
@@ -21,6 +23,8 @@ class Dashboard(BaseDashboard):
             collapsible=False,
             models=(
                 'greenbudget.app.template.models.Template',
+                'greenbudget.app.group.models.TemplateAccountGroup',
+                'greenbudget.app.group.models.TemplateSubAccountGroup'
             )
         ))
 

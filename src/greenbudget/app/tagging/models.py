@@ -20,7 +20,7 @@ class Color(models.Model):
         unique=True,
         validators=[ColorCodeValidator],
     )
-    name = models.CharField(max_length=32, null=True, unique=True)
+    name = models.CharField(max_length=32, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
     content_types = models.ManyToManyField(
         to=ContentType,
@@ -45,7 +45,7 @@ class Color(models.Model):
         ]
 
     def __str__(self):
-        return self.code
+        return "%s: %s" % (self.name, self.code)
 
     def save(self, *args, **kwargs):
         try:

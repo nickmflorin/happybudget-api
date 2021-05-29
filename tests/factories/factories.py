@@ -59,7 +59,8 @@ class ColorFactory(CustomModelFactory):
     A DjangoModelFactory to create instances of :obj:`User`.
     """
     code = factory.Faker('color')
-    name = factory.Faker('first_name')
+    name = factory.Sequence(lambda n: factory.Faker(
+        "first_name").generate() + f"{n}")
 
     class Meta:
         model = Color
