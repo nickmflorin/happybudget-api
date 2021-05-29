@@ -82,18 +82,18 @@ jobs:
 
             # 7- SSH to the server to deploy
             ssh -o StrictHostKeyChecking=no ec2-user@3.237.2.151 \
-              cd /www/greenbudget-api
+              cd /www/greenbudget-api \
 
-              echo "Building"
-              sudo docker-compose -f docker-compose.dev.yml up --build -d
+              echo "Building" \
+              sudo docker-compose -f docker-compose.dev.yml up --build -d \
 
-              echo "Collecting Static Files"
-              docker-compose -f docker-compose.dev.yml exec web python manage.py collectstatic -c --no-input
+              echo "Collecting Static Files" \
+              docker-compose -f docker-compose.dev.yml exec web python manage.py collectstatic -c --no-input \
 
-              echo "Running Migrations"
-              docker-compose -f docker-compose.dev.yml exec web python manage.py migrate
+              echo "Running Migrations" \
+              docker-compose -f docker-compose.dev.yml exec web python manage.py migrate \
 
-              echo "Restarting..."
+              echo "Restarting..." \
               docker-compose -f docker-compose.dev.yml restart
 
             # 8- Remove the ingress rule
