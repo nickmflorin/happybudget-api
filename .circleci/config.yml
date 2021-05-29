@@ -45,56 +45,105 @@ jobs:
     docker:
       - image: circleci/python:3.8.8
     steps:
-      - checkout
-      - run: chmod +x ./deploy_to_app.sh
-      - run: ./deploy_to_app.sh
-
-  deploy_to_dev:
-    docker:
-      - image: circleci/python:3.8.8
-    steps:
       - run:
+          # NOTE:  CircleCI is slightly different from Jenkins in the sense that the build
+          # is always happening on a different IP address - which means we cannot simply add
+          # a single IP address to the whitelisted IPs allowed to ssh into the instance.  For now,
+          # until we develop a better approach, the only solution is to use the AWS CLI to
+          # temporarily add the dynamic CircleCI IP Address to the EC2 Security Group, SSH into
+          # the instance, and then remove the IP address from the Securtiy Group afterwards.
+          # NOTE:  The AWS CLI is authenticated via the following environment variables in
+          # CircleCI:
+          # (1) AWS_ACCESS_KEY_ID
+          # (2) AWS_SECRET_ACCESS_KEY
+          # (3) AWS_DEFAULT_REGION
           name: "Deploy"
           command: |
-            # 1 - Install AWS CLI
+            # 1 - Install AWS CLI.
             curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
             unzip awscli-bundle.zip
             ./awscli-bundle/install -b ~/bin/aws
 
             # 2 - Get the public IP of the current CircleCI runner
             PUBLIC_IP=$(curl ipinfo.io/ip)
-            export AWS_ACCESS_KEY_ID=AKIAYL6B5MOTASE2PSOP
-            export AWS_SECRET_ACCESS_KEY=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
-            export AWS_DEFAULT_REGION=us-east-1
 
             # 3 - Get AWS Region
-            AWS_REGION=us-east-1
+            AWS_REGION=${AWS_DEFAULT_REGION}
 
             # 4 - SG ID
-            SG_ID=sg-07ee1b656cb802745
+            SG_ID=${AWS_PROD_SECURITY_GROUP_ID}
 
-            # 5 - Add an ingress rule to the security group
+            # 5 - Add an ingress rule to the security group.  The AWS CLI is
+            # configured/authenticated via environment variables in CircleCI.
             ~/bin/aws ec2 authorize-security-group-ingress --region $AWS_REGION --group-id $SG_ID \
               --protocol tcp --port 22 --cidr $PUBLIC_IP/24
 
             # 6- Give the ingress rule some time to propogate
             sleep 5
 
-            # 7- SSH to the server to deploy
-            ssh -o StrictHostKeyChecking=no ec2-user@3.237.2.151 \
+            # 7- SSH Into the Machine and Deploy
+            ssh -o StrictHostKeyChecking=no ec2-user@${AWS_PROD_EC2_PUBLIC_IP} \
               cd /www/greenbudget-api \
+              sudo git checkout master \
+              sudo git pull \
+              sudo docker-compose up --build -d \
+              sudo docker-compose exec web python manage.py collectstatic -c --no-input \
+              sudo docker-compose exec web python manage.py migrate \
+              sudo docker-compose restart
 
-              echo "Building" \
+            # 8- Remove the ingress rule
+            ~/bin/aws ec2 revoke-security-group-ingress --region $AWS_REGION --group-id $SG_ID \
+              --protocol tcp --port 22 --cidr $PUBLIC_IP/24
+
+  deploy_to_dev:
+    docker:
+      - image: circleci/python:3.8.8
+    steps:
+      - run:
+          # NOTE:  CircleCI is slightly different from Jenkins in the sense that the build
+          # is always happening on a different IP address - which means we cannot simply add
+          # a single IP address to the whitelisted IPs allowed to ssh into the instance.  For now,
+          # until we develop a better approach, the only solution is to use the AWS CLI to
+          # temporarily add the dynamic CircleCI IP Address to the EC2 Security Group, SSH into
+          # the instance, and then remove the IP address from the Securtiy Group afterwards.
+          # NOTE:  The AWS CLI is authenticated via the following environment variables in
+          # CircleCI:
+          # (1) AWS_ACCESS_KEY_ID
+          # (2) AWS_SECRET_ACCESS_KEY
+          # (3) AWS_DEFAULT_REGION
+          name: "Deploy"
+          command: |
+            # 1 - Install AWS CLI.
+            curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
+            unzip awscli-bundle.zip
+            ./awscli-bundle/install -b ~/bin/aws
+
+            # 2 - Get the public IP of the current CircleCI runner
+            PUBLIC_IP=$(curl ipinfo.io/ip)
+
+            # 3 - Get AWS Region
+            AWS_REGION=${AWS_DEFAULT_REGION}
+
+            # 4 - SG ID
+            SG_ID=${AWS_DEV_SECURITY_GROUP_ID}
+
+            # 5 - Add an ingress rule to the security group.  The AWS CLI is
+            # configured/authenticated via environment variables in CircleCI.
+            ~/bin/aws ec2 authorize-security-group-ingress --region $AWS_REGION --group-id $SG_ID \
+              --protocol tcp --port 22 --cidr $PUBLIC_IP/24
+
+            # 6- Give the ingress rule some time to propogate
+            sleep 5
+
+            # 7- SSH Into the Machine and Deploy
+            ssh -o StrictHostKeyChecking=no ec2-user@${AWS_DEV_EC2_PUBLIC_IP} \
+              cd /www/greenbudget-api \
+              sudo git checkout develop \
+              sudo git pull \
               sudo docker-compose -f docker-compose.dev.yml up --build -d \
-
-              echo "Collecting Static Files" \
-              docker-compose -f docker-compose.dev.yml exec web python manage.py collectstatic -c --no-input \
-
-              echo "Running Migrations" \
-              docker-compose -f docker-compose.dev.yml exec web python manage.py migrate \
-
-              echo "Restarting..." \
-              docker-compose -f docker-compose.dev.yml restart
+              sudo docker-compose -f docker-compose.dev.yml exec web python manage.py collectstatic -c --no-input \
+              sudo docker-compose -f docker-compose.dev.yml exec web python manage.py migrate \
+              sudo docker-compose -f docker-compose.dev.yml restart
 
             # 8- Remove the ingress rule
             ~/bin/aws ec2 revoke-security-group-ingress --region $AWS_REGION --group-id $SG_ID \
