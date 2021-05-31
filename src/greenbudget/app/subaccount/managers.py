@@ -68,6 +68,9 @@ class AbstractSubAccountManager(ModelDuplicateManager(SubAccountManager)):
             }
             child_cls.objects.create(**kwargs, **model_kwargs)
 
+    def instantiate_duplicates(self, original, *args, **kwargs):
+        pass
+
     def create_duplicate(self, original, *args, **kwargs):
         """
         Creates a duplicate of the :obj:`BudgetSubAccount` or

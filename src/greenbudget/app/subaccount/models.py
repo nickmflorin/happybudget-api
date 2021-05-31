@@ -4,6 +4,7 @@ from django.contrib.contenttypes.fields import (
     GenericForeignKey, GenericRelation)
 from django.contrib.contenttypes.models import ContentType
 from django.db import models, IntegrityError
+from django.db.models.signals import m2m_changed
 
 from greenbudget.lib.model_tracker import track_model
 
@@ -148,16 +149,28 @@ class SubAccount(PolymorphicModel):
                 "The group that an item belongs to must have the same parent "
                 "as that item."
             )
-        if self.id is not None:
-            for fringe in self.fringes.all():
-                if fringe.budget != self.budget:
-                    raise IntegrityError(
-                        "The fringes that belong to a sub-account must belong "
-                        "to the same budget as that sub-account."
-                    )
         setattr(self, '_suppress_budget_update',
             kwargs.pop('suppress_budget_update', False))
         return super().save(*args, **kwargs)
+
+
+def validate_fringes(sender, **kwargs):
+    from greenbudget.app.fringe.models import Fringe
+    if kwargs['action'] == 'pre_add' and kwargs['model'] == Fringe:
+        fringes = (Fringe.objects
+            .filter(pk__in=kwargs['pk_set'])
+            .prefetch_related('budget')
+            .only('budget')
+            .all())
+        for fringe in fringes:
+            if fringe.budget != kwargs['instance'].budget:
+                raise IntegrityError(
+                    "The fringes that belong to a sub-account must belong "
+                    "to the same budget as that sub-account."
+                )
+
+
+m2m_changed.connect(validate_fringes, sender=SubAccount.fringes.through)
 
 
 @track_model(

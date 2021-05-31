@@ -51,15 +51,23 @@ def ModelTemplateManager(*bases):
 
 def ModelDuplicateManager(*bases):
     class FromCopyManager(*bases, AbstractManagerOperationMixin):
-        def create_duplicate(self, original, *args, **kwargs):
+        def duplication_kwargs(self, original):
+            kwargs = {}
             assert hasattr(self.model, 'MAP_FIELDS_FROM_ORIGINAL'), \
                 "The model %s must define the `MAP_FIELDS_FROM_ORIGINAL`." \
                 % self.model.__name__
-
             for field in getattr(self.model, 'MAP_FIELDS_FROM_ORIGINAL'):
                 if field not in kwargs:
                     kwargs[field] = getattr(original, field)
-            return super().create(*args, **kwargs)
+            return kwargs
+
+        def instantiate_duplicate(self, original, *args, **kwargs):
+            duplicated_kwargs = self.duplication_kwargs(original)
+            return self.model(**duplicated_kwargs)
+
+        def create_duplicate(self, original, *args, **kwargs):
+            duplicated_kwargs = self.duplication_kwargs(original)
+            return super().create(*args, **kwargs, **duplicated_kwargs)
 
         def create(self, *args, **kwargs):
             if 'original' in kwargs:
