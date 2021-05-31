@@ -24,7 +24,8 @@ class ActualSerializer(EnhancedModelSerializer):
     description = serializers.CharField(
         required=False,
         allow_blank=False,
-        allow_null=True
+        allow_null=True,
+        trim_whitespace=False
     )
     created_by = serializers.PrimaryKeyRelatedField(read_only=True)
     updated_by = serializers.PrimaryKeyRelatedField(read_only=True)
