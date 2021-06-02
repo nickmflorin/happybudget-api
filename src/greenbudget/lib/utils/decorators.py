@@ -21,7 +21,7 @@ def optional_parameter_decorator(f):
 
     or
 
-    @decorator(foo='bar')
+    @decorator(foo='foo')
     def my_method():
         pass
     """
