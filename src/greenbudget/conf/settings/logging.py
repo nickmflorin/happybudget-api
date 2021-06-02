@@ -2,12 +2,6 @@ import logging
 import sys
 
 
-# Toggle JSON Logging for Base Django App Logger
-JSON_LOGGING = False
-
-
-# TODO: It would be nice if we can figure out how to send logs from celery.task
-# to both the Django Server and the Celery STDOUT.
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -18,10 +12,6 @@ LOGGING = {
         'simple': {
             'format': '[%(name)s] %(levelname)s: %(message)s',
         },
-        'json': {
-            '()': 'greenbudget.lib.logging.formatters.JsonLogFormatter',
-            'logger_name': 'greenbudget',
-        },
         'dynamic': {
             '()': 'greenbudget.lib.logging.formatters.DynamicExtraArgumentFormatter',  # noqa
         },
@@ -29,6 +19,9 @@ LOGGING = {
             '()': 'django.utils.log.ServerFormatter',
             'format': '[{server_time}] {message}',
             'style': '{',
+        },
+        "aws": {
+            '()': 'greenbudget.lib.logging.formatters.DynamicExtraArgumentFormatter',  # noqa
         },
     },
     'handlers': {
@@ -48,7 +41,7 @@ LOGGING = {
             'level': logging.DEBUG,
             'class': 'logging.StreamHandler',
             'stream': sys.stdout,
-            'formatter': 'json' if JSON_LOGGING else 'dynamic',
+            'formatter': 'dynamic'
         },
         'django.server': {
             'level': logging.INFO,

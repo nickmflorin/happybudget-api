@@ -1,6 +1,8 @@
 """
 Settings configuration file for development environment.
 """
+from boto3 import session
+import logging
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 import os
@@ -8,6 +10,8 @@ import os
 from greenbudget.conf import Environments, config
 
 from .base import *  # noqa
+from .base import (
+    LOGGING, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_DEFAULT_REGION)
 
 ENVIRONMENT = Environments.DEV
 
@@ -44,3 +48,22 @@ sentry_sdk.init(
     send_default_pii=True,
     environment="development"
 )
+
+logger_boto3_session = session.Session(
+    aws_access_key_id=AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+    region_name=AWS_DEFAULT_REGION,
+)
+
+LOGGING["handlers"]["watchtower"] = {
+    "level": logging.INFO,
+    "class": "watchtower.CloudWatchLogHandler",
+    "log_group": "greenbudget-dev-api",
+    "stream_name": "logstream",
+    "formatter": "aws",
+    "boto3_session": logger_boto3_session
+}
+
+for logger_name in ("django", "django.request", "django.server", "greenbudget"):
+    LOGGING["loggers"][logger_name]["handlers"] = LOGGING[
+        "loggers"][logger_name]["handlers"] + ["watchtower"]
