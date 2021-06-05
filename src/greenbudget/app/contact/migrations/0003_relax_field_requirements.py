@@ -4,7 +4,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('contact', '0001_initial'),
+        ('contact', '0002_convert_phone_numbers_to_int'),
     ]
 
     operations = [

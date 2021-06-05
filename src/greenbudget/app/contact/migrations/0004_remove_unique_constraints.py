@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('contact', '0002_relax_field_requirements'),
+        ('contact', '0003_relax_field_requirements'),
     ]
 
     operations = [
