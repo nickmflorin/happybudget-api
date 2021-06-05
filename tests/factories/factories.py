@@ -364,7 +364,7 @@ class ContactFactory(CustomModelFactory):
     email = factory.Faker('email')
     user = factory.SubFactory(UserFactory)
     role = Contact.ROLES.producer
-    phone_number = factory.Faker('phone_number')
+    phone_number = 15555555555
     country = "United States"
     city = "New York"
 

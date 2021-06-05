@@ -1,12 +1,11 @@
 from model_utils import Choices
-from phonenumber_field.modelfields import PhoneNumberField
 
 from django.db import models
 
 
 class Contact(models.Model):
     first_name = models.CharField(max_length=30)
-    last_name = models.CharField(max_length=30)
+    last_name = models.CharField(max_length=30, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     user = models.ForeignKey(
@@ -27,19 +26,17 @@ class Contact(models.Model):
         (9, "client", "Client"),
         (10, "other", "Other"),
     )
-    role = models.IntegerField(choices=ROLES)
-    # TODO: Use a better system for establishing contact location.
-    city = models.CharField(max_length=30)
-    country = models.CharField(max_length=30)
-    phone_number = PhoneNumberField()
-    email = models.EmailField()
+    role = models.IntegerField(choices=ROLES, null=True)
+    city = models.CharField(max_length=30, null=True)
+    country = models.CharField(max_length=30, null=True)
+    phone_number = models.IntegerField(null=True)
+    email = models.EmailField(null=True)
 
     class Meta:
         get_latest_by = "updated_at"
         ordering = ('created_at', )
         verbose_name = "Contact"
         verbose_name_plural = "Contacts"
-        unique_together = (('user', 'email'), ('user', 'phone_number'))
 
     def __str__(self):
         return "<{cls} id={id}, email={email}>".format(
@@ -50,4 +47,6 @@ class Contact(models.Model):
 
     @property
     def full_name(self):
-        return self.first_name + " " + self.last_name
+        if self.last_name is not None:
+            return self.first_name + " " + self.last_name
+        return self.first_name

@@ -15,7 +15,7 @@ def test_get_contact(api_client, user, create_contact, models):
         "updated_at": "2020-01-01 00:00:00",
         "city": contact.city,
         "country": contact.country,
-        "phone_number": str(contact.phone_number),
+        "phone_number": contact.phone_number,
         "email": contact.email,
         "full_name": contact.full_name,
         "role": {
@@ -41,7 +41,7 @@ def test_get_contacts(api_client, user, create_contact, models):
             "updated_at": "2020-01-01 00:00:00",
             "city": contacts[0].city,
             "country": contacts[0].country,
-            "phone_number": str(contacts[0].phone_number),
+            "phone_number": contacts[0].phone_number,
             "email": contacts[0].email,
             "full_name": contacts[0].full_name,
             "role": {
@@ -57,7 +57,7 @@ def test_get_contacts(api_client, user, create_contact, models):
             "updated_at": "2020-01-01 00:00:00",
             "city": contacts[1].city,
             "country": contacts[1].country,
-            "phone_number": str(contacts[1].phone_number),
+            "phone_number": contacts[1].phone_number,
             "email": contacts[1].email,
             "full_name": contacts[1].full_name,
             "role": {
@@ -68,7 +68,7 @@ def test_get_contacts(api_client, user, create_contact, models):
     ]
 
 
-@pytest.mark.freeze_time('2020-01-01')
+@ pytest.mark.freeze_time('2020-01-01')
 def test_create_contact(api_client, user, models):
     api_client.force_login(user)
     response = api_client.post("/v1/contacts/", data={
@@ -77,7 +77,7 @@ def test_create_contact(api_client, user, models):
         'first_name': 'Jack',
         'last_name': 'Johnson',
         'role': 1,
-        'phone_number': '+15183696530',
+        'phone_number': '15183696530',
         'email': 'jjohnson@gmail.com',
     })
     assert response.status_code == 201
@@ -89,7 +89,7 @@ def test_create_contact(api_client, user, models):
     assert contact.first_name == "Jack"
     assert contact.last_name == "Johnson"
     assert contact.role == 1
-    assert str(contact.phone_number) == "+15183696530"
+    assert contact.phone_number == 15183696530
     assert contact.email == "jjohnson@gmail.com"
 
     assert response.json() == {
@@ -100,7 +100,7 @@ def test_create_contact(api_client, user, models):
         "updated_at": "2020-01-01 00:00:00",
         "city": "New York",
         "country": "United States",
-        "phone_number": "+15183696530",
+        "phone_number": 15183696530,
         "email": "jjohnson@gmail.com",
         "full_name": "Jack Johnson",
         "role": {
@@ -110,7 +110,7 @@ def test_create_contact(api_client, user, models):
     }
 
 
-@pytest.mark.freeze_time('2020-01-01')
+@ pytest.mark.freeze_time('2020-01-01')
 def test_update_contact(api_client, user, create_contact, models):
     contact = create_contact()
     api_client.force_login(user)
@@ -136,7 +136,7 @@ def test_update_contact(api_client, user, create_contact, models):
         "updated_at": "2020-01-01 00:00:00",
         "city": "New York",
         "country": "United States",
-        "phone_number": str(contact.phone_number),
+        "phone_number": contact.phone_number,
         "email": contact.email,
         "full_name": contact.full_name,
         "role": {
@@ -146,7 +146,7 @@ def test_update_contact(api_client, user, create_contact, models):
     }
 
 
-@pytest.mark.freeze_time('2020-01-01')
+@ pytest.mark.freeze_time('2020-01-01')
 def test_delete_contact(api_client, user, create_contact, models):
     contact = create_contact()
     api_client.force_login(user)
