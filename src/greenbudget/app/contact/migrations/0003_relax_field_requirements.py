@@ -31,7 +31,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='contact',
             name='phone_number',
-            field=models.IntegerField(null=True),
+            field=models.BigIntegerField(null=True),
         ),
         migrations.AlterField(
             model_name='contact',
