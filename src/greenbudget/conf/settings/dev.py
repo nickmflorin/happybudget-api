@@ -8,6 +8,7 @@ from sentry_sdk.integrations.django import DjangoIntegration
 import os
 
 from greenbudget.conf import Environments, config
+from greenbudget.conf.util import get_ec2_hostname
 
 from .base import *  # noqa
 from .base import (
@@ -28,6 +29,10 @@ ALLOWED_HOSTS = [
     'devapi.greenbudget.cloud',
     'gb-dev-lb-563148772.us-east-1.elb.amazonaws.com',  # Load Balancer
 ]
+print("Adding EC2 IP Address to Allowed Hosts")
+ec2_host_name = get_ec2_hostname()
+if ec2_host_name is not None:
+    ALLOWED_HOSTS.append(ec2_host_name)
 
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'

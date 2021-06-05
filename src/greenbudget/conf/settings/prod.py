@@ -7,10 +7,12 @@ import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 
 from greenbudget.conf import Environments, config
+from greenbudget.conf.util import get_ec2_hostname
 
 from .base import *  # noqa
 from .base import (
-    LOGGING, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_DEFAULT_REGION)
+    ALLOWED_HOSTS, LOGGING, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY,
+    AWS_DEFAULT_REGION)
 
 ENVIRONMENT = Environments.PROD
 
@@ -21,6 +23,12 @@ STATIC_URL = config(
     name='AWS_STORAGE_BUCKET_URL',
     required=True
 )
+
+print("Adding EC2 IP Address to Allowed Hosts")
+ec2_host_name = get_ec2_hostname()
+if ec2_host_name is not None:
+    ALLOWED_HOSTS.append(ec2_host_name)
+
 
 sentry_sdk.init(
     dsn="https://9eeab5e26f804bd582385ffc5eda991d@o591585.ingest.sentry.io/5740484",  # noqa
