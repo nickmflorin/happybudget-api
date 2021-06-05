@@ -29,7 +29,7 @@ class Contact(models.Model):
     role = models.IntegerField(choices=ROLES, null=True)
     city = models.CharField(max_length=30, null=True)
     country = models.CharField(max_length=30, null=True)
-    phone_number = models.IntegerField(null=True)
+    phone_number = models.BigIntegerField(null=True)
     email = models.EmailField(null=True)
 
     class Meta:
