@@ -1,10 +1,13 @@
 from django.contrib.contenttypes.models import ContentType
+from django.db import models
 from django.utils.functional import cached_property
-from rest_framework import viewsets, mixins, decorators, response, status
+
+from rest_framework import viewsets, mixins
 
 from greenbudget.app.account.models import BudgetAccount
 from greenbudget.app.account.mixins import AccountNestedMixin
-from greenbudget.app.common.signals import disable_budget_tracking
+from greenbudget.app.budget.decorators import (
+    register_bulk_updating_and_creating, BulkAction)
 from greenbudget.app.group.models import (
     BudgetSubAccountGroup,
     TemplateSubAccountGroup
@@ -24,9 +27,7 @@ from .models import (
 from .serializers import (
     TemplateSubAccountSerializer,
     BudgetSubAccountSerializer,
-    SubAccountUnitSerializer,
-    create_bulk_create_subaccounts_serializer,
-    create_bulk_update_subaccounts_serializer
+    SubAccountUnitSerializer
 )
 
 
@@ -101,6 +102,32 @@ class GenericSubAccountViewSet(viewsets.GenericViewSet):
     search_fields = ['name']
 
 
+@register_bulk_updating_and_creating(
+    base_cls=lambda context: context.view.instance_cls,
+    post_save=lambda data, context: context.instance.budget.mark_updated(),
+    actions=[
+        BulkAction(
+            url_path='bulk-{action_name}-subaccounts',
+            child_cls=lambda context: context.view.child_instance_cls,
+            child_serializer_cls=lambda context: context.view.child_serializer_cls,  # noqa
+            filter_qs=lambda context: models.Q(
+                budget=context.instance.budget,
+                object_id=context.instance.pk,
+                content_type=ContentType.objects.get_for_model(
+                    context.view.instance_cls)
+            ),
+            perform_update=lambda serializer, context: serializer.save(
+                updated_by=context.request.user
+            ),
+            perform_create=lambda serializer, context: serializer.save(  # noqa
+                created_by=context.request.user,
+                updated_by=context.request.user,
+                parent=context.instance,
+                budget=context.instance.budget
+            )
+        )
+    ]
+)
 class SubAccountViewSet(
     mixins.UpdateModelMixin,
     mixins.RetrieveModelMixin,
@@ -123,6 +150,18 @@ class SubAccountViewSet(
         instance = self.get_object()
         return type(instance)
 
+    @property
+    def child_instance_cls(self):
+        if self.instance_cls is BudgetSubAccount:
+            return BudgetSubAccount
+        return TemplateSubAccount
+
+    @property
+    def child_serializer_cls(self):
+        if self.child_instance_cls is BudgetSubAccount:
+            return BudgetSubAccountSerializer
+        return TemplateSubAccountSerializer
+
     def get_queryset(self):
         return SubAccount.objects.filter(budget__trash=False)
 
@@ -133,41 +172,6 @@ class SubAccountViewSet(
 
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
-
-    def perform_bulk_change(self, serializer_cls, request):
-        instance = self.get_object()
-        serializer = serializer_cls(
-            instance=instance,
-            data=request.data,
-            partial=True
-        )
-        serializer.is_valid(raise_exception=True)
-        with disable_budget_tracking():
-            data = serializer.save(updated_by=request.user)
-        instance.budget.mark_updated()
-        return data
-
-    @decorators.action(
-        detail=True, url_path='bulk-update-subaccounts', methods=["PATCH"])
-    def bulk_update_subaccounts(self, request, *args, **kwargs):
-        serializer_cls = create_bulk_update_subaccounts_serializer(self.instance_cls)  # noqa
-        instance = self.perform_bulk_change(serializer_cls, request)
-        response_serializer_class = self.get_serializer_class()
-        return response.Response(
-            response_serializer_class(instance).data,
-            status=status.HTTP_200_OK
-        )
-
-    @decorators.action(
-        detail=True, url_path='bulk-create-subaccounts', methods=["PATCH"])
-    def bulk_create_subaccounts(self, request, *args, **kwargs):
-        serializer_cls = create_bulk_create_subaccounts_serializer(self.instance_cls)  # noqa
-        subaccounts = self.perform_bulk_change(serializer_cls, request)
-        response_serializer_cls = self.get_serializer_class()
-        return response.Response(
-            {'data': response_serializer_cls(subaccounts, many=True).data},
-            status=status.HTTP_201_CREATED
-        )
 
 
 class SubAccountRecursiveViewSet(

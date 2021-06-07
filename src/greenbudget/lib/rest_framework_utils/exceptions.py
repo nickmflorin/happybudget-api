@@ -87,6 +87,17 @@ class RequiredFieldError(AbstractFieldError):
     default_code = CommonErrorCodes.REQUIRED
     default_message = "This field is required."
 
+    @classmethod
+    def from_data_check(cls, data, *fields, operator=any, exc_kwargs=None):
+        truthy = [fld not in data for fld in fields]
+        missing = [fld for fld in fields if fld not in data]
+        if len(missing) == 0:
+            return None
+        elif operator(truthy):
+            exc_kwargs = exc_kwargs or {}
+            return cls(*tuple(missing), **exc_kwargs)
+        return None
+
 
 class InvalidFieldError(AbstractFieldError):
     """

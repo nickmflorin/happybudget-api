@@ -28,7 +28,6 @@ class Actual(models.Model):
     vendor = models.CharField(null=True, max_length=128)
     purchase_order = models.CharField(null=True, max_length=128)
     date = models.DateTimeField(null=True)
-    # TODO: Should we make this unique across the budget/template?
     payment_id = models.CharField(max_length=50, null=True)
     value = models.FloatField(null=True)
     PAYMENT_METHODS = Choices(
@@ -74,9 +73,18 @@ class Actual(models.Model):
         return "subaccount"
 
     def save(self, *args, **kwargs):
-        if self.parent.budget != self.budget:
+        # If the parent or budget are not set, we want Django to raise the
+        # exception that they are required - so we ignore them not being set
+        # here.
+        parent_budget = None
+        if self.parent is not None:
+            parent_budget = self.parent.budget
+
+        if parent_budget is not None and self.budget is not None \
+                and parent_budget != self.budget:
             raise IntegrityError(
                 "The actual must belong to the same budget as it's parent.")
+
         setattr(self, '_suppress_budget_update',
             kwargs.pop('suppress_budget_update', False))
         return super().save(*args, **kwargs)

@@ -1,24 +1,20 @@
+from django.db import models
 from django.http import HttpResponse
+
 from rest_framework import viewsets, mixins, response, status, decorators
 
 from greenbudget.app.account.models import BudgetAccount
-from greenbudget.app.account.serializers import (
-    BudgetAccountSerializer,
-    create_bulk_create_accounts_serializer,
-    create_bulk_update_accounts_serializer
-)
-from greenbudget.app.actual.serializers import BulkUpdateActualsSerializer
-from greenbudget.app.common.serializers import EntitySerializer
-from greenbudget.app.common.signals import disable_budget_tracking
-from greenbudget.app.fringe.serializers import (
-    FringeSerializer,
-    BulkCreateFringesSerializer,
-    BulkUpdateFringesSerializer
-)
+from greenbudget.app.account.serializers import BudgetAccountSerializer
+from greenbudget.app.actual.models import Actual
+from greenbudget.app.actual.serializers import ActualSerializer
+from greenbudget.app.budget.serializers import EntitySerializer
+from greenbudget.app.fringe.models import Fringe
+from greenbudget.app.fringe.serializers import FringeSerializer
 from greenbudget.app.group.models import BudgetAccountGroup
 from greenbudget.app.group.serializers import BudgetAccountGroupSerializer
 from greenbudget.app.subaccount.models import BudgetSubAccount
 
+from .decorators import register_bulk_updating_and_creating, BulkAction
 from .models import Budget
 from .mixins import BudgetNestedMixin, TrashModelMixin
 from .serializers import (
@@ -229,6 +225,37 @@ class GenericBudgetViewSet(viewsets.GenericViewSet):
         return self.get_serializer_class()
 
 
+@register_bulk_updating_and_creating(
+    base_cls=Budget,
+    filter_qs=lambda context: models.Q(budget=context.instance),
+    child_context=lambda context: {'budget': context.instance},
+    perform_update=lambda serializer, context: serializer.save(  # noqa
+        updated_by=context.request.user
+    ),
+    perform_create=lambda serializer, context: serializer.save(  # noqa
+        created_by=context.request.user,
+        updated_by=context.request.user,
+        budget=context.instance
+    ),
+    post_save=lambda data, context: context.instance.mark_updated(),
+    actions=[
+        BulkAction(
+            url_path='bulk-{action_name}-accounts',
+            child_cls=BudgetAccount,
+            child_serializer_cls=BudgetAccountSerializer
+        ),
+        BulkAction(
+            url_path='bulk-{action_name}-actuals',
+            child_cls=Actual,
+            child_serializer_cls=ActualSerializer,
+        ),
+        BulkAction(
+            url_path='bulk-{action_name}-fringes',
+            child_cls=Fringe,
+            child_serializer_cls=FringeSerializer,
+        )
+    ]
+)
 class BudgetViewSet(
     mixins.CreateModelMixin,
     mixins.UpdateModelMixin,
@@ -272,95 +299,6 @@ class BudgetViewSet(
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
-
-    def perform_bulk_accounts_change(self, serializer_cls, request):
-        instance = self.get_object()
-        serializer = serializer_cls(
-            instance=instance,
-            data=request.data,
-            partial=True
-        )
-        serializer.is_valid(raise_exception=True)
-        with disable_budget_tracking():
-            data = serializer.save(updated_by=request.user)
-        instance.mark_updated()
-        return data
-
-    @decorators.action(
-        detail=True, url_path='bulk-update-accounts', methods=["PATCH"])
-    def bulk_update_accounts(self, request, *args, **kwargs):
-        serializer_cls = create_bulk_update_accounts_serializer(BudgetAccount)
-        instance = self.perform_bulk_accounts_change(serializer_cls, request)
-        return response.Response(
-            self.serializer_class(instance).data,
-            status=status.HTTP_200_OK
-        )
-
-    @decorators.action(
-        detail=True, url_path='bulk-create-accounts', methods=["PATCH"])
-    def bulk_create_budget_accounts(self, request, *args, **kwargs):
-        serializer_cls = create_bulk_create_accounts_serializer(BudgetAccount)
-        accounts = self.perform_bulk_accounts_change(serializer_cls, request)
-        return response.Response(
-            {'data': BudgetAccountSerializer(accounts, many=True).data},
-            status=status.HTTP_201_CREATED
-        )
-
-    @decorators.action(
-        detail=True, url_path='bulk-update-actuals', methods=["PATCH"])
-    def bulk_update_actuals(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = BulkUpdateActualsSerializer(
-            instance=instance,
-            data=request.data,
-            partial=True,
-            context=self.get_serializer_context()
-        )
-        serializer.is_valid(raise_exception=True)
-        with disable_budget_tracking():
-            data = serializer.save(updated_by=request.user)
-        instance.mark_updated()
-        return response.Response(
-            self.serializer_class(data).data,
-            status=status.HTTP_200_OK
-        )
-
-    @decorators.action(
-        detail=True, url_path='bulk-update-fringes', methods=["PATCH"])
-    def bulk_update_fringes(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = BulkUpdateFringesSerializer(
-            instance=instance,
-            data=request.data,
-            partial=True,
-            context=self.get_serializer_context()
-        )
-        serializer.is_valid(raise_exception=True)
-        with disable_budget_tracking():
-            data = serializer.save(updated_by=request.user)
-        instance.mark_updated()
-        return response.Response(
-            self.serializer_class(data).data,
-            status=status.HTTP_200_OK
-        )
-
-    @decorators.action(
-        detail=True, url_path='bulk-create-fringes', methods=["PATCH"])
-    def bulk_create_fringes(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = BulkCreateFringesSerializer(
-            instance=instance,
-            data=request.data,
-            partial=True
-        )
-        serializer.is_valid(raise_exception=True)
-        with disable_budget_tracking():
-            fringes = serializer.save(updated_by=request.user)
-        instance.mark_updated()
-        return response.Response(
-            {'data': FringeSerializer(fringes, many=True).data},
-            status=status.HTTP_201_CREATED
-        )
 
     @decorators.action(detail=True, methods=["GET"])
     def pdf(self, request, *args, **kwargs):
