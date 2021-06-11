@@ -120,14 +120,13 @@ def create_bulk_update_serializer(base_cls, child_cls, child_serializer_cls,
         def update(self, instance, validated_data):
             with transaction.atomic():
                 for child, change in validated_data.pop('data'):
+                    # At this point, the change already represents the
+                    # validated data for that specific serializer.  So we do
+                    # not need to pass in the validated data on __init__
+                    # and rerun validation.
                     serializer = child_serializer_cls(
-                        instance=child,
-                        data=change,
-                        partial=True,
-                        context=self._child_context
-                    )
-                    serializer.is_valid(raise_exception=True)
-                    serializer.save(**validated_data)
+                        partial=True, context=self._child_context)
+                    serializer.update(child, change)
             return instance
 
     return BulkUpdateSerializer
