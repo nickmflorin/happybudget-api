@@ -201,7 +201,10 @@ class TemplateCommunityViewSet(
         return context
 
     def get_queryset(self):
-        return Template.objects.active().community()
+        qs = Template.objects.active().community()
+        if not self.request.user.is_staff:
+            return qs.filter(hidden=False)
+        return qs
 
     def perform_create(self, serializer):
         serializer.save(
