@@ -8,12 +8,23 @@ from .managers import TemplateManager
 class Template(BaseBudget):
     type = "template"
     community = models.BooleanField(default=False)
+    hidden = models.BooleanField(default=False)
     objects = TemplateManager()
     MAP_FIELDS_FROM_ORIGINAL = ('image', 'name')
 
     class Meta(BaseBudget.Meta):
         verbose_name = "Template"
         verbose_name_plural = "Templates"
+        # Check constraint to ensure that only community templates can be
+        # hidden.
+        constraints = [models.CheckConstraint(
+            name="%(app_label)s_%(class)s_hidden_only_for_community",
+            check=(
+                models.Q(community=True, hidden=False)
+                | models.Q(community=True, hidden=True)
+                | models.Q(community=False, hidden=False)
+            )
+        )]
 
     def save(self, *args, **kwargs):
         if self.community is True and not self.created_by.is_staff:

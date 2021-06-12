@@ -21,7 +21,7 @@ def test_get_templates(api_client, user, create_template, staff_user):
             "updated_at": "2020-01-01 00:00:00",
             "type": "template",
             "created_by": user.pk,
-            "image": None,
+            "image": None
         },
         {
             "id": templates[1].pk,
@@ -89,6 +89,7 @@ def test_get_community_templates(api_client, user, create_template, staff_user):
             "type": "template",
             "created_by": staff_user.pk,
             "image": None,
+            "hidden": False,
         },
         {
             "id": templates[1].pk,
@@ -98,6 +99,7 @@ def test_get_community_templates(api_client, user, create_template, staff_user):
             "type": "template",
             "created_by": staff_user.pk,
             "image": None,
+            "hidden": False,
         }
     ]
 
@@ -147,6 +149,7 @@ def test_get_community_template(api_client, staff_user, create_template,
         "type": "template",
         "created_by": another_staff_user.pk,
         "image": None,
+        "hidden": False,
     }
 
 
@@ -215,7 +218,39 @@ def test_create_community_template(api_client, staff_user, models):
         "type": "template",
         "created_by": staff_user.pk,
         "image": None,
+        "hidden": False,
     }
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_create_hidden_community_template(api_client, staff_user, models):
+    api_client.force_login(staff_user)
+    response = api_client.post("/v1/templates/community/", data={
+        "name": "Test Name",
+        "hidden": True,
+    })
+    assert response.status_code == 201
+    assert response.json()['hidden'] is True
+
+    template = models.Template.objects.first()
+    assert template is not None
+    assert template.hidden is True
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_create_hidden_non_community_template(api_client, staff_user, models):
+    api_client.force_login(staff_user)
+    response = api_client.post("/v1/templates/", data={
+        "name": "Test Name",
+        "hidden": True,
+    })
+    assert response.status_code == 400
+    assert response.json()['errors'] == [{
+        'message': 'Only community templates can be hidden/shown.',
+        'code': 'invalid',
+        'error_type': 'field',
+        'field': 'hidden'
+    }]
 
 
 @pytest.mark.freeze_time('2020-01-01')
@@ -268,7 +303,39 @@ def test_update_community_template(api_client, staff_user, create_template):
         "type": "template",
         "created_by": staff_user.pk,
         "image": None,
+        "hidden": False,
     }
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_hide_community_template(api_client, staff_user, create_template):
+    template = create_template(created_by=staff_user, community=True)
+    api_client.force_login(staff_user)
+    response = api_client.patch("/v1/templates/%s/" % template.pk, data={
+         "name": "New Name",
+         "hidden": True
+    })
+    assert response.status_code == 200
+    assert response.json()['hidden'] is True
+    template.refresh_from_db()
+    assert template.hidden is True
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_hide_non_community_template(api_client, user, create_template):
+    template = create_template()
+    api_client.force_login(user)
+    response = api_client.patch("/v1/templates/%s/" % template.pk, data={
+         "name": "New Name",
+         "hidden": True
+    })
+    assert response.status_code == 400
+    assert response.json()['errors'] == [{
+        'message': 'Only community templates can be hidden/shown.',
+        'code': 'invalid',
+        'error_type': 'field',
+        'field': 'hidden'
+    }]
 
 
 @pytest.mark.freeze_time('2020-01-01')
@@ -292,6 +359,7 @@ def test_update_another_users_community_template(api_client, staff_user,
         "type": "template",
         "created_by": user.pk,
         "image": None,
+        "hidden": False,
     }
 
 
