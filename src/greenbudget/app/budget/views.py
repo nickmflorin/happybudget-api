@@ -5,8 +5,10 @@ from rest_framework import viewsets, mixins, response, status, decorators
 
 from greenbudget.app.account.models import BudgetAccount
 from greenbudget.app.account.serializers import BudgetAccountSerializer
+from greenbudget.app.account.views import GenericAccountViewSet
 from greenbudget.app.actual.models import Actual
 from greenbudget.app.actual.serializers import ActualSerializer
+from greenbudget.app.actual.views import GenericActualViewSet
 from greenbudget.app.budget.serializers import EntitySerializer
 from greenbudget.app.fringe.models import Fringe
 from greenbudget.app.fringe.serializers import FringeSerializer
@@ -168,13 +170,49 @@ class BudgetGroupViewSet(
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context.update(parent=self.budget)
+        context.update(
+            parent=self.budget,
+            budget_context=True
+        )
         return context
 
     def perform_create(self, serializer):
         serializer.save(
             created_by=self.request.user,
             parent=self.budget
+        )
+
+
+class BudgetActualsViewSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    BudgetNestedMixin,
+    GenericActualViewSet
+):
+    """
+    ViewSet to handle requests to the following endpoints:
+
+    (1) GET /budgets/<pk>/actuals/
+    (2) POST /budgets/<pk>/actuals/
+    """
+    budget_lookup_field = ("pk", "budget_pk")
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update(
+            budget=self.budget,
+            budget_context=True
+        )
+        return context
+
+    def get_queryset(self):
+        return Actual.objects.filter(budget=self.budget)
+
+    def perform_create(self, serializer):
+        serializer.save(
+            created_by=self.request.user,
+            updated_by=self.request.user,
+            budget=self.budget
         )
 
 
@@ -196,7 +234,10 @@ class BudgetFringeViewSet(
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context.update(budget=self.budget)
+        context.update(
+            budget=self.budget,
+            budget_context=True
+        )
         return context
 
     def get_queryset(self):
@@ -206,6 +247,44 @@ class BudgetFringeViewSet(
         serializer.save(
             created_by=self.request.user,
             updated_by=self.request.user,
+            budget=self.budget
+        )
+
+
+class BudgetAccountViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.UpdateModelMixin,
+    BudgetNestedMixin,
+    GenericAccountViewSet
+):
+    """
+    ViewSet to handle requests to the following endpoints:
+
+    (1) GET /budgets/<pk>/accounts/
+    (2) POST /budgets/<pk>/accounts/
+    """
+    budget_lookup_field = ("pk", "budget_pk")
+    serializer_class = BudgetAccountSerializer
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update(
+            budget=self.budget,
+            budget_context=True
+        )
+        return context
+
+    def get_queryset(self):
+        return BudgetAccount.objects.filter(budget=self.budget).all()
+
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(
+            updated_by=self.request.user,
+            created_by=self.request.user,
             budget=self.budget
         )
 
@@ -228,7 +307,10 @@ class GenericBudgetViewSet(viewsets.GenericViewSet):
 @register_bulk_updating_and_creating(
     base_cls=Budget,
     filter_qs=lambda context: models.Q(budget=context.instance),
-    child_context=lambda context: {'budget': context.instance},
+    child_context=lambda context: {
+        'budget': context.instance,
+        'budget_context': True
+    },
     perform_update=lambda serializer, context: serializer.save(  # noqa
         updated_by=context.request.user
     ),

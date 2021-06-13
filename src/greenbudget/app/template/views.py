@@ -4,6 +4,7 @@ from rest_framework import (
 
 from greenbudget.app.account.models import TemplateAccount
 from greenbudget.app.account.serializers import TemplateAccountSerializer
+from greenbudget.app.account.views import GenericAccountViewSet
 from greenbudget.app.budget.mixins import TrashModelMixin
 from greenbudget.app.budget.decorators import (
     register_bulk_updating_and_creating, BulkAction)
@@ -40,7 +41,10 @@ class TemplateGroupViewSet(
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context.update(parent=self.template)
+        context.update(
+            parent=self.template,
+            budget_context=True
+        )
         return context
 
     def perform_create(self, serializer):
@@ -68,7 +72,10 @@ class TemplateFringeViewSet(
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context.update(budget=self.template)
+        context.update(
+            budget=self.template,
+            budget_context=True
+        )
         return context
 
     def get_queryset(self):
@@ -78,6 +85,44 @@ class TemplateFringeViewSet(
         serializer.save(
             created_by=self.request.user,
             updated_by=self.request.user,
+            budget=self.template
+        )
+
+
+class TemplateAccountViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.UpdateModelMixin,
+    TemplateNestedMixin,
+    GenericAccountViewSet
+):
+    """
+    ViewSet to handle requests to the following endpoints:
+
+    (1) GET /templates/<pk>/accounts/
+    (2) POST /templates/<pk>/accounts/
+    """
+    template_lookup_field = ("pk", "template_pk")
+    serializer_class = TemplateAccountSerializer
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update(
+            budget=self.template,
+            budget_context=True
+        )
+        return context
+
+    def get_queryset(self):
+        return TemplateAccount.objects.filter(budget=self.template).all()
+
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(
+            updated_by=self.request.user,
+            created_by=self.request.user,
             budget=self.template
         )
 
@@ -105,7 +150,10 @@ class GenericTemplateViewSet(viewsets.GenericViewSet):
 @register_bulk_updating_and_creating(
     base_cls=Template,
     filter_qs=lambda context: models.Q(budget=context.instance),
-    child_context=lambda context: {'budget': context.instance},
+    child_context=lambda context: {
+        'budget': context.instance,
+        'budget_context': True
+    },
     perform_update=lambda serializer, context: serializer.save(  # noqa
         updated_by=context.request.user
     ),

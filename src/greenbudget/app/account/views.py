@@ -6,9 +6,9 @@ from rest_framework import viewsets, mixins, permissions
 
 from greenbudget.app.account.models import Account
 from greenbudget.app.account.mixins import AccountNestedMixin
+from greenbudget.app.actual.views import GenericActualViewSet
 from greenbudget.app.budget.decorators import (
     register_bulk_updating_and_creating, BulkAction)
-from greenbudget.app.budget.mixins import BudgetNestedMixin
 from greenbudget.app.group.models import (
     BudgetSubAccountGroup,
     TemplateSubAccountGroup
@@ -23,7 +23,7 @@ from greenbudget.app.subaccount.serializers import (
     BudgetSubAccountSerializer,
     TemplateSubAccountSerializer,
 )
-from greenbudget.app.template.mixins import TemplateNestedMixin
+from greenbudget.app.subaccount.views import GenericSubAccountViewSet
 
 from .models import BudgetAccount, TemplateAccount
 from .permissions import AccountObjPermission
@@ -68,7 +68,10 @@ class AccountGroupViewSet(
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context.update(parent=self.account)
+        context.update(
+            parent=self.account,
+            account_context=True
+        )
         return context
 
     def perform_create(self, serializer):
@@ -77,6 +80,102 @@ class AccountGroupViewSet(
             object_id=self.account.pk,
             content_type=ContentType.objects.get_for_model(type(self.account)),
             parent=self.account
+        )
+
+
+class AccountActualsViewSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    AccountNestedMixin,
+    GenericActualViewSet
+):
+    """
+    ViewSet to handle requests to the following endpoints:
+
+    (1) GET /accounts/<pk>/actuals/
+    (2) POST /accounts/<pk>/actuals/
+    """
+    account_lookup_field = ("pk", "account_pk")
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update(
+            budget=self.account.budget,
+            parent_type="account",
+            object_id=self.account.pk,
+            account_context=True
+        )
+        return context
+
+    def get_queryset(self):
+        return self.account.actuals.all()
+
+    def perform_create(self, serializer):
+        serializer.save(
+            updated_by=self.request.user,
+            created_by=self.request.user,
+            object_id=self.account.pk,
+            content_type=ContentType.objects.get_for_model(Account),
+            parent=self.account,
+            budget=self.account.budget,
+        )
+
+
+class AccountSubAccountViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    AccountNestedMixin,
+    GenericSubAccountViewSet
+):
+    """
+    ViewSet to handle requests to the following endpoints:
+
+    (1) GET /accounts/<pk>/subaccounts
+    (2) POST /accounts/<pk>/subaccounts
+    """
+    account_lookup_field = ("pk", "account_pk")
+
+    @cached_property
+    def instance_cls(self):
+        return type(self.account)
+
+    @property
+    def child_instance_cls(self):
+        if self.instance_cls is BudgetAccount:
+            return BudgetSubAccount
+        return TemplateSubAccount
+
+    def get_serializer_class(self):
+        if self.child_instance_cls is TemplateSubAccount:
+            return TemplateSubAccountSerializer
+        return BudgetSubAccountSerializer
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update(
+            parent=self.account,
+            account_context=True
+        )
+        return context
+
+    def get_queryset(self):
+        content_type = ContentType.objects.get_for_model(type(self.account))
+        return self.child_instance_cls.objects.filter(
+            object_id=self.account.pk,
+            content_type=content_type,
+        )
+
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(
+            updated_by=self.request.user,
+            created_by=self.request.user,
+            object_id=self.account.pk,
+            content_type=ContentType.objects.get_for_model(type(self.account)),
+            parent=self.account,
+            budget=self.account.budget
         )
 
 
@@ -97,6 +196,10 @@ class GenericAccountViewSet(viewsets.GenericViewSet):
 @register_bulk_updating_and_creating(
     base_cls=lambda context: context.view.instance_cls,
     post_save=lambda data, context: context.instance.budget.mark_updated(),
+    child_context=lambda context: {
+        'budget': context.instance.budget,
+        'account_context': True
+    },
     actions=[
         BulkAction(
             url_path='bulk-{action_name}-subaccounts',
@@ -167,73 +270,3 @@ class AccountViewSet(
 
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
-
-
-class BudgetAccountViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    mixins.UpdateModelMixin,
-    BudgetNestedMixin,
-    GenericAccountViewSet
-):
-    """
-    ViewSet to handle requests to the following endpoints:
-
-    (1) GET /budgets/<pk>/accounts/
-    (2) POST /budgets/<pk>/accounts/
-    """
-    budget_lookup_field = ("pk", "budget_pk")
-    serializer_class = BudgetAccountSerializer
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context.update(budget=self.budget)
-        return context
-
-    def get_queryset(self):
-        return BudgetAccount.objects.filter(budget=self.budget).all()
-
-    def perform_update(self, serializer):
-        serializer.save(updated_by=self.request.user)
-
-    def perform_create(self, serializer):
-        serializer.save(
-            updated_by=self.request.user,
-            created_by=self.request.user,
-            budget=self.budget
-        )
-
-
-class TemplateAccountViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    mixins.UpdateModelMixin,
-    TemplateNestedMixin,
-    GenericAccountViewSet
-):
-    """
-    ViewSet to handle requests to the following endpoints:
-
-    (1) GET /templates/<pk>/accounts/
-    (2) POST /templates/<pk>/accounts/
-    """
-    template_lookup_field = ("pk", "template_pk")
-    serializer_class = TemplateAccountSerializer
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context.update(budget=self.template)
-        return context
-
-    def get_queryset(self):
-        return TemplateAccount.objects.filter(budget=self.template).all()
-
-    def perform_update(self, serializer):
-        serializer.save(updated_by=self.request.user)
-
-    def perform_create(self, serializer):
-        serializer.save(
-            updated_by=self.request.user,
-            created_by=self.request.user,
-            budget=self.template
-        )

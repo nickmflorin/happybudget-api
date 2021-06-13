@@ -44,10 +44,11 @@ class Actual(models.Model):
     content_type = models.ForeignKey(
         to=ContentType,
         on_delete=models.CASCADE,
+        null=True,
         limit_choices_to=models.Q(app_label='account', model='BudgetAccount')
         | models.Q(app_label='subaccount', model='BudgetSubAccount')
     )
-    object_id = models.PositiveIntegerField()
+    object_id = models.PositiveIntegerField(null=True)
     parent = GenericForeignKey('content_type', 'object_id')
     comments = GenericRelation(Comment)
 

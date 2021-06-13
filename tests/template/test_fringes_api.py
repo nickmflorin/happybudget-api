@@ -85,3 +85,72 @@ def test_create_template_fringe(api_client, user, create_template, models):
     assert fringe.rate == 5.5
     assert fringe.cutoff is None
     assert fringe.unit == 1
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_bulk_create_template_fringes(api_client, user, create_template,
+        models):
+    api_client.force_login(user)
+    template = create_template()
+    response = api_client.patch(
+        "/v1/templates/%s/bulk-create-fringes/" % template.pk,
+        format='json',
+        data={
+            'data': [
+                {
+                    'name': 'fringe-a',
+                    'rate': 1.2,
+                },
+                {
+                    'name': 'fringe-b',
+                    'rate': 2.2,
+                }
+            ]
+        })
+    assert response.status_code == 201
+
+    fringes = models.Fringe.objects.all()
+    assert len(fringes) == 2
+    assert fringes[0].name == "fringe-a"
+    assert fringes[0].rate == 1.2
+    assert fringes[0].budget == template
+    assert fringes[1].name == "fringe-b"
+    assert fringes[1].rate == 2.2
+    assert fringes[1].budget == template
+
+    assert response.json()['data'][0]['name'] == 'fringe-a'
+    assert response.json()['data'][0]['rate'] == 1.2
+    assert response.json()['data'][1]['name'] == 'fringe-b'
+    assert response.json()['data'][1]['rate'] == 2.2
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_bulk_update_template_fringes(api_client, user, create_template,
+        create_fringe):
+    api_client.force_login(user)
+    template = create_template()
+    fringes = [
+        create_fringe(budget=template),
+        create_fringe(budget=template)
+    ]
+    response = api_client.patch(
+        "/v1/templates/%s/bulk-update-fringes/" % template.pk,
+        format='json',
+        data={
+            'data': [
+                {
+                    'id': fringes[0].pk,
+                    'name': 'New Name 1',
+                },
+                {
+                    'id': fringes[1].pk,
+                    'name': 'New Name 2',
+                }
+            ]
+        })
+    assert response.status_code == 200
+
+    fringes[0].refresh_from_db()
+    assert fringes[0].name == "New Name 1"
+    fringes[1].refresh_from_db()
+    assert fringes[1].name == "New Name 2"

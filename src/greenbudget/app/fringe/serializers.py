@@ -14,12 +14,14 @@ class FringeSerializer(EnhancedModelSerializer):
     name = serializers.CharField(
         required=False,
         allow_blank=False,
-        allow_null=False
+        allow_null=True,
+        trim_whitespace=False
     )
     description = serializers.CharField(
         required=False,
         allow_blank=False,
-        allow_null=True
+        allow_null=True,
+        trim_whitespace=False
     )
     created_by = serializers.PrimaryKeyRelatedField(read_only=True)
     updated_by = serializers.PrimaryKeyRelatedField(read_only=True)
@@ -45,19 +47,3 @@ class FringeSerializer(EnhancedModelSerializer):
             'id', 'name', 'description', 'created_by', 'created_at',
             'updated_by', 'updated_at', 'rate', 'cutoff', 'unit',
             'num_times_used', 'color')
-
-    def validate_name(self, value):
-        budget = self.context.get('budget')
-        if budget is None:
-            if self.instance is None:
-                raise Exception(
-                    "The budget must be provided in context when using "
-                    "the serializer in an update context."
-                )
-            budget = self.instance.budget
-        validator = serializers.UniqueTogetherValidator(
-            queryset=budget.fringes.all(),
-            fields=('name', ),
-        )
-        validator({'name': value}, self)
-        return value

@@ -6,7 +6,7 @@ from .managers import FringeManager, BudgetFringeManager, TemplateFringeManager
 
 
 class Fringe(models.Model):
-    name = models.CharField(max_length=128)
+    name = models.CharField(max_length=128, null=True)
     description = models.CharField(null=True, max_length=128)
     cutoff = models.FloatField(null=True)
     rate = models.FloatField(null=True)
@@ -52,7 +52,6 @@ class Fringe(models.Model):
         ordering = ('-created_at', )
         verbose_name = "Fringe"
         verbose_name_plural = "Fringes"
-        unique_together = (('budget', 'name'), )
 
     def __str__(self):
         return "<{cls} name={name}>".format(

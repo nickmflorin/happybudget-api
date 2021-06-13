@@ -1,9 +1,6 @@
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import viewsets, mixins
 
-from greenbudget.app.account.mixins import AccountNestedMixin
-from greenbudget.app.account.models import Account
-from greenbudget.app.budget.mixins import BudgetNestedMixin
 from greenbudget.app.subaccount.mixins import SubAccountNestedMixin
 from greenbudget.app.subaccount.models import SubAccount
 
@@ -44,43 +41,6 @@ class ActualsViewSet(
         return Actual.objects.filter(budget__trash=False)
 
 
-class AccountActualsViewSet(
-    mixins.ListModelMixin,
-    mixins.CreateModelMixin,
-    AccountNestedMixin,
-    GenericActualViewSet
-):
-    """
-    ViewSet to handle requests to the following endpoints:
-
-    (1) GET /accounts/<pk>/actuals/
-    (2) POST /accounts/<pk>/actuals/
-    """
-    account_lookup_field = ("pk", "account_pk")
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context.update(
-            budget=self.account.budget,
-            parent_type="account",
-            object_id=self.account.pk,
-        )
-        return context
-
-    def get_queryset(self):
-        return self.account.actuals.all()
-
-    def perform_create(self, serializer):
-        serializer.save(
-            updated_by=self.request.user,
-            created_by=self.request.user,
-            object_id=self.account.pk,
-            content_type=ContentType.objects.get_for_model(Account),
-            parent=self.account,
-            budget=self.account.budget,
-        )
-
-
 class SubAccountActualsViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
@@ -116,19 +76,3 @@ class SubAccountActualsViewSet(
             parent=self.subaccount,
             budget=self.subaccount.budget,
         )
-
-
-class BudgetActualsViewSet(
-    mixins.ListModelMixin,
-    BudgetNestedMixin,
-    GenericActualViewSet
-):
-    """
-    ViewSet to handle requests to the following endpoints:
-
-    (1) GET /budgets/<pk>/actuals/
-    """
-    budget_lookup_field = ("pk", "budget_pk")
-
-    def get_queryset(self):
-        return Actual.objects.filter(budget=self.budget)

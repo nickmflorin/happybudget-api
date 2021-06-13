@@ -50,11 +50,16 @@ class ActualSerializer(EnhancedModelSerializer):
         allow_null=True
     )
     account = EntitySerializer(read_only=True, source='parent')
-    object_id = serializers.IntegerField(write_only=True, required=False)
+    object_id = serializers.IntegerField(
+        write_only=True,
+        required=False,
+        allow_null=True
+    )
     parent_type = serializers.ChoiceField(
         write_only=True,
         required=False,
-        choices=["account", "subaccount"]
+        choices=["account", "subaccount"],
+        allow_null=True
     )
 
     class Meta:
@@ -80,31 +85,24 @@ class ActualSerializer(EnhancedModelSerializer):
             )
 
     def validate(self, attrs):
-        request = self.context["request"]
-        bulk_create_context = self.context.get('bulk_create_context', False)
-        # In the context of bulk creation, the overall request will be a
-        # PATCH request but the serializer is still operating as if it were
-        # a POST request because we are creating objects.
-        if request.method == "PATCH":
-            if bulk_create_context \
-                    or ("parent_type" in attrs or "object_id" in attrs):
-                attrs['parent'] = self._reconstruct_parent(attrs)
+        if 'parent_type' in attrs or 'object_id' in attrs:
+            attrs['parent'] = self._reconstruct_parent(attrs)
 
-                budget = self.context.get('budget')
-                if budget is None:
-                    if self.instance is None:
-                        raise Exception(
-                            "The budget must be provided in context when using "
-                            "the serializer in an update context."
-                        )
-                    budget = self.instance.budget
-
-                if budget != attrs['parent'].budget:
-                    raise InvalidFieldError(
-                        "object_id",
-                        message=(
-                            "The parent %s does not belong to the "
-                            "correct budget." % attrs["object_id"]
-                        )
+            budget = self.context.get('budget')
+            if budget is None:
+                if self.instance is None:
+                    raise Exception(
+                        "The budget must be provided in context when using "
+                        "the serializer in an update context."
                     )
+                budget = self.instance.budget
+
+            if budget != attrs['parent'].budget:
+                raise InvalidFieldError(
+                    "object_id",
+                    message=(
+                        "The parent %s does not belong to the "
+                        "correct budget." % attrs["object_id"]
+                    )
+                )
         return attrs
