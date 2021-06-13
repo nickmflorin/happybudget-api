@@ -1,3 +1,5 @@
+from django.db import transaction
+
 from polymorphic.managers import PolymorphicManager
 from polymorphic.query import PolymorphicQuerySet
 
@@ -94,6 +96,7 @@ class TemplateManager(
         Creates a duplicate of the :obj:`Template` object by deriving all of the
         properties and structure from another :obj:`Template` instance.
         """
-        instance = super().create_duplicate(original, *args, **kwargs)
-        self._create_children(instance, original)
+        with transaction.atomic():
+            instance = super().create_duplicate(original, *args, **kwargs)
+            self._create_children(instance, original)
         return instance

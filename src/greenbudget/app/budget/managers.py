@@ -1,3 +1,5 @@
+from django.db import transaction
+
 from polymorphic.managers import PolymorphicManager
 from polymorphic.query import PolymorphicQuerySet
 
@@ -102,8 +104,9 @@ class BudgetManager(
         Creates a duplicate of the :obj:`Budget` object by deriving all of the
         properties and structure from another :obj:`Budget` instance.
         """
-        instance = super().create_duplicate(original, *args, **kwargs)
-        self._create_children(instance, original, 'original')
+        with transaction.atomic():
+            instance = super().create_duplicate(original, *args, **kwargs)
+            self._create_children(instance, original, 'original')
         return instance
 
     def create_from_template(self, template, *args, **kwargs):
@@ -111,6 +114,7 @@ class BudgetManager(
         Creates a new :obj:`Budget` object by deriving all of the properties
         and structure from a :obj:`Template` instance.
         """
-        instance = super().create_from_template(template, *args, **kwargs)
-        self._create_children(instance, template, 'template')
+        with transaction.atomic():
+            instance = super().create_from_template(template, *args, **kwargs)
+            self._create_children(instance, template, 'template')
         return instance
