@@ -1,6 +1,5 @@
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django.http import HttpResponse
 
 from rest_framework import viewsets, mixins, response, status, decorators
 
@@ -22,6 +21,7 @@ from .decorators import register_all_bulk_operations, BulkAction
 from .models import Budget
 from .mixins import BudgetNestedMixin
 from .serializers import BudgetSerializer, BudgetSimpleSerializer
+from .pdf_serializers import BudgetPdfSerializer
 
 
 class BudgetGroupViewSet(
@@ -392,8 +392,8 @@ class BudgetViewSet(
     @decorators.action(detail=True, methods=["GET"])
     def pdf(self, request, *args, **kwargs):
         instance = self.get_object()
-        pdf = instance.to_pdf()
-        return HttpResponse(pdf.getvalue(), content_type='application/pdf')
+        serializer = BudgetPdfSerializer(instance)
+        return response.Response(serializer.data, status=status.HTTP_200_OK)
 
     @decorators.action(detail=True, methods=["POST"])
     def duplicate(self, request, *args, **kwargs):

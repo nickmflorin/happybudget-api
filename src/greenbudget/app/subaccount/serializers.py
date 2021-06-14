@@ -176,3 +176,29 @@ class TemplateSubAccountDetailSerializer(TemplateSubAccountSerializer):
         model = TemplateSubAccount
         fields = TemplateSubAccountSerializer.Meta.fields + (
             'ancestors', 'siblings')
+
+
+class SubAccountPdfSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
+    identifier = serializers.CharField(read_only=True)
+    description = serializers.CharField(read_only=True)
+    name = serializers.CharField(read_only=True)
+    quantity = serializers.IntegerField(read_only=True)
+    rate = serializers.FloatField(read_only=True)
+    multiplier = serializers.FloatField(read_only=True)
+    estimated = serializers.FloatField(read_only=True)
+    unit = TagField(
+        model_cls=SubAccountUnit,
+        read_only=True,
+        serializer_class=SubAccountUnitSerializer
+    )
+    subaccounts = serializers.SerializerMethodField()
+
+    class Meta:
+        model = BudgetSubAccount
+        fields = ('id', 'identifier', 'description', 'name', 'quantity', 'rate',
+            'multiplier', 'estimated', 'unit', 'subaccounts')
+        read_only_fields = fields
+
+    def get_subaccounts(self, instance):
+        return self.__class__(instance.subaccounts.all(), many=True).data
