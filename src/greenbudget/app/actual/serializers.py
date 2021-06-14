@@ -69,40 +69,43 @@ class ActualSerializer(EnhancedModelSerializer):
             'updated_at', 'purchase_order', 'date', 'payment_id', 'value',
             'payment_method', 'object_id', 'parent_type', 'vendor', 'account')
 
-    def _reconstruct_parent(self, attrs):
-        exc = RequiredFieldError.from_data_check(attrs, 'object_id', 'parent_type')  # noqa
-        if exc is not None:
-            raise exc
-        parent_cls = Account if attrs.pop("parent_type") == "account" \
-            else SubAccount
-        try:
-            return parent_cls.objects.get(pk=attrs["object_id"])
-        except parent_cls.DoesNotExist:
-            raise InvalidFieldError(
-                "object_id",
-                message="The parent %s does not exist."
-                % attrs["object_id"]
-            )
-
     def validate(self, attrs):
+        parent_cls_lookup = {
+            'account': Account,
+            'subaccount': SubAccount
+        }
         if 'parent_type' in attrs or 'object_id' in attrs:
-            attrs['parent'] = self._reconstruct_parent(attrs)
-
-            budget = self.context.get('budget')
-            if budget is None:
-                if self.instance is None:
-                    raise Exception(
-                        "The budget must be provided in context when using "
-                        "the serializer in an update context."
+            parent_type = attrs.pop('parent_type', None)
+            object_id = attrs.pop('object_id', None)
+            if parent_type is None and object_id is None:
+                attrs['parent'] = None
+            else:
+                if parent_type is None or object_id is None:
+                    raise RequiredFieldError('parent_type', 'object_id')
+                parent_cls = parent_cls_lookup[parent_type]
+                try:
+                    attrs['parent'] = parent_cls.objects.get(pk=object_id)
+                except parent_cls.DoesNotExist:
+                    raise InvalidFieldError(
+                        "object_id",
+                        message="The parent %s does not exist."
+                        % object_id
                     )
-                budget = self.instance.budget
+                budget = self.context.get('budget')
+                if budget is None:
+                    if self.instance is None:
+                        raise Exception(
+                            "The budget must be provided in context when using "
+                            "the serializer in an update context."
+                        )
+                    budget = self.instance.budget
 
-            if budget != attrs['parent'].budget:
-                raise InvalidFieldError(
-                    "object_id",
-                    message=(
-                        "The parent %s does not belong to the "
-                        "correct budget." % attrs["object_id"]
+                if budget != attrs['parent'].budget:
+                    raise InvalidFieldError(
+                        "object_id",
+                        message=(
+                            "The parent %s does not belong to the "
+                            "correct budget." % object_id
+                        )
                     )
-                )
         return attrs
