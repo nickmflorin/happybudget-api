@@ -9,8 +9,7 @@ from greenbudget.app.history.urls import (
 from .views import (
     AccountViewSet,
     AccountGroupViewSet,
-    AccountSubAccountViewSet,
-    AccountActualsViewSet
+    AccountSubAccountViewSet
 )
 
 app_name = "account"
@@ -28,10 +27,6 @@ account_subaccounts_urlpatterns = account_subaccounts_router.urls + [
     path('history/', include(account_subaccounts_history_urlpatterns)),
 ]
 
-account_actuals_router = routers.SimpleRouter()
-account_actuals_router.register(
-    r'', AccountActualsViewSet, basename='actual')
-
 router = routers.SimpleRouter()
 router.register(r'', AccountViewSet, basename='account')
 
@@ -42,7 +37,6 @@ urlpatterns = router.urls + [
         # Note: These three endpoints will not work for an Account that belongs
         # to a template.  Is there a better way to do this to make that
         # distinction more clear in the URLs?
-        path('actuals/', include(account_actuals_router.urls)),
         path('comments/', include(account_comments_urlpatterns)),
         path('history/', include(account_history_urlpatterns)),
     ]))

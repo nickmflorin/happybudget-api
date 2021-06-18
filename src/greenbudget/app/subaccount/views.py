@@ -115,8 +115,7 @@ class SubAccountActualsViewSet(
         context = super().get_serializer_context()
         context.update(
             budget=self.subaccount.budget,
-            parent_type="subaccount",
-            object_id=self.subaccount.pk,
+            subaccount=self.subaccount,
             subaccount_context=True
         )
         return context
@@ -128,9 +127,7 @@ class SubAccountActualsViewSet(
         serializer.save(
             updated_by=self.request.user,
             created_by=self.request.user,
-            object_id=self.subaccount.pk,
-            content_type=ContentType.objects.get_for_model(SubAccount),
-            parent=self.subaccount,
+            subaccount=self.subaccount,
             budget=self.subaccount.budget,
         )
 

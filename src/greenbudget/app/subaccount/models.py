@@ -21,12 +21,6 @@ from greenbudget.app.tagging.models import Tag
 from .managers import (
     SubAccountManager, BudgetSubAccountManager, TemplateSubAccountManager)
 
-# Right now, we still need to iron out a discrepancy in the UI: whether or not
-# the actuals for parent line items should be determined from the sum of the
-# actuals of it's children, or the sum of the actuals tied to the parent.  This
-# is a temporary toggle to switch between the two.
-DETERMINE_ACTUAL_FROM_UNDERLYINGS = False
-
 
 class SubAccountUnit(Tag):
     color = models.ForeignKey(
@@ -203,7 +197,7 @@ class BudgetSubAccount(SubAccount):
         on_delete=models.SET_NULL,
         related_name='children'
     )
-    actuals = GenericRelation(Actual)
+
     comments = GenericRelation(Comment)
     events = GenericRelation(Event)
     groups = GenericRelation(BudgetSubAccountGroup)
@@ -237,14 +231,12 @@ class BudgetSubAccount(SubAccount):
     @property
     def actual(self):
         actuals = []
-        if DETERMINE_ACTUAL_FROM_UNDERLYINGS:
-            for subaccount in self.subaccounts.all():
-                if subaccount.actual is not None:
-                    actuals.append(subaccount.actual)
-        else:
-            for actual in self.actuals.all():
-                if actual.value is not None:
-                    actuals.append(actual.value)
+        for subaccount in self.subaccounts.all():
+            if subaccount.actual is not None:
+                actuals.append(subaccount.actual)
+        for actual in self.actuals.all():
+            if actual.value is not None:
+                actuals.append(actual.value)
         if len(actuals) != 0:
             return sum(actuals)
         return None

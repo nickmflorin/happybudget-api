@@ -17,12 +17,6 @@ from greenbudget.app.subaccount.models import SubAccount
 from .managers import (
     AccountManager, BudgetAccountManager, TemplateAccountManager)
 
-# Right now, we still need to iron out a discrepancy in the UI: whether or not
-# the actuals for parent line items should be determined from the sum of the
-# actuals of it's children, or the sum of the actuals tied to the parent.  This
-# is a temporary toggle to switch between the two.
-DETERMINE_ACTUAL_FROM_UNDERLYINGS = True
-
 
 class Account(PolymorphicModel):
     type = "account"
@@ -136,14 +130,9 @@ class BudgetAccount(Account):
     @property
     def actual(self):
         actuals = []
-        if DETERMINE_ACTUAL_FROM_UNDERLYINGS:
-            for subaccount in self.subaccounts.all():
-                if subaccount.actual is not None:
-                    actuals.append(subaccount.actual)
-        else:
-            for actual in self.actuals.all():
-                if actual.value is not None:
-                    actuals.append(actual.value)
+        for subaccount in self.subaccounts.all():
+            if subaccount.actual is not None:
+                actuals.append(subaccount.actual)
         if len(actuals) != 0:
             return sum(actuals)
         return None

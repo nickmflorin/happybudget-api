@@ -6,7 +6,7 @@ from greenbudget.lib.rest_framework_utils.serializers import (
     EnhancedModelSerializer, PolymorphicNonPolymorphicSerializer)
 
 from greenbudget.app.account.models import Account
-from greenbudget.app.subaccount.models import SubAccount, BudgetSubAccount
+from greenbudget.app.subaccount.models import SubAccount
 from greenbudget.app.template.models import Template
 
 from .models import BaseBudget, Budget
@@ -31,32 +31,6 @@ class EntitySerializer(PolymorphicNonPolymorphicSerializer):
             "template"
         )
     }
-
-
-class TreeNodeSerializer(EntitySerializer):
-    children = serializers.PrimaryKeyRelatedField(
-        queryset=BudgetSubAccount.objects.all())
-
-    def __init__(self, *args, **kwargs):
-        # The subset is the set of SubAccount(s) that have been filtered by
-        # the search.  Only these SubAccount(s) will be included as children
-        # to each node of the tree.
-        self._subset = kwargs.pop('subset')
-        self._search_path = kwargs.pop('search_path')
-        super().__init__(*args, **kwargs)
-
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        data.update(
-            in_search_path=instance in self._search_path,
-            children=[
-                self.__class__(child,
-                    search_path=self._search_path, subset=self._subset).data
-                for child in [
-                    obj for obj in self._subset if obj.parent == instance]
-            ]
-        )
-        return data
 
 
 class BaseBudgetSerializer(EnhancedModelSerializer):

@@ -1,8 +1,6 @@
 from model_utils import Choices
 
-from django.contrib.contenttypes.fields import (
-    GenericForeignKey, GenericRelation)
-from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models, IntegrityError
 
 from greenbudget.app.comment.models import Comment
@@ -41,15 +39,12 @@ class Actual(models.Model):
         on_delete=models.CASCADE,
         related_name='actuals'
     )
-    content_type = models.ForeignKey(
-        to=ContentType,
+    subaccount = models.ForeignKey(
+        to='subaccount.BudgetSubAccount',
         on_delete=models.CASCADE,
-        null=True,
-        limit_choices_to=models.Q(app_label='account', model='BudgetAccount')
-        | models.Q(app_label='subaccount', model='BudgetSubAccount')
+        related_name="actuals",
+        null=True
     )
-    object_id = models.PositiveIntegerField(null=True)
-    parent = GenericForeignKey('content_type', 'object_id')
     comments = GenericRelation(Comment)
 
     class Meta:
@@ -59,32 +54,22 @@ class Actual(models.Model):
         verbose_name_plural = "Actual"
 
     def __str__(self):
-        return "<{cls} id={id}, value={value}, content_type={content_type}>".format(  # noqa
+        return "<{cls} id={id}, value={value}, subaccount={subaccount}>".format(  # noqa
             cls=self.__class__.__name__,
             id=self.pk,
-            content_type=self.content_type.model,
             value=self.value,
+            subaccount=self.subaccount.pk if self.subaccount is not None else None  # noqa
         )
 
-    @property
-    def parent_type(self):
-        from greenbudget.app.account.models import Account
-        if isinstance(self.parent, Account):
-            return "account"
-        return "subaccount"
-
     def save(self, *args, **kwargs):
-        # If the parent or budget are not set, we want Django to raise the
-        # exception that they are required - so we ignore them not being set
-        # here.
-        parent_budget = None
-        if self.parent is not None:
-            parent_budget = self.parent.budget
+        subaccount_budget = None
+        if self.subaccount is not None:
+            subaccount_budget = self.subaccount.budget
 
-        if parent_budget is not None and self.budget is not None \
-                and parent_budget != self.budget:
+        if subaccount_budget is not None and self.budget is not None \
+                and subaccount_budget != self.budget:
             raise IntegrityError(
-                "The actual must belong to the same budget as it's parent.")
+                "The actual must belong to the same budget as it's subaccount.")
 
         setattr(self, '_suppress_budget_update',
             kwargs.pop('suppress_budget_update', False))

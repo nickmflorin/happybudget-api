@@ -44,6 +44,7 @@ django-grappelli = "^2.15.1"
 django_compressor = "^2.4.1"
 django-libsass = "^0.8"
 watchtower = "^1.0.6"
+drf-nested-routers = "^0.93.3"
 
 [tool.poetry.extras]
 docs = [

@@ -3,13 +3,14 @@ import pytest
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_create_actual(api_client, user, create_budget_account,
-        create_budget, models):
+        create_budget, create_budget_subaccount, models):
     budget = create_budget()
     account = create_budget_account(budget=budget)
+    subaccount = create_budget_subaccount(parent=account, budget=budget)
+
     api_client.force_login(user)
     response = api_client.post("/v1/budgets/%s/actuals/" % budget.pk, data={
-        'object_id': account.pk,
-        'parent_type': 'account'
+        'subaccount': subaccount.pk,
     })
     assert response.status_code == 201
     assert response.json() == {
@@ -25,55 +26,54 @@ def test_create_actual(api_client, user, create_budget_account,
         "vendor": None,
         "created_by": user.pk,
         "updated_by": user.pk,
-        "account": {
-            "id": account.pk,
-            "type": "account",
-            "identifier": account.identifier,
-            "description": account.description
+        "subaccount": {
+            "id": subaccount.pk,
+            "type": "subaccount",
+            "identifier": subaccount.identifier,
+            "description": subaccount.description,
+            "name": subaccount.name,
         }
     }
     actual = models.Actual.objects.first()
     assert actual is not None
     assert actual.budget == budget
-    assert actual.parent == account
+    assert actual.subaccount == subaccount
 
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_bulk_create_budget_actuals(api_client, user, create_budget,
-        create_budget_account, models):
+        create_budget_account, create_budget_subaccount, models):
     api_client.force_login(user)
     budget = create_budget()
     account = create_budget_account(budget=budget)
+    subaccount = create_budget_subaccount(parent=account, budget=budget)
+
     response = api_client.patch(
         "/v1/budgets/%s/bulk-create-actuals/" % budget.pk,
         format='json',
-        data={
-            'data': [
-                {
-                    'description': 'New Description 1',
-                    'parent_type': 'account',
-                    'object_id': account.pk
+        data={'data': [
+            {
+                'description': 'New Description 1',
+                'subaccount': subaccount.pk
 
-                },
-                {
-                    'description': 'New Description 2',
-                    'parent_type': 'account',
-                    'object_id': account.pk
+            },
+            {
+                'description': 'New Description 2',
+                'subaccount': subaccount.pk
 
-                },
-            ]
-        })
+            },
+        ]})
     assert response.status_code == 201
 
     actuals = models.Actual.objects.all()
     assert len(actuals) == 2
     assert actuals[0].description == "New Description 1"
-    assert actuals[0].parent == account
+    assert actuals[0].subaccount == subaccount
     assert actuals[0].created_by == user
     assert actuals[0].updated_by == user
     assert actuals[0].budget == budget
     assert actuals[1].description == "New Description 2"
-    assert actuals[1].parent == account
+    assert actuals[1].subaccount == subaccount
     assert actuals[1].created_by == user
     assert actuals[1].updated_by == user
     assert actuals[1].budget == budget
@@ -84,13 +84,14 @@ def test_bulk_create_budget_actuals(api_client, user, create_budget,
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_bulk_update_budget_actuals(api_client, user, create_budget,
-        create_budget_account, create_actual):
+        create_budget_account, create_budget_subaccount, create_actual):
     api_client.force_login(user)
     budget = create_budget()
     account = create_budget_account(budget=budget)
+    subaccount = create_budget_subaccount(parent=account, budget=budget)
     actuals = [
-        create_actual(parent=account, budget=budget),
-        create_actual(parent=account, budget=budget)
+        create_actual(subaccount=subaccount, budget=budget),
+        create_actual(subaccount=subaccount, budget=budget)
     ]
     response = api_client.patch(
         "/v1/budgets/%s/bulk-update-actuals/" % budget.pk,

@@ -332,9 +332,6 @@ class ActualFactory(CustomModelFactory):
     purchase_order = factory.Faker('random_number')
     value = 100.00
     payment_method = Actual.PAYMENT_METHODS.check
-    content_type = factory.LazyAttribute(
-        lambda o: ContentType.objects.get_for_model(o.parent))
-    object_id = factory.SelfAttribute('parent.pk')
 
     class Meta:
         model = Actual

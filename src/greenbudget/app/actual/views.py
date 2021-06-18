@@ -1,8 +1,4 @@
-from django.contrib.contenttypes.models import ContentType
 from rest_framework import viewsets, mixins
-
-from greenbudget.app.subaccount.mixins import SubAccountNestedMixin
-from greenbudget.app.subaccount.models import SubAccount
 
 from .models import Actual
 from .serializers import ActualSerializer
@@ -39,40 +35,3 @@ class ActualsViewSet(
 
     def get_queryset(self):
         return Actual.objects.filter(budget__trash=False)
-
-
-class SubAccountActualsViewSet(
-    mixins.ListModelMixin,
-    mixins.CreateModelMixin,
-    SubAccountNestedMixin,
-    GenericActualViewSet
-):
-    """
-    ViewSet to handle requests to the following endpoints:
-
-    (1) GET /subaccounts/<pk>/actuals/
-    (2) POST /subaccounts/<pk>/actuals/
-    """
-    subaccount_lookup_field = ("pk", "subaccount_pk")
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context.update(
-            budget=self.subaccount.budget,
-            parent_type="subaccount",
-            object_id=self.subaccount.pk,
-        )
-        return context
-
-    def get_queryset(self):
-        return self.subaccount.actuals.all()
-
-    def perform_create(self, serializer):
-        serializer.save(
-            updated_by=self.request.user,
-            created_by=self.request.user,
-            object_id=self.subaccount.pk,
-            content_type=ContentType.objects.get_for_model(SubAccount),
-            parent=self.subaccount,
-            budget=self.subaccount.budget,
-        )

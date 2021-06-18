@@ -615,23 +615,26 @@ def test_permanently_delete_budget(api_client, user, create_budget, models):
     assert models.Budget.objects.first() is None
 
 
-def test_get_budget_items(api_client, user, create_budget,
+def test_get_budget_subaccounts(api_client, user, create_budget,
         create_budget_account, create_budget_subaccount):
     budget = create_budget()
-    account = create_budget_account(budget=budget, identifier="Account A")
-    create_budget_subaccount(budget=budget, parent=account, identifier="Jack")
+    account = create_budget_account(budget=budget)
+    sub = create_budget_subaccount(
+        budget=budget, parent=account, identifier="Jack")
+    create_budget_subaccount(budget=budget, parent=account, identifier="Bob")
     api_client.force_login(user)
     response = api_client.get(
-        "/v1/budgets/%s/items/?search=%s"
-        % (budget.pk, "Account")
+        "/v1/budgets/%s/subaccounts/?search=%s"
+        % (budget.pk, "jack")
     )
     assert response.status_code == 200
     assert response.json()['count'] == 1
     assert response.json()['data'] == [{
-        'id': account.pk,
-        'identifier': 'Account A',
-        'description': account.description,
-        'type': 'account'
+        'id': sub.pk,
+        'identifier': 'Jack',
+        'description': sub.description,
+        'type': 'subaccount',
+        'name': sub.name
     }]
 
 

@@ -6,7 +6,6 @@ from rest_framework import viewsets, mixins, permissions
 
 from greenbudget.app.account.models import Account
 from greenbudget.app.account.mixins import AccountNestedMixin
-from greenbudget.app.actual.views import GenericActualViewSet
 from greenbudget.app.budget.decorators import (
     register_bulk_updating_and_creating, BulkAction)
 from greenbudget.app.group.models import (
@@ -80,44 +79,6 @@ class AccountGroupViewSet(
             object_id=self.account.pk,
             content_type=ContentType.objects.get_for_model(type(self.account)),
             parent=self.account
-        )
-
-
-class AccountActualsViewSet(
-    mixins.ListModelMixin,
-    mixins.CreateModelMixin,
-    AccountNestedMixin,
-    GenericActualViewSet
-):
-    """
-    ViewSet to handle requests to the following endpoints:
-
-    (1) GET /accounts/<pk>/actuals/
-    (2) POST /accounts/<pk>/actuals/
-    """
-    account_lookup_field = ("pk", "account_pk")
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context.update(
-            budget=self.account.budget,
-            parent_type="account",
-            object_id=self.account.pk,
-            account_context=True
-        )
-        return context
-
-    def get_queryset(self):
-        return self.account.actuals.all()
-
-    def perform_create(self, serializer):
-        serializer.save(
-            updated_by=self.request.user,
-            created_by=self.request.user,
-            object_id=self.account.pk,
-            content_type=ContentType.objects.get_for_model(Account),
-            parent=self.account,
-            budget=self.account.budget,
         )
 
 

@@ -1,19 +1,20 @@
 from django.urls import path, include
-from rest_framework import routers
+from rest_framework_nested import routers
+
+from greenbudget.lib.rest_framework_utils.router import combine_routers
 
 from greenbudget.app.comment.urls import budget_comments_urlpatterns
 from greenbudget.app.history.urls import (
     actuals_history_urlpatterns, accounts_history_urlpatterns)
 
 from .views import (
-    LineItemViewSet,
     BudgetViewSet,
     BudgetTrashViewSet,
     BudgetFringeViewSet,
     BudgetGroupViewSet,
     BudgetActualsViewSet,
     BudgetAccountViewSet,
-    LineItemTreeViewSet
+    BudgetSubAccountViewSet
 )
 
 app_name = "budget"
@@ -22,9 +23,19 @@ router = routers.SimpleRouter()
 router.register(r'trash', BudgetTrashViewSet, basename='budget-trash')
 router.register(r'', BudgetViewSet, basename='budget')
 
-budget_fringes_router = routers.SimpleRouter()
+budget_fringes_router = routers.NestedSimpleRouter(router, r'', lookup='budget')
 budget_fringes_router.register(
-    r'', BudgetFringeViewSet, basename='budget-fringe')
+    r'fringes', BudgetFringeViewSet, basename='budget-fringes')
+
+budget_subaccounts_router = routers.NestedSimpleRouter(
+    router, r'', lookup='budget')
+budget_subaccounts_router.register(
+    r'subaccounts', BudgetSubAccountViewSet, basename='budget-subaccount')
+
+budget_groups_router = routers.NestedSimpleRouter(
+    router, r'', lookup='budget')
+budget_groups_router.register(
+    r'groups', BudgetGroupViewSet, basename='budget-group')
 
 budget_actuals_router = routers.SimpleRouter()
 budget_actuals_router.register(
@@ -40,22 +51,15 @@ budget_accounts_urlpatterns = [
     path('history/', include(accounts_history_urlpatterns)),
 ] + budget_accounts_router.urls
 
-
-budget_line_items_router = routers.SimpleRouter()
-budget_line_items_router.register(r'', LineItemViewSet, basename='budget-item')
-budget_line_items_router.register(
-    r'tree', LineItemTreeViewSet, basename='budget-item-tree')
-
-budget_groups_router = routers.SimpleRouter()
-budget_groups_router.register(r'', BudgetGroupViewSet, basename='budget-group')
-
-urlpatterns = router.urls + [
+urlpatterns = combine_routers(
+    router,
+    budget_fringes_router,
+    budget_subaccounts_router,
+    budget_groups_router
+) + [
     path('<int:budget_pk>/', include([
-        path('items/', include(budget_line_items_router.urls)),
         path('accounts/', include(budget_accounts_urlpatterns)),
         path('actuals/', include(budget_actuals_urlpatterns)),
         path('comments/', include(budget_comments_urlpatterns)),
-        path('groups/', include(budget_groups_router.urls)),
-        path('fringes/', include(budget_fringes_router.urls)),
     ]))
 ]
