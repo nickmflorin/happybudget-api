@@ -26,7 +26,7 @@ class BaseBudget(PolymorphicModel):
         related_name='budgets',
         on_delete=models.CASCADE
     )
-    trash = models.BooleanField(default=False)
+    trash = models.BooleanField(default=False, db_index=True)
     image = models.ImageField(upload_to=upload_to, null=True)
     objects = BaseBudgetManager()
 

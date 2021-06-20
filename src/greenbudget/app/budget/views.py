@@ -385,7 +385,7 @@ class BudgetViewSet(
         return context
 
     def get_queryset(self):
-        return self.request.user.budgets.instance_of(Budget).active()
+        return Budget.objects.filter(created_by=self.request.user).active()
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
