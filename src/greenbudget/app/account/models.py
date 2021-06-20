@@ -108,7 +108,7 @@ class BudgetAccount(Account):
         on_delete=models.SET_NULL,
         related_name='children'
     )
-    actuals = GenericRelation(Actual)
+
     comments = GenericRelation(Comment)
     events = GenericRelation(Event)
     groups = GenericRelation(BudgetSubAccountGroup)
