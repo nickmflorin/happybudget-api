@@ -275,8 +275,6 @@ class SubAccountFactory(CustomModelFactory):
     identifier = factory.Faker('name')
     description = factory.Faker('sentence')
     name = factory.Faker('name')
-    multiplier = 1.00
-    rate = 1.00
 
     class Meta:
         abstract = True

@@ -1,7 +1,7 @@
 from rest_framework import serializers, exceptions
 
-from greenbudget.lib.rest_framework_utils.exceptions import InvalidFieldError
-from greenbudget.lib.rest_framework_utils.fields import Base64ImageField
+from greenbudget.lib.drf.exceptions import InvalidFieldError
+from greenbudget.lib.drf.fields import Base64ImageField
 
 from greenbudget.app.budget.serializers import BaseBudgetSerializer
 from .models import Template

@@ -2,9 +2,9 @@
 from django.contrib.auth import authenticate
 from rest_framework import serializers, exceptions, validators
 
-from greenbudget.lib.rest_framework_utils.fields import Base64ImageField
-from greenbudget.lib.rest_framework_utils.serializers import (
-    EnhancedModelSerializer)
+from greenbudget.lib.drf.fields import Base64ImageField
+from greenbudget.lib.drf.serializers import (
+    ModelSerializer)
 
 from .models import User
 
@@ -89,7 +89,7 @@ class SimpleUserSerializer(serializers.ModelSerializer):
             'profile_image')
 
 
-class UserSerializer(EnhancedModelSerializer):
+class UserSerializer(ModelSerializer):
     first_name = serializers.CharField(
         required=True,
         allow_blank=False,

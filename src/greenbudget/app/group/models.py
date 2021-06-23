@@ -1,3 +1,4 @@
+import functools
 from polymorphic.models import PolymorphicModel
 
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -60,13 +61,9 @@ class Group(PolymorphicModel):
 
     @property
     def estimated(self):
-        estimated = []
-        for child in self.children.all():
-            if child.estimated is not None:
-                estimated.append(child.estimated)
-        if len(estimated) != 0:
-            return sum(estimated)
-        return None
+        children = self.children.only('estimated')
+        return functools.reduce(
+            lambda current, c: current + (c.estimated or 0), children, 0)
 
     def save(self, *args, **kwargs):
         setattr(self, '_suppress_budget_update',
@@ -94,19 +91,13 @@ class BudgetAccountGroup(Group):
 
     @property
     def variance(self):
-        if self.actual is not None and self.estimated is not None:
-            return float(self.estimated) - float(self.actual)
-        return None
+        return self.estimated - self.actual
 
     @property
     def actual(self):
-        actuals = []
-        for child in self.children.all():
-            if child.actual is not None:
-                actuals.append(child.actual)
-        if len(actuals) != 0:
-            return sum(actuals)
-        return None
+        children = self.children.only('actual')
+        return functools.reduce(
+            lambda current, c: current + (c.actual or 0), children, 0)
 
 
 class TemplateAccountGroup(Group):
@@ -151,19 +142,13 @@ class BudgetSubAccountGroup(Group):
 
     @property
     def variance(self):
-        if self.actual is not None and self.estimated is not None:
-            return float(self.estimated) - float(self.actual)
-        return None
+        return self.estimated - self.actual
 
     @property
     def actual(self):
-        actuals = []
-        for child in self.children.all():
-            if child.actual is not None:
-                actuals.append(child.actual)
-        if len(actuals) != 0:
-            return sum(actuals)
-        return None
+        children = self.children.only('actual')
+        return functools.reduce(
+            lambda current, c: current + (c.actual or 0), children, 0)
 
 
 class TemplateSubAccountGroup(Group):

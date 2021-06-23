@@ -6,7 +6,7 @@ from django.utils import timezone
 
 from rest_framework import serializers
 
-from greenbudget.lib.rest_framework_utils.exceptions import InvalidFieldError
+from greenbudget.lib.drf.exceptions import InvalidFieldError
 
 from greenbudget.app.user.models import User
 

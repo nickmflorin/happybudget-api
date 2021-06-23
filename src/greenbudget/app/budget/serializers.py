@@ -1,9 +1,9 @@
 from rest_framework import serializers
 
-from greenbudget.lib.rest_framework_utils.fields import (
+from greenbudget.lib.drf.fields import (
     ModelChoiceField, Base64ImageField)
-from greenbudget.lib.rest_framework_utils.serializers import (
-    EnhancedModelSerializer, PolymorphicNonPolymorphicSerializer)
+from greenbudget.lib.drf.serializers import (
+    ModelSerializer, PolymorphicNonPolymorphicSerializer)
 
 from greenbudget.app.account.models import Account
 from greenbudget.app.subaccount.models import SubAccount
@@ -33,7 +33,7 @@ class EntitySerializer(PolymorphicNonPolymorphicSerializer):
     }
 
 
-class BaseBudgetSerializer(EnhancedModelSerializer):
+class BaseBudgetSerializer(ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     name = serializers.CharField(
         required=True,

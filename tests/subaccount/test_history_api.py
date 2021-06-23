@@ -1,8 +1,11 @@
 from copy import deepcopy
 import pytest
 
+from django.test import override_settings
+
 
 @pytest.mark.freeze_time('2020-01-01')
+@override_settings(TRACK_MODEL_HISTORY=True)
 def test_get_subaccount_subaccounts_history(api_client, create_budget, user,
         create_budget_subaccount, create_budget_account, models):
     api_client.force_login(user)
@@ -155,6 +158,7 @@ def test_get_subaccount_subaccounts_history(api_client, create_budget, user,
 
 
 @pytest.mark.freeze_time('2020-01-01')
+@override_settings(TRACK_MODEL_HISTORY=True)
 def test_get_subaccount_history(api_client, create_budget, user,
         create_budget_account, create_budget_subaccount, models):
     api_client.force_login(user)

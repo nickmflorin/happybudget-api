@@ -1,6 +1,6 @@
 from django.utils.deprecation import MiddlewareMixin
 
-from .track_model import track_model
+from .model_tracker import track_model
 
 
 class TrackModelMiddleware(MiddlewareMixin):

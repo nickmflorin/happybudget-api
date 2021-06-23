@@ -332,7 +332,6 @@ class GenericBudgetViewSet(viewsets.GenericViewSet):
         updated_by=context.request.user,
         budget=context.instance
     ),
-    post_save=lambda data, context: context.instance.mark_updated(),
     actions=[
         BulkAction(
             url_path='bulk-{action_name}-accounts',

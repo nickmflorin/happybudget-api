@@ -3,9 +3,12 @@ from model_utils import Choices
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models, IntegrityError
 
+from greenbudget.app import signals
 from greenbudget.app.comment.models import Comment
 
 
+@signals.track_model(track_changes_to_fields=['value', 'subaccount'])
+@signals.flag_model('suppress_budget_update')
 class Actual(models.Model):
     type = "actual"
     created_at = models.DateTimeField(auto_now_add=True)
@@ -71,6 +74,4 @@ class Actual(models.Model):
             raise IntegrityError(
                 "The actual must belong to the same budget as it's subaccount.")
 
-        setattr(self, '_suppress_budget_update',
-            kwargs.pop('suppress_budget_update', False))
         return super().save(*args, **kwargs)

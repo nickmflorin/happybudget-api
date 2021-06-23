@@ -9,7 +9,7 @@ from rest_framework import views, response, generics, status
 from rest_framework.permissions import AllowAny
 from greenbudget.app.authentication.exceptions import AccountDisabledError
 
-from greenbudget.lib.rest_framework_utils.exceptions import (
+from greenbudget.lib.drf.exceptions import (
     RequiredFieldError, InvalidFieldError)
 from greenbudget.app.common.exceptions import RateLimitedError
 from greenbudget.app.user.models import User

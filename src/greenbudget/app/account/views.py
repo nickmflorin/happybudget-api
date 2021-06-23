@@ -156,7 +156,6 @@ class GenericAccountViewSet(viewsets.GenericViewSet):
 
 @register_bulk_updating_and_creating(
     base_cls=lambda context: context.view.instance_cls,
-    post_save=lambda data, context: context.instance.budget.mark_updated(),
     child_context=lambda context: {
         'budget': context.instance.budget,
         'account_context': True

@@ -1,13 +1,13 @@
 from rest_framework import serializers
 
-from greenbudget.lib.rest_framework_utils.fields import ModelChoiceField
-from greenbudget.lib.rest_framework_utils.serializers import (
-    EnhancedModelSerializer)
+from greenbudget.lib.drf.fields import ModelChoiceField
+from greenbudget.lib.drf.serializers import (
+    ModelSerializer)
 
 from .models import Contact
 
 
-class ContactSerializer(EnhancedModelSerializer):
+class ContactSerializer(ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     first_name = serializers.CharField()
     last_name = serializers.CharField(allow_null=True, required=False)

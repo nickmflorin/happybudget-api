@@ -1,8 +1,8 @@
 from rest_framework import serializers
 
-from greenbudget.lib.rest_framework_utils.fields import ModelChoiceField
-from greenbudget.lib.rest_framework_utils.serializers import (
-    EnhancedModelSerializer)
+from greenbudget.lib.drf.fields import ModelChoiceField
+from greenbudget.lib.drf.serializers import (
+    ModelSerializer)
 
 from greenbudget.app.budget.fields import BudgetFilteredQuerysetPKField
 from greenbudget.app.subaccount.models import BudgetSubAccount
@@ -11,7 +11,7 @@ from greenbudget.app.subaccount.serializers import SubAccountSimpleSerializer
 from .models import Actual
 
 
-class ActualSerializer(EnhancedModelSerializer):
+class ActualSerializer(ModelSerializer):
     vendor = serializers.CharField(
         required=False,
         allow_blank=False,

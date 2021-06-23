@@ -1,6 +1,6 @@
-import importlib
-
 from rest_framework import serializers
+
+from greenbudget.lib.utils import import_at_module_path
 
 
 class InvalidValue(Exception):
@@ -27,12 +27,6 @@ class MissingSerializerField(Exception):
         super().__init__(message)
 
 
-class CannotExpandField(Exception):
-    def __init__(self, field):
-        message = "The field %s cannot be expanded" % field
-        super().__init__(message)
-
-
 class PolymorphicNonPolymorphicSerializer(serializers.Serializer):
     """
     A :obj:`rest_framework.serializers.Serializer` uses different serializers
@@ -46,15 +40,9 @@ class PolymorphicNonPolymorphicSerializer(serializers.Serializer):
     instance need not be a child of a Polymorphic model.
     """
 
-    def _import_serializer_cls(self, module_path):
-        module_name = ".".join(module_path.split(".")[:-1])
-        class_name = module_path.split(".")[-1]
-        module = importlib.import_module(module_name)
-        return getattr(module, class_name)
-
     def _configure_serializer_cls(self, value):
         if isinstance(value, str):
-            cls = self._import_serializer_cls(value)
+            cls = import_at_module_path(value)
             return self._configure_serializer_cls(cls)
         assert issubclass(value, serializers.BaseSerializer), (
             "%s is not a serializer class or a module path to a serializer "
@@ -104,13 +92,13 @@ class PolymorphicNonPolymorphicSerializer(serializers.Serializer):
         return data
 
 
-class EnhancedModelSerializer(serializers.ModelSerializer):
+class ModelSerializer(serializers.ModelSerializer):
     """
     An extremely powerful extension of Django REST Framework's
     :obj:`serializers.ModelSerializer` that provides additional useful behavior
     for constructing tailored responses to fit the needs of the application.
 
-    The :obj:`EnhancedModelSerializer` provides (4) implementations that can
+    The :obj:`ModelSerializer` provides (4) implementations that can
     be used to fine tune the behavior of a single serializer to fit multiple
     different use cases.  These implementations are:
 
@@ -162,7 +150,7 @@ class EnhancedModelSerializer(serializers.ModelSerializer):
                 model = Parent
                 fields = ('id', 'name')
 
-        class ChildSerializer(EnhancedModelSerializer):
+        class ChildSerializer(ModelSerializer):
             name = serializers.CharField()
             parent = ParentSerializer()
 
@@ -181,60 +169,7 @@ class EnhancedModelSerializer(serializers.ModelSerializer):
     the `Child` model, we can specify the `Parent` by it's primary key - but
     still get the full serialized `Parent` on GET requests.
 
-    (2) Explicit Field Expansion
-    ----------------------------
-    This implementation allows fields to be toggled in the presence of an
-    `expand` argument supplied to the serializer's __init__ method.
-
-    Example:
-    ~~~~~~~
-    Returning to the above example, suppose that we want the default field
-    definition for `parent` on the `ChildSerializer` to be a
-    :obj:`serializers.PrimaryKeyRelatedField`, but want to use the nested
-    `ParentSerializer` in certain situations.
-
-    This toggling can be accomplished by specifying the `expand` attribute on
-    the associated serializer's Meta class to expand the field by using a new
-    field definition when the `expand=True` argument is supplied to the
-    serializer.
-
-        class ParentSerializer(serializers.Serializer):
-            name = serializers.CharField()
-
-            class Meta:
-                model = Parent
-                fields = ('id', 'name')
-
-        class ChildSerializer(EnhancedModelSerializer):
-            name = serializers.CharField()
-            parent = serializers.PrimaryKeyRelatedField(
-                queryset=Parent.objects.all(),
-            )
-
-            class Meta:
-                model = Child
-                expand = {
-                    'parent': ParentSerializer
-                }
-
-    Now, when we reference the serializer as `ChildSerializer(expand=True)`,
-    the expanded fields will be used in place of the default fields.
-
-        class SchoolSerializer(serializers.ModelSerializer):
-            children = ChildSerializer(many=True, expand=True)
-
-            class Meta:
-                model = School
-
-    Note that we can also expand explicit fields, as shown here:
-
-        class SchoolSerializer(serializers.ModelSerializer):
-            children = ChildSerializer(many=True, expand=['parent'])
-
-            class Meta:
-                model = School
-
-    (3) Field Response Rendering
+    (2) Field Response Rendering
     ----------------------------
     This implementation is critically important to developing an API response
     contract that is consistent for a frontend client to use.
@@ -280,7 +215,7 @@ class EnhancedModelSerializer(serializers.ModelSerializer):
                 model = Parent
                 fields = ('id', 'name')
 
-        class ChildSerializer(EnhancedModelSerializer):
+        class ChildSerializer(ModelSerializer):
             name = serializers.CharField()
             parent = ParentSerializer()
 
@@ -302,7 +237,7 @@ class EnhancedModelSerializer(serializers.ModelSerializer):
     we can still reference the `Parent` instance by PK for POST and PATCH
     requests.
 
-    (4) Explicit Field Nesting
+    (3) Explicit Field Nesting
     --------------------------
     This implementation allows fields to be included or excluded based on
     whether or not the serializer is nested inside of another serializer.
@@ -323,7 +258,7 @@ class EnhancedModelSerializer(serializers.ModelSerializer):
     a condensed form of the `ChildSerializer` by the `nested_fields` attribute
     on the serializer's Meta class:
 
-        class ChildSerializer(EnhancedModelSerializer):
+        class ChildSerializer(ModelSerializer):
             id = serializers.IntegerField()
             first_name = serializers.CharField()
             last_name = serializers.CharField()
@@ -340,20 +275,11 @@ class EnhancedModelSerializer(serializers.ModelSerializer):
 
             class Meta:
             fields = ('id', 'child')
-
-    TODO:
-    ----
-    While this serializer class is wildly useful, it's API can be improved
-    substantially.
     """
 
     def __init__(self, *args, **kwargs):
         self._response = kwargs.pop('response', False)
         self._nested = kwargs.pop('nested', False)
-
-        self._expand = kwargs.pop('expand', [])
-        if not isinstance(self._expand, (bool, list, tuple)):
-            raise InvalidValue('expand', expected_type=(bool, list, tuple))
 
         super().__init__(*args, **kwargs)
 
@@ -395,8 +321,7 @@ class EnhancedModelSerializer(serializers.ModelSerializer):
 
         # Fields that are explicitly used to render responses take precedence
         # over HTTP toggled field behaviors - but not behaviors that are
-        # controlled on instantiation of the serializer (collapsing, expanding,
-        # nesting).
+        # controlled on instantiation of the serializer (collapsing/nesting).
         response_fields = getattr(self.Meta, 'response', {})
         if not isinstance(response_fields, dict):
             raise InvalidMetaValue('response', expected_type=dict)
@@ -422,31 +347,6 @@ class EnhancedModelSerializer(serializers.ModelSerializer):
                 new_fields[field_name] = self.fields[field_name]
             self.fields = new_fields
 
-        # If fields are explicitly expanded, they take precedence over the
-        # field behavior defined that is dependent on the HTTP request
-        # method and field behavior that is defined from nesting.
-        expandable = getattr(self.Meta, 'expand', {})
-        if not isinstance(expandable, dict):
-            raise InvalidMetaValue('expand', expected_type=dict)
-
-        if (self._expand is True
-                or (isinstance(self._expand, (tuple, list))
-                    and len(self._expand) != 0)):
-            for k, v in expandable.items():
-                if k not in self.fields:
-                    raise MissingSerializerField(k)
-                if isinstance(self._expand, bool):
-                    if self._expand is True:
-                        self.fields[k] = self._instantiate_field(v)
-                elif k in self._expand:
-                    self.fields[k] = self._instantiate_field(v)
-
-    def _import_serializer_cls(self, module_path):
-        module_name = ".".join(module_path.split(".")[:-1])
-        class_name = module_path.split(".")[-1]
-        module = importlib.import_module(module_name)
-        return getattr(module, class_name)
-
     def _instantiate_field(self, definition):
         # In the case that the serializer is provided by it's module path,
         # to avoid circular imports, this method will dynamically import that
@@ -454,7 +354,7 @@ class EnhancedModelSerializer(serializers.ModelSerializer):
         if not isinstance(definition, (list, tuple)):
             serializer_cls = definition
             if isinstance(definition, str):
-                serializer_cls = self._import_serializer_cls(definition)
+                serializer_cls = import_at_module_path(definition)
             return serializer_cls()
         else:
             if (len(definition) != 2
@@ -465,7 +365,7 @@ class EnhancedModelSerializer(serializers.ModelSerializer):
                 )
             serializer_cls = definition[0]
             if isinstance(definition[0], str):
-                serializer_cls = self._import_serializer_cls(definition[0])
+                serializer_cls = import_at_module_path(definition[0])
             return serializer_cls(**definition[1])
 
     @property
@@ -480,7 +380,6 @@ class EnhancedModelSerializer(serializers.ModelSerializer):
                 instance,
                 response=True,
                 nested=self._nested,
-                expand=self._expand,
                 context=self.context,
             )
             return serializer.data

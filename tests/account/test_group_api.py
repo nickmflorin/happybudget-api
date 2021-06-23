@@ -24,9 +24,9 @@ def test_get_budget_account_subaccount_groups(api_client, user,
         "updated_at": "2020-01-01 00:00:00",
         "color": group.color,
         "updated_by": user.pk,
-        "actual": None,
-        "variance": None,
-        "estimated": None,
+        "actual": 0.0,
+        "variance": 0.0,
+        "estimated": 0.0,
         "created_by": user.pk,
         "children": [subaccount.pk]
     }]
@@ -55,7 +55,7 @@ def test_get_template_account_subaccount_groups(api_client, user,
         "updated_at": "2020-01-01 00:00:00",
         "color": group.color,
         "updated_by": user.pk,
-        "estimated": None,
+        "estimated": 0.0,
         "created_by": user.pk,
         "children": [subaccount.pk]
     }]
@@ -91,9 +91,9 @@ def test_create_budget_account_subaccount_group(api_client, user,
         "updated_at": "2020-01-01 00:00:00",
         "updated_by": None,
         "color": '#a1887f',
-        "actual": None,
-        "variance": None,
-        "estimated": None,
+        "actual": 0.0,
+        "variance": 0.0,
+        "estimated": 0.0,
         "created_by": user.pk,
         "children": [subaccount.pk]
     }
@@ -129,7 +129,7 @@ def test_create_template_account_subaccount_group(api_client, user,
         "updated_at": "2020-01-01 00:00:00",
         "updated_by": None,
         "color": '#a1887f',
-        "estimated": None,
+        "estimated": 0.0,
         "created_by": user.pk,
         "children": [subaccount.pk]
     }

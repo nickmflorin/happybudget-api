@@ -1,7 +1,7 @@
 from rest_framework import serializers, exceptions
 
-from greenbudget.lib.rest_framework_utils.serializers import (
-    EnhancedModelSerializer)
+from greenbudget.lib.drf.serializers import (
+    ModelSerializer)
 
 from greenbudget.app.account.models import BudgetAccount, TemplateAccount
 from greenbudget.app.tagging.serializers import ColorField
@@ -17,7 +17,7 @@ from .models import (
 )
 
 
-class GroupSerializer(EnhancedModelSerializer):
+class GroupSerializer(ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     name = serializers.CharField(
         required=False,
@@ -173,6 +173,7 @@ class AbstractAccountGroupSerializer(GroupSerializer):
 class BudgetAccountGroupSerializer(AbstractAccountGroupSerializer):
     actual = serializers.FloatField(read_only=True)
     variance = serializers.FloatField(read_only=True)
+    # TODO: Adapt BudgetFilteredQuerysetPKField for many = True.
     children = serializers.PrimaryKeyRelatedField(
         many=True,
         required=True,
@@ -186,6 +187,7 @@ class BudgetAccountGroupSerializer(AbstractAccountGroupSerializer):
 
 
 class TemplateAccountGroupSerializer(AbstractAccountGroupSerializer):
+    # TODO: Adapt BudgetFilteredQuerysetPKField for many = True.
     children = serializers.PrimaryKeyRelatedField(
         many=True,
         required=True,
@@ -228,6 +230,7 @@ class AbstractSubAccountGroupSerializer(GroupSerializer):
 class BudgetSubAccountGroupSerializer(AbstractSubAccountGroupSerializer):
     actual = serializers.FloatField(read_only=True)
     variance = serializers.FloatField(read_only=True)
+    # TODO: Adapt BudgetFilteredQuerysetPKField for many = True.
     children = serializers.PrimaryKeyRelatedField(
         many=True,
         required=True,
@@ -241,6 +244,7 @@ class BudgetSubAccountGroupSerializer(AbstractSubAccountGroupSerializer):
 
 
 class TemplateSubAccountGroupSerializer(AbstractSubAccountGroupSerializer):
+    # TODO: Adapt BudgetFilteredQuerysetPKField for many = True.
     children = serializers.PrimaryKeyRelatedField(
         many=True,
         required=True,

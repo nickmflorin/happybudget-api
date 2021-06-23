@@ -1,7 +1,6 @@
 from rest_framework import serializers, exceptions
 
-from greenbudget.lib.rest_framework_utils.serializers import (
-    EnhancedModelSerializer)
+from greenbudget.lib import drf
 
 from greenbudget.app.budget.serializers import EntitySerializer
 from greenbudget.app.fringe.models import Fringe
@@ -24,7 +23,7 @@ class SubAccountUnitSerializer(TagSerializer):
         fields = TagSerializer.Meta.fields + ("color", )
 
 
-class SubAccountSimpleSerializer(EnhancedModelSerializer):
+class SubAccountSimpleSerializer(drf.serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     type = serializers.CharField(read_only=True)
     identifier = serializers.CharField(

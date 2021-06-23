@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
-from greenbudget.lib.rest_framework_utils.serializers import (
-    EnhancedModelSerializer)
+from greenbudget.lib.drf.serializers import (
+    ModelSerializer)
 
 from greenbudget.app.budget.serializers import EntitySerializer
 from greenbudget.app.group.models import (
@@ -13,7 +13,7 @@ from greenbudget.app.user.models import User
 from .models import Account, BudgetAccount, TemplateAccount
 
 
-class AccountSimpleSerializer(EnhancedModelSerializer):
+class AccountSimpleSerializer(ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     identifier = serializers.CharField(
         required=False,

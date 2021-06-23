@@ -1,6 +1,7 @@
 import datetime
 from datetime import timezone
 import pytest
+from django.test import override_settings
 
 
 def test_remove_budget_account_from_group_group_deleted(create_budget, user,
@@ -70,6 +71,7 @@ def test_remove_template_account_from_group_group_not_deleted(create_template,
     assert models.TemplateAccountGroup.objects.first() == group
 
 
+@override_settings(TRACK_MODEL_HISTORY=True)
 def test_record_create_history(create_budget, user, models):
     budget = create_budget()
     account = models.BudgetAccount.objects.create(
@@ -85,6 +87,7 @@ def test_record_create_history(create_budget, user, models):
     assert event.content_object == account
 
 
+@override_settings(TRACK_MODEL_HISTORY=True)
 def test_record_field_change_history(create_budget, user, models):
     budget = create_budget()
     account = models.BudgetAccount(
@@ -107,6 +110,7 @@ def test_record_field_change_history(create_budget, user, models):
     assert alteration.new_value == "New Description"
 
 
+@override_settings(TRACK_MODEL_HISTORY=True)
 def test_dont_record_field_change_history(create_budget, user, models):
     budget = create_budget()
     account = models.BudgetAccount(
@@ -123,6 +127,7 @@ def test_dont_record_field_change_history(create_budget, user, models):
     assert models.FieldAlterationEvent.objects.count() == 0
 
 
+@override_settings(TRACK_MODEL_HISTORY=True)
 def test_record_field_change_history_null_at_start(create_budget, user, models):
     budget = create_budget()
     account = models.BudgetAccount(

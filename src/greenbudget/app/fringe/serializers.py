@@ -1,15 +1,15 @@
 from rest_framework import serializers
 
-from greenbudget.lib.rest_framework_utils.fields import ModelChoiceField
-from greenbudget.lib.rest_framework_utils.serializers import (
-    EnhancedModelSerializer)
+from greenbudget.lib.drf.fields import ModelChoiceField
+from greenbudget.lib.drf.serializers import (
+    ModelSerializer)
 
 from greenbudget.app.tagging.serializers import ColorField
 
 from .models import Fringe
 
 
-class FringeSerializer(EnhancedModelSerializer):
+class FringeSerializer(ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     name = serializers.CharField(
         required=False,

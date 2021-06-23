@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework_nested import routers
 
-from greenbudget.lib.rest_framework_utils.router import combine_routers
+from greenbudget.lib.drf.router import combine_routers
 
 from greenbudget.app.comment.urls import budget_comments_urlpatterns
 from greenbudget.app.history.urls import (

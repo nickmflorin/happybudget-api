@@ -1,5 +1,24 @@
+import hashlib
+import importlib
+import json
 import re
+from typing import Dict, Any
+
 from .dateutils import ensure_datetime
+
+
+def hash_dict(dictionary: Dict[str, Any]) -> str:
+    dhash = hashlib.md5()
+    encoded = json.dumps(dictionary, sort_keys=True).encode()
+    dhash.update(encoded)
+    return dhash.hexdigest()
+
+
+def import_at_module_path(module_path):
+    module_name = ".".join(module_path.split(".")[:-1])
+    class_name = module_path.split(".")[-1]
+    module = importlib.import_module(module_name)
+    return getattr(module, class_name)
 
 
 def is_non_string_iterable(value):

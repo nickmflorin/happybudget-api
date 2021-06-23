@@ -26,6 +26,7 @@ class BaseBudget(PolymorphicModel):
         related_name='budgets',
         on_delete=models.CASCADE
     )
+    estimated = models.FloatField(default=0.0)
     trash = models.BooleanField(default=False, db_index=True)
     image = models.ImageField(upload_to=upload_to, null=True)
     objects = BaseBudgetManager()
@@ -51,19 +52,6 @@ class BaseBudget(PolymorphicModel):
         self.trash = False
         self.save()
 
-    def mark_updated(self):
-        self.save(update_fields=['updated_at'])
-
-    @property
-    def estimated(self):
-        estimated = []
-        for account in self.accounts.all():
-            if account.estimated is not None:
-                estimated.append(account.estimated)
-        if len(estimated) != 0:
-            return sum(estimated)
-        return None
-
 
 class Budget(BaseBudget):
     type = "budget"
@@ -86,6 +74,7 @@ class Budget(BaseBudget):
     prelight_days = models.IntegerField(default=0)
     studio_shoot_days = models.IntegerField(default=0)
     location_days = models.IntegerField(default=0)
+    actual = models.FloatField(default=0.0)
 
     comments = GenericRelation(Comment)
     objects = BudgetManager()
@@ -102,19 +91,7 @@ class Budget(BaseBudget):
 
     @property
     def variance(self):
-        if self.actual is not None and self.estimated is not None:
-            return float(self.estimated) - float(self.actual)
-        return None
-
-    @property
-    def actual(self):
-        actuals = []
-        for account in self.accounts.all():
-            if account.actual is not None:
-                actuals.append(account.actual)
-        if len(actuals) != 0:
-            return sum(actuals)
-        return None
+        return float(self.estimated) - float(self.actual)
 
     def to_pdf(self):
         return render_budget_as_pdf(self)

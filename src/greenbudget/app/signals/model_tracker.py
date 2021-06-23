@@ -1,17 +1,45 @@
+import collections
 import logging
 import threading
 
 import django
 from django.db import models
 
+from .signals import field_changed, fields_changed, post_create_by_user
+
 
 logger = logging.getLogger('greenbudget')
+
+
+FieldChange = collections.namedtuple(
+    'FieldChange', ['field', 'value', 'previous_value'])
+
+
+class FieldChanges:
+    def __init__(self, changes):
+        self.changes = changes
+        assert len([change.field for change in changes]) \
+            == len(set([change.field for change in changes]))
+
+    def __iter__(self):
+        for change in self.changes:
+            yield change
+
+    def get_change_for_field(self, field):
+        try:
+            return [
+                change for change in self.changes
+                if change.field == field
+            ][0]
+        except IndexError:
+            return None
 
 
 class track_model:
     """
     Tracks field alterations and other save behaviors of a
     :obj:`django.db.models.Model`.
+
     NOTE:
     ----
     IMPORTANT: Since the Django `save` method is not called when a model
@@ -21,51 +49,15 @@ class track_model:
     """
     thread = threading.local()
 
-    def __init__(self, **configuration):
+    def __init__(self, track_changes_to_fields=None, user_field=None):
         # The fields that are being tracked for specific cases.
-        self._track_changes_to_fields = configuration.get(
-            'track_changes_to_fields', [])
-        self._track_removal_of_fields = configuration.get(
-            'track_removal_of_fields', [])
-
-        # Specific hooks to use for specific fields.
-        self._on_field_removal_hooks = configuration.get(
-            'on_field_removal_hooks', {})
-        self._on_field_change_hooks = configuration.get(
-            'on_field_change_hooks', {})
-
-        # The hooks that are called when certain conditions are met.
-        self._on_field_removal = configuration.get('on_field_removal', [])
-        if self._on_field_removal is None:
-            self._on_field_removal = []
-        if type(self._on_field_removal) not in (list, tuple):
-            self._on_field_removal = [self._on_field_removal]
-        self._on_field_removal = [
-            f for f in self._on_field_removal if f is not None]
-
-        self._on_create = configuration.get('on_create', [])
-        if self._on_create is None:
-            self._on_create = []
-        if type(self._on_create) not in (list, tuple):
-            self._on_create = [self._on_create]
-        self._on_create = [f for f in self._on_create if f is not None]
-
-        self._on_field_change = configuration.get('on_field_change', [])
-        if self._on_field_change is None:
-            self._on_field_change = []
-        if type(self._on_field_change) not in (list, tuple):
-            self._on_field_change = [self._on_field_change]
-        self._on_field_change = [
-            f for f in self._on_field_change if f is not None]
+        self._track_changes_to_fields = track_changes_to_fields or []
 
         # A field on the model that is used to determine the user performing
         # the action when the request is not available.
-        self._user_field = configuration.get('user_field')
+        self._user_field = user_field
 
-        # Flags that are provided to toggle behavior on save.
-        self._flags = configuration.get('flags', [])
-
-        for field in self.provided_fields:
+        for field in self._track_changes_to_fields:
             if not isinstance(field, str):
                 raise ValueError(
                     "Invalid Field %s - The field must be a string "
@@ -73,6 +65,7 @@ class track_model:
                 )
 
     def __call__(self, cls):
+        # Validate the configuration to make sure things are setup properly.
         self.validate_configuration(cls)
 
         # If the class has already been decorated, that means it is a class
@@ -87,25 +80,9 @@ class track_model:
         cls.__data = {}
 
         # The fields that are being tracked.
-        cls.__tracked_fields = self.provided_fields
+        cls.__tracked_fields = self._track_changes_to_fields
 
-        # The fields that are being tracked for specific cases.
-        cls.__tracked_fields_for_removal = self._track_removal_of_fields
-        cls.__tracked_fields_for_change = self._track_changes_to_fields
-
-        # Specific hooks to use for specific fields.
-        cls.__on_field_removal_hooks = self._on_field_removal_hooks
-        cls.__on_field_change_hooks = self._on_field_change_hooks
-
-        # The hooks that are called when certain conditions are met.
-        cls.__on_field_removal = self._on_field_removal
-        cls.__on_field_change = self._on_field_change
-        cls.__on_create = self._on_create
-
-        # Flags that are provided to toggle behavior on save.
-        cls.__flags = self._flags
-
-        def field_changed(instance, field):
+        def field_has_changed(instance, field):
             """
             Returns a boolean to indicate whether or not the provided field
             has changed since the last time the model was saved.
@@ -121,20 +98,6 @@ class track_model:
                 raise ValueError("The instance has not yet been saved.")
             if instance.__data[field] != getattr(instance, field):
                 return True
-            return False
-
-        def field_removed(instance, field):
-            """
-            Returns a boolean to indicate whether or not the provided field
-            has been set to None since the last time the model was saved.
-
-            Parameters:
-            ----------
-            field: :obj:`str`
-                The name of the field on the model.
-            """
-            if instance.field_changed(field):
-                return getattr(instance, field) is None
             return False
 
         def previous_value(instance, field):
@@ -217,67 +180,56 @@ class track_model:
             """
             new_instance = instance.id is None
 
-            track_changes = kwargs.pop('track_changes', True)
-            setattr(instance, '_track_changes', track_changes)
+            track_history = kwargs.pop('track_history', True)
+            setattr(instance, '_track_history', track_history)
             save._original(instance, *args, **kwargs)
 
-            if not new_instance and track_changes is True:
+            update_fields = kwargs.pop('update_fields', None)
+
+            changes = []
+            if not new_instance and track_history is True:
                 for k in instance.__tracked_fields:
-                    if instance.field_changed(k):
-                        # Call either the specifically provided hook for the
-                        # field or the general hook for the case when the field
-                        # has changed.
-                        if k in self._on_field_change_hooks:
-                            self._on_field_change_hooks[k](instance, {
-                                'previous_value': instance.previous_value(k),
-                                'new_value': getattr(instance, k),
-                                'user': self.get_user(instance),
-                            })
-                        elif k in self._track_changes_to_fields \
-                                and self._on_field_change is not None:
-                            for hook in self._on_field_change:
-                                hook(instance, k, {
-                                    'previous_value': instance.previous_value(k),  # noqa
-                                    'new_value': getattr(instance, k),
-                                    'user': self.get_user(instance),
-                                })
-                    if instance.field_removed(k):
-                        # Call either the specifically provided hook for the
-                        # field or the general hook for the case when the field
-                        # has been removed.
-                        if k in self._on_field_removal_hooks:
-                            self._on_field_removal_hooks[k](instance, {
-                                'previous_value': instance.previous_value(k),
-                                'new_value': getattr(instance, k),
-                                'user': self.get_user(instance),
-                            })
-                        elif k in self._track_removal_of_fields \
-                                and self._on_field_removal is not None:
-                            for hook in self._on_field_removal:
-                                hook(instance, k, {
-                                    'previous_value': instance.previous_value(k),  # noqa
-                                    'new_value': getattr(instance, k),
-                                    'user': self.get_user(instance),
-                                })
+                    if update_fields is not None and k not in update_fields:
+                        continue
+                    if instance.field_has_changed(k):
+                        change = FieldChange(
+                            field=k,
+                            previous_value=instance.previous_value(k),
+                            value=getattr(instance, k),
+                        )
+                        changes.append(change)
+                        field_changed.send(
+                            sender=type(instance),
+                            instance=instance,
+                            change=change,
+                            user=self.get_user(instance)
+                        )
+                if changes:
+                    fields_changed.send(
+                        sender=type(instance),
+                        instance=instance,
+                        changes=FieldChanges(changes),
+                        user=self.get_user(instance)
+                    )
             store(instance)
 
         def _post_init(sender, instance, **kwargs):
             store(instance)
 
         def _post_save(sender, instance, **kwargs):
-            if kwargs['created'] is True and instance._track_changes is True \
-                    and instance.__on_create is not None:
-                user = self.get_user(instance)
-                for hook in instance.__on_create:
-                    hook(instance, {'user': user})
+            if kwargs['created'] is True and instance._track_history is True:
+                post_create_by_user.send(
+                    sender=type(instance),
+                    instance=instance,
+                    user=self.get_user(instance)
+                )
 
         models.signals.post_init.connect(_post_init, sender=cls, weak=False)
         models.signals.post_save.connect(_post_save, sender=cls, weak=False)
 
         # Expose helper methods on the model class.
         cls.changed_fields = changed_fields
-        cls.field_changed = field_changed
-        cls.field_removed = field_removed
+        cls.field_has_changed = field_has_changed
         cls.previous_value = previous_value
 
         # Replace the model save method with the overridden one, but keep track
@@ -291,15 +243,6 @@ class track_model:
 
         return cls
 
-    @property
-    def provided_fields(self):
-        return list(set(
-            self._track_removal_of_fields
-            + self._track_changes_to_fields
-            + list(self._on_field_change_hooks.keys())
-            + list(self._on_field_removal_hooks.keys())
-        ))
-
     def validate_field(self, klass, field):
         try:
             klass._meta.get_field(field)
@@ -309,12 +252,8 @@ class track_model:
                 % (field, klass.__name__))
 
     def validate_configuration(self, klass):
-        for field in self.provided_fields:
+        for field in self._track_changes_to_fields:
             self.validate_field(klass, field)
-        for k, _ in self._on_field_removal_hooks.items():
-            self.validate_field(klass, k)
-        for k, _ in self._on_field_change_hooks.items():
-            self.validate_field(klass, k)
 
     def get_user(self, instance):
         try:

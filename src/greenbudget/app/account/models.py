@@ -3,21 +3,19 @@ from polymorphic.models import PolymorphicModel
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models, IntegrityError
 
-from greenbudget.lib.model_tracker import track_model
+from greenbudget.app import signals
 
-from greenbudget.app.actual.models import Actual
 from greenbudget.app.comment.models import Comment
 from greenbudget.app.group.models import (
     BudgetSubAccountGroup, TemplateSubAccountGroup)
-from greenbudget.app.group.hooks import on_group_removal
 from greenbudget.app.history.models import Event
-from greenbudget.app.history.hooks import on_create, on_field_change
 from greenbudget.app.subaccount.models import SubAccount
 
 from .managers import (
     AccountManager, BudgetAccountManager, TemplateAccountManager)
 
 
+@signals.flag_model('suppress_budget_update')
 class Account(PolymorphicModel):
     type = "account"
     created_at = models.DateTimeField(auto_now_add=True)
@@ -29,6 +27,7 @@ class Account(PolymorphicModel):
         on_delete=models.CASCADE,
         related_name='accounts'
     )
+    estimated = models.FloatField(default=0.0)
     subaccounts = GenericRelation(SubAccount)
     objects = AccountManager()
 
@@ -56,35 +55,20 @@ class Account(PolymorphicModel):
             if account != self
         ]
 
-    @property
-    def estimated(self):
-        estimated = []
-        for subaccount in self.subaccounts.all():
-            if subaccount.estimated is not None:
-                estimated.append(subaccount.estimated)
-        if len(estimated) != 0:
-            return sum(estimated)
-        return None
-
     def save(self, *args, **kwargs):
         if self.group is not None and self.group.parent != self.budget:
             raise IntegrityError(
                 "The group that an account belongs to must belong to the same "
                 "budget as that account."
             )
-        setattr(self, '_suppress_budget_update',
-            kwargs.pop('suppress_budget_update', False))
         return super().save(*args, **kwargs)
 
 
-@track_model(
-    on_create=on_create,
-    track_removal_of_fields=['group'],
+@signals.track_model(
     user_field='updated_by',
-    on_field_removal_hooks={'group': on_group_removal},
-    on_field_change=on_field_change,
-    track_changes_to_fields=['description', 'identifier'],
+    track_changes_to_fields=['description', 'identifier', 'group'],
 )
+@signals.flag_model('track_changes')
 class BudgetAccount(Account):
     updated_by = models.ForeignKey(
         to='user.User',
@@ -108,6 +92,7 @@ class BudgetAccount(Account):
         on_delete=models.SET_NULL,
         related_name='children'
     )
+    actual = models.FloatField(default=0.0)
 
     comments = GenericRelation(Comment)
     events = GenericRelation(Event)
@@ -115,6 +100,8 @@ class BudgetAccount(Account):
 
     MAP_FIELDS_FROM_TEMPLATE = ('identifier', 'description')
     MAP_FIELDS_FROM_ORIGINAL = ('identifier', 'description')
+    TRACK_MODEL_HISTORY = True
+
     objects = BudgetAccountManager()
 
     class Meta(Account.Meta):
@@ -123,24 +110,12 @@ class BudgetAccount(Account):
 
     @property
     def variance(self):
-        if self.actual is not None and self.estimated is not None:
-            return float(self.estimated) - float(self.actual)
-        return None
-
-    @property
-    def actual(self):
-        actuals = []
-        for subaccount in self.subaccounts.all():
-            if subaccount.actual is not None:
-                actuals.append(subaccount.actual)
-        if len(actuals) != 0:
-            return sum(actuals)
-        return None
+        return float(self.estimated) - float(self.actual)
 
 
-@track_model(
-    track_removal_of_fields=['group'],
-    on_field_removal_hooks={'group': on_group_removal},
+@signals.track_model(
+    user_field='updated_by',
+    track_changes_to_fields=['group'],
 )
 class TemplateAccount(Account):
     updated_by = models.ForeignKey(

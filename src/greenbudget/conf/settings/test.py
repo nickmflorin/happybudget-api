@@ -17,6 +17,7 @@ TIME_ZONE = 'UTC'
 EMAIL_ENABLED = False
 CELERY_ENABLED = False
 RATELIMIT_ENABLE = False
+TRACK_MODEL_HISTORY = False
 
 # Disable logging in tests
 LOGGING['loggers'] = {  # noqa

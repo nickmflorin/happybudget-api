@@ -9,7 +9,6 @@ from rest_framework import decorators, response, status
 
 from .bulk_serializers import (
     create_bulk_create_serializer, create_bulk_update_serializer)
-from .signals import disable_budget_tracking
 
 
 @dataclass
@@ -128,11 +127,7 @@ class bulk_action:
             context={'request': request}
         )
         serializer.is_valid(raise_exception=True)
-
-        # Only update the budget once after the bulk operation is finished.
-        with disable_budget_tracking():
-            data = self.perform_save(serializer)
-
+        data = self.perform_save(serializer)
         self.post_save(data)
         return data
 

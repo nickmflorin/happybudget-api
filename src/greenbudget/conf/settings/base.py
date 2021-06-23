@@ -117,7 +117,8 @@ SIMPLE_JWT = {
 
 AUTH_USER_MODEL = 'user.User'
 
-TRACK_MODEL_HISTORY = True
+# Temporarily turning off for now until we build out more.
+TRACK_MODEL_HISTORY = False
 
 INSTALLED_APPS = [
     'compressor',
@@ -137,6 +138,7 @@ INSTALLED_APPS = [
     'generic_relations',
     'corsheaders',
     'timezone_field',
+    'greenbudget.app',
     'greenbudget.app.account',
     'greenbudget.app.actual',
     'greenbudget.app.authentication',
@@ -165,7 +167,7 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'greenbudget.app.jwt.middleware.TokenCookieMiddleware',
-    'greenbudget.lib.model_tracker.TrackModelMiddleware',
+    'greenbudget.app.signals.middleware.TrackModelMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -263,7 +265,7 @@ REST_FRAMEWORK = {
     'DATETIME_FORMAT': '%Y-%m-%d %H:%M:%S',
     'NON_FIELD_ERRORS_KEY': '__all__',
     'EXCEPTION_HANDLER': (
-        'greenbudget.lib.rest_framework_utils.views.exception_handler'),
+        'greenbudget.lib.drf.views.exception_handler'),
     'DEFAULT_FILTER_BACKENDS': [
         'rest_framework_filters.backends.RestFrameworkFilterBackend',
         'rest_framework.filters.SearchFilter',
@@ -275,7 +277,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
-    'DEFAULT_PAGINATION_CLASS': 'greenbudget.lib.rest_framework_utils.pagination.Pagination',  # noqa
+    'DEFAULT_PAGINATION_CLASS': 'greenbudget.lib.drf.pagination.Pagination',  # noqa
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
         'rest_framework.throttling.UserRateThrottle'

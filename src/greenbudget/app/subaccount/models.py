@@ -6,16 +6,12 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models, IntegrityError
 from django.db.models.signals import m2m_changed
 
-from greenbudget.lib.model_tracker import track_model
+from greenbudget.app import signals
 
-from greenbudget.app.actual.models import Actual
 from greenbudget.app.comment.models import Comment
-from greenbudget.app.fringe.utils import fringe_value
-from greenbudget.app.group.hooks import on_group_removal
 from greenbudget.app.group.models import (
     BudgetSubAccountGroup, TemplateSubAccountGroup)
 from greenbudget.app.history.models import Event
-from greenbudget.app.history.hooks import on_create, on_field_change
 from greenbudget.app.tagging.models import Tag
 
 from .managers import (
@@ -48,6 +44,7 @@ class SubAccountUnit(Tag):
         )
 
 
+@signals.flag_model('suppress_budget_update')
 class SubAccount(PolymorphicModel):
     type = "subaccount"
     created_at = models.DateTimeField(auto_now_add=True)
@@ -58,6 +55,7 @@ class SubAccount(PolymorphicModel):
     quantity = models.IntegerField(null=True)
     rate = models.FloatField(null=True)
     multiplier = models.IntegerField(null=True)
+    estimated = models.FloatField(default=0.0)
     unit = models.ForeignKey(
         to='subaccount.SubAccountUnit',
         on_delete=models.SET_NULL,
@@ -113,23 +111,6 @@ class SubAccount(PolymorphicModel):
         return "account"
 
     @property
-    def estimated(self):
-        if self.subaccounts.count() == 0:
-            if self.quantity is not None and self.rate is not None:
-                multiplier = self.multiplier or 1.0
-                value = float(self.quantity) * float(self.rate) * float(multiplier)  # noqa
-                return fringe_value(value, self.fringes.all())
-            return None
-        else:
-            estimated = []
-            for subaccount in self.subaccounts.all():
-                if subaccount.estimated is not None:
-                    estimated.append(subaccount.estimated)
-            if len(estimated) != 0:
-                return sum(estimated)
-            return None
-
-    @property
     def account(self):
         from greenbudget.app.account.models import Account
         parent = self.parent
@@ -143,8 +124,6 @@ class SubAccount(PolymorphicModel):
                 "The group that an item belongs to must have the same parent "
                 "as that item."
             )
-        setattr(self, '_suppress_budget_update',
-            kwargs.pop('suppress_budget_update', False))
         return super().save(*args, **kwargs)
 
 
@@ -167,17 +146,13 @@ def validate_fringes(sender, **kwargs):
 m2m_changed.connect(validate_fringes, sender=SubAccount.fringes.through)
 
 
-@track_model(
-    on_create=on_create,
-    track_removal_of_fields=['group'],
+@signals.track_model(
     user_field='updated_by',
-    on_field_removal_hooks={'group': on_group_removal},
-    on_field_change=on_field_change,
-    # We are temporarily removing the track changes to `unit` field until
-    # `model_tracker` is built to support FK fields.
     track_changes_to_fields=[
-        'description', 'identifier', 'name', 'rate', 'quantity', 'multiplier'],
+        'description', 'identifier', 'name', 'rate', 'quantity', 'multiplier',
+        'object_id', 'group'],
 )
+@signals.flag_model('track_changes')
 class BudgetSubAccount(SubAccount):
     updated_by = models.ForeignKey(
         to='user.User',
@@ -197,6 +172,7 @@ class BudgetSubAccount(SubAccount):
         on_delete=models.SET_NULL,
         related_name='children'
     )
+    actual = models.FloatField(default=0.0)
 
     comments = GenericRelation(Comment)
     events = GenericRelation(Event)
@@ -209,6 +185,7 @@ class BudgetSubAccount(SubAccount):
     MAP_FIELDS_FROM_ORIGINAL = (
         'identifier', 'description', 'name', 'rate', 'quantity', 'multiplier',
         'unit')
+    TRACK_MODEL_HISTORY = True
 
     class Meta(SubAccount.Meta):
         verbose_name = "Sub Account"
@@ -224,27 +201,12 @@ class BudgetSubAccount(SubAccount):
 
     @property
     def variance(self):
-        if self.actual is not None and self.estimated is not None:
-            return float(self.estimated) - float(self.actual)
-        return None
-
-    @property
-    def actual(self):
-        actuals = []
-        for subaccount in self.subaccounts.all():
-            if subaccount.actual is not None:
-                actuals.append(subaccount.actual)
-        for actual in self.actuals.all():
-            if actual.value is not None:
-                actuals.append(actual.value)
-        if len(actuals) != 0:
-            return sum(actuals)
-        return None
+        return float(self.estimated) - float(self.actual)
 
 
-@track_model(
-    track_removal_of_fields=['group'],
-    on_field_removal_hooks={'group': on_group_removal},
+@signals.track_model(
+    user_field='updated_by',
+    track_changes_to_fields=['group', 'rate', 'quantity', 'multiplier'],
 )
 class TemplateSubAccount(SubAccount):
     updated_by = models.ForeignKey(

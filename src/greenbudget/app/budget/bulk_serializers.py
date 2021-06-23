@@ -1,5 +1,7 @@
-from django.db import transaction, models
+from django.db import models
 from rest_framework import serializers, exceptions
+
+from greenbudget.app import signals
 
 
 class AbstractBulkSerializer(serializers.ModelSerializer):
@@ -62,7 +64,7 @@ def create_bulk_create_serializer(base_cls, child_cls, child_serializer_cls,
 
         def perform_children_write(self, validated_data_array, **kwargs):
             children = []
-            with transaction.atomic():
+            with signals.bulk_context:
                 for validated_data in validated_data_array:
                     child = child_cls.objects.create(**validated_data, **kwargs)
                     children.append(child)
@@ -118,15 +120,16 @@ def create_bulk_update_serializer(base_cls, child_cls, child_serializer_cls,
             return [(gp['instance'], gp['change']) for _, gp in grouped.items()]
 
         def update(self, instance, validated_data):
-            with transaction.atomic():
-                for child, change in validated_data.pop('data'):
+            with signals.bulk_context:
+                data = validated_data.pop('data')
+                for child, change in data:
                     # At this point, the change already represents the
                     # validated data for that specific serializer.  So we do
                     # not need to pass in the validated data on __init__
                     # and rerun validation.
                     serializer = child_serializer_cls(
                         partial=True, context=self._child_context)
-                    serializer.update(child, change)
+                    serializer.update(child, {**validated_data, **change})
             return instance
 
     return BulkUpdateSerializer
