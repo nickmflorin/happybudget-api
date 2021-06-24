@@ -5,6 +5,7 @@
 - pyenv
 - homebrew
 - poetry
+- postgres
 
 Note that this documentation describes how to setup/configure the application for local development
 on MacOSX.  The steps outlined here can be done on a Windows/Ubuntu machine as well, but the steps
@@ -17,7 +18,7 @@ will not be exactly as they are here (for obvious reasons).
 Clone this repository locally and `cd` into the directory.
 
 ```bash
-$ git clone git clone https://<user>@bitbucket.org/Saturation-IO/greenbudget-api.git.git
+$ git clone https://github.com/Saturation-IO/greenbudget-api.git
 ```
 
 #### Step 2: Environment
@@ -64,6 +65,7 @@ Now that [`poetry`](https://python-poetry.org/docs/) is setup, you need to creat
 the dependencies to that virtual environment.
 
 ```bash
+$ python -m <env_name> ./<env_name>
 $ pyenv virtualenv 3.8.2 <env_name>
 $ . ./<env_name>/bin/activate
 $ poetry install
@@ -81,7 +83,7 @@ should not be needed when running locally.
 
 ## Running Locally
 
-To run the application locally, simply activate the virtual environment and start the Django web server:
+To run the application locally, simply activate the virtual environment, start postgres app, and start the Django web server:
 
 ```bash
 $ . ./env/bin/activate
