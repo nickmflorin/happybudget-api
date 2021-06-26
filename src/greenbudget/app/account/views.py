@@ -7,7 +7,7 @@ from rest_framework import viewsets, mixins, permissions
 from greenbudget.app.account.models import Account
 from greenbudget.app.account.mixins import AccountNestedMixin
 from greenbudget.app.budget.decorators import (
-    register_bulk_updating_and_creating, BulkAction)
+    register_all_bulk_operations, BulkAction)
 from greenbudget.app.group.models import (
     BudgetSubAccountGroup,
     TemplateSubAccountGroup
@@ -154,7 +154,7 @@ class GenericAccountViewSet(viewsets.GenericViewSet):
         return context
 
 
-@register_bulk_updating_and_creating(
+@register_all_bulk_operations(
     base_cls=lambda context: context.view.instance_cls,
     child_context=lambda context: {
         'budget': context.instance.budget,

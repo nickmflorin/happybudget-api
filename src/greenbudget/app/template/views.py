@@ -7,7 +7,7 @@ from greenbudget.app.account.serializers import TemplateAccountSerializer
 from greenbudget.app.account.views import GenericAccountViewSet
 from greenbudget.app.budget.mixins import TrashModelMixin
 from greenbudget.app.budget.decorators import (
-    register_bulk_updating_and_creating, BulkAction)
+    register_all_bulk_operations, BulkAction)
 from greenbudget.app.common.permissions import IsAdminOrReadOnly
 from greenbudget.app.fringe.models import Fringe
 from greenbudget.app.fringe.serializers import FringeSerializer
@@ -147,7 +147,7 @@ class GenericTemplateViewSet(viewsets.GenericViewSet):
         return TemplateSerializer
 
 
-@register_bulk_updating_and_creating(
+@register_all_bulk_operations(
     base_cls=Template,
     filter_qs=lambda context: models.Q(budget=context.instance),
     child_context=lambda context: {

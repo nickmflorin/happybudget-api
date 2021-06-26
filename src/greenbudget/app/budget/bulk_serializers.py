@@ -62,12 +62,12 @@ def create_bulk_create_serializer(base_cls, child_cls, child_serializer_cls,
                 )
             return attrs
 
+        @signals.bulk_context
         def perform_children_write(self, validated_data_array, **kwargs):
             children = []
-            with signals.bulk_context:
-                for validated_data in validated_data_array:
-                    child = child_cls.objects.create(**validated_data, **kwargs)
-                    children.append(child)
+            for validated_data in validated_data_array:
+                child = child_cls.objects.create(**validated_data, **kwargs)
+                children.append(child)
             return children
 
         def update(self, instance, validated_data):
@@ -82,6 +82,27 @@ def create_bulk_create_serializer(base_cls, child_cls, child_serializer_cls,
             )
 
     return BulkCreateSerializer
+
+
+def create_bulk_delete_serializer(base_cls, child_cls, filter_qs=None):
+    class BulkDeleteSerializer(serializers.ModelSerializer):
+        ids = serializers.PrimaryKeyRelatedField(
+            required=True,
+            queryset=child_cls.objects.filter(filter_qs or models.Q()),
+            write_only=True,
+            many=True
+        )
+
+        class Meta:
+            model = base_cls
+            fields = ('ids', )
+
+        @signals.bulk_context
+        def update(self, instance, validated_data):
+            for child in validated_data['ids']:
+                child.delete()
+            return instance
+    return BulkDeleteSerializer
 
 
 def create_bulk_update_serializer(base_cls, child_cls, child_serializer_cls,
@@ -119,17 +140,17 @@ def create_bulk_update_serializer(base_cls, child_cls, child_serializer_cls,
                     }
             return [(gp['instance'], gp['change']) for _, gp in grouped.items()]
 
+        @signals.bulk_context
         def update(self, instance, validated_data):
-            with signals.bulk_context:
-                data = validated_data.pop('data')
-                for child, change in data:
-                    # At this point, the change already represents the
-                    # validated data for that specific serializer.  So we do
-                    # not need to pass in the validated data on __init__
-                    # and rerun validation.
-                    serializer = child_serializer_cls(
-                        partial=True, context=self._child_context)
-                    serializer.update(child, {**validated_data, **change})
+            data = validated_data.pop('data')
+            for child, change in data:
+                # At this point, the change already represents the
+                # validated data for that specific serializer.  So we do
+                # not need to pass in the validated data on __init__
+                # and rerun validation.
+                serializer = child_serializer_cls(
+                    partial=True, context=self._child_context)
+                serializer.update(child, {**validated_data, **change})
             return instance
 
     return BulkUpdateSerializer

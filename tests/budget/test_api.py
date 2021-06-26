@@ -734,6 +734,22 @@ def test_bulk_create_budget_accounts(api_client, user, create_budget, models):
     assert response.json()['data'][1]['description'] == 'New Description 2'
 
 
+def test_bulk_delete_budget_accounts(api_client, user, create_budget,
+        create_budget_account, models):
+    budget = create_budget()
+    accounts = [
+        create_budget_account(budget=budget),
+        create_budget_account(budget=budget)
+    ]
+    api_client.force_login(user)
+    response = api_client.patch(
+        "/v1/budgets/%s/bulk-delete-accounts/" % budget.pk, data={
+            'ids': [a.pk for a in accounts]
+        })
+    assert response.status_code == 200
+    assert models.BudgetAccount.objects.count() == 0
+
+
 @pytest.mark.freeze_time('2020-01-01')
 def test_bulk_create_budget_accounts_count(api_client, user, create_budget,
         models):

@@ -153,3 +153,19 @@ def test_bulk_update_budget_fringes(api_client, user, create_budget,
     assert fringes[0].name == "New Name 1"
     fringes[1].refresh_from_db()
     assert fringes[1].name == "New Name 2"
+
+
+def test_bulk_delete_fringes(api_client, user, create_budget, create_fringe,
+        models):
+    budget = create_budget()
+    fringes = [
+        create_fringe(budget=budget),
+        create_fringe(budget=budget)
+    ]
+    api_client.force_login(user)
+    response = api_client.patch(
+        "/v1/budgets/%s/bulk-delete-fringes/" % budget.pk, data={
+            'ids': [f.pk for f in fringes]
+        })
+    assert response.status_code == 200
+    assert models.Fringe.objects.count() == 0

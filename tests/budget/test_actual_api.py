@@ -85,7 +85,6 @@ def test_bulk_create_budget_actuals(api_client, user, create_budget,
 @pytest.mark.freeze_time('2020-01-01')
 def test_bulk_update_budget_actuals(api_client, user, create_budget,
         create_budget_account, create_budget_subaccount, create_actual):
-    api_client.force_login(user)
     budget = create_budget()
     account = create_budget_account(budget=budget)
     subaccount = create_budget_subaccount(parent=account, budget=budget)
@@ -93,6 +92,7 @@ def test_bulk_update_budget_actuals(api_client, user, create_budget,
         create_actual(subaccount=subaccount, budget=budget),
         create_actual(subaccount=subaccount, budget=budget)
     ]
+    api_client.force_login(user)
     response = api_client.patch(
         "/v1/budgets/%s/bulk-update-actuals/" % budget.pk,
         format='json',
@@ -114,3 +114,21 @@ def test_bulk_update_budget_actuals(api_client, user, create_budget,
     assert actuals[0].description == "New Description 1"
     actuals[1].refresh_from_db()
     assert actuals[1].description == "New Description 2"
+
+
+def test_bulk_delete_actuals(api_client, user, create_budget, models,
+        create_budget_account, create_budget_subaccount, create_actual):
+    budget = create_budget()
+    account = create_budget_account(budget=budget)
+    subaccount = create_budget_subaccount(parent=account, budget=budget)
+    actuals = [
+        create_actual(subaccount=subaccount, budget=budget),
+        create_actual(subaccount=subaccount, budget=budget)
+    ]
+    api_client.force_login(user)
+    response = api_client.patch(
+        "/v1/budgets/%s/bulk-delete-actuals/" % budget.pk, data={
+            'ids': [a.pk for a in actuals]
+        })
+    assert response.status_code == 200
+    assert models.Actual.objects.count() == 0

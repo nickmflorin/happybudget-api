@@ -6,7 +6,7 @@ from rest_framework import viewsets, mixins
 
 from greenbudget.app.actual.views import GenericActualViewSet
 from greenbudget.app.budget.decorators import (
-    register_bulk_updating_and_creating, BulkAction)
+    register_all_bulk_operations, BulkAction)
 from greenbudget.app.group.models import (
     BudgetSubAccountGroup,
     TemplateSubAccountGroup
@@ -138,7 +138,7 @@ class GenericSubAccountViewSet(viewsets.GenericViewSet):
     search_fields = ['name']
 
 
-@register_bulk_updating_and_creating(
+@register_all_bulk_operations(
     base_cls=lambda context: context.view.instance_cls,
     child_context=lambda context: {
         'budget': context.instance.budget,

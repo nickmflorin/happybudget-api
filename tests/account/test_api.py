@@ -196,6 +196,24 @@ def test_bulk_update_budget_account_subaccounts(api_client, user, create_budget,
         tzinfo=timezone.utc)
 
 
+def test_bulk_delete_budget_account_subaccounts(api_client, user,
+        create_budget, create_budget_account, create_budget_subaccount,
+        models):
+    budget = create_budget()
+    account = create_budget_account(budget=budget)
+    subaccounts = [
+        create_budget_subaccount(budget=budget, parent=account),
+        create_budget_subaccount(budget=budget, parent=account)
+    ]
+    api_client.force_login(user)
+    response = api_client.patch(
+        "/v1/accounts/%s/bulk-delete-subaccounts/" % account.pk,
+        data={'ids': [sub.pk for sub in subaccounts]}
+    )
+    assert response.status_code == 200
+    assert models.BudgetSubAccount.objects.count() == 0
+
+
 def test_bulk_update_budget_account_subaccounts_budget_updated_once(api_client,
         user, create_budget, create_budget_account, create_budget_subaccount):
     budget = create_budget()
@@ -240,16 +258,8 @@ def test_bulk_update_template_account_subaccounts(api_client, user,
     template = create_template()
     account = create_template_account(budget=template)
     subaccounts = [
-        create_template_subaccount(
-            budget=template,
-            parent=account,
-            created_at=datetime.datetime(2020, 1, 1)
-        ),
-        create_template_subaccount(
-            budget=template,
-            parent=account,
-            created_at=datetime.datetime(2020, 1, 2)
-        )
+        create_template_subaccount(budget=template, parent=account),
+        create_template_subaccount(budget=template, parent=account)
     ]
     api_client.force_login(user)
     freezer.move_to("2021-01-01")
@@ -280,6 +290,32 @@ def test_bulk_update_template_account_subaccounts(api_client, user,
     template.refresh_from_db()
     assert template.updated_at == datetime.datetime(2021, 1, 1).replace(
         tzinfo=timezone.utc)
+
+
+def test_bulk_delete_template_account_subaccounts(api_client, user,
+        create_template, create_template_account, create_template_subaccount,
+        models):
+    template = create_template()
+    account = create_template_account(budget=template)
+    subaccounts = [
+        create_template_subaccount(
+            budget=template,
+            parent=account,
+            created_at=datetime.datetime(2020, 1, 1)
+        ),
+        create_template_subaccount(
+            budget=template,
+            parent=account,
+            created_at=datetime.datetime(2020, 1, 2)
+        )
+    ]
+    api_client.force_login(user)
+    response = api_client.patch(
+        "/v1/accounts/%s/bulk-delete-subaccounts/" % account.pk,
+        data={'ids': [sub.pk for sub in subaccounts]}
+    )
+    assert response.status_code == 200
+    assert models.TemplateSubAccount.objects.count() == 0
 
 
 def test_bulk_update_template_account_subaccounts_template_updated_once(

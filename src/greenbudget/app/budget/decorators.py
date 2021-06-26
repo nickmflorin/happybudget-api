@@ -8,7 +8,10 @@ from django.db import models
 from rest_framework import decorators, response, status
 
 from .bulk_serializers import (
-    create_bulk_create_serializer, create_bulk_update_serializer)
+    create_bulk_create_serializer,
+    create_bulk_update_serializer,
+    create_bulk_delete_serializer
+)
 
 
 @dataclass
@@ -25,6 +28,7 @@ class BulkAction:
     child_serializer_cls: type
     perform_create: Any = None
     perform_update: Any = None
+    perform_destroy: Any = None
     filter_qs: Any = None
     child_context: Any = None
     post_save: Any = None
@@ -183,6 +187,25 @@ class bulk_create_action(bulk_action):
         )
 
 
+class bulk_delete_action(bulk_action):
+    def __init__(self, action, **kwargs):
+        kwargs.setdefault('perform_destroy', action.perform_destroy)
+        super().__init__(action, **kwargs)
+
+    def get_serializer_class(self):
+        return create_bulk_delete_serializer(
+            base_cls=self.base_cls,
+            child_cls=self.child_cls
+        )
+
+    def decorated(self, view, request):
+        updated_instance = super().decorated(view, request)
+        return response.Response(
+            self.base_serializer_cls(updated_instance).data,
+            status=status.HTTP_200_OK
+        )
+
+
 class bulk_registration:
     def __init__(self, base_cls, base_serializer_cls=None, actions=None,
             **kwargs):
@@ -243,15 +266,25 @@ class register_bulk_creating(bulk_registration):
         return bulk_create_action(action, **kwargs)
 
 
-class register_bulk_updating_and_creating(bulk_registration):
+class register_bulk_deleting(bulk_registration):
+    action_name = "delete"
+
+    def decorate(self, action, **kwargs):
+        return bulk_delete_action(action, **kwargs)
+
+
+class register_all_bulk_operations(bulk_registration):
     def __init__(self, base_cls, actions=None, **kwargs):
         super().__init__(base_cls, actions=actions)
         self._register_bulk_updating = register_bulk_updating(
             base_cls, actions=actions, **kwargs)
         self._register_bulk_creating = register_bulk_creating(
             base_cls, actions=actions, **kwargs)
+        self._register_bulk_deleting = register_bulk_deleting(
+            base_cls, actions=actions, **kwargs)
 
     def __call__(self, cls):
         self._register_bulk_updating(cls)
         self._register_bulk_creating(cls)
+        self._register_bulk_deleting(cls)
         return cls

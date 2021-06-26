@@ -33,6 +33,13 @@ class bulk_context_manager(threading.local):
     def active(self):
         return self._active
 
+    def __call__(self, f):
+        @functools.wraps(f)
+        def decorated(*args, **kwds):
+            with self:
+                return f(*args, **kwds)
+        return decorated
+
     def __enter__(self):
         if self._active is True:
             return self

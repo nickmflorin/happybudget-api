@@ -18,7 +18,7 @@ from greenbudget.app.subaccount.models import BudgetSubAccount
 from greenbudget.app.subaccount.serializers import (
     SubAccountSimpleSerializer, SubAccountTreeNodeSerializer)
 
-from .decorators import register_bulk_updating_and_creating, BulkAction
+from .decorators import register_all_bulk_operations, BulkAction
 from .models import Budget
 from .mixins import BudgetNestedMixin, TrashModelMixin
 from .serializers import BudgetSerializer, BudgetSimpleSerializer
@@ -317,7 +317,7 @@ class GenericBudgetViewSet(viewsets.GenericViewSet):
         return self.get_serializer_class()
 
 
-@register_bulk_updating_and_creating(
+@register_all_bulk_operations(
     base_cls=Budget,
     filter_qs=lambda context: models.Q(budget=context.instance),
     child_context=lambda context: {
