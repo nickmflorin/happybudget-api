@@ -9,7 +9,8 @@ from greenbudget.app import signals
 from greenbudget.app.budget.signals import (
     estimate_budget, actualize_budget, calculate_budget)
 from greenbudget.app.group.models import Group
-from greenbudget.app.subaccount.models import BudgetSubAccount
+from greenbudget.app.subaccount.models import (
+    BudgetSubAccount, TemplateSubAccount)
 
 from .models import BudgetAccount, TemplateAccount
 
@@ -24,7 +25,15 @@ recalculate_account = signals.Signal()
 
 @signals.bulk_context.decorate()
 def estimate_account(instance):
-    subaccounts = instance.subaccounts.only('estimated').all()
+    # NOTE: We cannot use instance.subaccounts.all() due to race conditions on
+    # delete events.
+    model_cls = BudgetSubAccount
+    if isinstance(instance, TemplateAccount):
+        model_cls = TemplateSubAccount
+    subaccounts = model_cls.objects.filter(
+        content_type=ContentType.objects.get_for_model(BudgetAccount),
+        object_id=instance.pk
+    ).only('estimated')
     instance.estimated = functools.reduce(
         lambda current, sub: current + (sub.estimated or 0), subaccounts, 0)
     instance.save(update_fields=['estimated'])
