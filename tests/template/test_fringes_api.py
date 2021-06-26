@@ -154,3 +154,19 @@ def test_bulk_update_template_fringes(api_client, user, create_template,
     assert fringes[0].name == "New Name 1"
     fringes[1].refresh_from_db()
     assert fringes[1].name == "New Name 2"
+
+
+def test_bulk_delete_fringes(api_client, user, create_template, create_fringe,
+        models):
+    template = create_template()
+    fringes = [
+        create_fringe(budget=template),
+        create_fringe(budget=template)
+    ]
+    api_client.force_login(user)
+    response = api_client.patch(
+        "/v1/templates/%s/bulk-delete-fringes/" % template.pk, data={
+            'ids': [f.pk for f in fringes]
+        })
+    assert response.status_code == 200
+    assert models.Fringe.objects.count() == 0

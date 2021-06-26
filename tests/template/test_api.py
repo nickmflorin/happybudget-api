@@ -769,6 +769,22 @@ def test_bulk_create_template_accounts(api_client, user, create_template,
     assert response.json()['data'][1]['description'] == 'New Description 2'
 
 
+def test_bulk_delete_templates_accounts(api_client, user, create_template,
+        create_template_account, models):
+    template = create_template()
+    accounts = [
+        create_template_account(budget=template),
+        create_template_account(budget=template)
+    ]
+    api_client.force_login(user)
+    response = api_client.patch(
+        "/v1/templates/%s/bulk-delete-accounts/" % template.pk, data={
+            'ids': [a.pk for a in accounts]
+        })
+    assert response.status_code == 200
+    assert models.BudgetAccount.objects.count() == 0
+
+
 @pytest.mark.freeze_time('2020-01-01')
 def test_bulk_create_template_accounts_count(api_client, user, create_template,
         models):
