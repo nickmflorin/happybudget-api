@@ -286,18 +286,7 @@ def test_update_budget_subaccount_group_child_not_same_parent(api_client,
         'children': [subaccount.pk],
     })
     assert response.status_code == 400
-    assert response.json() == {
-        'errors': [{
-            'code': 'invalid',
-            'error_type': 'field',
-            'field': 'children',
-            'message': (
-                'The BudgetSubAccount %s does not belong to the same '
-                'BudgetAccount that the Group does (%s).'
-                % (subaccount.pk, another_account.pk)
-            )
-        }]
-    }
+    assert response.json()['errors'][0]['code'] == 'does_not_exist'
 
 
 def test_update_template_subaccount_group_child_not_same_parent(api_client,
@@ -315,18 +304,7 @@ def test_update_template_subaccount_group_child_not_same_parent(api_client,
         'children': [subaccount.pk],
     })
     assert response.status_code == 400
-    assert response.json() == {
-        'errors': [{
-            'code': 'invalid',
-            'error_type': 'field',
-            'field': 'children',
-            'message': (
-                'The TemplateSubAccount %s does not belong to the same '
-                'TemplateAccount that the Group does (%s).'
-                % (subaccount.pk, another_account.pk)
-            )
-        }]
-    }
+    assert response.json()['errors'][0]['code'] == 'does_not_exist'
 
 
 def test_budget_account_group_account_already_in_group(api_client, user,

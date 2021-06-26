@@ -113,6 +113,7 @@ def test_create_template_account_subaccount_group(api_client, user,
         'children': [subaccount.pk],
         'color': '#a1887f',
     })
+
     assert response.status_code == 201
 
     group = models.TemplateSubAccountGroup.objects.first()

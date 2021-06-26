@@ -34,6 +34,8 @@ class bulk_context_manager(threading.local):
         return self._active
 
     def __enter__(self):
+        if self._active is True:
+            return self
         with transaction.atomic():
             self._active = True
             return self

@@ -1,4 +1,4 @@
-from rest_framework import serializers, exceptions
+from rest_framework import serializers
 
 from greenbudget.lib.drf.serializers import (
     ModelSerializer)
@@ -8,6 +8,10 @@ from greenbudget.app.tagging.serializers import ColorField
 from greenbudget.app.subaccount.models import (
     BudgetSubAccount, TemplateSubAccount)
 
+from .fields import (
+    AccountGroupChildFilteredQuerysetPKField,
+    SubAccountGroupChildFilteredQuerysetPKField
+)
 from .models import (
     Group,
     BudgetAccountGroup,
@@ -151,30 +155,10 @@ class GroupSerializer(ModelSerializer):
         return instance
 
 
-class AbstractAccountGroupSerializer(GroupSerializer):
-    class Meta:
-        abstract = True
-
-    def validate_children(self, value):
-        parent = self.context.get('parent')
-        if parent is None:
-            parent = self.instance.parent
-        for child in value:
-            if child.budget != parent:
-                raise exceptions.ValidationError(
-                    "The %s %s does not belong to the same %s "
-                    "that the Group does (%s)." % (
-                        type(child).__name__, child.pk, type(parent).__name__,
-                        parent.pk)
-                )
-        return value
-
-
-class BudgetAccountGroupSerializer(AbstractAccountGroupSerializer):
+class BudgetAccountGroupSerializer(GroupSerializer):
     actual = serializers.FloatField(read_only=True)
     variance = serializers.FloatField(read_only=True)
-    # TODO: Adapt BudgetFilteredQuerysetPKField for many = True.
-    children = serializers.PrimaryKeyRelatedField(
+    children = AccountGroupChildFilteredQuerysetPKField(
         many=True,
         required=True,
         queryset=BudgetAccount.objects.active()
@@ -186,9 +170,8 @@ class BudgetAccountGroupSerializer(AbstractAccountGroupSerializer):
             'children', 'actual', 'variance')
 
 
-class TemplateAccountGroupSerializer(AbstractAccountGroupSerializer):
-    # TODO: Adapt BudgetFilteredQuerysetPKField for many = True.
-    children = serializers.PrimaryKeyRelatedField(
+class TemplateAccountGroupSerializer(GroupSerializer):
+    children = AccountGroupChildFilteredQuerysetPKField(
         many=True,
         required=True,
         queryset=TemplateAccount.objects.active()
@@ -199,39 +182,10 @@ class TemplateAccountGroupSerializer(AbstractAccountGroupSerializer):
         fields = GroupSerializer.Meta.fields + ('children', )
 
 
-class AbstractSubAccountGroupSerializer(GroupSerializer):
-    class Meta:
-        abstract = True
-
-    def validate_children(self, value):
-        parent = self.context.get('parent')
-        if parent is None:
-            parent = self.instance.parent
-        for child in value:
-            if child.parent != parent:
-                raise exceptions.ValidationError(
-                    "The %s %s does not belong to the same %s "
-                    "that the Group does (%s)." % (
-                        type(child).__name__, child.pk, type(parent).__name__,
-                        parent.pk)
-                )
-            # Is this check necessary?  Would this otherwise be constrained
-            # by model restrictions?
-            elif child.budget != parent.budget:
-                raise exceptions.ValidationError(
-                    "The %s %s does not belong to the same %s "
-                    "that the Group does (%s)." % (
-                        type(child).__name__, child.pk,
-                        type(child.budget).__name__, parent.pk)
-                )
-        return value
-
-
-class BudgetSubAccountGroupSerializer(AbstractSubAccountGroupSerializer):
+class BudgetSubAccountGroupSerializer(GroupSerializer):
     actual = serializers.FloatField(read_only=True)
     variance = serializers.FloatField(read_only=True)
-    # TODO: Adapt BudgetFilteredQuerysetPKField for many = True.
-    children = serializers.PrimaryKeyRelatedField(
+    children = SubAccountGroupChildFilteredQuerysetPKField(
         many=True,
         required=True,
         queryset=BudgetSubAccount.objects.active()
@@ -243,9 +197,8 @@ class BudgetSubAccountGroupSerializer(AbstractSubAccountGroupSerializer):
             'children', 'actual', 'variance')
 
 
-class TemplateSubAccountGroupSerializer(AbstractSubAccountGroupSerializer):
-    # TODO: Adapt BudgetFilteredQuerysetPKField for many = True.
-    children = serializers.PrimaryKeyRelatedField(
+class TemplateSubAccountGroupSerializer(GroupSerializer):
+    children = SubAccountGroupChildFilteredQuerysetPKField(
         many=True,
         required=True,
         queryset=TemplateSubAccount.objects.active()

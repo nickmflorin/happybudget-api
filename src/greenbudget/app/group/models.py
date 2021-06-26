@@ -1,6 +1,8 @@
 import functools
 from polymorphic.models import PolymorphicModel
 
+from greenbudget.app import signals
+
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -13,6 +15,7 @@ from .managers import (
 )
 
 
+@signals.flag_model('suppress_budget_update')
 class Group(PolymorphicModel):
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(
@@ -64,11 +67,6 @@ class Group(PolymorphicModel):
         children = self.children.only('estimated')
         return functools.reduce(
             lambda current, c: current + (c.estimated or 0), children, 0)
-
-    def save(self, *args, **kwargs):
-        setattr(self, '_suppress_budget_update',
-            kwargs.pop('suppress_budget_update', False))
-        super().save(*args, **kwargs)
 
 
 class BudgetAccountGroup(Group):

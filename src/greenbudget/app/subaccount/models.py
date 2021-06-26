@@ -119,6 +119,9 @@ class SubAccount(PolymorphicModel):
         return parent
 
     def save(self, *args, **kwargs):
+        # TODO: For whatever reason, this validation does not seem to work when
+        # updating a specific Group with { children: [] } via the API.  The
+        # group is always None.
         if self.group is not None and self.group.parent != self.parent:
             raise IntegrityError(
                 "The group that an item belongs to must have the same parent "
