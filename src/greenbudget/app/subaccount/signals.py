@@ -118,7 +118,8 @@ def subaccount_recalculation(instance, **kwargs):
 @dispatch.receiver(models.signals.post_delete, sender=BudgetSubAccount)
 @dispatch.receiver(models.signals.post_delete, sender=TemplateSubAccount)
 def subaccount_deleted(instance, **kwargs):
-    calculate_parent(instance.parent)
+    if instance.parent is not None:
+        calculate_parent(instance.parent)
 
 
 @signals.any_fields_changed_receiver(
