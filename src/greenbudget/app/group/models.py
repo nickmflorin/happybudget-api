@@ -15,7 +15,7 @@ from .managers import (
 )
 
 
-@signals.flag_model('suppress_budget_update')
+@signals.model('suppress_budget_update')
 class Group(PolymorphicModel):
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(

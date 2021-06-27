@@ -44,7 +44,7 @@ class SubAccountUnit(Tag):
         )
 
 
-@signals.flag_model('suppress_budget_update')
+@signals.model('suppress_budget_update')
 class SubAccount(PolymorphicModel):
     type = "subaccount"
     created_at = models.DateTimeField(auto_now_add=True)
@@ -155,7 +155,7 @@ m2m_changed.connect(validate_fringes, sender=SubAccount.fringes.through)
         'description', 'identifier', 'name', 'rate', 'quantity', 'multiplier',
         'object_id', 'group'],
 )
-@signals.flag_model('track_changes')
+@signals.model('track_changes')
 class BudgetSubAccount(SubAccount):
     updated_by = models.ForeignKey(
         to='user.User',

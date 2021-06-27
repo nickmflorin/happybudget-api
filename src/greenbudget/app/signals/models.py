@@ -1,11 +1,15 @@
-class flag_model:
+from greenbudget.lib.utils import ensure_iterable
+
+
+class model:
     """
-    Allows flags to be set on model instances during save for purposes of
-    context in save related signals.
+    A common decorator for all of our applications :obj:`django.db.models.Model`
+    instances.  All :obj:`django.db.models.Model` instances that have connected
+    signals should be decorated with this class.
     """
 
-    def __init__(self, *flags):
-        self._flags = list(flags)
+    def __init__(self, flags=None):
+        self._flags = ensure_iterable(flags)
 
     def __call__(self, cls):
         def save(instance, *args, **kwargs):
@@ -27,6 +31,6 @@ class flag_model:
 
         # Track that the model was decorated with this class for purposes of
         # model inheritance and/or prevention of model inheritance.
-        setattr(cls, '__flag_model_decorated__', self)
+        setattr(cls, '__decorated_for_signals__', self)
 
         return cls

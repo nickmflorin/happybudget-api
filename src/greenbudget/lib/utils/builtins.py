@@ -162,6 +162,8 @@ def ensure_iterable(value, strict=False, cast=list):
     (if `strict = True`) or returning the value as the first element in an
     iterable (if `strict = False`).
     """
+    if value is None:
+        return cast()
     if not hasattr(value, '__iter__') or isinstance(value, type):
         if strict:
             raise ValueError("Value %s is not an iterable." % value)
