@@ -1,10 +1,12 @@
 from django.db import models, IntegrityError
 
+from greenbudget.app import signals
 from greenbudget.app.budget.models import BaseBudget
 
 from .managers import TemplateManager
 
 
+@signals.model(flags='suppress_budget_update')
 class Template(BaseBudget):
     type = "template"
     community = models.BooleanField(default=False)

@@ -2,9 +2,15 @@ from model_utils import Choices
 
 from django.db import models
 
+from greenbudget.app import signals
+
 from .managers import FringeManager, BudgetFringeManager, TemplateFringeManager
 
 
+@signals.model(
+    flags='suppress_budget_update',
+    user_field='updated_by'
+)
 class Fringe(models.Model):
     name = models.CharField(max_length=128, null=True)
     description = models.CharField(null=True, max_length=128)
@@ -74,8 +80,6 @@ class Fringe(models.Model):
         # is irrelevant.
         if self.unit == self.UNITS.flat:
             self.cutoff = None
-        setattr(self, '_suppress_budget_update',
-            kwargs.pop('suppress_budget_update', False))
         super().save(*args, **kwargs)
 
 

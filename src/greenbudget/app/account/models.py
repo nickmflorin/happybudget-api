@@ -15,7 +15,6 @@ from .managers import (
     AccountManager, BudgetAccountManager, TemplateAccountManager)
 
 
-@signals.model('suppress_budget_update')
 class Account(PolymorphicModel):
     type = "account"
     created_at = models.DateTimeField(auto_now_add=True)
@@ -64,11 +63,11 @@ class Account(PolymorphicModel):
         return super().save(*args, **kwargs)
 
 
-@signals.track_model(
+@signals.model(
+    flags=['suppress_budget_update'],
     user_field='updated_by',
-    track_changes_to_fields=['description', 'identifier', 'group'],
+    exclude_fields=['updated_by', 'created_by', 'estimated', 'actual']
 )
-@signals.model('track_changes')
 class BudgetAccount(Account):
     updated_by = models.ForeignKey(
         to='user.User',
@@ -101,6 +100,7 @@ class BudgetAccount(Account):
     MAP_FIELDS_FROM_TEMPLATE = ('identifier', 'description')
     MAP_FIELDS_FROM_ORIGINAL = ('identifier', 'description')
     TRACK_MODEL_HISTORY = True
+    TRACK_FIELD_CHANGE_HISTORY = ['identifier', 'description']
 
     objects = BudgetAccountManager()
 
@@ -113,9 +113,10 @@ class BudgetAccount(Account):
         return float(self.estimated) - float(self.actual)
 
 
-@signals.track_model(
+@signals.model(
+    flags=['suppress_budget_update'],
     user_field='updated_by',
-    track_changes_to_fields=['group'],
+    exclude_fields=['updated_by', 'created_by', 'estimated']
 )
 class TemplateAccount(Account):
     updated_by = models.ForeignKey(

@@ -5,6 +5,7 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django.utils import timezone
 
+from greenbudget.app import signals
 from greenbudget.app.comment.models import Comment
 
 from .managers import BudgetManager, BaseBudgetManager
@@ -53,6 +54,7 @@ class BaseBudget(PolymorphicModel):
         self.save()
 
 
+@signals.model(flags='suppress_budget_update')
 class Budget(BaseBudget):
     type = "budget"
     project_number = models.IntegerField(default=0)

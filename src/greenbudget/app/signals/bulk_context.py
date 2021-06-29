@@ -1,17 +1,25 @@
 import functools
+import logging
 import threading
 
 from django.db import transaction
 
 
-class FuncSignature:
-    def __init__(self, func, args=None, kwargs=None, id=None):
+logger = logging.getLogger('signals')
+
+
+class LazyFunc:
+    def __init__(self, context, func, args=None, kwargs=None, id=None, bind=False):  # noqa
+        self.context = context
         self.func = func
         self.args = tuple(args or [])
         self.kwargs = dict(kwargs or {})
         self.id = id
+        self.bind = bind
 
     def __call__(self):
+        if self.bind is True:
+            return self.func(self.context, *self.args, **self.kwargs)
         return self.func(*self.args, **self.kwargs)
 
     def __eq__(self, other):
@@ -21,11 +29,21 @@ class FuncSignature:
             and self.args == other.args \
             and self.kwargs == other.kwargs
 
+    def __str__(self):
+        if self.id is not None:
+            return "[func={func} id={id}]".format(func=self.func, id=self.id)
+        return "[func={func} args={args} kwargs={kwargs}]".format(
+            func=self.func.__name__,
+            args=self.args,
+            kwargs=self.kwargs
+        )
+
 
 class bulk_context_manager(threading.local):
     def __init__(self, active=False):
         super().__init__()
         self.queue = []
+        self.lazy_saves = []
         self._active = active
         self._flushing = False
 
@@ -43,37 +61,63 @@ class bulk_context_manager(threading.local):
     def __enter__(self):
         if self._active is True:
             return self
-        with transaction.atomic():
-            self._active = True
-            return self
+        logger.info("Entering bulk context.")
+        self._active = True
+        return self
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
+        logger.info(
+            "Exiting bulk context, queue length = %s." % len(self.queue))
         if not exc_type:
-            self.flush()
+            with transaction.atomic():
+                self.flush()
         self._active = False
         return False
 
     def flush(self):
         while self.queue:
-            queue = self.queue[:]
-            self.queue = []
-            for signature in queue:
+            level_queue = self.queue[:]
+            for signature in level_queue:
+                logger.info("Flushing: %s" % signature)
                 signature()
+            # Wait until after all of the signatures are called before
+            # removing them from the queue.  Calling a signature might result
+            # in an additional signature being added to the queue, and we still
+            # do not want to add that signature if it was already in the queue
+            # to begin with.
+            for signature in level_queue:
+                self.queue.remove(signature)
 
-    def decorate(self, recall_id=None):
+    def queue_in_context(self, recall_id=None, bind=False):
+        """
+        Decorator for a function that we only want to be called once with the
+        same signature while inside the bulk context.
+        """
         def decorator(func):
             @functools.wraps(func)
             def decorated(*args, **kwargs):
                 if self._active is False:
+                    if bind:
+                        return func(self, *args, **kwargs)
                     return func(*args, **kwargs)
 
                 explicit_id = None
                 if recall_id is not None:
                     explicit_id = recall_id(*args, **kwargs)
 
-                signature = FuncSignature(func, args, kwargs, id=explicit_id)
+                signature = LazyFunc(
+                    context=self,
+                    bind=bind,
+                    func=func,
+                    args=args,
+                    kwargs=kwargs,
+                    id=explicit_id
+                )
                 if signature not in self.queue:
+                    logger.info("Adding Signature to Queue: %s" % signature)
                     self.queue.append(signature)
+                else:
+                    logger.debug("Ignoring repetitive call to %s." % signature)
             return decorated
         return decorator
 

@@ -18,12 +18,7 @@ from .models import BudgetAccount, TemplateAccount
 logger = logging.getLogger('signals')
 
 
-reestimate_account = signals.Signal()
-reactualize_account = signals.Signal()
-recalculate_account = signals.Signal()
-
-
-@signals.bulk_context.decorate()
+@signals.bulk_context.queue_in_context()
 def estimate_account(instance):
     # NOTE: We cannot use instance.subaccounts.all() due to race conditions on
     # delete events.
@@ -36,11 +31,11 @@ def estimate_account(instance):
     ).only('estimated')
     instance.estimated = functools.reduce(
         lambda current, sub: current + (sub.estimated or 0), subaccounts, 0)
-    instance.save(update_fields=['estimated'])
+    instance.save(update_fields=['estimated'], suppress_budget_update=True)
     estimate_budget(instance.budget)
 
 
-@signals.bulk_context.decorate()
+@signals.bulk_context.queue_in_context()
 def actualize_account(instance):
     subaccounts = BudgetSubAccount.objects.filter(
         content_type=ContentType.objects.get_for_model(BudgetAccount),
@@ -48,7 +43,7 @@ def actualize_account(instance):
     ).only('actual')
     instance.actual = functools.reduce(
         lambda current, sub: current + (sub.actual or 0), subaccounts, 0)
-    instance.save(update_fields=['actual'])
+    instance.save(update_fields=['actual'], suppress_budget_update=True)
     actualize_budget(instance.budget)
 
 
@@ -62,25 +57,8 @@ def calculate_account(instance):
 @dispatch.receiver(signals.post_create, sender=TemplateAccount)
 @dispatch.receiver(models.signals.post_delete, sender=BudgetAccount)
 @dispatch.receiver(models.signals.post_delete, sender=TemplateAccount)
-def account_created_or_deleted(instance, **kwargs):
+def account_created_or_deleted(sender, instance, **kwargs):
     calculate_budget(instance.budget)
-
-
-@dispatch.receiver(reestimate_account, sender=BudgetAccount)
-@dispatch.receiver(reestimate_account, sender=TemplateAccount)
-def account_reestimation(instance, **kwargs):
-    estimate_account(instance)
-
-
-@dispatch.receiver(reactualize_account, sender=BudgetAccount)
-def account_reactualization(instance, **kwargs):
-    actualize_account(instance)
-
-
-@dispatch.receiver(recalculate_account, sender=BudgetAccount)
-@dispatch.receiver(recalculate_account, sender=TemplateAccount)
-def account_recalculation(instance, **kwargs):
-    calculate_account(instance)
 
 
 @signals.field_changed_receiver('group', sender=BudgetAccount)

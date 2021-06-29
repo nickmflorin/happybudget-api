@@ -3,6 +3,8 @@ from datetime import timezone
 import pytest
 from django.test import override_settings
 
+from greenbudget.app import signals
+
 
 def test_remove_budget_account_from_group_group_deleted(create_budget, user,
         create_budget_account_group, models):
@@ -23,9 +25,10 @@ def test_remove_budget_account_from_group_group_deleted(create_budget, user,
 def test_saving_subaccount_saves_budget(create_budget, create_budget_account,
         freezer):
     freezer.move_to('2017-05-20')
-    budget = create_budget()
-    account = create_budget_account(budget=budget)
-    freezer.move_to('2019-05-20')
+    with signals.post_save.disable():
+        budget = create_budget()
+        account = create_budget_account(budget=budget)
+        freezer.move_to('2019-05-20')
     account.save()
     budget.refresh_from_db()
     assert budget.updated_at == datetime.datetime(

@@ -1,14 +1,14 @@
 from django.utils.deprecation import MiddlewareMixin
 
-from .model_tracker import track_model
+from .models import model
 
 
-class TrackModelMiddleware(MiddlewareMixin):
+class ModelSignalMiddleware(MiddlewareMixin):
     """
     Middleware that associates the incoming HTTP request with the
-    :obj:`track_model` so that the user performing the alteration
+    :obj:`model` so that the user performing the alteration
     to the model can be referenced.
     """
 
     def process_request(self, request):
-        track_model.thread.request = request
+        model.thread.request = request

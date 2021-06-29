@@ -3,8 +3,9 @@ from datetime import timezone
 import pytest
 
 from django.contrib.contenttypes.models import ContentType
-
 from django.test import override_settings
+
+from greenbudget.app import signals
 
 
 def test_create_subaccount_recalculates(models, create_budget,
@@ -161,8 +162,9 @@ def test_remove_template_subaccount_from_group_group_not_deleted(models,
 @override_settings(TRACK_MODEL_HISTORY=True)
 def test_record_create_history(create_budget, create_budget_account, user,
         models):
-    budget = create_budget()
-    account = create_budget_account(budget=budget)
+    with signals.post_create_by_user.disable():
+        budget = create_budget()
+        account = create_budget_account(budget=budget)
     subaccount = models.BudgetSubAccount.objects.create(
         description="Description",
         identifier="Identifier",

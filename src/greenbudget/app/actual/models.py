@@ -7,8 +7,11 @@ from greenbudget.app import signals
 from greenbudget.app.comment.models import Comment
 
 
-@signals.track_model(track_changes_to_fields=['value', 'subaccount'])
-@signals.model('suppress_budget_update')
+@signals.model(
+    flags=['suppress_budget_update'],
+    user_field='updated_by',
+    exclude_fields=['updated_by', 'created_by']
+)
 class Actual(models.Model):
     type = "actual"
     created_at = models.DateTimeField(auto_now_add=True)

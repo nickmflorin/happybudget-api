@@ -164,6 +164,8 @@ def ensure_iterable(value, strict=False, cast=list):
     """
     if value is None:
         return cast()
+    if isinstance(value, str):
+        return [value]
     if not hasattr(value, '__iter__') or isinstance(value, type):
         if strict:
             raise ValueError("Value %s is not an iterable." % value)

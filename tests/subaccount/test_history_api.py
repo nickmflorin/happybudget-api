@@ -3,26 +3,29 @@ import pytest
 
 from django.test import override_settings
 
+from greenbudget.app import signals
+
 
 @pytest.mark.freeze_time('2020-01-01')
 @override_settings(TRACK_MODEL_HISTORY=True)
 def test_get_subaccount_subaccounts_history(api_client, create_budget, user,
         create_budget_subaccount, create_budget_account, models):
-    api_client.force_login(user)
-    budget = create_budget()
-    account = create_budget_account(budget=budget)
-    parent_subaccount = create_budget_subaccount(
-        parent=account,
-        budget=budget,
-        identifier="subaccount-a"
-    )
-    subaccount = create_budget_subaccount(
-        parent=parent_subaccount,
-        name="Original Name",
-        description="Original Description",
-        identifier="old_identifier",
-        budget=budget
-    )
+
+    with signals.post_create_by_user.disable():
+        budget = create_budget()
+        account = create_budget_account(budget=budget)
+        parent_subaccount = create_budget_subaccount(
+            parent=account,
+            budget=budget,
+            identifier="subaccount-a"
+        )
+        subaccount = create_budget_subaccount(
+            parent=parent_subaccount,
+            name="Original Name",
+            description="Original Description",
+            identifier="old_identifier",
+            budget=budget
+        )
     api_client.force_login(user)
     response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk, data={
         "name": "New Name",
@@ -161,16 +164,16 @@ def test_get_subaccount_subaccounts_history(api_client, create_budget, user,
 @override_settings(TRACK_MODEL_HISTORY=True)
 def test_get_subaccount_history(api_client, create_budget, user,
         create_budget_account, create_budget_subaccount, models):
-    api_client.force_login(user)
-    budget = create_budget()
-    account = create_budget_account(budget=budget)
-    subaccount = create_budget_subaccount(
-        parent=account,
-        name="Original Name",
-        description="Original Description",
-        identifier="old_identifier",
-        budget=budget
-    )
+    with signals.post_create_by_user.disable():
+        budget = create_budget()
+        account = create_budget_account(budget=budget)
+        subaccount = create_budget_subaccount(
+            parent=account,
+            name="Original Name",
+            description="Original Description",
+            identifier="old_identifier",
+            budget=budget
+        )
     api_client.force_login(user)
     response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk, data={
         "name": "New Name",

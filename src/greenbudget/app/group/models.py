@@ -15,7 +15,6 @@ from .managers import (
 )
 
 
-@signals.model('suppress_budget_update')
 class Group(PolymorphicModel):
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(
@@ -69,6 +68,7 @@ class Group(PolymorphicModel):
             lambda current, c: current + (c.estimated or 0), children, 0)
 
 
+@signals.model('suppress_budget_update')
 class BudgetAccountGroup(Group):
     parent = models.ForeignKey(
         to='budget.Budget',
@@ -98,6 +98,7 @@ class BudgetAccountGroup(Group):
             lambda current, c: current + (c.actual or 0), children, 0)
 
 
+@signals.model('suppress_budget_update')
 class TemplateAccountGroup(Group):
     parent = models.ForeignKey(
         to='template.Template',
@@ -116,6 +117,7 @@ class TemplateAccountGroup(Group):
         verbose_name_plural = "Account Groups"
 
 
+@signals.model('suppress_budget_update')
 class BudgetSubAccountGroup(Group):
     content_type = models.ForeignKey(
         to=ContentType,
@@ -149,6 +151,7 @@ class BudgetSubAccountGroup(Group):
             lambda current, c: current + (c.actual or 0), children, 0)
 
 
+@signals.model('suppress_budget_update')
 class TemplateSubAccountGroup(Group):
     content_type = models.ForeignKey(
         to=ContentType,

@@ -95,7 +95,7 @@ def test_get_another_users_community_template_accounts(api_client, staff_user,
     assert response.json()['count'] == 2
 
 
-@ pytest.mark.freeze_time('2020-01-01')
+@pytest.mark.freeze_time('2020-01-01')
 def test_create_template_account(api_client, user, create_template, models):
     template = create_template()
     api_client.force_login(user)

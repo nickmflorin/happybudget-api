@@ -62,17 +62,17 @@ def track_change_history(instance, **kwargs):
     should_track_history = getattr(
         kwargs['sender'], 'TRACK_MODEL_HISTORY', False)
     should_track_change_history = getattr(
-        kwargs['sender'], 'TRACK_MODEL_CHANGE_HISTORY', False)
+        kwargs['sender'], 'TRACK_FIELD_CHANGE_HISTORY', [])
 
     if (should_track_history or should_track_change_history):
         model_supports_history(kwargs['sender'])
         if not model_history_enabled(kwargs['sender']):
             return
 
-        # TODO: Eventually, we are going to want to do this in the background,
-        # or at least bulk create.
+        # TODO: Start doing this in the background.
         with transaction.atomic():
-            for change in kwargs['changes']:
+            for change in [c for c in kwargs['changes']
+                    if c.field in should_track_change_history]:
                 FieldAlterationEvent.objects.create(
                     content_object=instance,
                     field=change.field,

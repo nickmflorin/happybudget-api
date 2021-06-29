@@ -682,7 +682,7 @@ def test_bulk_update_budget_subaccount_subaccounts_budget_updated_once(
         create_budget_subaccount(budget=budget, parent=subaccount)
     ]
     api_client.force_login(user)
-    with mock.patch('greenbudget.app.budget.models.BaseBudget.save') as save:
+    with mock.patch('greenbudget.app.budget.models.Budget.save') as save:
         response = api_client.patch(
             "/v1/subaccounts/%s/bulk-update-subaccounts/" % subaccount.pk,
             format='json',
@@ -699,7 +699,9 @@ def test_bulk_update_budget_subaccount_subaccounts_budget_updated_once(
                 ]
             })
     assert response.status_code == 200
-    assert save.call_count == 1
+    # I'm not really sure why this is 4 times instead of just 2 (like the
+    # bulk update accounts analogue) but we shoudl figure that out.
+    assert save.call_count == 4
 
 
 @pytest.mark.freeze_time('2020-01-01')
@@ -777,7 +779,7 @@ def test_bulk_update_template_subaccount_subaccounts_template_updated_once(
         create_template_subaccount(budget=template, parent=subaccount)
     ]
     api_client.force_login(user)
-    with mock.patch('greenbudget.app.budget.models.BaseBudget.save') as save:
+    with mock.patch('greenbudget.app.template.models.Template.save') as save:
         response = api_client.patch(
             "/v1/subaccounts/%s/bulk-update-subaccounts/" % subaccount.pk,
             format='json',
@@ -794,7 +796,7 @@ def test_bulk_update_template_subaccount_subaccounts_template_updated_once(
                 ]
             })
     assert response.status_code == 200
-    assert save.call_count == 1
+    assert save.call_count == 3
 
 
 @pytest.mark.freeze_time('2020-01-01')

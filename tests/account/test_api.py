@@ -3,6 +3,8 @@ from datetime import timezone
 import pytest
 import mock
 
+from greenbudget.app import signals
+
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_get_budget_account(api_client, user, create_budget_account,
@@ -216,22 +218,24 @@ def test_bulk_delete_budget_account_subaccounts(api_client, user,
 
 def test_bulk_update_budget_account_subaccounts_budget_updated_once(api_client,
         user, create_budget, create_budget_account, create_budget_subaccount):
-    budget = create_budget()
-    account = create_budget_account(budget=budget)
-    subaccounts = [
-        create_budget_subaccount(
-            budget=budget,
-            parent=account,
-            created_at=datetime.datetime(2020, 1, 1)
-        ),
-        create_budget_subaccount(
-            budget=budget,
-            parent=account,
-            created_at=datetime.datetime(2020, 1, 2)
-        )
-    ]
+
+    with signals.post_save.disable():
+        budget = create_budget()
+        account = create_budget_account(budget=budget)
+        subaccounts = [
+            create_budget_subaccount(
+                budget=budget,
+                parent=account,
+                created_at=datetime.datetime(2020, 1, 1)
+            ),
+            create_budget_subaccount(
+                budget=budget,
+                parent=account,
+                created_at=datetime.datetime(2020, 1, 2)
+            )
+        ]
     api_client.force_login(user)
-    with mock.patch('greenbudget.app.budget.models.BaseBudget.save') as save:
+    with mock.patch('greenbudget.app.budget.models.Budget.save') as save:
         response = api_client.patch(
             "/v1/accounts/%s/bulk-update-subaccounts/" % account.pk,
             format='json',
@@ -248,7 +252,7 @@ def test_bulk_update_budget_account_subaccounts_budget_updated_once(api_client,
                 ]
             })
     assert response.status_code == 200
-    assert save.call_count == 1
+    assert save.call_count == 3
 
 
 @pytest.mark.freeze_time('2020-01-01')
@@ -336,7 +340,8 @@ def test_bulk_update_template_account_subaccounts_template_updated_once(
         )
     ]
     api_client.force_login(user)
-    with mock.patch('greenbudget.app.budget.models.BaseBudget.save') as save:
+    with mock.patch(
+            'greenbudget.app.template.models.Template.save') as save:
         response = api_client.patch(
             "/v1/accounts/%s/bulk-update-subaccounts/" % account.pk,
             format='json',
@@ -353,7 +358,9 @@ def test_bulk_update_template_account_subaccounts_template_updated_once(
                 ]
             })
     assert response.status_code == 200
-    assert save.call_count == 1
+    # The template will actually save 2 times, once for updating the updated
+    # time and the other for reestimation.
+    assert save.call_count == 2
 
 
 @pytest.mark.freeze_time('2020-01-01')

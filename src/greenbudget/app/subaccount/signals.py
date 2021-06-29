@@ -3,7 +3,7 @@ import logging
 
 from django import dispatch
 from django.contrib.contenttypes.models import ContentType
-from django.db import models, transaction
+from django.db import models
 
 from greenbudget.app import signals
 from greenbudget.app.account.signals import (
@@ -17,13 +17,7 @@ from .models import BudgetSubAccount, TemplateSubAccount
 logger = logging.getLogger('signals')
 
 
-reestimate_subaccount = signals.Signal()
-reactualize_subaccount = signals.Signal()
-recalculate_subaccount = signals.Signal()
-
-
-@transaction.atomic
-@signals.bulk_context.decorate()
+@signals.bulk_context.queue_in_context()
 def actualize_subaccount(instance):
     # We cannot do .only('actual') here because the subaccounts are polymorphic.
     # We should figure out how to do that.
@@ -38,7 +32,7 @@ def actualize_subaccount(instance):
     instance.actual += functools.reduce(
         lambda current, actual: current + (actual.value or 0), actuals.all(), 0)
 
-    instance.save(update_fields=['actual'])
+    instance.save(update_fields=['actual'], suppress_budget_update=True)
 
     if isinstance(instance.parent, (BudgetSubAccount, TemplateSubAccount)):
         actualize_subaccount(instance.parent)
@@ -46,8 +40,7 @@ def actualize_subaccount(instance):
         actualize_account(instance.parent)
 
 
-@transaction.atomic
-@signals.bulk_context.decorate()
+@signals.bulk_context.queue_in_context()
 def estimate_subaccount(instance):
     subaccounts = instance.subaccounts.only('estimated')
     if subaccounts.count() == 0:
@@ -66,7 +59,7 @@ def estimate_subaccount(instance):
             0
         )
 
-    instance.save(update_fields=['estimated'])
+    instance.save(update_fields=['estimated'], suppress_budget_update=True)
 
     if isinstance(instance.parent, (BudgetSubAccount, TemplateSubAccount)):
         estimate_subaccount(instance.parent)
@@ -74,7 +67,6 @@ def estimate_subaccount(instance):
         estimate_account(instance.parent)
 
 
-@transaction.atomic
 def calculate_subaccount(instance):
     estimate_subaccount(instance)
     if isinstance(instance, BudgetSubAccount):
@@ -88,13 +80,6 @@ def calculate_parent(parent):
         calculate_account(parent)
 
 
-@dispatch.receiver(reactualize_subaccount, sender=BudgetSubAccount)
-def subaccount_reactualization(instance, **kwargs):
-    actualize_subaccount(instance)
-
-
-@dispatch.receiver(reestimate_subaccount, sender=BudgetSubAccount)
-@dispatch.receiver(reestimate_subaccount, sender=TemplateSubAccount)
 @signals.any_fields_changed_receiver(
     fields=['rate', 'multiplier', 'quantity'],
     sender=BudgetSubAccount
@@ -107,8 +92,6 @@ def subaccount_reestimation(instance, **kwargs):
     estimate_subaccount(instance)
 
 
-@dispatch.receiver(recalculate_subaccount, sender=BudgetSubAccount)
-@dispatch.receiver(recalculate_subaccount, sender=TemplateSubAccount)
 @dispatch.receiver(signals.post_create, sender=BudgetSubAccount)
 @dispatch.receiver(signals.post_create, sender=TemplateSubAccount)
 def subaccount_recalculation(instance, **kwargs):
@@ -138,7 +121,7 @@ def subaccount_parent_changed(instance, **kwargs):
     if changes.get_change_for_field('content_type') is not None:
         content_type_change = changes.get_change_for_field('content_type')
         previous_content_type_id = content_type_change.previous_value
-        new_content_type_id = content_type_change.value
+        new_content_type_id = content_type_change.value.pk
 
     previous_object_id = instance.object_id
     new_object_id = instance.object_id
@@ -185,8 +168,8 @@ def delete_empty_group(instance, **kwargs):
                 group.delete()
 
 
-@dispatch.receiver(models.signals.post_save, sender=BudgetSubAccount)
-@dispatch.receiver(models.signals.post_save, sender=TemplateSubAccount)
+@dispatch.receiver(signals.post_save, sender=BudgetSubAccount)
+@dispatch.receiver(signals.post_save, sender=TemplateSubAccount)
 def remove_parent_calculated_fields(instance, **kwargs):
     # If a SubAccount has children SubAccount(s), the fields used to derive
     # calculated values are no longer used since the calculated values are
@@ -197,6 +180,12 @@ def remove_parent_calculated_fields(instance, **kwargs):
         instance.parent.fringes.set([])
         if isinstance(instance.parent, BudgetSubAccount):
             instance.parent.save(
-                update_fields=instance.DERIVING_FIELDS, track_changes=False)
+                update_fields=instance.DERIVING_FIELDS,
+                track_changes=False,
+                suppress_budget_update=True
+            )
         else:
-            instance.parent.save(update_fields=instance.DERIVING_FIELDS)
+            instance.parent.save(
+                update_fields=instance.DERIVING_FIELDS,
+                suppress_budget_update=True
+            )

@@ -3,7 +3,7 @@ from django.db import models
 
 from greenbudget.app import signals
 from greenbudget.app.subaccount.models import BudgetSubAccount
-from greenbudget.app.subaccount.signals import reactualize_subaccount
+from greenbudget.app.subaccount.signals import actualize_subaccount
 
 from .models import Actual
 
@@ -20,10 +20,7 @@ def actual_created_or_deleted(instance, **kwargs):
         # the BudgetSubAccount associated with the Actual is already gone.
         pass
     else:
-        reactualize_subaccount.send(
-            instance=subaccount,
-            sender=type(subaccount),
-        )
+        actualize_subaccount(subaccount)
 
 
 @signals.any_fields_changed_receiver(
@@ -36,7 +33,7 @@ def actual_metrics_changed(instance, **kwargs):
     for change in kwargs['changes']:
         if change.field == 'subaccount':
             # The previous value of a FK will be the ID, not the full object -
-            # for reasons explained in greenbudget.signals.model_tracker.
+            # for reasons explained in greenbudget.signals.models.
             if change.previous_value is not None:
                 old_subaccount = BudgetSubAccount.objects.get(
                     pk=change.previous_value)
@@ -51,7 +48,4 @@ def actual_metrics_changed(instance, **kwargs):
                 subaccounts_to_reactualize.append(instance.subaccount)
 
     for subaccount in subaccounts_to_reactualize:
-        reactualize_subaccount.send(
-            instance=subaccount,
-            sender=type(subaccount)
-        )
+        actualize_subaccount(subaccount)

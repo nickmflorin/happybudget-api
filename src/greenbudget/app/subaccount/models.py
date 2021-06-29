@@ -4,7 +4,6 @@ from django.contrib.contenttypes.fields import (
     GenericForeignKey, GenericRelation)
 from django.contrib.contenttypes.models import ContentType
 from django.db import models, IntegrityError
-from django.db.models.signals import m2m_changed
 
 from greenbudget.app import signals
 
@@ -44,7 +43,6 @@ class SubAccountUnit(Tag):
         )
 
 
-@signals.model('suppress_budget_update')
 class SubAccount(PolymorphicModel):
     type = "subaccount"
     created_at = models.DateTimeField(auto_now_add=True)
@@ -130,32 +128,11 @@ class SubAccount(PolymorphicModel):
         return super().save(*args, **kwargs)
 
 
-def validate_fringes(sender, **kwargs):
-    from greenbudget.app.fringe.models import Fringe
-    if kwargs['action'] == 'pre_add' and kwargs['model'] == Fringe:
-        fringes = (Fringe.objects
-            .filter(pk__in=kwargs['pk_set'])
-            .prefetch_related('budget')
-            .only('budget')
-            .all())
-        for fringe in fringes:
-            if fringe.budget != kwargs['instance'].budget:
-                raise IntegrityError(
-                    "The fringes that belong to a sub-account must belong "
-                    "to the same budget as that sub-account."
-                )
-
-
-m2m_changed.connect(validate_fringes, sender=SubAccount.fringes.through)
-
-
-@signals.track_model(
+@signals.model(
+    flags=['suppress_budget_update'],
     user_field='updated_by',
-    track_changes_to_fields=[
-        'description', 'identifier', 'name', 'rate', 'quantity', 'multiplier',
-        'object_id', 'group'],
+    exclude_fields=['updated_by', 'created_by', 'estimated', 'actual']
 )
-@signals.model('track_changes')
 class BudgetSubAccount(SubAccount):
     updated_by = models.ForeignKey(
         to='user.User',
@@ -189,6 +166,9 @@ class BudgetSubAccount(SubAccount):
         'identifier', 'description', 'name', 'rate', 'quantity', 'multiplier',
         'unit')
     TRACK_MODEL_HISTORY = True
+    TRACK_FIELD_CHANGE_HISTORY = [
+        'identifier', 'description', 'name', 'rate', 'quantity', 'multiplier',
+        'unit']
 
     class Meta(SubAccount.Meta):
         verbose_name = "Sub Account"
@@ -207,9 +187,10 @@ class BudgetSubAccount(SubAccount):
         return float(self.estimated) - float(self.actual)
 
 
-@signals.track_model(
+@signals.model(
+    flags=['suppress_budget_update'],
     user_field='updated_by',
-    track_changes_to_fields=['group', 'rate', 'quantity', 'multiplier'],
+    exclude_fields=['updated_by', 'created_by', 'estimated']
 )
 class TemplateSubAccount(SubAccount):
     updated_by = models.ForeignKey(

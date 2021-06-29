@@ -167,7 +167,7 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'greenbudget.app.jwt.middleware.TokenCookieMiddleware',
-    'greenbudget.app.signals.middleware.TrackModelMiddleware',
+    'greenbudget.app.signals.middleware.ModelSignalMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
