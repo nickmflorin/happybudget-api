@@ -197,20 +197,25 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'greenbudget.wsgi.application'
 
+# NOTE: If Django is not starting because the database does not exist, we need
+# to create one with postgres.  Go into the Postgres shell (psql) and do
+# the following:
+# >>> CREATE USER greenbudget WITH PASSWORD '';
+# >>> CREATE DATABASE postgres_greenbudget WITH OWNER greenbudget ENCODING 'utf-8';
 DATABASE_NAME = config(
     name='DATABASE_NAME',
     required=[Environments.PROD, Environments.DEV],
     default={
-        Environments.TEST: 'postgres',
-        Environments.LOCAL: 'postgres'
+        Environments.TEST: 'postgres_greenbudget',
+        Environments.LOCAL: 'postgres_greenbudget'
     }
 )
 DATABASE_USER = config(
     name='DATABASE_USER',
     required=[Environments.PROD, Environments.DEV],
     default={
-        Environments.TEST: 'postgres',
-        Environments.LOCAL: 'postgres'
+        Environments.TEST: 'greenbudget',
+        Environments.LOCAL: 'greenbudget'
     }
 )
 DATABASE_PASSWORD = config(
