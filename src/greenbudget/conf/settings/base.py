@@ -201,7 +201,8 @@ WSGI_APPLICATION = 'greenbudget.wsgi.application'
 # to create one with postgres.  Go into the Postgres shell (psql) and do
 # the following:
 # >>> CREATE USER greenbudget WITH PASSWORD '';
-# >>> CREATE DATABASE postgres_greenbudget WITH OWNER greenbudget ENCODING 'utf-8';
+# >>> CREATE DATABASE postgres_greenbudget WITH OWNER greenbudget ENCODING
+#     utf-8';
 DATABASE_NAME = config(
     name='DATABASE_NAME',
     required=[Environments.PROD, Environments.DEV],
