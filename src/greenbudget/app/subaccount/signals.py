@@ -34,10 +34,13 @@ def actualize_subaccount(instance):
 
     instance.save(update_fields=['actual'], suppress_budget_update=True)
 
-    if isinstance(instance.parent, (BudgetSubAccount, TemplateSubAccount)):
-        actualize_subaccount(instance.parent)
-    else:
-        actualize_account(instance.parent)
+    # There are weird cases (like CASCADE deletes) where non-nullable fields
+    # will be temporarily null - they just won't be saved in a NULL state.
+    if instance.parent is not None:
+        if isinstance(instance.parent, (BudgetSubAccount, TemplateSubAccount)):
+            actualize_subaccount(instance.parent)
+        else:
+            actualize_account(instance.parent)
 
 
 @signals.bulk_context.queue_in_context()

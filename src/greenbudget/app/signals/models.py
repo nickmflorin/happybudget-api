@@ -192,11 +192,11 @@ class model:
                         unsupported_fields.append(field_obj.name)
 
             if unsupported_fields:
-                logger.warning(
+                logger.debug(
                     "Field(s) {fields} for model {model} cannot be tracked as "
                     "they are not supported.".format(
-                        model=cls,
-                        fields=",".join(unsupported_fields)
+                        model=cls.__name__,
+                        fields=", ".join(unsupported_fields)
                     )
                 )
             return tracked_fields
