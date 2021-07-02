@@ -4,18 +4,28 @@ import threading
 
 from django.db import transaction
 
+from greenbudget.lib.utils import ensure_iterable
+
 
 logger = logging.getLogger('signals')
 
 
-class LazyFunc:
-    def __init__(self, context, func, args=None, kwargs=None, id=None, bind=False):  # noqa
+def name_if_obj(obj):
+    if hasattr(obj, '__name__'):
+        return obj.__name__
+    return obj
+
+
+class FunctionSignature:
+    def __init__(self, context, func, args=None, kwargs=None, id=None,
+            bind=False, caller=None):
         self.context = context
         self.func = func
         self.args = tuple(args or [])
         self.kwargs = dict(kwargs or {})
         self.id = id
         self.bind = bind
+        self.caller = [c for c in ensure_iterable(caller) if c is not None]
 
     def __call__(self):
         if self.bind is True:
@@ -29,14 +39,35 @@ class LazyFunc:
             and self.args == other.args \
             and self.kwargs == other.kwargs
 
+    @property
+    def callers_string(self):
+        if not self.caller:
+            return None
+        return [name_if_obj(c) for c in self.caller]
+
+    @property
+    def func_string(self):
+        return name_if_obj(self.func)
+
     def __str__(self):
+        attributes = [
+            ('func_string', 'func'),
+            ('callers_string', 'callers'),
+            'args',
+            'kwargs'
+        ]
         if self.id is not None:
-            return "[func={func} id={id}]".format(func=self.func, id=self.id)
-        return "[func={func} args={args} kwargs={kwargs}]".format(
-            func=self.func.__name__,
-            args=self.args,
-            kwargs=self.kwargs
-        )
+            attributes = attributes[:2] + ['id']
+
+        string_parts = [
+            "{attr}={value}".format(
+                attr=attr[1] if isinstance(attr, tuple) else attr,
+                value=getattr(self, attr[0] if isinstance(attr, tuple) else attr)  # noqa
+            )
+            for attr in attributes
+            if getattr(self, attr[0] if isinstance(attr, tuple) else attr) is not None  # noqa
+        ]
+        return "Signature(%s)" % ", ".join(string_parts)
 
 
 class bulk_context_manager(threading.local):
@@ -96,6 +127,7 @@ class bulk_context_manager(threading.local):
         def decorator(func):
             @functools.wraps(func)
             def decorated(*args, **kwargs):
+                caller = kwargs.pop('caller', None)
                 if self._active is False:
                     if bind:
                         return func(self, *args, **kwargs)
@@ -105,10 +137,11 @@ class bulk_context_manager(threading.local):
                 if recall_id is not None:
                     explicit_id = recall_id(*args, **kwargs)
 
-                signature = LazyFunc(
+                signature = FunctionSignature(
                     context=self,
                     bind=bind,
                     func=func,
+                    caller=caller,
                     args=args,
                     kwargs=kwargs,
                     id=explicit_id

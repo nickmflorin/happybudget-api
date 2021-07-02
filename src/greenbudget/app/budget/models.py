@@ -79,7 +79,10 @@ class Budget(BaseBudget):
     actual = models.FloatField(default=0.0)
 
     comments = GenericRelation(Comment)
+
     objects = BudgetManager()
+    non_polymorphic = models.Manager()
+
     MAP_FIELDS_FROM_TEMPLATE = ()
     MAP_FIELDS_FROM_ORIGINAL = (
         'project_number', 'production_type', 'shoot_date', 'delivery_date',

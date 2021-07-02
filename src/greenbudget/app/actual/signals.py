@@ -20,7 +20,8 @@ def actual_created_or_deleted(instance, **kwargs):
         # the BudgetSubAccount associated with the Actual is already gone.
         pass
     else:
-        actualize_subaccount(subaccount)
+        if subaccount is not None:
+            actualize_subaccount(subaccount, caller=actual_created_or_deleted)
 
 
 @signals.any_fields_changed_receiver(
@@ -48,4 +49,4 @@ def actual_metrics_changed(instance, **kwargs):
                 subaccounts_to_reactualize.append(instance.subaccount)
 
     for subaccount in subaccounts_to_reactualize:
-        actualize_subaccount(subaccount)
+        actualize_subaccount(subaccount, caller=actual_metrics_changed)
