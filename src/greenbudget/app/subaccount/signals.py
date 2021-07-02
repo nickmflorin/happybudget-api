@@ -17,8 +17,8 @@ from .models import BudgetSubAccount, TemplateSubAccount
 logger = logging.getLogger('signals')
 
 
-@signals.bulk_context.queue_in_context()
-def actualize_subaccount(instance):
+@signals.bulk_context.handler(queue_in_context=True, bind=True)
+def actualize_subaccount(context, instance):
     # We cannot do .only('actual') here because the subaccounts are polymorphic.
     # We should figure out how to do that.
     subaccounts = BudgetSubAccount.objects.filter(
@@ -37,14 +37,14 @@ def actualize_subaccount(instance):
     # There are weird cases (like CASCADE deletes) where non-nullable fields
     # will be temporarily null - they just won't be saved in a NULL state.
     if instance.parent is not None:
+        func = actualize_account
         if isinstance(instance.parent, (BudgetSubAccount, TemplateSubAccount)):
-            actualize_subaccount(instance.parent, caller=actualize_subaccount)
-        else:
-            actualize_account(instance.parent, caller=actualize_subaccount)
+            func = actualize_subaccount
+        context.call(func, args=(instance.parent, ))
 
 
-@signals.bulk_context.queue_in_context()
-def estimate_subaccount(instance):
+@signals.bulk_context.handler(queue_in_context=True, bind=True)
+def estimate_subaccount(context, instance):
     subaccounts = instance.subaccounts.only('estimated')
     if subaccounts.count() == 0:
         if instance.quantity is not None and instance.rate is not None:
@@ -64,23 +64,25 @@ def estimate_subaccount(instance):
 
     instance.save(update_fields=['estimated'], suppress_budget_update=True)
 
+    func = estimate_account
     if isinstance(instance.parent, (BudgetSubAccount, TemplateSubAccount)):
-        estimate_subaccount(instance.parent, caller=estimate_subaccount)
-    else:
-        estimate_account(instance.parent, caller=estimate_subaccount)
+        func = estimate_subaccount
+    context.call(func, args=(instance.parent, ))
 
 
-def calculate_subaccount(instance, caller=None):
-    estimate_subaccount(instance, caller=[caller, calculate_subaccount])
+@signals.bulk_context.handler(bind=True)
+def calculate_subaccount(context, instance):
+    context.call(estimate_subaccount, args=(instance, ))
     if isinstance(instance, BudgetSubAccount):
-        actualize_subaccount(instance, caller=[caller, calculate_subaccount])
+        context.call(actualize_subaccount, args=(instance, ))
 
 
-def calculate_parent(parent, caller=None):
+@signals.bulk_context.handler(bind=True)
+def calculate_parent(context, parent):
+    func = calculate_account
     if isinstance(parent, (BudgetSubAccount, TemplateSubAccount)):
-        calculate_subaccount(parent, caller=[caller, calculate_parent])
-    else:
-        calculate_account(parent, caller=[caller, calculate_parent])
+        func = calculate_subaccount
+    context.call(func, args=(parent, ))
 
 
 @signals.any_fields_changed_receiver(
@@ -91,21 +93,24 @@ def calculate_parent(parent, caller=None):
     fields=['rate', 'multiplier', 'quantity'],
     sender=TemplateSubAccount
 )
-def subaccount_reestimation(instance, **kwargs):
-    estimate_subaccount(instance, caller=subaccount_reestimation)
+@signals.bulk_context.handler(bind=True)
+def subaccount_reestimation(context, instance, **kwargs):
+    context.call(estimate_subaccount, args=(instance, ))
 
 
 @dispatch.receiver(signals.post_create, sender=BudgetSubAccount)
 @dispatch.receiver(signals.post_create, sender=TemplateSubAccount)
-def subaccount_recalculation(instance, **kwargs):
-    calculate_subaccount(instance, caller=subaccount_recalculation)
+@signals.bulk_context.handler(bind=True)
+def subaccount_recalculation(context, instance, **kwargs):
+    context.call(calculate_subaccount, args=(instance, ))
 
 
 @dispatch.receiver(models.signals.post_delete, sender=BudgetSubAccount)
 @dispatch.receiver(models.signals.post_delete, sender=TemplateSubAccount)
-def subaccount_deleted(instance, **kwargs):
+@signals.bulk_context.handler(bind=True)
+def subaccount_deleted(context, instance, **kwargs):
     if instance.parent is not None:
-        calculate_parent(instance.parent, caller=subaccount_deleted)
+        context.call(calculate_parent, args=(instance.parent, ))
 
 
 @signals.any_fields_changed_receiver(
@@ -116,7 +121,8 @@ def subaccount_deleted(instance, **kwargs):
     fields=['object_id', 'content_type'],
     sender=TemplateSubAccount
 )
-def subaccount_parent_changed(instance, **kwargs):
+@signals.bulk_context.handler(bind=True)
+def subaccount_parent_changed(context, instance, **kwargs):
     changes = kwargs['changes']
 
     previous_content_type_id = instance.content_type_id
@@ -142,8 +148,8 @@ def subaccount_parent_changed(instance, **kwargs):
         pk=new_content_type_id).model_class()
     new_parent = new_model_cls.objects.get(pk=new_object_id)
 
-    calculate_parent(previous_parent, caller=subaccount_parent_changed)
-    calculate_parent(new_parent, caller=subaccount_parent_changed)
+    context.call(calculate_parent, args=(previous_parent, ))
+    context.call(calculate_parent, args=(new_parent, ))
 
 
 @signals.field_changed_receiver('group', sender=BudgetSubAccount)

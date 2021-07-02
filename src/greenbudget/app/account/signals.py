@@ -18,8 +18,8 @@ from .models import BudgetAccount, TemplateAccount
 logger = logging.getLogger('signals')
 
 
-@signals.bulk_context.queue_in_context()
-def estimate_account(instance):
+@signals.bulk_context.handler(queue_in_context=True, bind=True)
+def estimate_account(context, instance):
     # NOTE: We cannot use instance.subaccounts.all() due to race conditions on
     # delete events.
     model_cls = BudgetSubAccount
@@ -32,11 +32,11 @@ def estimate_account(instance):
     instance.estimated = functools.reduce(
         lambda current, sub: current + (sub.estimated or 0), subaccounts, 0)
     instance.save(update_fields=['estimated'], suppress_budget_update=True)
-    estimate_budget(instance.budget)
+    context.call(estimate_budget, args=(instance.budget, ))
 
 
-@signals.bulk_context.queue_in_context()
-def actualize_account(instance):
+@signals.bulk_context.handler(queue_in_context=True, bind=True)
+def actualize_account(context, instance):
     subaccounts = BudgetSubAccount.objects.filter(
         content_type=ContentType.objects.get_for_model(BudgetAccount),
         object_id=instance.pk
@@ -44,21 +44,23 @@ def actualize_account(instance):
     instance.actual = functools.reduce(
         lambda current, sub: current + (sub.actual or 0), subaccounts, 0)
     instance.save(update_fields=['actual'], suppress_budget_update=True)
-    actualize_budget(instance.budget)
+    context.call(actualize_budget, args=(instance.budget, ))
 
 
-def calculate_account(instance):
-    estimate_account(instance)
+@signals.bulk_context.handler(bind=True)
+def calculate_account(context, instance):
+    context.call(estimate_account, args=(instance, ))
     if isinstance(instance, BudgetAccount):
-        actualize_account(instance)
+        context.call(actualize_account, args=(instance, ))
 
 
 @dispatch.receiver(signals.post_create, sender=BudgetAccount)
 @dispatch.receiver(signals.post_create, sender=TemplateAccount)
 @dispatch.receiver(models.signals.post_delete, sender=BudgetAccount)
 @dispatch.receiver(models.signals.post_delete, sender=TemplateAccount)
-def account_created_or_deleted(sender, instance, **kwargs):
-    calculate_budget(instance.budget)
+@signals.bulk_context.handler(bind=True)
+def account_created_or_deleted(context, sender, instance, **kwargs):
+    context.call(calculate_budget, args=(instance.budget, ))
 
 
 @signals.field_changed_receiver('group', sender=BudgetAccount)

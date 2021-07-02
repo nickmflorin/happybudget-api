@@ -33,5 +33,6 @@ def validate_fringes(sender, **kwargs):
 
 
 @dispatch.receiver(models.signals.m2m_changed, sender=SubAccount.fringes.through)
-def subaccount_fringes_changed(instance, **kwargs):
-    estimate_subaccount(instance)
+@signals.bulk_context.handler(bind=True)
+def subaccount_fringes_changed(context, instance, **kwargs):
+    context.call(estimate_subaccount, args=(instance, ))

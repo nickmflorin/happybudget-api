@@ -10,7 +10,8 @@ from .models import Actual
 
 @dispatch.receiver(signals.post_create, sender=Actual)
 @dispatch.receiver(models.signals.post_delete, sender=Actual)
-def actual_created_or_deleted(instance, **kwargs):
+@signals.bulk_context.handler(bind=True)
+def actual_created_or_deleted(context, instance, **kwargs):
     try:
         subaccount = instance.subaccount
     except BudgetSubAccount.DoesNotExist:
@@ -21,15 +22,15 @@ def actual_created_or_deleted(instance, **kwargs):
         pass
     else:
         if subaccount is not None:
-            actualize_subaccount(subaccount, caller=actual_created_or_deleted)
+            context.call(actualize_subaccount, args=(subaccount, ))
 
 
 @signals.any_fields_changed_receiver(
     fields=['value', 'subaccount'],
     sender=Actual
 )
-def actual_metrics_changed(instance, **kwargs):
-    from greenbudget.app.subaccount.models import BudgetSubAccount
+@signals.bulk_context.handler(bind=True)
+def actual_metrics_changed(context, instance, **kwargs):
     subaccounts_to_reactualize = []
     for change in kwargs['changes']:
         if change.field == 'subaccount':
@@ -49,4 +50,4 @@ def actual_metrics_changed(instance, **kwargs):
                 subaccounts_to_reactualize.append(instance.subaccount)
 
     for subaccount in subaccounts_to_reactualize:
-        actualize_subaccount(subaccount, caller=actual_metrics_changed)
+        context.call(actualize_subaccount, args=(subaccount, ))

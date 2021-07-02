@@ -21,7 +21,7 @@ from .models import Budget
 logger = logging.getLogger('signals')
 
 
-@signals.bulk_context.queue_in_context()
+@signals.bulk_context.handler(queue_in_context=True)
 def mark_budget_updated(instance):
     logger.info(
         "Marking Budget %s Updated at %s"
@@ -30,7 +30,7 @@ def mark_budget_updated(instance):
     instance.save(update_fields=['updated_at'])
 
 
-@signals.bulk_context.queue_in_context()
+@signals.bulk_context.handler(queue_in_context=True)
 def estimate_budget(instance):
     # I don't understand why, but using Account.objects.filter, or using
     # instance.accounts.filter() seems to throw errors occasionally.
@@ -45,7 +45,7 @@ def estimate_budget(instance):
     instance.save(update_fields=['estimated'], suppress_budget_update=True)
 
 
-@signals.bulk_context.queue_in_context()
+@signals.bulk_context.handler(queue_in_context=True)
 def actualize_budget(instance):
     accounts = BudgetAccount.objects.filter(budget=instance).only('actual')
     instance.actual = functools.reduce(
@@ -57,10 +57,11 @@ def actualize_budget(instance):
     instance.save(update_fields=['actual'], suppress_budget_update=True)
 
 
-def calculate_budget(instance):
-    estimate_budget(instance)
+@signals.bulk_context.handler(bind=True)
+def calculate_budget(context, instance):
+    context.call(estimate_budget, args=(instance, ))
     if isinstance(instance, Budget):
-        actualize_budget(instance)
+        context.call(actualize_budget, args=(instance, ))
 
 
 @dispatch.receiver(signals.post_save, sender=BudgetAccount)
@@ -74,6 +75,7 @@ def calculate_budget(instance):
 @dispatch.receiver(signals.post_save, sender=TemplateAccountGroup)
 @dispatch.receiver(signals.post_save, sender=TemplateSubAccountGroup)
 @signals.suppress_signal('suppress_budget_update')
-def update_budget_updated_at(instance, **kwargs):
-    mark_budget_updated(instance.budget)
+@signals.bulk_context.handler(bind=True)
+def update_budget_updated_at(context, instance, **kwargs):
+    context.call(mark_budget_updated, args=(instance.budget, ))
     instance.clear_flag('suppress_budget_update')

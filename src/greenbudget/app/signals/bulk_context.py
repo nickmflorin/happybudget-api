@@ -16,6 +16,15 @@ def name_if_obj(obj):
     return obj
 
 
+def lazy_caller(caller=None):
+    def caller(f, args=None, kwargs=None):
+        args = args or ()
+        kwargs = kwargs or {}
+        kwargs['caller'] = caller
+        return f(*args, **kwargs)
+    return caller
+
+
 class FunctionSignature:
     def __init__(self, context, func, args=None, kwargs=None, id=None,
             bind=False, caller=None):
@@ -119,17 +128,15 @@ class bulk_context_manager(threading.local):
             for signature in level_queue:
                 self.queue.remove(signature)
 
-    def queue_in_context(self, recall_id=None, bind=False):
-        """
-        Decorator for a function that we only want to be called once with the
-        same signature while inside the bulk context.
-        """
+    def handler(self, recall_id=None, bind=False, queue_in_context=False):
         def decorator(func):
             @functools.wraps(func)
             def decorated(*args, **kwargs):
-                caller = kwargs.pop('caller', None)
-                if self._active is False:
+                root_caller = kwargs.pop('caller', [])
+
+                if self._active is False or queue_in_context is False:
                     if bind:
+                        setattr(self, 'call', lazy_caller([root_caller, func]))
                         return func(self, *args, **kwargs)
                     return func(*args, **kwargs)
 
@@ -141,7 +148,7 @@ class bulk_context_manager(threading.local):
                     context=self,
                     bind=bind,
                     func=func,
-                    caller=caller,
+                    caller=root_caller,
                     args=args,
                     kwargs=kwargs,
                     id=explicit_id
