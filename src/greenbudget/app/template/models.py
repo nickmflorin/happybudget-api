@@ -2,6 +2,7 @@ from django.db import models, IntegrityError
 
 from greenbudget.app import signals
 from greenbudget.app.budget.models import BaseBudget
+from greenbudget.app.budget.duplication import BudgetDeriver
 
 from .managers import TemplateManager
 
@@ -12,7 +13,8 @@ class Template(BaseBudget):
     community = models.BooleanField(default=False)
     hidden = models.BooleanField(default=False)
     objects = TemplateManager()
-    MAP_FIELDS_FROM_ORIGINAL = ('image', 'name')
+    FIELDS_TO_DUPLICATE = ('image', 'name')
+    FIELDS_TO_DERIVE = ('image', 'name')
 
     class Meta(BaseBudget.Meta):
         verbose_name = "Template"
@@ -27,6 +29,10 @@ class Template(BaseBudget):
                 | models.Q(community=False, hidden=False)
             )
         )]
+
+    def derive(self, user, **kwargs):
+        deriver = BudgetDeriver(self, user)
+        return deriver.derive(**kwargs)
 
     def save(self, *args, **kwargs):
         if self.community is True and not self.created_by.is_staff:

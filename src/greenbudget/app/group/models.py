@@ -7,12 +7,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
-from .managers import (
-    BudgetAccountGroupManager,
-    BudgetSubAccountGroupManager,
-    TemplateAccountGroupManager,
-    TemplateSubAccountGroupManager
-)
+from .managers import GroupManager
 
 
 class Group(PolymorphicModel):
@@ -41,6 +36,7 @@ class Group(PolymorphicModel):
         )
     )
 
+    objects = GroupManager()
     non_polymorphic = models.Manager()
 
     class Meta:
@@ -75,9 +71,8 @@ class BudgetAccountGroup(Group):
         on_delete=models.CASCADE,
         related_name='groups'
     )
-    objects = BudgetAccountGroupManager()
-    MAP_FIELDS_FROM_TEMPLATE = ("name", "color")
-    MAP_FIELDS_FROM_ORIGINAL = ("name", "color")
+    objects = GroupManager()
+    FIELDS_TO_DUPLICATE = ("name", "color")
 
     class Meta(Group.Meta):
         verbose_name = "Account Group"
@@ -105,8 +100,9 @@ class TemplateAccountGroup(Group):
         on_delete=models.CASCADE,
         related_name='groups'
     )
-    objects = TemplateAccountGroupManager()
-    MAP_FIELDS_FROM_ORIGINAL = ("name", "color")
+    objects = GroupManager()
+    FIELDS_TO_DUPLICATE = ("name", "color")
+    FIELDS_TO_DERIVE = ("name", "color")
 
     @property
     def budget(self):
@@ -128,9 +124,9 @@ class BudgetSubAccountGroup(Group):
     )
     object_id = models.PositiveIntegerField(db_index=True)
     parent = GenericForeignKey('content_type', 'object_id')
-    objects = BudgetSubAccountGroupManager()
-    MAP_FIELDS_FROM_TEMPLATE = ("name", "color")
-    MAP_FIELDS_FROM_ORIGINAL = ("name", "color")
+    objects = GroupManager()
+
+    FIELDS_TO_DUPLICATE = ("name", "color")
 
     class Meta(Group.Meta):
         verbose_name = "Sub Account Group"
@@ -162,8 +158,10 @@ class TemplateSubAccountGroup(Group):
     )
     object_id = models.PositiveIntegerField(db_index=True)
     parent = GenericForeignKey('content_type', 'object_id')
-    objects = TemplateSubAccountGroupManager()
-    MAP_FIELDS_FROM_ORIGINAL = ("name", "color")
+    objects = GroupManager()
+
+    FIELDS_TO_DERIVE = ("name", "color")
+    FIELDS_TO_DUPLICATE = ("name", "color")
 
     class Meta(Group.Meta):
         verbose_name = "Sub Account Group"

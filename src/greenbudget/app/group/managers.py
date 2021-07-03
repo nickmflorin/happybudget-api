@@ -1,22 +1,18 @@
 from polymorphic.managers import PolymorphicManager
 
-from greenbudget.app.budget.managers import (
-    ModelTemplateManager, ModelDuplicateManager)
+from greenbudget.lib.django_utils.models import BulkCreatePolymorphicQuerySet
 
 
-class BudgetAccountGroupManager(
-        ModelDuplicateManager(ModelTemplateManager(PolymorphicManager))):
-    template_cls = 'group.TemplateAccountGroup'
-
-
-class BudgetSubAccountGroupManager(
-        ModelDuplicateManager(ModelTemplateManager(PolymorphicManager))):
-    template_cls = 'group.TemplateSubAccountGroup'
-
-
-class TemplateAccountGroupManager(ModelDuplicateManager(PolymorphicManager)):
+class GroupQuerier(object):
     pass
 
 
-class TemplateSubAccountGroupManager(ModelDuplicateManager(PolymorphicManager)):
+class GroupQuery(GroupQuerier, BulkCreatePolymorphicQuerySet):
     pass
+
+
+class GroupManager(GroupQuerier, PolymorphicManager):
+    queryset_class = GroupQuery
+
+    def get_queryset(self):
+        return self.queryset_class(self.model)

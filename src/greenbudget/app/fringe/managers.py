@@ -1,9 +1,9 @@
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
 
+from greenbudget.lib.django_utils.models import PrePKBulkCreateQuerySet
+
 from greenbudget.app.budget.models import Budget
-from greenbudget.app.common.managers import (
-    ModelTemplateManager, ModelDuplicateManager)
 from greenbudget.app.template.models import Template
 
 
@@ -20,15 +20,11 @@ class FringeQuerier(object):
         return self.filter(budget__polymorphic_ctype_id=ctype_id)
 
 
-class FringeQuery(FringeQuerier, models.QuerySet):
+class FringeQuery(FringeQuerier, PrePKBulkCreateQuerySet):
     pass
 
 
-class FringeManager(ModelDuplicateManager(
-    FringeQuerier,
-    ModelTemplateManager(models.Manager)
-)):
-    template_cls = 'fringe.Fringe'
+class FringeManager(FringeQuerier, models.Manager):
     queryset_class = FringeQuery
 
     def get_queryset(self):

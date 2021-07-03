@@ -8,6 +8,7 @@ from django.utils import timezone
 from greenbudget.app import signals
 from greenbudget.app.comment.models import Comment
 
+from .duplication import BudgetDuplicator
 from .managers import BudgetManager, BaseBudgetManager
 from .utils import render_budget_as_pdf
 
@@ -30,7 +31,9 @@ class BaseBudget(PolymorphicModel):
     estimated = models.FloatField(default=0.0)
     trash = models.BooleanField(default=False, db_index=True)
     image = models.ImageField(upload_to=upload_to, null=True)
+
     objects = BaseBudgetManager()
+    non_polymorphic = models.Manager()
 
     class Meta:
         get_latest_by = "updated_at"
@@ -52,6 +55,10 @@ class BaseBudget(PolymorphicModel):
     def restore(self):
         self.trash = False
         self.save()
+
+    def duplicate(self, user):
+        duplicator = BudgetDuplicator(self, user)
+        return duplicator.duplicate()
 
 
 @signals.model(flags='suppress_budget_update')
@@ -83,11 +90,11 @@ class Budget(BaseBudget):
     objects = BudgetManager()
     non_polymorphic = models.Manager()
 
-    MAP_FIELDS_FROM_TEMPLATE = ()
-    MAP_FIELDS_FROM_ORIGINAL = (
+    FIELDS_TO_DERIVE = ()
+    FIELDS_TO_DUPLICATE = (
         'project_number', 'production_type', 'shoot_date', 'delivery_date',
         'build_days', 'prelight_days', 'studio_shoot_days', 'location_days',
-        'image', 'name'
+        'image', 'name', 'actual', 'estimated'
     )
 
     class Meta(BaseBudget.Meta):

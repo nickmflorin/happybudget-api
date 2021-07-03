@@ -49,8 +49,8 @@ class Fringe(models.Model):
             content_types__app_label='fringe'
         )
     )
-    MAP_FIELDS_FROM_ORIGINAL = ('name', 'description', 'cutoff', 'rate', 'unit')
-    MAP_FIELDS_FROM_TEMPLATE = MAP_FIELDS_FROM_ORIGINAL
+    FIELDS_TO_DUPLICATE = ('name', 'description', 'cutoff', 'rate', 'unit')
+    FIELDS_TO_DERIVE = FIELDS_TO_DUPLICATE
     objects = FringeManager()
 
     class Meta:

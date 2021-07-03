@@ -6,6 +6,8 @@ from django.db import models, IntegrityError
 from greenbudget.app import signals
 from greenbudget.app.comment.models import Comment
 
+from .managers import ActualManager
+
 
 @signals.model(
     flags=['suppress_budget_update'],
@@ -52,6 +54,7 @@ class Actual(models.Model):
         null=True
     )
     comments = GenericRelation(Comment)
+    objects = ActualManager()
 
     class Meta:
         get_latest_by = "updated_at"

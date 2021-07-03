@@ -13,8 +13,7 @@ from greenbudget.app.group.models import (
 from greenbudget.app.history.models import Event
 from greenbudget.app.tagging.models import Tag
 
-from .managers import (
-    SubAccountManager, BudgetSubAccountManager, TemplateSubAccountManager)
+from .managers import SubAccountManager
 
 
 class SubAccountUnit(Tag):
@@ -74,7 +73,9 @@ class SubAccount(PolymorphicModel):
     object_id = models.PositiveIntegerField(db_index=True)
     parent = GenericForeignKey('content_type', 'object_id')
     subaccounts = GenericRelation('self')
+
     objects = SubAccountManager()
+    non_polymorphic = models.Manager()
 
     DERIVING_FIELDS = [
         "name",
@@ -157,14 +158,11 @@ class BudgetSubAccount(SubAccount):
     comments = GenericRelation(Comment)
     events = GenericRelation(Event)
     groups = GenericRelation(BudgetSubAccountGroup)
-    objects = BudgetSubAccountManager()
+    objects = SubAccountManager()
 
-    MAP_FIELDS_FROM_TEMPLATE = (
+    FIELDS_TO_DUPLICATE = (
         'identifier', 'description', 'name', 'rate', 'quantity', 'multiplier',
-        'unit')
-    MAP_FIELDS_FROM_ORIGINAL = (
-        'identifier', 'description', 'name', 'rate', 'quantity', 'multiplier',
-        'unit')
+        'unit', 'actual', 'estimated')
     TRACK_MODEL_HISTORY = True
     TRACK_FIELD_CHANGE_HISTORY = [
         'identifier', 'description', 'name', 'rate', 'quantity', 'multiplier',
@@ -212,10 +210,12 @@ class TemplateSubAccount(SubAccount):
         related_name='children'
     )
     groups = GenericRelation(TemplateSubAccountGroup)
-    objects = TemplateSubAccountManager()
-    MAP_FIELDS_FROM_ORIGINAL = (
+    objects = SubAccountManager()
+
+    FIELDS_TO_DUPLICATE = (
         'identifier', 'description', 'name', 'rate', 'quantity', 'multiplier',
-        'unit')
+        'unit', 'estimated')
+    FIELDS_TO_DERIVE = FIELDS_TO_DUPLICATE
 
     class Meta(SubAccount.Meta):
         verbose_name = "Sub Account"

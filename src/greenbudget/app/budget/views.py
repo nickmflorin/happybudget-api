@@ -403,8 +403,7 @@ class BudgetViewSet(
     @decorators.action(detail=True, methods=["POST"])
     def duplicate(self, request, *args, **kwargs):
         instance = self.get_object()
-        duplicated = Budget.objects.create(
-            original=instance, created_by=request.user)
+        duplicated = instance.duplicate(request.user)
         return response.Response(
             self.serializer_class(duplicated).data,
             status=status.HTTP_201_CREATED

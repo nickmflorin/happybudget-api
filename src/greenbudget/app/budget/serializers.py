@@ -1,4 +1,4 @@
-from rest_framework import serializers
+from rest_framework import serializers, exceptions
 
 from greenbudget.lib.drf.fields import (
     ModelChoiceField, Base64ImageField)
@@ -63,6 +63,24 @@ class BudgetSimpleSerializer(BaseBudgetSerializer):
         model = Budget
         fields = BaseBudgetSerializer.Meta.fields + (
             'created_by', 'updated_at', 'created_at', 'template', 'image')
+
+    def create(self, validated_data):
+        if 'template' not in validated_data:
+            return super().create(validated_data)
+        template = validated_data.pop('template')
+        if 'created_by' in validated_data:
+            del validated_data['created_by']
+        request = self.context['request']
+        return template.derive(request.user, **validated_data)
+
+    def validate_template(self, template):
+        request = self.context['request']
+        if not request.user.is_staff:
+            if not template.created_by.is_staff \
+                    and template.created_by != request.user:
+                raise exceptions.ValidationError(
+                    "Do not have permission to use template.")
+        return template
 
 
 class BudgetSerializer(BudgetSimpleSerializer):

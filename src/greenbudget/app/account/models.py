@@ -11,8 +11,7 @@ from greenbudget.app.group.models import (
 from greenbudget.app.history.models import Event
 from greenbudget.app.subaccount.models import SubAccount
 
-from .managers import (
-    AccountManager, BudgetAccountManager, TemplateAccountManager)
+from .managers import AccountManager
 
 
 class Account(PolymorphicModel):
@@ -28,7 +27,9 @@ class Account(PolymorphicModel):
     )
     estimated = models.FloatField(default=0.0)
     subaccounts = GenericRelation(SubAccount)
+
     objects = AccountManager()
+    non_polymorphic = models.Manager()
 
     class Meta:
         get_latest_by = "updated_at"
@@ -97,12 +98,12 @@ class BudgetAccount(Account):
     events = GenericRelation(Event)
     groups = GenericRelation(BudgetSubAccountGroup)
 
-    MAP_FIELDS_FROM_TEMPLATE = ('identifier', 'description')
-    MAP_FIELDS_FROM_ORIGINAL = ('identifier', 'description')
+    FIELDS_TO_DUPLICATE = (
+        'identifier', 'description', 'actual', 'estimated')
     TRACK_MODEL_HISTORY = True
     TRACK_FIELD_CHANGE_HISTORY = ['identifier', 'description']
 
-    objects = BudgetAccountManager()
+    objects = AccountManager()
 
     class Meta(Account.Meta):
         verbose_name = "Account"
@@ -138,8 +139,11 @@ class TemplateAccount(Account):
         related_name='children'
     )
     groups = GenericRelation(TemplateSubAccountGroup)
-    objects = TemplateAccountManager()
-    MAP_FIELDS_FROM_ORIGINAL = ('identifier', 'description')
+
+    objects = AccountManager()
+
+    FIELDS_TO_DUPLICATE = ('identifier', 'description', 'estimated')
+    FIELDS_TO_DERIVE = ('identifier', 'description', 'estimated')
 
     class Meta(Account.Meta):
         verbose_name = "Account"
