@@ -3,8 +3,18 @@ from polymorphic.query import PolymorphicQuerySet
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
-from django.db import models, connections, transaction
+from django.db import models, connections, connection, transaction
 from django.utils.functional import partition
+
+
+def reset_id_sequence(model_cls):
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT setval('{sequence_table}', (SELECT MAX(id) from \"{db_table}\"));".format(  # noqa
+                sequence_table='%s_id_seq' % model_cls._meta.db_table,
+                db_table=model_cls._meta.db_table
+            )
+        )
 
 
 class PrePKBulkCreateQuerySet(models.QuerySet):
@@ -224,6 +234,11 @@ class BulkCreatePolymorphicQuerySet(PolymorphicQuerySet):
                 batch_size=batch_size,
                 ignore_conflicts=ignore_conflicts
             )
+
+            # NOTE: Since we are manually setting the the IDs, PostGres does
+            # not detect that the ID sequence needs to be automatically updated.
+            # Therefore, we need to do this ourselves.
+            reset_id_sequence(self.polymorphic_base)
 
             # Note that while the created children are fully represented with
             # all fields (both base and child) in the database, the children
