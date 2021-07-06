@@ -102,11 +102,7 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
         required=False,
         allow_null=True
     )
-    budget = serializers.PrimaryKeyRelatedField(read_only=True)
     subaccounts = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
-    ancestors = EntitySerializer(many=True, read_only=True)
-    siblings = EntitySerializer(many=True, read_only=True)
-    account = serializers.IntegerField(read_only=True, source='account.pk')
     object_id = serializers.IntegerField(read_only=True)
     parent_type = serializers.ChoiceField(
         choices=["account", "subaccount"],
@@ -122,9 +118,8 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
         model = SubAccount
         fields = SubAccountSimpleSerializer.Meta.fields + (
             'identifier', 'name', 'created_by', 'updated_by', 'created_at',
-            'updated_at', 'quantity', 'rate', 'multiplier', 'unit', 'account',
-            'object_id', 'parent_type', 'ancestors', 'estimated', 'subaccounts',
-            'budget', 'siblings', 'fringes')
+            'updated_at', 'quantity', 'rate', 'multiplier', 'unit', 'object_id',
+            'parent_type', 'estimated', 'subaccounts', 'fringes')
 
     def validate(self, attrs):
         if self.instance is not None and self.instance.subaccounts.count() != 0:
@@ -151,6 +146,16 @@ class BudgetSubAccountSerializer(SubAccountSerializer):
             'actual', 'variance', 'group')
 
 
+class BudgetSubAccountDetailSerializer(BudgetSubAccountSerializer):
+    ancestors = EntitySerializer(many=True, read_only=True)
+    siblings = EntitySerializer(many=True, read_only=True)
+
+    class Meta:
+        model = BudgetSubAccount
+        fields = BudgetSubAccountSerializer.Meta.fields + (
+            'ancestors', 'siblings')
+
+
 class TemplateSubAccountSerializer(SubAccountSerializer):
     group = serializers.PrimaryKeyRelatedField(
         required=False,
@@ -161,3 +166,13 @@ class TemplateSubAccountSerializer(SubAccountSerializer):
     class Meta:
         model = TemplateSubAccount
         fields = SubAccountSerializer.Meta.fields + ('group', )
+
+
+class TemplateSubAccountDetailSerializer(TemplateSubAccountSerializer):
+    ancestors = EntitySerializer(many=True, read_only=True)
+    siblings = EntitySerializer(many=True, read_only=True)
+
+    class Meta:
+        model = TemplateSubAccount
+        fields = TemplateSubAccountSerializer.Meta.fields + (
+            'ancestors', 'siblings')

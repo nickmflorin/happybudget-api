@@ -25,6 +25,8 @@ from .models import (
 from .serializers import (
     TemplateSubAccountSerializer,
     BudgetSubAccountSerializer,
+    BudgetSubAccountDetailSerializer,
+    TemplateSubAccountDetailSerializer,
     SubAccountUnitSerializer
 )
 
@@ -198,16 +200,16 @@ class SubAccountViewSet(
     @property
     def child_serializer_cls(self):
         if self.child_instance_cls is BudgetSubAccount:
-            return BudgetSubAccountSerializer
-        return TemplateSubAccountSerializer
+            return BudgetSubAccountDetailSerializer
+        return TemplateSubAccountDetailSerializer
 
     def get_queryset(self):
         return SubAccount.objects.all()
 
     def get_serializer_class(self):
         if self.instance_cls is TemplateSubAccount:
-            return TemplateSubAccountSerializer
-        return BudgetSubAccountSerializer
+            return TemplateSubAccountDetailSerializer
+        return BudgetSubAccountDetailSerializer
 
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
