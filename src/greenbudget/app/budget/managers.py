@@ -4,14 +4,7 @@ from greenbudget.lib.django_utils.models import BulkCreatePolymorphicQuerySet
 
 
 class BudgetQuerier(object):
-
-    def active(self):
-        # pylint: disable=no-member
-        return self.filter(trash=False)
-
-    def inactive(self):
-        # pylint: disable=no-member
-        return self.filter(trash=True)
+    pass
 
 
 class BudgetQuery(BudgetQuerier, BulkCreatePolymorphicQuerySet):

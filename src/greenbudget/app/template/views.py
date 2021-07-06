@@ -5,7 +5,6 @@ from rest_framework import (
 from greenbudget.app.account.models import TemplateAccount
 from greenbudget.app.account.serializers import TemplateAccountSerializer
 from greenbudget.app.account.views import GenericAccountViewSet
-from greenbudget.app.budget.mixins import TrashModelMixin
 from greenbudget.app.budget.decorators import (
     register_all_bulk_operations, BulkAction)
 from greenbudget.app.common.permissions import IsAdminOrReadOnly
@@ -203,18 +202,13 @@ class TemplateViewSet(
     )
 
     def get_queryset(self):
-        qs = Template.objects.active()
+        qs = Template.objects.all()
         if self.action in ('list', 'create'):
             return qs.user(self.request.user)
         return qs
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
-
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        instance.to_trash()
-        return response.Response(status=204)
 
     @decorators.action(detail=True, methods=["POST"])
     def duplicate(self, request, *args, **kwargs):
@@ -248,7 +242,7 @@ class TemplateCommunityViewSet(
         return context
 
     def get_queryset(self):
-        qs = Template.objects.active().community()
+        qs = Template.objects.community()
         if not self.request.user.is_staff:
             return qs.filter(hidden=False)
         return qs
@@ -258,17 +252,3 @@ class TemplateCommunityViewSet(
             created_by=self.request.user,
             community=True
         )
-
-
-class TemplateTrashViewSet(TrashModelMixin, GenericTemplateViewSet):
-    """
-    ViewSet to handle requests to the following endpoints:
-
-    (1) GET /templates/trash/
-    (2) GET /templates/trash/<pk>/
-    (3) PATCH /templates/trash/<pk>/restore/
-    (4) DELETE /templates/trash/<pk>/
-    """
-
-    def get_queryset(self):
-        return Template.objects.inactive().user(self.request.user)

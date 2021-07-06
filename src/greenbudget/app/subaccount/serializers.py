@@ -115,7 +115,7 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
     fringes = serializers.PrimaryKeyRelatedField(
         many=True,
         required=False,
-        queryset=Fringe.objects.filter(budget__trash=False)
+        queryset=Fringe.objects.all()
     )
 
     class Meta:

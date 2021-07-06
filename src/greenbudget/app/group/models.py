@@ -36,7 +36,6 @@ class Group(PolymorphicModel):
         )
     )
 
-    objects = GroupManager()
     non_polymorphic = models.Manager()
 
     class Meta:

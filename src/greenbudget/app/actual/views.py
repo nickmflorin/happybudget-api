@@ -34,4 +34,4 @@ class ActualsViewSet(
         serializer.save(updated_by=self.request.user)
 
     def get_queryset(self):
-        return Actual.objects.filter(budget__trash=False)
+        return Actual.objects.all()

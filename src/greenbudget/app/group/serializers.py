@@ -161,7 +161,7 @@ class BudgetAccountGroupSerializer(GroupSerializer):
     children = AccountGroupChildFilteredQuerysetPKField(
         many=True,
         required=True,
-        queryset=BudgetAccount.objects.active()
+        queryset=BudgetAccount.objects.all()
     )
 
     class Meta(GroupSerializer.Meta):
@@ -174,7 +174,7 @@ class TemplateAccountGroupSerializer(GroupSerializer):
     children = AccountGroupChildFilteredQuerysetPKField(
         many=True,
         required=True,
-        queryset=TemplateAccount.objects.active()
+        queryset=TemplateAccount.objects.all()
     )
 
     class Meta(GroupSerializer.Meta):
@@ -188,7 +188,7 @@ class BudgetSubAccountGroupSerializer(GroupSerializer):
     children = SubAccountGroupChildFilteredQuerysetPKField(
         many=True,
         required=True,
-        queryset=BudgetSubAccount.objects.active()
+        queryset=BudgetSubAccount.objects.all()
     )
 
     class Meta(GroupSerializer.Meta):
@@ -201,7 +201,7 @@ class TemplateSubAccountGroupSerializer(GroupSerializer):
     children = SubAccountGroupChildFilteredQuerysetPKField(
         many=True,
         required=True,
-        queryset=TemplateSubAccount.objects.active()
+        queryset=TemplateSubAccount.objects.all()
     )
 
     class Meta(GroupSerializer.Meta):

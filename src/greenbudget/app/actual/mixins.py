@@ -18,5 +18,4 @@ class ActualNestedMixin(object):
             self.actual_lookup_field[0]: (
                 self.kwargs[self.actual_lookup_field[1]])
         }
-        return get_object_or_404(
-            Actual.objects.filter(budget__trash=False), **params)
+        return get_object_or_404(Actual.objects.all(), **params)

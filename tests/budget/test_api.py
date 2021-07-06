@@ -209,95 +209,10 @@ def test_duplicate_budget(api_client, user, create_budget, models):
     }
 
 
-@pytest.mark.freeze_time('2020-01-01')
-def test_get_budgets_in_trash(api_client, user, create_budget, models):
-    api_client.force_login(user)
-    budgets = [
-        create_budget(trash=True),
-        create_budget(trash=True),
-        create_budget()
-    ]
-    response = api_client.get("/v1/budgets/trash/")
-    assert response.status_code == 200
-    assert response.json()['count'] == 2
-    assert response.json()['data'] == [
-        {
-            "id": budgets[0].pk,
-            "name": budgets[0].name,
-            "created_at": "2020-01-01 00:00:00",
-            "updated_at": "2020-01-01 00:00:00",
-            "created_by": user.pk,
-            "type": "budget",
-            "image": None,
-        },
-        {
-            "id": budgets[1].pk,
-            "name": budgets[1].name,
-            "created_at": "2020-01-01 00:00:00",
-            "updated_at": "2020-01-01 00:00:00",
-            "created_by": user.pk,
-            "type": "budget",
-            "image": None,
-        }
-    ]
-
-
-@pytest.mark.freeze_time('2020-01-01')
-def test_get_budget_in_trash(api_client, user, create_budget, models):
-    api_client.force_login(user)
-    budget = create_budget(trash=True)
-    response = api_client.get("/v1/budgets/trash/%s/" % budget.pk)
-    assert response.status_code == 200
-    assert response.json() == {
-        "id": budget.pk,
-        "name": budget.name,
-        "project_number": budget.project_number,
-        "production_type": {
-                "id": budget.production_type,
-                "name": models.Budget.PRODUCTION_TYPES[budget.production_type]
-        },
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
-        "shoot_date": api_datetime_string(budget.shoot_date),
-        "delivery_date": api_datetime_string(budget.delivery_date),
-        "build_days": budget.build_days,
-        "prelight_days": budget.prelight_days,
-        "studio_shoot_days": budget.studio_shoot_days,
-        "location_days": budget.location_days,
-        "estimated": 0.0,
-        "variance": 0.0,
-        "actual": 0.0,
-        "created_by": user.pk,
-        "type": "budget",
-        "image": None,
-    }
-
-
-def test_delete_budget(api_client, user, create_budget):
+def test_delete_budget(api_client, user, create_budget, models):
     api_client.force_login(user)
     budget = create_budget()
     response = api_client.delete("/v1/budgets/%s/" % budget.pk)
-    assert response.status_code == 204
-
-    budget.refresh_from_db()
-    assert budget.trash is True
-    assert budget.id is not None
-
-
-def test_restore_budget(api_client, user, create_budget):
-    api_client.force_login(user)
-    budget = create_budget(trash=True)
-    response = api_client.patch("/v1/budgets/trash/%s/restore/" % budget.pk)
-    assert response.status_code == 201
-    assert response.json()['id'] == budget.pk
-    budget.refresh_from_db()
-    assert budget.trash is False
-
-
-def test_permanently_delete_budget(api_client, user, create_budget, models):
-    api_client.force_login(user)
-    budget = create_budget(trash=True)
-    response = api_client.delete("/v1/budgets/trash/%s/" % budget.pk)
     assert response.status_code == 204
     assert models.Budget.objects.first() is None
 

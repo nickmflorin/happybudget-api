@@ -20,7 +20,7 @@ from greenbudget.app.subaccount.serializers import (
 
 from .decorators import register_all_bulk_operations, BulkAction
 from .models import Budget
-from .mixins import BudgetNestedMixin, TrashModelMixin
+from .mixins import BudgetNestedMixin
 from .serializers import BudgetSerializer, BudgetSimpleSerializer
 
 
@@ -384,12 +384,7 @@ class BudgetViewSet(
         return context
 
     def get_queryset(self):
-        return Budget.objects.filter(created_by=self.request.user).active()
-
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        instance.to_trash()
-        return response.Response(status=status.HTTP_204_NO_CONTENT)
+        return Budget.objects.filter(created_by=self.request.user).all()
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
@@ -408,17 +403,3 @@ class BudgetViewSet(
             self.serializer_class(duplicated).data,
             status=status.HTTP_201_CREATED
         )
-
-
-class BudgetTrashViewSet(TrashModelMixin, GenericBudgetViewSet):
-    """
-    ViewSet to handle requests to the following endpoints:
-
-    (1) GET /budgets/trash/
-    (2) GET /budgets/trash/<pk>/
-    (3) PATCH /budgets/trash/<pk>/restore/
-    (4) DELETE /budgets/trash/<pk>/
-    """
-
-    def get_queryset(self):
-        return self.request.user.budgets.instance_of(Budget).inactive()

@@ -3,7 +3,6 @@ from rest_framework import routers
 
 from .views import (
     TemplateViewSet,
-    TemplateTrashViewSet,
     TemplateFringeViewSet,
     TemplateGroupViewSet,
     TemplateAccountViewSet,
@@ -15,7 +14,6 @@ app_name = "template"
 router = routers.SimpleRouter()
 router.register(
     r'community', TemplateCommunityViewSet, basename='template-community')
-router.register(r'trash', TemplateTrashViewSet, basename='template-trash')
 router.register(r'', TemplateViewSet, basename='template')
 
 template_fringes_router = routers.SimpleRouter()

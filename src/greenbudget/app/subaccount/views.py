@@ -202,7 +202,7 @@ class SubAccountViewSet(
         return TemplateSubAccountSerializer
 
     def get_queryset(self):
-        return SubAccount.objects.filter(budget__trash=False)
+        return SubAccount.objects.all()
 
     def get_serializer_class(self):
         if self.instance_cls is TemplateSubAccount:

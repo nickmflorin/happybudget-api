@@ -1,6 +1,7 @@
 from polymorphic.models import PolymorphicModel
 from polymorphic.query import PolymorphicQuerySet
 
+from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models, connections, connection, transaction
@@ -237,8 +238,16 @@ class BulkCreatePolymorphicQuerySet(PolymorphicQuerySet):
 
             # NOTE: Since we are manually setting the the IDs, PostGres does
             # not detect that the ID sequence needs to be automatically updated.
-            # Therefore, we need to do this ourselves.
-            reset_id_sequence(self.polymorphic_base)
+            # Therefore, we need to do this ourselves.  This will not work for
+            # our SQLite test database though.
+            db_name = 'default'
+            if child_instances[0]._state.db is not None:
+                db_name = child_instances[0]._state.db
+
+            # This might also not work for MySQL but we don't use that ever.
+            db_backend = settings.DATABASES[db_name]['ENGINE'].split('.')[-1]
+            if db_backend != 'sqlite3':
+                reset_id_sequence(self.polymorphic_base)
 
             # Note that while the created children are fully represented with
             # all fields (both base and child) in the database, the children

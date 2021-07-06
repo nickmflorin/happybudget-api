@@ -9,7 +9,6 @@ from greenbudget.app.history.urls import (
 
 from .views import (
     BudgetViewSet,
-    BudgetTrashViewSet,
     BudgetFringeViewSet,
     BudgetGroupViewSet,
     BudgetActualsViewSet,
@@ -20,7 +19,6 @@ from .views import (
 app_name = "budget"
 
 router = routers.SimpleRouter()
-router.register(r'trash', BudgetTrashViewSet, basename='budget-trash')
 router.register(r'', BudgetViewSet, basename='budget')
 
 budget_fringes_router = routers.NestedSimpleRouter(router, r'', lookup='budget')

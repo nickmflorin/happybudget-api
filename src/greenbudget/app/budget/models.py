@@ -29,7 +29,6 @@ class BaseBudget(PolymorphicModel):
         on_delete=models.CASCADE
     )
     estimated = models.FloatField(default=0.0)
-    trash = models.BooleanField(default=False, db_index=True)
     image = models.ImageField(upload_to=upload_to, null=True)
 
     objects = BaseBudgetManager()
@@ -47,14 +46,6 @@ class BaseBudget(PolymorphicModel):
             id=self.pk,
             name=self.name
         )
-
-    def to_trash(self):
-        self.trash = True
-        self.save()
-
-    def restore(self):
-        self.trash = False
-        self.save()
 
     def duplicate(self, user):
         duplicator = BudgetDuplicator(self, user)

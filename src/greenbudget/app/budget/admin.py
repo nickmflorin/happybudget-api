@@ -11,8 +11,7 @@ class BudgetAdminForm(forms.ModelForm):
 
 
 class BudgetAdmin(admin.ModelAdmin):
-    list_display = (
-        "name", "created_at", "updated_at", "created_by", "trash")
+    list_display = ("name", "created_at", "updated_at", "created_by")
     form = BudgetAdminForm
 
 

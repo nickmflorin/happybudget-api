@@ -55,7 +55,7 @@ class BudgetSimpleSerializer(BaseBudgetSerializer):
     template = serializers.PrimaryKeyRelatedField(
         write_only=True,
         required=False,
-        queryset=Template.objects.active(),
+        queryset=Template.objects.all(),
         allow_null=False
     )
 

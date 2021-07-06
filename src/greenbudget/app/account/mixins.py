@@ -16,7 +16,7 @@ class AccountNestedMixin(NestedObjectViewMixin):
         return None
 
     def get_account_queryset(self, request):
-        qs = Account.objects.filter(budget__trash=False)
+        qs = Account.objects.all()
         if self.account_polymorphic_instance is not None:
             qs = qs.instance_of(self.account_polymorphic_instance)
         return qs

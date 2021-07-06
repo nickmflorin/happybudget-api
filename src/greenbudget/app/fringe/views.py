@@ -22,7 +22,7 @@ class FringesViewSet(
     budget_lookup_field = ("pk", "budget_pk")
 
     def get_queryset(self):
-        return Fringe.objects.filter(budget__trash=False)
+        return Fringe.objects.all()
 
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)

@@ -12,7 +12,7 @@ class TemplateAdminForm(forms.ModelForm):
 
 class TemplateAdmin(admin.ModelAdmin):
     list_display = (
-        "name", "created_at", "updated_at", "created_by", "trash", "community")
+        "name", "created_at", "updated_at", "created_by", "community")
     form = TemplateAdminForm
 
 

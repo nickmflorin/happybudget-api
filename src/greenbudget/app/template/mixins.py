@@ -12,4 +12,4 @@ class TemplateNestedMixin(NestedObjectViewMixin):
     view_name = 'template'
 
     def get_template_queryset(self, request):
-        return Template.objects.active()
+        return Template.objects.all()

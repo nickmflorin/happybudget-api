@@ -418,92 +418,19 @@ def test_duplicate_template(api_client, user, create_template, models):
     }
 
 
-@pytest.mark.freeze_time('2020-01-01')
-def test_get_templates_in_trash(api_client, user, create_template):
-    api_client.force_login(user)
-    templates = [
-        create_template(trash=True),
-        create_template(trash=True),
-        create_template()
-    ]
-    response = api_client.get("/v1/templates/trash/")
-    assert response.status_code == 200
-    assert response.json()['count'] == 2
-    assert response.json()['data'] == [
-        {
-            "id": templates[0].pk,
-            "name": templates[0].name,
-            "created_at": "2020-01-01 00:00:00",
-            "updated_at": "2020-01-01 00:00:00",
-            "type": "template",
-            "created_by": user.pk,
-            "image": None,
-        },
-        {
-            "id": templates[1].pk,
-            "name": templates[1].name,
-            "created_at": "2020-01-01 00:00:00",
-            "updated_at": "2020-01-01 00:00:00",
-            "type": "template",
-            "created_by": user.pk,
-            "image": None,
-        }
-    ]
-
-
-@pytest.mark.freeze_time('2020-01-01')
-def test_get_template_in_trash(api_client, user, create_template):
-    api_client.force_login(user)
-    template = create_template(trash=True)
-    response = api_client.get("/v1/templates/trash/%s/" % template.pk)
-    assert response.status_code == 200
-    assert response.json() == {
-        "id": template.pk,
-        "name": template.name,
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
-        "estimated": 0.0,
-        "type": "template",
-        "created_by": user.pk,
-        "image": None,
-    }
-
-
-def test_delete_template(api_client, user, create_template):
+def test_delete_template(api_client, user, create_template, models):
     api_client.force_login(user)
     template = create_template()
     response = api_client.delete("/v1/templates/%s/" % template.pk)
     assert response.status_code == 204
-    template.refresh_from_db()
-    assert template.trash is True
-    assert template.id is not None
+    assert models.Template.objects.first() is None
 
 
-def test_delete_community_template(api_client, staff_user, create_template):
+def test_delete_community_template(api_client, staff_user, create_template,
+        models):
     api_client.force_login(staff_user)
     template = create_template(created_by=staff_user, community=True)
     response = api_client.delete("/v1/templates/%s/" % template.pk)
-    assert response.status_code == 204
-    template.refresh_from_db()
-    assert template.trash is True
-    assert template.id is not None
-
-
-def test_restore_template(api_client, user, create_template):
-    api_client.force_login(user)
-    template = create_template(trash=True)
-    response = api_client.patch("/v1/templates/trash/%s/restore/" % template.pk)
-    assert response.status_code == 201
-
-    assert response.json()['id'] == template.pk
-    template.refresh_from_db()
-    assert template.trash is False
-
-
-def test_permanently_delete_template(api_client, user, create_template, models):
-    api_client.force_login(user)
-    template = create_template(trash=True)
-    response = api_client.delete("/v1/templates/trash/%s/" % template.pk)
     assert response.status_code == 204
     assert models.Template.objects.first() is None
 
