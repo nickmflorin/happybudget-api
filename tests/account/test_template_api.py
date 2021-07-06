@@ -20,24 +20,12 @@ def test_get_template_accounts(api_client, user, create_template_account,
             "description": accounts[0].description,
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
-            "budget": template.pk,
             "type": "account",
             "estimated": 0.0,
             "subaccounts": [],
             "group": None,
             "created_by": user.pk,
-            "updated_by": user.pk,
-            "ancestors": [{
-                "type": "template",
-                "id": template.pk,
-                "name": template.name,
-            }],
-            "siblings": [{
-                "type": "account",
-                "id": accounts[1].pk,
-                "identifier": accounts[1].identifier,
-                "description": accounts[1].description
-            }]
+            "updated_by": user.pk
         },
         {
             "id": accounts[1].pk,
@@ -45,24 +33,12 @@ def test_get_template_accounts(api_client, user, create_template_account,
             "description": accounts[1].description,
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
-            "budget": template.pk,
             "type": "account",
             "estimated": 0.0,
             "subaccounts": [],
             "group": None,
             "created_by": user.pk,
-            "updated_by": user.pk,
-            "ancestors": [{
-                "type": "template",
-                "id": template.pk,
-                "name": template.name
-            }],
-            "siblings": [{
-                "type": "account",
-                "id": accounts[0].pk,
-                "identifier": accounts[0].identifier,
-                "description": accounts[0].description
-            }]
+            "updated_by": user.pk
         }
     ]
 
@@ -114,17 +90,10 @@ def test_create_template_account(api_client, user, create_template, models):
         "description": None,
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
-        "budget": template.pk,
         "type": "account",
         "estimated": 0.0,
         "subaccounts": [],
         "group": None,
         "created_by": user.pk,
-        "updated_by": user.pk,
-        "siblings": [],
-        "ancestors": [{
-            "type": "template",
-            "id": template.pk,
-            "name": template.name
-        }]
+        "updated_by": user.pk
     }

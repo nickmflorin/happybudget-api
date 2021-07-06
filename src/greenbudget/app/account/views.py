@@ -26,7 +26,10 @@ from greenbudget.app.subaccount.views import GenericSubAccountViewSet
 
 from .models import BudgetAccount, TemplateAccount
 from .permissions import AccountObjPermission
-from .serializers import BudgetAccountSerializer, TemplateAccountSerializer
+from .serializers import (
+    BudgetAccountDetailSerializer,
+    TemplateAccountDetailSerializer
+)
 
 
 class AccountGroupViewSet(
@@ -225,8 +228,8 @@ class AccountViewSet(
 
     def get_serializer_class(self):
         if self.instance_cls is TemplateAccount:
-            return TemplateAccountSerializer
-        return BudgetAccountSerializer
+            return TemplateAccountDetailSerializer
+        return BudgetAccountDetailSerializer
 
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)

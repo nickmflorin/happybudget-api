@@ -39,16 +39,13 @@ class AccountSerializer(AccountSimpleSerializer):
     updated_by = serializers.PrimaryKeyRelatedField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
-    budget = serializers.PrimaryKeyRelatedField(read_only=True)
-    ancestors = EntitySerializer(many=True, read_only=True)
-    siblings = EntitySerializer(many=True, read_only=True)
     estimated = serializers.FloatField(read_only=True)
     subaccounts = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
 
     class Meta(AccountSimpleSerializer.Meta):
         fields = AccountSimpleSerializer.Meta.fields + (
-            'created_by', 'updated_by', 'created_at', 'updated_at', 'budget',
-            'ancestors', 'estimated', 'subaccounts', 'type', 'siblings')
+            'created_by', 'updated_by', 'created_at', 'updated_at', 'estimated',
+            'subaccounts')
 
 
 class BudgetAccountSerializer(AccountSerializer):
@@ -71,6 +68,15 @@ class BudgetAccountSerializer(AccountSerializer):
             'actual', 'variance', 'access', 'group')
 
 
+class BudgetAccountDetailSerializer(BudgetAccountSerializer):
+    ancestors = EntitySerializer(many=True, read_only=True)
+    siblings = EntitySerializer(many=True, read_only=True)
+
+    class Meta(BudgetAccountSerializer.Meta):
+        fields = BudgetAccountSerializer.Meta.fields + (
+            "ancestors", "siblings")
+
+
 class TemplateAccountSerializer(AccountSerializer):
     group = serializers.PrimaryKeyRelatedField(
         required=False,
@@ -81,3 +87,12 @@ class TemplateAccountSerializer(AccountSerializer):
     class Meta:
         model = TemplateAccount
         fields = AccountSerializer.Meta.fields + ('group', )
+
+
+class TemplateAccountDetailSerializer(TemplateAccountSerializer):
+    ancestors = EntitySerializer(many=True, read_only=True)
+    siblings = EntitySerializer(many=True, read_only=True)
+
+    class Meta(TemplateAccountSerializer.Meta):
+        fields = TemplateAccountSerializer.Meta.fields + (
+            "ancestors", "siblings")

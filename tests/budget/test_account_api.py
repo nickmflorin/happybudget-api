@@ -21,7 +21,6 @@ def test_get_budget_accounts(api_client, user, create_budget_account,
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
             "access": [],
-            "budget": budget.pk,
             "type": "account",
             "estimated": 0.0,
             "variance": 0.0,
@@ -29,18 +28,7 @@ def test_get_budget_accounts(api_client, user, create_budget_account,
             "subaccounts": [],
             "group": None,
             "created_by": user.pk,
-            "updated_by": user.pk,
-            "ancestors": [{
-                "type": "budget",
-                "id": budget.pk,
-                "name": budget.name,
-            }],
-            "siblings": [{
-                "type": "account",
-                "id": accounts[1].pk,
-                "identifier": accounts[1].identifier,
-                "description": accounts[1].description
-            }]
+            "updated_by": user.pk
         },
         {
             "id": accounts[1].pk,
@@ -49,7 +37,6 @@ def test_get_budget_accounts(api_client, user, create_budget_account,
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
             "access": [],
-            "budget": budget.pk,
             "type": "account",
             "estimated": 0.0,
             "variance": 0.0,
@@ -57,18 +44,7 @@ def test_get_budget_accounts(api_client, user, create_budget_account,
             "subaccounts": [],
             "group": None,
             "created_by": user.pk,
-            "updated_by": user.pk,
-            "ancestors": [{
-                "type": "budget",
-                "id": budget.pk,
-                "name": budget.name
-            }],
-            "siblings": [{
-                "type": "account",
-                "id": accounts[0].pk,
-                "identifier": accounts[0].identifier,
-                "description": accounts[0].description
-            }]
+            "updated_by": user.pk
         }
     ]
 
@@ -92,7 +68,6 @@ def test_create_budget_account(api_client, user, create_budget, models):
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
         "access": [],
-        "budget": budget.pk,
         "type": "account",
         "estimated": 0.0,
         "variance": 0.0,
@@ -101,10 +76,4 @@ def test_create_budget_account(api_client, user, create_budget, models):
         "group": None,
         "created_by": user.pk,
         "updated_by": user.pk,
-        "ancestors": [{
-            "type": "budget",
-            "id": budget.pk,
-            "name": budget.name
-        }],
-        "siblings": []
     }
