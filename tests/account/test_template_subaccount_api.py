@@ -38,36 +38,14 @@ def test_get_template_account_subaccounts(api_client, user, create_template,
             "multiplier": subaccounts[0].multiplier,
             "type": "subaccount",
             "object_id": account.pk,
-            "budget": template.pk,
             "parent_type": "account",
-            "account": account.pk,
             "estimated": 0.0,
             "subaccounts": [],
             "fringes": [],
             "created_by": user.pk,
             "updated_by": user.pk,
             "group": None,
-            "unit": None,
-            "ancestors": [
-                {
-                    "type": "template",
-                    "id": template.pk,
-                    "name": template.name,
-                },
-                {
-                    "id": account.id,
-                    "type": "account",
-                    "identifier": account.identifier,
-                    "description": account.description,
-                }
-            ],
-            "siblings": [{
-                "id": subaccounts[1].id,
-                "type": "subaccount",
-                "identifier": subaccounts[1].identifier,
-                "name": subaccounts[1].name,
-                "description": subaccounts[1].description
-            }],
+            "unit": None
         },
         {
             "id": subaccounts[1].pk,
@@ -81,36 +59,14 @@ def test_get_template_account_subaccounts(api_client, user, create_template,
             "multiplier": subaccounts[1].multiplier,
             "type": "subaccount",
             "object_id": account.pk,
-            "budget": template.pk,
             "parent_type": "account",
-            "account": account.pk,
             "estimated": 0.0,
             "subaccounts": [],
             "fringes": [],
             "group": None,
             "created_by": user.pk,
             "updated_by": user.pk,
-            "unit": None,
-            "ancestors": [
-                {
-                    "type": "template",
-                    "id": template.pk,
-                    "name": template.name,
-                },
-                {
-                    "id": account.id,
-                    "type": "account",
-                    "identifier": account.identifier,
-                    "description": account.description,
-                }
-            ],
-            "siblings": [{
-                "id": subaccounts[0].id,
-                "type": "subaccount",
-                "identifier": subaccounts[0].identifier,
-                "name": subaccounts[0].name,
-                "description": subaccounts[0].description
-            }],
+            "unit": None
         },
     ]
 
@@ -197,27 +153,11 @@ def test_create_template_subaccount(api_client, user, create_template_account,
         "unit": None,
         "type": "subaccount",
         "object_id": account.pk,
-        "budget": template.pk,
         "parent_type": "account",
-        "account": account.pk,
         "estimated": 0.0,
         "subaccounts": [],
         "fringes": [],
-        "siblings": [],
         "group": None,
         "created_by": user.pk,
         "updated_by": user.pk,
-        "ancestors": [
-            {
-                "type": "template",
-                "id": template.pk,
-                "name": template.name,
-            },
-            {
-                "id": account.id,
-                "type": "account",
-                "identifier": account.identifier,
-                "description": account.description,
-            }
-        ]
     }

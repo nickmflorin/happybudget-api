@@ -38,9 +38,7 @@ def test_get_budget_account_subaccounts(api_client, user, create_budget_account,
             "multiplier": subaccounts[0].multiplier,
             "type": "subaccount",
             "object_id": account.pk,
-            "budget": budget.pk,
             "parent_type": "account",
-            "account": account.pk,
             "actual": 0.0,
             "estimated": 0.0,
             "variance": 0.0,
@@ -49,27 +47,7 @@ def test_get_budget_account_subaccounts(api_client, user, create_budget_account,
             "created_by": user.pk,
             "updated_by": user.pk,
             "group": None,
-            "unit": None,
-            "ancestors": [
-                {
-                    "type": "budget",
-                    "id": budget.pk,
-                    "name": budget.name,
-                },
-                {
-                    "id": account.id,
-                    "type": "account",
-                    "identifier": account.identifier,
-                    "description": account.description,
-                }
-            ],
-            "siblings": [{
-                "id": subaccounts[1].id,
-                "type": "subaccount",
-                "identifier": subaccounts[1].identifier,
-                "name": subaccounts[1].name,
-                "description": subaccounts[1].description,
-            }],
+            "unit": None
         },
         {
             "id": subaccounts[1].pk,
@@ -83,9 +61,7 @@ def test_get_budget_account_subaccounts(api_client, user, create_budget_account,
             "multiplier": subaccounts[1].multiplier,
             "type": "subaccount",
             "object_id": account.pk,
-            "budget": budget.pk,
             "parent_type": "account",
-            "account": account.pk,
             "actual": 0.0,
             "estimated": 0.0,
             "variance": 0.0,
@@ -94,27 +70,7 @@ def test_get_budget_account_subaccounts(api_client, user, create_budget_account,
             "group": None,
             "created_by": user.pk,
             "updated_by": user.pk,
-            "unit": None,
-            "ancestors": [
-                {
-                    "type": "budget",
-                    "id": budget.pk,
-                    "name": budget.name,
-                },
-                {
-                    "id": account.id,
-                    "type": "account",
-                    "identifier": account.identifier,
-                    "description": account.description,
-                }
-            ],
-            "siblings": [{
-                "id": subaccounts[0].id,
-                "type": "subaccount",
-                "identifier": subaccounts[0].identifier,
-                "name": subaccounts[0].name,
-                "description": subaccounts[0].description,
-            }],
+            "unit": None
         },
     ]
 
@@ -153,29 +109,13 @@ def test_create_budget_subaccount(api_client, user, create_budget_account,
         "unit": None,
         "type": "subaccount",
         "object_id": account.pk,
-        "budget": budget.pk,
         "parent_type": "account",
-        "account": account.pk,
         "actual": 0.0,
         "estimated": 0.0,
         "variance": 0.0,
         "subaccounts": [],
         "fringes": [],
-        "siblings": [],
         "group": None,
         "created_by": user.pk,
-        "updated_by": user.pk,
-        "ancestors": [
-            {
-                "type": "budget",
-                "id": budget.pk,
-                "name": budget.name,
-            },
-            {
-                "id": account.id,
-                "type": "account",
-                "identifier": account.identifier,
-                "description": account.description,
-            }
-        ]
+        "updated_by": user.pk
     }
