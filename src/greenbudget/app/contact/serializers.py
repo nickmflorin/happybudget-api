@@ -9,7 +9,7 @@ from .models import Contact
 
 class ContactSerializer(ModelSerializer):
     id = serializers.IntegerField(read_only=True)
-    first_name = serializers.CharField()
+    first_name = serializers.CharField(allow_null=True, required=False)
     last_name = serializers.CharField(allow_null=True, required=False)
     full_name = serializers.CharField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)

@@ -111,6 +111,37 @@ def test_create_contact(api_client, user, models):
 
 
 @pytest.mark.freeze_time('2020-01-01')
+def test_create_blank_contact(api_client, user, models):
+    api_client.force_login(user)
+    response = api_client.post("/v1/contacts/", data={})
+    assert response.status_code == 201
+    contact = models.Contact.objects.first()
+
+    assert contact is not None
+    assert contact.city is None
+    assert contact.country is None
+    assert contact.first_name is None
+    assert contact.last_name is None
+    assert contact.role is None
+    assert contact.phone_number is None
+    assert contact.email is None
+
+    assert response.json() == {
+        "id": contact.pk,
+        "first_name": None,
+        "last_name": None,
+        "created_at": "2020-01-01 00:00:00",
+        "updated_at": "2020-01-01 00:00:00",
+        "city": None,
+        "country": None,
+        "phone_number": None,
+        "email": None,
+        "full_name": None,
+        "role": None
+    }
+
+
+@pytest.mark.freeze_time('2020-01-01')
 def test_update_contact(api_client, user, create_contact, models):
     contact = create_contact()
     api_client.force_login(user)
