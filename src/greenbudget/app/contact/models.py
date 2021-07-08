@@ -2,6 +2,8 @@ from model_utils import Choices
 
 from django.db import models
 
+from greenbudget.lib.utils import conditionally_separate_strings
+
 
 class Contact(models.Model):
     first_name = models.CharField(max_length=30, null=True)
@@ -27,10 +29,11 @@ class Contact(models.Model):
         (10, "other", "Other"),
     )
     role = models.IntegerField(choices=ROLES, null=True)
+    company = models.CharField(max_length=128, null=True)
     city = models.CharField(max_length=30, null=True)
-    country = models.CharField(max_length=30, null=True)
     phone_number = models.BigIntegerField(null=True)
     email = models.EmailField(null=True)
+    rate = models.IntegerField(null=True)
 
     class Meta:
         get_latest_by = "updated_at"
@@ -47,6 +50,4 @@ class Contact(models.Model):
 
     @property
     def full_name(self):
-        if self.last_name is not None:
-            return self.first_name + " " + self.last_name
-        return self.first_name
+        return conditionally_separate_strings([self.first_name, self.last_name])

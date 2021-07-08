@@ -352,8 +352,9 @@ class ContactFactory(CustomModelFactory):
     user = factory.SubFactory(UserFactory)
     role = Contact.ROLES.producer
     phone_number = 15555555555
-    country = "United States"
+    rate = 100
     city = "New York"
+    company = "GE"
 
     class Meta:
         model = Contact

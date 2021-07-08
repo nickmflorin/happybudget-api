@@ -19,13 +19,14 @@ class ContactSerializer(ModelSerializer):
         choices=Contact.ROLES,
         allow_null=True
     )
+    company = serializers.CharField(allow_null=True, required=False)
     city = serializers.CharField(allow_null=True, required=False)
-    country = serializers.CharField(allow_null=True, required=False)
     phone_number = serializers.IntegerField(allow_null=True, required=False)
     email = serializers.EmailField(allow_null=True, required=False)
+    rate = serializers.IntegerField(allow_null=True, required=False)
 
     class Meta:
         model = Contact
         fields = (
             'id', 'first_name', 'last_name', 'created_at', 'updated_at', 'role',
-            'city', 'country', 'phone_number', 'email', 'full_name')
+            'city', 'rate', 'phone_number', 'email', 'full_name', 'company')

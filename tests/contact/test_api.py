@@ -14,10 +14,11 @@ def test_get_contact(api_client, user, create_contact, models):
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
         "city": contact.city,
-        "country": contact.country,
+        "rate": contact.rate,
         "phone_number": contact.phone_number,
         "email": contact.email,
         "full_name": contact.full_name,
+        "company": contact.company,
         "role": {
             "id": contact.role,
             "name": models.Contact.ROLES[contact.role]
@@ -40,7 +41,8 @@ def test_get_contacts(api_client, user, create_contact, models):
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
             "city": contacts[0].city,
-            "country": contacts[0].country,
+            "rate": contacts[0].rate,
+            "company": contacts[0].company,
             "phone_number": contacts[0].phone_number,
             "email": contacts[0].email,
             "full_name": contacts[0].full_name,
@@ -56,7 +58,8 @@ def test_get_contacts(api_client, user, create_contact, models):
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
             "city": contacts[1].city,
-            "country": contacts[1].country,
+            "rate": contacts[1].rate,
+            "company": contacts[1].company,
             "phone_number": contacts[1].phone_number,
             "email": contacts[1].email,
             "full_name": contacts[1].full_name,
@@ -73,24 +76,26 @@ def test_create_contact(api_client, user, models):
     api_client.force_login(user)
     response = api_client.post("/v1/contacts/", data={
         'city': 'New York',
-        'country': 'United States',
+        'rate': 5,
         'first_name': 'Jack',
         'last_name': 'Johnson',
         'role': 1,
         'phone_number': '15183696530',
         'email': 'jjohnson@gmail.com',
+        "company": "Boeing"
     })
     assert response.status_code == 201
     contact = models.Contact.objects.first()
 
     assert contact is not None
     assert contact.city == "New York"
-    assert contact.country == "United States"
+    assert contact.rate == 5
     assert contact.first_name == "Jack"
     assert contact.last_name == "Johnson"
     assert contact.role == 1
     assert contact.phone_number == 15183696530
     assert contact.email == "jjohnson@gmail.com"
+    assert contact.company == "Boeing"
 
     assert response.json() == {
         "id": contact.pk,
@@ -99,10 +104,11 @@ def test_create_contact(api_client, user, models):
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
         "city": "New York",
-        "country": "United States",
+        "rate": 5,
         "phone_number": 15183696530,
         "email": "jjohnson@gmail.com",
         "full_name": "Jack Johnson",
+        "company": "Boeing",
         "role": {
             "id": 1,
             "name": models.Contact.ROLES[1]
@@ -119,12 +125,13 @@ def test_create_blank_contact(api_client, user, models):
 
     assert contact is not None
     assert contact.city is None
-    assert contact.country is None
+    assert contact.rate is None
     assert contact.first_name is None
     assert contact.last_name is None
     assert contact.role is None
     assert contact.phone_number is None
     assert contact.email is None
+    assert contact.company is None
 
     assert response.json() == {
         "id": contact.pk,
@@ -132,11 +139,12 @@ def test_create_blank_contact(api_client, user, models):
         "last_name": None,
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
+        "company": None,
         "city": None,
-        "country": None,
+        "rate": None,
         "phone_number": None,
         "email": None,
-        "full_name": None,
+        "full_name": "",
         "role": None
     }
 
@@ -147,7 +155,7 @@ def test_update_contact(api_client, user, create_contact, models):
     api_client.force_login(user)
     response = api_client.patch("/v1/contacts/%s/" % contact.pk, data={
         'city': 'New York',
-        'country': 'United States',
+        'rate': 5,
         'first_name': 'Jack',
         'last_name': 'Johnson',
     })
@@ -155,7 +163,7 @@ def test_update_contact(api_client, user, create_contact, models):
     contact.refresh_from_db()
 
     assert contact.city == "New York"
-    assert contact.country == "United States"
+    assert contact.rate == 5
     assert contact.first_name == "Jack"
     assert contact.last_name == "Johnson"
 
@@ -166,7 +174,8 @@ def test_update_contact(api_client, user, create_contact, models):
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
         "city": "New York",
-        "country": "United States",
+        "rate": 5,
+        "company": contact.company,
         "phone_number": contact.phone_number,
         "email": contact.email,
         "full_name": contact.full_name,

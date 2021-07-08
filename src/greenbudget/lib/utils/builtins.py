@@ -7,6 +7,16 @@ from typing import Dict, Any
 from .dateutils import ensure_datetime
 
 
+def conditionally_separate_strings(strings, separator=" "):
+    parts = [pt for pt in strings if pt is not None]
+    assert all([isinstance(pt, str) for pt in parts])
+    if len(parts) == 0:
+        return ""
+    elif len(parts) == 1:
+        return parts[0]
+    return separator.join(parts)
+
+
 def hash_dict(dictionary: Dict[str, Any]) -> str:
     dhash = hashlib.md5()
     encoded = json.dumps(dictionary, sort_keys=True).encode()
