@@ -10,7 +10,6 @@ from greenbudget.app.comment.models import Comment
 
 from .duplication import BudgetDuplicator
 from .managers import BudgetManager, BaseBudgetManager
-from .utils import render_budget_as_pdf
 
 
 def upload_to(instance, filename):
@@ -95,6 +94,3 @@ class Budget(BaseBudget):
     @property
     def variance(self):
         return float(self.estimated) - float(self.actual)
-
-    def to_pdf(self):
-        return render_budget_as_pdf(self)
