@@ -226,6 +226,26 @@ def test_update_budget_subaccount(api_client, user, create_budget_subaccount,
 
 
 @pytest.mark.freeze_time('2020-01-01')
+def test_update_subaccount_fringes(api_client, user, create_budget_subaccount,
+        create_budget_account, create_budget, create_fringe):
+    budget = create_budget()
+    account = create_budget_account(budget=budget)
+    subaccount = create_budget_subaccount(
+        parent=account,
+        budget=budget
+    )
+    fringes = [create_fringe(budget=budget), create_fringe(budget=budget)]
+    api_client.force_login(user)
+    response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk, data={
+        "fringes": [fringe.pk for fringe in fringes]
+    })
+    assert response.status_code == 200
+    assert response.json()['fringes'] == [fringe.pk for fringe in fringes]
+    subaccount.refresh_from_db()
+    assert subaccount.fringes.count() == 2
+
+
+@pytest.mark.freeze_time('2020-01-01')
 def test_update_template_subaccount(api_client, user, create_template_account,
         create_template_subaccount, create_template):
     template = create_template()
@@ -583,7 +603,7 @@ def test_bulk_update_budget_subaccount_subaccounts_budget_updated_once(
 @pytest.mark.freeze_time('2020-01-01')
 def test_bulk_update_template_subaccount_subaccounts(api_client, user,
         create_template, create_template_account, create_template_subaccount,
-        freezer):
+        create_fringe, freezer):
     template = create_template()
     account = create_template_account(budget=template)
     subaccount = create_template_subaccount(
@@ -592,6 +612,7 @@ def test_bulk_update_template_subaccount_subaccounts(api_client, user,
         create_template_subaccount(budget=template, parent=subaccount),
         create_template_subaccount(budget=template, parent=subaccount)
     ]
+    fringes = [create_fringe(budget=template), create_fringe(budget=template)]
     api_client.force_login(user)
     freezer.move_to("2021-01-01")
     response = api_client.patch(
@@ -602,10 +623,12 @@ def test_bulk_update_template_subaccount_subaccounts(api_client, user,
                 {
                     'id': subaccounts[0].pk,
                     'name': 'New Name 1',
+                    'fringes': [fringe.pk for fringe in fringes]
                 },
                 {
                     'id': subaccounts[1].pk,
                     'name': 'New Name 2',
+                    'fringes': [fringe.pk for fringe in fringes]
                 }
             ]
         })
@@ -615,8 +638,10 @@ def test_bulk_update_template_subaccount_subaccounts(api_client, user,
 
     subaccounts[0].refresh_from_db()
     assert subaccounts[0].name == "New Name 1"
+    assert subaccounts[0].fringes.count() == 2
     subaccounts[1].refresh_from_db()
     assert subaccounts[1].name == "New Name 2"
+    assert subaccounts[1].fringes.count() == 2
 
     template.refresh_from_db()
     assert template.updated_at == datetime.datetime(2021, 1, 1).replace(
@@ -678,13 +703,14 @@ def test_bulk_update_template_subaccount_subaccounts_template_updated_once(
 @pytest.mark.freeze_time('2020-01-01')
 def test_bulk_create_budget_subaccount_subaccounts(api_client, user,
         create_budget, create_budget_account, create_budget_subaccount,
-        freezer):
+        create_fringe, freezer):
     budget = create_budget()
     account = create_budget_account(budget=budget)
     subaccount = create_budget_subaccount(parent=account, budget=budget)
-    api_client.force_login(user)
+    fringes = [create_fringe(budget=budget), create_fringe(budget=budget)]
 
     freezer.move_to("2021-01-01")
+    api_client.force_login(user)
     response = api_client.patch(
         "/v1/subaccounts/%s/bulk-create-subaccounts/" % subaccount.pk,
         format='json',
@@ -693,10 +719,12 @@ def test_bulk_create_budget_subaccount_subaccounts(api_client, user,
                 {
                     'identifier': 'subaccount-a',
                     'name': 'New Name 1',
+                    'fringes': [fringe.pk for fringe in fringes]
                 },
                 {
                     'identifier': 'subaccount-b',
                     'name': 'New Name 2',
+                    'fringes': [fringe.pk for fringe in fringes]
                 }
             ]
         })
@@ -708,15 +736,22 @@ def test_bulk_create_budget_subaccount_subaccounts(api_client, user,
     assert subaccounts[1].name == "New Name 1"
     assert subaccounts[1].budget == budget
     assert subaccounts[1].parent == subaccount
+    assert subaccounts[1].fringes.count() == 2
     assert subaccounts[2].name == "New Name 2"
     assert subaccounts[2].identifier == "subaccount-b"
     assert subaccounts[2].budget == budget
     assert subaccounts[2].parent == subaccount
+    assert subaccounts[2].fringes.count() == 2
 
+    assert len(response.json()['data']) == 2
     assert response.json()['data'][0]['identifier'] == 'subaccount-a'
     assert response.json()['data'][0]['name'] == 'New Name 1'
+    assert response.json()['data'][0]['fringes'] == [
+        fringe.pk for fringe in fringes]
     assert response.json()['data'][1]['identifier'] == 'subaccount-b'
     assert response.json()['data'][1]['name'] == 'New Name 2'
+    assert response.json()['data'][1]['fringes'] == [
+        fringe.pk for fringe in fringes]
 
     budget.refresh_from_db()
     assert budget.updated_at == datetime.datetime(2021, 1, 1).replace(
