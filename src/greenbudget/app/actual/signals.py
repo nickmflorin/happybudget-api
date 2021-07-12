@@ -10,10 +10,9 @@ from .models import Actual
 
 @dispatch.receiver(signals.post_create, sender=Actual)
 @dispatch.receiver(models.signals.post_delete, sender=Actual)
-@signals.bulk_context.handler(bind=True)
-def actual_created_or_deleted(context, instance, **kwargs):
+def actual_created_or_deleted(**kwargs):
     try:
-        subaccount = instance.subaccount
+        subaccount = kwargs['instance'].subaccount
     except BudgetSubAccount.DoesNotExist:
         # This can happen when this delete is triggered from the deletion of
         # a BudgetSubAccount - the BudgetSubAccount will be deleted, and the
@@ -22,15 +21,14 @@ def actual_created_or_deleted(context, instance, **kwargs):
         pass
     else:
         if subaccount is not None:
-            context.call(actualize_subaccount, args=(subaccount, ))
+            actualize_subaccount(subaccount)
 
 
 @signals.any_fields_changed_receiver(
     fields=['value', 'subaccount'],
     sender=Actual
 )
-@signals.bulk_context.handler(bind=True)
-def actual_metrics_changed(context, instance, **kwargs):
+def actual_metrics_changed(**kwargs):
     subaccounts_to_reactualize = []
     for change in kwargs['changes']:
         if change.field == 'subaccount':
@@ -45,9 +43,9 @@ def actual_metrics_changed(context, instance, **kwargs):
                     and change.value not in subaccounts_to_reactualize:
                 subaccounts_to_reactualize.append(change.value)
         elif change.field == 'value':
-            if instance.subaccount is not None \
-                    and instance.subaccount not in subaccounts_to_reactualize:
-                subaccounts_to_reactualize.append(instance.subaccount)
+            if kwargs['instance'].subaccount is not None \
+                    and kwargs['instance'].subaccount not in subaccounts_to_reactualize:  # noqa
+                subaccounts_to_reactualize.append(kwargs['instance'].subaccount)
 
     for subaccount in subaccounts_to_reactualize:
-        context.call(actualize_subaccount, args=(subaccount, ))
+        actualize_subaccount(subaccount)

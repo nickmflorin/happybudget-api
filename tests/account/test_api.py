@@ -194,6 +194,66 @@ def test_bulk_update_budget_account_subaccounts(api_client, user, create_budget,
         tzinfo=timezone.utc)
 
 
+def test_bulk_update_budget_account_subaccounts_fringes(api_client, user,
+        create_budget, create_budget_account, create_budget_subaccount,
+        create_fringe):
+    budget = create_budget()
+    account = create_budget_account(budget=budget)
+    subaccounts = [
+        create_budget_subaccount(
+            budget=budget,
+            parent=account,
+            created_at=datetime.datetime(2020, 1, 1),
+            quantity=1,
+            rate=100,
+            multiplier=1
+        ),
+        create_budget_subaccount(
+            budget=budget,
+            parent=account,
+            created_at=datetime.datetime(2020, 1, 2),
+            estimated=100,
+            quantity=1,
+            rate=100,
+            multiplier=1
+        )
+    ]
+    fringes = [
+        create_fringe(budget=budget, rate=0.5),
+        create_fringe(budget=budget, rate=0.2)
+    ]
+    api_client.force_login(user)
+    response = api_client.patch(
+        "/v1/accounts/%s/bulk-update-subaccounts/" % account.pk,
+        format='json',
+        data={
+            'data': [
+                {
+                    'id': subaccounts[0].pk,
+                    'name': 'New Name 1',
+                    'fringes': [f.pk for f in fringes]
+                },
+                {
+                    'id': subaccounts[1].pk,
+                    'name': 'New Name 2',
+                }
+            ]
+        })
+    assert response.status_code == 200
+    assert response.json()['subaccounts'][0] == subaccounts[0].pk
+    assert response.json()['subaccounts'][1] == subaccounts[1].pk
+
+    subaccounts[0].refresh_from_db()
+    assert subaccounts[0].name == "New Name 1"
+    assert subaccounts[0].estimated == 170
+    subaccounts[1].refresh_from_db()
+    assert subaccounts[1].name == "New Name 2"
+    assert subaccounts[1].estimated == 100
+
+    budget.refresh_from_db()
+    assert budget.estimated == 270
+
+
 def test_bulk_delete_budget_account_subaccounts(api_client, user,
         create_budget, create_budget_account, create_budget_subaccount,
         models):
@@ -231,7 +291,7 @@ def test_bulk_update_budget_account_subaccounts_budget_updated_once(api_client,
             )
         ]
     api_client.force_login(user)
-    with mock.patch('greenbudget.app.budget.models.Budget.save') as save:
+    with mock.patch('greenbudget.app.budget.signals.Budget.save') as save:
         response = api_client.patch(
             "/v1/accounts/%s/bulk-update-subaccounts/" % account.pk,
             format='json',
@@ -248,7 +308,7 @@ def test_bulk_update_budget_account_subaccounts_budget_updated_once(api_client,
                 ]
             })
     assert response.status_code == 200
-    assert save.call_count == 3
+    assert save.call_count == 1
 
 
 @pytest.mark.freeze_time('2020-01-01')
@@ -354,9 +414,7 @@ def test_bulk_update_template_account_subaccounts_template_updated_once(
                 ]
             })
     assert response.status_code == 200
-    # The template will actually save 2 times, once for updating the updated
-    # time and the other for reestimation.
-    assert save.call_count == 2
+    assert save.call_count == 1
 
 
 @pytest.mark.freeze_time('2020-01-01')

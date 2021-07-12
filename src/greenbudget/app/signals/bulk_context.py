@@ -10,80 +10,79 @@ from greenbudget.lib.utils import ensure_iterable
 logger = logging.getLogger('signals')
 
 
-def name_if_obj(obj):
-    if hasattr(obj, '__name__'):
-        return obj.__name__
-    return obj
-
-
-def lazy_caller(caller=None):
-    def caller(f, args=None, kwargs=None):
-        args = args or ()
-        kwargs = kwargs or {}
-        kwargs['caller'] = caller
-        return f(*args, **kwargs)
-    return caller
-
-
-class FunctionSignature:
-    def __init__(self, context, func, args=None, kwargs=None, id=None,
-            bind=False, caller=None):
-        self.context = context
+class SideEffect:
+    def __init__(self, func, args=None, kwargs=None, conditional=None):
         self.func = func
         self.args = tuple(args or [])
         self.kwargs = dict(kwargs or {})
-        self.id = id
-        self.bind = bind
-        self.caller = [c for c in ensure_iterable(caller) if c is not None]
+        self.conditional = conditional
 
-    def __call__(self):
-        if self.bind is True:
-            return self.func(self.context, *self.args, **self.kwargs)
-        return self.func(*self.args, **self.kwargs)
+    def __call__(self, context):
+        result = self.call_func(self.func)
+        queue_in_context = getattr(self.func, '__options__')['queue_in_context']
+        # If we are not in an active bulk context, then we need to also call
+        # the function side effects immediately.
+        if context.active is False or queue_in_context is False:
+            side_effects = self._get_function_side_effects()
+            for effect in side_effects:
+                effect(context)
+        return result
 
-    def __eq__(self, other):
-        if self.id is not None:
-            return hash(self.func) == hash(other.func) and self.id == other.id
-        return hash(self.func) == hash(other.func) \
-            and self.args == other.args \
-            and self.kwargs == other.kwargs
-
-    @property
-    def callers_string(self):
-        if not self.caller:
-            return None
-        return [name_if_obj(c) for c in self.caller]
+    def call_func(self, func):
+        return func(*self.args, **self.kwargs)
 
     @property
-    def func_string(self):
-        return name_if_obj(self.func)
+    def id(self):
+        func_id = getattr(self.func, '__options__')['id']
+        if hasattr(func_id, '__call__'):
+            func_id = self.call_func(func_id)
+        return '%s-%s' % (hash(self.func), func_id)
 
-    def __str__(self):
-        attributes = [
-            ('func_string', 'func'),
-            ('callers_string', 'callers'),
-            'args',
-            'kwargs'
-        ]
-        if self.id is not None:
-            attributes = attributes[:2] + ['id']
+    def _evaluate_side_effect_conditional(self, side_effect, parent=None):
+        parent = parent or self
+        if side_effect.conditional is not None:
+            conditional = side_effect.conditional
+            if hasattr(conditional, '__call__'):
+                conditional = parent.call_func(conditional)
+            assert isinstance(conditional, bool), \
+                "The conditional for a side effect must be a boolean or " \
+                "return a boolean."
+            return conditional
+        return True
 
-        string_parts = [
-            "{attr}={value}".format(
-                attr=attr[1] if isinstance(attr, tuple) else attr,
-                value=getattr(self, attr[0] if isinstance(attr, tuple) else attr)  # noqa
-            )
-            for attr in attributes
-            if getattr(self, attr[0] if isinstance(attr, tuple) else attr) is not None  # noqa
-        ]
-        return "Signature(%s)" % ", ".join(string_parts)
+    def _get_function_side_effects(self, func=None, parent=None):
+        parent = parent or self
+        func = func or self.func
+        side_effects = getattr(func, '__options__')['side_effect']
+        if side_effects is not None:
+            if hasattr(side_effects, '__call__'):
+                side_effects = parent.call_func(side_effects)
+            side_effects = ensure_iterable(side_effects)
+            return [
+                effect for effect in side_effects
+                if self._evaluate_side_effect_conditional(effect, parent) is True  # noqa
+            ]
+        return []
+
+    def get_all_side_effects(self):
+        def get_func_side_effects(func, parent):
+            side_effects = self._get_function_side_effects(
+                func=func, parent=parent)
+
+            effects = []
+            for effect in side_effects:
+                effects.append(effect)
+                nested_effects = get_func_side_effects(effect.func, effect)
+                effects.extend(nested_effects)
+            return effects
+
+        return get_func_side_effects(self.func, self)
 
 
 class bulk_context_manager(threading.local):
     def __init__(self, active=False):
         super().__init__()
-        self.queue = []
-        self.lazy_saves = []
+        self.queue = {}
         self._active = active
         self._flushing = False
 
@@ -115,49 +114,60 @@ class bulk_context_manager(threading.local):
         return False
 
     def flush(self):
+        # Keep flushing until queue empty.  It is possible that calling other
+        # signatures results in the queue increasing in size.
         while self.queue:
-            level_queue = self.queue[:]
-            for signature in level_queue:
-                logger.info("Flushing: %s" % signature)
-                signature()
-            # Wait until after all of the signatures are called before
-            # removing them from the queue.  Calling a signature might result
-            # in an additional signature being added to the queue, and we still
-            # do not want to add that signature if it was already in the queue
-            # to begin with.
-            for signature in level_queue:
-                self.queue.remove(signature)
+            # Collect Side Effects - We want to do this first, because we want
+            # the arguments supplied to the side effect to be the same at the
+            # time of the call.
+            flattened_queue = {}
+            for id, signature in self.queue.items():
+                flattened_queue[id] = signature
+                for effect in signature.get_all_side_effects():
+                    flattened_queue[effect.id] = effect
 
-    def handler(self, recall_id=None, bind=False, queue_in_context=False):
+            # Now that we have collected all the signatures and nested side
+            # effects in the queue, we can clear the queue - calling the
+            # signatures and side effects may result in the context's queue
+            # increasing in size again.
+            self.queue = {}
+
+            # Call all the queued signatures and side effects.
+            for id, signature in flattened_queue.items():
+                logger.info("Flushing: %s" % signature)
+                signature(self)
+
+    def call_in_queue(self, func):
+        def caller(*args, **kwargs):
+            id = kwargs.pop('id', None) or getattr(func, '__options__')['id']
+            queue_in_context = getattr(func, '__options__')['queue_in_context']
+            if hasattr(id, '__call__'):
+                id = id(*args, **kwargs)
+
+            signature = SideEffect(
+                func=func,
+                args=args,
+                kwargs=kwargs
+            )
+            if self._active is False or queue_in_context is False:
+                signature(self)
+            else:
+                # Always use most up to date signature.
+                self.queue[signature.id] = signature
+        return caller
+
+    def handler(self, id, queue_in_context=False, side_effect=None):
         def decorator(func):
+            setattr(func, '__options__', {
+                'id': id,
+                'queue_in_context': queue_in_context,
+                'side_effect': side_effect
+            })
+            setattr(func, 'call_in_queue', self.call_in_queue(func))
+
             @functools.wraps(func)
             def decorated(*args, **kwargs):
-                root_caller = kwargs.pop('caller', [])
-
-                if self._active is False or queue_in_context is False:
-                    if bind:
-                        setattr(self, 'call', lazy_caller([root_caller, func]))
-                        return func(self, *args, **kwargs)
-                    return func(*args, **kwargs)
-
-                explicit_id = None
-                if recall_id is not None:
-                    explicit_id = recall_id(*args, **kwargs)
-
-                signature = FunctionSignature(
-                    context=self,
-                    bind=bind,
-                    func=func,
-                    caller=root_caller,
-                    args=args,
-                    kwargs=kwargs,
-                    id=explicit_id
-                )
-                if signature not in self.queue:
-                    logger.info("Adding Signature to Queue: %s" % signature)
-                    self.queue.append(signature)
-                else:
-                    logger.debug("Ignoring repetitive call to %s." % signature)
+                func.call_in_queue(*args, **kwargs)
             return decorated
         return decorator
 

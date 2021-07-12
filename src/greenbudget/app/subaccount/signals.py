@@ -17,8 +17,31 @@ from .models import BudgetSubAccount, TemplateSubAccount
 logger = logging.getLogger('signals')
 
 
-@signals.bulk_context.handler(queue_in_context=True, bind=True)
-def actualize_subaccount(context, instance):
+@signals.bulk_context.handler(
+    id=lambda instance: instance.pk,
+    queue_in_context=True,
+    side_effect=lambda instance: [
+        signals.SideEffect(
+            func=actualize_account,
+            args=(instance.parent, ),
+            # There are weird cases (like CASCADE deletes) where non-nullable
+            # fields will be temporarily null - they just won't be saved in a
+            # NULL state.
+            conditional=instance.parent is not None and not isinstance(
+                instance.parent, (BudgetSubAccount, TemplateSubAccount))
+        ),
+        signals.SideEffect(
+            func=actualize_subaccount,
+            args=(instance.parent, ),
+            # There are weird cases (like CASCADE deletes) where non-nullable
+            # fields will be temporarily null - they just won't be saved in a
+            # NULL state.
+            conditional=instance.parent is not None and isinstance(
+                instance.parent, (BudgetSubAccount, TemplateSubAccount))
+        )
+    ]
+)
+def actualize_subaccount(instance):
     # We cannot do .only('actual') here because the subaccounts are polymorphic.
     # We should figure out how to do that.
     subaccounts = BudgetSubAccount.objects.filter(
@@ -34,17 +57,32 @@ def actualize_subaccount(context, instance):
 
     instance.save(update_fields=['actual'], suppress_budget_update=True)
 
-    # There are weird cases (like CASCADE deletes) where non-nullable fields
-    # will be temporarily null - they just won't be saved in a NULL state.
-    if instance.parent is not None:
-        func = actualize_account
-        if isinstance(instance.parent, (BudgetSubAccount, TemplateSubAccount)):
-            func = actualize_subaccount
-        context.call(func, args=(instance.parent, ))
 
-
-@signals.bulk_context.handler(queue_in_context=True, bind=True)
-def estimate_subaccount(context, instance):
+@signals.bulk_context.handler(
+    id=lambda instance: instance.pk,
+    queue_in_context=True,
+    side_effect=lambda instance: [
+        signals.SideEffect(
+            func=estimate_account,
+            args=(instance.parent, ),
+            # There are weird cases (like CASCADE deletes) where non-nullable
+            # fields will be temporarily null - they just won't be saved in a
+            # NULL state.
+            conditional=instance.parent is not None and not isinstance(
+                instance.parent, (BudgetSubAccount, TemplateSubAccount))
+        ),
+        signals.SideEffect(
+            func=estimate_subaccount,
+            args=(instance.parent, ),
+            # There are weird cases (like CASCADE deletes) where non-nullable
+            # fields will be temporarily null - they just won't be saved in a
+            # NULL state.
+            conditional=instance.parent is not None and isinstance(
+                instance.parent, (BudgetSubAccount, TemplateSubAccount))
+        )
+    ]
+)
+def estimate_subaccount(instance):
     subaccounts = instance.subaccounts.only('estimated')
     if subaccounts.count() == 0:
         if instance.quantity is not None and instance.rate is not None:
@@ -64,25 +102,46 @@ def estimate_subaccount(context, instance):
 
     instance.save(update_fields=['estimated'], suppress_budget_update=True)
 
-    func = estimate_account
-    if isinstance(instance.parent, (BudgetSubAccount, TemplateSubAccount)):
-        func = estimate_subaccount
-    context.call(func, args=(instance.parent, ))
+
+@signals.bulk_context.handler(
+    id=lambda instance: instance.pk,
+    queue_in_context=True,
+    side_effect=lambda instance: [
+        signals.SideEffect(
+            func=estimate_subaccount,
+            args=(instance, ),
+        ),
+        signals.SideEffect(
+            func=actualize_subaccount,
+            args=(instance, ),
+            conditional=isinstance(instance, BudgetSubAccount)
+        )
+    ]
+)
+def calculate_subaccount(instance):
+    pass
 
 
-@signals.bulk_context.handler(bind=True)
-def calculate_subaccount(context, instance):
-    context.call(estimate_subaccount, args=(instance, ))
-    if isinstance(instance, BudgetSubAccount):
-        context.call(actualize_subaccount, args=(instance, ))
-
-
-@signals.bulk_context.handler(bind=True)
-def calculate_parent(context, parent):
-    func = calculate_account
-    if isinstance(parent, (BudgetSubAccount, TemplateSubAccount)):
-        func = calculate_subaccount
-    context.call(func, args=(parent, ))
+@signals.bulk_context.handler(
+    id=lambda parent: parent.pk,
+    queue_in_context=True,
+    side_effect=lambda parent: [
+        signals.SideEffect(
+            func=calculate_account,
+            args=(parent, ),
+            conditional=not isinstance(
+                parent, (BudgetSubAccount, TemplateSubAccount))
+        ),
+        signals.SideEffect(
+            func=calculate_subaccount,
+            args=(parent, ),
+            conditional=isinstance(
+                parent, (BudgetSubAccount, TemplateSubAccount))
+        )
+    ]
+)
+def calculate_parent(parent):
+    pass
 
 
 @signals.any_fields_changed_receiver(
@@ -93,24 +152,20 @@ def calculate_parent(context, parent):
     fields=['rate', 'multiplier', 'quantity'],
     sender=TemplateSubAccount
 )
-@signals.bulk_context.handler(bind=True)
-def subaccount_reestimation(context, instance, **kwargs):
-    context.call(estimate_subaccount, args=(instance, ))
+def subaccount_reestimation(**kwargs):
+    estimate_subaccount(kwargs['instance'])
 
 
 @dispatch.receiver(signals.post_create, sender=BudgetSubAccount)
 @dispatch.receiver(signals.post_create, sender=TemplateSubAccount)
-@signals.bulk_context.handler(bind=True)
-def subaccount_recalculation(context, instance, **kwargs):
-    context.call(calculate_subaccount, args=(instance, ))
+def subaccount_recalculation(**kwargs):
+    calculate_subaccount(kwargs['instance'])
 
 
 @dispatch.receiver(models.signals.post_delete, sender=BudgetSubAccount)
 @dispatch.receiver(models.signals.post_delete, sender=TemplateSubAccount)
-@signals.bulk_context.handler(bind=True)
-def subaccount_deleted(context, instance, **kwargs):
-    if instance.parent is not None:
-        context.call(calculate_parent, args=(instance.parent, ))
+def subaccount_deleted(**kwargs):
+    calculate_parent(kwargs['instance'].parent)
 
 
 @signals.any_fields_changed_receiver(
@@ -121,19 +176,19 @@ def subaccount_deleted(context, instance, **kwargs):
     fields=['object_id', 'content_type'],
     sender=TemplateSubAccount
 )
-@signals.bulk_context.handler(bind=True)
-def subaccount_parent_changed(context, instance, **kwargs):
+@signals.bulk_context.handler(id=lambda *args, **kwargs: kwargs['instance'].pk)
+def subaccount_parent_changed(**kwargs):
     changes = kwargs['changes']
 
-    previous_content_type_id = instance.content_type_id
-    new_content_type_id = instance.content_type_id
+    previous_content_type_id = kwargs['instance'].content_type_id
+    new_content_type_id = kwargs['instance'].content_type_id
     if changes.get_change_for_field('content_type') is not None:
         content_type_change = changes.get_change_for_field('content_type')
         previous_content_type_id = content_type_change.previous_value
         new_content_type_id = content_type_change.value.pk
 
-    previous_object_id = instance.object_id
-    new_object_id = instance.object_id
+    previous_object_id = kwargs['instance'].object_id
+    new_object_id = kwargs['instance'].object_id
     if changes.get_change_for_field('object_id') is not None:
         object_id_change = changes.get_change_for_field('object_id')
         previous_object_id = object_id_change.previous_value
@@ -148,8 +203,9 @@ def subaccount_parent_changed(context, instance, **kwargs):
         pk=new_content_type_id).model_class()
     new_parent = new_model_cls.objects.get(pk=new_object_id)
 
-    context.call(calculate_parent, args=(previous_parent, ))
-    context.call(calculate_parent, args=(new_parent, ))
+    if new_parent != previous_parent:
+        calculate_parent(previous_parent)
+        calculate_parent(new_parent)
 
 
 @signals.field_changed_receiver('group', sender=BudgetSubAccount)

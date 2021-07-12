@@ -33,6 +33,8 @@ def validate_fringes(sender, **kwargs):
 
 
 @dispatch.receiver(models.signals.m2m_changed, sender=SubAccount.fringes.through)
-@signals.bulk_context.handler(bind=True)
-def subaccount_fringes_changed(context, instance, **kwargs):
-    context.call(estimate_subaccount, args=(instance, ))
+def subaccount_fringes_changed(**kwargs):
+    # If we fire the reestimation of the subaccount on all actions, it will
+    # only be triggered for one.
+    if kwargs['action'] == 'post_add':
+        estimate_subaccount(kwargs['instance'])

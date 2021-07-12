@@ -595,9 +595,7 @@ def test_bulk_update_budget_subaccount_subaccounts_budget_updated_once(
                 ]
             })
     assert response.status_code == 200
-    # I'm not really sure why this is 4 times instead of just 2 (like the
-    # bulk update accounts analogue) but we shoudl figure that out.
-    assert save.call_count == 4
+    assert save.call_count == 1
 
 
 @pytest.mark.freeze_time('2020-01-01')
@@ -697,7 +695,7 @@ def test_bulk_update_template_subaccount_subaccounts_template_updated_once(
                 ]
             })
     assert response.status_code == 200
-    assert save.call_count == 3
+    assert save.call_count == 1
 
 
 @pytest.mark.freeze_time('2020-01-01')

@@ -18,25 +18,41 @@ from .models import BudgetAccount, TemplateAccount
 logger = logging.getLogger('signals')
 
 
-@signals.bulk_context.handler(queue_in_context=True, bind=True)
-def estimate_account(context, instance):
+@signals.bulk_context.handler(
+    id=lambda instance: instance.pk,
+    queue_in_context=True,
+    side_effect=lambda instance: signals.SideEffect(
+        func=estimate_budget,
+        args=(instance.budget, )
+    )
+)
+def estimate_account(instance):
     # NOTE: We cannot use instance.subaccounts.all() due to race conditions on
     # delete events.
     model_cls = BudgetSubAccount
     if isinstance(instance, TemplateAccount):
         model_cls = TemplateSubAccount
+
     subaccounts = model_cls.objects.filter(
         content_type=ContentType.objects.get_for_model(BudgetAccount),
         object_id=instance.pk
     ).only('estimated')
+
     instance.estimated = functools.reduce(
         lambda current, sub: current + (sub.estimated or 0), subaccounts, 0)
+
     instance.save(update_fields=['estimated'], suppress_budget_update=True)
-    context.call(estimate_budget, args=(instance.budget, ))
 
 
-@signals.bulk_context.handler(queue_in_context=True, bind=True)
-def actualize_account(context, instance):
+@signals.bulk_context.handler(
+    id=lambda instance: instance.pk,
+    queue_in_context=True,
+    side_effect=lambda instance: signals.SideEffect(
+        func=actualize_budget,
+        args=(instance.budget, )
+    )
+)
+def actualize_account(instance):
     subaccounts = BudgetSubAccount.objects.filter(
         content_type=ContentType.objects.get_for_model(BudgetAccount),
         object_id=instance.pk
@@ -44,23 +60,33 @@ def actualize_account(context, instance):
     instance.actual = functools.reduce(
         lambda current, sub: current + (sub.actual or 0), subaccounts, 0)
     instance.save(update_fields=['actual'], suppress_budget_update=True)
-    context.call(actualize_budget, args=(instance.budget, ))
 
 
-@signals.bulk_context.handler(bind=True)
-def calculate_account(context, instance):
-    context.call(estimate_account, args=(instance, ))
-    if isinstance(instance, BudgetAccount):
-        context.call(actualize_account, args=(instance, ))
+@signals.bulk_context.handler(
+    id=lambda instance: instance.pk,
+    queue_in_context=True,
+    side_effect=lambda instance: [
+        signals.SideEffect(
+            func=estimate_account,
+            args=(instance, )
+        ),
+        signals.SideEffect(
+            func=actualize_account,
+            args=(instance, ),
+            conditional=isinstance(instance, BudgetAccount)
+        )
+    ]
+)
+def calculate_account(instance):
+    pass
 
 
 @dispatch.receiver(signals.post_create, sender=BudgetAccount)
 @dispatch.receiver(signals.post_create, sender=TemplateAccount)
 @dispatch.receiver(models.signals.post_delete, sender=BudgetAccount)
 @dispatch.receiver(models.signals.post_delete, sender=TemplateAccount)
-@signals.bulk_context.handler(bind=True)
-def account_created_or_deleted(context, sender, instance, **kwargs):
-    context.call(calculate_budget, args=(instance.budget, ))
+def account_created_or_deleted(**kwargs):
+    calculate_budget(kwargs['instance'].budget, )
 
 
 @signals.field_changed_receiver('group', sender=BudgetAccount)
