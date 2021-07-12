@@ -30,11 +30,3 @@ def validate_fringes(sender, **kwargs):
                     "The fringes that belong to a sub-account must belong "
                     "to the same budget as that sub-account."
                 )
-
-
-@dispatch.receiver(models.signals.m2m_changed, sender=SubAccount.fringes.through)
-def subaccount_fringes_changed(**kwargs):
-    # If we fire the reestimation of the subaccount on all actions, it will
-    # only be triggered for one.
-    if kwargs['action'] == 'post_add':
-        estimate_subaccount(kwargs['instance'])

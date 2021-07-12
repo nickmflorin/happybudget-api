@@ -168,6 +168,17 @@ def subaccount_deleted(**kwargs):
     calculate_parent(kwargs['instance'].parent)
 
 
+@dispatch.receiver(
+    models.signals.m2m_changed, sender=BudgetSubAccount.fringes.through)
+@dispatch.receiver(
+    models.signals.m2m_changed, sender=TemplateSubAccount.fringes.through)
+def subaccount_fringes_changed(**kwargs):
+    # If we fire the reestimation of the subaccount on all actions, it will
+    # only be triggered for one.
+    # if kwargs['action'] == 'post_add':
+    estimate_subaccount(kwargs['instance'])
+
+
 @signals.any_fields_changed_receiver(
     fields=['object_id', 'content_type'],
     sender=BudgetSubAccount

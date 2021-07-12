@@ -506,14 +506,33 @@ def test_remove_template_subaccount_from_group(api_client, user,
 @pytest.mark.freeze_time('2020-01-01')
 def test_bulk_update_budget_subaccount_subaccounts(api_client, user,
         create_budget, create_budget_account, create_budget_subaccount,
-        freezer):
+        freezer, create_fringe):
     budget = create_budget()
     account = create_budget_account(budget=budget)
     subaccount = create_budget_subaccount(
         parent=account, budget=budget, identifier="subaccount-a")
     subaccounts = [
-        create_budget_subaccount(budget=budget, parent=subaccount),
-        create_budget_subaccount(budget=budget, parent=subaccount)
+        create_budget_subaccount(
+            budget=budget,
+            parent=subaccount,
+            rate=50,
+            multiplier=2,
+            quantity=1,
+        ),
+        create_budget_subaccount(
+            budget=budget,
+            parent=subaccount,
+            rate=100,
+            multiplier=2,
+            quantity=1,
+        ),
+    ]
+    assert subaccounts[0].estimated == 100
+    assert subaccounts[1].estimated == 200
+
+    fringes = [
+        create_fringe(budget=budget, rate=0.5),
+        create_fringe(budget=budget, rate=0.2)
     ]
     api_client.force_login(user)
     freezer.move_to("2021-01-01")
@@ -525,10 +544,12 @@ def test_bulk_update_budget_subaccount_subaccounts(api_client, user,
                 {
                     'id': subaccounts[0].pk,
                     'name': 'New Name 1',
+                    'fringes': [fringes[0].pk]
                 },
                 {
                     'id': subaccounts[1].pk,
                     'name': 'New Name 2',
+                    'fringes': [fringes[1].pk]
                 }
             ]
         })
@@ -537,11 +558,20 @@ def test_bulk_update_budget_subaccount_subaccounts(api_client, user,
     assert response.json()['subaccounts'][1] == subaccounts[1].id
 
     subaccounts[0].refresh_from_db()
+    assert subaccounts[0].estimated == 150
     assert subaccounts[0].name == "New Name 1"
     subaccounts[1].refresh_from_db()
+    assert subaccounts[1].estimated == 240
     assert subaccounts[1].name == "New Name 2"
 
+    subaccount.refresh_from_db()
+    assert subaccount.estimated == 390
+
+    account.refresh_from_db()
+    assert account.estimated == 390
+
     budget.refresh_from_db()
+    assert budget.estimated == 390
     assert budget.updated_at == datetime.datetime(2021, 1, 1).replace(
         tzinfo=timezone.utc)
 
