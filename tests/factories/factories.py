@@ -268,7 +268,6 @@ class SubAccountFactory(CustomModelFactory):
     updated_by = factory.SubFactory(UserFactory)
     identifier = factory.Faker('name')
     description = factory.Faker('sentence')
-    name = factory.Faker('name')
 
     class Meta:
         abstract = True

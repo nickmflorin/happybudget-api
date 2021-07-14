@@ -176,7 +176,6 @@ def test_get_account_subaccounts_history(api_client, create_budget, user,
         account = create_budget_account(budget=budget)
         subaccount = create_budget_subaccount(
             parent=account,
-            name="Original Name",
             description="Original Description",
             identifier="old_identifier",
             budget=budget
@@ -184,7 +183,6 @@ def test_get_account_subaccounts_history(api_client, create_budget, user,
 
     api_client.force_login(user)
     response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk, data={
-        "name": "New Name",
         "description": "New Description",
         "identifier": "new_identifier",
         "quantity": 10,
@@ -194,9 +192,9 @@ def test_get_account_subaccounts_history(api_client, create_budget, user,
         "/v1/accounts/%s/subaccounts/history/" % account.pk)
     assert response.status_code == 200
 
-    assert models.FieldAlterationEvent.objects.count() == 5
+    assert models.FieldAlterationEvent.objects.count() == 4
 
-    assert response.json()['count'] == 5
+    assert response.json()['count'] == 4
     serialized_events = [
         {
             "created_at": "2020-01-01 00:00:00",
@@ -208,7 +206,6 @@ def test_get_account_subaccounts_history(api_client, create_budget, user,
                 'id': subaccount.pk,
                 'identifier': 'new_identifier',
                 'type': 'subaccount',
-                'name': 'New Name',
                 'description': 'New Description',
             },
             "user": {
@@ -230,7 +227,6 @@ def test_get_account_subaccounts_history(api_client, create_budget, user,
                 'id': subaccount.pk,
                 'identifier': 'new_identifier',
                 'type': 'subaccount',
-                'name': 'New Name',
                 'description': 'New Description',
             },
             "user": {
@@ -252,29 +248,6 @@ def test_get_account_subaccounts_history(api_client, create_budget, user,
                 'id': subaccount.pk,
                 'identifier': 'new_identifier',
                 'type': 'subaccount',
-                'name': 'New Name',
-                'description': 'New Description',
-            },
-            "user": {
-                "id": user.pk,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "full_name": user.full_name,
-                "email": user.email,
-                "profile_image": None,
-            }
-        },
-        {
-            "created_at": "2020-01-01 00:00:00",
-            "new_value": "New Name",
-            "old_value": "Original Name",
-            "field": "name",
-            "type": "field_alteration",
-            "content_object": {
-                'id': subaccount.pk,
-                'identifier': 'new_identifier',
-                'type': 'subaccount',
-                'name': 'New Name',
                 'description': 'New Description',
             },
             "user": {
@@ -296,7 +269,6 @@ def test_get_account_subaccounts_history(api_client, create_budget, user,
                 'id': subaccount.pk,
                 'identifier': 'new_identifier',
                 'type': 'subaccount',
-                'name': 'New Name',
                 'description': 'New Description',
             },
             "user": {

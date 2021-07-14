@@ -236,7 +236,6 @@ def test_get_budget_subaccounts(api_client, user, create_budget,
         'identifier': 'Jack',
         'description': sub.description,
         'type': 'subaccount',
-        'name': sub.name
     }]
 
 

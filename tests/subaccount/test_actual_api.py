@@ -28,7 +28,6 @@ def test_create_actual(api_client, user, create_budget_account, create_budget,
         "subaccount": {
             "id": subaccount.pk,
             "type": "subaccount",
-            "name": subaccount.name,
             "identifier": subaccount.identifier,
             "description": subaccount.description
         }
@@ -73,7 +72,6 @@ def test_get_subaccount_actuals(api_client, user, create_budget_subaccount,
             "subaccount": {
                 "id": subaccount.pk,
                 "type": "subaccount",
-                "name": subaccount.name,
                 "identifier": subaccount.identifier,
                 "description": subaccount.description
             }
@@ -97,7 +95,6 @@ def test_get_subaccount_actuals(api_client, user, create_budget_subaccount,
             "subaccount": {
                 "id": subaccount.pk,
                 "type": "subaccount",
-                "name": subaccount.name,
                 "identifier": subaccount.identifier,
                 "description": subaccount.description
             }

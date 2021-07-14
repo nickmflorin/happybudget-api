@@ -28,7 +28,6 @@ def test_get_template_account_subaccounts(api_client, user, create_template,
     assert response.json()['data'] == [
         {
             "id": subaccounts[0].pk,
-            "name": subaccounts[0].name,
             "identifier": "%s" % subaccounts[0].identifier,
             "description": subaccounts[0].description,
             "created_at": "2020-01-01 00:00:00",
@@ -48,7 +47,6 @@ def test_get_template_account_subaccounts(api_client, user, create_template,
         },
         {
             "id": subaccounts[1].pk,
-            "name": subaccounts[1].name,
             "identifier": "%s" % subaccounts[1].identifier,
             "description": subaccounts[1].description,
             "created_at": "2020-01-02 00:00:00",
@@ -126,21 +124,18 @@ def test_create_template_subaccount(api_client, user, create_template_account,
     response = api_client.post(
         "/v1/accounts/%s/subaccounts/" % account.pk,
         data={
-            'name': 'New Subaccount',
             'identifier': '100',
             'description': 'Test'
         }
     )
     assert response.status_code == 201
     subaccount = models.TemplateSubAccount.objects.first()
-    assert subaccount.name == "New Subaccount"
     assert subaccount.description == "Test"
     assert subaccount.identifier == "100"
 
     assert subaccount is not None
     assert response.json() == {
         "id": subaccount.pk,
-        "name": 'New Subaccount',
         "identifier": '100',
         "description": 'Test',
         "created_at": "2020-01-01 00:00:00",

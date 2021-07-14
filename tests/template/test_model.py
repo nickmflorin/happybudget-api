@@ -121,7 +121,6 @@ def test_duplicate_template(user, create_template,
     assert first_account_subaccount.description == subaccounts[0].description
     assert first_account_subaccount.budget == template
     # These values will be None because the subaccount has children.
-    assert first_account_subaccount.name is None
     assert first_account_subaccount.rate is None
     assert first_account_subaccount.quantity is None
     assert first_account_subaccount.multiplier is None
@@ -133,7 +132,6 @@ def test_duplicate_template(user, create_template,
     assert first_account_subaccount_subaccount.updated_by == user
     assert first_account_subaccount_subaccount.identifier == child_subaccounts[0].identifier  # noqa
     assert first_account_subaccount_subaccount.description == child_subaccounts[0].description  # noqa
-    assert first_account_subaccount_subaccount.name == child_subaccounts[0].name  # noqa
     assert first_account_subaccount_subaccount.rate == child_subaccounts[0].rate  # noqa
     assert first_account_subaccount_subaccount.quantity == child_subaccounts[0].quantity  # noqa
     assert first_account_subaccount_subaccount.multiplier == child_subaccounts[0].multiplier  # noqa
@@ -155,7 +153,6 @@ def test_duplicate_template(user, create_template,
     assert second_account_subaccount.description == subaccounts[1].description
     assert second_account_subaccount.budget == template
     # These values will be None because the subaccount has children.
-    assert second_account_subaccount.name is None
     assert second_account_subaccount.rate is None
     assert second_account_subaccount.quantity is None
     assert second_account_subaccount.multiplier is None
@@ -167,7 +164,6 @@ def test_duplicate_template(user, create_template,
     assert second_account_subaccount_subaccount.updated_by == user
     assert second_account_subaccount_subaccount.identifier == child_subaccounts[1].identifier  # noqa
     assert second_account_subaccount_subaccount.description == child_subaccounts[1].description  # noqa
-    assert second_account_subaccount_subaccount.name == child_subaccounts[1].name  # noqa
     assert second_account_subaccount_subaccount.rate == child_subaccounts[1].rate  # noqa
     assert second_account_subaccount_subaccount.quantity == child_subaccounts[1].quantity  # noqa
     assert second_account_subaccount_subaccount.multiplier == child_subaccounts[1].multiplier  # noqa
@@ -301,7 +297,6 @@ def test_derive_budget(user, create_template, create_template_account,
     assert first_account_subaccount.description == subaccounts[0].description
     assert first_account_subaccount.budget == budget
     # These values will be None because the subaccount has children.
-    assert first_account_subaccount.name is None
     assert first_account_subaccount.rate is None
     assert first_account_subaccount.quantity is None
     assert first_account_subaccount.multiplier is None
@@ -313,7 +308,6 @@ def test_derive_budget(user, create_template, create_template_account,
     assert first_account_subaccount_subaccount.updated_by == user
     assert first_account_subaccount_subaccount.identifier == child_subaccounts[0].identifier  # noqa
     assert first_account_subaccount_subaccount.description == child_subaccounts[0].description  # noqa
-    assert first_account_subaccount_subaccount.name == child_subaccounts[0].name  # noqa
     assert first_account_subaccount_subaccount.rate == child_subaccounts[0].rate  # noqa
     assert first_account_subaccount_subaccount.quantity == child_subaccounts[0].quantity  # noqa
     assert first_account_subaccount_subaccount.multiplier == child_subaccounts[0].multiplier  # noqa
@@ -335,7 +329,6 @@ def test_derive_budget(user, create_template, create_template_account,
     assert second_account_subaccount.description == subaccounts[1].description
     assert second_account_subaccount.budget == budget
     # These values will be None because the subaccount has children.
-    assert second_account_subaccount.name is None
     assert second_account_subaccount.rate is None
     assert second_account_subaccount.quantity is None
     assert second_account_subaccount.multiplier is None
@@ -347,7 +340,6 @@ def test_derive_budget(user, create_template, create_template_account,
     assert second_account_subaccount_subaccount.updated_by == user
     assert second_account_subaccount_subaccount.identifier == child_subaccounts[1].identifier  # noqa
     assert second_account_subaccount_subaccount.description == child_subaccounts[1].description  # noqa
-    assert second_account_subaccount_subaccount.name == child_subaccounts[1].name  # noqa
     assert second_account_subaccount_subaccount.rate == child_subaccounts[1].rate  # noqa
     assert second_account_subaccount_subaccount.quantity == child_subaccounts[1].quantity  # noqa
     assert second_account_subaccount_subaccount.multiplier == child_subaccounts[1].multiplier  # noqa

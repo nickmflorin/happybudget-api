@@ -38,16 +38,10 @@ class SubAccountSimpleSerializer(drf.serializers.ModelSerializer):
         allow_null=True,
         trim_whitespace=False
     )
-    name = serializers.CharField(
-        required=False,
-        allow_blank=False,
-        allow_null=True,
-        trim_whitespace=False
-    )
 
     class Meta:
         model = SubAccount
-        fields = ('id', 'name', 'identifier', 'type', 'description')
+        fields = ('id', 'identifier', 'type', 'description')
 
 
 class SubAccountTreeNodeSerializer(SubAccountSimpleSerializer):
@@ -117,7 +111,7 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
     class Meta:
         model = SubAccount
         fields = SubAccountSimpleSerializer.Meta.fields + (
-            'identifier', 'name', 'created_by', 'updated_by', 'created_at',
+            'identifier', 'created_by', 'updated_by', 'created_at',
             'updated_at', 'quantity', 'rate', 'multiplier', 'unit', 'object_id',
             'parent_type', 'estimated', 'subaccounts', 'fringes')
 
@@ -184,7 +178,6 @@ class SubAccountPdfSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     identifier = serializers.CharField(read_only=True)
     description = serializers.CharField(read_only=True)
-    name = serializers.CharField(read_only=True)
     quantity = serializers.IntegerField(read_only=True)
     rate = serializers.FloatField(read_only=True)
     multiplier = serializers.FloatField(read_only=True)
@@ -198,7 +191,7 @@ class SubAccountPdfSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = BudgetSubAccount
-        fields = ('id', 'identifier', 'description', 'name', 'quantity', 'rate',
+        fields = ('id', 'identifier', 'description', 'quantity', 'rate',
             'multiplier', 'estimated', 'unit', 'subaccounts')
         read_only_fields = fields
 

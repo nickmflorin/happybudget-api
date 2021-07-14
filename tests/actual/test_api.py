@@ -38,7 +38,6 @@ def test_update_actual(api_client, user, create_budget_account,
             "type": "subaccount",
             "identifier": subaccount.identifier,
             "description": subaccount.description,
-            "name": subaccount.name
         }
     }
     actual.refresh_from_db()
@@ -81,8 +80,7 @@ def test_change_actual_parent(api_client, user, create_budget_account,
             "id": another_subaccount.pk,
             "type": "subaccount",
             "identifier": another_subaccount.identifier,
-            "description": another_subaccount.description,
-            "name": another_subaccount.name
+            "description": another_subaccount.description
         }
     }
     actual.refresh_from_db()

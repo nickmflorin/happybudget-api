@@ -145,8 +145,8 @@ class AccountSubAccountViewSet(
 
 class GenericAccountViewSet(viewsets.GenericViewSet):
     lookup_field = 'pk'
-    ordering_fields = ['updated_at', 'name', 'created_at']
-    search_fields = ['name']
+    ordering_fields = ['updated_at', 'created_at']
+    search_fields = ['description']
 
     def get_serializer_context(self):
         context = super().get_serializer_context()

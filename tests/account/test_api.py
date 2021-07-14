@@ -168,11 +168,11 @@ def test_bulk_update_budget_account_subaccounts(api_client, user, create_budget,
             'data': [
                 {
                     'id': subaccounts[0].pk,
-                    'name': 'New Name 1',
+                    'description': 'New Desc 1',
                 },
                 {
                     'id': subaccounts[1].pk,
-                    'name': 'New Name 2',
+                    'description': 'New Desc 2',
                 }
             ]
         })
@@ -181,9 +181,9 @@ def test_bulk_update_budget_account_subaccounts(api_client, user, create_budget,
     assert response.json()['subaccounts'][1] == subaccounts[1].pk
 
     subaccounts[0].refresh_from_db()
-    assert subaccounts[0].name == "New Name 1"
+    assert subaccounts[0].description == "New Desc 1"
     subaccounts[1].refresh_from_db()
-    assert subaccounts[1].name == "New Name 2"
+    assert subaccounts[1].description == "New Desc 2"
 
     budget.refresh_from_db()
     assert budget.updated_at == datetime.datetime(2021, 1, 1).replace(
@@ -226,12 +226,12 @@ def test_bulk_update_budget_account_subaccounts_fringes(api_client, user,
             'data': [
                 {
                     'id': subaccounts[0].pk,
-                    'name': 'New Name 1',
+                    'description': 'New Desc 1',
                     'fringes': [f.pk for f in fringes]
                 },
                 {
                     'id': subaccounts[1].pk,
-                    'name': 'New Name 2',
+                    'description': 'New Desc 2',
                 }
             ]
         })
@@ -240,10 +240,10 @@ def test_bulk_update_budget_account_subaccounts_fringes(api_client, user,
     assert response.json()['subaccounts'][1] == subaccounts[1].pk
 
     subaccounts[0].refresh_from_db()
-    assert subaccounts[0].name == "New Name 1"
+    assert subaccounts[0].description == "New Desc 1"
     assert subaccounts[0].estimated == 170
     subaccounts[1].refresh_from_db()
-    assert subaccounts[1].name == "New Name 2"
+    assert subaccounts[1].description == "New Desc 2"
     assert subaccounts[1].estimated == 100
 
     budget.refresh_from_db()
@@ -295,11 +295,11 @@ def test_bulk_update_budget_account_subaccounts_budget_updated_once(api_client,
                 'data': [
                     {
                         'id': subaccounts[0].pk,
-                        'name': 'New Name 1',
+                        'name': 'New Desc 1',
                     },
                     {
                         'id': subaccounts[1].pk,
-                        'name': 'New Name 2',
+                        'name': 'New Desc 2',
                     }
                 ]
             })
@@ -326,11 +326,11 @@ def test_bulk_update_template_account_subaccounts(api_client, user,
             'data': [
                 {
                     'id': subaccounts[0].pk,
-                    'name': 'New Name 1',
+                    'description': 'New Desc 1',
                 },
                 {
                     'id': subaccounts[1].pk,
-                    'name': 'New Name 2',
+                    'description': 'New Desc 2',
                 }
             ]
         })
@@ -339,9 +339,9 @@ def test_bulk_update_template_account_subaccounts(api_client, user,
     assert response.json()['subaccounts'][1] == subaccounts[1].pk
 
     subaccounts[0].refresh_from_db()
-    assert subaccounts[0].name == "New Name 1"
+    assert subaccounts[0].description == "New Desc 1"
     subaccounts[1].refresh_from_db()
-    assert subaccounts[1].name == "New Name 2"
+    assert subaccounts[1].description == "New Desc 2"
 
     template.refresh_from_db()
     assert template.updated_at == datetime.datetime(2021, 1, 1).replace(
@@ -401,11 +401,11 @@ def test_bulk_update_template_account_subaccounts_template_updated_once(
                 'data': [
                     {
                         'id': subaccounts[0].pk,
-                        'name': 'New Name 1',
+                        'name': 'New Desc 1',
                     },
                     {
                         'id': subaccounts[1].pk,
-                        'name': 'New Name 2',
+                        'name': 'New Desc 2',
                     }
                 ]
             })
@@ -426,11 +426,11 @@ def test_bulk_create_budget_account_subaccounts(api_client, user, create_budget,
             'data': [
                 {
                     'identifier': 'subaccount-a',
-                    'name': 'New Name 1',
+                    'description': 'New Desc 1',
                 },
                 {
                     'identifier': 'subaccount-b',
-                    'name': 'New Name 2',
+                    'description': 'New Desc 2',
                 }
             ]
         })
@@ -439,18 +439,18 @@ def test_bulk_create_budget_account_subaccounts(api_client, user, create_budget,
     subaccounts = models.BudgetSubAccount.objects.all()
     assert len(subaccounts) == 2
     assert subaccounts[0].identifier == "subaccount-a"
-    assert subaccounts[0].name == "New Name 1"
+    assert subaccounts[0].description == "New Desc 1"
     assert subaccounts[0].budget == budget
     assert subaccounts[0].parent == account
-    assert subaccounts[1].name == "New Name 2"
+    assert subaccounts[1].description == "New Desc 2"
     assert subaccounts[1].identifier == "subaccount-b"
     assert subaccounts[1].budget == budget
     assert subaccounts[1].parent == account
 
     assert response.json()['data'][0]['identifier'] == 'subaccount-a'
-    assert response.json()['data'][0]['name'] == 'New Name 1'
+    assert response.json()['data'][0]['description'] == 'New Desc 1'
     assert response.json()['data'][1]['identifier'] == 'subaccount-b'
-    assert response.json()['data'][1]['name'] == 'New Name 2'
+    assert response.json()['data'][1]['description'] == 'New Desc 2'
 
 
 @pytest.mark.freeze_time('2020-01-01')
@@ -490,11 +490,11 @@ def test_bulk_create_template_account_subaccounts(api_client, user,
             'data': [
                 {
                     'identifier': 'subaccount-a',
-                    'name': 'New Name 1',
+                    'description': 'New Desc 1',
                 },
                 {
                     'identifier': 'subaccount-b',
-                    'name': 'New Name 2',
+                    'description': 'New Desc 2',
                 }
             ]
         })
@@ -503,18 +503,18 @@ def test_bulk_create_template_account_subaccounts(api_client, user,
     subaccounts = models.TemplateSubAccount.objects.all()
     assert len(subaccounts) == 2
     assert subaccounts[0].identifier == "subaccount-a"
-    assert subaccounts[0].name == "New Name 1"
+    assert subaccounts[0].description == "New Desc 1"
     assert subaccounts[0].budget == template
     assert subaccounts[0].parent == account
-    assert subaccounts[1].name == "New Name 2"
+    assert subaccounts[1].description == "New Desc 2"
     assert subaccounts[1].identifier == "subaccount-b"
     assert subaccounts[1].budget == template
     assert subaccounts[1].parent == account
 
     assert response.json()['data'][0]['identifier'] == 'subaccount-a'
-    assert response.json()['data'][0]['name'] == 'New Name 1'
+    assert response.json()['data'][0]['description'] == 'New Desc 1'
     assert response.json()['data'][1]['identifier'] == 'subaccount-b'
-    assert response.json()['data'][1]['name'] == 'New Name 2'
+    assert response.json()['data'][1]['description'] == 'New Desc 2'
 
     template.refresh_from_db()
     assert template.updated_at == datetime.datetime(2021, 1, 1).replace(

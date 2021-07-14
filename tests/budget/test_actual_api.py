@@ -30,8 +30,7 @@ def test_create_actual(api_client, user, create_budget_account,
             "id": subaccount.pk,
             "type": "subaccount",
             "identifier": subaccount.identifier,
-            "description": subaccount.description,
-            "name": subaccount.name,
+            "description": subaccount.description
         }
     }
     actual = models.Actual.objects.first()

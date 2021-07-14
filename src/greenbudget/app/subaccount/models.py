@@ -48,7 +48,6 @@ class SubAccount(PolymorphicModel):
     updated_at = models.DateTimeField(auto_now=True)
     identifier = models.CharField(null=True, max_length=128)
     description = models.CharField(null=True, max_length=128)
-    name = models.CharField(max_length=128, null=True)
     quantity = models.IntegerField(null=True)
     rate = models.FloatField(null=True)
     multiplier = models.IntegerField(null=True)
@@ -78,7 +77,6 @@ class SubAccount(PolymorphicModel):
     non_polymorphic = models.Manager()
 
     DERIVING_FIELDS = [
-        "name",
         "quantity",
         "rate",
         "multiplier",
@@ -161,11 +159,11 @@ class BudgetSubAccount(SubAccount):
     objects = SubAccountManager()
 
     FIELDS_TO_DUPLICATE = (
-        'identifier', 'description', 'name', 'rate', 'quantity', 'multiplier',
+        'identifier', 'description', 'rate', 'quantity', 'multiplier',
         'unit', 'actual', 'estimated')
     TRACK_MODEL_HISTORY = True
     TRACK_FIELD_CHANGE_HISTORY = [
-        'identifier', 'description', 'name', 'rate', 'quantity', 'multiplier',
+        'identifier', 'description', 'rate', 'quantity', 'multiplier',
         'unit']
 
     class Meta(SubAccount.Meta):
@@ -173,10 +171,9 @@ class BudgetSubAccount(SubAccount):
         verbose_name_plural = "Sub Accounts"
 
     def __str__(self):
-        return "<{cls} id={id}, name={name}, identifier={identifier}>".format(
+        return "<{cls} id={id}, identifier={identifier}>".format(
             cls=self.__class__.__name__,
             id=self.pk,
-            name=self.name,
             identifier=self.identifier,
         )
 
@@ -213,7 +210,7 @@ class TemplateSubAccount(SubAccount):
     objects = SubAccountManager()
 
     FIELDS_TO_DUPLICATE = (
-        'identifier', 'description', 'name', 'rate', 'quantity', 'multiplier',
+        'identifier', 'description', 'rate', 'quantity', 'multiplier',
         'unit', 'estimated')
     FIELDS_TO_DERIVE = FIELDS_TO_DUPLICATE
 
@@ -222,9 +219,8 @@ class TemplateSubAccount(SubAccount):
         verbose_name_plural = "Sub Accounts"
 
     def __str__(self):
-        return "<{cls} id={id}, name={name}, identifier={identifier}>".format(
+        return "<{cls} id={id}, identifier={identifier}>".format(
             cls=self.__class__.__name__,
             id=self.pk,
-            name=self.name,
             identifier=self.identifier,
         )
