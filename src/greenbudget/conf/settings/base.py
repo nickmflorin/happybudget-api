@@ -27,6 +27,7 @@ USE_TZ = True
 APP_DOMAIN = 'api.greenbudget.cloud/'
 APP_URL = 'https://%s' % APP_DOMAIN
 APP_V1_URL = os.path.join(APP_URL, "v1")
+SITE_ID = 1
 
 FRONTEND_URL = "https://dev.greenbudget.cloud/"
 
@@ -255,6 +256,10 @@ DATABASES = {
     },
 }
 
+DEFAULT_FILE_STORAGE = 'greenbudget.lib.django_utils.storages.S3ToggleStorage'
+STATICFILES_STORAGE = 'greenbudget.lib.django_utils.storages.S3ToggleStorage'
+AWS_STORAGE = False
+
 STATIC_URL = '/static/'
 STATIC_ROOT = str(BASE_DIR / "static")
 STATICFILES_FINDERS = (
@@ -262,6 +267,10 @@ STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
     'compressor.finders.CompressorFinder',
 )
+
+# Only applicable for image uploads locally.
+MEDIA_URL = '/media/'
+MEDIA_ROOT = str(BASE_DIR / "media")
 
 COMPRESS_PRECOMPILERS = (
     ('text/x-scss', 'django_libsass.SassCompiler'),

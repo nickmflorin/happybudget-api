@@ -3,6 +3,16 @@ from model_utils import Choices
 from django.db import models
 
 from greenbudget.lib.utils import conditionally_separate_strings
+from greenbudget.app.user.utils import upload_user_image_to
+
+
+def upload_to(instance, filename):
+    return upload_user_image_to(
+        user=instance.user,
+        filename=f"contact_image_{instance.pk}",
+        original_filename=filename,
+        directory="contacts"
+    )
 
 
 class Contact(models.Model):
@@ -15,25 +25,19 @@ class Contact(models.Model):
         on_delete=models.CASCADE,
         related_name="contacts"
     )
-    ROLES = Choices(
-        (0, "producer", "Producer"),
-        (1, "executive_producer", "Executive Producer"),
-        (2, "production_manager", "Production Manager"),
-        (3, "production_designer", "Production Designer"),
-        (4, "actor", "Actor"),
-        (5, "director", "Director"),
-        (6, "medic", "Medic"),
-        (7, "wardrobe", "Wardrobe"),
-        (8, "writer", "Writer"),
-        (9, "client", "Client"),
-        (10, "other", "Other"),
+    TYPES = Choices(
+        (0, "contractor", "Contractor"),
+        (1, "employee", "Employee"),
+        (2, "vendor", "Vendor"),
     )
-    role = models.IntegerField(choices=ROLES, null=True)
+    type = models.IntegerField(choices=TYPES, null=True)
+    position = models.CharField(max_length=128, null=True)
     company = models.CharField(max_length=128, null=True)
     city = models.CharField(max_length=30, null=True)
     phone_number = models.BigIntegerField(null=True)
     email = models.EmailField(null=True)
     rate = models.IntegerField(null=True)
+    image = models.ImageField(upload_to=upload_to, null=True)
 
     class Meta:
         get_latest_by = "updated_at"

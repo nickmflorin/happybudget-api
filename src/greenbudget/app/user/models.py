@@ -4,13 +4,16 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 from .managers import UserManager
-from .utils import get_user_from_social_token
+from .utils import get_user_from_social_token, upload_user_image_to
 
 
 def upload_to(instance, filename):
-    ext = filename.split('.')[-1]
-    filename = f"profile_image_{instance.email.lower().replace(' ','')}.{ext}"
-    return f'users/{instance.email.lower()}/profile/{filename}'
+    return upload_user_image_to(
+        user=instance,
+        filename=f"profile_image_{instance.pk}",
+        original_filename=filename,
+        directory="profile"
+    )
 
 
 class User(AbstractUser):

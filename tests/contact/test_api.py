@@ -19,9 +19,11 @@ def test_get_contact(api_client, user, create_contact, models):
         "email": contact.email,
         "full_name": contact.full_name,
         "company": contact.company,
-        "role": {
-            "id": contact.role,
-            "name": models.Contact.ROLES[contact.role]
+        "position": contact.position,
+        "image": None,
+        "type": {
+            "id": contact.type,
+            "name": models.Contact.TYPES[contact.type]
         }
     }
 
@@ -46,9 +48,11 @@ def test_get_contacts(api_client, user, create_contact, models):
             "phone_number": contacts[0].phone_number,
             "email": contacts[0].email,
             "full_name": contacts[0].full_name,
-            "role": {
-                "id": contacts[0].role,
-                "name": models.Contact.ROLES[contacts[0].role]
+            "position": contacts[0].position,
+            "image": None,
+            "type": {
+                "id": contacts[0].type,
+                "name": models.Contact.TYPES[contacts[0].type]
             }
         },
         {
@@ -63,9 +67,11 @@ def test_get_contacts(api_client, user, create_contact, models):
             "phone_number": contacts[1].phone_number,
             "email": contacts[1].email,
             "full_name": contacts[1].full_name,
-            "role": {
-                "id": contacts[1].role,
-                "name": models.Contact.ROLES[contacts[1].role]
+            "position": contacts[1].position,
+            "image": None,
+            "type": {
+                "id": contacts[1].type,
+                "name": models.Contact.TYPES[contacts[1].type]
             }
         }
     ]
@@ -79,7 +85,7 @@ def test_create_contact(api_client, user, models):
         'rate': 5,
         'first_name': 'Jack',
         'last_name': 'Johnson',
-        'role': 1,
+        'type': 1,
         'phone_number': '15183696530',
         'email': 'jjohnson@gmail.com',
         "company": "Boeing"
@@ -92,7 +98,7 @@ def test_create_contact(api_client, user, models):
     assert contact.rate == 5
     assert contact.first_name == "Jack"
     assert contact.last_name == "Johnson"
-    assert contact.role == 1
+    assert contact.type == 1
     assert contact.phone_number == 15183696530
     assert contact.email == "jjohnson@gmail.com"
     assert contact.company == "Boeing"
@@ -109,9 +115,11 @@ def test_create_contact(api_client, user, models):
         "email": "jjohnson@gmail.com",
         "full_name": "Jack Johnson",
         "company": "Boeing",
-        "role": {
+        "position": None,
+        "image": None,
+        "type": {
             "id": 1,
-            "name": models.Contact.ROLES[1]
+            "name": models.Contact.TYPES[1]
         }
     }
 
@@ -128,7 +136,7 @@ def test_create_blank_contact(api_client, user, models):
     assert contact.rate is None
     assert contact.first_name is None
     assert contact.last_name is None
-    assert contact.role is None
+    assert contact.type is None
     assert contact.phone_number is None
     assert contact.email is None
     assert contact.company is None
@@ -145,7 +153,9 @@ def test_create_blank_contact(api_client, user, models):
         "phone_number": None,
         "email": None,
         "full_name": "",
-        "role": None
+        "type": None,
+        "position": None,
+        "image": None,
     }
 
 
@@ -179,9 +189,11 @@ def test_update_contact(api_client, user, create_contact, models):
         "phone_number": contact.phone_number,
         "email": contact.email,
         "full_name": contact.full_name,
-        "role": {
-            "id": contact.role,
-            "name": models.Contact.ROLES[contact.role]
+        "position": contact.position,
+        "image": None,
+        "type": {
+            "id": contact.type,
+            "name": models.Contact.TYPES[contact.type]
         }
     }
 

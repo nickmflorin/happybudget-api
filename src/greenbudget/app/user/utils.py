@@ -20,6 +20,20 @@ SocialUser = collections.namedtuple(
     'SocialUser', ['first_name', 'last_name', 'email'])
 
 
+def user_image_directory(user):
+    return f'users/{user.pk}'
+
+
+def user_image_temp_directory(user):
+    return f'{user_image_directory(user)}/temp'
+
+
+def upload_user_image_to(user, directory, filename, original_filename):
+    ext = original_filename.split('.')[-1]
+    filename = f"{filename.replace(' ', '').lower()}.{ext}"
+    return f'{user_image_directory(user)}/{directory}/{filename}'
+
+
 def get_google_user_from_token(token):
     url = add_query_params_to_url(settings.GOOGLE_OAUTH_API_URL, id_token=token)
     try:

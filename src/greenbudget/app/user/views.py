@@ -1,5 +1,3 @@
-import os
-
 from django.contrib.auth import login
 from django.utils.decorators import method_decorator
 from django.views.decorators.debug import sensitive_post_parameters
@@ -7,7 +5,6 @@ from django.views.decorators.debug import sensitive_post_parameters
 from rest_framework import (
     viewsets, mixins, response, permissions, status, decorators)
 
-from greenbudget.lib.utils.fs import increment_name_count
 from greenbudget.app.common.exceptions import RateLimitedError
 
 from .serializers import UserSerializer, UserRegistrationSerializer
@@ -18,27 +15,12 @@ def sensitive_post_parameters_m(*args):
     return method_decorator(sensitive_post_parameters(*args))
 
 
-def increment_file_name_until_unique(storage, directory, filename):
-    path = os.path.join(directory, filename)
-    if not storage.exists(path):
-        return path
-    return increment_file_name_until_unique(
-        filename=increment_name_count(filename),
-        storage=storage,
-        directory=directory
-    )
-
-
 @decorators.api_view(['POST'])
 def temp_upload_user_image_view(request):
     image = request.data['image']
-
-    directory = 'temp/%s' % request.user.email
-
-    storage = TempUserImageStorage()
-    filepath = increment_file_name_until_unique(storage, directory, image.name)
-    storage.save(filepath, image.file)
-    file_url = storage.url(filepath)
+    storage = TempUserImageStorage(user=request.user)
+    storage.save(image.name, image.file)
+    file_url = storage.url(image.name)
     return response.Response({'fileUrl': file_url})
 
 
