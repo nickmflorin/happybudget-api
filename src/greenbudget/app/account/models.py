@@ -73,14 +73,14 @@ class BudgetAccount(Account):
     updated_by = models.ForeignKey(
         to='user.User',
         related_name='updated_budget_accounts',
-        on_delete=models.SET_NULL,
-        null=True
+        on_delete=models.CASCADE,
+        editable=False
     )
     created_by = models.ForeignKey(
         to='user.User',
         related_name='created_budget_accounts',
-        on_delete=models.SET_NULL,
-        null=True
+        on_delete=models.CASCADE,
+        editable=False
     )
     access = models.ManyToManyField(
         to='user.User',
@@ -123,14 +123,14 @@ class TemplateAccount(Account):
     updated_by = models.ForeignKey(
         to='user.User',
         related_name='updated_template_accounts',
-        on_delete=models.SET_NULL,
-        null=True
+        on_delete=models.CASCADE,
+        editable=False
     )
     created_by = models.ForeignKey(
         to='user.User',
         related_name='created_template_accounts',
-        on_delete=models.SET_NULL,
-        null=True
+        on_delete=models.CASCADE,
+        editable=False
     )
     group = models.ForeignKey(
         to='group.TemplateAccountGroup',

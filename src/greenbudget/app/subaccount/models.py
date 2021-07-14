@@ -136,14 +136,14 @@ class BudgetSubAccount(SubAccount):
     updated_by = models.ForeignKey(
         to='user.User',
         related_name='updated_budget_subaccounts',
-        on_delete=models.SET_NULL,
-        null=True
+        on_delete=models.CASCADE,
+        editable=False
     )
     created_by = models.ForeignKey(
         to='user.User',
         related_name='created_budget_subaccounts',
-        on_delete=models.SET_NULL,
-        null=True
+        on_delete=models.CASCADE,
+        editable=False
     )
     group = models.ForeignKey(
         to='group.BudgetSubAccountGroup',
@@ -151,6 +151,12 @@ class BudgetSubAccount(SubAccount):
         on_delete=models.SET_NULL,
         related_name='children'
     )
+    # contact = models.ForeignKey(
+    #     to='contact.Contact',
+    #     null=True,
+    #     on_delete=models.SET_NULL,
+    #     related_name='assigned_subaccounts'
+    # )
     actual = models.FloatField(default=0.0)
 
     comments = GenericRelation(Comment)
@@ -181,6 +187,14 @@ class BudgetSubAccount(SubAccount):
     def variance(self):
         return float(self.estimated) - float(self.actual)
 
+    # def save(self, *args, **kwargs):
+    #     if self.contact is not None and self.contact.user != self.created_by:
+    #         raise IntegrityError(
+    #             "Cannot assign a contact created by one user to a sub account "
+    #             "created by another user."
+    #         )
+    #     return super().save(*args, **kwargs)
+
 
 @signals.model(
     flags=['suppress_budget_update'],
@@ -191,14 +205,14 @@ class TemplateSubAccount(SubAccount):
     updated_by = models.ForeignKey(
         to='user.User',
         related_name='updated_template_subaccounts',
-        on_delete=models.SET_NULL,
-        null=True
+        on_delete=models.CASCADE,
+        editable=False
     )
     created_by = models.ForeignKey(
         to='user.User',
         related_name='created_template_subaccounts',
-        on_delete=models.SET_NULL,
-        null=True
+        on_delete=models.CASCADE,
+        editable=False
     )
     group = models.ForeignKey(
         to='group.TemplateSubAccountGroup',

@@ -15,6 +15,7 @@ def test_remove_budget_account_from_group_group_deleted(create_budget, user,
         identifier="Identifier",
         group=group,
         updated_by=user,
+        created_by=user
     )
     account.group = None
     account.save()
@@ -44,6 +45,7 @@ def test_remove_template_account_from_group_group_deleted(create_template, user,
         identifier="Identifier",
         group=group,
         updated_by=user,
+        created_by=user
     )
     account.group = None
     account.save()
@@ -81,7 +83,8 @@ def test_record_create_history(create_budget, user, models):
         description="Description",
         identifier="Identifier",
         budget=budget,
-        updated_by=user
+        updated_by=user,
+        created_by=user
     )
     assert models.Event.objects.count() == 1
     event = models.Event.objects.first()
@@ -97,7 +100,8 @@ def test_record_field_change_history(create_budget, user, models):
         description="Description",
         identifier="Identifier",
         budget=budget,
-        updated_by=user
+        updated_by=user,
+        created_by=user
     )
     account.save()
     assert models.FieldAlterationEvent.objects.count() == 0
@@ -120,7 +124,8 @@ def test_dont_record_field_change_history(create_budget, user, models):
         description=None,
         identifier="Identifier",
         budget=budget,
-        updated_by=user
+        updated_by=user,
+        created_by=user
     )
     account.save()
     assert models.FieldAlterationEvent.objects.count() == 0
@@ -137,7 +142,8 @@ def test_record_field_change_history_null_at_start(create_budget, user, models):
         description=None,
         identifier="Identifier",
         budget=budget,
-        updated_by=user
+        updated_by=user,
+        created_by=user
     )
     account.save()
     assert models.FieldAlterationEvent.objects.count() == 0

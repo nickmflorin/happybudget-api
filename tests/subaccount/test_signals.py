@@ -9,7 +9,7 @@ from greenbudget.app import signals
 
 
 def test_create_subaccount_recalculates(models, create_budget,
-        create_budget_account):
+        create_budget_account, user):
     budget = create_budget()
     account = create_budget_account(budget=budget)
     subaccount = models.BudgetSubAccount.objects.create(
@@ -17,7 +17,9 @@ def test_create_subaccount_recalculates(models, create_budget,
         parent=account,
         rate=1,
         multiplier=5,
-        quantity=10
+        quantity=10,
+        created_by=user,
+        updated_by=user
     )
     assert subaccount.estimated == 50.0
     assert account.estimated == 50.0
@@ -25,7 +27,7 @@ def test_create_subaccount_recalculates(models, create_budget,
 
 
 def test_update_subaccount_recalculates(models, create_budget,
-        create_budget_account):
+        create_budget_account, user):
     budget = create_budget()
     account = create_budget_account(budget=budget)
     subaccount = models.BudgetSubAccount.objects.create(
@@ -33,7 +35,9 @@ def test_update_subaccount_recalculates(models, create_budget,
         parent=account,
         rate=1,
         multiplier=5,
-        quantity=10
+        quantity=10,
+        created_by=user,
+        updated_by=user
     )
     assert subaccount.estimated == 50.0
     assert account.estimated == 50.0
@@ -47,7 +51,7 @@ def test_update_subaccount_recalculates(models, create_budget,
 
 
 def test_change_subaccount_parent_recalculates(models, create_budget,
-        create_budget_account):
+        create_budget_account, user):
     budget = create_budget()
     account = create_budget_account(budget=budget)
     another_account = create_budget_account(budget=budget)
@@ -56,7 +60,9 @@ def test_change_subaccount_parent_recalculates(models, create_budget,
         parent=account,
         rate=1,
         multiplier=5,
-        quantity=10
+        quantity=10,
+        created_by=user,
+        updated_by=user
     )
     assert subaccount.estimated == 50.0
     assert account.estimated == 50.0
@@ -101,6 +107,7 @@ def test_remove_budget_subaccount_from_group_group_deleted(user, create_budget,
         identifier="Identifier",
         group=group,
         updated_by=user,
+        created_by=user
     )
     subaccount.group = None
     subaccount.save()
@@ -119,6 +126,7 @@ def test_remove_template_subaccount_from_group_group_deleted(user, models,
         identifier="Identifier",
         group=group,
         updated_by=user,
+        created_by=user
     )
     subaccount.group = None
     subaccount.save()
@@ -170,7 +178,8 @@ def test_record_create_history(create_budget, create_budget_account, user,
         identifier="Identifier",
         budget=budget,
         updated_by=user,
-        parent=account
+        parent=account,
+        created_by=user,
     )
     assert models.Event.objects.count() == 1
     event = models.Event.objects.first()
@@ -189,7 +198,8 @@ def test_record_field_change_history(create_budget, create_budget_account,
         identifier="Identifier",
         budget=budget,
         parent=account,
-        updated_by=user
+        updated_by=user,
+        created_by=user
     )
     subaccount.save()
     assert models.FieldAlterationEvent.objects.count() == 0
@@ -215,7 +225,8 @@ def test_dont_record_field_change_history(create_budget, create_budget_account,
         identifier="Identifier",
         budget=budget,
         parent=account,
-        updated_by=user
+        updated_by=user,
+        created_by=user
     )
     subaccount.save()
     assert models.FieldAlterationEvent.objects.count() == 0
@@ -236,6 +247,7 @@ def test_record_field_change_history_null_at_start(create_budget, models,
         budget=budget,
         updated_by=user,
         parent=account,
+        created_by=user
     )
     subaccount.save()
     assert models.FieldAlterationEvent.objects.count() == 0

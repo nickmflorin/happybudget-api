@@ -20,15 +20,15 @@ class Actual(models.Model):
     created_by = models.ForeignKey(
         to='user.User',
         related_name='created_actuals',
-        on_delete=models.SET_NULL,
-        null=True
+        on_delete=models.CASCADE,
+        editable=False
     )
     updated_at = models.DateTimeField(auto_now=True)
     updated_by = models.ForeignKey(
         to='user.User',
         related_name='updated_actuals',
-        on_delete=models.SET_NULL,
-        null=True
+        on_delete=models.CASCADE,
+        editable=False
     )
     description = models.CharField(null=True, max_length=128)
     vendor = models.CharField(null=True, max_length=128)

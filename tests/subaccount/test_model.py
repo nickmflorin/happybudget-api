@@ -4,7 +4,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import IntegrityError
 
 
-def test_bulk_create_subaccounts(models, create_budget, create_budget_account):
+def test_bulk_create_subaccounts(models, create_budget, create_budget_account,
+        user):
     budget = create_budget()
     accounts = [
         create_budget_account(budget=budget),
@@ -15,19 +16,25 @@ def test_bulk_create_subaccounts(models, create_budget, create_budget_account):
             budget=budget,
             content_type=ContentType.objects.get_for_model(models.BudgetAccount),
             object_id=accounts[0].pk,
-            identifier="Sub Account 1"
+            identifier="Sub Account 1",
+            created_by=user,
+            updated_by=user
         ),
         models.BudgetSubAccount(
             budget=budget,
             content_type=ContentType.objects.get_for_model(models.BudgetAccount),
             object_id=accounts[0].pk,
-            identifier="Sub Account 2"
+            identifier="Sub Account 2",
+            created_by=user,
+            updated_by=user
         ),
         models.BudgetSubAccount(
             budget=budget,
             content_type=ContentType.objects.get_for_model(models.BudgetAccount),
             object_id=accounts[1].pk,
-            identifier="Sub Account 3"
+            identifier="Sub Account 3",
+            created_by=user,
+            updated_by=user
         )
     ]
     created_subaccounts = models.BudgetSubAccount.objects.bulk_create(

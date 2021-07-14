@@ -25,7 +25,8 @@ class BaseBudget(PolymorphicModel):
     created_by = models.ForeignKey(
         to='user.User',
         related_name='budgets',
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        editable=False
     )
     estimated = models.FloatField(default=0.0)
     image = models.ImageField(upload_to=upload_to, null=True)

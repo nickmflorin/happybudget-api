@@ -1,8 +1,18 @@
-def test_bulk_create_accounts(models, create_budget):
+def test_bulk_create_accounts(models, create_budget, user):
     budget = create_budget()
     instances = [
-        models.BudgetAccount(identifier='Account 1', budget=budget),
-        models.BudgetAccount(identifier='Account 2', budget=budget)
+        models.BudgetAccount(
+            identifier='Account 1',
+            budget=budget,
+            created_by=user,
+            updated_by=user
+        ),
+        models.BudgetAccount(
+            identifier='Account 2',
+            budget=budget,
+            created_by=user,
+            updated_by=user
+        )
     ]
     created = models.BudgetAccount.objects.bulk_create(instances,
         return_created_objects=True)

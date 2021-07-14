@@ -51,7 +51,7 @@ def test_create_template_account_group(api_client, user, create_template,
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
         "color": '#a1887f',
-        "updated_by": None,
+        "updated_by": user.pk,
         "estimated": 0.0,
         "created_by": user.pk,
         "children": [account.pk]

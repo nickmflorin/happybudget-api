@@ -15,15 +15,15 @@ class Group(PolymorphicModel):
     created_by = models.ForeignKey(
         to='user.User',
         related_name='created_groups',
-        on_delete=models.SET_NULL,
-        null=True
+        on_delete=models.CASCADE,
+        editable=False
     )
     updated_at = models.DateTimeField(auto_now=True)
     updated_by = models.ForeignKey(
         to='user.User',
         related_name='updated_groups',
-        on_delete=models.SET_NULL,
-        null=True
+        on_delete=models.CASCADE,
+        editable=False
     )
     name = models.CharField(max_length=128)
     color = models.ForeignKey(

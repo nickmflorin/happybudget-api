@@ -79,6 +79,7 @@ class AccountGroupViewSet(
     def perform_create(self, serializer):
         serializer.save(
             created_by=self.request.user,
+            updated_by=self.request.user,
             object_id=self.account.pk,
             content_type=ContentType.objects.get_for_model(type(self.account)),
             parent=self.account

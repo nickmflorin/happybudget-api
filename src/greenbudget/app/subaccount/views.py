@@ -93,6 +93,7 @@ class SubAccountGroupViewSet(
     def perform_create(self, serializer):
         serializer.save(
             created_by=self.request.user,
+            updated_by=self.request.user,
             object_id=self.subaccount.pk,
             content_type=ContentType.objects.get_for_model(self.instance_cls),
             parent=self.subaccount
