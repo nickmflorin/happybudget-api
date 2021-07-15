@@ -1,15 +1,7 @@
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
-
-def find_original_serializer(field):
-    parent = field.parent
-    while parent is not None:
-        new_parent = parent.parent
-        if new_parent is None:
-            break
-        parent = new_parent
-    return parent
+from greenbudget.lib.drf.fields import find_field_original_serializer
 
 
 class BudgetFilteredQuerysetPKField(serializers.PrimaryKeyRelatedField):
@@ -37,7 +29,7 @@ class BudgetFilteredQuerysetPKField(serializers.PrimaryKeyRelatedField):
     def get_queryset(self, budget=None):
         qs = super().get_queryset()
 
-        original_serializer = find_original_serializer(self)
+        original_serializer = find_field_original_serializer(self)
         if original_serializer is None:
             raise Exception("Invalid use of %s." % self.__class__.__name__)
 

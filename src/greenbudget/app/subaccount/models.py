@@ -151,12 +151,12 @@ class BudgetSubAccount(SubAccount):
         on_delete=models.SET_NULL,
         related_name='children'
     )
-    # contact = models.ForeignKey(
-    #     to='contact.Contact',
-    #     null=True,
-    #     on_delete=models.SET_NULL,
-    #     related_name='assigned_subaccounts'
-    # )
+    contact = models.ForeignKey(
+        to='contact.Contact',
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name='assigned_subaccounts'
+    )
     actual = models.FloatField(default=0.0)
 
     comments = GenericRelation(Comment)
@@ -187,13 +187,13 @@ class BudgetSubAccount(SubAccount):
     def variance(self):
         return float(self.estimated) - float(self.actual)
 
-    # def save(self, *args, **kwargs):
-    #     if self.contact is not None and self.contact.user != self.created_by:
-    #         raise IntegrityError(
-    #             "Cannot assign a contact created by one user to a sub account "
-    #             "created by another user."
-    #         )
-    #     return super().save(*args, **kwargs)
+    def save(self, *args, **kwargs):
+        if self.contact is not None and self.contact.user != self.created_by:
+            raise IntegrityError(
+                "Cannot assign a contact created by one user to a sub account "
+                "created by another user."
+            )
+        return super().save(*args, **kwargs)
 
 
 @signals.model(

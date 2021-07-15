@@ -3,6 +3,7 @@ from rest_framework import serializers, exceptions
 from greenbudget.lib import drf
 
 from greenbudget.app.budget.serializers import EntitySerializer
+from greenbudget.app.contact.models import Contact
 from greenbudget.app.fringe.models import Fringe
 from greenbudget.app.group.models import (
     BudgetSubAccountGroup,
@@ -10,6 +11,7 @@ from greenbudget.app.group.models import (
 )
 from greenbudget.app.tagging.serializers import (
     TagField, TagSerializer, ColorSerializer)
+from greenbudget.app.user.fields import UserFilteredQuerysetPKField
 
 from .models import (
     SubAccount, BudgetSubAccount, TemplateSubAccount, SubAccountUnit)
@@ -107,13 +109,19 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
         required=False,
         queryset=Fringe.objects.all()
     )
+    contact = UserFilteredQuerysetPKField(
+        required=False,
+        allow_null=True,
+        queryset=Contact.objects.all(),
+        user_field='user'
+    )
 
     class Meta:
         model = SubAccount
         fields = SubAccountSimpleSerializer.Meta.fields + (
             'identifier', 'created_by', 'updated_by', 'created_at',
             'updated_at', 'quantity', 'rate', 'multiplier', 'unit', 'object_id',
-            'parent_type', 'estimated', 'subaccounts', 'fringes')
+            'parent_type', 'estimated', 'subaccounts', 'fringes', 'contact')
 
     def validate(self, attrs):
         if self.instance is not None and self.instance.subaccounts.count() != 0:
@@ -187,12 +195,18 @@ class SubAccountPdfSerializer(serializers.ModelSerializer):
         read_only=True,
         serializer_class=SubAccountUnitSerializer
     )
+    contact = UserFilteredQuerysetPKField(
+        required=False,
+        allow_null=True,
+        queryset=Contact.objects.all(),
+        user_field='user'
+    )
     subaccounts = serializers.SerializerMethodField()
 
     class Meta:
         model = BudgetSubAccount
         fields = ('id', 'identifier', 'description', 'quantity', 'rate',
-            'multiplier', 'estimated', 'unit', 'subaccounts')
+            'multiplier', 'estimated', 'unit', 'subaccounts', 'contact')
         read_only_fields = fields
 
     def get_subaccounts(self, instance):

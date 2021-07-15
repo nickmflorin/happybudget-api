@@ -38,12 +38,7 @@ def test_update_subaccount_unit(api_client, user, create_budget_subaccount,
         create_budget_account, create_budget, create_subaccount_unit):
     budget = create_budget()
     account = create_budget_account(budget=budget)
-    subaccount = create_budget_subaccount(
-        parent=account,
-        description="Original Description",
-        identifier="Original identifier",
-        budget=budget
-    )
+    subaccount = create_budget_subaccount(parent=account, budget=budget)
     unit = create_subaccount_unit()
     api_client.force_login(user)
     response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk, data={
@@ -60,6 +55,36 @@ def test_update_subaccount_unit(api_client, user, create_budget_subaccount,
         'color': unit.color.code
     }
     assert subaccount.unit == unit
+
+
+def test_update_subaccount_contact(api_client, user, create_budget_subaccount,
+        create_budget_account, create_budget, create_contact):
+    budget = create_budget()
+    account = create_budget_account(budget=budget)
+    contact = create_contact(user=user)
+    subaccount = create_budget_subaccount(parent=account, budget=budget)
+    api_client.force_login(user)
+    response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk, data={
+        "contact": contact.pk
+    })
+    assert response.status_code == 200
+    subaccount.refresh_from_db()
+    assert response.json()['contact'] == contact.pk
+    assert subaccount.contact == contact
+
+
+def test_update_subaccount_contact_wrong_user(api_client, user,
+        create_budget_subaccount, create_budget_account, create_budget,
+        create_contact, admin_user):
+    budget = create_budget()
+    account = create_budget_account(budget=budget)
+    contact = create_contact(user=admin_user)
+    subaccount = create_budget_subaccount(parent=account, budget=budget)
+    api_client.force_login(user)
+    response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk, data={
+        "contact": contact.pk
+    })
+    assert response.status_code == 400
 
 
 @pytest.mark.freeze_time('2020-01-01')
@@ -93,6 +118,7 @@ def test_get_budget_subaccount(api_client, user, create_budget_subaccount,
         "created_by": user.pk,
         "updated_by": user.pk,
         "unit": None,
+        "contact": None,
         "ancestors": [
             {
                 "type": "budget",
@@ -138,6 +164,7 @@ def test_get_template_subaccount(api_client, user, create_template_subaccount,
         "created_by": user.pk,
         "updated_by": user.pk,
         "unit": None,
+        "contact": None,
         "ancestors": [
             {
                 "type": "template",
@@ -195,6 +222,7 @@ def test_update_budget_subaccount(api_client, user, create_budget_subaccount,
         "created_by": user.pk,
         "updated_by": user.pk,
         "unit": None,
+        "contact": None,
         "ancestors": [
             {
                 "type": "budget",
@@ -274,6 +302,7 @@ def test_update_template_subaccount(api_client, user, create_template_account,
         "updated_by": user.pk,
         "unit": None,
         "siblings": [],
+        "contact": None,
         "ancestors": [
             {
                 "type": "template",
@@ -334,6 +363,7 @@ def test_get_budget_subaccount_subaccounts(api_client, user, create_budget,
             "fringes": [],
             "created_by": user.pk,
             "updated_by": user.pk,
+            "contact": None,
             "unit": None
         },
         {
@@ -355,6 +385,7 @@ def test_get_budget_subaccount_subaccounts(api_client, user, create_budget,
             "fringes": [],
             "created_by": user.pk,
             "updated_by": user.pk,
+            "contact": None,
             "unit": None
         },
     ]
@@ -406,6 +437,7 @@ def test_get_template_subaccount_subaccounts(api_client, user, create_template,
             "fringes": [],
             "created_by": user.pk,
             "updated_by": user.pk,
+            "contact": None,
             "unit": None
         },
         {
@@ -425,6 +457,7 @@ def test_get_template_subaccount_subaccounts(api_client, user, create_template,
             "fringes": [],
             "created_by": user.pk,
             "updated_by": user.pk,
+            "contact": None,
             "unit": None
         },
     ]

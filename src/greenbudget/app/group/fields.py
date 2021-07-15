@@ -2,8 +2,9 @@ from django.contrib.contenttypes.models import ContentType
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
-from greenbudget.app.budget.fields import (
-    BudgetFilteredQuerysetPKField, find_original_serializer)
+from greenbudget.lib.drf.fields import find_field_original_serializer
+
+from greenbudget.app.budget.fields import BudgetFilteredQuerysetPKField
 
 
 class AccountGroupChildFilteredQuerysetPKField(BudgetFilteredQuerysetPKField):
@@ -30,7 +31,7 @@ class AccountGroupChildFilteredQuerysetPKField(BudgetFilteredQuerysetPKField):
         super().__init__(*args, **kwargs)
 
     def get_parent(self):
-        original_serializer = find_original_serializer(self)
+        original_serializer = find_field_original_serializer(self)
         if original_serializer is None:
             raise Exception("Invalid use of %s." % self.__class__.__name__)
 

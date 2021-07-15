@@ -6,6 +6,16 @@ from django.core.files.base import ContentFile
 from rest_framework import serializers
 
 
+def find_field_original_serializer(field):
+    parent = field.parent
+    while parent is not None:
+        new_parent = parent.parent
+        if new_parent is None:
+            break
+        parent = new_parent
+    return parent
+
+
 class ModelChoiceField(serializers.ChoiceField):
     """
     A :obj:`rest_framework.serializers.ModelSerializer` field that allows
