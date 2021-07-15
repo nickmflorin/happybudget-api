@@ -171,6 +171,7 @@ class BudgetSubAccount(SubAccount):
     TRACK_FIELD_CHANGE_HISTORY = [
         'identifier', 'description', 'rate', 'quantity', 'multiplier',
         'unit']
+    DERIVING_FIELDS = SubAccount.DERIVING_FIELDS + ["contact"]
 
     class Meta(SubAccount.Meta):
         verbose_name = "Sub Account"
