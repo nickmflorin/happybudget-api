@@ -26,7 +26,6 @@ def test_get_budget_accounts(api_client, user, create_budget_account,
             "variance": 0.0,
             "actual": 0.0,
             "subaccounts": [],
-            "group": None,
             "created_by": user.pk,
             "updated_by": user.pk
         },
@@ -42,7 +41,6 @@ def test_get_budget_accounts(api_client, user, create_budget_account,
             "variance": 0.0,
             "actual": 0.0,
             "subaccounts": [],
-            "group": None,
             "created_by": user.pk,
             "updated_by": user.pk
         }
@@ -73,7 +71,6 @@ def test_create_budget_account(api_client, user, create_budget, models):
         "variance": 0.0,
         "actual": 0.0,
         "subaccounts": [],
-        "group": None,
         "created_by": user.pk,
         "updated_by": user.pk,
     }

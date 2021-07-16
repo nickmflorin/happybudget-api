@@ -108,3 +108,4 @@ CACHE
 docker-compose.override.yml
 local_override.py
 .env
+media/

@@ -44,7 +44,6 @@ def test_get_template_account_subaccounts(api_client, user, create_template,
             "fringes": [],
             "created_by": user.pk,
             "updated_by": user.pk,
-            "group": None,
             "unit": None
         },
         {
@@ -63,7 +62,6 @@ def test_get_template_account_subaccounts(api_client, user, create_template,
             "estimated": 0.0,
             "subaccounts": [],
             "fringes": [],
-            "group": None,
             "created_by": user.pk,
             "updated_by": user.pk,
             "unit": None
@@ -157,7 +155,6 @@ def test_create_template_subaccount(api_client, user, create_template_account,
         "estimated": 0.0,
         "subaccounts": [],
         "fringes": [],
-        "group": None,
         "created_by": user.pk,
         "updated_by": user.pk,
     }

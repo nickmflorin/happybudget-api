@@ -57,7 +57,8 @@ class BudgetAccountSerializer(AccountSerializer):
     group = serializers.PrimaryKeyRelatedField(
         required=False,
         allow_null=True,
-        queryset=BudgetAccountGroup.objects.all()
+        queryset=BudgetAccountGroup.objects.all(),
+        write_only=True
     )
 
     class Meta:
@@ -79,7 +80,8 @@ class TemplateAccountSerializer(AccountSerializer):
     group = serializers.PrimaryKeyRelatedField(
         required=False,
         allow_null=True,
-        queryset=TemplateAccountGroup.objects.all()
+        queryset=TemplateAccountGroup.objects.all(),
+        write_only=True
     )
 
     class Meta:

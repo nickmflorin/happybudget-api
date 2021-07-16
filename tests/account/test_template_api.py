@@ -23,7 +23,6 @@ def test_get_template_accounts(api_client, user, create_template_account,
             "type": "account",
             "estimated": 0.0,
             "subaccounts": [],
-            "group": None,
             "created_by": user.pk,
             "updated_by": user.pk
         },
@@ -36,7 +35,6 @@ def test_get_template_accounts(api_client, user, create_template_account,
             "type": "account",
             "estimated": 0.0,
             "subaccounts": [],
-            "group": None,
             "created_by": user.pk,
             "updated_by": user.pk
         }
@@ -93,7 +91,6 @@ def test_create_template_account(api_client, user, create_template, models):
         "type": "account",
         "estimated": 0.0,
         "subaccounts": [],
-        "group": None,
         "created_by": user.pk,
         "updated_by": user.pk
     }
