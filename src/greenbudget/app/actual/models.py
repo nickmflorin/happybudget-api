@@ -31,7 +31,12 @@ class Actual(models.Model):
         editable=False
     )
     description = models.CharField(null=True, max_length=128)
-    vendor = models.CharField(null=True, max_length=128)
+    contact = models.ForeignKey(
+        to='contact.Contact',
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name='assigned_actuals'
+    )
     purchase_order = models.CharField(null=True, max_length=128)
     date = models.DateTimeField(null=True)
     payment_id = models.CharField(max_length=50, null=True)
@@ -79,5 +84,11 @@ class Actual(models.Model):
                 and subaccount_budget != self.budget:
             raise IntegrityError(
                 "The actual must belong to the same budget as it's subaccount.")
+
+        if self.contact is not None and self.contact.user != self.created_by:
+            raise IntegrityError(
+                "Cannot assign a contact created by one user to an actual "
+                "created by another user."
+            )
 
         return super().save(*args, **kwargs)

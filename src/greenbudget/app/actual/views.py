@@ -7,8 +7,8 @@ from .serializers import ActualSerializer
 class GenericActualViewSet(viewsets.GenericViewSet):
     lookup_field = 'pk'
     serializer_class = ActualSerializer
-    ordering_fields = ['updated_at', 'vendor', 'created_at']
-    search_fields = ['vendor']
+    ordering_fields = ['updated_at', 'created_at']
+    search_fields = ['description']
 
     def get_serializer_context(self):
         context = super().get_serializer_context()

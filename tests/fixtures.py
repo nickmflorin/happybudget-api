@@ -293,8 +293,8 @@ def create_actual(user, db):
     Usage:
     -----
     >>> def test_actual(create_actual):
-    >>>     actual = create_actual(vendor='Test Vendor')
-    >>>     assert actual.name == 'Test Vendor'
+    >>>     actual = create_actual(description='Test Actual')
+    >>>     assert actual.description == 'Test Actual'
     """
     def inner(*args, **kwargs):
         kwargs.setdefault('created_by', user)

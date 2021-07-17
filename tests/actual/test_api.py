@@ -11,7 +11,6 @@ def test_update_actual(api_client, user, create_budget_account,
 
     api_client.force_login(user)
     response = api_client.patch("/v1/actuals/%s/" % actual.pk, data={
-        "vendor": "Vendor Name",
         "payment_id": "Payment ID",
         "payment_method": 1,
     })
@@ -26,7 +25,7 @@ def test_update_actual(api_client, user, create_budget_account,
         "date": actual.date,
         "payment_id": "Payment ID",
         "value": actual.value,
-        "vendor": "Vendor Name",
+        "contact": None,
         "created_by": user.pk,
         "updated_by": user.pk,
         "payment_method": {
@@ -42,7 +41,6 @@ def test_update_actual(api_client, user, create_budget_account,
     }
     actual.refresh_from_db()
     assert actual.payment_id == "Payment ID"
-    assert actual.vendor == "Vendor Name"
     assert actual.payment_method == 1
 
 
@@ -69,7 +67,7 @@ def test_change_actual_parent(api_client, user, create_budget_account,
         "date": actual.date,
         "payment_id": actual.payment_id,
         "value": actual.value,
-        "vendor": actual.vendor,
+        "contact": actual.contact,
         "created_by": user.pk,
         "updated_by": user.pk,
         "payment_method": {

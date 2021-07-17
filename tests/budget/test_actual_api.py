@@ -23,7 +23,7 @@ def test_create_actual(api_client, user, create_budget_account,
         "payment_id": None,
         "value": None,
         "payment_method": None,
-        "vendor": None,
+        "contact": None,
         "created_by": user.pk,
         "updated_by": user.pk,
         "subaccount": {

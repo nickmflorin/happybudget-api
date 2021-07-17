@@ -5,18 +5,15 @@ from greenbudget.lib.drf.serializers import (
     ModelSerializer)
 
 from greenbudget.app.budget.fields import BudgetFilteredQuerysetPKField
+from greenbudget.app.contact.models import Contact
 from greenbudget.app.subaccount.models import BudgetSubAccount
 from greenbudget.app.subaccount.serializers import SubAccountSimpleSerializer
+from greenbudget.app.user.fields import UserFilteredQuerysetPKField
 
 from .models import Actual
 
 
 class ActualSerializer(ModelSerializer):
-    vendor = serializers.CharField(
-        required=False,
-        allow_blank=False,
-        allow_null=True
-    )
     description = serializers.CharField(
         required=False,
         allow_blank=False,
@@ -52,13 +49,19 @@ class ActualSerializer(ModelSerializer):
         required=False,
         allow_null=True
     )
+    contact = UserFilteredQuerysetPKField(
+        required=False,
+        allow_null=True,
+        queryset=Contact.objects.all(),
+        user_field='user'
+    )
 
     class Meta:
         model = Actual
         fields = (
             'id', 'description', 'created_by', 'updated_by', 'created_at',
             'updated_at', 'purchase_order', 'date', 'payment_id', 'value',
-            'payment_method', 'vendor', 'subaccount')
+            'payment_method', 'contact', 'subaccount')
         response = {
             'subaccount': SubAccountSimpleSerializer
         }
