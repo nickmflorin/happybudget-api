@@ -124,6 +124,9 @@ def calculate_subaccount(instance):
 
 @signals.bulk_context.handler(
     id=lambda parent: parent.pk,
+    # There are cases with CASCADE deletes where a non-nullable field will be
+    # temporarily null.
+    conditional=lambda parent: parent is not None,
     queue_in_context=True,
     side_effect=lambda parent: [
         signals.SideEffect(

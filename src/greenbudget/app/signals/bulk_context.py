@@ -139,8 +139,20 @@ class bulk_context_manager(threading.local):
 
     def call_in_queue(self, func):
         def caller(*args, **kwargs):
+            conditional = kwargs.pop('conditional', None) \
+                or getattr(func, '__options__')['conditional']
+
+            if conditional is not None:
+                if hasattr(conditional, '__call__'):
+                    conditional = conditional(*args, **kwargs)
+
+            # If the conditional evaluates to False, do not proceed with any
+            # step (even getting the ID) as the ID callback might require state
+            # that is guarded against with the conditional.
+            if conditional is False:
+                return
+
             id = kwargs.pop('id', None) or getattr(func, '__options__')['id']
-            queue_in_context = getattr(func, '__options__')['queue_in_context']
             if hasattr(id, '__call__'):
                 id = id(*args, **kwargs)
 
@@ -149,6 +161,7 @@ class bulk_context_manager(threading.local):
                 args=args,
                 kwargs=kwargs
             )
+            queue_in_context = getattr(func, '__options__')['queue_in_context']
             if self._active is False or queue_in_context is False:
                 signature(self)
             else:
@@ -156,12 +169,14 @@ class bulk_context_manager(threading.local):
                 self.queue[signature.id] = signature
         return caller
 
-    def handler(self, id, queue_in_context=False, side_effect=None):
+    def handler(self, id, queue_in_context=False, side_effect=None,
+            conditional=None):
         def decorator(func):
             setattr(func, '__options__', {
                 'id': id,
                 'queue_in_context': queue_in_context,
-                'side_effect': side_effect
+                'side_effect': side_effect,
+                'conditional': conditional,
             })
             setattr(func, 'call_in_queue', self.call_in_queue(func))
 
