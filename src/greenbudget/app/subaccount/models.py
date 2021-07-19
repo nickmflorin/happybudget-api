@@ -21,6 +21,7 @@ class SubAccountUnit(Tag):
         to="tagging.Color",
         on_delete=models.SET_NULL,
         null=True,
+        blank=True,
         limit_choices_to=models.Q(
             content_types__model="subaccountunit",
             content_types__app_label="subaccount"
