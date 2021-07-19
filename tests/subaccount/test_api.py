@@ -28,6 +28,7 @@ def test_unit_properly_serializes(api_client, user, create_budget_subaccount,
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
         'title': unit.title,
+        'plural_title': unit.plural_title,
         'order': unit.order,
         'color': unit.color.code
     }
@@ -51,6 +52,7 @@ def test_update_subaccount_unit(api_client, user, create_budget_subaccount,
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
         'title': unit.title,
+        'plural_title': unit.plural_title,
         'order': unit.order,
         'color': unit.color.code
     }

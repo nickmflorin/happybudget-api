@@ -9,8 +9,8 @@ from greenbudget.app.group.models import (
     BudgetSubAccountGroup,
     TemplateSubAccountGroup
 )
-from greenbudget.app.tagging.serializers import (
-    TagField, TagSerializer, ColorSerializer)
+from greenbudget.app.tagging.fields import TagField
+from greenbudget.app.tagging.serializers import TagSerializer, ColorSerializer
 from greenbudget.app.user.fields import UserFilteredQuerysetPKField
 
 from .models import (

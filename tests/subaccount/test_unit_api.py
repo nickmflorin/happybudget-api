@@ -17,6 +17,7 @@ def test_unit_properly_serializes(api_client, user, create_subaccount_unit):
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
             'title': units[0].title,
+            'plural_title': units[0].plural_title,
             'order': units[0].order,
             'color': units[0].color.code
         },
@@ -25,6 +26,7 @@ def test_unit_properly_serializes(api_client, user, create_subaccount_unit):
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
             'title': units[1].title,
+            'plural_title': units[1].plural_title,
             'order': units[1].order,
             'color': units[1].color.code
         }

@@ -59,6 +59,7 @@ class Tag(PolymorphicModel):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     title = models.CharField(max_length=32)
+    plural_title = models.CharField(max_length=32, null=True)
     order = models.IntegerField(null=True)
 
     class Meta:
