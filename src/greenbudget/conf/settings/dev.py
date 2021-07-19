@@ -35,8 +35,6 @@ ec2_host_name = get_ec2_hostname()
 if ec2_host_name is not None:
     ALLOWED_HOSTS.append(ec2_host_name)
 
-# DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-# STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 AWS_STORAGE = True
 
 STATIC_URL = config(

@@ -16,10 +16,6 @@ from .base import (
 
 ENVIRONMENT = Environments.PROD
 
-# DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-# STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-AWS_STORAGE = True
-
 STATIC_URL = config(
     name='AWS_STORAGE_BUCKET_URL',
     required=True

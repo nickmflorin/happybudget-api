@@ -27,7 +27,6 @@ USE_TZ = True
 APP_DOMAIN = 'api.greenbudget.cloud/'
 APP_URL = 'https://%s' % APP_DOMAIN
 APP_V1_URL = os.path.join(APP_URL, "v1")
-SITE_ID = 1
 
 FRONTEND_URL = "https://dev.greenbudget.cloud/"
 
