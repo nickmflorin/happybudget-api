@@ -9,6 +9,7 @@ from greenbudget.app.group.models import (
     BudgetSubAccountGroup,
     TemplateSubAccountGroup
 )
+from greenbudget.app.group.serializers import BudgetSubAccountGroupSerializer
 from greenbudget.app.tagging.fields import TagField
 from greenbudget.app.tagging.serializers import TagSerializer, ColorSerializer
 from greenbudget.app.user.fields import UserFilteredQuerysetPKField
@@ -202,11 +203,13 @@ class SubAccountPdfSerializer(serializers.ModelSerializer):
         user_field='user'
     )
     subaccounts = serializers.SerializerMethodField()
+    groups = BudgetSubAccountGroupSerializer(many=True, read_only=True)
 
     class Meta:
         model = BudgetSubAccount
         fields = ('id', 'identifier', 'description', 'quantity', 'rate',
-            'multiplier', 'estimated', 'unit', 'subaccounts', 'contact')
+            'multiplier', 'estimated', 'unit', 'subaccounts', 'contact',
+            'groups')
         read_only_fields = fields
 
     def get_subaccounts(self, instance):

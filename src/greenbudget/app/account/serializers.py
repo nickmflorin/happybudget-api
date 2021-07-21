@@ -5,6 +5,7 @@ from greenbudget.lib.drf.serializers import (
 
 from greenbudget.app.budget.serializers import EntitySerializer
 from greenbudget.app.group.models import BudgetAccountGroup, TemplateAccountGroup  # noqa
+from greenbudget.app.group.serializers import BudgetSubAccountGroupSerializer
 from greenbudget.app.subaccount.serializers import SubAccountPdfSerializer
 from greenbudget.app.user.models import User
 
@@ -106,10 +107,10 @@ class AccountPdfSerializer(serializers.ModelSerializer):
     variance = serializers.FloatField(read_only=True)
     estimated = serializers.FloatField(read_only=True)
     subaccounts = SubAccountPdfSerializer(many=True, read_only=True)
-    group = serializers.PrimaryKeyRelatedField(read_only=True)
+    groups = BudgetSubAccountGroupSerializer(many=True, read_only=True)
 
     class Meta:
         model = BudgetAccount
         fields = ('id', 'identifier', 'description', 'actual', 'variance',
-            'estimated', 'subaccounts', 'group')
+            'estimated', 'subaccounts', 'groups')
         read_only_fields = fields
