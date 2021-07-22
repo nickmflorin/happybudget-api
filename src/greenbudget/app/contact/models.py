@@ -10,7 +10,6 @@ def upload_to(instance, filename):
     return upload_user_image_to(
         user=instance.user,
         filename=f"contact_image_{instance.pk}",
-        original_filename=filename,
         directory="contacts"
     )
 

@@ -11,7 +11,6 @@ def upload_to(instance, filename):
     return upload_user_image_to(
         user=instance,
         filename=filename,
-        original_filename=filename,
         directory="profile"
     )
 

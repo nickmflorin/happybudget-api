@@ -17,7 +17,6 @@ def upload_to(instance, filename):
     return upload_user_image_to(
         user=instance.created_by,
         filename=filename,
-        original_filename=filename,
         directory="budgets"
     )
 
