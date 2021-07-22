@@ -1,51 +1,61 @@
-from storages.backends.s3boto3 import S3Boto3Storage
 import os
 
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 
 
-class BaseStorageMixin:
-    def file_name(self, name):
-        if self._subdirectory is not None:
-            return os.path.join(self._subdirectory, name)
-        return name
-
-
-class S3StorageBase(S3Boto3Storage, BaseStorageMixin):
-    bucket_name = settings.AWS_STORAGE_BUCKET_NAME
-
-    def __init__(self, *args, **kwargs):
-        self._subdirectory = kwargs.pop('sub_directory', None)
-        super().__init__(*args, **kwargs)
-
+class LocalStorage(FileSystemStorage):
     def url(self, name):
-        if self._subdirectory is not None:
-            name = os.path.join(self._subdirectory, name)
-        return super().url(name)
-
-
-class LocalStorage(FileSystemStorage, BaseStorageMixin):
-    def __init__(self, *args, **kwargs):
-        self._subdirectory = kwargs.pop('sub_directory', None)
-        if self._subdirectory is not None:
-            kwargs['location'] = os.path.join(
-                settings.MEDIA_ROOT, self._subdirectory)
-        super().__init__(*args, **kwargs)
-
-    def url(self, name):
-        url = super().url(self.file_name(name))
+        url = super().url(name)
         if url.startswith("/"):
             url = url[1:]
         return os.path.join(settings.APP_URL, url)
 
 
-def S3ToggleStorageBase():
-    if getattr(settings, 'AWS_STORAGE', False) is True:
-        return S3StorageBase
-    return LocalStorage
+class ImageExtensionError(Exception):
+    pass
 
 
-def S3ToggleStorage(*args, **kwargs):
-    storage_cls = S3ToggleStorageBase()
-    return storage_cls(*args, **kwargs)
+class MissingImageExtension(ImageExtensionError):
+    def __init__(self, filename):
+        self._filename = filename
+
+    def __str__(self):
+        return "No extension found on filename %s." % self._filename
+
+
+class UnsupportedImageExtension(ImageExtensionError):
+    def __init__(self, ext):
+        self._ext = ext
+
+    def __str__(self):
+        return "Unsupported image extension %s." % self._ext
+
+
+def using_s3_storage():
+    return settings.DEFAULT_FILE_STORAGE == 'storages.backends.s3boto3.S3Boto3Storage'  # noqa
+
+
+def get_image_filename_extension(filename, strict=True):
+    if '.' not in filename:
+        if strict:
+            raise MissingImageExtension(filename)
+        return None
+    ext = filename.split('.')[-1]
+    if ext.strip().lower() not in settings.ACCEPTED_IMAGE_EXTENSIONS:
+        if strict:
+            raise UnsupportedImageExtension(ext)
+        return None
+    return ext.strip().lower()
+
+
+def get_image_filename(filename, new_filename=None):
+    new_filename = new_filename or filename
+    extension = get_image_filename_extension(filename, strict=True)
+
+    new_extension = get_image_filename_extension(new_filename, strict=False)
+    if new_extension is not None and new_extension != extension:
+        raise Exception("Conflicting file extensions %s and %s." %
+                        (extension, new_extension))
+
+    return f"{new_filename.replace(' ', '').lower()}.{extension}"

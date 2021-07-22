@@ -1,4 +1,5 @@
 from django.contrib.auth import login
+from django.core.files.storage import get_storage_class
 from django.utils.decorators import method_decorator
 from django.views.decorators.debug import sensitive_post_parameters
 
@@ -8,7 +9,7 @@ from rest_framework import (
 from greenbudget.app.common.exceptions import RateLimitedError
 
 from .serializers import UserSerializer, UserRegistrationSerializer
-from .storages import TempUserImageStorage
+from .utils import upload_temp_user_image_to
 
 
 def sensitive_post_parameters_m(*args):
@@ -18,9 +19,14 @@ def sensitive_post_parameters_m(*args):
 @decorators.api_view(['POST'])
 def temp_upload_user_image_view(request):
     image = request.data['image']
-    storage = TempUserImageStorage(user=request.user)
-    storage.save(image.name, image.file)
-    file_url = storage.url(image.name)
+    storage_cls = get_storage_class()
+    storage = storage_cls()
+    image_name = upload_temp_user_image_to(
+        user=request.user,
+        filename=image.name
+    )
+    storage.save(image_name, image.file)
+    file_url = storage.url(image_name)
     return response.Response({'fileUrl': file_url})
 
 

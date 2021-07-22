@@ -16,6 +16,7 @@ from .base import (
 
 ENVIRONMENT = Environments.PROD
 
+STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 STATIC_URL = config(
     name='AWS_STORAGE_BUCKET_URL',
     required=True
@@ -25,8 +26,6 @@ print("Adding EC2 IP Address to Allowed Hosts")
 ec2_host_name = get_ec2_hostname()
 if ec2_host_name is not None:
     ALLOWED_HOSTS.append(ec2_host_name)
-
-AWS_STORAGE = True
 
 sentry_sdk.init(
     dsn="https://9eeab5e26f804bd582385ffc5eda991d@o591585.ingest.sentry.io/5740484",  # noqa

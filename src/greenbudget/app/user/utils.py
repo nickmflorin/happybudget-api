@@ -8,6 +8,7 @@ from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.utils import timezone
 
+from greenbudget.lib.django_utils.storages import get_image_filename
 from greenbudget.lib.utils.urls import add_query_params_to_url
 
 from .exceptions import InvalidSocialToken, InvalidSocialProvider
@@ -28,10 +29,18 @@ def user_image_temp_directory(user):
     return f'{user_image_directory(user)}/temp'
 
 
-def upload_user_image_to(user, directory, filename, original_filename):
-    ext = original_filename.split('.')[-1]
-    filename = f"{filename.replace(' ', '').lower()}.{ext}"
-    return f'{user_image_directory(user)}/{directory}/{filename}'
+def upload_temp_user_image_to(user, filename, directory=None, new_filename=None):  # noqa
+    filename = get_image_filename(filename, new_filename=new_filename)
+    if directory is not None:
+        return f'{user_image_temp_directory(user)}/{directory}/{filename}'
+    return f'{user_image_temp_directory(user)}/{filename}'
+
+
+def upload_user_image_to(user, filename, directory=None, new_filename=None):
+    filename = get_image_filename(filename, new_filename=new_filename)
+    if directory is not None:
+        return f'{user_image_directory(user)}/{directory}/{filename}'
+    return f'{user_image_directory(user)}/{filename}'
 
 
 def get_google_user_from_token(token):

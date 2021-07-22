@@ -255,9 +255,8 @@ DATABASES = {
     },
 }
 
-DEFAULT_FILE_STORAGE = 'greenbudget.lib.django_utils.storages.S3ToggleStorage'
-STATICFILES_STORAGE = 'greenbudget.lib.django_utils.storages.S3ToggleStorage'
-AWS_STORAGE = False
+ACCEPTED_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png']
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
 STATIC_URL = '/static/'
 STATIC_ROOT = str(BASE_DIR / "static")

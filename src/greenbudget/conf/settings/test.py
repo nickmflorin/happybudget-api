@@ -19,6 +19,10 @@ CELERY_ENABLED = False
 RATELIMIT_ENABLE = False
 TRACK_MODEL_HISTORY = False
 
+# Eventually we should configure these for a temporary test directory.
+STATICFILES_STORAGE = None
+DEFAULT_FILE_STORAGE = None
+
 # Disable logging in tests
 LOGGING['loggers'] = {  # noqa
     '': {
