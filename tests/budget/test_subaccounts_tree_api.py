@@ -1,64 +1,68 @@
+from greenbudget.app import signals
+
+
 def test_get_subaccounts_tree(api_client, user, create_budget,
         create_budget_account, create_budget_subaccount):
-    budget = create_budget()
-    accounts = [
-        create_budget_account(budget=budget, identifier="Account A"),
-        create_budget_account(budget=budget, identifier="Account B"),
-    ]
-    first_level_subaccounts = [
-        create_budget_subaccount(
-            budget=budget,
-            parent=accounts[0],
-            identifier="Sub Account A-A"
-        ),
-        create_budget_subaccount(
-            budget=budget,
-            parent=accounts[0],
-            identifier="Sub Account A-B"
-        ),
-        create_budget_subaccount(
-            budget=budget,
-            parent=accounts[0],
-            identifier="Sub Account A-C"
-        ),
-        create_budget_subaccount(
-            budget=budget,
-            parent=accounts[0],
-            identifier="Sub Account A-D"
-        )
-    ]
-    second_level_subaccounts = [
-        create_budget_subaccount(
-            budget=budget,
-            parent=first_level_subaccounts[0],
-            identifier="Sub Account A-A-A"
-        ),
-        create_budget_subaccount(
-            budget=budget,
-            parent=first_level_subaccounts[1],
-            identifier="Sub Account A-B-A"
-        ),
-        create_budget_subaccount(
-            budget=budget,
-            parent=first_level_subaccounts[1],
-            identifier="Sub Account A-B-B"
-        ),
-        create_budget_subaccount(
-            budget=budget,
-            parent=first_level_subaccounts[2],
-            identifier="Sub Account A-C-A"
-        ),
-        create_budget_subaccount(
-            budget=budget,
-            parent=first_level_subaccounts[2],
-            identifier="Sub Account A-C-B"
-        ),
-        create_budget_subaccount(
-            budget=budget,
-            parent=first_level_subaccounts[2],
-            identifier="Sub Account A-C-C"
-        )
-    ]
+    with signals.disable():
+        budget = create_budget()
+        accounts = [
+            create_budget_account(budget=budget, identifier="Account A"),
+            create_budget_account(budget=budget, identifier="Account B"),
+        ]
+        first_level_subaccounts = [
+            create_budget_subaccount(
+                budget=budget,
+                parent=accounts[0],
+                identifier="Sub Account A-A"
+            ),
+            create_budget_subaccount(
+                budget=budget,
+                parent=accounts[0],
+                identifier="Sub Account A-B"
+            ),
+            create_budget_subaccount(
+                budget=budget,
+                parent=accounts[0],
+                identifier="Sub Account A-C"
+            ),
+            create_budget_subaccount(
+                budget=budget,
+                parent=accounts[0],
+                identifier="Sub Account A-D"
+            )
+        ]
+        second_level_subaccounts = [
+            create_budget_subaccount(
+                budget=budget,
+                parent=first_level_subaccounts[0],
+                identifier="Sub Account A-A-A"
+            ),
+            create_budget_subaccount(
+                budget=budget,
+                parent=first_level_subaccounts[1],
+                identifier="Sub Account A-B-A"
+            ),
+            create_budget_subaccount(
+                budget=budget,
+                parent=first_level_subaccounts[1],
+                identifier="Sub Account A-B-B"
+            ),
+            create_budget_subaccount(
+                budget=budget,
+                parent=first_level_subaccounts[2],
+                identifier="Sub Account A-C-A"
+            ),
+            create_budget_subaccount(
+                budget=budget,
+                parent=first_level_subaccounts[2],
+                identifier="Sub Account A-C-B"
+            ),
+            create_budget_subaccount(
+                budget=budget,
+                parent=first_level_subaccounts[2],
+                identifier="Sub Account A-C-C"
+            )
+        ]
     api_client.force_login(user)
     response = api_client.get("/v1/budgets/%s/subaccounts/tree/" % budget.pk)
     assert response.status_code == 200
@@ -152,73 +156,74 @@ def test_get_subaccounts_tree(api_client, user, create_budget,
 
 def test_search_subaccounts_tree(api_client, user, create_budget,
         create_budget_account, create_budget_subaccount):
-    budget = create_budget()
-    accounts = [
-        create_budget_account(budget=budget, identifier="Account A"),
-        create_budget_account(budget=budget, identifier="Account B"),
-    ]
-    first_level_subaccounts = [
-        create_budget_subaccount(
-            budget=budget,
-            parent=accounts[0],
-            identifier="Sub Account A-A",
-            description="Jack",
-        ),
-        create_budget_subaccount(
-            budget=budget,
-            parent=accounts[0],
-            identifier="Sub Account A-B",
-            description="Jacky",
-        ),
-        create_budget_subaccount(
-            budget=budget,
-            parent=accounts[0],
-            identifier="Sub Account A-C"
-        ),
-        create_budget_subaccount(
-            budget=budget,
-            parent=accounts[0],
-            identifier="Sub Account A-D"
-        )
-    ]
-    second_level_subaccounts = [
-        create_budget_subaccount(
-            budget=budget,
-            parent=first_level_subaccounts[0],
-            identifier="Sub Account A-A-A",
-            description="Mufassa"
-        ),
-        create_budget_subaccount(
-            budget=budget,
-            parent=first_level_subaccounts[1],
-            identifier="Sub Account A-B-A",
-            description="Jack",
-        ),
-        create_budget_subaccount(
-            budget=budget,
-            parent=first_level_subaccounts[1],
-            identifier="Sub Account A-B-B",
-            description="Banana"
-        ),
-        create_budget_subaccount(
-            budget=budget,
-            parent=first_level_subaccounts[2],
-            identifier="Sub Account A-C-A",
-            description="Banana"
-        ),
-        create_budget_subaccount(
-            budget=budget,
-            parent=first_level_subaccounts[2],
-            identifier="Sub Account A-C-B",
-            description="Jack"
-        ),
-        create_budget_subaccount(
-            budget=budget,
-            parent=first_level_subaccounts[2],
-            identifier="Sub Account A-C-C",
-            description="Banana"
-        )
-    ]
+    with signals.disable():
+        budget = create_budget()
+        accounts = [
+            create_budget_account(budget=budget, identifier="Account A"),
+            create_budget_account(budget=budget, identifier="Account B"),
+        ]
+        first_level_subaccounts = [
+            create_budget_subaccount(
+                budget=budget,
+                parent=accounts[0],
+                identifier="Sub Account A-A",
+                description="Jack",
+            ),
+            create_budget_subaccount(
+                budget=budget,
+                parent=accounts[0],
+                identifier="Sub Account A-B",
+                description="Jacky",
+            ),
+            create_budget_subaccount(
+                budget=budget,
+                parent=accounts[0],
+                identifier="Sub Account A-C"
+            ),
+            create_budget_subaccount(
+                budget=budget,
+                parent=accounts[0],
+                identifier="Sub Account A-D"
+            )
+        ]
+        second_level_subaccounts = [
+            create_budget_subaccount(
+                budget=budget,
+                parent=first_level_subaccounts[0],
+                identifier="Sub Account A-A-A",
+                description="Mufassa"
+            ),
+            create_budget_subaccount(
+                budget=budget,
+                parent=first_level_subaccounts[1],
+                identifier="Sub Account A-B-A",
+                description="Jack",
+            ),
+            create_budget_subaccount(
+                budget=budget,
+                parent=first_level_subaccounts[1],
+                identifier="Sub Account A-B-B",
+                description="Banana"
+            ),
+            create_budget_subaccount(
+                budget=budget,
+                parent=first_level_subaccounts[2],
+                identifier="Sub Account A-C-A",
+                description="Banana"
+            ),
+            create_budget_subaccount(
+                budget=budget,
+                parent=first_level_subaccounts[2],
+                identifier="Sub Account A-C-B",
+                description="Jack"
+            ),
+            create_budget_subaccount(
+                budget=budget,
+                parent=first_level_subaccounts[2],
+                identifier="Sub Account A-C-C",
+                description="Banana"
+            )
+        ]
     api_client.force_login(user)
     response = api_client.get(
         "/v1/budgets/%s/subaccounts/tree/?search=jack" % budget.pk)

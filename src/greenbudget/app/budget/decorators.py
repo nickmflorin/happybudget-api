@@ -12,6 +12,7 @@ from .bulk_serializers import (
     create_bulk_update_serializer,
     create_bulk_delete_serializer
 )
+from .serializers import BudgetSerializer
 
 
 @dataclass
@@ -35,15 +36,37 @@ class BulkAction:
 
 
 class bulk_action:
-    def __init__(self, action, base_cls, base_serializer_cls=None,
-            perform_save=None, **kwargs):
+    def __init__(self, action, base_cls, child_context_indicator, get_budget,
+            **kwargs):
         self._action = action
         self._base_cls = base_cls
-        self._base_serializer_cls = base_serializer_cls
-        self._perform_save = perform_save
+
+        # Used to let the children serializers know that we are in a specific
+        # bulk context.
+        self._child_context_indicator = child_context_indicator
+
+        self._base_serializer_cls = kwargs.pop('base_serializer_cls', None)
+
+        # Ability to override the default `serializer.save()` call.
+        self._perform_save = kwargs.pop('perform_save', None)
+
+        # A way to get the Budget or Template instance from the instance being
+        # updated.  This is used to return the updated Budget/Template in the
+        # response and provide the Budget/Template in the serializer context.
+        # If we are bulk changing the Account(s) of a Budget/Template, then the
+        # updated instance already is the Budget/Template, so we do not need
+        # to include the Budget/Template in the response again.  In this case,
+        # we set `include_budget_in_response` to False.
+        self._get_budget = get_budget
+        self._budget_serializer = kwargs.pop(
+            'budget_serializer', BudgetSerializer) or BudgetSerializer
+        self._include_budget_in_response = kwargs.pop(
+            'include_budget_in_response', True)
+
         # Additional kwargs passed directly through to Django REST Framework's
         # :obj:`rest_framework.decorators.action`.
         self._kwargs = kwargs
+
         self.context = None
 
     def __call__(self, func):
@@ -97,12 +120,17 @@ class bulk_action:
 
     @property
     def child_context(self):
+        budget = self._get_budget(self.context.instance)
+        default_context = {'budget': budget, self._child_context_indicator: True}  # noqa
         if self._action.child_context is None:
-            return {}
+            return default_context
         elif isinstance(self._action.child_context, dict):
-            return self._action.child_context
+            return {**self._action.child_context, **default_context}
         else:
-            return self._evaluate_action_callback('child_context')
+            return {
+                **self._evaluate_action_callback('child_context'),
+                **default_context
+            }
 
     def perform_save(self, serializer):
         if self._perform_save is not None:
@@ -122,7 +150,6 @@ class bulk_action:
     def decorated(self, view, request):
         instance = view.get_object()
         self.context = ActionContext(instance=instance, view=view, request=request)  # noqa
-
         serializer_cls = self.get_serializer_class()
         serializer = serializer_cls(
             instance=instance,
@@ -135,11 +162,18 @@ class bulk_action:
         self.post_save(data)
         return data
 
+    def render_response(self, data, status=status.HTTP_200_OK):
+        if self._include_budget_in_response is True:
+            budget = self._get_budget(self.context.instance)
+            budget.refresh_from_db()
+            data['budget'] = self._budget_serializer(budget).data
+        return response.Response(data, status=status)
+
 
 class bulk_update_action(bulk_action):
-    def __init__(self, action, **kwargs):
+    def __init__(self, action, *args, **kwargs):
         kwargs.setdefault('perform_save', action.perform_update)
-        super().__init__(action, **kwargs)
+        super().__init__(action, *args, **kwargs)
 
     @property
     def filter_qs(self):
@@ -160,16 +194,14 @@ class bulk_update_action(bulk_action):
 
     def decorated(self, view, request):
         updated_instance = super().decorated(view, request)
-        return response.Response(
-            self.base_serializer_cls(updated_instance).data,
-            status=status.HTTP_200_OK
-        )
+        return self.render_response({
+            'data': self.base_serializer_cls(updated_instance).data})
 
 
 class bulk_create_action(bulk_action):
-    def __init__(self, action, **kwargs):
+    def __init__(self, action, *args, **kwargs):
         kwargs.setdefault('perform_save', action.perform_create)
-        super().__init__(action, **kwargs)
+        super().__init__(action, *args, **kwargs)
 
     def get_serializer_class(self):
         return create_bulk_create_serializer(
@@ -180,15 +212,15 @@ class bulk_create_action(bulk_action):
         )
 
     def decorated(self, view, request):
-        children = super().decorated(view, request)
-        return response.Response(
-            {'data': self.child_serializer_cls(children, many=True).data},
-            status=status.HTTP_201_CREATED
-        )
+        instance, children = super().decorated(view, request)
+        return self.render_response({
+            'children': self.child_serializer_cls(children, many=True).data,
+            'data': self.base_serializer_cls(instance).data
+        }, status=status.HTTP_201_CREATED)
 
 
 class bulk_delete_action(bulk_action):
-    def __init__(self, action, **kwargs):
+    def __init__(self, action, *args, **kwargs):
         kwargs.setdefault('perform_destroy', action.perform_destroy)
         super().__init__(action, **kwargs)
 
@@ -200,19 +232,22 @@ class bulk_delete_action(bulk_action):
 
     def decorated(self, view, request):
         updated_instance = super().decorated(view, request)
-        return response.Response(
-            self.base_serializer_cls(updated_instance).data,
-            status=status.HTTP_200_OK
-        )
+        return self.render_response({
+            'data': self.base_serializer_cls(updated_instance).data})
 
 
 class bulk_registration:
-    def __init__(self, base_cls, base_serializer_cls=None, actions=None,
-            **kwargs):
+    def __init__(self, base_cls, get_budget, child_context_indicator,
+            base_serializer_cls=None, actions=None, budget_serializer=None,
+            include_budget_in_response=True, **kwargs):
         self._base_cls = base_cls
         self._base_serializer_cls = base_serializer_cls
-        self._actions = []
+        self._get_budget = get_budget
+        self._child_context_indicator = child_context_indicator
+        self._budget_serializer = budget_serializer
+        self._include_budget_in_response = include_budget_in_response
 
+        self._actions = []
         actions = actions or []
         for original_action in actions:
             action = deepcopy(original_action)
@@ -237,7 +272,11 @@ class bulk_registration:
             action=action,
             base_cls=self._base_cls,
             base_serializer_cls=self._base_serializer_cls,
-            url_path=url_path
+            url_path=url_path,
+            get_budget=self._get_budget,
+            child_context_indicator=self._child_context_indicator,
+            budget_serializer=self._budget_serializer,
+            include_budget_in_response=self._include_budget_in_response
         )
         @decorators.action(detail=True, methods=["PATCH"], url_path=url_path)
         def func(*args, **kwargs):
@@ -255,36 +294,38 @@ class register_bulk_updating(bulk_registration):
     action_name = "update"
     exclude_params = ('')
 
-    def decorate(self, action, **kwargs):
-        return bulk_update_action(action, **kwargs)
+    def decorate(self, *args, **kwargs):
+        return bulk_update_action(*args, **kwargs)
 
 
 class register_bulk_creating(bulk_registration):
     action_name = "create"
 
-    def decorate(self, action, **kwargs):
-        return bulk_create_action(action, **kwargs)
+    def decorate(self, *args, **kwargs):
+        return bulk_create_action(*args, **kwargs)
 
 
 class register_bulk_deleting(bulk_registration):
     action_name = "delete"
 
-    def decorate(self, action, **kwargs):
-        return bulk_delete_action(action, **kwargs)
+    def decorate(self, *args, **kwargs):
+        return bulk_delete_action(*args, **kwargs)
 
 
 class register_all_bulk_operations(bulk_registration):
-    def __init__(self, base_cls, actions=None, **kwargs):
-        super().__init__(base_cls, actions=actions)
-        self._register_bulk_updating = register_bulk_updating(
-            base_cls, actions=actions, **kwargs)
-        self._register_bulk_creating = register_bulk_creating(
-            base_cls, actions=actions, **kwargs)
-        self._register_bulk_deleting = register_bulk_deleting(
-            base_cls, actions=actions, **kwargs)
+    registrations = [
+        register_bulk_updating,
+        register_bulk_creating,
+        register_bulk_deleting
+    ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._registrated = []
+        for registration in self.registrations:
+            self._registrated.append(registration(*args, **kwargs))
 
     def __call__(self, cls):
-        self._register_bulk_updating(cls)
-        self._register_bulk_creating(cls)
-        self._register_bulk_deleting(cls)
+        for registered in self._registrated:
+            registered(cls)
         return cls

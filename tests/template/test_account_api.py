@@ -4,16 +4,16 @@ from greenbudget.app import signals
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_budget_accounts(api_client, user, create_budget_account,
-        create_budget):
+def test_get_template_accounts(api_client, user, create_template_account,
+        create_template):
     with signals.disable():
-        budget = create_budget()
+        template = create_template()
         accounts = [
-            create_budget_account(budget=budget),
-            create_budget_account(budget=budget)
+            create_template_account(budget=template),
+            create_template_account(budget=template)
         ]
     api_client.force_login(user)
-    response = api_client.get("/v1/budgets/%s/accounts/" % budget.pk)
+    response = api_client.get("/v1/templates/%s/accounts/" % template.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'] == [
@@ -23,11 +23,8 @@ def test_get_budget_accounts(api_client, user, create_budget_account,
             "description": accounts[0].description,
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
-            "access": [],
             "type": "account",
             "estimated": 0.0,
-            "variance": 0.0,
-            "actual": 0.0,
             "subaccounts": [],
             "created_by": user.pk,
             "updated_by": user.pk
@@ -38,11 +35,8 @@ def test_get_budget_accounts(api_client, user, create_budget_account,
             "description": accounts[1].description,
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
-            "access": [],
             "type": "account",
             "estimated": 0.0,
-            "variance": 0.0,
-            "actual": 0.0,
             "subaccounts": [],
             "created_by": user.pk,
             "updated_by": user.pk
@@ -51,15 +45,44 @@ def test_get_budget_accounts(api_client, user, create_budget_account,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_budget_account(api_client, user, create_budget, models):
-    budget = create_budget()
+def test_get_community_template_accounts(api_client, user, staff_user,
+        create_template_account, create_template):
+    with signals.disable():
+        template = create_template(community=True, created_by=staff_user)
+        create_template_account(budget=template)
+        create_template_account(budget=template)
     api_client.force_login(user)
-    response = api_client.post("/v1/budgets/%s/accounts/" % budget.pk, data={
-        'identifier': 'new_account'
-    })
+    response = api_client.get("/v1/templates/%s/accounts/" % template.pk)
+    assert response.status_code == 403
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_get_another_users_community_template_accounts(api_client, staff_user,
+        create_template_account, create_template, create_user):
+    with signals.disable():
+        user = create_user(is_staff=True)
+        template = create_template(created_by=user, community=True)
+        [
+            create_template_account(budget=template),
+            create_template_account(budget=template)
+        ]
+    api_client.force_login(staff_user)
+    response = api_client.get("/v1/templates/%s/accounts/" % template.pk)
+    assert response.status_code == 200
+    assert response.json()['count'] == 2
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_create_template_account(api_client, user, create_template, models):
+    template = create_template()
+    api_client.force_login(user)
+    response = api_client.post(
+        "/v1/templates/%s/accounts/" % template.pk, data={
+            'identifier': 'new_account'
+        })
     assert response.status_code == 201
 
-    account = models.BudgetAccount.objects.first()
+    account = models.TemplateAccount.objects.first()
     assert account is not None
 
     assert response.json() == {
@@ -68,28 +91,25 @@ def test_create_budget_account(api_client, user, create_budget, models):
         "description": None,
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
-        "access": [],
         "type": "account",
         "estimated": 0.0,
-        "variance": 0.0,
-        "actual": 0.0,
         "subaccounts": [],
         "created_by": user.pk,
-        "updated_by": user.pk,
+        "updated_by": user.pk
     }
 
 
-def test_bulk_update_budget_accounts(api_client, user, create_budget,
-        create_budget_account):
+def test_bulk_update_template_accounts(api_client, user, create_template,
+        create_template_account):
     with signals.disable():
-        budget = create_budget()
+        template = create_template()
         accounts = [
-            create_budget_account(budget=budget),
-            create_budget_account(budget=budget)
+            create_template_account(budget=template),
+            create_template_account(budget=template)
         ]
     api_client.force_login(user)
     response = api_client.patch(
-        "/v1/budgets/%s/bulk-update-accounts/" % budget.pk,
+        "/v1/templates/%s/bulk-update-accounts/" % template.pk,
         format='json',
         data={
             'data': [
@@ -111,25 +131,23 @@ def test_bulk_update_budget_accounts(api_client, user, create_budget,
     assert accounts[1].description == "New Description 2"
 
     # The data in the response refers to base the entity we are updating, A.K.A.
-    # the Budget.
-    assert response.json()['data']['id'] == budget.pk
+    # the Template.
+    assert response.json()['data']['id'] == template.pk
     assert response.json()['data']['estimated'] == 0.0
-    assert response.json()['data']['variance'] == 0.0
-    assert response.json()['data']['actual'] == 0.0
 
 
-def test_bulk_update_budget_accounts_outside_budget(api_client, user,
-        create_budget, create_budget_account):
+def test_bulk_update_template_accounts_outside_template(api_client, user,
+        create_template, create_template_account):
     with signals.disable():
-        budget = create_budget()
-        another_budget = create_budget()
+        template = create_template()
+        another_template = create_template()
         accounts = [
-            create_budget_account(budget=budget),
-            create_budget_account(budget=another_budget)
+            create_template_account(budget=template),
+            create_template_account(budget=another_template)
         ]
     api_client.force_login(user)
     response = api_client.patch(
-        "/v1/budgets/%s/bulk-update-accounts/" % budget.pk,
+        "/v1/templates/%s/bulk-update-accounts/" % template.pk,
         format='json',
         data={
             'data': [
@@ -146,11 +164,12 @@ def test_bulk_update_budget_accounts_outside_budget(api_client, user,
     assert response.status_code == 400
 
 
-def test_bulk_create_budget_accounts(api_client, user, create_budget, models):
-    budget = create_budget()
+def test_bulk_create_template_accounts(api_client, user, create_template,
+        models):
+    template = create_template()
     api_client.force_login(user)
     response = api_client.patch(
-        "/v1/budgets/%s/bulk-create-accounts/" % budget.pk,
+        "/v1/templates/%s/bulk-create-accounts/" % template.pk,
         format='json',
         data={
             'data': [
@@ -166,14 +185,14 @@ def test_bulk_create_budget_accounts(api_client, user, create_budget, models):
         })
     assert response.status_code == 201
 
-    accounts = models.Account.objects.all()
+    accounts = models.TemplateAccount.objects.all()
     assert len(accounts) == 2
     assert accounts[0].identifier == "account-a"
     assert accounts[0].description == "New Description 1"
-    assert accounts[0].budget == budget
+    assert accounts[0].budget == template
     assert accounts[1].description == "New Description 2"
     assert accounts[1].identifier == "account-b"
-    assert accounts[1].budget == budget
+    assert accounts[1].budget == template
 
     assert len(response.json()['children']) == 2
     assert response.json()['children'][0]['id'] == accounts[0].pk
@@ -184,34 +203,32 @@ def test_bulk_create_budget_accounts(api_client, user, create_budget, models):
     assert response.json()['children'][1]['description'] == "New Description 2"
 
     # The data in the response refers to base the entity we are updating, A.K.A.
-    # the Budget.
-    assert response.json()['data']['id'] == budget.pk
+    # the Template.
+    assert response.json()['data']['id'] == template.pk
     assert response.json()['data']['estimated'] == 0.0
-    assert response.json()['data']['variance'] == 0.0
-    assert response.json()['data']['actual'] == 0.0
 
 
-def test_bulk_delete_budget_accounts(api_client, user, create_budget,
-        create_budget_account, create_budget_subaccount, models):
+def test_bulk_delete_budget_accounts(api_client, user, create_template,
+        create_template_account, create_template_subaccount, models):
     with signals.disable():
-        budget = create_budget()
+        template = create_template()
         accounts = [
-            create_budget_account(budget=budget),
-            create_budget_account(budget=budget)
+            create_template_account(budget=template),
+            create_template_account(budget=template)
         ]
     # We need to create SubAccount(s) so that the accounts themselves have
     # calculated values, and thus the Budget itself has calculated values, so
     # we can test whether or not the deletion recalculates the metrics on the
     # Budget.
-    create_budget_subaccount(
-        budget=budget,
+    create_template_subaccount(
+        budget=template,
         parent=accounts[0],
         quantity=1,
         rate=100,
         multiplier=1
     )
-    create_budget_subaccount(
-        budget=budget,
+    create_template_subaccount(
+        budget=template,
         parent=accounts[1],
         estimated=100,
         quantity=1,
@@ -220,44 +237,37 @@ def test_bulk_delete_budget_accounts(api_client, user, create_budget,
     )
     api_client.force_login(user)
     response = api_client.patch(
-        "/v1/budgets/%s/bulk-delete-accounts/" % budget.pk, data={
+        "/v1/templates/%s/bulk-delete-accounts/" % template.pk, data={
             'ids': [a.pk for a in accounts]
         })
     assert response.status_code == 200
-    assert models.BudgetAccount.objects.count() == 0
+    assert models.TemplateAccount.objects.count() == 0
 
     # The data in the response refers to base the entity we are updating, A.K.A.
-    # the Budget.
-    assert response.json()['data']['id'] == budget.pk
+    # the Template.
+    assert response.json()['data']['id'] == template.pk
     assert response.json()['data']['estimated'] == 0.0
-    assert response.json()['data']['variance'] == 0.0
-    assert response.json()['data']['actual'] == 0.0
 
-    budget.refresh_from_db()
-    assert budget.estimated == 0.0
-    assert budget.variance == 0.0
-    assert budget.actual == 0.0
+    template.refresh_from_db()
+    assert template.estimated == 0.0
 
 
-def test_bulk_create_budget_accounts_count(api_client, user, create_budget,
+def test_bulk_create_template_accounts_count(api_client, user, create_template,
         models):
     api_client.force_login(user)
-    budget = create_budget()
+    template = create_template()
     response = api_client.patch(
-        "/v1/budgets/%s/bulk-create-accounts/" % budget.pk,
+        "/v1/templates/%s/bulk-create-accounts/" % template.pk,
         format='json',
         data={'count': 2}
     )
     assert response.status_code == 201
 
-    accounts = models.Account.objects.all()
+    accounts = models.TemplateAccount.objects.all()
     assert len(accounts) == 2
 
     # The data in the response refers to base the entity we are updating, A.K.A.
-    # the Budget.
-    assert response.json()['data']['id'] == budget.pk
+    # the Template.
+    assert response.json()['data']['id'] == template.pk
     assert response.json()['data']['estimated'] == 0.0
-    assert response.json()['data']['variance'] == 0.0
-    assert response.json()['data']['actual'] == 0.0
-
     assert len(response.json()['children']) == 2

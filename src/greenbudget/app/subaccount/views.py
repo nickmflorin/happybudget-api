@@ -143,10 +143,8 @@ class GenericSubAccountViewSet(viewsets.GenericViewSet):
 
 @register_all_bulk_operations(
     base_cls=lambda context: context.view.instance_cls,
-    child_context=lambda context: {
-        'budget': context.instance.budget,
-        'subaccount_context': True
-    },
+    child_context_indicator='subaccount_context',
+    get_budget=lambda instance: instance.budget,
     actions=[
         BulkAction(
             url_path='bulk-{action_name}-subaccounts',

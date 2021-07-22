@@ -3,7 +3,6 @@ import logging
 
 from django import dispatch
 from django.contrib.contenttypes.models import ContentType
-from django.db import models
 
 from greenbudget.app import signals
 from greenbudget.app.account.signals import (
@@ -18,9 +17,9 @@ logger = logging.getLogger('signals')
 
 
 @signals.bulk_context.handler(
-    id=lambda instance: instance.pk,
+    id=lambda instance, **kwargs: instance.pk,
     queue_in_context=True,
-    side_effect=lambda instance: [
+    side_effect=lambda instance, **kwargs: [
         signals.SideEffect(
             func=actualize_account,
             args=(instance.parent, ),
@@ -41,14 +40,30 @@ logger = logging.getLogger('signals')
         )
     ]
 )
-def actualize_subaccount(instance):
+def actualize_subaccount(instance, actuals=None):
+    """
+    Reactualizes the :obj:`greenbudget.app.subaccount.models.SubAccount` based
+    on the :obj:`greenbudget.app.actual.models.Actual`(s) associated with the
+    instance.
+
+    Note that we have to allow the Actuals to be optionally supplied to this
+    method.  This is because in the case when an Actual is deleted, we cannot
+    use the post_delete signal because the Actual will already have been
+    disassociated with the SubAccount so we do not know which SubAccount to
+    reactualize.  This means that we have to use this method in the context of
+    the pre_delete signal (see `greenbudget.app.actual.signals`).  However,
+    when we call this method from the pre_delete signal, the Actual still
+    exists - so we have to tell the method to exclude that Actual from the
+    re-actualization and then delete the Actual.
+    """
     # We cannot do .only('actual') here because the subaccounts are polymorphic.
     # We should figure out how to do that.
     subaccounts = BudgetSubAccount.objects.filter(
         content_type=ContentType.objects.get_for_model(BudgetSubAccount),
         object_id=instance.pk
     ).only('actual')
-    actuals = instance.actuals.only('value')
+
+    actuals = actuals if actuals is not None else instance.actuals.only('value')
 
     instance.actual = functools.reduce(
         lambda current, sub: current + (sub.actual or 0), subaccounts.all(), 0)
@@ -59,9 +74,9 @@ def actualize_subaccount(instance):
 
 
 @signals.bulk_context.handler(
-    id=lambda instance: instance.pk,
+    id=lambda instance, **kwargs: instance.pk,
     queue_in_context=True,
-    side_effect=lambda instance: [
+    side_effect=lambda instance, **kwargs: [
         signals.SideEffect(
             func=estimate_account,
             args=(instance.parent, ),
@@ -82,17 +97,28 @@ def actualize_subaccount(instance):
         )
     ]
 )
-def estimate_subaccount(instance):
+def estimate_subaccount(instance, fringes=None):
+    """
+    Reestimates the :obj:`greenbudget.app.subaccount.models.SubAccount` based
+    on the calculatable fields of the instance and the
+    :obj:`greenbudget.app.fringe.models.Fringe`(s) associated with the instance.
+
+    Note that we have to allow the Fringes to be optionally supplied to this
+    method.  This is because in the case when a Fringe is deleted, we cannot
+    use the post_delete signal because the Fringe will already have been
+    disassociated with the SubAccount so we do not know which SubAccount to
+    reestimate.  This means that we have to use this method in the context of
+    the pre_delete signal (see `greenbudget.app.fringe.signals`).  However,
+    when we call this method from the pre_delete signal, the Fringe still
+    exists - so we have to tell the method to exclude that Fringe from the
+    re-estimation and then delete the Fringe.
+    """
     subaccounts = instance.subaccounts.only('estimated')
     if subaccounts.count() == 0:
-        if instance.quantity is not None and instance.rate is not None:
-            multiplier = instance.multiplier or 1.0
-            value = float(instance.quantity) * float(instance.rate) * float(multiplier)  # noqa
-            # TODO: Eventually, we want to have the value fringed on post_save
-            # signals for the Fringes themselves.
-            instance.estimated = fringe_value(value, instance.fringes.all())
-        else:
-            instance.estimated = 0.0
+        fringes = fringes if fringes is not None else instance.fringes.all()
+        # Will return 0.0 if the quantity or rate values for the instance are
+        # None.
+        instance.estimated = fringe_value(instance.unfringed_value, fringes)
     else:
         instance.estimated = functools.reduce(
             lambda current, sub: current + (sub.estimated or 0),
@@ -165,21 +191,21 @@ def subaccount_recalculation(**kwargs):
     calculate_subaccount(kwargs['instance'])
 
 
-@dispatch.receiver(models.signals.post_delete, sender=BudgetSubAccount)
-@dispatch.receiver(models.signals.post_delete, sender=TemplateSubAccount)
+@dispatch.receiver(signals.post_delete, sender=BudgetSubAccount)
+@dispatch.receiver(signals.post_delete, sender=TemplateSubAccount)
 def subaccount_deleted(**kwargs):
     calculate_parent(kwargs['instance'].parent)
 
 
 @dispatch.receiver(
-    models.signals.m2m_changed, sender=BudgetSubAccount.fringes.through)
+    signals.m2m_changed, sender=BudgetSubAccount.fringes.through)
 @dispatch.receiver(
-    models.signals.m2m_changed, sender=TemplateSubAccount.fringes.through)
+    signals.m2m_changed, sender=TemplateSubAccount.fringes.through)
 def subaccount_fringes_changed(**kwargs):
     # If we fire the reestimation of the subaccount on all actions, it will
     # only be triggered for one.
-    # if kwargs['action'] == 'post_add':
-    estimate_subaccount(kwargs['instance'])
+    if kwargs['action'] == 'post_add':
+        estimate_subaccount(kwargs['instance'])
 
 
 @signals.any_fields_changed_receiver(

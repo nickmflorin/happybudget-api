@@ -321,10 +321,11 @@ class GenericBudgetViewSet(viewsets.GenericViewSet):
 @register_all_bulk_operations(
     base_cls=Budget,
     filter_qs=lambda context: models.Q(budget=context.instance),
-    child_context=lambda context: {
-        'budget': context.instance,
-        'budget_context': True
-    },
+    get_budget=lambda instance: instance,
+    # Since the Budget is the entity being updated, it will already be included
+    # in the response by default.  We do not want to double include it.
+    include_budget_in_response=False,
+    child_context_indicator='budget_context',
     perform_update=lambda serializer, context: serializer.save(  # noqa
         updated_by=context.request.user
     ),

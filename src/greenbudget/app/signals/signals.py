@@ -3,16 +3,19 @@ from greenbudget.lib.utils import ensure_iterable
 from .signal import Signal
 
 
-post_create = Signal()
-post_save = Signal()
-post_create_by_user = Signal()
-field_changed = Signal()
-fields_changed = Signal()
+post_create = Signal(name='post_create')
+post_save = Signal(name='post_save')
+post_create_by_user = Signal(name='post_create_by_user')
+field_changed = Signal(name='field_changed')
+fields_changed = Signal(name='fields_changed')
+m2m_changed = Signal(name='m2m_changed')
+post_delete = Signal(name='post_delete')
+pre_delete = Signal(name='pre_delete')
 
 
 def any_fields_changed_signal(fields, **kwargs):
     fields = ensure_iterable(fields)
-    temp_signal = Signal()
+    temp_signal = Signal(add_to_registry=False)
 
     def field_receiver(instance, sender, signal, **kw):
         changed_fields = [change.field for change in kw['changes']]
@@ -28,7 +31,7 @@ def any_fields_changed_signal(fields, **kwargs):
 
 
 def field_changed_signal(field, **kwargs):
-    temp_signal = Signal()
+    temp_signal = Signal(add_to_registry=False)
 
     def field_receiver(instance, sender, signal, **kw):
         if kw['change'].field == field:

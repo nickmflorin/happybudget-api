@@ -1,18 +1,21 @@
 import pytest
 
+from greenbudget.app import signals
+
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_get_budget_account_subaccount_groups(api_client, user,
         create_budget_subaccount, create_budget_account, create_budget,
         create_budget_subaccount_group):
-    budget = create_budget()
-    account = create_budget_account(budget=budget)
-    group = create_budget_subaccount_group(parent=account)
-    subaccount = create_budget_subaccount(
-        parent=account,
-        budget=budget,
-        group=group
-    )
+    with signals.disable():
+        budget = create_budget()
+        account = create_budget_account(budget=budget)
+        group = create_budget_subaccount_group(parent=account)
+        subaccount = create_budget_subaccount(
+            parent=account,
+            budget=budget,
+            group=group
+        )
     api_client.force_login(user)
     response = api_client.get("/v1/accounts/%s/groups/" % account.pk)
     assert response.status_code == 200
@@ -36,14 +39,15 @@ def test_get_budget_account_subaccount_groups(api_client, user,
 def test_get_template_account_subaccount_groups(api_client, user,
         create_template_subaccount, create_template_account, create_template,
         create_template_subaccount_group):
-    template = create_template()
-    account = create_template_account(budget=template)
-    group = create_template_subaccount_group(parent=account)
-    subaccount = create_template_subaccount(
-        parent=account,
-        budget=template,
-        group=group
-    )
+    with signals.disable():
+        template = create_template()
+        account = create_template_account(budget=template)
+        group = create_template_subaccount_group(parent=account)
+        subaccount = create_template_subaccount(
+            parent=account,
+            budget=template,
+            group=group
+        )
     api_client.force_login(user)
     response = api_client.get("/v1/accounts/%s/groups/" % account.pk)
     assert response.status_code == 200
@@ -65,9 +69,10 @@ def test_get_template_account_subaccount_groups(api_client, user,
 def test_create_budget_account_subaccount_group(api_client, user,
         create_budget_subaccount, create_budget_account, create_budget,
         models):
-    budget = create_budget()
-    account = create_budget_account(budget=budget)
-    subaccount = create_budget_subaccount(parent=account, budget=budget)
+    with signals.disable():
+        budget = create_budget()
+        account = create_budget_account(budget=budget)
+        subaccount = create_budget_subaccount(parent=account, budget=budget)
 
     api_client.force_login(user)
     response = api_client.post("/v1/accounts/%s/groups/" % account.pk, data={
@@ -103,9 +108,10 @@ def test_create_budget_account_subaccount_group(api_client, user,
 def test_create_template_account_subaccount_group(api_client, user,
         create_template_subaccount, create_template_account, create_template,
         models):
-    template = create_template()
-    account = create_template_account(budget=template)
-    subaccount = create_template_subaccount(parent=account, budget=template)
+    with signals.disable():
+        template = create_template()
+        account = create_template_account(budget=template)
+        subaccount = create_template_subaccount(parent=account, budget=template)
 
     api_client.force_login(user)
     response = api_client.post("/v1/accounts/%s/groups/" % account.pk, data={
@@ -139,13 +145,15 @@ def test_create_template_account_subaccount_group(api_client, user,
 @pytest.mark.freeze_time('2020-01-01')
 def test_create_budget_account_subaccount_group_invalid_child(api_client, user,
         create_budget_subaccount, create_budget_account, create_budget):
-    budget = create_budget()
-    # We are trying to create the grouping under `account` but
-    # including children that belong to `another_account`, which should
-    # trigger a 400 response.
-    account = create_budget_account(budget=budget)
-    another_account = create_budget_account(budget=budget)
-    subaccount = create_budget_subaccount(parent=another_account, budget=budget)
+    with signals.disable():
+        budget = create_budget()
+        # We are trying to create the grouping under `account` but
+        # including children that belong to `another_account`, which should
+        # trigger a 400 response.
+        account = create_budget_account(budget=budget)
+        another_account = create_budget_account(budget=budget)
+        subaccount = create_budget_subaccount(
+            parent=another_account, budget=budget)
 
     api_client.force_login(user)
     response = api_client.post("/v1/accounts/%s/groups/" % account.pk, data={
@@ -160,16 +168,17 @@ def test_create_budget_account_subaccount_group_invalid_child(api_client, user,
 def test_create_template_account_subaccount_group_invalid_child(api_client,
         user, create_template_subaccount, create_template_account,
         create_template):
-    template = create_template()
-    # We are trying to create the grouping under `account` but
-    # including children that belong to `another_account`, which should
-    # trigger a 400 response.
-    account = create_template_account(budget=template)
-    another_account = create_template_account(budget=template)
-    subaccount = create_template_subaccount(
-        parent=another_account,
-        budget=template
-    )
+    with signals.disable():
+        template = create_template()
+        # We are trying to create the grouping under `account` but
+        # including children that belong to `another_account`, which should
+        # trigger a 400 response.
+        account = create_template_account(budget=template)
+        another_account = create_template_account(budget=template)
+        subaccount = create_template_subaccount(
+            parent=another_account,
+            budget=template
+        )
     api_client.force_login(user)
     response = api_client.post("/v1/accounts/%s/groups/" % account.pk, data={
         'name': 'Group Name',

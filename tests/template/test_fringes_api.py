@@ -1,15 +1,18 @@
 import pytest
 
+from greenbudget.app import signals
+
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_get_template_fringes(api_client, user, create_template, create_fringe,
         models):
+    with signals.disable():
+        template = create_template()
+        fringes = [
+            create_fringe(budget=template),
+            create_fringe(budget=template)
+        ]
     api_client.force_login(user)
-    template = create_template()
-    fringes = [
-        create_fringe(budget=template),
-        create_fringe(budget=template)
-    ]
     response = api_client.get("/v1/templates/%s/fringes/" % template.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
@@ -88,27 +91,57 @@ def test_create_template_fringe(api_client, user, create_template, models):
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_bulk_create_template_fringes(api_client, user, create_template,
-        models):
-    api_client.force_login(user)
+def test_bulk_create_template_fringes(api_client, user, create_template, models,
+        create_template_account, create_template_subaccount):
     template = create_template()
+    accounts = [
+        create_template_account(budget=template),
+        create_template_account(budget=template)
+    ]
+    # Do not disable the signals, because disabling the signals will prevent
+    # the metrics on the SubAccount(s) (and thus the Account(s) and Template)
+    # from being calculated.
+    create_template_subaccount(
+        budget=template,
+        parent=accounts[0],
+        quantity=1,
+        rate=100,
+        multiplier=1
+    )
+    create_template_subaccount(
+        budget=template,
+        parent=accounts[1],
+        estimated=100,
+        quantity=1,
+        rate=100,
+        multiplier=1
+    )
+
+    api_client.force_login(user)
     response = api_client.patch(
         "/v1/templates/%s/bulk-create-fringes/" % template.pk,
         format='json',
-        data={
-            'data': [
-                {
-                    'name': 'fringe-a',
-                    'rate': 1.2,
-                },
-                {
-                    'name': 'fringe-b',
-                    'rate': 2.2,
-                }
-            ]
-        })
+        data={'data': [
+            {'name': 'fringe-a', 'rate': 1.2},
+            {'name': 'fringe-b', 'rate': 2.2}
+        ]})
     assert response.status_code == 201
 
+    # The children in the response will be the created Fringes.
+    assert len(response.json()['children']) == 2
+    assert response.json()['children'][0]['name'] == 'fringe-a'
+    assert response.json()['children'][0]['rate'] == 1.2
+    assert response.json()['children'][1]['name'] == 'fringe-b'
+    assert response.json()['children'][1]['rate'] == 2.2
+
+    # The data in the response refers to base the entity we are updating, A.K.A.
+    # the Template.
+    assert response.json()['data']['id'] == template.pk
+    # The Fringe(s) should not have an affect on the calculated value of the
+    # Template because they have not yet been tied to a specific SubAccount.
+    assert response.json()['data']['estimated'] == 200.0
+
+    # Make sure the actual Fringe(s) were created in the database.
     fringes = models.Fringe.objects.all()
     assert len(fringes) == 2
     assert fringes[0].name == "fringe-a"
@@ -118,55 +151,167 @@ def test_bulk_create_template_fringes(api_client, user, create_template,
     assert fringes[1].rate == 2.2
     assert fringes[1].budget == template
 
-    assert response.json()['data'][0]['name'] == 'fringe-a'
-    assert response.json()['data'][0]['rate'] == 1.2
-    assert response.json()['data'][1]['name'] == 'fringe-b'
-    assert response.json()['data'][1]['rate'] == 2.2
+    # The Fringe(s) should not have an affect on the calculated value of the
+    # Template because they have not yet been tied to a specific SubAccount.
+    template.refresh_from_db()
+    assert template.estimated == 200.0
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_bulk_update_template_fringes(api_client, user, create_template,
-        create_fringe):
-    api_client.force_login(user)
+        create_fringe, create_template_account, create_template_subaccount):
     template = create_template()
-    fringes = [
-        create_fringe(budget=template),
-        create_fringe(budget=template)
+    accounts = [
+        create_template_account(budget=template),
+        create_template_account(budget=template)
     ]
+    fringes = [
+        create_fringe(budget=template, rate=0.5),
+        create_fringe(budget=template, rate=0.2)
+    ]
+    # Do not disable the signals, because disabling the signals will prevent
+    # the metrics on the SubAccount(s) (and thus the Account(s) and Template)
+    # from being calculated.
+    subaccounts = [
+        create_template_subaccount(
+            budget=template,
+            parent=accounts[0],
+            quantity=1,
+            rate=100,
+            multiplier=1,
+            fringes=fringes
+        ),
+        create_template_subaccount(
+            budget=template,
+            parent=accounts[1],
+            quantity=2,
+            rate=50,
+            multiplier=2,
+            fringes=fringes
+        )
+    ]
+    subaccounts[0].refresh_from_db()
+    assert subaccounts[0].estimated == 170.0
+    subaccounts[1].refresh_from_db()
+    assert subaccounts[1].estimated == 340.0
+
+    accounts[0].refresh_from_db()
+    assert accounts[0].estimated == 170.0
+    accounts[1].refresh_from_db()
+    assert accounts[1].estimated == 340.0
+
+    template.refresh_from_db()
+    assert template.estimated == 510.0
+
+    api_client.force_login(user)
     response = api_client.patch(
         "/v1/templates/%s/bulk-update-fringes/" % template.pk,
         format='json',
-        data={
-            'data': [
-                {
-                    'id': fringes[0].pk,
-                    'name': 'New Name 1',
-                },
-                {
-                    'id': fringes[1].pk,
-                    'name': 'New Name 2',
-                }
-            ]
-        })
+        data={'data': [
+            {'id': fringes[0].pk, 'rate': 0.7},
+            {'id': fringes[1].pk, 'rate': 0.6}
+        ]})
     assert response.status_code == 200
 
+    # The data in the response refers to base the entity we are updating, A.K.A.
+    # the Template.
+    assert response.json()['data']['id'] == template.pk
+    assert response.json()['data']['estimated'] == 690.0
+
+    # Make sure the actual Fringe(s) were updated in the database.
     fringes[0].refresh_from_db()
-    assert fringes[0].name == "New Name 1"
+    assert fringes[0].rate == 0.7
     fringes[1].refresh_from_db()
-    assert fringes[1].name == "New Name 2"
+    assert fringes[1].rate == 0.6
+
+    # Make sure the actual SubAccount(s) were updated in the database.
+    subaccounts[0].refresh_from_db()
+    assert subaccounts[0].estimated == 230.0
+    subaccounts[1].refresh_from_db()
+    assert subaccounts[1].estimated == 460.0
+
+    # Make sure the actual Account(s) were updated in the database.
+    accounts[0].refresh_from_db()
+    assert accounts[0].estimated == 230.0
+    accounts[1].refresh_from_db()
+    assert accounts[1].estimated == 460.0
+
+    # Make sure the Template was updated in the database.
+    template.refresh_from_db()
+    assert template.estimated == 690.0
 
 
 def test_bulk_delete_fringes(api_client, user, create_template, create_fringe,
-        models):
+        models, create_template_account, create_template_subaccount):
     template = create_template()
-    fringes = [
-        create_fringe(budget=template),
-        create_fringe(budget=template)
+    accounts = [
+        create_template_account(budget=template),
+        create_template_account(budget=template)
     ]
+    fringes = [
+        create_fringe(budget=template, rate=0.5),
+        create_fringe(budget=template, rate=0.2)
+    ]
+    # Do not disable the signals, because disabling the signals will prevent
+    # the metrics on the SubAccount(s) (and thus the Account(s) and Template)
+    # from being calculated.
+    subaccounts = [
+        create_template_subaccount(
+            budget=template,
+            parent=accounts[0],
+            quantity=1,
+            rate=100,
+            multiplier=1,
+            fringes=fringes
+        ),
+        create_template_subaccount(
+            budget=template,
+            parent=accounts[1],
+            quantity=2,
+            rate=50,
+            multiplier=2,
+            fringes=fringes
+        )
+    ]
+    subaccounts[0].refresh_from_db()
+    assert subaccounts[0].estimated == 170.0
+    subaccounts[1].refresh_from_db()
+    assert subaccounts[1].estimated == 340.0
+
+    accounts[0].refresh_from_db()
+    assert accounts[0].estimated == 170.0
+    accounts[1].refresh_from_db()
+    assert accounts[1].estimated == 340.0
+
+    template.refresh_from_db()
+    assert template.estimated == 510.0
+
     api_client.force_login(user)
     response = api_client.patch(
         "/v1/templates/%s/bulk-delete-fringes/" % template.pk, data={
             'ids': [f.pk for f in fringes]
         })
     assert response.status_code == 200
+
+    # Make sure the Fringe(s) were deleted in the database.
     assert models.Fringe.objects.count() == 0
+
+    # The data in the response refers to base the entity we are updating, A.K.A.
+    # the Template.
+    assert response.json()['data']['id'] == template.pk
+    assert response.json()['data']['estimated'] == 300.0
+
+    # Make sure the actual SubAccount(s) were updated in the database.
+    subaccounts[0].refresh_from_db()
+    assert subaccounts[0].estimated == 100.0
+    subaccounts[1].refresh_from_db()
+    assert subaccounts[1].estimated == 200.0
+
+    # Make sure the actual Account(s) were updated in the database.
+    accounts[0].refresh_from_db()
+    assert accounts[0].estimated == 100.0
+    accounts[1].refresh_from_db()
+    assert accounts[1].estimated == 200.0
+
+    # Make sure the Template was updated in the database.
+    template.refresh_from_db()
+    assert template.estimated == 300.0

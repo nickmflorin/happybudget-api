@@ -9,7 +9,7 @@ from greenbudget.lib.utils.decorators import optional_parameter_decorator
 
 from .signals import (
     post_create, any_fields_changed_signal, field_changed_signal,
-    post_save)
+    post_save, m2m_changed, post_delete, pre_delete)
 
 
 logger = logging.getLogger('signals')
@@ -92,3 +92,18 @@ def handle_universal_post_save(instance, sender, signal, **kwargs):
         if kwargs['created'] is True:
             post_create.send(sender, instance=instance, **kwargs)
         post_save.send(sender, instance=instance, **kwargs)
+
+
+@dispatch.receiver(models.signals.m2m_changed)
+def handle_universal_m2m_changed(signal, **kwargs):
+    m2m_changed.send(**kwargs)
+
+
+@dispatch.receiver(models.signals.post_delete)
+def handle_universal_post_delete(signal, **kwargs):
+    post_delete.send(**kwargs)
+
+
+@dispatch.receiver(models.signals.pre_delete)
+def handle_universal_pre_delete(signal, **kwargs):
+    pre_delete.send(**kwargs)

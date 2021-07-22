@@ -2,11 +2,13 @@ import pytest
 
 from greenbudget.lib.utils.dateutils import api_datetime_string
 
+from greenbudget.app import signals
+
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_get_budgets(api_client, user, create_budget):
-    api_client.force_login(user)
     budgets = [create_budget(), create_budget()]
+    api_client.force_login(user)
     response = api_client.get("/v1/budgets/")
     assert response.status_code == 200
     assert response.json()['count'] == 2
@@ -34,8 +36,8 @@ def test_get_budgets(api_client, user, create_budget):
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_get_budget(api_client, user, create_budget, models):
-    api_client.force_login(user)
     budget = create_budget()
+    api_client.force_login(user)
     response = api_client.get("/v1/budgets/%s/" % budget.pk)
     assert response.status_code == 200
     assert response.json() == {
@@ -219,11 +221,12 @@ def test_delete_budget(api_client, user, create_budget, models):
 
 def test_get_budget_subaccounts(api_client, user, create_budget,
         create_budget_account, create_budget_subaccount):
-    budget = create_budget()
-    account = create_budget_account(budget=budget)
-    sub = create_budget_subaccount(
-        budget=budget, parent=account, identifier="Jack")
-    create_budget_subaccount(budget=budget, parent=account, identifier="Bob")
+    with signals.disable():
+        budget = create_budget()
+        account = create_budget_account(budget=budget)
+        sub = create_budget_subaccount(
+            budget=budget, parent=account, identifier="Jack")
+        create_budget_subaccount(budget=budget, parent=account, identifier="Bob")
     api_client.force_login(user)
     response = api_client.get(
         "/v1/budgets/%s/subaccounts/?search=%s"
@@ -237,132 +240,3 @@ def test_get_budget_subaccounts(api_client, user, create_budget,
         'description': sub.description,
         'type': 'subaccount',
     }]
-
-
-@pytest.mark.freeze_time('2020-01-01')
-def test_bulk_update_budget_accounts(api_client, user, create_budget,
-        create_budget_account):
-    api_client.force_login(user)
-    budget = create_budget()
-    accounts = [
-        create_budget_account(budget=budget),
-        create_budget_account(budget=budget)
-    ]
-    response = api_client.patch(
-        "/v1/budgets/%s/bulk-update-accounts/" % budget.pk,
-        format='json',
-        data={
-            'data': [
-                {
-                    'id': accounts[0].pk,
-                    'description': 'New Description 1',
-                },
-                {
-                    'id': accounts[1].pk,
-                    'description': 'New Description 2',
-                }
-            ]
-        })
-    assert response.status_code == 200
-
-    accounts[0].refresh_from_db()
-    assert accounts[0].description == "New Description 1"
-    accounts[1].refresh_from_db()
-    assert accounts[1].description == "New Description 2"
-
-
-@pytest.mark.freeze_time('2020-01-01')
-def test_bulk_update_budget_accounts_outside_budget(api_client, user,
-        create_budget, create_budget_account):
-    api_client.force_login(user)
-    budget = create_budget()
-    another_budget = create_budget()
-    accounts = [
-        create_budget_account(budget=budget),
-        create_budget_account(budget=another_budget)
-    ]
-    response = api_client.patch(
-        "/v1/budgets/%s/bulk-update-accounts/" % budget.pk,
-        format='json',
-        data={
-            'data': [
-                {
-                    'id': accounts[0].pk,
-                    'description': 'New Description 1',
-                },
-                {
-                    'id': accounts[1].pk,
-                    'description': 'New Description 2',
-                }
-            ]
-        })
-    assert response.status_code == 400
-
-
-@pytest.mark.freeze_time('2020-01-01')
-def test_bulk_create_budget_accounts(api_client, user, create_budget, models):
-    api_client.force_login(user)
-    budget = create_budget()
-    response = api_client.patch(
-        "/v1/budgets/%s/bulk-create-accounts/" % budget.pk,
-        format='json',
-        data={
-            'data': [
-                {
-                    'identifier': 'account-a',
-                    'description': 'New Description 1',
-                },
-                {
-                    'identifier': 'account-b',
-                    'description': 'New Description 2',
-                }
-            ]
-        })
-    assert response.status_code == 201
-
-    accounts = models.Account.objects.all()
-    assert len(accounts) == 2
-    assert accounts[0].identifier == "account-a"
-    assert accounts[0].description == "New Description 1"
-    assert accounts[0].budget == budget
-    assert accounts[1].description == "New Description 2"
-    assert accounts[1].identifier == "account-b"
-    assert accounts[1].budget == budget
-
-    assert response.json()['data'][0]['identifier'] == 'account-a'
-    assert response.json()['data'][0]['description'] == 'New Description 1'
-    assert response.json()['data'][1]['identifier'] == 'account-b'
-    assert response.json()['data'][1]['description'] == 'New Description 2'
-
-
-def test_bulk_delete_budget_accounts(api_client, user, create_budget,
-        create_budget_account, models):
-    budget = create_budget()
-    accounts = [
-        create_budget_account(budget=budget),
-        create_budget_account(budget=budget)
-    ]
-    api_client.force_login(user)
-    response = api_client.patch(
-        "/v1/budgets/%s/bulk-delete-accounts/" % budget.pk, data={
-            'ids': [a.pk for a in accounts]
-        })
-    assert response.status_code == 200
-    assert models.BudgetAccount.objects.count() == 0
-
-
-@pytest.mark.freeze_time('2020-01-01')
-def test_bulk_create_budget_accounts_count(api_client, user, create_budget,
-        models):
-    api_client.force_login(user)
-    budget = create_budget()
-    response = api_client.patch(
-        "/v1/budgets/%s/bulk-create-accounts/" % budget.pk,
-        format='json',
-        data={'count': 2}
-    )
-    assert response.status_code == 201
-
-    accounts = models.Account.objects.all()
-    assert len(accounts) == 2
-    assert len(response.json()['data']) == 2

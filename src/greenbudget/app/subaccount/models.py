@@ -116,6 +116,13 @@ class SubAccount(PolymorphicModel):
             parent = parent.parent
         return parent
 
+    @property
+    def unfringed_value(self):
+        multiplier = self.multiplier or 1.0
+        if self.quantity is not None and self.rate is not None:
+            return float(self.quantity) * float(self.rate) * float(multiplier)
+        return 0.0
+
     def save(self, *args, **kwargs):
         # TODO: For whatever reason, this validation does not seem to work when
         # updating a specific Group with { children: [] } via the API.  The

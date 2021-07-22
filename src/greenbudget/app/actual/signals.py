@@ -1,5 +1,4 @@
 from django import dispatch
-from django.db import models
 
 from greenbudget.app import signals
 from greenbudget.app.subaccount.models import BudgetSubAccount
@@ -9,19 +8,22 @@ from .models import Actual
 
 
 @dispatch.receiver(signals.post_create, sender=Actual)
-@dispatch.receiver(models.signals.post_delete, sender=Actual)
-def actual_created_or_deleted(**kwargs):
-    try:
-        subaccount = kwargs['instance'].subaccount
-    except BudgetSubAccount.DoesNotExist:
-        # This can happen when this delete is triggered from the deletion of
-        # a BudgetSubAccount - the BudgetSubAccount will be deleted, and the
-        # on_delete=models.CASCADE will trigger a delete of the Actual - but
-        # the BudgetSubAccount associated with the Actual is already gone.
-        pass
-    else:
-        if subaccount is not None:
-            actualize_subaccount(subaccount)
+def actual_created(instance, **kwargs):
+    if instance.subaccount is not None:
+        actualize_subaccount(instance.subaccount)
+
+
+@dispatch.receiver(signals.pre_delete, sender=Actual)
+def actual_deleted(instance, **kwargs):
+    # Note that we have to use the pre_delete signal because we still need to
+    # determine which SubAccount(s) have to be reactualized.  We also have to
+    # explicitly define the Actuals(s) for the reactualization, so it knows to
+    # exclude the Actual that is about to be deleted.
+    if instance.subaccount is not None:
+        actualize_subaccount(
+            instance.subaccount,
+            actuals=instance.subaccount.actuals.exclude(pk=instance.pk)
+        )
 
 
 @signals.any_fields_changed_receiver(

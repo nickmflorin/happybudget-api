@@ -150,10 +150,12 @@ class GenericTemplateViewSet(viewsets.GenericViewSet):
 @register_all_bulk_operations(
     base_cls=Template,
     filter_qs=lambda context: models.Q(budget=context.instance),
-    child_context=lambda context: {
-        'budget': context.instance,
-        'budget_context': True
-    },
+    child_context_indicator='budget_context',
+    get_budget=lambda instance: instance,
+    # Since the Template is the entity being updated, it will already be
+    # included in the response by default.  We do not want to double include it.
+    include_budget_in_response=False,
+    budget_serializer=TemplateSerializer,
     perform_update=lambda serializer, context: serializer.save(  # noqa
         updated_by=context.request.user
     ),

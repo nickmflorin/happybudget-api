@@ -34,7 +34,7 @@ def estimate_account(instance):
         model_cls = TemplateSubAccount
 
     subaccounts = model_cls.objects.filter(
-        content_type=ContentType.objects.get_for_model(BudgetAccount),
+        content_type=ContentType.objects.get_for_model(type(instance)),
         object_id=instance.pk
     ).only('estimated')
 
