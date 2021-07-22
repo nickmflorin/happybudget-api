@@ -10,7 +10,7 @@ from .utils import get_user_from_social_token, upload_user_image_to
 def upload_to(instance, filename):
     return upload_user_image_to(
         user=instance,
-        filename=f"profile_image_{instance.pk}",
+        filename=filename,
         original_filename=filename,
         directory="profile"
     )

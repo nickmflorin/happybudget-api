@@ -17,6 +17,8 @@ APP_V1_URL = os.path.join(APP_URL, "v1")
 FRONTEND_URL = "127.0.0.1:3000"
 COMPRESS_URL = os.path.join(APP_URL, "media/")
 
+AWS_STORAGE = True
+
 EMAIL_HOST = 'localhost'
 
 SESSION_COOKIE_SECURE = False

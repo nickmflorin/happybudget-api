@@ -13,7 +13,7 @@ class BaseStorageMixin:
 
 
 class S3StorageBase(S3Boto3Storage, BaseStorageMixin):
-    bucket_name = 'greenbudget-s3-main'
+    bucket_name = settings.AWS_STORAGE_BUCKET_NAME
 
     def __init__(self, *args, **kwargs):
         self._subdirectory = kwargs.pop('sub_directory', None)

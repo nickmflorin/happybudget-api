@@ -7,15 +7,19 @@ from django.utils import timezone
 
 from greenbudget.app import signals
 from greenbudget.app.comment.models import Comment
+from greenbudget.app.user.utils import upload_user_image_to
 
 from .duplication import BudgetDuplicator
 from .managers import BudgetManager, BaseBudgetManager
 
 
 def upload_to(instance, filename):
-    ext = filename.split('.')[-1]
-    filename = f"{instance.type}_image_{instance.pk}.{ext}"
-    return f'users/{instance.created_by.email.lower()}/{instance.type}s/{filename}'  # noqa
+    return upload_user_image_to(
+        user=instance.created_by,
+        filename=filename,
+        original_filename=filename,
+        directory="budgets"
+    )
 
 
 class BaseBudget(PolymorphicModel):
