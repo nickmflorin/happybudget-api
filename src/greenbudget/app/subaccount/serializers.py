@@ -185,6 +185,7 @@ class TemplateSubAccountDetailSerializer(TemplateSubAccountSerializer):
 
 class SubAccountPdfSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
+    type = serializers.CharField(read_only=True)
     identifier = serializers.CharField(read_only=True)
     description = serializers.CharField(read_only=True)
     quantity = serializers.IntegerField(read_only=True)
@@ -209,7 +210,7 @@ class SubAccountPdfSerializer(serializers.ModelSerializer):
         model = BudgetSubAccount
         fields = ('id', 'identifier', 'description', 'quantity', 'rate',
             'multiplier', 'estimated', 'unit', 'subaccounts', 'contact',
-            'groups')
+            'groups', 'type')
         read_only_fields = fields
 
     def get_subaccounts(self, instance):

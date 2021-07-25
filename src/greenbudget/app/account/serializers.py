@@ -101,6 +101,7 @@ class TemplateAccountDetailSerializer(TemplateAccountSerializer):
 
 class AccountPdfSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
+    type = serializers.CharField(read_only=True)
     identifier = serializers.CharField(read_only=True)
     description = serializers.CharField(read_only=True)
     actual = serializers.FloatField(read_only=True)
@@ -112,5 +113,5 @@ class AccountPdfSerializer(serializers.ModelSerializer):
     class Meta:
         model = BudgetAccount
         fields = ('id', 'identifier', 'description', 'actual', 'variance',
-            'estimated', 'subaccounts', 'groups')
+            'estimated', 'subaccounts', 'groups', 'type')
         read_only_fields = fields
