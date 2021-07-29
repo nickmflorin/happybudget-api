@@ -1,4 +1,5 @@
 import base64
+import binascii
 import imghdr
 import uuid
 
@@ -74,6 +75,15 @@ class ImageFieldFileSerializer(serializers.Serializer):
         else:
             extension = imghdr.what(instance.path)
         return "jpg" if extension == "jpeg" else extension
+
+
+def is_base64_encoded_string(data):
+    if 'data:' in data and ';base64,' in data:
+        _, data = data.split(';base64,')
+    try:
+        return base64.b64encode(base64.b64decode(data)) == data
+    except binascii.Error:
+        return False
 
 
 class Base64ImageField(serializers.ImageField):

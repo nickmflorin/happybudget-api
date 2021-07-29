@@ -4,8 +4,33 @@ from polymorphic.query import PolymorphicQuerySet
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
-from django.db import models, connections, connection, transaction
+from django.db import (
+    models, connections, connection, transaction, IntegrityError)
 from django.utils.functional import partition
+
+
+class InvalidModelFieldValueError(IntegrityError):
+    def __init__(self, model, field, **kwargs):
+        self._model = model.__name__ if isinstance(model, type) \
+            else model.__class__.__name__
+        self._field = field
+        if 'value' in kwargs:
+            self._value = kwargs['value']
+        else:
+            self._value = getattr(model, field) \
+                if not isinstance(model, type) else None
+
+    def __str__(self):
+        if self._value is not None:
+            return "Invalid value `{value}` for field {field} on model {model}.".format(  # noqa
+                value=self._value,
+                field=self._field,
+                model=self._model
+            )
+        return "Invalid value for field {field} on model {model}.".format(
+            field=self._field,
+            model=self._model
+        )
 
 
 def reset_id_sequence(model_cls):
@@ -178,9 +203,8 @@ class BulkCreatePolymorphicQuerySet(PolymorphicQuerySet):
         # :obj:`django.db.models.Manager` that can be used to create objects
         # directly.
         assert hasattr(self.polymorphic_base, "non_polymorphic") \
-            and isinstance(
-                getattr(self.polymorphic_base, "non_polymorphic"),
-                models.Manager), \
+            and isinstance(getattr(
+                self.polymorphic_base, "non_polymorphic"), models.Manager), \
             "The polymorphic base model %s must define a " \
             "`non_polymorphic` manager." % self.polymorphic_base.__name__
 

@@ -16,14 +16,20 @@ logger = logging.getLogger('signals')
 
 
 FieldChange = collections.namedtuple(
-    'FieldChange', ['field', 'value', 'previous_value'])
+    'FieldChange', ['field', 'value', 'previous_value', 'field_instance'])
 
 
-class FieldChanges:
+class FieldChanges(collections.Sequence):
     def __init__(self, changes):
         self.changes = changes
         assert len([change.field for change in changes]) \
             == len(set([change.field for change in changes]))
+
+    def __len__(self):
+        return len(self.changes)
+
+    def __getitem__(self, k):
+        return self.changes[k]
 
     def __iter__(self):
         for change in self.changes:
@@ -44,7 +50,7 @@ class ModelException(Exception):
         self.model = model if isinstance(model, type) else model.__class__
 
     def __str__(self):
-        return self.message.format(model=self.model.__name__)
+        return self.data.format(model=self.model.__name__)
 
 
 class ModelFieldException(ModelException):
@@ -53,23 +59,28 @@ class ModelFieldException(ModelException):
         self._field = field
 
     def __str__(self):
-        return self.message.format(field=self._field, model=self._model_name)
+        return self.data.format(field=self._field, model=self.model.__name__)
 
 
 class InstanceNotSavedError(ModelException):
-    message = "The {model} instance has not yet been saved."
+    data = "The {model} instance has not yet been saved."
 
 
 class FieldDoesNotExistError(ModelFieldException):
-    message = "Field {field} does not exist on model {model}."
+    data = "Field {field} does not exist on model {model}."
 
 
 class FieldCannotBeTrackedError(ModelFieldException):
-    message = "Field {field} cannot be tracked for model {model}."
+    data = "Field {field} cannot be tracked for model {model}."
 
 
 class FieldNotTrackedError(ModelFieldException):
-    message = "Field {field} is not tracked for model {model}."
+    data = "Field {field} is not tracked for model {model}."
+
+
+DISALLOWED_ATTRIBUTES = [('editable', False), ('primary_key', True)]
+DISALLOWED_FIELDS = [models.fields.AutoField, models.ManyToManyField]
+FIELDS_NOT_STORED_IN_MODEL_MEMORY = [models.ForeignKey, models.OneToOneField]
 
 
 class model:
@@ -138,18 +149,25 @@ class model:
         # the action when the request is not available.
         self._user_field = user_field
 
-    def field_is_supported(self, field):
-        disallowed_attributes = [('editable', False), ('primary_key', True)]
-        disallowed_fields = [models.fields.AutoField]
+    def log_field_not_being_tracked(self, field_obj, model):
+        model = model if isinstance(model, type) else model.__class__
+        logger.warning(
+            "Not tracking field {field} for model {model} because it is not "
+            "supported.".format(field=field_obj.name, model=model)
+        )
 
-        for attr_set in disallowed_attributes:
+    def get_field_instance(self, cls, field_name):
+        try:
+            return cls._meta.get_field(field_name)
+        except django.core.exceptions.FieldDoesNotExist:
+            raise FieldDoesNotExistError(field_name, cls)
+
+    def field_is_supported(self, field):
+        for attr_set in DISALLOWED_ATTRIBUTES:
             if getattr(field, attr_set[0], None) is attr_set[1]:
                 return False
 
-        if type(field) in disallowed_fields:
-            return False
-
-        if type(field) is models.ManyToManyField:
+        if type(field) in DISALLOWED_FIELDS:
             return False
 
         elif type(field) in (
@@ -161,21 +179,10 @@ class model:
             return True
         return True
 
-    def log_field_not_being_tracked(self, field_obj, model):
-        model = model if isinstance(model, type) else model.__class__
-        logger.warning(
-            "Not tracking field {field} for model {model} because it is not "
-            "supported.".format(field=field_obj.name, model=model)
-        )
-
     def validate_field(self, cls, field):
-        try:
-            cls._meta.get_field(field)
-        except django.core.exceptions.FieldDoesNotExist:
-            raise FieldDoesNotExistError(field, cls)
-        else:
-            if not self.field_is_supported(field):
-                raise FieldCannotBeTrackedError(field, cls)
+        field_instance = self.get_field_instance(cls, field)
+        if not self.field_is_supported(field_instance):
+            raise FieldCannotBeTrackedError(field, cls)
 
     def tracked_fields(self, cls):
         if self._no_field_tracking:
@@ -236,35 +243,88 @@ class model:
                 raise InstanceNotSavedError(instance)
             return instance.__data[field]
 
-        def field_has_changed(instance, field):
-            previous = previous_value(instance, field)
-            if previous != getattr(instance, field):
-                return True
-            return False
+        def field_has_changed(instance, k):
+            if field_stored_in_local_memory(k):
+                return previous_value(instance, k) != getattr(instance, k)
+            return previous_value(instance, k) != getattr(instance, '%s_id' % k)
 
         @property
         def changed_fields(instance):
             changed = {}
             for k in instance.__tracked_fields:
                 try:
-                    if previous_value(instance, k) != getattr(instance, k):
-                        changed[k] = previous_value(instance, k)
+                    did_change = field_has_changed(instance, k)
                 except InstanceNotSavedError:
                     return {}
+                else:
+                    if did_change:
+                        changed[k] = FieldChange(
+                            field=k,
+                            value=getattr(instance, k),
+                            previous_value=previous_value(instance, k)
+
+                        )
             return changed
+
+        def field_stored_in_local_memory(field):
+            if not isinstance(field, models.Field):
+                field = self.get_field_instance(cls, field)
+            return type(field) not in FIELDS_NOT_STORED_IN_MODEL_MEMORY
+
+        def store_field(instance, field_name):
+            """
+            Retrieves the field value from the model's local memory state,
+            without performing a DB query to obtain fields that represent
+            model relationships.
+
+            The model's local memory state is the data stored in the model's
+            `__dict__` attribute.
+
+            For fields like ForeignKey and OneToOneField, the full model is not
+            actually stored in the model's local memory.  This is because the
+            field is not populated in the model's local memory until it is
+            accessed, because it requires a database query.  Instead, the
+            PK of the associated field value is stored in the model's local
+            memory, suffixed with `_id`.
+
+            For instance, consider the following field:
+
+            class Model(models.Model):
+                parent = models.ForeignKey(...)
+
+            Looking at a Model instance, we have
+
+            model = Model.objects.first()
+            model.__dict__
+            >>> { parent_id: 1 }
+
+            The full `parent` model will not be loaded into memory until we
+            access `model.parent` - because it will only then perform a
+            database query.
+            """
+            # For non-Foreign Key type fields, the full field value
+            # will be stored in the model memory and thus be present
+            # in the model's __dict__ attribute.
+            if field_stored_in_local_memory(field_name):
+                # Note that the field may or may not be in the local model
+                # `__dict__` attribute yet.
+                if field_name in instance.__dict__:
+                    instance.__data[field_name] = getattr(instance, field_name)
+            # For Foreign Key type fields, the full field value will
+            # not be stored in the model memory.  Only the associated
+            # ID will be stored.
+            else:
+                # Note that the field may or may not be in the local model
+                # `__dict__` attribute yet.
+                if '%s_id' % field_name in instance.__dict__:
+                    instance.__data[field_name] = getattr(
+                        instance, '%s_id' % field_name)
 
         def store(instance):
             instance.__data = dict()
             if instance.pk:
                 for f in instance.__tracked_fields:
-                    # Only load the field into the store if it is already
-                    # loaded into memory.
-                    if f in instance.__dict__:
-                        instance.__data[f] = getattr(instance, f)
-                    # If the field is not already loaded into memory, it may
-                    # be a FK field - so we only track the associated ID.
-                    elif '%s_id' % f in instance.__dict__:
-                        instance.__data[f] = getattr(instance, '%s_id' % f)
+                    store_field(instance, f)
 
         def get_flag(instance, flag):
             if hasattr(instance, '_post_save_flags'):
@@ -302,6 +362,7 @@ class model:
                             field=k,
                             previous_value=instance.previous_value(k),
                             value=getattr(instance, k),
+                            field_instance=self.get_field_instance(cls, k)
                         )
                         changes.append(change)
                         field_changed.send(

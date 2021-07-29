@@ -14,6 +14,14 @@ from greenbudget.app.group.models import (
     TemplateAccountGroup,
     TemplateSubAccountGroup
 )
+from greenbudget.app.pdf.models import (
+    HeaderTemplate,
+    HeadingBlock,
+    ParagraphBlock,
+    TextFragment,
+    TextFragmentGroup,
+    ExportField
+)
 from greenbudget.app.subaccount.models import (
     BudgetSubAccount,
     TemplateSubAccount,
@@ -347,7 +355,6 @@ class ContactFactory(CustomModelFactory):
     first_name = factory.Faker('first_name')
     last_name = factory.Faker('last_name')
     email = factory.Faker('email')
-    user = factory.SubFactory(UserFactory)
     type = Contact.TYPES.vendor
     phone_number = 15555555555
     rate = 100
@@ -357,3 +364,57 @@ class ContactFactory(CustomModelFactory):
 
     class Meta:
         model = Contact
+
+
+class TextFragmentGroupFactory(CustomModelFactory):
+    """
+    A DjangoModelFactory to create instances of :obj:`TextFragmentGroup`.
+    """
+    class Meta:
+        model = TextFragmentGroup
+
+
+class TextFragmentFactory(CustomModelFactory):
+    """
+    A DjangoModelFactory to create instances of :obj:`TextFragment`.
+    """
+    text = factory.Faker('sentence')
+
+    class Meta:
+        model = TextFragment
+
+
+class HeadingBlockFactory(CustomModelFactory):
+    """
+    A DjangoModelFactory to create instances of :obj:`HeadingBlock`.
+    """
+    level = 2
+
+    class Meta:
+        model = HeadingBlock
+
+
+class ParagraphBlockFactory(CustomModelFactory):
+    """
+    A DjangoModelFactory to create instances of :obj:`ParagraphBlock`.
+    """
+    class Meta:
+        model = ParagraphBlock
+
+
+class ExportFieldFactory(CustomModelFactory):
+    """
+    A DjangoModelFactory to create instances of :obj:`ExportField`.
+    """
+    class Meta:
+        model = ExportField
+
+
+class HeaderTemplateFactory(CustomModelFactory):
+    """
+    A DjangoModelFactory to create instances of :obj:`HeaderTemplate`.
+    """
+    name = factory.Faker('name')
+
+    class Meta:
+        model = HeaderTemplate

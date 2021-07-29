@@ -10,6 +10,7 @@ urlpatterns = [
     path('contacts/', include('greenbudget.app.contact.urls')),
     path('fringes/', include('greenbudget.app.fringe.urls')),
     path('groups/', include('greenbudget.app.group.urls')),
+    path('pdf/', include('greenbudget.app.pdf.urls')),
     path('subaccounts/', include('greenbudget.app.subaccount.urls')),
     path('templates/', include('greenbudget.app.template.urls')),
     path('jwt/', include('greenbudget.app.jwt.urls')),
