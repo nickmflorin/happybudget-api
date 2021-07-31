@@ -212,19 +212,20 @@ def create_bulk_update_serializer(base_cls, child_cls, child_serializer_cls,
             return [(gp['instance'], gp['change']) for _, gp in grouped.items()]
 
         def update(self, instance, validated_data):
-            data = validated_data.pop('data')
-            with signals.bulk_context:
-                for child, change in data:
-                    # At this point, the change already represents the
-                    # validated data for that specific serializer.  So we do
-                    # not need to pass in the validated data on __init__
-                    # and rerun validation.
-                    serializer = child_serializer_cls(
-                        partial=True, context=self._child_context)
-                    serializer.update(child, {**validated_data, **change})
-            # We have to refresh the instance from the DB because of the changes
-            # that might have occurred due to the signals.
-            instance.refresh_from_db()
+            data = validated_data.pop('data', None)
+            if data is not None:
+                with signals.bulk_context:
+                    for child, change in data:
+                        # At this point, the change already represents the
+                        # validated data for that specific serializer.  So we do
+                        # not need to pass in the validated data on __init__
+                        # and rerun validation.
+                        serializer = child_serializer_cls(
+                            partial=True, context=self._child_context)
+                        serializer.update(child, {**validated_data, **change})
+                # We have to refresh the instance from the DB because of the
+                # changes that might have occurred due to the signals.
+                instance.refresh_from_db()
             return instance
 
     return BulkUpdateSerializer
