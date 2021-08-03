@@ -3,6 +3,8 @@ import imghdr
 import uuid
 
 from django.core.files.base import ContentFile
+from django.db.models.fields import files
+
 from rest_framework import serializers
 
 
@@ -51,12 +53,34 @@ class ModelChoiceField(serializers.ChoiceField):
         return value
 
 
+class ImageFieldFileSerializer(serializers.Serializer):
+    url = serializers.URLField(read_only=True)
+    size = serializers.IntegerField(read_only=True)
+    width = serializers.IntegerField(read_only=True)
+    height = serializers.IntegerField(read_only=True)
+    extension = serializers.SerializerMethodField()
+
+    def get_extension(self, instance):
+        extension = imghdr.what(instance.path)
+        return "jpg" if extension == "jpeg" else extension
+
+
 class Base64ImageField(serializers.ImageField):
     """
     A :obj:`rest_framework.serializers.ImageField` field that allows image
     uploads via raw POST data.  It uses base64 for encoding/decoding the
     contents of the file.
     """
+
+    def to_representation(self, instance):
+        if instance is not None:
+            try:
+                return ImageFieldFileSerializer(instance).data
+            except ValueError:
+                # This will happen if hte instance does not have a file
+                # associated with it.
+                return super().to_representation(instance)
+        return super().to_representation(instance)
 
     def to_internal_value(self, data):
         if isinstance(data, str):
