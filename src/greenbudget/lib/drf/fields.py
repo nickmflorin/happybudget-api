@@ -3,7 +3,6 @@ import imghdr
 import uuid
 
 from django.core.files.base import ContentFile
-from django.db.models.fields import files
 
 from rest_framework import serializers
 
