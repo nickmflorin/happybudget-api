@@ -118,7 +118,7 @@ class UserSerializer(ModelSerializer):
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
     timezone = serializers.CharField()
-    profile_image = Base64ImageField(required=False)
+    profile_image = Base64ImageField(required=False, allow_null=True)
     is_first_time = serializers.BooleanField(read_only=True)
 
     class Meta:
