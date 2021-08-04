@@ -9,7 +9,7 @@ from greenbudget.app.user.utils import upload_user_image_to
 def upload_to(instance, filename):
     return upload_user_image_to(
         user=instance.user,
-        filename=f"contact_image_{instance.pk}",
+        filename=filename,
         directory="contacts"
     )
 
