@@ -3,8 +3,10 @@ import imghdr
 import uuid
 
 from django.core.files.base import ContentFile
-
 from rest_framework import serializers
+
+from greenbudget.lib.django_utils.storages import (
+    using_s3_storage, get_image_filename_extension)
 
 
 def find_field_original_serializer(field):
@@ -60,7 +62,17 @@ class ImageFieldFileSerializer(serializers.Serializer):
     extension = serializers.SerializerMethodField()
 
     def get_extension(self, instance):
-        extension = imghdr.what(instance.path)
+        # Note that imghdr uses the local file system, so it will look at the
+        # file in the local file system.  This only works when we are in local
+        # development, because we are using
+        # django.core.files.storage.FileSystemStorage.  When we are are in
+        # a production/dev environment, and we are using
+        # storages.backends.s3boto3.S3Boto3Storage, we need to use an alternate
+        # method to find the extension.
+        if using_s3_storage():
+            extension = get_image_filename_extension(instance.name)
+        else:
+            extension = imghdr.what(instance.path)
         return "jpg" if extension == "jpeg" else extension
 
 

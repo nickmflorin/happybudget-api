@@ -1,7 +1,8 @@
 import os
+from storages.backends.s3boto3 import S3Boto3Storage
 
 from django.conf import settings
-from django.core.files.storage import FileSystemStorage
+from django.core.files.storage import FileSystemStorage, get_storage_class
 
 
 class LocalStorage(FileSystemStorage):
@@ -33,7 +34,8 @@ class UnsupportedImageExtension(ImageExtensionError):
 
 
 def using_s3_storage():
-    return settings.DEFAULT_FILE_STORAGE == 'storages.backends.s3boto3.S3Boto3Storage'  # noqa
+    storage_cls = get_storage_class()
+    return storage_cls is S3Boto3Storage
 
 
 def get_image_filename_extension(filename, strict=True):
