@@ -11,7 +11,7 @@ class TemplateSimpleSerializer(BaseBudgetSerializer):
     created_by = serializers.PrimaryKeyRelatedField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
-    image = Base64ImageField(required=False)
+    image = Base64ImageField(required=False, allow_null=True)
     hidden = serializers.BooleanField(read_only=True)
 
     class Meta:
