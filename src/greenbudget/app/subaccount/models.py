@@ -64,6 +64,18 @@ class SubAccount(PolymorphicModel):
         on_delete=models.CASCADE,
         related_name='subaccounts'
     )
+    updated_by = models.ForeignKey(
+        to='user.User',
+        related_name='updated_subaccounts',
+        on_delete=models.CASCADE,
+        editable=False
+    )
+    created_by = models.ForeignKey(
+        to='user.User',
+        related_name='created_subaccounts',
+        on_delete=models.CASCADE,
+        editable=False
+    )
     content_type = models.ForeignKey(
         to=ContentType,
         on_delete=models.CASCADE,
@@ -141,18 +153,6 @@ class SubAccount(PolymorphicModel):
     exclude_fields=['updated_by', 'created_by', 'estimated', 'actual']
 )
 class BudgetSubAccount(SubAccount):
-    updated_by = models.ForeignKey(
-        to='user.User',
-        related_name='updated_budget_subaccounts',
-        on_delete=models.CASCADE,
-        editable=False
-    )
-    created_by = models.ForeignKey(
-        to='user.User',
-        related_name='created_budget_subaccounts',
-        on_delete=models.CASCADE,
-        editable=False
-    )
     group = models.ForeignKey(
         to='group.BudgetSubAccountGroup',
         null=True,
@@ -211,18 +211,6 @@ class BudgetSubAccount(SubAccount):
     exclude_fields=['updated_by', 'created_by', 'estimated']
 )
 class TemplateSubAccount(SubAccount):
-    updated_by = models.ForeignKey(
-        to='user.User',
-        related_name='updated_template_subaccounts',
-        on_delete=models.CASCADE,
-        editable=False
-    )
-    created_by = models.ForeignKey(
-        to='user.User',
-        related_name='created_template_subaccounts',
-        on_delete=models.CASCADE,
-        editable=False
-    )
     group = models.ForeignKey(
         to='group.TemplateSubAccountGroup',
         null=True,

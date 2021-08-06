@@ -27,6 +27,18 @@ class Account(PolymorphicModel):
     )
     estimated = models.FloatField(default=0.0)
     subaccounts = GenericRelation(SubAccount)
+    updated_by = models.ForeignKey(
+        to='user.User',
+        related_name='updated_accounts',
+        on_delete=models.CASCADE,
+        editable=False,
+    )
+    created_by = models.ForeignKey(
+        to='user.User',
+        related_name='created_accounts',
+        on_delete=models.CASCADE,
+        editable=False,
+    )
 
     objects = AccountManager()
     non_polymorphic = models.Manager()
@@ -70,18 +82,6 @@ class Account(PolymorphicModel):
     exclude_fields=['updated_by', 'created_by', 'estimated', 'actual']
 )
 class BudgetAccount(Account):
-    updated_by = models.ForeignKey(
-        to='user.User',
-        related_name='updated_budget_accounts',
-        on_delete=models.CASCADE,
-        editable=False
-    )
-    created_by = models.ForeignKey(
-        to='user.User',
-        related_name='created_budget_accounts',
-        on_delete=models.CASCADE,
-        editable=False
-    )
     access = models.ManyToManyField(
         to='user.User',
         related_name='accessible_accounts'
@@ -120,18 +120,6 @@ class BudgetAccount(Account):
     exclude_fields=['updated_by', 'created_by', 'estimated']
 )
 class TemplateAccount(Account):
-    updated_by = models.ForeignKey(
-        to='user.User',
-        related_name='updated_template_accounts',
-        on_delete=models.CASCADE,
-        editable=False
-    )
-    created_by = models.ForeignKey(
-        to='user.User',
-        related_name='created_template_accounts',
-        on_delete=models.CASCADE,
-        editable=False
-    )
     group = models.ForeignKey(
         to='group.TemplateAccountGroup',
         null=True,
