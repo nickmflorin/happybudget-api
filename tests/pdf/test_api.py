@@ -322,3 +322,61 @@ def test_update_header_template(api_client, user, create_paragraph_block,
             },
         ]
     }
+
+
+def test_delete_header_template(api_client, user, create_paragraph_block,
+        create_heading_block, create_export_field, create_header_template,
+        create_text_fragment, models):
+    left_info_field = create_export_field()
+    paragraph_block = create_paragraph_block(field=left_info_field)
+    paragraph_block_data_elements = [
+        create_text_fragment(
+            parent=paragraph_block,
+            is_bold=True
+        ),
+        create_text_fragment(
+            parent=paragraph_block,
+            is_bold=True,
+        ),
+        create_text_fragment(
+            parent=paragraph_block,
+            is_italic=True
+        )
+    ]
+    heading_block = create_heading_block(field=left_info_field)
+    heading_block_data_elements = [
+        create_text_fragment(
+            parent=heading_block,
+            is_bold=True
+        ),
+        create_text_fragment(
+            parent=heading_block,
+            is_bold=True,
+        ),
+        create_text_fragment(
+            parent=heading_block,
+            is_italic=True
+        )
+    ]
+    template = create_header_template(left_info=left_info_field)
+
+    api_client.force_login(user)
+    response = api_client.delete("/v1/pdf/header-templates/%s/" % template.pk)
+
+    assert response.status_code == 204
+
+    # Make sure the old field and associated blocks are indeed deleted.
+    with pytest.raises(models.ExportField.DoesNotExist):
+        left_info_field.refresh_from_db()
+
+    with pytest.raises(models.HeadingBlock.DoesNotExist):
+        heading_block.refresh_from_db()
+
+    with pytest.raises(models.ParagraphBlock.DoesNotExist):
+        paragraph_block.refresh_from_db()
+
+    for fragment in paragraph_block_data_elements + heading_block_data_elements:
+        with pytest.raises(models.TextFragment.DoesNotExist):
+            fragment.refresh_from_db()
+
+    assert models.HeaderTemplate.objects.count() == 0

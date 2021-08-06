@@ -16,11 +16,11 @@ class HeaderTemplateViewSet(
     """
     ViewSet to handle requests to the following endpoints:
 
-    (1) GET /contacts/
-    (2) POST /contacts/
-    (3) GET /contacts/<pk>/
-    (4) PATCH /contacts/<pk>/
-    (5) DELETE /contacts/<pk>/
+    (1) GET /pdf/header-templates/
+    (2) POST /pdf/header-templates/
+    (3) GET /pdf/header-templates/<pk>/
+    (4) PATCH /pdf/header-templates/<pk>/
+    (5) DELETE /pdf/header-templates/<pk>/
     """
     lookup_field = 'pk'
     serializer_class = HeaderTemplateSerializer

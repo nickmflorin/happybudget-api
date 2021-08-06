@@ -205,6 +205,7 @@ class HeaderTemplate(models.Model):
         null=True,
         related_name='header_template_right_info'
     )
+    RICH_TEXT_FIELDS = ["header", "left_info", "right_info"]
 
     class Meta:
         verbose_name = "Header Template"
