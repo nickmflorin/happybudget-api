@@ -1,5 +1,10 @@
-from rest_framework import viewsets, mixins
+from rest_framework import viewsets, mixins, decorators, response, status
 
+from .bulk_serializers import (
+    create_bulk_delete_serializer,
+    create_bulk_update_serializer,
+    create_bulk_create_serializer
+)
 from .serializers import ContactSerializer
 
 
@@ -19,6 +24,9 @@ class ContactViewSet(
     (3) GET /contacts/<pk>/
     (4) PATCH /contacts/<pk>/
     (5) DELETE /contacts/<pk>/
+    (6) PATCH /contacts/bulk-delete/
+    (7) PATCH /contacts/bulk-update/
+    (8) PATCH /contacts/bulk-create/
     """
     lookup_field = 'pk'
     serializer_class = ContactSerializer
@@ -36,3 +44,29 @@ class ContactViewSet(
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+    @decorators.action(detail=False, url_path="bulk-delete", methods=["PATCH"])
+    def bulk_delete(self, request, *args, **kwargs):
+        serializer_cls = create_bulk_delete_serializer(user=request.user)
+        serializer = serializer_cls(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return response.Response(status=status.HTTP_204_NO_CONTENT)
+
+    @decorators.action(detail=False, url_path="bulk-update", methods=["PATCH"])
+    def bulk_update(self, request, *args, **kwargs):
+        serializer_cls = create_bulk_update_serializer(user=request.user)
+        serializer = serializer_cls(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return response.Response(status=status.HTTP_200_OK)
+
+    @decorators.action(detail=False, url_path="bulk-create", methods=["PATCH"])
+    def bulk_create(self, request, *args, **kwargs):
+        serializer_cls = create_bulk_create_serializer()
+        serializer = serializer_cls(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        children = serializer.save(user=request.user)
+        return response.Response({
+            'data': self.serializer_class(children, many=True).data
+        }, status=status.HTTP_201_CREATED)

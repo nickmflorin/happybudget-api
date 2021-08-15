@@ -198,10 +198,117 @@ def test_update_contact(api_client, user, create_contact, models):
     }
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_delete_contact(api_client, user, create_contact, models):
     contact = create_contact()
     api_client.force_login(user)
     response = api_client.delete("/v1/contacts/%s/" % contact.pk)
     assert response.status_code == 204
     assert models.Contact.objects.first() is None
+
+
+def test_bulk_delete_contacts(api_client, user, create_contact, models):
+    contacts = [create_contact(), create_contact()]
+    api_client.force_login(user)
+    response = api_client.patch("/v1/contacts/bulk-delete/", data={
+        'ids': [c.pk for c in contacts]
+    })
+    assert response.status_code == 204
+    assert models.Contact.objects.count() == 0
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_bulk_create_contacts(api_client, user, models):
+    api_client.force_login(user)
+    response = api_client.patch(
+        "/v1/contacts/bulk-create/",
+        format='json',
+        data={"data": [
+            {
+                'city': 'New York',
+                'rate': 5,
+                'first_name': 'Jack',
+                'last_name': 'Johnson',
+                'type': 1,
+            },
+            {
+                'phone_number': '15183696530',
+                'email': 'jjohnson@gmail.com',
+                "company": "Boeing"
+            }
+        ]}
+    )
+    assert response.status_code == 201
+    assert models.Contact.objects.count() == 2
+    contacts = models.Contact.objects.all()
+    assert response.json()['data'] == [
+        {
+            "id": contacts[0].pk,
+            "first_name": "Jack",
+            "last_name": "Johnson",
+            "created_at": "2020-01-01 00:00:00",
+            "updated_at": "2020-01-01 00:00:00",
+            "city": "New York",
+            "rate": 5,
+            "company": contacts[0].company,
+            "phone_number": contacts[0].phone_number,
+            "email": contacts[0].email,
+            "full_name": contacts[0].full_name,
+            "position": contacts[0].position,
+            "image": None,
+            "type": {
+                "id": 1,
+                "name": models.Contact.TYPES[1]
+            }
+        },
+        {
+            "id": contacts[1].pk,
+            "first_name": contacts[1].first_name,
+            "last_name": contacts[1].last_name,
+            "created_at": "2020-01-01 00:00:00",
+            "updated_at": "2020-01-01 00:00:00",
+            "city": contacts[1].city,
+            "rate": contacts[1].rate,
+            "company": "Boeing",
+            "phone_number": 15183696530,
+            "email": 'jjohnson@gmail.com',
+            "full_name": contacts[1].full_name,
+            "position": contacts[1].position,
+            "image": None,
+            "type": None
+        }
+    ]
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_bulk_update_contacts(api_client, user, create_contact, models):
+    contacts = [create_contact(), create_contact()]
+    api_client.force_login(user)
+    response = api_client.patch(
+        "/v1/contacts/bulk-update/",
+        format='json',
+        data={'data': [
+            {
+                'id': contacts[0].pk,
+                'city': 'New York',
+                'rate': 5,
+                'first_name': 'Jack',
+                'last_name': 'Johnson',
+            },
+            {
+                'id': contacts[1].pk,
+                'phone_number': '15183696530',
+                'email': 'jjohnson@gmail.com',
+                "company": "Boeing"
+            }
+        ]})
+    assert response.status_code == 200
+    [c.refresh_from_db() for c in contacts]
+
+    assert contacts[0].city == "New York"
+    assert contacts[0].rate == 5
+    assert contacts[0].first_name == "Jack"
+    assert contacts[0].last_name == "Johnson"
+
+    assert contacts[1].phone_number == 15183696530
+    assert contacts[1].email == 'jjohnson@gmail.com'
+    assert contacts[1].company == "Boeing"
