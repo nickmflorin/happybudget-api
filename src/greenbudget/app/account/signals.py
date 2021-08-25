@@ -97,7 +97,7 @@ def account_deleted(**kwargs):
         # with it - so the Budget might not exist after a Account is deleted.
         logger.info(
             "Not recalculating budget on account %s deletion because account "
-            "was deleted with the budget." % kwargs['intance'].pk
+            "was deleted with the budget." % kwargs['instance'].pk
         )
 
 
