@@ -237,27 +237,3 @@ def test_bulk_delete_budget_accounts(api_client, user, create_budget,
     assert budget.estimated == 0.0
     assert budget.variance == 0.0
     assert budget.actual == 0.0
-
-
-def test_bulk_create_budget_accounts_count(api_client, user, create_budget,
-        models):
-    api_client.force_login(user)
-    budget = create_budget()
-    response = api_client.patch(
-        "/v1/budgets/%s/bulk-create-accounts/" % budget.pk,
-        format='json',
-        data={'count': 2}
-    )
-    assert response.status_code == 201
-
-    accounts = models.Account.objects.all()
-    assert len(accounts) == 2
-
-    # The data in the response refers to base the entity we are updating, A.K.A.
-    # the Budget.
-    assert response.json()['data']['id'] == budget.pk
-    assert response.json()['data']['estimated'] == 0.0
-    assert response.json()['data']['variance'] == 0.0
-    assert response.json()['data']['actual'] == 0.0
-
-    assert len(response.json()['children']) == 2

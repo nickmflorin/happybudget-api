@@ -640,40 +640,6 @@ def test_bulk_create_budget_account_subaccounts(api_client, user, create_budget,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_bulk_create_budget_account_subaccounts_count(api_client, user,
-        create_budget, create_budget_account, models, freezer):
-    with signals.disable():
-        budget = create_budget()
-        account = create_budget_account(budget=budget)
-
-    freezer.move_to("2021-01-01")
-    api_client.force_login(user)
-    response = api_client.patch(
-        "/v1/accounts/%s/bulk-create-subaccounts/" % account.pk,
-        format='json',
-        data={'count': 2}
-    )
-    assert response.status_code == 201
-
-    assert response.json()['budget']['id'] == budget.pk
-    assert response.json()['budget']['estimated'] == 0.0
-
-    # The data in the response refers to base the entity we are updating, A.K.A.
-    # the Account.
-    assert response.json()['data']['id'] == account.pk
-    assert response.json()['data']['estimated'] == 0.0
-
-    assert len(response.json()['children']) == 2
-
-    subaccounts = models.BudgetSubAccount.objects.all()
-    assert len(subaccounts) == 2
-
-    budget.refresh_from_db()
-    assert budget.updated_at == datetime.datetime(2021, 1, 1).replace(
-        tzinfo=timezone.utc)
-
-
-@pytest.mark.freeze_time('2020-01-01')
 def test_bulk_create_template_account_subaccounts(api_client, user,
         create_template, create_template_account, models, freezer):
     with signals.disable():
@@ -731,37 +697,3 @@ def test_bulk_create_template_account_subaccounts(api_client, user,
     # Make sure the Template is updated in the database.
     template.refresh_from_db()
     assert template.estimated == 40.0
-
-
-@pytest.mark.freeze_time('2020-01-01')
-def test_bulk_create_template_account_subaccounts_count(api_client, user,
-        create_template, create_template_account, models, freezer):
-    with signals.disable():
-        template = create_template()
-        account = create_template_account(budget=template)
-
-    freezer.move_to("2021-01-01")
-    api_client.force_login(user)
-    response = api_client.patch(
-        "/v1/accounts/%s/bulk-create-subaccounts/" % account.pk,
-        format='json',
-        data={'count': 2}
-    )
-    assert response.status_code == 201
-
-    subaccounts = models.TemplateSubAccount.objects.all()
-    assert len(subaccounts) == 2
-
-    assert response.json()['budget']['id'] == template.pk
-    assert response.json()['budget']['estimated'] == 0.0
-
-    # The data in the response refers to base the entity we are updating, A.K.A.
-    # the Account.
-    assert response.json()['data']['id'] == account.pk
-    assert response.json()['data']['estimated'] == 0.0
-
-    assert len(response.json()['children']) == 2
-
-    template.refresh_from_db()
-    assert template.updated_at == datetime.datetime(2021, 1, 1).replace(
-        tzinfo=timezone.utc)

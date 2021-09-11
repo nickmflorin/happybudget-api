@@ -1,7 +1,7 @@
 import traceback
 
 from django.db import models
-from rest_framework import serializers, exceptions
+from rest_framework import serializers
 from rest_framework.utils import model_meta
 
 
@@ -131,20 +131,9 @@ def create_bulk_create_serializer(child_cls, serializer_cls, base_cls=None,
         serializer_cls=serializer_cls,
         child_context=child_context,
         bulk_context_name='bulk_create_context',
-        fields=('count', )
     )
 
     class BulkCreateSerializer(base_serializer):
-        count = serializers.IntegerField(required=False)
-
-        def validate(self, attrs):
-            if ('data' not in attrs and 'count' not in attrs) \
-                    or ('data' in attrs and 'count' in attrs):
-                raise exceptions.ValidationError(
-                    "Either the `data` or `count` parameters must be provided."
-                )
-            return attrs
-
         def perform_children_write(self, validated_data_array, **kwargs):
             children = []
             for validated_data in validated_data_array:

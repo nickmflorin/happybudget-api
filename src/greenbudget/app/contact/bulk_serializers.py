@@ -40,8 +40,6 @@ def create_bulk_create_serializer():
         # here.
         def save(self, **kwargs):
             data = [payload for payload in self.validated_data.pop('data', [])]
-            if 'count' in self.validated_data:
-                data = [{} for _ in range(self.validated_data.pop('count'))]
             children = self.perform_children_write(data, **kwargs)
             return children
 

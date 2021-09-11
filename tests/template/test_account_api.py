@@ -250,24 +250,3 @@ def test_bulk_delete_budget_accounts(api_client, user, create_template,
 
     template.refresh_from_db()
     assert template.estimated == 0.0
-
-
-def test_bulk_create_template_accounts_count(api_client, user, create_template,
-        models):
-    api_client.force_login(user)
-    template = create_template()
-    response = api_client.patch(
-        "/v1/templates/%s/bulk-create-accounts/" % template.pk,
-        format='json',
-        data={'count': 2}
-    )
-    assert response.status_code == 201
-
-    accounts = models.TemplateAccount.objects.all()
-    assert len(accounts) == 2
-
-    # The data in the response refers to base the entity we are updating, A.K.A.
-    # the Template.
-    assert response.json()['data']['id'] == template.pk
-    assert response.json()['data']['estimated'] == 0.0
-    assert len(response.json()['children']) == 2
