@@ -10,6 +10,7 @@ from .views import (
     SubAccountViewSet,
     SubAccountRecursiveViewSet,
     SubAccountGroupViewSet,
+    SubAccountMarkupViewSet,
     SubAccountUnitViewSet,
     SubAccountActualsViewSet
 )
@@ -33,6 +34,12 @@ subaccount_groups_router.register(
     basename='subaccount-group'
 )
 
+subaccount_markup_router = routers.SimpleRouter()
+subaccount_markup_router.register(
+    r'', SubAccountMarkupViewSet,
+    basename='subaccount-markup'
+)
+
 router = routers.SimpleRouter()
 router.register(r'units', SubAccountUnitViewSet, basename='subaccount-unit')
 router.register(r'', SubAccountViewSet, basename='subaccount')
@@ -44,5 +51,6 @@ urlpatterns = router.urls + [
         path('comments/', include(subaccount_comments_urlpatterns)),
         path('history/', include(subaccount_history_urlpatterns)),
         path('groups/', include(subaccount_groups_router.urls)),
+        path('markups/', include(subaccount_markup_router.urls)),
     ]))
 ]

@@ -15,6 +15,9 @@ from greenbudget.app.group.serializers import (
     BudgetSubAccountGroupSerializer,
     TemplateSubAccountGroupSerializer
 )
+from greenbudget.app.markup.models import BudgetSubAccountMarkup
+from greenbudget.app.markup.serializers import BudgetSubAccountMarkupSerializer
+
 from .mixins import SubAccountNestedMixin
 from .models import (
     SubAccount,
@@ -44,6 +47,46 @@ class SubAccountUnitViewSet(
 
     def get_queryset(self):
         return SubAccountUnit.objects.all()
+
+
+class SubAccountMarkupViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    SubAccountNestedMixin,
+    viewsets.GenericViewSet
+):
+    """
+    Viewset to handle requests to the following endpoints:
+
+    (1) POST /subaccounts/<pk>/groups/
+    (2) GET /subaccounts/<pk>/groups/
+    """
+    lookup_field = 'pk'
+    subaccount_lookup_field = ("pk", "subaccount_pk")
+    serializer_class = BudgetSubAccountMarkupSerializer
+
+    def get_queryset(self):
+        return BudgetSubAccountMarkup.objects.filter(
+            content_type=ContentType.objects.get_for_model(BudgetSubAccount),
+            object_id=self.subaccount.pk,
+        )
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update(
+            parent=self.subaccount,
+            subaccount_context=True
+        )
+        return context
+
+    def perform_create(self, serializer):
+        serializer.save(
+            created_by=self.request.user,
+            updated_by=self.request.user,
+            object_id=self.subaccount.pk,
+            content_type=ContentType.objects.get_for_model(BudgetSubAccount),
+            parent=self.subaccount
+        )
 
 
 class SubAccountGroupViewSet(

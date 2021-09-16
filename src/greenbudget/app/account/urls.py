@@ -8,6 +8,7 @@ from greenbudget.app.history.urls import (
 )
 from .views import (
     AccountViewSet,
+    AccountMarkupViewSet,
     AccountGroupViewSet,
     AccountSubAccountViewSet
 )
@@ -18,6 +19,12 @@ account_groups_router = routers.SimpleRouter()
 account_groups_router.register(
     r'', AccountGroupViewSet,
     basename='account-subaccount-group'
+)
+
+account_markup_router = routers.SimpleRouter()
+account_markup_router.register(
+    r'', AccountMarkupViewSet,
+    basename='account-subaccount-markup'
 )
 
 account_subaccounts_router = routers.SimpleRouter()
@@ -33,6 +40,7 @@ router.register(r'', AccountViewSet, basename='account')
 urlpatterns = router.urls + [
     path('<int:account_pk>/', include([
         path('groups/', include(account_groups_router.urls)),
+        path('markups/', include(account_markup_router.urls)),
         path('subaccounts/', include(account_subaccounts_urlpatterns)),
         # Note: These three endpoints will not work for an Account that belongs
         # to a template.  Is there a better way to do this to make that

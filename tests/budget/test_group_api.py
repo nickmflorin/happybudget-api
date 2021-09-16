@@ -66,7 +66,6 @@ def test_create_budget_account_group(api_client, user, create_budget_account,
     }
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_create_budget_account_group_invalid_child(api_client, user,
         create_budget_account, create_budget):
     with signals.disable():

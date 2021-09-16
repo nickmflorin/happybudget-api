@@ -14,6 +14,11 @@ from greenbudget.app.group.models import (
     TemplateAccountGroup,
     TemplateSubAccountGroup
 )
+from greenbudget.app.markup.models import (
+    Markup,
+    BudgetAccountMarkup,
+    BudgetSubAccountMarkup,
+)
 from greenbudget.app.pdf.models import (
     HeaderTemplate,
     HeadingBlock,
@@ -181,6 +186,46 @@ class FringeFactory(CustomModelFactory):
 
     class Meta:
         model = Fringe
+
+
+class MarkupFactory(CustomModelFactory):
+    """
+    A an abstract DjangoModelFactory to referencing the polymorphic base model
+    :obj:`Markup`.
+    """
+    rate = 1.00
+    unit = Markup.UNITS.percent
+    created_by = factory.SubFactory(UserFactory)
+    updated_by = factory.SubFactory(UserFactory)
+    identifier = factory.Faker('name')
+    description = factory.Faker('sentence')
+
+    class Meta:
+        abstract = True
+
+    @factory.post_generation
+    def children(self, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for child in extracted:
+                self.children.add(child)
+
+
+class BudgetAccountMarkupFactory(MarkupFactory):
+    """
+    A DjangoModelFactory to create instances of :obj:`BudgetAccountMarkup`.
+    """
+    class Meta:
+        model = BudgetAccountMarkup
+
+
+class BudgetSubAccountMarkupFactory(MarkupFactory):
+    """
+    A DjangoModelFactory to create instances of :obj:`BudgetSubAccountMarkup`.
+    """
+    class Meta:
+        model = BudgetSubAccountMarkup
 
 
 class GroupFactory(CustomModelFactory):

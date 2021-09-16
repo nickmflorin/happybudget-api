@@ -13,6 +13,8 @@ from greenbudget.app.fringe.models import Fringe
 from greenbudget.app.fringe.serializers import FringeSerializer
 from greenbudget.app.group.models import BudgetAccountGroup
 from greenbudget.app.group.serializers import BudgetAccountGroupSerializer
+from greenbudget.app.markup.models import BudgetAccountMarkup
+from greenbudget.app.markup.serializers import BudgetAccountMarkupSerializer
 from greenbudget.app.subaccount.models import BudgetSubAccount
 from greenbudget.app.subaccount.serializers import (
     SubAccountSimpleSerializer, SubAccountTreeNodeSerializer)
@@ -22,6 +24,41 @@ from .models import Budget
 from .mixins import BudgetNestedMixin
 from .serializers import BudgetSerializer, BudgetSimpleSerializer
 from .pdf_serializers import BudgetPdfSerializer
+
+
+class BudgetMarkupViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    BudgetNestedMixin,
+    viewsets.GenericViewSet
+):
+    """
+    Viewset to handle requests to the following endpoints:
+
+    (1) POST /budgets/<pk>/markups/
+    (2) GET /budgets/<pk>/markups/
+    """
+    lookup_field = 'pk'
+    serializer_class = BudgetAccountMarkupSerializer
+    budget_lookup_field = ("pk", "budget_pk")
+
+    def get_queryset(self):
+        return BudgetAccountMarkup.objects.filter(parent=self.budget)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update(
+            parent=self.budget,
+            budget_context=True
+        )
+        return context
+
+    def perform_create(self, serializer):
+        serializer.save(
+            created_by=self.request.user,
+            updated_by=self.request.user,
+            parent=self.budget
+        )
 
 
 class BudgetGroupViewSet(

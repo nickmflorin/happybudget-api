@@ -4,14 +4,14 @@ from greenbudget.lib.drf.serializers import (
     ModelSerializer)
 
 from greenbudget.app.account.models import BudgetAccount, TemplateAccount
+from greenbudget.app.budget.fields import (
+    AccountChildrenFilteredQuerysetPKField,
+    SubAccountChildrenFilteredQuerysetPKField,
+)
 from greenbudget.app.tagging.serializers import ColorField
 from greenbudget.app.subaccount.models import (
     BudgetSubAccount, TemplateSubAccount)
 
-from .fields import (
-    AccountGroupChildFilteredQuerysetPKField,
-    SubAccountGroupChildFilteredQuerysetPKField
-)
 from .models import (
     Group,
     BudgetAccountGroup,
@@ -158,7 +158,7 @@ class GroupSerializer(ModelSerializer):
 class BudgetAccountGroupSerializer(GroupSerializer):
     actual = serializers.FloatField(read_only=True)
     variance = serializers.FloatField(read_only=True)
-    children = AccountGroupChildFilteredQuerysetPKField(
+    children = AccountChildrenFilteredQuerysetPKField(
         many=True,
         required=True,
         queryset=BudgetAccount.objects.all()
@@ -171,7 +171,7 @@ class BudgetAccountGroupSerializer(GroupSerializer):
 
 
 class TemplateAccountGroupSerializer(GroupSerializer):
-    children = AccountGroupChildFilteredQuerysetPKField(
+    children = AccountChildrenFilteredQuerysetPKField(
         many=True,
         required=True,
         queryset=TemplateAccount.objects.all()
@@ -185,7 +185,7 @@ class TemplateAccountGroupSerializer(GroupSerializer):
 class BudgetSubAccountGroupSerializer(GroupSerializer):
     actual = serializers.FloatField(read_only=True)
     variance = serializers.FloatField(read_only=True)
-    children = SubAccountGroupChildFilteredQuerysetPKField(
+    children = SubAccountChildrenFilteredQuerysetPKField(
         many=True,
         required=True,
         queryset=BudgetSubAccount.objects.all()
@@ -198,7 +198,7 @@ class BudgetSubAccountGroupSerializer(GroupSerializer):
 
 
 class TemplateSubAccountGroupSerializer(GroupSerializer):
-    children = SubAccountGroupChildFilteredQuerysetPKField(
+    children = SubAccountChildrenFilteredQuerysetPKField(
         many=True,
         required=True,
         queryset=TemplateSubAccount.objects.all()

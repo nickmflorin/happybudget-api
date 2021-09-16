@@ -11,6 +11,7 @@ from .views import (
     BudgetViewSet,
     BudgetFringeViewSet,
     BudgetGroupViewSet,
+    BudgetMarkupViewSet,
     BudgetActualsViewSet,
     BudgetAccountViewSet,
     BudgetSubAccountViewSet
@@ -29,6 +30,11 @@ budget_subaccounts_router = routers.NestedSimpleRouter(
     router, r'', lookup='budget')
 budget_subaccounts_router.register(
     r'subaccounts', BudgetSubAccountViewSet, basename='budget-subaccount')
+
+budget_markup_router = routers.NestedSimpleRouter(
+    router, r'', lookup='budget')
+budget_markup_router.register(
+    r'markups', BudgetMarkupViewSet, basename='budget-markup')
 
 budget_groups_router = routers.NestedSimpleRouter(
     router, r'', lookup='budget')
@@ -53,7 +59,8 @@ urlpatterns = combine_routers(
     router,
     budget_fringes_router,
     budget_subaccounts_router,
-    budget_groups_router
+    budget_groups_router,
+    budget_markup_router
 ) + [
     path('<int:budget_pk>/', include([
         path('accounts/', include(budget_accounts_urlpatterns)),

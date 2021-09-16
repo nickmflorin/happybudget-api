@@ -150,6 +150,7 @@ INSTALLED_APPS = [
     'greenbudget.app.fringe',
     'greenbudget.app.group',
     'greenbudget.app.history',
+    'greenbudget.app.markup',
     'greenbudget.app.pdf',
     'greenbudget.app.subaccount',
     'greenbudget.app.tagging',

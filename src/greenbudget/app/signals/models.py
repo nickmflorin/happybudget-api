@@ -210,7 +210,7 @@ class model:
         else:
             for field in self._track_fields:
                 if field not in self._exclude_fields:
-                    self.validate_field(field, cls)
+                    self.validate_field(cls, field)
             return self._track_fields[:]
 
     def set_flags(self, instance, **kwargs):

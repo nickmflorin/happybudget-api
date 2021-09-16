@@ -142,7 +142,6 @@ def test_create_template_account_subaccount_group(api_client, user,
     }
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_create_budget_account_subaccount_group_invalid_child(api_client, user,
         create_budget_subaccount, create_budget_account, create_budget):
     with signals.disable():
@@ -164,7 +163,6 @@ def test_create_budget_account_subaccount_group_invalid_child(api_client, user,
     assert response.status_code == 400
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_create_template_account_subaccount_group_invalid_child(api_client,
         user, create_template_subaccount, create_template_account,
         create_template):
