@@ -14,7 +14,7 @@ class Markup(PolymorphicModel):
         (0, "percent", "Percent"),
         (1, "flat", "Flat"),
     )
-    unit = models.IntegerField(choices=UNITS, default=UNITS.percent)
+    unit = models.IntegerField(choices=UNITS, default=UNITS.percent, null=True)
     rate = models.FloatField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(
