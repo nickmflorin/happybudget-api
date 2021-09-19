@@ -9,8 +9,8 @@ def test_get_budget_account_subaccounts(api_client, user, create_budget_account,
         create_budget, create_budget_subaccount):
     with signals.disable():
         budget = create_budget()
-        account = create_budget_account(budget=budget)
-        another_account = create_budget_account(budget=budget)
+        account = create_budget_account(parent=budget)
+        another_account = create_budget_account(parent=budget)
         subaccounts = [
             create_budget_subaccount(
                 parent=account,
@@ -39,10 +39,11 @@ def test_get_budget_account_subaccounts(api_client, user, create_budget_account,
             "type": "subaccount",
             "object_id": account.pk,
             "parent_type": "account",
-            "actual": 0.0,
             "estimated": 0.0,
-            "variance": 0.0,
-            "subaccounts": [],
+            "fringe_contribution": 0.0,
+            "markup_contribution": 0.0,
+            "actual": 0.0,
+            "children": [],
             "fringes": [],
             "created_by": user.pk,
             "updated_by": user.pk,
@@ -61,10 +62,11 @@ def test_get_budget_account_subaccounts(api_client, user, create_budget_account,
             "type": "subaccount",
             "object_id": account.pk,
             "parent_type": "account",
-            "actual": 0.0,
             "estimated": 0.0,
-            "variance": 0.0,
-            "subaccounts": [],
+            "fringe_contribution": 0.0,
+            "markup_contribution": 0.0,
+            "actual": 0.0,
+            "children": [],
             "fringes": [],
             "created_by": user.pk,
             "updated_by": user.pk,
@@ -79,7 +81,7 @@ def test_create_budget_subaccount(api_client, user, create_budget_account,
         create_budget, models):
     with signals.disable():
         budget = create_budget()
-        account = create_budget_account(budget=budget)
+        account = create_budget_account(parent=budget)
     api_client.force_login(user)
     response = api_client.post(
          "/v1/accounts/%s/subaccounts/" % account.pk, data={
@@ -106,10 +108,11 @@ def test_create_budget_subaccount(api_client, user, create_budget_account,
         "type": "subaccount",
         "object_id": account.pk,
         "parent_type": "account",
-        "actual": 0.0,
         "estimated": 0.0,
-        "variance": 0.0,
-        "subaccounts": [],
+        "fringe_contribution": 0.0,
+        "markup_contribution": 0.0,
+        "actual": 0.0,
+        "children": [],
         "fringes": [],
         "created_by": user.pk,
         "updated_by": user.pk

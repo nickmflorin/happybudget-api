@@ -1,5 +1,4 @@
 import datetime
-import functools
 import logging
 
 from django import dispatch
@@ -9,9 +8,8 @@ from greenbudget.app import signals
 from greenbudget.app.account.models import BudgetAccount, TemplateAccount
 from greenbudget.app.actual.models import Actual
 from greenbudget.app.fringe.models import Fringe
-from greenbudget.app.group.models import (
-    BudgetAccountGroup, BudgetSubAccountGroup, TemplateAccountGroup,
-    TemplateSubAccountGroup)
+from greenbudget.app.group.models import Group
+from greenbudget.app.markup.models import Markup
 from greenbudget.app.subaccount.models import (
     BudgetSubAccount, TemplateSubAccount)
 
@@ -39,17 +37,19 @@ def mark_budget_updated(instance):
     queue_in_context=True
 )
 def estimate_budget(instance):
-    # I don't understand why, but using Account.objects.filter, or using
-    # instance.accounts.filter() seems to throw errors occasionally.
-    model_cls = BudgetAccount if isinstance(instance, Budget) else TemplateAccount  # noqa
-    accounts = model_cls.objects.filter(budget=instance).only('estimated')
-    instance.estimated = functools.reduce(
-        lambda current, acct: current + (acct.estimated or 0), accounts, 0)
+    instance.establish_all()
     logger.info(
         "Updating %s %s -> Estimated: %s"
         % (type(instance).__name__, instance.pk, instance.estimated)
     )
-    instance.save(update_fields=['estimated'], suppress_budget_update=True)
+    instance.save(
+        update_fields=[
+            'estimated',
+            'fringe_contribution',
+            'markup_contribution'
+        ],
+        suppress_budget_update=True
+    )
 
 
 @signals.bulk_context.handler(
@@ -57,9 +57,7 @@ def estimate_budget(instance):
     queue_in_context=True
 )
 def actualize_budget(instance):
-    accounts = BudgetAccount.objects.filter(budget=instance).only('actual')
-    instance.actual = functools.reduce(
-        lambda current, acct: current + (acct.actual or 0), accounts.all(), 0)
+    instance.establish_actual()
     logger.info(
         "Updating %s %s -> Actual: %s"
         % (type(instance).__name__, instance.pk, instance.actual)
@@ -91,10 +89,8 @@ def calculate_budget(instance):
 @dispatch.receiver(signals.post_save, sender=TemplateSubAccount)
 @dispatch.receiver(signals.post_save, sender=Fringe)
 @dispatch.receiver(signals.post_save, sender=Actual)
-@dispatch.receiver(signals.post_save, sender=BudgetAccountGroup)
-@dispatch.receiver(signals.post_save, sender=BudgetSubAccountGroup)
-@dispatch.receiver(signals.post_save, sender=TemplateAccountGroup)
-@dispatch.receiver(signals.post_save, sender=TemplateSubAccountGroup)
+@dispatch.receiver(signals.post_save, sender=Group)
+@dispatch.receiver(signals.post_save, sender=Markup)
 @signals.suppress_signal('suppress_budget_update')
 def update_budget_updated_at(instance, **kwargs):
     mark_budget_updated(instance.budget)

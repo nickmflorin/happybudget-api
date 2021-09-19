@@ -11,6 +11,7 @@ fields_changed = Signal(name='fields_changed')
 m2m_changed = Signal(name='m2m_changed')
 post_delete = Signal(name='post_delete')
 pre_delete = Signal(name='pre_delete')
+pre_save = Signal(name='pre_save')
 
 
 def any_fields_changed_signal(fields, **kwargs):

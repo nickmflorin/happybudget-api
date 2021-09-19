@@ -1,5 +1,6 @@
 import hashlib
 import importlib
+import inspect
 import json
 import re
 from typing import Dict, Any
@@ -15,6 +16,20 @@ def conditionally_separate_strings(strings, separator=" "):
     elif len(parts) == 1:
         return parts[0]
     return separator.join(parts)
+
+
+def get_function_keyword_defaults(func):
+    arg_spec = inspect.getargspec(func)
+    positional_count = len(arg_spec.args)
+    defaults = {}
+    if arg_spec.defaults is not None:
+        positional_count = positional_count - len(arg_spec.defaults)
+
+        defaults = dict(zip(
+            arg_spec.args[positional_count:],
+            arg_spec.defaults
+        ))
+    return defaults
 
 
 def hash_dict(dictionary: Dict[str, Any]) -> str:

@@ -8,7 +8,7 @@ def test_create_actual(api_client, user, create_budget_account, create_budget,
         create_budget_subaccount, models):
     with signals.disable():
         budget = create_budget()
-        account = create_budget_account(budget=budget)
+        account = create_budget_account(parent=budget)
         subaccount = create_budget_subaccount(parent=account)
     api_client.force_login(user)
     # We do not have to provide the object_id and parent_type since we are
@@ -17,6 +17,7 @@ def test_create_actual(api_client, user, create_budget_account, create_budget,
     assert response.status_code == 201
     assert response.json() == {
         "id": 1,
+        "type": "actual",
         "description": None,
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
@@ -46,7 +47,7 @@ def test_get_subaccount_actuals(api_client, user, create_budget_subaccount,
         create_actual, create_budget, create_budget_account):
     with signals.disable():
         budget = create_budget()
-        account = create_budget_account(budget=budget)
+        account = create_budget_account(parent=budget)
         subaccount = create_budget_subaccount(parent=account)
         actuals = [
             create_actual(subaccount=subaccount, budget=budget),
@@ -59,6 +60,7 @@ def test_get_subaccount_actuals(api_client, user, create_budget_subaccount,
     assert response.json()['data'] == [
         {
             "id": actuals[0].pk,
+            "type": "actual",
             "description": actuals[0].description,
             "contact": actuals[0].contact,
             "created_at": "2020-01-01 00:00:00",
@@ -82,6 +84,7 @@ def test_get_subaccount_actuals(api_client, user, create_budget_subaccount,
         },
         {
             "id": actuals[1].pk,
+            "type": "actual",
             "description": actuals[1].description,
             "contact": actuals[1].contact,
             "created_at": "2020-01-01 00:00:00",

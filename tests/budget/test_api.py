@@ -57,7 +57,8 @@ def test_get_budget(api_client, user, create_budget, models):
         "studio_shoot_days": budget.studio_shoot_days,
         "location_days": budget.location_days,
         "estimated": 0.0,
-        "variance": 0.0,
+        "fringe_contribution": 0.0,
+        "markup_contribution": 0.0,
         "actual": 0.0,
         "created_by": user.pk,
         "type": "budget",
@@ -92,7 +93,8 @@ def test_update_budget(api_client, user, create_budget, models):
         "studio_shoot_days": budget.studio_shoot_days,
         "location_days": budget.location_days,
         "estimated": 0.0,
-        "variance": 0.0,
+        "fringe_contribution": 0.0,
+        "markup_contribution": 0.0,
         "actual": 0.0,
         "created_by": user.pk,
         "type": "budget",
@@ -129,7 +131,8 @@ def test_create_budget(api_client, user, models):
         "studio_shoot_days": budget.studio_shoot_days,
         "location_days": budget.location_days,
         "estimated": 0.0,
-        "variance": 0.0,
+        "fringe_contribution": 0.0,
+        "markup_contribution": 0.0,
         "actual": 0.0,
         "created_by": user.pk,
         "type": "budget",
@@ -168,7 +171,8 @@ def test_derive_budget(api_client, user, create_template, staff_user, models):
         "studio_shoot_days": budget.studio_shoot_days,
         "location_days": budget.location_days,
         "estimated": 0.0,
-        "variance": 0.0,
+        "fringe_contribution": 0.0,
+        "markup_contribution": 0.0,
         "actual": 0.0,
         "created_by": user.pk,
         "type": "budget",
@@ -203,7 +207,8 @@ def test_duplicate_budget(api_client, user, create_budget, models):
         "studio_shoot_days": original.studio_shoot_days,
         "location_days": original.location_days,
         "estimated": 0.0,
-        "variance": 0.0,
+        "fringe_contribution": 0.0,
+        "markup_contribution": 0.0,
         "actual": 0.0,
         "created_by": user.pk,
         "type": "budget",
@@ -223,7 +228,7 @@ def test_get_budget_subaccounts(api_client, user, create_budget,
         create_budget_account, create_budget_subaccount):
     with signals.disable():
         budget = create_budget()
-        account = create_budget_account(budget=budget)
+        account = create_budget_account(parent=budget)
         sub = create_budget_subaccount(parent=account, identifier="Jack")
         create_budget_subaccount(parent=account, identifier="Bob")
     api_client.force_login(user)

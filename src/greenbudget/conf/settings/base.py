@@ -143,9 +143,9 @@ INSTALLED_APPS = [
     'greenbudget.app.actual',
     'greenbudget.app.authentication',
     'greenbudget.app.budget',
+    'greenbudget.app.budgeting',
     'greenbudget.app.comment',
     'greenbudget.app.contact',
-    'greenbudget.app.common',
     'greenbudget.app.custom_admin',
     'greenbudget.app.fringe',
     'greenbudget.app.group',
@@ -257,7 +257,7 @@ DATABASES = {
     },
 }
 
-FIXTURES = ['colors.json', 'subaccountunits.json', 'tags.json']
+FIXTURES = ['colors.json', 'tags.json', 'subaccountunits.json']
 
 ACCEPTED_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png']
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'

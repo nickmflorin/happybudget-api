@@ -6,18 +6,12 @@ from rest_framework import viewsets, mixins, permissions
 
 from greenbudget.app.account.models import Account
 from greenbudget.app.account.mixins import AccountNestedMixin
-from greenbudget.app.budget.decorators import (
-    register_all_bulk_operations, BulkAction)
-from greenbudget.app.group.models import (
-    BudgetSubAccountGroup,
-    TemplateSubAccountGroup
-)
-from greenbudget.app.group.serializers import (
-    BudgetSubAccountGroupSerializer,
-    TemplateSubAccountGroupSerializer
-)
-from greenbudget.app.markup.models import BudgetSubAccountMarkup
-from greenbudget.app.markup.serializers import BudgetSubAccountMarkupSerializer
+from greenbudget.app.budgeting.decorators import (
+    register_bulk_operations, BulkAction, BulkDeleteAction)
+from greenbudget.app.group.models import Group
+from greenbudget.app.group.serializers import GroupSerializer
+from greenbudget.app.markup.models import Markup
+from greenbudget.app.markup.serializers import MarkupSerializer
 from greenbudget.app.subaccount.models import (
     BudgetSubAccount, TemplateSubAccount)
 from greenbudget.app.subaccount.serializers import (
@@ -48,10 +42,10 @@ class AccountMarkupViewSet(
     """
     lookup_field = 'pk'
     account_lookup_field = ("pk", "account_pk")
-    serializer_class = BudgetSubAccountMarkupSerializer
+    serializer_class = MarkupSerializer
 
     def get_queryset(self):
-        return BudgetSubAccountMarkup.objects.filter(
+        return Markup.objects.filter(
             content_type=ContentType.objects.get_for_model(BudgetAccount),
             object_id=self.account.pk,
         )
@@ -88,24 +82,10 @@ class AccountGroupViewSet(
     """
     lookup_field = 'pk'
     account_lookup_field = ("pk", "account_pk")
-
-    @cached_property
-    def instance_cls(self):
-        mapping = {
-            BudgetAccount: BudgetSubAccountGroup,
-            TemplateAccount: TemplateSubAccountGroup
-        }
-        return mapping[type(self.account)]
-
-    def get_serializer_class(self):
-        mapping = {
-            BudgetAccount: BudgetSubAccountGroupSerializer,
-            TemplateAccount: TemplateSubAccountGroupSerializer
-        }
-        return mapping[type(self.account)]
+    serializer_class = GroupSerializer
 
     def get_queryset(self):
-        return self.instance_cls.objects.filter(
+        return Group.objects.filter(
             content_type=ContentType.objects.get_for_model(type(self.account)),
             object_id=self.account.pk,
         )
@@ -199,11 +179,19 @@ class GenericAccountViewSet(viewsets.GenericViewSet):
         return context
 
 
-@register_all_bulk_operations(
+@register_bulk_operations(
     base_cls=lambda context: context.view.instance_cls,
     child_context_indicator='account_context',
-    get_budget=lambda instance: instance.budget,
+    get_budget=lambda instance: instance.parent,
     actions=[
+        BulkDeleteAction(
+            url_path='bulk-{action_name}-markups',
+            child_cls=Markup,
+            filter_qs=lambda context: models.Q(
+                content_type=ContentType.objects.get_for_model(context.instance),
+                object_id=context.instance.pk
+            ),
+        ),
         BulkAction(
             url_path='bulk-{action_name}-subaccounts',
             child_cls=lambda context: context.view.child_instance_cls,

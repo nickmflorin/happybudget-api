@@ -5,11 +5,11 @@ from greenbudget.app import signals
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_get_template_account_groups(api_client, user, create_template,
-        create_template_account, create_template_account_group):
+        create_template_account, create_group):
     with signals.disable():
         template = create_template()
-        group = create_template_account_group(parent=template)
-        account = create_template_account(budget=template, group=group)
+        group = create_group(parent=template)
+        account = create_template_account(parent=template, group=group)
     api_client.force_login(user)
     response = api_client.get("/v1/templates/%s/groups/" % template.pk)
     assert response.status_code == 200
@@ -17,22 +17,23 @@ def test_get_template_account_groups(api_client, user, create_template,
     assert response.json()['data'] == [{
         "id": group.pk,
         "name": group.name,
+        "type": "group",
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
         "color": group.color,
         "updated_by": user.pk,
-        "estimated": 0.0,
         "created_by": user.pk,
-        "children": [account.pk]
+        "children": [account.pk],
+        "children_markups": []
     }]
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_template_account_group(api_client, user, create_template,
+def test_create_group(api_client, user, create_template,
         create_template_account, models):
     with signals.disable():
         template = create_template()
-        account = create_template_account(budget=template)
+        account = create_template_account(parent=template)
 
     api_client.force_login(user)
     response = api_client.post("/v1/templates/%s/groups/" % template.pk, data={
@@ -42,7 +43,7 @@ def test_create_template_account_group(api_client, user, create_template,
     })
     assert response.status_code == 201
 
-    group = models.TemplateAccountGroup.objects.first()
+    group = models.Group.objects.first()
     assert group is not None
     assert group.name == "Group Name"
     assert group.children.count() == 1
@@ -52,18 +53,19 @@ def test_create_template_account_group(api_client, user, create_template,
     assert response.json() == {
         "id": group.pk,
         "name": "Group Name",
+        "type": "group",
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
         "color": '#a1887f',
         "updated_by": user.pk,
-        "estimated": 0.0,
         "created_by": user.pk,
-        "children": [account.pk]
+        "children": [account.pk],
+        "children_markups": []
     }
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_template_account_group_invalid_child(api_client, user,
+def test_create_group_invalid_child(api_client, user,
         create_template_account, create_template):
     with signals.disable():
         template = create_template()
@@ -71,7 +73,7 @@ def test_create_template_account_group_invalid_child(api_client, user,
         # We are trying to create the grouping under `template` but including
         # children that belong to `another_template`, which should trigger a 400
         # response.
-        account = create_template_account(budget=another_template)
+        account = create_template_account(parent=another_template)
 
     api_client.force_login(user)
     response = api_client.post("/v1/templates/%s/groups/" % template.pk, data={

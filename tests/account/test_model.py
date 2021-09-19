@@ -3,13 +3,13 @@ def test_bulk_create_accounts(models, create_budget, user):
     instances = [
         models.BudgetAccount(
             identifier='Account 1',
-            budget=budget,
+            parent=budget,
             created_by=user,
             updated_by=user
         ),
         models.BudgetAccount(
             identifier='Account 2',
-            budget=budget,
+            parent=budget,
             created_by=user,
             updated_by=user
         )

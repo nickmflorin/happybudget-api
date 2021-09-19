@@ -1,4 +1,5 @@
-from greenbudget.app.common.permissions import AdminPermissionMixin, IsOwner
+from greenbudget.app.authentication.permissions import (
+    AdminPermissionMixin, IsOwner)
 
 
 class TemplateObjPermission(AdminPermissionMixin, IsOwner):

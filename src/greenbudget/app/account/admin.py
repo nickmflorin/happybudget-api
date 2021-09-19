@@ -6,7 +6,7 @@ from .models import BudgetAccount, TemplateAccount
 
 class AccountAdmin(admin.ModelAdmin):
     list_display = (
-        "identifier", "description", "budget", "created_by", "created_at")
+        "identifier", "description", "parent", "created_by", "created_at")
 
 
 class BudgetAccountAdminForm(forms.ModelForm):

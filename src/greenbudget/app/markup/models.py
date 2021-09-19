@@ -1,13 +1,18 @@
 from model_utils import Choices
-from polymorphic.models import PolymorphicModel
 
-from django.db import models
-
+from django.db import models, IntegrityError
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 
+from greenbudget.app import signals
 
-class Markup(PolymorphicModel):
+
+@signals.model(
+    flags=['suppress_budget_update', 'suppress_markups_changed'],
+    user_field='updated_by'
+)
+class Markup(models.Model):
+    type = "markup"
     identifier = models.CharField(null=True, max_length=128)
     description = models.CharField(null=True, max_length=128)
     UNITS = Choices(
@@ -19,17 +24,32 @@ class Markup(PolymorphicModel):
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(
         to='user.User',
-        related_name='created_markups',
+        related_name='created_new_markups',
         on_delete=models.CASCADE,
         editable=False
     )
     updated_at = models.DateTimeField(auto_now=True)
     updated_by = models.ForeignKey(
         to='user.User',
-        related_name='updated_markups',
+        related_name='updated_new_markups',
         on_delete=models.CASCADE,
         editable=False
     )
+    group = models.ForeignKey(
+        to='group.Group',
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name='children_markups'
+    )
+    content_type = models.ForeignKey(
+        to=ContentType,
+        on_delete=models.CASCADE,
+        limit_choices_to=models.Q(app_label='account', model='budgetaccount')
+        | models.Q(app_label='subaccount', model='budgetsubaccount')
+        | models.Q(app_label='budget', model='budget')
+    )
+    object_id = models.PositiveIntegerField(db_index=True)
+    parent = GenericForeignKey('content_type', 'object_id')
 
     class Meta:
         get_latest_by = "updated_at"
@@ -37,51 +57,71 @@ class Markup(PolymorphicModel):
         verbose_name = "Markup"
         verbose_name_plural = "Markups"
 
+    @classmethod
+    def child_instance_cls_for_parent(cls, parent):
+        from greenbudget.app.account.models import BudgetAccount
+        from greenbudget.app.budget.models import Budget
+        from greenbudget.app.subaccount.models import BudgetSubAccount
 
-class BudgetAccountMarkup(Markup):
-    parent = models.ForeignKey(
-        to='budget.Budget',
-        on_delete=models.CASCADE,
-        related_name='markups'
-    )
-    children = models.ManyToManyField(
-        to='account.BudgetAccount',
-        related_name='markups'
-    )
-
-    class Meta:
-        get_latest_by = "updated_at"
-        ordering = ('-created_at', )
-        verbose_name = "Account Markup"
-        verbose_name_plural = "Account Markups"
-
-    def __str__(self):
-        return "<{cls} identifier={identifier} parent={parent}>".format(
-            cls=self.__class__.__name__,
-            identifier=self.identifier,
-            parent=self.parent.id,
+        mapping = {
+            Budget: BudgetAccount,
+            (BudgetAccount, BudgetSubAccount): BudgetSubAccount,
+        }
+        for k, v in mapping.items():
+            if isinstance(parent, k):
+                return v
+        raise IntegrityError(
+            "Unexpected instance %s - must be a valid parent of Group."
+            % parent.__class__.__name__
         )
 
+    @property
+    def parent_instance_cls(self):
+        return type(self.parent)
 
-class BudgetSubAccountMarkup(Markup):
-    content_type = models.ForeignKey(
-        to=ContentType,
-        on_delete=models.CASCADE,
-        limit_choices_to=models.Q(app_label='account', model='budgetaccount')
-        | models.Q(app_label='subaccount', model='budgetsubaccount')
-    )
-    object_id = models.PositiveIntegerField(db_index=True)
-    parent = GenericForeignKey('content_type', 'object_id')
-    children = models.ManyToManyField(
-        to='subaccount.BudgetSubAccount',
-        related_name='markups'
-    )
+    @property
+    def child_instance_cls(self):
+        return self.child_instance_cls_for_parent(self.parent)
 
-    class Meta:
-        get_latest_by = "updated_at"
-        ordering = ('-created_at', )
-        verbose_name = "Sub Account Markup"
-        verbose_name_plural = "Sub Account Markups"
+    @property
+    def children(self):
+        # Note that Groups are not included as children.
+        return self.child_instance_cls.objects.filter(markups=self)
+
+    def get_children_operator(self):
+        from greenbudget.app.account.models import BudgetAccount
+        from greenbudget.app.subaccount.models import BudgetSubAccount
+        if self.parent_instance_cls is BudgetAccount \
+                or self.parent_instance_cls is BudgetSubAccount:
+            return self.subaccounts
+        return self.accounts
+
+    def set_children(self, children):
+        operator = self.get_children_operator()
+        operator.set(children)
+
+    def remove_children(self, children):
+        operator = self.get_children_operator()
+        operator.remove(children)
+
+    def add_children(self, children):
+        operator = self.get_children_operator()
+        operator.add(children)
+
+    @property
+    def budget(self):
+        from greenbudget.app.budget.models import BaseBudget
+        parent = self.parent
+        while not isinstance(parent, BaseBudget):
+            parent = parent.parent
+        return parent
+
+    @property
+    def is_empty(self):
+        # If there are Group(s) that are marked up but the Markup itself does
+        # not have any SubAccount(s) or Account(s), then the Group will be
+        # empty.
+        return self.children.count() == 0
 
     def __str__(self):
         return "<{cls} identifier={identifier} parent={parent}>".format(

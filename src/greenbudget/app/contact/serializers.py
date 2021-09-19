@@ -9,12 +9,13 @@ from .models import Contact
 
 class ContactSerializer(ModelSerializer):
     id = serializers.IntegerField(read_only=True)
+    type = serializers.CharField(read_only=True)
     first_name = serializers.CharField(allow_null=True, required=False)
     last_name = serializers.CharField(allow_null=True, required=False)
     full_name = serializers.CharField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
-    type = ModelChoiceField(
+    contact_type = ModelChoiceField(
         required=False,
         choices=Contact.TYPES,
         allow_null=True
@@ -32,4 +33,4 @@ class ContactSerializer(ModelSerializer):
         fields = (
             'id', 'first_name', 'last_name', 'created_at', 'updated_at', 'type',
             'city', 'rate', 'phone_number', 'email', 'full_name', 'company',
-            'position', 'image')
+            'position', 'image', 'contact_type')

@@ -22,7 +22,7 @@ def actual_deleted(instance, **kwargs):
     if instance.subaccount is not None:
         actualize_subaccount(
             instance.subaccount,
-            actuals=instance.subaccount.actuals.exclude(pk=instance.pk)
+            actuals_to_be_deleted=[instance.pk]
         )
 
 

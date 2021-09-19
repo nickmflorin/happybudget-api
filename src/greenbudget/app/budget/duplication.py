@@ -21,6 +21,12 @@ class ObjectSet:
     @property
     def map(self):
         assert len(self.existing) == len(self.duplicated)
+        if any([dup.pk is None for dup in self.duplicated]):
+            raise Exception(
+                "The primary key values must be attributed to the duplicated "
+                "set before we can map the existing object to the duplicated "
+                "one."
+            )
         return {
             self.existing[i].pk: self.duplicated[i].pk
             for i in range(len(self.existing))
@@ -29,9 +35,9 @@ class ObjectSet:
     def get_duplicated(self, pk):
         return self.map[pk]
 
-    def add(self, set: Any):
-        self.existing += set.existing
-        self.duplicated += set.duplicated
+    def add(self, obj_set: Any):
+        self.existing += obj_set.existing
+        self.duplicated += obj_set.duplicated
 
 
 def log_after(entity, prefix=None):
@@ -61,34 +67,20 @@ class BulkBudgetOperation:
 
     @cached_property
     def budget_model_mapping(self):
-        from greenbudget.app.actual.models import Actual
         from greenbudget.app.account.models import BudgetAccount
-        from greenbudget.app.fringe.models import Fringe
-        from greenbudget.app.group.models import (
-            BudgetAccountGroup, BudgetSubAccountGroup)
         from greenbudget.app.subaccount.models import BudgetSubAccount
         return {
-            'AccountGroup': BudgetAccountGroup,
-            'SubAccountGroup': BudgetSubAccountGroup,
             'SubAccount': BudgetSubAccount,
-            'Account': BudgetAccount,
-            'Fringe': Fringe,
-            'Actual': Actual
+            'Account': BudgetAccount
         }
 
     @cached_property
     def template_model_mapping(self):
         from greenbudget.app.account.models import TemplateAccount
-        from greenbudget.app.fringe.models import Fringe
-        from greenbudget.app.group.models import (
-            TemplateAccountGroup, TemplateSubAccountGroup)
         from greenbudget.app.subaccount.models import TemplateSubAccount
         return {
-            'AccountGroup': TemplateAccountGroup,
-            'SubAccountGroup': TemplateSubAccountGroup,
             'SubAccount': TemplateSubAccount,
-            'Account': TemplateAccount,
-            'Fringe': Fringe,
+            'Account': TemplateAccount
         }
 
     @cached_property
@@ -102,7 +94,7 @@ class BulkBudgetOperation:
 
     def iterate_over_level(self, level=1):
         def iterate_over_subaccounts(obj, current_level):
-            for subaccount in obj.subaccounts.all():
+            for subaccount in obj.children.all():
                 if current_level == level:
                     yield (subaccount, obj)
                 else:
@@ -110,10 +102,10 @@ class BulkBudgetOperation:
                         subaccount, current_level + 1)
         assert level >= 1
         if level == 1:
-            for account in self.original.accounts.all():
+            for account in self.original.children.all():
                 yield (account, self.original)
         if level >= 2:
-            for account in self.original.accounts.all():
+            for account in self.original.children.all():
                 yield from iterate_over_subaccounts(account, 2)
 
     def model_cls(self, common_name, base=None):
@@ -155,30 +147,57 @@ class BulkBudgetOperation:
         ])
         return fringes_set
 
+    def bulk_create_group_set(self, group_set):
+        # Unfortunately, since Group is no longer a Polymorphic model, we cannot
+        # use our custom Polymorphic Bulk Create manager which will return the
+        # created IDs.  Instead, we have to do this workaround.
+        # Note: This workaround is query intensive, and if there is a way to
+        # speed it up, we should do that.
+        from greenbudget.app.group.models import Group
+        original_ids = [
+            obj[0]
+            for obj in list(Group.objects.only('pk').values_list('pk'))
+        ]
+        Group.objects.bulk_create(group_set.duplicated)
+        group_set.duplicated = Group.objects.exclude(
+            pk__in=original_ids).order_by('pk')
+
+        assert len(group_set.duplicated) == len(group_set.existing)
+        return group_set
+
+    def create_group_set_for_parent(self, original_parent, new_parent,
+            persist=True, already_duplicated_originals=None):
+        from greenbudget.app.group.models import Group
+
+        already_duplicated_originals = already_duplicated_originals or []
+        account_group_set = ObjectSet(
+            existing=Group.objects.filter(
+                content_type=ContentType.objects.get_for_model(type(original_parent)),  # noqa
+                object_id=self.original.pk
+            ).exclude(pk__in=already_duplicated_originals)
+        )
+        account_group_set.duplicated = [
+            self.instantiate_obj(
+                obj=group,
+                content_type=ContentType.objects.get_for_model(type(new_parent)),  # noqa
+                object_id=new_parent.pk
+            )
+            for group in account_group_set.existing
+        ]
+        if persist:
+            self.bulk_create_group_set(account_group_set)
+        return account_group_set
+
     @log_after(entity="Account Group")
     def handle_account_groups(self):
-        account_group_set = ObjectSet(
-            existing=self.objects('AccountGroup')
-            .filter(parent=self.original).all()
-        )
-        account_group_set.duplicated = self.bulk_create(
-            model_name="AccountGroup",
-            objs=[
-                self.instantiate_obj(group, parent=self.budget)
-                for group in account_group_set.existing
-            ],
-            return_created_objects=True
-        )
-        return account_group_set
+        return self.create_group_set_for_parent(self.original, self.budget)
 
     @log_after(entity="Account")
     def handle_accounts(self):
         account_group_set = self.handle_account_groups()
-
-        account_set = ObjectSet()
-        account_set.existing = self.original.accounts.all()
+        account_set = ObjectSet(existing=self.original.children.all())
         for account in account_set.existing:
-            kwargs = {'budget': self.budget}
+            kwargs = {'parent': self.budget}
             if account.group is not None:
                 kwargs['group_id'] = account_group_set.get_duplicated(
                     account.group.pk)
@@ -193,7 +212,7 @@ class BulkBudgetOperation:
         return account_set
 
     @log_after(
-        entity="Sub Account Group",
+        entity="Group",
         prefix=lambda level, parent_set: "Level %s:" % level
     )
     def handle_subaccount_groups(self, level, parent_set):
@@ -218,25 +237,17 @@ class BulkBudgetOperation:
         # ---- Account 2 => Group B
         group_set = ObjectSet()
         for parent, _ in self.iterate_over_level(level=level - 1):
-            parent_subaccount_groups = self.objects('SubAccountGroup').filter(
-                object_id=parent.pk,
-                content_type=ContentType.objects.get_for_model(type(parent))
-            ).all()
-            group_set.existing += parent_subaccount_groups
             parent_cls = self.subaccount_parent_cls(parent)
-            group_set.duplicated += [
-                self.instantiate_obj(
-                    obj=group,
-                    parent=parent_cls.objects.get(pk=parent_set.map[parent.pk])
-                )
-                for group in parent_subaccount_groups
-            ]
-        if len(group_set.duplicated) != 0:
-            group_set.duplicated = self.bulk_create(
-                model_name='SubAccountGroup',
-                objs=group_set.duplicated,
-                return_created_objects=True
+            group_set_iteree = self.create_group_set_for_parent(
+                original_parent=parent,
+                new_parent=parent_cls.objects.get(pk=parent_set.map[parent.pk]),
+                persist=False,
+                already_duplicated_originals=[
+                    obj.pk for obj in group_set.existing]
             )
+            group_set.add(group_set_iteree)
+
+        self.bulk_create_group_set(group_set)
         return group_set
 
     def assign_fringes_to_subaccounts(self, subaccount_set, fringes_set):
@@ -272,6 +283,10 @@ class BulkBudgetOperation:
             # associated with the original parent (duplicated in previous
             # level).
             parent_cls = self.subaccount_parent_cls(parent)
+            kwargs.update(
+                content_type=ContentType.objects.get_for_model(parent_cls),
+                object_id=parent.pk
+            )
             kwargs['parent'] = parent_cls.objects.get(pk=parent_set.map[parent.pk])  # noqa
 
             duplicated_obj = self.instantiate_obj(obj, **kwargs)
@@ -279,7 +294,7 @@ class BulkBudgetOperation:
             # This is currently handled by a post_save signal in
             # greenbudget.app.subaccount.signals - but since we are disabling
             # signals for performance, we have to do it the faster way here.
-            if obj.subaccounts.count() != 0:
+            if obj.children.count() != 0:
                 for fld in duplicated_obj.DERIVING_FIELDS:
                     setattr(duplicated_obj, fld, None)
 
@@ -411,5 +426,9 @@ class BudgetDuplicator(BulkBudgetOperation):
                 kwargs['subaccount_id'] = subaccount_set.map[actual.subaccount.pk]  # noqa
             duplicated_actuals.append(self.instantiate_obj(actual, **kwargs))
 
+        # We do not have to worry about including the primary keys on the
+        # bulk created Actual instances because we do not need to map the
+        # original Actual instances to the duplicated ones (which we do need
+        # to do for Groups).
         Actual.objects.bulk_create(duplicated_actuals)
         self.log("Duplicated %s Actuals" % len(duplicated_actuals))

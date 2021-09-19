@@ -16,6 +16,7 @@ def upload_to(instance, filename):
 
 
 class User(AbstractUser):
+    username = None
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30)
     email = models.EmailField(unique=True)
@@ -27,8 +28,8 @@ class User(AbstractUser):
     is_first_time = models.BooleanField(default=True)
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
-
+    REQUIRED_FIELDS = ['first_name', 'last_name']
+    
     objects = UserManager()
 
     class Meta:

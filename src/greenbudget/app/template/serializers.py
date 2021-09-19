@@ -30,11 +30,15 @@ class TemplateSerializer(TemplateSimpleSerializer):
     community = serializers.BooleanField(required=False, write_only=True)
     hidden = serializers.BooleanField(required=False)
     estimated = serializers.FloatField(read_only=True)
+    actual = serializers.FloatField(read_only=True)
+    fringe_contribution = serializers.FloatField(read_only=True)
+    markup_contribution = serializers.FloatField(read_only=True)
 
     class Meta:
         model = Template
         fields = TemplateSimpleSerializer.Meta.fields + (
-            'community', 'estimated', 'hidden')
+            'community', 'estimated', 'hidden', 'actual', 'fringe_contribution',
+            'markup_contribution')
 
     def validate(self, attrs):
         request = self.context["request"]

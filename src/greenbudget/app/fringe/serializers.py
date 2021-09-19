@@ -11,6 +11,7 @@ from .models import Fringe
 
 class FringeSerializer(ModelSerializer):
     id = serializers.IntegerField(read_only=True)
+    type = serializers.CharField(read_only=True)
     name = serializers.CharField(
         required=False,
         allow_blank=False,
@@ -46,4 +47,4 @@ class FringeSerializer(ModelSerializer):
         fields = (
             'id', 'name', 'description', 'created_by', 'created_at',
             'updated_by', 'updated_at', 'rate', 'cutoff', 'unit',
-            'num_times_used', 'color')
+            'num_times_used', 'color', 'type')

@@ -2,35 +2,11 @@ from rest_framework import serializers, exceptions
 
 from greenbudget.lib.drf.fields import (
     ModelChoiceField, Base64ImageField)
-from greenbudget.lib.drf.serializers import (
-    ModelSerializer, PolymorphicNonPolymorphicSerializer)
+from greenbudget.lib.drf.serializers import ModelSerializer
 
-from greenbudget.app.account.models import Account
-from greenbudget.app.subaccount.models import SubAccount
 from greenbudget.app.template.models import Template
 
 from .models import BaseBudget, Budget
-
-
-class EntitySerializer(PolymorphicNonPolymorphicSerializer):
-    choices = {
-        Account: (
-            "greenbudget.app.account.serializers.AccountSimpleSerializer",
-            "account"
-        ),
-        SubAccount: (
-            "greenbudget.app.subaccount.serializers.SubAccountSimpleSerializer",
-            "subaccount"
-        ),
-        Budget: (
-            "greenbudget.app.budget.serializers.BaseBudgetSerializer",
-            "budget"
-        ),
-        Template: (
-            "greenbudget.app.budget.serializers.BaseBudgetSerializer",
-            "template"
-        )
-    }
 
 
 class BaseBudgetSerializer(ModelSerializer):
@@ -97,11 +73,12 @@ class BudgetSerializer(BudgetSimpleSerializer):
     location_days = serializers.IntegerField(read_only=True)
     estimated = serializers.FloatField(read_only=True)
     actual = serializers.FloatField(read_only=True)
-    variance = serializers.FloatField(read_only=True)
+    fringe_contribution = serializers.FloatField(read_only=True)
+    markup_contribution = serializers.FloatField(read_only=True)
 
     class Meta:
         model = Budget
         fields = BudgetSimpleSerializer.Meta.fields + (
             'project_number', 'production_type', 'shoot_date', 'delivery_date',
             'build_days', 'prelight_days', 'studio_shoot_days', 'location_days',
-            'actual', 'variance', 'estimated')
+            'actual', 'estimated', 'fringe_contribution', 'markup_contribution')

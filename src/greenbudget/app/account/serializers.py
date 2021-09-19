@@ -3,9 +3,10 @@ from rest_framework import serializers
 from greenbudget.lib.drf.serializers import (
     ModelSerializer)
 
-from greenbudget.app.budget.serializers import EntitySerializer
-from greenbudget.app.group.models import BudgetAccountGroup, TemplateAccountGroup  # noqa
-from greenbudget.app.group.serializers import BudgetSubAccountGroupSerializer
+from greenbudget.app.budgeting.fields import TableChildrenPrimaryKeyRelatedField
+from greenbudget.app.budgeting.serializers import EntitySerializer
+from greenbudget.app.group.models import Group
+from greenbudget.app.group.serializers import GroupSerializer
 from greenbudget.app.subaccount.serializers import SubAccountPdfSerializer
 from greenbudget.app.user.models import User
 
@@ -39,33 +40,36 @@ class AccountSerializer(AccountSimpleSerializer):
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
     estimated = serializers.FloatField(read_only=True)
-    subaccounts = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    actual = serializers.FloatField(read_only=True)
+    fringe_contribution = serializers.FloatField(read_only=True)
+    markup_contribution = serializers.FloatField(read_only=True)
+    children = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    group = TableChildrenPrimaryKeyRelatedField(
+        obj_name='Account',
+        required=False,
+        allow_null=True,
+        child_instance_cls=lambda parent: Group.child_instance_cls_for_parent(
+            parent),
+        write_only=True,
+    )
 
     class Meta(AccountSimpleSerializer.Meta):
         fields = AccountSimpleSerializer.Meta.fields + (
             'created_by', 'updated_by', 'created_at', 'updated_at', 'estimated',
-            'subaccounts')
+            'children', 'fringe_contribution', 'markup_contribution', 'actual',
+            'group')
 
 
 class BudgetAccountSerializer(AccountSerializer):
-    actual = serializers.FloatField(read_only=True)
-    variance = serializers.FloatField(read_only=True)
     access = serializers.PrimaryKeyRelatedField(
         many=True,
         queryset=User.objects.active(),
         required=False
     )
-    group = serializers.PrimaryKeyRelatedField(
-        required=False,
-        allow_null=True,
-        queryset=BudgetAccountGroup.objects.all(),
-        write_only=True
-    )
 
     class Meta:
         model = BudgetAccount
-        fields = AccountSerializer.Meta.fields + (
-            'actual', 'variance', 'access', 'group')
+        fields = AccountSerializer.Meta.fields + ('access',)
 
 
 class BudgetAccountDetailSerializer(BudgetAccountSerializer):
@@ -78,16 +82,9 @@ class BudgetAccountDetailSerializer(BudgetAccountSerializer):
 
 
 class TemplateAccountSerializer(AccountSerializer):
-    group = serializers.PrimaryKeyRelatedField(
-        required=False,
-        allow_null=True,
-        queryset=TemplateAccountGroup.objects.all(),
-        write_only=True
-    )
-
     class Meta:
         model = TemplateAccount
-        fields = AccountSerializer.Meta.fields + ('group', )
+        fields = AccountSerializer.Meta.fields
 
 
 class TemplateAccountDetailSerializer(TemplateAccountSerializer):
@@ -105,13 +102,15 @@ class AccountPdfSerializer(serializers.ModelSerializer):
     identifier = serializers.CharField(read_only=True)
     description = serializers.CharField(read_only=True)
     actual = serializers.FloatField(read_only=True)
-    variance = serializers.FloatField(read_only=True)
     estimated = serializers.FloatField(read_only=True)
-    subaccounts = SubAccountPdfSerializer(many=True, read_only=True)
-    groups = BudgetSubAccountGroupSerializer(many=True, read_only=True)
+    fringe_contribution = serializers.FloatField(read_only=True)
+    markup_contribution = serializers.FloatField(read_only=True)
+    children = SubAccountPdfSerializer(many=True, read_only=True)
+    groups = GroupSerializer(many=True, read_only=True)
 
     class Meta:
         model = BudgetAccount
-        fields = ('id', 'identifier', 'description', 'actual', 'variance',
-            'estimated', 'subaccounts', 'groups', 'type')
+        fields = ('id', 'identifier', 'description', 'actual',
+            'estimated', 'children', 'groups', 'type', 'fringe_contribution',
+            'markup_contribution')
         read_only_fields = fields

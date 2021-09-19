@@ -21,10 +21,30 @@ class UserQuery(UserQuerier, models.query.QuerySet):
 
 
 class UserManager(UserQuerier, DjangoUserManager):
+    use_in_migrations = True
     queryset_class = UserQuery
 
     def get_queryset(self):
         return self.queryset_class(self.model)
+
+    def _create_user(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError('Email is a required user field.')
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        if password is not None:
+            user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_user(self, email, **kwargs):
+        kwargs.setdefault('is_staff', False)
+        kwargs.setdefault('is_superuser', False)
+        return self._create_user(email, **kwargs)
+
+    def create_superuser(self, email, **kwargs):
+        kwargs.update(is_staff=True, is_superuser=True)
+        return self._create_user(email, **kwargs)
 
     def get_from_google_token(self, token):
         try:
@@ -39,7 +59,7 @@ class UserManager(UserQuerier, DjangoUserManager):
     def create_from_google_token(self, token):
         google_user = get_google_user_from_token(token)
         return self.create(
-            google_user.email,
+            email=google_user.email,
             first_name=google_user.first_name,
             last_name=google_user.last_name
         )
@@ -61,11 +81,3 @@ class UserManager(UserQuerier, DjangoUserManager):
     def get_or_create_from_social_token(self, token, provider):
         assert provider == "google", "Provider %s not supported." % provider
         return self.get_or_create_from_google_token(token)
-
-    def create(self, email, password=None, **kwargs):
-        kwargs['username'] = email
-        user = super().create(email=email, **kwargs)
-        if password is not None:
-            user.set_password(password)
-            user.save()
-        return user

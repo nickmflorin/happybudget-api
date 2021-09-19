@@ -7,9 +7,9 @@
     "name": "Orange",
     "created_at": "2021-09-19T19:34:34.911Z",
     "content_types": [
-      1,
-      3,
-      18
+      ["subaccount", "subaccountunit"],
+      ["group", "group"],
+      ["fringe", "fringe"]
     ]
   }
 },
@@ -21,9 +21,9 @@
     "name": "Muted Blue",
     "created_at": "2021-09-19T19:34:45.460Z",
     "content_types": [
-      1,
-      3,
-      18
+      ["subaccount", "subaccountunit"],
+      ["group", "group"],
+      ["fringe", "fringe"]
     ]
   }
 },
@@ -35,9 +35,9 @@
     "name": "Teal",
     "created_at": "2021-09-19T19:34:55.230Z",
     "content_types": [
-      1,
-      3,
-      18
+      ["subaccount", "subaccountunit"],
+      ["group", "group"],
+      ["fringe", "fringe"]
     ]
   }
 },
@@ -49,9 +49,9 @@
     "name": "Barney",
     "created_at": "2021-09-19T19:35:03.703Z",
     "content_types": [
-      1,
-      3,
-      18
+      ["subaccount", "subaccountunit"],
+      ["group", "group"],
+      ["fringe", "fringe"]
     ]
   }
 },
@@ -63,9 +63,9 @@
     "name": "Light Brown",
     "created_at": "2021-09-19T19:35:13.319Z",
     "content_types": [
-      1,
-      3,
-      18
+      ["subaccount", "subaccountunit"],
+      ["group", "group"],
+      ["fringe", "fringe"]
     ]
   }
 },
@@ -77,9 +77,9 @@
     "name": "Onyx",
     "created_at": "2021-09-19T19:35:23.130Z",
     "content_types": [
-      1,
-      3,
-      18
+      ["subaccount", "subaccountunit"],
+      ["group", "group"],
+      ["fringe", "fringe"]
     ]
   }
 },
@@ -91,9 +91,9 @@
     "name": "Mint",
     "created_at": "2021-09-19T19:35:30.748Z",
     "content_types": [
-      1,
-      3,
-      18
+      ["subaccount", "subaccountunit"],
+      ["group", "group"],
+      ["fringe", "fringe"]
     ]
   }
 },
@@ -105,9 +105,9 @@
     "name": "Light Red",
     "created_at": "2021-09-19T19:35:37.870Z",
     "content_types": [
-      1,
-      3,
-      18
+      ["subaccount", "subaccountunit"],
+      ["group", "group"],
+      ["fringe", "fringe"]
     ]
   }
 },
@@ -119,9 +119,9 @@
     "name": "Light Blue",
     "created_at": "2021-09-19T19:35:46.226Z",
     "content_types": [
-      1,
-      3,
-      18
+      ["subaccount", "subaccountunit"],
+      ["group", "group"],
+      ["fringe", "fringe"]
     ]
   }
 },
@@ -133,9 +133,9 @@
     "name": "Lavender",
     "created_at": "2021-09-19T19:35:54.825Z",
     "content_types": [
-      1,
-      3,
-      18
+      ["subaccount", "subaccountunit"],
+      ["group", "group"],
+      ["fringe", "fringe"]
     ]
   }
 },
@@ -147,9 +147,9 @@
     "name": "Yellow",
     "created_at": "2021-09-19T19:36:05.256Z",
     "content_types": [
-      1,
-      3,
-      18
+      ["subaccount", "subaccountunit"],
+      ["group", "group"],
+      ["fringe", "fringe"]
     ]
   }
 },
@@ -161,9 +161,9 @@
     "name": "Salmon",
     "created_at": "2021-09-19T19:36:12.923Z",
     "content_types": [
-      1,
-      3,
-      18
+      ["subaccount", "subaccountunit"],
+      ["group", "group"],
+      ["fringe", "fringe"]
     ]
   }
 },
@@ -175,9 +175,9 @@
     "name": "Light Purple",
     "created_at": "2021-09-19T19:36:20.990Z",
     "content_types": [
-      1,
-      3,
-      18
+      ["subaccount", "subaccountunit"],
+      ["group", "group"],
+      ["fringe", "fringe"]
     ]
   }
 },
@@ -189,9 +189,9 @@
     "name": "Purple",
     "created_at": "2021-09-19T19:36:29.158Z",
     "content_types": [
-      1,
-      3,
-      18
+      ["subaccount", "subaccountunit"],
+      ["group", "group"],
+      ["fringe", "fringe"]
     ]
   }
 },
@@ -203,9 +203,9 @@
     "name": "Blue",
     "created_at": "2021-09-19T19:36:37.558Z",
     "content_types": [
-      1,
-      3,
-      18
+      ["subaccount", "subaccountunit"],
+      ["group", "group"],
+      ["fringe", "fringe"]
     ]
   }
 },
@@ -217,9 +217,9 @@
     "name": "Green",
     "created_at": "2021-09-19T19:36:43.909Z",
     "content_types": [
-      1,
-      3,
-      18
+      ["subaccount", "subaccountunit"],
+      ["group", "group"],
+      ["fringe", "fringe"]
     ]
   }
 },
@@ -231,9 +231,9 @@
     "name": "Pink",
     "created_at": "2021-09-19T19:36:53.187Z",
     "content_types": [
-      1,
-      3,
-      18
+      ["subaccount", "subaccountunit"],
+      ["group", "group"],
+      ["fringe", "fringe"]
     ]
   }
 },
@@ -245,9 +245,9 @@
     "name": "Sky Blue",
     "created_at": "2021-09-19T19:37:01.310Z",
     "content_types": [
-      1,
-      3,
-      18
+      ["subaccount", "subaccountunit"],
+      ["group", "group"],
+      ["fringe", "fringe"]
     ]
   }
 },
@@ -259,9 +259,9 @@
     "name": "Neon Green",
     "created_at": "2021-09-19T19:37:18.833Z",
     "content_types": [
-      1,
-      18,
-      3
+      ["subaccount", "subaccountunit"],
+      ["group", "group"],
+      ["fringe", "fringe"]
     ]
   }
 },
@@ -273,9 +273,9 @@
     "name": "Dark Yellow",
     "created_at": "2021-09-19T19:37:30.645Z",
     "content_types": [
-      1,
-      18,
-      3
+      ["subaccount", "subaccountunit"],
+      ["group", "group"],
+      ["fringe", "fringe"]
     ]
   }
 },
@@ -287,9 +287,9 @@
     "name": "Turqoise",
     "created_at": "2021-09-19T19:37:41.418Z",
     "content_types": [
-      1,
-      18,
-      3
+      ["subaccount", "subaccountunit"],
+      ["group", "group"],
+      ["fringe", "fringe"]
     ]
   }
 },
@@ -301,9 +301,9 @@
     "name": "Volcano",
     "created_at": "2021-09-19T19:37:52.624Z",
     "content_types": [
-      1,
-      18,
-      3
+      ["subaccount", "subaccountunit"],
+      ["group", "group"],
+      ["fringe", "fringe"]
     ]
   }
 },
@@ -315,9 +315,9 @@
     "name": "Rose",
     "created_at": "2021-09-19T19:38:04.718Z",
     "content_types": [
-      1,
-      18,
-      3
+      ["subaccount", "subaccountunit"],
+      ["group", "group"],
+      ["fringe", "fringe"]
     ]
   }
 }

@@ -1,5 +1,6 @@
 from django.utils.translation import gettext_lazy as _
-from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
+from rest_framework.exceptions import (
+    AuthenticationFailed, PermissionDenied, Throttled)
 
 
 class AuthErrorCodes(object):
@@ -41,3 +42,8 @@ class InvalidCredentialsError(AuthenticationFailed):
 class InvalidResetToken(PermissionDenied):
     default_detail = _("The provided token is invalid.")
     default_code = AuthErrorCodes.INVALID_RESET_TOKEN
+
+
+class RateLimitedError(Throttled):
+    default_detail = _("Request limit exceeded.")
+    default_code = "rate_limited"

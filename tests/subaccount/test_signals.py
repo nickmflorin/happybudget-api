@@ -8,34 +8,52 @@ from django.test import override_settings
 from greenbudget.app import signals
 
 
-def test_create_subaccount_recalculates(models, create_budget,
-        create_budget_account, user):
+def test_delete_subaccount_recalculates(create_budget,
+        create_budget_account, create_budget_subaccount):
     budget = create_budget()
-    account = create_budget_account(budget=budget)
-    subaccount = models.BudgetSubAccount.objects.create(
+    account = create_budget_account(parent=budget)
+    parent_subaccount = create_budget_subaccount(parent=account)
+    subaccount = create_budget_subaccount(
+        parent=parent_subaccount,
+        rate=1,
+        multiplier=5,
+        quantity=10,
+    )
+    assert parent_subaccount.estimated == 50.0
+    assert subaccount.estimated == 50.0
+    assert account.estimated == 50.0
+    assert budget.estimated == 50.0
+
+    subaccount.delete()
+    assert account.estimated == 0.0
+    assert budget.estimated == 0.0
+    assert parent_subaccount.estimated == 0.0
+
+
+def test_create_subaccount_recalculates(create_budget, create_budget_account,
+        create_budget_subaccount):
+    budget = create_budget()
+    account = create_budget_account(parent=budget)
+    subaccount = create_budget_subaccount(
         parent=account,
         rate=1,
         multiplier=5,
         quantity=10,
-        created_by=user,
-        updated_by=user
     )
     assert subaccount.estimated == 50.0
     assert account.estimated == 50.0
     assert budget.estimated == 50.0
 
 
-def test_update_subaccount_recalculates(models, create_budget,
-        create_budget_account, user):
+def test_update_subaccount_recalculates(create_budget, create_budget_account,
+        create_budget_subaccount):
     budget = create_budget()
-    account = create_budget_account(budget=budget)
-    subaccount = models.BudgetSubAccount.objects.create(
+    account = create_budget_account(parent=budget)
+    subaccount = create_budget_subaccount(
         parent=account,
         rate=1,
         multiplier=5,
         quantity=10,
-        created_by=user,
-        updated_by=user
     )
     assert subaccount.estimated == 50.0
     assert account.estimated == 50.0
@@ -49,17 +67,15 @@ def test_update_subaccount_recalculates(models, create_budget,
 
 
 def test_change_subaccount_parent_recalculates(models, create_budget,
-        create_budget_account, user):
+        create_budget_account, create_budget_subaccount):
     budget = create_budget()
-    account = create_budget_account(budget=budget)
-    another_account = create_budget_account(budget=budget)
-    subaccount = models.BudgetSubAccount.objects.create(
+    account = create_budget_account(parent=budget)
+    another_account = create_budget_account(parent=budget)
+    subaccount = create_budget_subaccount(
         parent=account,
         rate=1,
         multiplier=5,
         quantity=10,
-        created_by=user,
-        updated_by=user
     )
     assert subaccount.estimated == 50.0
     assert account.estimated == 50.0
@@ -84,7 +100,7 @@ def test_saving_subaccount_saves_budget(create_budget, create_budget_account,
         create_budget_subaccount, freezer):
     freezer.move_to('2017-05-20')
     budget = create_budget()
-    account = create_budget_account(budget=budget)
+    account = create_budget_account(parent=budget)
     subaccount = create_budget_subaccount(parent=account)
     freezer.move_to('2019-05-20')
     subaccount.save()
@@ -93,79 +109,12 @@ def test_saving_subaccount_saves_budget(create_budget, create_budget_account,
         2019, 5, 20).replace(tzinfo=timezone.utc)
 
 
-def test_remove_budget_subaccount_from_group_group_deleted(user, create_budget,
-        create_budget_account, create_budget_subaccount_group, models):
-    budget = create_budget()
-    account = create_budget_account(budget=budget)
-    group = create_budget_subaccount_group(parent=account)
-    subaccount = models.BudgetSubAccount.objects.create(
-        parent=account,
-        identifier="Identifier",
-        group=group,
-        updated_by=user,
-        created_by=user
-    )
-    subaccount.group = None
-    subaccount.save()
-    assert models.BudgetSubAccountGroup.objects.first() is None
-
-
-def test_remove_template_subaccount_from_group_group_deleted(user, models,
-        create_template, create_template_account,
-        create_template_subaccount_group):
-    template = create_template()
-    account = create_template_account(budget=template)
-    group = create_template_subaccount_group(parent=account)
-    subaccount = models.TemplateSubAccount.objects.create(
-        parent=account,
-        identifier="Identifier",
-        group=group,
-        updated_by=user,
-        created_by=user
-    )
-    subaccount.group = None
-    subaccount.save()
-    assert models.TemplateSubAccountGroup.objects.first() is None
-
-
-def test_remove_budget_subaccount_from_group_group_not_deleted(create_budget,
-        create_budget_subaccount, create_budget_account, models,
-        create_budget_subaccount_group):
-    budget = create_budget()
-    account = create_budget_account(budget=budget)
-    group = create_budget_subaccount_group(parent=account)
-    subaccount = create_budget_subaccount(
-        parent=account,
-        group=group
-    )
-    create_budget_subaccount(parent=account, group=group)
-    subaccount.group = None
-    subaccount.save()
-    assert models.BudgetSubAccountGroup.objects.first() == group
-
-
-def test_remove_template_subaccount_from_group_group_not_deleted(models,
-        create_template, create_template_subaccount, create_template_account,
-        create_template_subaccount_group):
-    budget = create_template()
-    account = create_template_account(budget=budget)
-    group = create_template_subaccount_group(parent=account)
-    subaccount = create_template_subaccount(
-        parent=account,
-        group=group
-    )
-    create_template_subaccount(parent=account, group=group)
-    subaccount.group = None
-    subaccount.save()
-    assert models.TemplateSubAccountGroup.objects.first() == group
-
-
 @override_settings(TRACK_MODEL_HISTORY=True)
 def test_record_create_history(create_budget, create_budget_account, user,
         models):
     with signals.post_create_by_user.disable():
         budget = create_budget()
-        account = create_budget_account(budget=budget)
+        account = create_budget_account(parent=budget)
     subaccount = models.BudgetSubAccount.objects.create(
         description="Description",
         identifier="Identifier",
@@ -184,7 +133,7 @@ def test_record_create_history(create_budget, create_budget_account, user,
 def test_record_field_change_history(create_budget, create_budget_account,
         user, models):
     budget = create_budget()
-    account = create_budget_account(budget=budget)
+    account = create_budget_account(parent=budget)
     subaccount = models.BudgetSubAccount(
         description="Description",
         identifier="Identifier",
@@ -210,7 +159,7 @@ def test_record_field_change_history(create_budget, create_budget_account,
 def test_dont_record_field_change_history(create_budget, create_budget_account,
         user, models):
     budget = create_budget()
-    account = create_budget_account(budget=budget)
+    account = create_budget_account(parent=budget)
     subaccount = models.BudgetSubAccount(
         description="Description",
         identifier="Identifier",
@@ -230,7 +179,7 @@ def test_dont_record_field_change_history(create_budget, create_budget_account,
 def test_record_field_change_history_null_at_start(create_budget, models,
         create_budget_account, user):
     budget = create_budget()
-    account = create_budget_account(budget=budget)
+    account = create_budget_account(parent=budget)
     subaccount = models.BudgetSubAccount(
         description=None,
         identifier="Identifier",

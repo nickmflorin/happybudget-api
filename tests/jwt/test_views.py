@@ -32,7 +32,6 @@ def test_validate_token(api_client, settings, user):
             'last_name': user.last_name,
             'full_name': user.full_name,
             'email': user.email,
-            'username': user.username,
             'is_active': user.is_active,
             'is_admin': user.is_admin,
             'is_superuser': user.is_superuser,

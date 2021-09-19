@@ -13,7 +13,7 @@ def test_get_subaccount_subaccounts_history(api_client, create_budget, user,
 
     with signals.post_create_by_user.disable():
         budget = create_budget()
-        account = create_budget_account(budget=budget)
+        account = create_budget_account(parent=budget)
         parent_subaccount = create_budget_subaccount(
             parent=account,
             identifier="subaccount-a"
@@ -136,7 +136,7 @@ def test_get_subaccount_history(api_client, create_budget, user,
         create_budget_account, create_budget_subaccount, models):
     with signals.post_create_by_user.disable():
         budget = create_budget()
-        account = create_budget_account(budget=budget)
+        account = create_budget_account(parent=budget)
         subaccount = create_budget_subaccount(
             parent=account,
             description="Original Description",

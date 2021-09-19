@@ -1,3 +1,4 @@
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from rest_framework import (
     viewsets, mixins, response, status, decorators, permissions)
@@ -5,13 +6,13 @@ from rest_framework import (
 from greenbudget.app.account.models import TemplateAccount
 from greenbudget.app.account.serializers import TemplateAccountSerializer
 from greenbudget.app.account.views import GenericAccountViewSet
-from greenbudget.app.budget.decorators import (
-    register_all_bulk_operations, BulkAction)
-from greenbudget.app.common.permissions import IsAdminOrReadOnly
+from greenbudget.app.budgeting.decorators import (
+    register_bulk_operations, BulkAction)
+from greenbudget.app.authentication.permissions import IsAdminOrReadOnly
 from greenbudget.app.fringe.models import Fringe
 from greenbudget.app.fringe.serializers import FringeSerializer
-from greenbudget.app.group.models import TemplateAccountGroup
-from greenbudget.app.group.serializers import TemplateAccountGroupSerializer
+from greenbudget.app.group.models import Group
+from greenbudget.app.group.serializers import GroupSerializer
 
 from .models import Template
 from .mixins import TemplateNestedMixin
@@ -32,11 +33,14 @@ class TemplateGroupViewSet(
     (2) GET /templates/<pk>/groups/
     """
     lookup_field = 'pk'
-    serializer_class = TemplateAccountGroupSerializer
+    serializer_class = GroupSerializer
     template_lookup_field = ("pk", "template_pk")
 
     def get_queryset(self):
-        return TemplateAccountGroup.objects.filter(parent=self.template)
+        return Group.objects.filter(
+            content_type=ContentType.objects.get_for_model(type(self.template)),
+            object_id=self.template.pk
+        )
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -50,7 +54,8 @@ class TemplateGroupViewSet(
         serializer.save(
             created_by=self.request.user,
             updated_by=self.request.user,
-            parent=self.template
+            content_type=ContentType.objects.get_for_model(type(self.template)),
+            object_id=self.template.pk
         )
 
 
@@ -114,7 +119,7 @@ class TemplateAccountViewSet(
         return context
 
     def get_queryset(self):
-        return TemplateAccount.objects.filter(budget=self.template).all()
+        return TemplateAccount.objects.filter(parent=self.template).all()
 
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
@@ -123,7 +128,7 @@ class TemplateAccountViewSet(
         serializer.save(
             updated_by=self.request.user,
             created_by=self.request.user,
-            budget=self.template
+            parent=self.template
         )
 
 
@@ -147,9 +152,8 @@ class GenericTemplateViewSet(viewsets.GenericViewSet):
         return TemplateSerializer
 
 
-@register_all_bulk_operations(
+@register_bulk_operations(
     base_cls=Template,
-    filter_qs=lambda context: models.Q(budget=context.instance),
     child_context_indicator='budget_context',
     get_budget=lambda instance: instance,
     # Since the Template is the entity being updated, it will already be
@@ -159,21 +163,28 @@ class GenericTemplateViewSet(viewsets.GenericViewSet):
     perform_update=lambda serializer, context: serializer.save(  # noqa
         updated_by=context.request.user
     ),
-    perform_create=lambda serializer, context: serializer.save(  # noqa
-        created_by=context.request.user,
-        updated_by=context.request.user,
-        budget=context.instance
-    ),
     actions=[
         BulkAction(
             url_path='bulk-{action_name}-accounts',
             child_cls=TemplateAccount,
             child_serializer_cls=TemplateAccountSerializer,
+            filter_qs=lambda context: models.Q(parent=context.instance),
+            perform_create=lambda serializer, context: serializer.save(  # noqa
+                created_by=context.request.user,
+                updated_by=context.request.user,
+                parent=context.instance
+            ),
         ),
         BulkAction(
             url_path='bulk-{action_name}-fringes',
             child_cls=Fringe,
             child_serializer_cls=FringeSerializer,
+            filter_qs=lambda context: models.Q(budget=context.instance),
+            perform_create=lambda serializer, context: serializer.save(  # noqa
+                created_by=context.request.user,
+                updated_by=context.request.user,
+                budget=context.instance
+            ),
         )
     ]
 )

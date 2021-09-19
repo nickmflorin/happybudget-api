@@ -2,14 +2,12 @@ from rest_framework import serializers, exceptions
 
 from greenbudget.lib import drf
 
-from greenbudget.app.budget.serializers import EntitySerializer
+from greenbudget.app.budgeting.fields import TableChildrenPrimaryKeyRelatedField
+from greenbudget.app.budgeting.serializers import EntitySerializer
 from greenbudget.app.contact.models import Contact
 from greenbudget.app.fringe.models import Fringe
-from greenbudget.app.group.models import (
-    BudgetSubAccountGroup,
-    TemplateSubAccountGroup
-)
-from greenbudget.app.group.serializers import BudgetSubAccountGroupSerializer
+from greenbudget.app.group.models import Group
+from greenbudget.app.group.serializers import GroupSerializer
 from greenbudget.app.tagging.fields import TagField
 from greenbudget.app.tagging.serializers import TagSerializer, ColorSerializer
 from greenbudget.app.user.fields import UserFilteredQuerysetPKField
@@ -49,8 +47,7 @@ class SubAccountSimpleSerializer(drf.serializers.ModelSerializer):
 
 class SubAccountTreeNodeSerializer(SubAccountSimpleSerializer):
     children = serializers.PrimaryKeyRelatedField(
-        queryset=BudgetSubAccount.objects.all(),
-        source='subaccounts'
+        queryset=BudgetSubAccount.objects.all()
     )
 
     class Meta:
@@ -93,13 +90,24 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
     rate = serializers.FloatField(required=False, allow_null=True)
     multiplier = serializers.FloatField(required=False, allow_null=True)
     estimated = serializers.FloatField(read_only=True)
+    fringe_contribution = serializers.FloatField(read_only=True)
+    markup_contribution = serializers.FloatField(read_only=True)
+    actual = serializers.FloatField(read_only=True)
+    group = TableChildrenPrimaryKeyRelatedField(
+        obj_name='Sub Account',
+        required=False,
+        allow_null=True,
+        child_instance_cls=lambda parent: Group.child_instance_cls_for_parent(
+            parent),
+        write_only=True,
+    )
     unit = TagField(
         serializer_class=SubAccountUnitSerializer,
         queryset=SubAccountUnit.objects.all(),
         required=False,
         allow_null=True
     )
-    subaccounts = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    children = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     object_id = serializers.IntegerField(read_only=True)
     parent_type = serializers.ChoiceField(
         choices=["account", "subaccount"],
@@ -122,10 +130,11 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
         fields = SubAccountSimpleSerializer.Meta.fields + (
             'identifier', 'created_by', 'updated_by', 'created_at',
             'updated_at', 'quantity', 'rate', 'multiplier', 'unit', 'object_id',
-            'parent_type', 'estimated', 'subaccounts', 'fringes', 'contact')
+            'parent_type', 'estimated', 'children', 'fringes', 'contact',
+            'fringe_contribution', 'markup_contribution', 'actual', 'group')
 
     def validate(self, attrs):
-        if self.instance is not None and self.instance.subaccounts.count() != 0:
+        if self.instance is not None and self.instance.children.count() != 0:
             if any([field in attrs for field in self.instance.DERIVING_FIELDS]):
                 raise exceptions.ValidationError(
                     "Field can only be updated when the sub account is not "
@@ -135,19 +144,9 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
 
 
 class BudgetSubAccountSerializer(SubAccountSerializer):
-    actual = serializers.FloatField(read_only=True)
-    variance = serializers.FloatField(read_only=True)
-    group = serializers.PrimaryKeyRelatedField(
-        required=False,
-        allow_null=True,
-        queryset=BudgetSubAccountGroup.objects.all(),
-        write_only=True
-    )
-
     class Meta:
         model = BudgetSubAccount
-        fields = SubAccountSerializer.Meta.fields + (
-            'actual', 'variance', 'group')
+        fields = SubAccountSerializer.Meta.fields
 
 
 class BudgetSubAccountDetailSerializer(BudgetSubAccountSerializer):
@@ -161,16 +160,9 @@ class BudgetSubAccountDetailSerializer(BudgetSubAccountSerializer):
 
 
 class TemplateSubAccountSerializer(SubAccountSerializer):
-    group = serializers.PrimaryKeyRelatedField(
-        required=False,
-        allow_null=True,
-        queryset=TemplateSubAccountGroup.objects.all(),
-        write_only=True
-    )
-
     class Meta:
         model = TemplateSubAccount
-        fields = SubAccountSerializer.Meta.fields + ('group', )
+        fields = SubAccountSerializer.Meta.fields
 
 
 class TemplateSubAccountDetailSerializer(TemplateSubAccountSerializer):
@@ -192,6 +184,8 @@ class SubAccountPdfSerializer(serializers.ModelSerializer):
     rate = serializers.FloatField(read_only=True)
     multiplier = serializers.FloatField(read_only=True)
     estimated = serializers.FloatField(read_only=True)
+    fringe_contribution = serializers.FloatField(read_only=True)
+    markup_contribution = serializers.FloatField(read_only=True)
     unit = TagField(
         model_cls=SubAccountUnit,
         read_only=True,
@@ -203,15 +197,15 @@ class SubAccountPdfSerializer(serializers.ModelSerializer):
         queryset=Contact.objects.all(),
         user_field='user'
     )
-    subaccounts = serializers.SerializerMethodField()
-    groups = BudgetSubAccountGroupSerializer(many=True, read_only=True)
+    children = serializers.SerializerMethodField()
+    groups = GroupSerializer(many=True, read_only=True)
 
     class Meta:
         model = BudgetSubAccount
         fields = ('id', 'identifier', 'description', 'quantity', 'rate',
-            'multiplier', 'estimated', 'unit', 'subaccounts', 'contact',
-            'groups', 'type')
+            'multiplier', 'estimated', 'unit', 'children', 'contact',
+            'groups', 'type', 'fringe_contribution', 'markup_contribution')
         read_only_fields = fields
 
-    def get_subaccounts(self, instance):
-        return self.__class__(instance.subaccounts.all(), many=True).data
+    def get_children(self, instance):
+        return self.__class__(instance.children.all(), many=True).data

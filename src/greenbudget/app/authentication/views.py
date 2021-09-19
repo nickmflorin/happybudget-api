@@ -11,7 +11,7 @@ from greenbudget.app.authentication.exceptions import AccountDisabledError
 
 from greenbudget.lib.drf.exceptions import (
     RequiredFieldError, InvalidFieldError)
-from greenbudget.app.common.exceptions import RateLimitedError
+from greenbudget.app.authentication.exceptions import RateLimitedError
 from greenbudget.app.user.models import User
 from greenbudget.app.user.serializers import UserSerializer
 from greenbudget.app.user.utils import send_forgot_password_email

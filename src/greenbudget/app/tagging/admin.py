@@ -9,7 +9,7 @@ from django.contrib import admin
 from django.contrib.contenttypes.models import ContentType
 from django.db import IntegrityError
 
-from greenbudget.app.common.admin import color_icon
+from greenbudget.app.custom_admin.utils import color_icon
 from greenbudget.app.subaccount.models import SubAccountUnit
 
 from .models import Color, Tag

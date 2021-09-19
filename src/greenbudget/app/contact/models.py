@@ -15,6 +15,7 @@ def upload_to(instance, filename):
 
 
 class Contact(models.Model):
+    type = "contact"
     first_name = models.CharField(max_length=30, null=True)
     last_name = models.CharField(max_length=30, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -29,7 +30,7 @@ class Contact(models.Model):
         (1, "employee", "Employee"),
         (2, "vendor", "Vendor"),
     )
-    type = models.IntegerField(choices=TYPES, null=True)
+    contact_type = models.IntegerField(choices=TYPES, null=True)
     position = models.CharField(max_length=128, null=True)
     company = models.CharField(max_length=128, null=True)
     city = models.CharField(max_length=30, null=True)

@@ -9,6 +9,7 @@ def test_get_contact(api_client, user, create_contact, models):
     assert response.status_code == 200
     assert response.json() == {
         "id": contact.pk,
+        "type": "contact",
         "first_name": contact.first_name,
         "last_name": contact.last_name,
         "created_at": "2020-01-01 00:00:00",
@@ -21,9 +22,9 @@ def test_get_contact(api_client, user, create_contact, models):
         "company": contact.company,
         "position": contact.position,
         "image": None,
-        "type": {
-            "id": contact.type,
-            "name": models.Contact.TYPES[contact.type]
+        "contact_type": {
+            "id": contact.contact_type,
+            "name": models.Contact.TYPES[contact.contact_type]
         }
     }
 
@@ -38,6 +39,7 @@ def test_get_contacts(api_client, user, create_contact, models):
     assert response.json()['data'] == [
         {
             "id": contacts[0].pk,
+            "type": "contact",
             "first_name": contacts[0].first_name,
             "last_name": contacts[0].last_name,
             "created_at": "2020-01-01 00:00:00",
@@ -50,13 +52,14 @@ def test_get_contacts(api_client, user, create_contact, models):
             "full_name": contacts[0].full_name,
             "position": contacts[0].position,
             "image": None,
-            "type": {
-                "id": contacts[0].type,
-                "name": models.Contact.TYPES[contacts[0].type]
+            "contact_type": {
+                "id": contacts[0].contact_type,
+                "name": models.Contact.TYPES[contacts[0].contact_type]
             }
         },
         {
             "id": contacts[1].pk,
+            "type": "contact",
             "first_name": contacts[1].first_name,
             "last_name": contacts[1].last_name,
             "created_at": "2020-01-01 00:00:00",
@@ -69,9 +72,9 @@ def test_get_contacts(api_client, user, create_contact, models):
             "full_name": contacts[1].full_name,
             "position": contacts[1].position,
             "image": None,
-            "type": {
-                "id": contacts[1].type,
-                "name": models.Contact.TYPES[contacts[1].type]
+            "contact_type": {
+                "id": contacts[1].contact_type,
+                "name": models.Contact.TYPES[contacts[1].contact_type]
             }
         }
     ]
@@ -85,7 +88,7 @@ def test_create_contact(api_client, user, models):
         'rate': 5,
         'first_name': 'Jack',
         'last_name': 'Johnson',
-        'type': 1,
+        'contact_type': 1,
         'phone_number': '15183696530',
         'email': 'jjohnson@gmail.com',
         "company": "Boeing"
@@ -98,13 +101,14 @@ def test_create_contact(api_client, user, models):
     assert contact.rate == 5
     assert contact.first_name == "Jack"
     assert contact.last_name == "Johnson"
-    assert contact.type == 1
+    assert contact.contact_type == 1
     assert contact.phone_number == 15183696530
     assert contact.email == "jjohnson@gmail.com"
     assert contact.company == "Boeing"
 
     assert response.json() == {
         "id": contact.pk,
+        "type": "contact",
         "first_name": "Jack",
         "last_name": "Johnson",
         "created_at": "2020-01-01 00:00:00",
@@ -117,7 +121,7 @@ def test_create_contact(api_client, user, models):
         "company": "Boeing",
         "position": None,
         "image": None,
-        "type": {
+        "contact_type": {
             "id": 1,
             "name": models.Contact.TYPES[1]
         }
@@ -136,13 +140,14 @@ def test_create_blank_contact(api_client, user, models):
     assert contact.rate is None
     assert contact.first_name is None
     assert contact.last_name is None
-    assert contact.type is None
+    assert contact.contact_type is None
     assert contact.phone_number is None
     assert contact.email is None
     assert contact.company is None
 
     assert response.json() == {
         "id": contact.pk,
+        "type": "contact",
         "first_name": None,
         "last_name": None,
         "created_at": "2020-01-01 00:00:00",
@@ -153,7 +158,7 @@ def test_create_blank_contact(api_client, user, models):
         "phone_number": None,
         "email": None,
         "full_name": "",
-        "type": None,
+        "contact_type": None,
         "position": None,
         "image": None,
     }
@@ -179,6 +184,7 @@ def test_update_contact(api_client, user, create_contact, models):
 
     assert response.json() == {
         "id": contact.pk,
+        "type": "contact",
         "first_name": "Jack",
         "last_name": "Johnson",
         "created_at": "2020-01-01 00:00:00",
@@ -191,9 +197,9 @@ def test_update_contact(api_client, user, create_contact, models):
         "full_name": contact.full_name,
         "position": contact.position,
         "image": None,
-        "type": {
-            "id": contact.type,
-            "name": models.Contact.TYPES[contact.type]
+        "contact_type": {
+            "id": contact.contact_type,
+            "name": models.Contact.TYPES[contact.contact_type]
         }
     }
 
@@ -228,7 +234,7 @@ def test_bulk_create_contacts(api_client, user, models):
                 'rate': 5,
                 'first_name': 'Jack',
                 'last_name': 'Johnson',
-                'type': 1,
+                'contact_type': 1,
             },
             {
                 'phone_number': '15183696530',
@@ -243,6 +249,7 @@ def test_bulk_create_contacts(api_client, user, models):
     assert response.json()['data'] == [
         {
             "id": contacts[0].pk,
+            "type": "contact",
             "first_name": "Jack",
             "last_name": "Johnson",
             "created_at": "2020-01-01 00:00:00",
@@ -255,13 +262,14 @@ def test_bulk_create_contacts(api_client, user, models):
             "full_name": contacts[0].full_name,
             "position": contacts[0].position,
             "image": None,
-            "type": {
+            "contact_type": {
                 "id": 1,
                 "name": models.Contact.TYPES[1]
             }
         },
         {
             "id": contacts[1].pk,
+            "type": "contact",
             "first_name": contacts[1].first_name,
             "last_name": contacts[1].last_name,
             "created_at": "2020-01-01 00:00:00",
@@ -274,7 +282,7 @@ def test_bulk_create_contacts(api_client, user, models):
             "full_name": contacts[1].full_name,
             "position": contacts[1].position,
             "image": None,
-            "type": None
+            "contact_type": None
         }
     ]
 

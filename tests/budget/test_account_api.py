@@ -9,8 +9,8 @@ def test_get_budget_accounts(api_client, user, create_budget_account,
     with signals.disable():
         budget = create_budget()
         accounts = [
-            create_budget_account(budget=budget),
-            create_budget_account(budget=budget)
+            create_budget_account(parent=budget),
+            create_budget_account(parent=budget)
         ]
     api_client.force_login(user)
     response = api_client.get("/v1/budgets/%s/accounts/" % budget.pk)
@@ -26,9 +26,10 @@ def test_get_budget_accounts(api_client, user, create_budget_account,
             "access": [],
             "type": "account",
             "estimated": 0.0,
-            "variance": 0.0,
+            "fringe_contribution": 0.0,
+            "markup_contribution": 0.0,
             "actual": 0.0,
-            "subaccounts": [],
+            "children": [],
             "created_by": user.pk,
             "updated_by": user.pk
         },
@@ -41,9 +42,11 @@ def test_get_budget_accounts(api_client, user, create_budget_account,
             "access": [],
             "type": "account",
             "estimated": 0.0,
-            "variance": 0.0,
+            "fringe_contribution": 0.0,
+            "markup_contribution": 0.0,
             "actual": 0.0,
-            "subaccounts": [],
+            "actual": 0.0,
+            "children": [],
             "created_by": user.pk,
             "updated_by": user.pk
         }
@@ -71,9 +74,10 @@ def test_create_budget_account(api_client, user, create_budget, models):
         "access": [],
         "type": "account",
         "estimated": 0.0,
-        "variance": 0.0,
+        "fringe_contribution": 0.0,
+        "markup_contribution": 0.0,
         "actual": 0.0,
-        "subaccounts": [],
+        "children": [],
         "created_by": user.pk,
         "updated_by": user.pk,
     }
@@ -84,8 +88,8 @@ def test_bulk_update_budget_accounts(api_client, user, create_budget,
     with signals.disable():
         budget = create_budget()
         accounts = [
-            create_budget_account(budget=budget),
-            create_budget_account(budget=budget)
+            create_budget_account(parent=budget),
+            create_budget_account(parent=budget)
         ]
     api_client.force_login(user)
     response = api_client.patch(
@@ -114,7 +118,6 @@ def test_bulk_update_budget_accounts(api_client, user, create_budget,
     # the Budget.
     assert response.json()['data']['id'] == budget.pk
     assert response.json()['data']['estimated'] == 0.0
-    assert response.json()['data']['variance'] == 0.0
     assert response.json()['data']['actual'] == 0.0
 
 
@@ -124,8 +127,8 @@ def test_bulk_update_budget_accounts_outside_budget(api_client, user,
         budget = create_budget()
         another_budget = create_budget()
         accounts = [
-            create_budget_account(budget=budget),
-            create_budget_account(budget=another_budget)
+            create_budget_account(parent=budget),
+            create_budget_account(parent=another_budget)
         ]
     api_client.force_login(user)
     response = api_client.patch(
@@ -187,7 +190,6 @@ def test_bulk_create_budget_accounts(api_client, user, create_budget, models):
     # the Budget.
     assert response.json()['data']['id'] == budget.pk
     assert response.json()['data']['estimated'] == 0.0
-    assert response.json()['data']['variance'] == 0.0
     assert response.json()['data']['actual'] == 0.0
 
 
@@ -196,8 +198,8 @@ def test_bulk_delete_budget_accounts(api_client, user, create_budget,
     with signals.disable():
         budget = create_budget()
         accounts = [
-            create_budget_account(budget=budget),
-            create_budget_account(budget=budget)
+            create_budget_account(parent=budget),
+            create_budget_account(parent=budget)
         ]
     # We need to create SubAccount(s) so that the accounts themselves have
     # calculated values, and thus the Budget itself has calculated values, so
@@ -229,10 +231,8 @@ def test_bulk_delete_budget_accounts(api_client, user, create_budget,
     # the Budget.
     assert response.json()['data']['id'] == budget.pk
     assert response.json()['data']['estimated'] == 0.0
-    assert response.json()['data']['variance'] == 0.0
     assert response.json()['data']['actual'] == 0.0
 
     budget.refresh_from_db()
     assert budget.estimated == 0.0
-    assert budget.variance == 0.0
     assert budget.actual == 0.0

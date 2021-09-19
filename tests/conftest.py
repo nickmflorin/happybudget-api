@@ -59,7 +59,6 @@ def api_client():
 def user(db):
     user = User.objects.create(
         email="test+user@gmail.com",
-        username="test+user@gmail.com",
         first_name="Test",
         last_name="User",
         is_active=True,
@@ -77,7 +76,6 @@ def user(db):
 def admin_user(db):
     user = User.objects.create(
         email="admin+user@gmail.com",
-        username="admin+user@gmail.com",
         first_name="Admin",
         last_name="User",
         is_active=True,
@@ -95,7 +93,6 @@ def admin_user(db):
 def staff_user(db):
     user = User.objects.create(
         email="staff+user@gmail.com",
-        username="staff+user@gmail.com",
         first_name="Staff",
         last_name="User",
         is_active=True,

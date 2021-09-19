@@ -1,4 +1,5 @@
-from greenbudget.app.common.permissions import AdminPermissionMixin, IsOwner
+from greenbudget.app.authentication.permissions import (
+    AdminPermissionMixin, IsOwner)
 
 from .models import TemplateAccount
 
@@ -11,7 +12,7 @@ class AccountObjPermission(AdminPermissionMixin, IsOwner):
 
     def has_object_permission(self, request, view, obj):
         if isinstance(obj, TemplateAccount):
-            if obj.budget.community is True:
+            if obj.parent.community is True:
                 return self.has_admin_permission(request, view)
             return super().has_object_permission(request, view, obj)
         return super().has_object_permission(request, view, obj)

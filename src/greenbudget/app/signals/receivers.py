@@ -9,7 +9,7 @@ from greenbudget.lib.utils.decorators import optional_parameter_decorator
 
 from .signals import (
     post_create, any_fields_changed_signal, field_changed_signal,
-    post_save, m2m_changed, post_delete, pre_delete)
+    post_save, m2m_changed, post_delete, pre_delete, pre_save)
 
 
 logger = logging.getLogger('signals')
@@ -107,3 +107,8 @@ def handle_universal_post_delete(signal, **kwargs):
 @dispatch.receiver(models.signals.pre_delete)
 def handle_universal_pre_delete(signal, **kwargs):
     pre_delete.send(**kwargs)
+
+
+@dispatch.receiver(models.signals.pre_save)
+def handle_universal_pre_save(signal, **kwargs):
+    pre_save.send(**kwargs)

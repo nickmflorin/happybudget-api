@@ -69,8 +69,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             is_admin=False,
             is_staff=False,
             is_superuser=False,
-            is_active=True,
-            username=attrs['email']
+            is_active=True
         )
         return attrs
 
@@ -108,7 +107,6 @@ class UserSerializer(ModelSerializer):
         validators=[
             validators.UniqueValidator(queryset=User.objects.all())]
     )
-    username = serializers.EmailField(read_only=True)
     is_active = serializers.BooleanField(default=True, read_only=True)
     is_admin = serializers.BooleanField(default=False, read_only=True)
     is_staff = serializers.BooleanField(default=False, read_only=True)
@@ -123,7 +121,7 @@ class UserSerializer(ModelSerializer):
 
     class Meta:
         model = User
-        nested_fields = ('id', 'first_name', 'last_name', 'email', 'username',
+        nested_fields = ('id', 'first_name', 'last_name', 'email',
             'is_active', 'is_admin', 'is_superuser', 'is_staff', 'full_name',
             'profile_image')
         fields = nested_fields + (

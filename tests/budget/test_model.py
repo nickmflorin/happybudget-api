@@ -21,8 +21,7 @@ def test_bulk_create_budgets(models, user):
 
 
 def test_duplicate_budget(user, create_budget, create_fringe,
-        create_budget_account_group, create_budget_account,
-        create_budget_subaccount, create_budget_subaccount_group):
+        create_group, create_budget_account, create_budget_subaccount):
     with signals.post_save.disable():
         original = create_budget(created_by=user)
         fringes = [
@@ -37,22 +36,22 @@ def test_duplicate_budget(user, create_budget, create_fringe,
                 updated_by=user
             ),
         ]
-        account_group = create_budget_account_group(parent=original)
+        account_group = create_group(parent=original)
         accounts = [
             create_budget_account(
-                budget=original,
+                parent=original,
                 created_by=user,
                 updated_by=user,
                 group=account_group,
             ),
             create_budget_account(
-                budget=original,
+                parent=original,
                 created_by=user,
                 updated_by=user,
                 group=account_group,
             )
         ]
-        subaccount_group = create_budget_subaccount_group(parent=accounts[0])
+        subaccount_group = create_group(parent=accounts[0])
         subaccounts = [
             create_budget_subaccount(
                 parent=accounts[0],
@@ -82,9 +81,10 @@ def test_duplicate_budget(user, create_budget, create_fringe,
     budget = original.duplicate(user)
 
     assert budget.name == original.name
-    assert budget.accounts.count() == 2
+    assert budget.children.count() == 2
     assert budget.created_by == user
 
+    account_group.refresh_from_db()
     assert budget.groups.count() == 1
     budget_account_group = budget.groups.first()
     assert budget_account_group.name == account_group.name
@@ -110,23 +110,22 @@ def test_duplicate_budget(user, create_budget, create_fringe,
     assert second_fringe.rate == fringes[1].rate
     assert second_fringe.unit == fringes[1].unit
 
-    assert budget.accounts.count() == 2
-
-    first_account = budget.accounts.first()
+    assert budget.children.count() == 2
+    first_account = budget.children.first()
     assert first_account.group == budget_account_group
     assert first_account.identifier == accounts[0].identifier
     assert first_account.description == accounts[0].description
     assert first_account.created_by == user
     assert first_account.updated_by == user
 
-    assert first_account.subaccounts.count() == 1
+    assert first_account.children.count() == 1
 
     assert first_account.groups.count() == 1
     budget_subaccount_group = first_account.groups.first()
     assert budget_subaccount_group.name == subaccount_group.name
     assert budget_subaccount_group.color == subaccount_group.color
 
-    first_account_subaccount = first_account.subaccounts.first()
+    first_account_subaccount = first_account.children.first()
     assert first_account_subaccount.group == budget_subaccount_group
 
     assert first_account_subaccount.created_by == user
@@ -140,8 +139,8 @@ def test_duplicate_budget(user, create_budget, create_fringe,
     assert first_account_subaccount.multiplier is None
     assert first_account_subaccount.unit is None
 
-    assert first_account_subaccount.subaccounts.count() == 1
-    first_account_subaccount_subaccount = first_account_subaccount.subaccounts.first()  # noqa
+    assert first_account_subaccount.children.count() == 1
+    first_account_subaccount_subaccount = first_account_subaccount.children.first()  # noqa
     assert first_account_subaccount_subaccount.created_by == user
     assert first_account_subaccount_subaccount.updated_by == user
     assert first_account_subaccount_subaccount.identifier == child_subaccounts[0].identifier  # noqa
@@ -151,15 +150,15 @@ def test_duplicate_budget(user, create_budget, create_fringe,
     assert first_account_subaccount_subaccount.multiplier == child_subaccounts[0].multiplier  # noqa
     assert first_account_subaccount_subaccount.unit == child_subaccounts[0].unit  # noqa
 
-    second_account = budget.accounts.all()[1]
+    second_account = budget.children.all()[1]
     assert second_account.group == budget_account_group
     assert second_account.identifier == accounts[1].identifier
     assert second_account.description == accounts[1].description
     assert second_account.created_by == user
     assert second_account.updated_by == user
 
-    assert second_account.subaccounts.count() == 1
-    second_account_subaccount = second_account.subaccounts.first()
+    assert second_account.children.count() == 1
+    second_account_subaccount = second_account.children.first()
     assert second_account_subaccount.created_by == user
     assert second_account_subaccount.updated_by == user
     assert second_account_subaccount.identifier == subaccounts[1].identifier
@@ -171,8 +170,8 @@ def test_duplicate_budget(user, create_budget, create_fringe,
     assert second_account_subaccount.multiplier is None
     assert second_account_subaccount.unit is None
 
-    assert second_account_subaccount.subaccounts.count() == 1
-    second_account_subaccount_subaccount = second_account_subaccount.subaccounts.first()  # noqa
+    assert second_account_subaccount.children.count() == 1
+    second_account_subaccount_subaccount = second_account_subaccount.children.first()  # noqa
     assert second_account_subaccount_subaccount.created_by == user
     assert second_account_subaccount_subaccount.updated_by == user
     assert second_account_subaccount_subaccount.identifier == child_subaccounts[1].identifier  # noqa

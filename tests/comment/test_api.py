@@ -50,7 +50,7 @@ def test_get_budget_comment(api_client, user, create_comment, create_budget):
 def test_get_account_comment(api_client, user, create_comment,
         create_budget_account, create_budget):
     budget = create_budget()
-    account = create_budget_account(budget=budget)
+    account = create_budget_account(parent=budget)
     comment = create_comment(user=user, content_object=account)
     nested_comment = create_comment(content_object=comment, user=user)
     api_client.force_login(user)
@@ -97,7 +97,7 @@ def test_get_account_comment(api_client, user, create_comment,
 def test_get_subaccount_comment(api_client, user, create_comment,
         create_budget, create_budget_account, create_budget_subaccount):
     budget = create_budget()
-    account = create_budget_account(budget=budget)
+    account = create_budget_account(parent=budget)
     sub_account = create_budget_subaccount(parent=account)
     comment = create_comment(user=user, content_object=sub_account)
     nested_comment = create_comment(content_object=comment, user=user)
@@ -178,7 +178,7 @@ def test_create_budget_comment(api_client, user, create_budget, models):
 def test_create_budget_account_comment(api_client, user, create_budget,
         create_budget_account, models):
     budget = create_budget()
-    account = create_budget_account(budget=budget)
+    account = create_budget_account(parent=budget)
     api_client.force_login(user)
     response = api_client.post("/v1/accounts/%s/comments/" % account.pk, data={
         "text": "This is a fake comment."
@@ -213,7 +213,7 @@ def test_create_budget_account_comment(api_client, user, create_budget,
 def test_create_budget_subaccount_comment(api_client, user, create_budget,
         create_budget_account, create_budget_subaccount, models):
     budget = create_budget()
-    account = create_budget_account(budget=budget)
+    account = create_budget_account(parent=budget)
     subaccount = create_budget_subaccount(parent=account)
     api_client.force_login(user)
     response = api_client.post(

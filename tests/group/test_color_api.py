@@ -6,11 +6,11 @@ def test_get_group_colors(api_client, user, colors):
 
 
 def test_update_group_color(api_client, user, create_color, models,
-        create_budget_account_group, create_budget):
+        create_group, create_budget):
     color = create_color(code='#AFAFAF', content_types=[models.Group])
     another_color = create_color(code='#000000', content_types=[models.Group])
     budget = create_budget()
-    group = create_budget_account_group(parent=budget, color=color)
+    group = create_group(parent=budget, color=color)
 
     api_client.force_login(user)
     response = api_client.patch("/v1/groups/%s/" % group.pk, {
@@ -23,10 +23,10 @@ def test_update_group_color(api_client, user, create_color, models,
 
 
 def test_update_group_color_invalid_code(api_client, user, create_color, models,
-        create_budget_account_group, create_budget):
+        create_group, create_budget):
     color = create_color(code='#AFAFAF', content_types=[models.Group])
     budget = create_budget()
-    group = create_budget_account_group(parent=budget, color=color)
+    group = create_group(parent=budget, color=color)
 
     api_client.force_login(user)
     response = api_client.patch("/v1/groups/%s/" % group.pk, {

@@ -13,9 +13,9 @@ class Dashboard(BaseDashboard):
             models=(
                 'greenbudget.app.budget.models.Budget',
                 'greenbudget.app.account.models.BudgetAccount',
-                'greenbudget.app.group.models.BudgetAccountGroup',
+                # TODO: Filter by only those that are applicable.
+                'greenbudget.app.group.models.Group',
                 'greenbudget.app.subaccount.models.BudgetSubAccount',
-                'greenbudget.app.group.models.BudgetSubAccountGroup',
                 'greenbudget.app.fringe.models.BudgetFringe',
             )
         ))
@@ -27,9 +27,9 @@ class Dashboard(BaseDashboard):
             models=(
                 'greenbudget.app.template.models.Template',
                 'greenbudget.app.account.models.TemplateAccount',
-                'greenbudget.app.group.models.TemplateAccountGroup',
+                # TODO: Filter by only those that are applicable.
+                'greenbudget.app.group.models.Group',
                 'greenbudget.app.subaccount.models.TemplateSubAccount',
-                'greenbudget.app.group.models.TemplateSubAccountGroup',
                 'greenbudget.app.fringe.models.TemplateFringe',
             )
         ))

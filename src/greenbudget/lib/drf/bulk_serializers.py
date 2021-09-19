@@ -1,8 +1,5 @@
-import traceback
-
 from django.db import models
 from rest_framework import serializers
-from rest_framework.utils import model_meta
 
 
 def meta_factory(**attrs):
@@ -142,64 +139,7 @@ def create_bulk_create_serializer(child_cls, serializer_cls, base_cls=None,
             return children
 
         def create_child(self, **validated_data):
-            """
-            Analogous to Django REST Framework's
-            `rest_framework.serializers.ModelSerializer.create` method, with
-            the exception that it operates on the child class instead of the
-            base model class.  This is because this serializer is in regard
-            to updating the base model class - since bulk create operations
-            happen with PATCH requests to the base model.
-
-            Reference:
-            ---------
-            https://github.com/encode/django-rest-framework/blob/master/
-                rest_framework/serializers.py#L904
-
-            This method is essentially just:
-                return ExampleModel.objects.create(**validated_data)
-            with the handling of M2M fields.
-            """
-            if base_cls is not None:
-                serializers.raise_errors_on_nested_writes(
-                    'create', self, validated_data)
-
-            # Remove many-to-many relationships from validated_data.
-            # They are not valid arguments to the default `.create()` method,
-            # as they require that the instance has already been saved.
-            info = model_meta.get_field_info(child_cls)
-            many_to_many = {}
-            for field_name, relation_info in info.relations.items():
-                if relation_info.to_many and (field_name in validated_data):
-                    many_to_many[field_name] = validated_data.pop(field_name)
-
-            try:
-                instance = child_cls._default_manager.create(**validated_data)
-            except TypeError:
-                tb = traceback.format_exc()
-                msg = (
-                    'Got a `TypeError` when calling `%s.%s.create()`. '
-                    'This may be because you have a writable field on the '
-                    'serializer class that is not a valid argument to '
-                    '`%s.%s.create()`. You may need to make the field '
-                    'read-only, or override the %s.create() method to handle '
-                    'this correctly.\nOriginal exception was:\n %s' %
-                    (
-                        child_cls.__name__,
-                        child_cls._default_manager.name,
-                        child_cls.__name__,
-                        child_cls._default_manager.name,
-                        self.__class__.__name__,
-                        tb
-                    )
-                )
-                raise TypeError(msg)
-
-            # Save many-to-many relationships after the instance is created.
-            if many_to_many:
-                for field_name, value in many_to_many.items():
-                    field = getattr(instance, field_name)
-                    field.set(value)
-
-            return instance
+            serializer = serializer_cls()
+            return serializer.create(validated_data)
 
     return BulkCreateSerializer

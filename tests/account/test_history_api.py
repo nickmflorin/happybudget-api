@@ -102,7 +102,7 @@ def test_get_account_history(api_client, create_budget, create_budget_account,
     with signals.post_create_by_user.disable():
         budget = create_budget()
         account = create_budget_account(
-            budget=budget,
+            parent=budget,
             identifier="original_identifier"
         )
     api_client.force_login(user)
@@ -173,7 +173,7 @@ def test_get_account_subaccounts_history(api_client, create_budget, user,
     with signals.post_create_by_user.disable():
         api_client.force_login(user)
         budget = create_budget()
-        account = create_budget_account(budget=budget)
+        account = create_budget_account(parent=budget)
         subaccount = create_budget_subaccount(
             parent=account,
             description="Original Description",

@@ -9,8 +9,8 @@ def test_get_template_accounts(api_client, user, create_template_account,
     with signals.disable():
         template = create_template()
         accounts = [
-            create_template_account(budget=template),
-            create_template_account(budget=template)
+            create_template_account(parent=template),
+            create_template_account(parent=template)
         ]
     api_client.force_login(user)
     response = api_client.get("/v1/templates/%s/accounts/" % template.pk)
@@ -25,7 +25,10 @@ def test_get_template_accounts(api_client, user, create_template_account,
             "updated_at": "2020-01-01 00:00:00",
             "type": "account",
             "estimated": 0.0,
-            "subaccounts": [],
+            "fringe_contribution": 0.0,
+            "markup_contribution": 0.0,
+            "actual": 0.0,
+            "children": [],
             "created_by": user.pk,
             "updated_by": user.pk
         },
@@ -37,7 +40,11 @@ def test_get_template_accounts(api_client, user, create_template_account,
             "updated_at": "2020-01-01 00:00:00",
             "type": "account",
             "estimated": 0.0,
-            "subaccounts": [],
+            "fringe_contribution": 0.0,
+            "markup_contribution": 0.0,
+            "actual": 0.0,
+            "actual": 0.0,
+            "children": [],
             "created_by": user.pk,
             "updated_by": user.pk
         }
@@ -45,41 +52,13 @@ def test_get_template_accounts(api_client, user, create_template_account,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_community_template_accounts(api_client, user, staff_user,
-        create_template_account, create_template):
-    with signals.disable():
-        template = create_template(community=True, created_by=staff_user)
-        create_template_account(budget=template)
-        create_template_account(budget=template)
-    api_client.force_login(user)
-    response = api_client.get("/v1/templates/%s/accounts/" % template.pk)
-    assert response.status_code == 403
-
-
-@pytest.mark.freeze_time('2020-01-01')
-def test_get_another_users_community_template_accounts(api_client, staff_user,
-        create_template_account, create_template, create_user):
-    with signals.disable():
-        user = create_user(is_staff=True)
-        template = create_template(created_by=user, community=True)
-        [
-            create_template_account(budget=template),
-            create_template_account(budget=template)
-        ]
-    api_client.force_login(staff_user)
-    response = api_client.get("/v1/templates/%s/accounts/" % template.pk)
-    assert response.status_code == 200
-    assert response.json()['count'] == 2
-
-
-@pytest.mark.freeze_time('2020-01-01')
 def test_create_template_account(api_client, user, create_template, models):
     template = create_template()
     api_client.force_login(user)
     response = api_client.post(
-        "/v1/templates/%s/accounts/" % template.pk, data={
-            'identifier': 'new_account'
-        })
+        "/v1/templates/%s/accounts/" % template.pk,
+        data={'identifier': 'new_account'}
+    )
     assert response.status_code == 201
 
     account = models.TemplateAccount.objects.first()
@@ -93,9 +72,12 @@ def test_create_template_account(api_client, user, create_template, models):
         "updated_at": "2020-01-01 00:00:00",
         "type": "account",
         "estimated": 0.0,
-        "subaccounts": [],
+        "fringe_contribution": 0.0,
+        "markup_contribution": 0.0,
+        "actual": 0.0,
+        "children": [],
         "created_by": user.pk,
-        "updated_by": user.pk
+        "updated_by": user.pk,
     }
 
 
@@ -104,8 +86,8 @@ def test_bulk_update_template_accounts(api_client, user, create_template,
     with signals.disable():
         template = create_template()
         accounts = [
-            create_template_account(budget=template),
-            create_template_account(budget=template)
+            create_template_account(parent=template),
+            create_template_account(parent=template)
         ]
     api_client.force_login(user)
     response = api_client.patch(
@@ -131,9 +113,10 @@ def test_bulk_update_template_accounts(api_client, user, create_template,
     assert accounts[1].description == "New Description 2"
 
     # The data in the response refers to base the entity we are updating, A.K.A.
-    # the Template.
+    # the Budget.
     assert response.json()['data']['id'] == template.pk
     assert response.json()['data']['estimated'] == 0.0
+    assert response.json()['data']['actual'] == 0.0
 
 
 def test_bulk_update_template_accounts_outside_template(api_client, user,
@@ -142,8 +125,8 @@ def test_bulk_update_template_accounts_outside_template(api_client, user,
         template = create_template()
         another_template = create_template()
         accounts = [
-            create_template_account(budget=template),
-            create_template_account(budget=another_template)
+            create_template_account(parent=template),
+            create_template_account(parent=another_template)
         ]
     api_client.force_login(user)
     response = api_client.patch(
@@ -185,7 +168,7 @@ def test_bulk_create_template_accounts(api_client, user, create_template,
         })
     assert response.status_code == 201
 
-    accounts = models.TemplateAccount.objects.all()
+    accounts = models.Account.objects.all()
     assert len(accounts) == 2
     assert accounts[0].identifier == "account-a"
     assert accounts[0].description == "New Description 1"
@@ -203,18 +186,19 @@ def test_bulk_create_template_accounts(api_client, user, create_template,
     assert response.json()['children'][1]['description'] == "New Description 2"
 
     # The data in the response refers to base the entity we are updating, A.K.A.
-    # the Template.
+    # the Budget.
     assert response.json()['data']['id'] == template.pk
     assert response.json()['data']['estimated'] == 0.0
+    assert response.json()['data']['actual'] == 0.0
 
 
-def test_bulk_delete_budget_accounts(api_client, user, create_template,
+def test_bulk_delete_template_accounts(api_client, user, create_template,
         create_template_account, create_template_subaccount, models):
     with signals.disable():
         template = create_template()
         accounts = [
-            create_template_account(budget=template),
-            create_template_account(budget=template)
+            create_template_account(parent=template),
+            create_template_account(parent=template)
         ]
     # We need to create SubAccount(s) so that the accounts themselves have
     # calculated values, and thus the Budget itself has calculated values, so
@@ -227,6 +211,7 @@ def test_bulk_delete_budget_accounts(api_client, user, create_template,
         multiplier=1
     )
     create_template_subaccount(
+
         parent=accounts[1],
         estimated=100,
         quantity=1,
@@ -242,9 +227,11 @@ def test_bulk_delete_budget_accounts(api_client, user, create_template,
     assert models.TemplateAccount.objects.count() == 0
 
     # The data in the response refers to base the entity we are updating, A.K.A.
-    # the Template.
+    # the Budget.
     assert response.json()['data']['id'] == template.pk
     assert response.json()['data']['estimated'] == 0.0
+    assert response.json()['data']['actual'] == 0.0
 
     template.refresh_from_db()
     assert template.estimated == 0.0
+    assert template.actual == 0.0

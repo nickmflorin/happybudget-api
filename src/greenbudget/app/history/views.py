@@ -34,7 +34,7 @@ class AccountsHistoryViewSet(
     def get_queryset(self):
         content_type = ContentType.objects.get_for_model(BudgetAccount)
         return Event.objects.filter(
-            object_id__in=[acct.pk for acct in self.budget.accounts.all()],
+            object_id__in=[acct.pk for acct in self.budget.children.all()],
             content_type=content_type
         )
 
@@ -74,7 +74,7 @@ class AccountSubAccountsHistoryViewSet(
     def get_queryset(self):
         content_type = ContentType.objects.get_for_model(BudgetSubAccount)
         return Event.objects.filter(
-            object_id__in=[acct.pk for acct in self.account.subaccounts.all()],
+            object_id__in=[acct.pk for acct in self.account.children.all()],
             content_type=content_type
         )
 
@@ -95,7 +95,7 @@ class SubAccountSubAccountsHistoryViewSet(
         content_type = ContentType.objects.get_for_model(BudgetSubAccount)
         return Event.objects.filter(
             object_id__in=[
-                acct.pk for acct in self.subaccount.subaccounts.all()],
+                acct.pk for acct in self.subaccount.children.all()],
             content_type=content_type
         )
 

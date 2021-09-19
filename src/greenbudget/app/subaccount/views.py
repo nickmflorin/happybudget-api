@@ -5,18 +5,12 @@ from django.utils.functional import cached_property
 from rest_framework import viewsets, mixins
 
 from greenbudget.app.actual.views import GenericActualViewSet
-from greenbudget.app.budget.decorators import (
-    register_all_bulk_operations, BulkAction)
-from greenbudget.app.group.models import (
-    BudgetSubAccountGroup,
-    TemplateSubAccountGroup
-)
-from greenbudget.app.group.serializers import (
-    BudgetSubAccountGroupSerializer,
-    TemplateSubAccountGroupSerializer
-)
-from greenbudget.app.markup.models import BudgetSubAccountMarkup
-from greenbudget.app.markup.serializers import BudgetSubAccountMarkupSerializer
+from greenbudget.app.budgeting.decorators import (
+    register_bulk_operations, BulkAction, BulkDeleteAction)
+from greenbudget.app.group.models import Group
+from greenbudget.app.group.serializers import GroupSerializer
+from greenbudget.app.markup.models import Markup
+from greenbudget.app.markup.serializers import MarkupSerializer
 
 from .mixins import SubAccountNestedMixin
 from .models import (
@@ -63,10 +57,10 @@ class SubAccountMarkupViewSet(
     """
     lookup_field = 'pk'
     subaccount_lookup_field = ("pk", "subaccount_pk")
-    serializer_class = BudgetSubAccountMarkupSerializer
+    serializer_class = MarkupSerializer
 
     def get_queryset(self):
-        return BudgetSubAccountMarkup.objects.filter(
+        return Markup.objects.filter(
             content_type=ContentType.objects.get_for_model(BudgetSubAccount),
             object_id=self.subaccount.pk,
         )
@@ -103,24 +97,10 @@ class SubAccountGroupViewSet(
     """
     lookup_field = 'pk'
     subaccount_lookup_field = ("pk", "subaccount_pk")
-
-    @cached_property
-    def instance_cls(self):
-        mapping = {
-            BudgetSubAccount: BudgetSubAccountGroup,
-            TemplateSubAccount: TemplateSubAccountGroup
-        }
-        return mapping[type(self.subaccount)]
-
-    def get_serializer_class(self):
-        mapping = {
-            BudgetSubAccountGroup: BudgetSubAccountGroupSerializer,
-            TemplateSubAccountGroup: TemplateSubAccountGroupSerializer
-        }
-        return mapping[self.instance_cls]
+    serializer_class = GroupSerializer
 
     def get_queryset(self):
-        return self.instance_cls.objects.filter(
+        return Group.objects.filter(
             content_type=ContentType.objects.get_for_model(type(self.subaccount)),  # noqa
             object_id=self.subaccount.pk,
         )
@@ -138,8 +118,8 @@ class SubAccountGroupViewSet(
             created_by=self.request.user,
             updated_by=self.request.user,
             object_id=self.subaccount.pk,
-            content_type=ContentType.objects.get_for_model(self.instance_cls),
-            parent=self.subaccount
+            content_type=ContentType.objects.get_for_model(
+                type(self.subaccount))
         )
 
 
@@ -184,11 +164,19 @@ class GenericSubAccountViewSet(viewsets.GenericViewSet):
     search_fields = ['description']
 
 
-@register_all_bulk_operations(
+@register_bulk_operations(
     base_cls=lambda context: context.view.instance_cls,
     child_context_indicator='subaccount_context',
     get_budget=lambda instance: instance.budget,
     actions=[
+        BulkDeleteAction(
+            url_path='bulk-{action_name}-markups',
+            child_cls=Markup,
+            filter_qs=lambda context: models.Q(
+                content_type=ContentType.objects.get_for_model(context.instance),
+                object_id=context.instance.pk
+            ),
+        ),
         BulkAction(
             url_path='bulk-{action_name}-subaccounts',
             child_cls=lambda context: context.view.child_instance_cls,

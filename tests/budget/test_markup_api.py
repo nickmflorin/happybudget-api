@@ -3,10 +3,10 @@ import pytest
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_get_budget_account_markups(api_client, user, models,
-        create_budget_account, create_budget, create_budget_account_markup):
+        create_budget_account, create_budget, create_markup):
     budget = create_budget()
-    account = create_budget_account(budget=budget)
-    markup = create_budget_account_markup(parent=budget, children=[account])
+    markup = create_markup(parent=budget)
+    account = create_budget_account(parent=budget, markups=[markup])
 
     api_client.force_login(user)
     response = api_client.get("/v1/budgets/%s/markups/" % budget.pk)
@@ -14,6 +14,7 @@ def test_get_budget_account_markups(api_client, user, models,
     assert response.json()['count'] == 1
     assert response.json()['data'] == [{
         "id": markup.pk,
+        "type": "markup",
         "identifier": markup.identifier,
         "description": markup.description,
         "rate": markup.rate,
@@ -25,15 +26,16 @@ def test_get_budget_account_markups(api_client, user, models,
         "updated_at": "2020-01-01 00:00:00",
         "created_by": user.pk,
         "updated_by": user.pk,
+        "groups": [],
         "children": [account.pk]
     }]
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_budget_account_markup(api_client, user, create_budget_account,
+def test_create_markup(api_client, user, create_budget_account,
         create_budget, models):
     budget = create_budget()
-    account = create_budget_account(budget=budget)
+    account = create_budget_account(parent=budget)
 
     api_client.force_login(user)
     response = api_client.post("/v1/budgets/%s/markups/" % budget.pk, data={
@@ -42,7 +44,7 @@ def test_create_budget_account_markup(api_client, user, create_budget_account,
     })
     assert response.status_code == 201
 
-    markup = models.BudgetAccountMarkup.objects.first()
+    markup = models.Markup.objects.first()
     assert markup is not None
     assert markup.identifier == 'Markup Identifier'
     assert markup.children.count() == 1
@@ -51,6 +53,7 @@ def test_create_budget_account_markup(api_client, user, create_budget_account,
 
     assert response.json() == {
         "id": markup.pk,
+        "type": "markup",
         "identifier": 'Markup Identifier',
         "description": markup.description,
         "rate": markup.rate,
@@ -62,18 +65,53 @@ def test_create_budget_account_markup(api_client, user, create_budget_account,
         "updated_at": "2020-01-01 00:00:00",
         "created_by": user.pk,
         "updated_by": user.pk,
+        "groups": [],
         "children": [account.pk]
     }
 
 
-def test_create_budget_account_markup_invalid_child(api_client, user,
+def test_create_markup_invalid_child(api_client, user,
         create_budget_account, create_budget):
     budget = create_budget()
     another_budget = create_budget()
-    account = create_budget_account(budget=another_budget)
+    account = create_budget_account(parent=another_budget)
 
     api_client.force_login(user)
     response = api_client.post("/v1/budgets/%s/markups/" % budget.pk, data={
         'children': [account.pk],
     })
     assert response.status_code == 400
+
+
+def test_bulk_delete_budget_markups(api_client, user, create_budget, models,
+        create_budget_account, create_markup):
+    budget = create_budget()
+    markups = [
+        create_markup(parent=budget, unit=models.Markup.UNITS.flat, rate=100),
+        create_markup(parent=budget, unit=models.Markup.UNITS.flat, rate=100)
+    ]
+    account = create_budget_account(parent=budget, markups=markups)
+    assert budget.markup_contribution == 200.0
+    assert account.markup_contribution == 200.0
+
+    api_client.force_login(user)
+    response = api_client.patch(
+        "/v1/budgets/%s/bulk-delete-markups/" % budget.pk,
+        data={'ids': [m.pk for m in markups]}
+    )
+
+    assert response.status_code == 200
+    assert models.Markup.objects.count() == 0
+
+    budget.refresh_from_db()
+    assert budget.markup_contribution == 0.0
+
+    account.refresh_from_db()
+    assert account.markup_contribution == 0.0
+
+    # The data in the response refers to base the entity we are updating, A.K.A.
+    # the Budget.
+    assert response.json()['data']['id'] == budget.pk
+    assert response.json()['data']['estimated'] == 0.0
+    assert response.json()['data']['markup_contribution'] == 0.0
+    assert response.json()['data']['actual'] == 0.0

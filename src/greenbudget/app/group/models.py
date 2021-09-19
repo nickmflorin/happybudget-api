@@ -1,5 +1,4 @@
-import functools
-from polymorphic.models import PolymorphicModel
+from django.db.utils import IntegrityError
 
 from greenbudget.app import signals
 
@@ -7,21 +6,21 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
-from .managers import GroupManager
 
-
-class Group(PolymorphicModel):
+@signals.model('suppress_budget_update')
+class Group(models.Model):
+    type = "group"
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(
         to='user.User',
-        related_name='created_groups',
+        related_name='created_groups_new',
         on_delete=models.CASCADE,
         editable=False
     )
     updated_at = models.DateTimeField(auto_now=True)
     updated_by = models.ForeignKey(
         to='user.User',
-        related_name='updated_groups',
+        related_name='updated_groups_new',
         on_delete=models.CASCADE,
         editable=False
     )
@@ -35,14 +34,24 @@ class Group(PolymorphicModel):
             content_types__app_label='group'
         )
     )
+    markups = models.ManyToManyField(
+        to='markup.Markup',
+        related_name='groups'
+    )
+    content_type = models.ForeignKey(
+        to=ContentType,
+        on_delete=models.CASCADE,
+        limit_choices_to=models.Q(app_label='subaccount', model='subaccount')
+        | models.Q(app_label='account', model='account')
+        | models.Q(app_label='budget', model='basebudget')
+    )
+    object_id = models.PositiveIntegerField(db_index=True)
+    parent = GenericForeignKey('content_type', 'object_id')
 
-    non_polymorphic = models.Manager()
+    FIELDS_TO_DUPLICATE = ("name", "color")
+    FIELDS_TO_DERIVE = ("name", "color")
 
     class Meta:
-        # See https://code.djangoproject.com/ticket/23076 - this addresses
-        # a bug with the Django-polymorphic package in regard to deleting parent
-        # models.
-        base_manager_name = 'non_polymorphic'
         get_latest_by = "created_at"
         ordering = ('created_at', )
         verbose_name = "Group"
@@ -56,116 +65,40 @@ class Group(PolymorphicModel):
             parent=self.parent.pk
         )
 
-    @property
-    def estimated(self):
-        children = self.children.only('estimated')
-        return functools.reduce(
-            lambda current, c: current + (c.estimated or 0), children, 0)
+    @classmethod
+    def child_instance_cls_for_parent(cls, parent):
+        from greenbudget.app.budget.models import Budget
+        from greenbudget.app.template.models import Template
+        from greenbudget.app.account.models import BudgetAccount, TemplateAccount  # noqa
+        from greenbudget.app.subaccount.models import (
+            BudgetSubAccount, TemplateSubAccount)
 
-
-@signals.model('suppress_budget_update')
-class BudgetAccountGroup(Group):
-    parent = models.ForeignKey(
-        to='budget.Budget',
-        on_delete=models.CASCADE,
-        related_name='groups'
-    )
-    objects = GroupManager()
-    FIELDS_TO_DUPLICATE = ("name", "color")
-
-    class Meta(Group.Meta):
-        verbose_name = "Account Group"
-        verbose_name_plural = "Account Groups"
-
-    @property
-    def budget(self):
-        return self.parent
+        mapping = {
+            Budget: BudgetAccount,
+            Template: TemplateAccount,
+            (BudgetAccount, BudgetSubAccount): BudgetSubAccount,
+            (TemplateAccount, TemplateSubAccount): TemplateSubAccount
+        }
+        for k, v in mapping.items():
+            if isinstance(parent, k):
+                return v
+        raise IntegrityError(
+            "Unexpected instance %s - must be a valid parent of Group."
+            % parent.__class__.__name__
+        )
 
     @property
-    def variance(self):
-        return self.estimated - self.actual
+    def child_instance_cls(self):
+        return self.child_instance_cls_for_parent(self.parent)
 
     @property
-    def actual(self):
-        children = self.children.only('actual')
-        return functools.reduce(
-            lambda current, c: current + (c.actual or 0), children, 0)
-
-
-@signals.model('suppress_budget_update')
-class TemplateAccountGroup(Group):
-    parent = models.ForeignKey(
-        to='template.Template',
-        on_delete=models.CASCADE,
-        related_name='groups'
-    )
-    objects = GroupManager()
-    FIELDS_TO_DUPLICATE = ("name", "color")
-    FIELDS_TO_DERIVE = ("name", "color")
+    def children(self):
+        return self.child_instance_cls.objects.filter(group=self)
 
     @property
     def budget(self):
-        return self.parent
-
-    class Meta(Group.Meta):
-        verbose_name = "Account Group"
-        verbose_name_plural = "Account Groups"
-
-
-@signals.model('suppress_budget_update')
-class BudgetSubAccountGroup(Group):
-    content_type = models.ForeignKey(
-        to=ContentType,
-        on_delete=models.CASCADE,
-        limit_choices_to=models.Q(
-            app_label='subaccount', model='budgetsubaccount')
-        | models.Q(app_label='account', model='budgetaccount')
-    )
-    object_id = models.PositiveIntegerField(db_index=True)
-    parent = GenericForeignKey('content_type', 'object_id')
-    objects = GroupManager()
-
-    FIELDS_TO_DUPLICATE = ("name", "color")
-
-    class Meta(Group.Meta):
-        verbose_name = "Sub Account Group"
-        verbose_name_plural = "Sub Account Groups"
-
-    @property
-    def budget(self):
-        return self.parent.budget
-
-    @property
-    def variance(self):
-        return self.estimated - self.actual
-
-    @property
-    def actual(self):
-        children = self.children.only('actual')
-        return functools.reduce(
-            lambda current, c: current + (c.actual or 0), children, 0)
-
-
-@signals.model('suppress_budget_update')
-class TemplateSubAccountGroup(Group):
-    content_type = models.ForeignKey(
-        to=ContentType,
-        on_delete=models.CASCADE,
-        limit_choices_to=models.Q(
-            app_label='subaccount', model='templatesubaccount')
-        | models.Q(app_label='account', model='templateaccount')
-    )
-    object_id = models.PositiveIntegerField(db_index=True)
-    parent = GenericForeignKey('content_type', 'object_id')
-    objects = GroupManager()
-
-    FIELDS_TO_DERIVE = ("name", "color")
-    FIELDS_TO_DUPLICATE = ("name", "color")
-
-    class Meta(Group.Meta):
-        verbose_name = "Sub Account Group"
-        verbose_name_plural = "Sub Account Groups"
-
-    @property
-    def budget(self):
-        return self.parent.budget
+        from greenbudget.app.budget.models import BaseBudget
+        parent = self.parent
+        while not isinstance(parent, BaseBudget):
+            parent = parent.parent
+        return parent

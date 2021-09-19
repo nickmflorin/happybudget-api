@@ -1,4 +1,4 @@
-from greenbudget.app.common.mixins import NestedObjectViewMixin
+from greenbudget.app.budgeting.mixins import NestedObjectViewMixin
 
 from .models import Template
 from .permissions import TemplateObjPermission

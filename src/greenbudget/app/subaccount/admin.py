@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib import admin
 
-from greenbudget.app.common.admin import color_icon
+from greenbudget.app.custom_admin.utils import color_icon
 from greenbudget.app.tagging.admin import TagAdminForm
 
 from .models import (
@@ -30,7 +30,7 @@ class SubAccountUnitAdmin(admin.ModelAdmin):
     get_color_for_admin.short_description = 'Color'
 
 
-class AccountAdmin(admin.ModelAdmin):
+class SubAccountAdmin(admin.ModelAdmin):
     list_display = (
         "identifier", "description", "budget", "created_by", "created_at")
 
@@ -48,10 +48,10 @@ class TemplateSubAccountAdminForm(forms.ModelForm):
 
 
 @admin.register(BudgetSubAccount)
-class BudgetSubAccountAdmin(AccountAdmin):
+class BudgetSubAccountAdmin(SubAccountAdmin):
     form = BudgetSubAccountAdminForm
 
 
 @admin.register(TemplateSubAccount)
-class TemplateSubAccountAdmin(AccountAdmin):
+class TemplateSubAccountAdmin(SubAccountAdmin):
     form = TemplateSubAccountAdminForm

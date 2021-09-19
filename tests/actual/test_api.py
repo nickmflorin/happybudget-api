@@ -5,7 +5,7 @@ import pytest
 def test_update_actual(api_client, user, create_budget_account,
         create_budget, create_actual, create_budget_subaccount):
     budget = create_budget()
-    account = create_budget_account(budget=budget)
+    account = create_budget_account(parent=budget)
     subaccount = create_budget_subaccount(parent=account)
     actual = create_actual(subaccount=subaccount, budget=budget)
 
@@ -18,6 +18,7 @@ def test_update_actual(api_client, user, create_budget_account,
     assert response.status_code == 200
     assert response.json() == {
         "id": actual.pk,
+        "type": "actual",
         "description": actual.description,
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
@@ -48,7 +49,7 @@ def test_update_actual(api_client, user, create_budget_account,
 def test_change_actual_parent(api_client, user, create_budget_account,
         create_budget, create_actual, create_budget_subaccount):
     budget = create_budget()
-    account = create_budget_account(budget=budget)
+    account = create_budget_account(parent=budget)
     subaccount = create_budget_subaccount(parent=account)
     another_subaccount = create_budget_subaccount(parent=account)
     actual = create_actual(subaccount=subaccount, budget=budget)
@@ -60,6 +61,7 @@ def test_change_actual_parent(api_client, user, create_budget_account,
     assert response.status_code == 200
     assert response.json() == {
         "id": actual.pk,
+        "type": "actual",
         "description": actual.description,
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
@@ -88,11 +90,10 @@ def test_change_actual_parent(api_client, user, create_budget_account,
 
 def test_change_actual_parent_invalid(api_client, user, create_budget_account,
         create_budget, create_actual, create_budget_subaccount):
-
     budgets = [create_budget(), create_budget()]
-    account = create_budget_account(budget=budgets[0])
+    account = create_budget_account(parent=budgets[0])
     subaccount = create_budget_subaccount(parent=account)
-    another_account = create_budget_account(budget=budgets[1])
+    another_account = create_budget_account(parent=budgets[1])
     another_subaccount = create_budget_subaccount(parent=another_account)
     actual = create_actual(subaccount=subaccount, budget=budgets[0])
 

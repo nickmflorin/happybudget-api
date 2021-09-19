@@ -9,8 +9,8 @@ def test_get_template_account_subaccounts(api_client, user, create_template,
         create_template_account, create_template_subaccount):
     with signals.disable():
         template = create_template()
-        account = create_template_account(budget=template)
-        another_account = create_template_account(budget=template)
+        account = create_template_account(parent=template)
+        another_account = create_template_account(parent=template)
         subaccounts = [
             create_template_subaccount(
                 parent=account,
@@ -40,7 +40,10 @@ def test_get_template_account_subaccounts(api_client, user, create_template,
             "object_id": account.pk,
             "parent_type": "account",
             "estimated": 0.0,
-            "subaccounts": [],
+            "fringe_contribution": 0.0,
+            "markup_contribution": 0.0,
+            "actual": 0.0,
+            "children": [],
             "fringes": [],
             "created_by": user.pk,
             "updated_by": user.pk,
@@ -60,7 +63,10 @@ def test_get_template_account_subaccounts(api_client, user, create_template,
             "object_id": account.pk,
             "parent_type": "account",
             "estimated": 0.0,
-            "subaccounts": [],
+            "fringe_contribution": 0.0,
+            "markup_contribution": 0.0,
+            "actual": 0.0,
+            "children": [],
             "fringes": [],
             "created_by": user.pk,
             "updated_by": user.pk,
@@ -76,7 +82,7 @@ def test_get_community_template_account_subaccounts(api_client, user,
         create_template_subaccount):
     with signals.disable():
         template = create_template(community=True, created_by=staff_user)
-        account = create_template_account(budget=template)
+        account = create_template_account(parent=template)
         [
             create_template_subaccount(
                 parent=account,
@@ -99,7 +105,7 @@ def test_get_another_users_community_template_account_subaccounts(api_client,
     with signals.disable():
         user = create_user(is_staff=True)
         template = create_template(community=True, created_by=user)
-        account = create_template_account(budget=template)
+        account = create_template_account(parent=template)
         [
             create_template_subaccount(
                 parent=account,
@@ -121,7 +127,7 @@ def test_create_template_subaccount(api_client, user, create_template_account,
         create_template, models):
     with signals.disable():
         template = create_template()
-        account = create_template_account(budget=template)
+        account = create_template_account(parent=template)
     api_client.force_login(user)
     response = api_client.post(
         "/v1/accounts/%s/subaccounts/" % account.pk,
@@ -151,7 +157,10 @@ def test_create_template_subaccount(api_client, user, create_template_account,
         "object_id": account.pk,
         "parent_type": "account",
         "estimated": 0.0,
-        "subaccounts": [],
+        "fringe_contribution": 0.0,
+        "markup_contribution": 0.0,
+        "actual": 0.0,
+        "children": [],
         "fringes": [],
         "contact": None,
         "created_by": user.pk,

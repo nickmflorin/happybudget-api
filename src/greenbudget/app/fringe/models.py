@@ -12,6 +12,7 @@ from .managers import FringeManager, BudgetFringeManager, TemplateFringeManager
     user_field='updated_by'
 )
 class Fringe(models.Model):
+    type = "fringe"
     name = models.CharField(max_length=128, null=True)
     description = models.CharField(null=True, max_length=128)
     cutoff = models.FloatField(null=True)
@@ -20,7 +21,7 @@ class Fringe(models.Model):
         (0, "percent", "Percent"),
         (1, "flat", "Flat"),
     )
-    unit = models.IntegerField(choices=UNITS, default=UNITS.percent)
+    unit = models.IntegerField(choices=UNITS, default=UNITS.percent, null=True)
     budget = models.ForeignKey(
         to='budget.BaseBudget',
         on_delete=models.CASCADE,

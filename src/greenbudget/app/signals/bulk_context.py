@@ -1,21 +1,26 @@
 import functools
 import logging
+import inspect
 import threading
 
 from django.db import transaction
 
-from greenbudget.lib.utils import ensure_iterable
+from greenbudget.lib.utils import ensure_iterable, get_function_keyword_defaults
 
 
 logger = logging.getLogger('signals')
 
 
 class SideEffect:
-    def __init__(self, func, args=None, kwargs=None, conditional=None):
+    def __init__(self, func, id=None, args=None, kwargs=None, conditional=None,
+            children=None):
+        self._id = id
         self.func = func
         self.args = tuple(args or [])
         self.kwargs = dict(kwargs or {})
         self.conditional = conditional
+
+        self.children = children
 
     def __call__(self, context):
         result = self.call_func(self.func)
@@ -23,60 +28,60 @@ class SideEffect:
         # If we are not in an active bulk context, then we need to also call
         # the function side effects immediately.
         if context.active is False or queue_in_context is False:
-            side_effects = self._get_function_side_effects()
+            side_effects = self._get_children_side_effects(self)
             for effect in side_effects:
                 effect(context)
         return result
 
-    def call_func(self, func):
-        return func(*self.args, **self.kwargs)
+    def bind(self, parent):
+        self._id = self._id or parent._id
+
+    @property
+    def children(self):
+        return self._children
+
+    @children.setter
+    def children(self, value):
+        self._children = ensure_iterable(value or [])
+        [child.bind(self) for child in self._children]
 
     @property
     def id(self):
-        func_id = getattr(self.func, '__options__')['id']
-        if hasattr(func_id, '__call__'):
-            func_id = self.call_func(func_id)
-        return '%s-%s' % (hash(self.func), func_id)
+        assert self._id is not None
+        return '%s-%s' % (hash(self.func), self._id)
 
-    def _evaluate_side_effect_conditional(self, side_effect, parent=None):
-        parent = parent or self
-        if side_effect.conditional is not None:
-            conditional = side_effect.conditional
-            if hasattr(conditional, '__call__'):
-                conditional = parent.call_func(conditional)
+    def call_func(self, func):
+        return func(*self.args, **self.kwargs)
+
+    def evaluate_conditional(self):
+        if self.conditional is not None:
+            conditional = self.conditional
             assert isinstance(conditional, bool), \
                 "The conditional for a side effect must be a boolean or " \
                 "return a boolean."
             return conditional
         return True
 
-    def _get_function_side_effects(self, func=None, parent=None):
-        parent = parent or self
-        func = func or self.func
-        side_effects = getattr(func, '__options__')['side_effect']
-        if side_effects is not None:
-            if hasattr(side_effects, '__call__'):
-                side_effects = parent.call_func(side_effects)
-            side_effects = ensure_iterable(side_effects)
+    def _get_children_side_effects(self, base_effect):
+        if base_effect.children is not None:
+            side_effects = ensure_iterable(base_effect.children)
             return [
                 effect for effect in side_effects
-                if self._evaluate_side_effect_conditional(effect, parent) is True  # noqa
+                if effect.evaluate_conditional() is True
             ]
         return []
 
     def get_all_side_effects(self):
-        def get_func_side_effects(func, parent):
-            side_effects = self._get_function_side_effects(
-                func=func, parent=parent)
-
+        def get_func_side_effects(effect):
+            side_effects = self._get_children_side_effects(effect)
             effects = []
             for effect in side_effects:
                 effects.append(effect)
-                nested_effects = get_func_side_effects(effect.func, effect)
+                nested_effects = get_func_side_effects(effect)
                 effects.extend(nested_effects)
             return effects
 
-        return get_func_side_effects(self.func, self)
+        return get_func_side_effects(self)
 
 
 class bulk_context_manager(threading.local):
@@ -138,13 +143,34 @@ class bulk_context_manager(threading.local):
                 signature(self)
 
     def call_in_queue(self, func):
+        def use_callback(f, *a, **kw):
+            handler_argspec = inspect.getargspec(func)
+            callback_argspec = inspect.getargspec(f)
+
+            keyword_args = {}
+            defaults = get_function_keyword_defaults(func)
+            for arg_name in callback_argspec.args:
+                try:
+                    keyword_args[arg_name] = [
+                        v for i, v in enumerate(a)
+                        if handler_argspec.args[i] == arg_name
+                    ][0]
+                except IndexError:
+                    keyword_args[arg_name] = kw.get(arg_name, defaults[arg_name])
+                except KeyError:
+                    raise TypeError(
+                        "The callback %s expects an argument for %s, but "
+                        "this argument is not passed into the handler method."
+                        % (f.__name__, arg_name)
+                    )
+            return f(**keyword_args)
+
         def caller(*args, **kwargs):
             conditional = kwargs.pop('conditional', None) \
                 or getattr(func, '__options__')['conditional']
-
             if conditional is not None:
                 if hasattr(conditional, '__call__'):
-                    conditional = conditional(*args, **kwargs)
+                    conditional = use_callback(conditional, *args, **kwargs)
 
             # If the conditional evaluates to False, do not proceed with any
             # step (even getting the ID) as the ID callback might require state
@@ -154,12 +180,18 @@ class bulk_context_manager(threading.local):
 
             id = kwargs.pop('id', None) or getattr(func, '__options__')['id']
             if hasattr(id, '__call__'):
-                id = id(*args, **kwargs)
+                id = use_callback(id, *args, **kwargs)
+
+            side_effects = getattr(func, '__options__')['side_effect']
+            if hasattr(side_effects, '__call__'):
+                side_effects = use_callback(side_effects, *args, **kwargs)
 
             signature = SideEffect(
+                id=id,
                 func=func,
                 args=args,
-                kwargs=kwargs
+                kwargs=kwargs,
+                children=side_effects
             )
             queue_in_context = getattr(func, '__options__')['queue_in_context']
             if self._active is False or queue_in_context is False:

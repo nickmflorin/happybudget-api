@@ -6,8 +6,8 @@ def test_get_subaccounts_tree(api_client, user, create_budget,
     with signals.disable():
         budget = create_budget()
         accounts = [
-            create_budget_account(budget=budget, identifier="Account A"),
-            create_budget_account(budget=budget, identifier="Account B"),
+            create_budget_account(parent=budget, identifier="Account A"),
+            create_budget_account(parent=budget, identifier="Account B"),
         ]
         first_level_subaccounts = [
             create_budget_subaccount(
@@ -149,8 +149,8 @@ def test_search_subaccounts_tree(api_client, user, create_budget,
     with signals.disable():
         budget = create_budget()
         accounts = [
-            create_budget_account(budget=budget, identifier="Account A"),
-            create_budget_account(budget=budget, identifier="Account B"),
+            create_budget_account(parent=budget, identifier="Account A"),
+            create_budget_account(parent=budget, identifier="Account B"),
         ]
         first_level_subaccounts = [
             create_budget_subaccount(

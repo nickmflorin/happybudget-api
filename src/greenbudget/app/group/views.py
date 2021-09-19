@@ -1,19 +1,7 @@
-from django.utils.functional import cached_property
 from rest_framework import viewsets, mixins
 
-from .models import (
-    Group,
-    BudgetAccountGroup,
-    TemplateAccountGroup,
-    BudgetSubAccountGroup,
-    TemplateSubAccountGroup
-)
-from .serializers import (
-    BudgetAccountGroupSerializer,
-    BudgetSubAccountGroupSerializer,
-    TemplateAccountGroupSerializer,
-    TemplateSubAccountGroupSerializer
-)
+from .models import Group
+from .serializers import GroupSerializer
 
 
 class GroupViewSet(
@@ -30,20 +18,17 @@ class GroupViewSet(
     (3) DELETE /groups/<pk>/
     """
     lookup_field = 'pk'
+    serializer_class = GroupSerializer
 
-    @cached_property
-    def instance_cls(self):
-        instance = self.get_object()
-        return type(instance)
-
-    def get_serializer_class(self):
-        mapping = {
-            BudgetAccountGroup: BudgetAccountGroupSerializer,
-            TemplateAccountGroup: TemplateAccountGroupSerializer,
-            BudgetSubAccountGroup: BudgetSubAccountGroupSerializer,
-            TemplateSubAccountGroup: TemplateSubAccountGroupSerializer
-        }
-        return mapping[self.instance_cls]
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        # The parent object is needed in context in order to update the children
+        # of a Group - but that will only happen in a PATCH request for this
+        # view (POST request is handled by another view).
+        if self.detail is True:
+            obj = self.get_object()
+            context['parent'] = obj.parent
+        return context
 
     def get_queryset(self):
         return Group.objects.filter(created_by=self.request.user)

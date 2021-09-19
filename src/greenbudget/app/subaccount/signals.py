@@ -1,4 +1,3 @@
-import functools
 import logging
 
 from django import dispatch
@@ -7,8 +6,6 @@ from django.contrib.contenttypes.models import ContentType
 from greenbudget.app import signals
 from greenbudget.app.account.signals import (
     estimate_account, actualize_account, calculate_account)
-from greenbudget.app.fringe.utils import fringe_value
-from greenbudget.app.group.models import Group
 
 from .models import BudgetSubAccount, TemplateSubAccount
 
@@ -17,12 +14,15 @@ logger = logging.getLogger('signals')
 
 
 @signals.bulk_context.handler(
-    id=lambda instance, **kwargs: instance.pk,
+    id=lambda instance: instance.pk,
     queue_in_context=True,
-    side_effect=lambda instance, **kwargs: [
+    side_effect=lambda instance, subaccounts_to_be_deleted: [
         signals.SideEffect(
             func=actualize_account,
             args=(instance.parent, ),
+            kwargs={
+                'subaccounts_to_be_deleted': subaccounts_to_be_deleted
+            },
             # There are weird cases (like CASCADE deletes) where non-nullable
             # fields will be temporarily null - they just won't be saved in a
             # NULL state.
@@ -32,6 +32,9 @@ logger = logging.getLogger('signals')
         signals.SideEffect(
             func=actualize_subaccount,
             args=(instance.parent, ),
+            kwargs={
+                'subaccounts_to_be_deleted': subaccounts_to_be_deleted
+            },
             # There are weird cases (like CASCADE deletes) where non-nullable
             # fields will be temporarily null - they just won't be saved in a
             # NULL state.
@@ -40,112 +43,70 @@ logger = logging.getLogger('signals')
         )
     ]
 )
-def actualize_subaccount(instance, actuals=None):
+def actualize_subaccount(instance, actuals_to_be_deleted=None,
+        subaccounts_to_be_deleted=None):
     """
     Reactualizes the :obj:`greenbudget.app.subaccount.models.SubAccount` based
     on the :obj:`greenbudget.app.actual.models.Actual`(s) associated with the
     instance.
-
-    Note that we have to allow the Actuals to be optionally supplied to this
-    method.  This is because in the case when an Actual is deleted, we cannot
-    use the post_delete signal because the Actual will already have been
-    disassociated with the SubAccount so we do not know which SubAccount to
-    reactualize.  This means that we have to use this method in the context of
-    the pre_delete signal (see `greenbudget.app.actual.signals`).  However,
-    when we call this method from the pre_delete signal, the Actual still
-    exists - so we have to tell the method to exclude that Actual from the
-    re-actualization and then delete the Actual.
     """
-    # We cannot do .only('actual') here because the subaccounts are polymorphic.
-    # We should figure out how to do that.
-    subaccounts = BudgetSubAccount.objects.filter(
-        content_type=ContentType.objects.get_for_model(BudgetSubAccount),
-        object_id=instance.pk
-    ).only('actual')
-
-    actuals = actuals if actuals is not None else instance.actuals.only('value')
-
-    instance.actual = functools.reduce(
-        lambda current, sub: current + (sub.actual or 0), subaccounts.all(), 0)
-    instance.actual += functools.reduce(
-        lambda current, actual: current + (actual.value or 0), actuals.all(), 0)
-
-    instance.save(update_fields=['actual'], suppress_budget_update=True)
-
-
-@signals.bulk_context.handler(
-    id=lambda instance, **kwargs: instance.pk,
-    queue_in_context=True,
-    side_effect=lambda instance, **kwargs: [
-        signals.SideEffect(
-            func=estimate_account,
-            args=(instance.parent, ),
-            # There are weird cases (like CASCADE deletes) where non-nullable
-            # fields will be temporarily null - they just won't be saved in a
-            # NULL state.
-            conditional=instance.parent is not None and not isinstance(
-                instance.parent, (BudgetSubAccount, TemplateSubAccount))
-        ),
-        signals.SideEffect(
-            func=estimate_subaccount,
-            args=(instance.parent, ),
-            # There are weird cases (like CASCADE deletes) where non-nullable
-            # fields will be temporarily null - they just won't be saved in a
-            # NULL state.
-            conditional=instance.parent is not None and isinstance(
-                instance.parent, (BudgetSubAccount, TemplateSubAccount))
-        )
-    ]
-)
-def estimate_subaccount(instance, fringes=None):
-    """
-    Reestimates the :obj:`greenbudget.app.subaccount.models.SubAccount` based
-    on the calculatable fields of the instance and the
-    :obj:`greenbudget.app.fringe.models.Fringe`(s) associated with the instance.
-
-    Note that we have to allow the Fringes to be optionally supplied to this
-    method.  This is because in the case when a Fringe is deleted, we cannot
-    use the post_delete signal because the Fringe will already have been
-    disassociated with the SubAccount so we do not know which SubAccount to
-    reestimate.  This means that we have to use this method in the context of
-    the pre_delete signal (see `greenbudget.app.fringe.signals`).  However,
-    when we call this method from the pre_delete signal, the Fringe still
-    exists - so we have to tell the method to exclude that Fringe from the
-    re-estimation and then delete the Fringe.
-    """
-    subaccounts = instance.subaccounts.only('estimated')
-    if subaccounts.count() == 0:
-        fringes = fringes if fringes is not None else instance.fringes.all()
-        # Will return 0.0 if the quantity or rate values for the instance are
-        # None.
-        instance.estimated = fringe_value(instance.unfringed_value, fringes)
-    else:
-        instance.estimated = functools.reduce(
-            lambda current, sub: current + (sub.estimated or 0),
-            subaccounts.all(),
-            0
-        )
-
-    instance.save(update_fields=['estimated'], suppress_budget_update=True)
+    instance.establish_actual(
+        actuals_to_be_deleted=actuals_to_be_deleted,
+        subaccounts_to_be_deleted=subaccounts_to_be_deleted
+    )
+    instance.save(update_fields=["actual"], suppress_budget_update=True)
 
 
 @signals.bulk_context.handler(
     id=lambda instance: instance.pk,
     queue_in_context=True,
-    side_effect=lambda instance: [
+    side_effect=lambda instance, subaccounts_to_be_deleted: [
         signals.SideEffect(
-            func=estimate_subaccount,
-            args=(instance, ),
+            func=estimate_account,
+            args=(instance.parent, ),
+            kwargs={
+                'subaccounts_to_be_deleted': subaccounts_to_be_deleted
+            },
+            # There are weird cases (like CASCADE deletes) where non-nullable
+            # fields will be temporarily null - they just won't be saved in a
+            # NULL state.
+            conditional=instance.parent is not None and not isinstance(
+                instance.parent, (BudgetSubAccount, TemplateSubAccount))
         ),
         signals.SideEffect(
-            func=actualize_subaccount,
-            args=(instance, ),
-            conditional=isinstance(instance, BudgetSubAccount)
+            func=estimate_subaccount,
+            args=(instance.parent, ),
+            kwargs={
+                'subaccounts_to_be_deleted': subaccounts_to_be_deleted
+            },
+            # There are weird cases (like CASCADE deletes) where non-nullable
+            # fields will be temporarily null - they just won't be saved in a
+            # NULL state.
+            conditional=instance.parent is not None and isinstance(
+                instance.parent, (BudgetSubAccount, TemplateSubAccount))
         )
     ]
 )
-def calculate_subaccount(instance):
-    pass
+def estimate_subaccount(instance, fringes_to_be_deleted=None,
+        markups_to_be_deleted=None, subaccounts_to_be_deleted=None):
+    """
+    Reestimates the :obj:`greenbudget.app.subaccount.models.SubAccount` based
+    on the calculatable fields of the instance and the
+    :obj:`greenbudget.app.fringe.models.Fringe`(s) associated with the instance.
+    """
+    instance.establish_all(
+        markups_to_be_deleted=markups_to_be_deleted,
+        fringes_to_be_deleted=fringes_to_be_deleted,
+        subaccounts_to_be_deleted=subaccounts_to_be_deleted
+    )
+    instance.save(
+        update_fields=[
+            'estimated',
+            'fringe_contribution',
+            'markup_contribution'
+        ],
+        suppress_budget_update=True
+    )
 
 
 @signals.bulk_context.handler(
@@ -154,22 +115,53 @@ def calculate_subaccount(instance):
     # temporarily null.
     conditional=lambda parent: parent is not None,
     queue_in_context=True,
-    side_effect=lambda parent: [
+    side_effect=lambda parent, subaccounts_to_be_deleted: [
         signals.SideEffect(
             func=calculate_account,
-            args=(parent, ),
+            args=(parent,),
+            kwargs={
+                'subaccounts_to_be_deleted': subaccounts_to_be_deleted
+            },
             conditional=not isinstance(
                 parent, (BudgetSubAccount, TemplateSubAccount))
         ),
         signals.SideEffect(
             func=calculate_subaccount,
-            args=(parent, ),
+            args=(parent,),
+            kwargs={
+                'subaccounts_to_be_deleted': subaccounts_to_be_deleted
+            },
             conditional=isinstance(
                 parent, (BudgetSubAccount, TemplateSubAccount))
         )
     ]
 )
-def calculate_parent(parent):
+def calculate_parent(parent, subaccounts_to_be_deleted=None):
+    pass
+
+
+@signals.bulk_context.handler(
+    id=lambda instance: instance.pk,
+    queue_in_context=True,
+    side_effect=lambda instance, subaccounts_to_be_deleted: [
+        signals.SideEffect(
+            func=estimate_subaccount,
+            args=(instance,),
+            kwargs={
+                'subaccounts_to_be_deleted': subaccounts_to_be_deleted
+            },
+        ),
+        signals.SideEffect(
+            func=actualize_subaccount,
+            args=(instance, ),
+            conditional=isinstance(instance, BudgetSubAccount),
+            kwargs={
+                'subaccounts_to_be_deleted': subaccounts_to_be_deleted
+            },
+        )
+    ]
+)
+def calculate_subaccount(instance, subaccounts_to_be_deleted=None):
     pass
 
 
@@ -181,31 +173,21 @@ def calculate_parent(parent):
     fields=['rate', 'multiplier', 'quantity'],
     sender=TemplateSubAccount
 )
-def subaccount_reestimation(**kwargs):
-    estimate_subaccount(kwargs['instance'])
+def subaccount_reestimation(instance, **kwargs):
+    if instance.children.count() == 0:
+        estimate_subaccount(instance)
 
 
 @dispatch.receiver(signals.post_create, sender=BudgetSubAccount)
 @dispatch.receiver(signals.post_create, sender=TemplateSubAccount)
-def subaccount_recalculation(**kwargs):
-    calculate_subaccount(kwargs['instance'])
+def subaccount_created(instance, **kwargs):
+    calculate_subaccount(instance)
 
 
 @dispatch.receiver(signals.post_delete, sender=BudgetSubAccount)
 @dispatch.receiver(signals.post_delete, sender=TemplateSubAccount)
-def subaccount_deleted(**kwargs):
-    calculate_parent(kwargs['instance'].parent)
-
-
-@dispatch.receiver(
-    signals.m2m_changed, sender=BudgetSubAccount.fringes.through)
-@dispatch.receiver(
-    signals.m2m_changed, sender=TemplateSubAccount.fringes.through)
-def subaccount_fringes_changed(**kwargs):
-    # If we fire the reestimation of the subaccount on all actions, it will
-    # only be triggered for one.
-    if kwargs['action'] == 'post_add':
-        estimate_subaccount(kwargs['instance'])
+def subaccount_deleted(instance, **kwargs):
+    calculate_parent(instance.parent, subaccounts_to_be_deleted=[instance.pk])
 
 
 @signals.any_fields_changed_receiver(
@@ -216,19 +198,18 @@ def subaccount_fringes_changed(**kwargs):
     fields=['object_id', 'content_type'],
     sender=TemplateSubAccount
 )
-@signals.bulk_context.handler(id=lambda *args, **kwargs: kwargs['instance'].pk)
-def subaccount_parent_changed(**kwargs):
+def subaccount_parent_changed(instance, **kwargs):
     changes = kwargs['changes']
 
-    previous_content_type_id = kwargs['instance'].content_type_id
-    new_content_type_id = kwargs['instance'].content_type_id
+    previous_content_type_id = instance.content_type_id
+    new_content_type_id = instance.content_type_id
     if changes.get_change_for_field('content_type') is not None:
         content_type_change = changes.get_change_for_field('content_type')
         previous_content_type_id = content_type_change.previous_value
         new_content_type_id = content_type_change.value.pk
 
-    previous_object_id = kwargs['instance'].object_id
-    new_object_id = kwargs['instance'].object_id
+    previous_object_id = instance.object_id
+    new_object_id = instance.object_id
     if changes.get_change_for_field('object_id') is not None:
         object_id_change = changes.get_change_for_field('object_id')
         previous_object_id = object_id_change.previous_value
@@ -246,31 +227,6 @@ def subaccount_parent_changed(**kwargs):
     if new_parent != previous_parent:
         calculate_parent(previous_parent)
         calculate_parent(new_parent)
-
-
-@signals.field_changed_receiver('group', sender=BudgetSubAccount)
-@signals.field_changed_receiver('group', sender=TemplateSubAccount)
-def delete_empty_group(instance, **kwargs):
-    # TODO: Eventually, we will want to do this in the background.
-    if kwargs['change'].value is None:
-        if instance.__class__.objects.filter(
-                group_id=kwargs['change'].previous_value).count() == 0:
-            logger.info(
-                "Deleting group %s after it was removed from %s (id = %s) "
-                "because the group no longer has any children."
-                % (
-                    kwargs['change'].previous_value,
-                    instance.__class__.__name__,
-                    instance.pk
-                )
-            )
-            # We have to be concerned with race conditions here.
-            try:
-                group = Group.objects.get(pk=kwargs['change'].previous_value)
-            except Group.DoesNotExist:
-                pass
-            else:
-                group.delete()
 
 
 @dispatch.receiver(signals.post_save, sender=BudgetSubAccount)

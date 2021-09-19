@@ -11,7 +11,7 @@ def test_unit_properly_serializes(api_client, user, create_budget_subaccount,
         create_budget_account, create_budget, create_subaccount_unit):
     with signals.disable():
         budget = create_budget()
-        account = create_budget_account(budget=budget)
+        account = create_budget_account(parent=budget)
         unit = create_subaccount_unit()
         subaccount = create_budget_subaccount(
             parent=account,
@@ -36,7 +36,7 @@ def test_update_subaccount_unit(api_client, user, create_budget_subaccount,
         create_budget_account, create_budget, create_subaccount_unit):
     with signals.disable():
         budget = create_budget()
-        account = create_budget_account(budget=budget)
+        account = create_budget_account(parent=budget)
         subaccount = create_budget_subaccount(parent=account)
         unit = create_subaccount_unit()
     api_client.force_login(user)
@@ -61,7 +61,7 @@ def test_update_subaccount_contact(api_client, user, create_budget_subaccount,
         create_budget_account, create_budget, create_contact):
     with signals.disable():
         budget = create_budget()
-        account = create_budget_account(budget=budget)
+        account = create_budget_account(parent=budget)
         contact = create_contact(user=user)
         subaccount = create_budget_subaccount(parent=account)
     api_client.force_login(user)
@@ -79,7 +79,7 @@ def test_update_subaccount_contact_wrong_user(api_client, user,
         create_contact, admin_user):
     with signals.disable():
         budget = create_budget()
-        account = create_budget_account(budget=budget)
+        account = create_budget_account(parent=budget)
         contact = create_contact(user=admin_user)
         subaccount = create_budget_subaccount(parent=account)
     api_client.force_login(user)
@@ -94,7 +94,7 @@ def test_get_budget_subaccount(api_client, user, create_budget_subaccount,
         create_budget_account, create_budget):
     with signals.disable():
         budget = create_budget()
-        account = create_budget_account(budget=budget)
+        account = create_budget_account(parent=budget)
         subaccount = create_budget_subaccount(parent=account)
 
     api_client.force_login(user)
@@ -112,10 +112,11 @@ def test_get_budget_subaccount(api_client, user, create_budget_subaccount,
         "type": "subaccount",
         "object_id": account.pk,
         "parent_type": "account",
-        "actual": 0.0,
         "estimated": 0.0,
-        "variance": 0.0,
-        "subaccounts": [],
+        "fringe_contribution": 0.0,
+        "markup_contribution": 0.0,
+        "actual": 0.0,
+        "children": [],
         "fringes": [],
         "siblings": [],
         "created_by": user.pk,
@@ -143,7 +144,7 @@ def test_get_template_subaccount(api_client, user, create_template_subaccount,
         create_template_account, create_template):
     with signals.disable():
         template = create_template()
-        account = create_template_account(budget=template)
+        account = create_template_account(parent=template)
         subaccount = create_template_subaccount(parent=account)
 
     api_client.force_login(user)
@@ -162,7 +163,10 @@ def test_get_template_subaccount(api_client, user, create_template_subaccount,
         "object_id": account.pk,
         "parent_type": "account",
         "estimated": 0.0,
-        "subaccounts": [],
+        "fringe_contribution": 0.0,
+        "markup_contribution": 0.0,
+        "actual": 0.0,
+        "children": [],
         "fringes": [],
         "siblings": [],
         "created_by": user.pk,
@@ -190,7 +194,7 @@ def test_update_budget_subaccount(api_client, user, create_budget_subaccount,
         create_budget_account, create_budget):
     with signals.disable():
         budget = create_budget()
-        account = create_budget_account(budget=budget)
+        account = create_budget_account(parent=budget)
         subaccount = create_budget_subaccount(
             parent=account,
             description="Original Description",
@@ -218,9 +222,10 @@ def test_update_budget_subaccount(api_client, user, create_budget_subaccount,
         "object_id": account.pk,
         "parent_type": "account",
         "estimated": 15.0,
+        "fringe_contribution": 0.0,
+        "markup_contribution": 0.0,
         "actual": 0.0,
-        "variance": 15.0,
-        "subaccounts": [],
+        "children": [],
         "fringes": [],
         "siblings": [],
         "created_by": user.pk,
@@ -251,7 +256,7 @@ def test_update_budget_subaccount(api_client, user, create_budget_subaccount,
 def test_update_subaccount_fringes(api_client, user, create_budget_subaccount,
         create_budget_account, create_budget, create_fringe):
     budget = create_budget()
-    account = create_budget_account(budget=budget)
+    account = create_budget_account(parent=budget)
     subaccount = create_budget_subaccount(parent=account)
     fringes = [create_fringe(budget=budget), create_fringe(budget=budget)]
     api_client.force_login(user)
@@ -269,7 +274,7 @@ def test_update_template_subaccount(api_client, user, create_template_account,
         create_template_subaccount, create_template):
     with signals.disable():
         template = create_template()
-        account = create_template_account(budget=template)
+        account = create_template_account(parent=template)
         subaccount = create_template_subaccount(
             parent=account,
             description="Original Description",
@@ -297,7 +302,10 @@ def test_update_template_subaccount(api_client, user, create_template_account,
         "object_id": account.pk,
         "parent_type": "account",
         "estimated": 15.0,
-        "subaccounts": [],
+        "fringe_contribution": 0.0,
+        "markup_contribution": 0.0,
+        "actual": 0.0,
+        "children": [],
         "fringes": [],
         "created_by": user.pk,
         "updated_by": user.pk,
@@ -329,7 +337,7 @@ def test_get_budget_subaccount_subaccounts(api_client, user, create_budget,
         create_budget_subaccount, create_budget_account):
     with signals.disable():
         budget = create_budget()
-        account = create_budget_account(budget=budget)
+        account = create_budget_account(parent=budget)
         parent = create_budget_subaccount(parent=account)
         another_parent = create_budget_subaccount(parent=account)
         subaccounts = [
@@ -357,10 +365,11 @@ def test_get_budget_subaccount_subaccounts(api_client, user, create_budget,
             "type": "subaccount",
             "object_id": parent.pk,
             "parent_type": "subaccount",
-            "actual": 0.0,
             "estimated": 0.0,
-            "variance": 0.0,
-            "subaccounts": [],
+            "fringe_contribution": 0.0,
+            "markup_contribution": 0.0,
+            "actual": 0.0,
+            "children": [],
             "fringes": [],
             "created_by": user.pk,
             "updated_by": user.pk,
@@ -379,10 +388,11 @@ def test_get_budget_subaccount_subaccounts(api_client, user, create_budget,
             "type": "subaccount",
             "object_id": parent.pk,
             "parent_type": "subaccount",
-            "actual": 0.0,
             "estimated": 0.0,
-            "variance": 0.0,
-            "subaccounts": [],
+            "fringe_contribution": 0.0,
+            "markup_contribution": 0.0,
+            "actual": 0.0,
+            "children": [],
             "fringes": [],
             "created_by": user.pk,
             "updated_by": user.pk,
@@ -397,7 +407,7 @@ def test_get_template_subaccount_subaccounts(api_client, user, create_template,
         create_template_subaccount, create_template_account):
     with signals.disable():
         template = create_template()
-        account = create_template_account(budget=template)
+        account = create_template_account(parent=template)
         parent = create_template_subaccount(parent=account)
         another_parent = create_template_subaccount(
             parent=account)
@@ -433,7 +443,10 @@ def test_get_template_subaccount_subaccounts(api_client, user, create_template,
             "object_id": parent.pk,
             "parent_type": "subaccount",
             "estimated": 0.0,
-            "subaccounts": [],
+            "fringe_contribution": 0.0,
+            "markup_contribution": 0.0,
+            "actual": 0.0,
+            "children": [],
             "fringes": [],
             "created_by": user.pk,
             "updated_by": user.pk,
@@ -453,7 +466,10 @@ def test_get_template_subaccount_subaccounts(api_client, user, create_template,
             "object_id": parent.pk,
             "parent_type": "subaccount",
             "estimated": 0.0,
-            "subaccounts": [],
+            "fringe_contribution": 0.0,
+            "markup_contribution": 0.0,
+            "actual": 0.0,
+            "children": [],
             "fringes": [],
             "created_by": user.pk,
             "updated_by": user.pk,
@@ -465,11 +481,11 @@ def test_get_template_subaccount_subaccounts(api_client, user, create_template,
 
 def test_remove_budget_subaccount_from_group(api_client, user, create_budget,
         create_budget_subaccount, create_budget_account, models,
-        create_budget_subaccount_group):
+        create_group):
     with signals.disable():
         budget = create_budget()
-        account = create_budget_account(budget=budget)
-        group = create_budget_subaccount_group(parent=account)
+        account = create_budget_account(parent=budget)
+        group = create_group(parent=account)
         subaccount = create_budget_subaccount(
             parent=account,
             group=group
@@ -485,16 +501,16 @@ def test_remove_budget_subaccount_from_group(api_client, user, create_budget,
     subaccount.refresh_from_db()
     assert subaccount.group is None
 
-    assert models.BudgetSubAccountGroup.objects.first() is None
+    assert models.Group.objects.first() is None
 
 
 def test_remove_template_subaccount_from_group(api_client, user,
         create_template, create_template_subaccount, create_template_account,
-        create_template_subaccount_group, models):
+        create_group, models):
     with signals.disable():
         template = create_template()
-        account = create_template_account(budget=template)
-        group = create_template_subaccount_group(parent=account)
+        account = create_template_account(parent=template)
+        group = create_group(parent=account)
         subaccount = create_template_subaccount(
             parent=account,
             group=group
@@ -510,7 +526,7 @@ def test_remove_template_subaccount_from_group(api_client, user,
     subaccount.refresh_from_db()
     assert subaccount.group is None
 
-    assert models.TemplateSubAccountGroup.objects.first() is None
+    assert models.Group.objects.first() is None
 
 
 @pytest.mark.freeze_time('2020-01-01')
@@ -519,7 +535,7 @@ def test_bulk_update_budget_subaccount_subaccounts(api_client, user,
         freezer):
     with signals.disable():
         budget = create_budget()
-        account = create_budget_account(budget=budget)
+        account = create_budget_account(parent=budget)
         subaccount = create_budget_subaccount(parent=account)
         subaccounts = [
             create_budget_subaccount(
@@ -556,15 +572,13 @@ def test_bulk_update_budget_subaccount_subaccounts(api_client, user,
     # the SubAccount.
     assert response.json()['data']['id'] == subaccount.pk
     assert response.json()['data']['estimated'] == 40.0
-    assert response.json()['data']['variance'] == 40.0
     assert response.json()['data']['actual'] == 0.0
-    assert len(response.json()['data']['subaccounts']) == 2
-    assert response.json()['data']['subaccounts'][0] == subaccounts[0].pk
-    assert response.json()['data']['subaccounts'][1] == subaccounts[1].pk
+    assert len(response.json()['data']['children']) == 2
+    assert response.json()['data']['children'][0] == subaccounts[0].pk
+    assert response.json()['data']['children'][1] == subaccounts[1].pk
 
     assert response.json()['budget']['id'] == budget.pk
     assert response.json()['budget']['estimated'] == 40.0
-    assert response.json()['budget']['variance'] == 40.0
     assert response.json()['budget']['actual'] == 0.0
 
     # Make sure the SubAccount(s) are updated in the database.
@@ -581,13 +595,11 @@ def test_bulk_update_budget_subaccount_subaccounts(api_client, user,
     # Make sure the SubAccount is updated in the database.
     subaccount.refresh_from_db()
     assert subaccount.estimated == 40.0
-    assert subaccount.variance == 40.0
     assert subaccount.actual == 0.0
 
     # Make sure the Account is updated in the database.
     account.refresh_from_db()
     assert account.estimated == 40.0
-    assert account.variance == 40.0
     assert account.actual == 0.0
 
     # Make sure the Budget is updated in the database.
@@ -595,7 +607,6 @@ def test_bulk_update_budget_subaccount_subaccounts(api_client, user,
     assert budget.updated_at == datetime.datetime(2021, 1, 1).replace(
         tzinfo=timezone.utc)
     assert budget.estimated == 40.0
-    assert budget.variance == 40.0
     assert budget.actual == 0.0
 
 
@@ -604,7 +615,7 @@ def test_bulk_update_budget_subaccount_subaccounts_fringes(api_client, user,
         create_fringe):
     with signals.disable():
         budget = create_budget()
-        account = create_budget_account(budget=budget)
+        account = create_budget_account(parent=budget)
         subaccount = create_budget_subaccount(parent=account)
         subaccounts = [
             create_budget_subaccount(
@@ -649,39 +660,42 @@ def test_bulk_update_budget_subaccount_subaccounts_fringes(api_client, user,
     # The data in the response refers to base the entity we are updating, A.K.A.
     # the SubAccount.
     assert response.json()['data']['id'] == subaccount.pk
-    assert response.json()['data']['estimated'] == 270.0
-    assert response.json()['data']['variance'] == 270.0
+    assert response.json()['data']['estimated'] == 200.0
+    assert response.json()['data']['fringe_contribution'] == 70.0
     assert response.json()['data']['actual'] == 0.0
-    assert len(response.json()['data']['subaccounts']) == 2
-    assert response.json()['data']['subaccounts'][0] == subaccounts[0].pk
-    assert response.json()['data']['subaccounts'][1] == subaccounts[1].pk
+    assert len(response.json()['data']['children']) == 2
+    assert response.json()['data']['children'][0] == subaccounts[0].pk
+    assert response.json()['data']['children'][1] == subaccounts[1].pk
 
     assert response.json()['budget']['id'] == budget.pk
-    assert response.json()['budget']['estimated'] == 270.0
-    assert response.json()['budget']['variance'] == 270.0
+    assert response.json()['budget']['estimated'] == 200.0
+    assert response.json()['budget']['fringe_contribution'] == 70.0
     assert response.json()['budget']['actual'] == 0.0
 
     # Make sure the Account is updated in the database.
     account.refresh_from_db()
-    assert account.estimated == 270.0
-    assert account.variance == 270.0
+    assert account.estimated == 200.0
+    assert account.fringe_contribution == 70.0
     assert account.actual == 0.0
 
     # Make sure the SubAccount is updated in the database.
     subaccount.refresh_from_db()
-    assert subaccount.estimated == 270.0
-    assert subaccount.variance == 270.0
+    assert subaccount.estimated == 200.0
+    assert subaccount.fringe_contribution == 70.0
     assert subaccount.actual == 0.0
 
     # Make sure the SubAccount(s) are updated in the database.
     subaccounts[0].refresh_from_db()
-    assert subaccounts[0].estimated == 170
+    assert subaccounts[0].estimated == 100
+    assert subaccounts[0].fringe_contribution == 70.0
     subaccounts[1].refresh_from_db()
     assert subaccounts[1].estimated == 100
+    assert subaccounts[1].fringe_contribution == 0.0
 
     # Make sure the Budget is updated in the database.
     budget.refresh_from_db()
-    assert budget.estimated == 270
+    assert budget.estimated == 200.0
+    assert budget.fringe_contribution == 70.0
 
 
 def test_bulk_delete_budget_subaccount_subaccounts(api_client, user,
@@ -689,7 +703,7 @@ def test_bulk_delete_budget_subaccount_subaccounts(api_client, user,
         models):
     with signals.disable():
         budget = create_budget()
-        account = create_budget_account(budget=budget)
+        account = create_budget_account(parent=budget)
         subaccount = create_budget_subaccount(parent=account)
 
     # Do not do in the context of disabled signals because we need the values
@@ -722,25 +736,21 @@ def test_bulk_delete_budget_subaccount_subaccounts(api_client, user,
     # the SubAccount.
     assert response.json()['data']['id'] == subaccount.pk
     assert response.json()['data']['estimated'] == 0.0
-    assert response.json()['data']['variance'] == 0.0
     assert response.json()['data']['actual'] == 0.0
-    assert len(response.json()['data']['subaccounts']) == 0
+    assert len(response.json()['data']['children']) == 0
 
     assert response.json()['budget']['id'] == budget.pk
     assert response.json()['budget']['estimated'] == 0.0
-    assert response.json()['budget']['variance'] == 0.0
     assert response.json()['budget']['actual'] == 0.0
 
     # Make sure the SubAccount is updated in the database.
     subaccount.refresh_from_db()
     assert subaccount.estimated == 0.0
-    assert subaccount.variance == 0.0
     assert subaccount.actual == 0.0
 
     # Make sure the Account is updated in the database.
     account.refresh_from_db()
     assert account.estimated == 0.0
-    assert account.variance == 0.0
     assert account.actual == 0.0
 
     # Make sure the Budget is updated in the database.
@@ -753,7 +763,7 @@ def test_bulk_update_budget_subaccount_subaccounts_budget_updated_once(
         create_budget_subaccount):
     with signals.disable():
         budget = create_budget()
-        account = create_budget_account(budget=budget)
+        account = create_budget_account(parent=budget)
         subaccount = create_budget_subaccount(parent=account)
         subaccounts = [
             create_budget_subaccount(parent=subaccount),
@@ -786,7 +796,7 @@ def test_bulk_update_template_subaccount_subaccounts(api_client, user,
         freezer):
     with signals.disable():
         template = create_template()
-        account = create_template_account(budget=template)
+        account = create_template_account(parent=template)
         subaccount = create_template_subaccount(parent=account)
         subaccounts = [
             create_template_subaccount(
@@ -824,9 +834,9 @@ def test_bulk_update_template_subaccount_subaccounts(api_client, user,
     # the SubAccount.
     assert response.json()['data']['id'] == subaccount.pk
     assert response.json()['data']['estimated'] == 40.0
-    assert len(response.json()['data']['subaccounts']) == 2
-    assert response.json()['data']['subaccounts'][0] == subaccounts[0].pk
-    assert response.json()['data']['subaccounts'][1] == subaccounts[1].pk
+    assert len(response.json()['data']['children']) == 2
+    assert response.json()['data']['children'][0] == subaccounts[0].pk
+    assert response.json()['data']['children'][1] == subaccounts[1].pk
 
     assert response.json()['budget']['id'] == template.pk
     assert response.json()['budget']['estimated'] == 40.0
@@ -862,7 +872,7 @@ def test_bulk_delete_template_subaccount_subaccounts(api_client, user,
         models):
     with signals.disable():
         template = create_template()
-        account = create_template_account(budget=template)
+        account = create_template_account(parent=template)
         subaccount = create_template_subaccount(parent=account)
 
     # Do not do in the context of disabled signals because we need the values
@@ -894,7 +904,7 @@ def test_bulk_delete_template_subaccount_subaccounts(api_client, user,
     # the SubAccount.
     assert response.json()['data']['id'] == subaccount.pk
     assert response.json()['data']['estimated'] == 0.0
-    assert len(response.json()['data']['subaccounts']) == 0
+    assert len(response.json()['data']['children']) == 0
 
     assert response.json()['budget']['id'] == template.pk
     assert response.json()['budget']['estimated'] == 0.0
@@ -917,7 +927,7 @@ def test_bulk_update_template_subaccount_subaccounts_template_updated_once(
         create_template_subaccount):
     with signals.disable():
         template = create_template()
-        account = create_template_account(budget=template)
+        account = create_template_account(parent=template)
         subaccount = create_template_subaccount(parent=account)
         subaccounts = [
             create_template_subaccount(parent=subaccount),
@@ -949,7 +959,7 @@ def test_bulk_create_budget_subaccount_subaccounts(api_client, user,
         create_budget, create_budget_account, create_budget_subaccount, models):
     with signals.disable():
         budget = create_budget()
-        account = create_budget_account(budget=budget)
+        account = create_budget_account(parent=budget)
         subaccount = create_budget_subaccount(parent=account)
 
     api_client.force_login(user)
@@ -976,26 +986,22 @@ def test_bulk_create_budget_subaccount_subaccounts(api_client, user,
     assert len(response.json()['children']) == 2
     assert response.json()['children'][0]['id'] == subaccounts[0].pk
     assert response.json()['children'][0]['estimated'] == 20.0
-    assert response.json()['children'][0]['variance'] == 20.0
     assert response.json()['children'][0]['actual'] == 0.0
     assert response.json()['children'][1]['id'] == subaccounts[1].pk
     assert response.json()['children'][1]['estimated'] == 20.0
-    assert response.json()['children'][1]['variance'] == 20.0
     assert response.json()['children'][1]['actual'] == 0.0
 
     # The data in the response refers to base the entity we are updating, A.K.A.
     # the SubAccount.
     assert response.json()['data']['id'] == subaccount.pk
     assert response.json()['data']['estimated'] == 40.0
-    assert response.json()['data']['variance'] == 40.0
     assert response.json()['data']['actual'] == 0.0
-    assert len(response.json()['data']['subaccounts']) == 2
-    assert response.json()['data']['subaccounts'][0] == subaccounts[0].pk
-    assert response.json()['data']['subaccounts'][1] == subaccounts[1].pk
+    assert len(response.json()['data']['children']) == 2
+    assert response.json()['data']['children'][0] == subaccounts[0].pk
+    assert response.json()['data']['children'][1] == subaccounts[1].pk
 
     assert response.json()['budget']['id'] == budget.pk
     assert response.json()['budget']['estimated'] == 40.0
-    assert response.json()['budget']['variance'] == 40.0
     assert response.json()['budget']['actual'] == 0.0
 
     # Make sure the SubAccount(s) are updated in the database.
@@ -1012,19 +1018,16 @@ def test_bulk_create_budget_subaccount_subaccounts(api_client, user,
     # Make sure the SubAccount is updated in the database.
     subaccount.refresh_from_db()
     assert subaccount.estimated == 40.0
-    assert subaccount.variance == 40.0
     assert subaccount.actual == 0.0
 
     # Make sure the Account is updated in the database.
     account.refresh_from_db()
     assert account.estimated == 40.0
-    assert account.variance == 40.0
     assert account.actual == 0.0
 
     # Make sure the Budget is updated in the database.
     budget.refresh_from_db()
     assert budget.estimated == 40.0
-    assert budget.variance == 40.0
     assert budget.actual == 0.0
 
 
@@ -1034,7 +1037,7 @@ def test_bulk_create_template_account_subaccounts(api_client, user,
         create_template_subaccount):
     with signals.disable():
         template = create_template()
-        account = create_template_account(budget=template)
+        account = create_template_account(parent=template)
         subaccount = create_template_subaccount(parent=account)
 
     freezer.move_to("2021-01-01")
@@ -1063,9 +1066,9 @@ def test_bulk_create_template_account_subaccounts(api_client, user,
     # the SubAccount.
     assert response.json()['data']['id'] == subaccount.pk
     assert response.json()['data']['estimated'] == 40.0
-    assert len(response.json()['data']['subaccounts']) == 2
-    assert response.json()['data']['subaccounts'][0] == subaccounts[0].pk
-    assert response.json()['data']['subaccounts'][1] == subaccounts[1].pk
+    assert len(response.json()['data']['children']) == 2
+    assert response.json()['data']['children'][0] == subaccounts[0].pk
+    assert response.json()['data']['children'][1] == subaccounts[1].pk
 
     assert response.json()['budget']['id'] == template.pk
     assert response.json()['budget']['estimated'] == 40.0

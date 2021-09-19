@@ -16,6 +16,7 @@ def test_update_fringe(api_client, user, create_budget, create_fringe, models):
     fringe.refresh_from_db()
     assert response.json() == {
         "id": fringe.pk,
+        "type": "fringe",
         "name": "Test Fringe",
         "description": fringe.description,
         "created_by": user.pk,
@@ -46,6 +47,7 @@ def test_get_fringe(api_client, user, create_budget, create_fringe, models):
     assert response.status_code == 200
     assert response.json() == {
         "id": fringe.pk,
+        "type": "fringe",
         "name": fringe.name,
         "description": fringe.description,
         "created_by": user.pk,

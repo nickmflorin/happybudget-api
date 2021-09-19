@@ -8,17 +8,8 @@ from greenbudget.app.budget.models import Budget
 from greenbudget.app.comment.models import Comment
 from greenbudget.app.contact.models import Contact
 from greenbudget.app.fringe.models import Fringe
-from greenbudget.app.group.models import (
-    BudgetAccountGroup,
-    BudgetSubAccountGroup,
-    TemplateAccountGroup,
-    TemplateSubAccountGroup
-)
-from greenbudget.app.markup.models import (
-    Markup,
-    BudgetAccountMarkup,
-    BudgetSubAccountMarkup,
-)
+from greenbudget.app.group.models import Group
+from greenbudget.app.markup.models import Markup
 from greenbudget.app.pdf.models import (
     HeaderTemplate,
     HeadingBlock,
@@ -38,6 +29,7 @@ from greenbudget.app.user.models import User
 
 from .base import CustomModelFactory
 from .fields import FutureDateTimeField
+from .lazy import Lazy
 
 
 def ConstantTimeMixin(*fields):
@@ -108,7 +100,6 @@ class UserFactory(CustomModelFactory):
     first_name = factory.Faker('first_name')
     last_name = factory.Faker('last_name')
     email = factory.Faker('email')
-    username = factory.SelfAttribute('email')
     is_staff = False
     is_admin = False
     is_superuser = False
@@ -190,8 +181,7 @@ class FringeFactory(CustomModelFactory):
 
 class MarkupFactory(CustomModelFactory):
     """
-    A an abstract DjangoModelFactory to referencing the polymorphic base model
-    :obj:`Markup`.
+    A DjangoModelFactory to to create instances of :obj:`Markup`.
     """
     rate = 1.00
     unit = Markup.UNITS.percent
@@ -201,74 +191,53 @@ class MarkupFactory(CustomModelFactory):
     description = factory.Faker('sentence')
 
     class Meta:
-        abstract = True
+        model = Markup
 
     @factory.post_generation
-    def children(self, create, extracted, **kwargs):
+    def accounts(self, create, extracted, **kwargs):
         if not create:
             return
         if extracted:
             for child in extracted:
-                self.children.add(child)
+                # pylint: disable=no-member
+                self.accounts.add(child)
 
+    @factory.post_generation
+    def groups(self, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for child in extracted:
+                # pylint: disable=no-member
+                self.groups.add(child)
 
-class BudgetAccountMarkupFactory(MarkupFactory):
-    """
-    A DjangoModelFactory to create instances of :obj:`BudgetAccountMarkup`.
-    """
-    class Meta:
-        model = BudgetAccountMarkup
-
-
-class BudgetSubAccountMarkupFactory(MarkupFactory):
-    """
-    A DjangoModelFactory to create instances of :obj:`BudgetSubAccountMarkup`.
-    """
-    class Meta:
-        model = BudgetSubAccountMarkup
+    @factory.post_generation
+    def subaccounts(self, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for child in extracted:
+                # pylint: disable=no-member
+                self.subaccounts.add(child)
 
 
 class GroupFactory(CustomModelFactory):
     """
-    A an abstract DjangoModelFactory to referencing the polymorphic base model
-    :obj:`Group`.
+    A DjangoModelFactory to create instances of :obj:`Group`.
     """
     name = factory.Faker('name')
 
     class Meta:
-        abstract = True
+        model = Group
 
-
-class BudgetAccountGroupFactory(GroupFactory):
-    """
-    A DjangoModelFactory to create instances of :obj:`BudgetAccountGroup`.
-    """
-    class Meta:
-        model = BudgetAccountGroup
-
-
-class TemplateAccountGroupFactory(GroupFactory):
-    """
-    A DjangoModelFactory to create instances of :obj:`TemplateAccountGroup`.
-    """
-    class Meta:
-        model = TemplateAccountGroup
-
-
-class BudgetSubAccountGroupFactory(GroupFactory):
-    """
-    A DjangoModelFactory to create instances of :obj:`BudgetSubAccountGroup`.
-    """
-    class Meta:
-        model = BudgetSubAccountGroup
-
-
-class TemplateSubAccountGroupFactory(GroupFactory):
-    """
-    A DjangoModelFactory to create instances of :obj:`TemplateSubAccountGroup`.
-    """
-    class Meta:
-        model = TemplateSubAccountGroup
+    @factory.post_generation
+    def markups(self, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for markup in extracted:
+                # pylint: disable=no-member
+                self.markups.add(markup)
 
 
 class AccountFactory(CustomModelFactory):
@@ -283,6 +252,24 @@ class AccountFactory(CustomModelFactory):
 
     class Meta:
         abstract = True
+
+    @factory.post_generation
+    def markups(self, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for markup in extracted:
+                # pylint: disable=no-member
+                self.markups.add(markup)
+
+    @factory.post_generation
+    def children(self, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for child in extracted:
+                assert isinstance(child, Lazy), "Child must be lazy!"
+                child.create(parent=self)
 
 
 class BudgetAccountFactory(AccountFactory):
@@ -324,6 +311,24 @@ class SubAccountFactory(CustomModelFactory):
 
     class Meta:
         abstract = True
+
+    @factory.post_generation
+    def children(self, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for child in extracted:
+                assert isinstance(child, Lazy), "Child must be lazy!"
+                child.create(parent=self)
+
+    @factory.post_generation
+    def markups(self, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for markup in extracted:
+                # pylint: disable=no-member
+                self.markups.add(markup)
 
     @factory.post_generation
     def fringes(self, create, extracted, **kwargs):
@@ -400,7 +405,7 @@ class ContactFactory(CustomModelFactory):
     first_name = factory.Faker('first_name')
     last_name = factory.Faker('last_name')
     email = factory.Faker('email')
-    type = Contact.TYPES.vendor
+    contact_type = Contact.TYPES.vendor
     phone_number = 15555555555
     rate = 100
     city = "New York"

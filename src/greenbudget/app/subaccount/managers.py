@@ -41,15 +41,15 @@ class SubAccountQuerier(object):
     def _get_subaccount_levels(self, budget):
         subaccount_levels = []
         subaccounts = concat([
-            [q[0] for q in account.subaccounts.only('pk').values_list('pk')]
-            for account in self.account_model.objects.filter(budget=budget)
+            [q[0] for q in account.children.only('pk').values_list('pk')]
+            for account in self.account_model.objects.filter(parent=budget)
         ])
         while len(subaccounts) != 0:
             subaccount_levels.append(subaccounts)
             subaccounts = concat([
-                [q[0] for q in account.subaccounts.only('pk').values_list('pk')]
+                [q[0] for q in account.children.only('pk').values_list('pk')]
                 for account in self.model.objects
-                .prefetch_related('subaccounts').filter(id__in=subaccounts)
+                .prefetch_related('children').filter(id__in=subaccounts)
             ])
         return subaccount_levels
 
@@ -58,7 +58,7 @@ class SubAccountQuerier(object):
         subaccount_ct = ContentType.objects.get_for_model(self.model).id
 
         accounts = [
-            q[0] for q in self.account_model.objects.filter(budget=budget)
+            q[0] for q in self.account_model.objects.filter(parent=budget)
             .only('pk').values_list('pk')
         ]
 

@@ -19,6 +19,7 @@ def test_get_budget_fringes(api_client, user, create_budget, create_fringe,
     assert response.json()['data'] == [
         {
             "id": fringes[0].pk,
+            "type": "fringe",
             "name": fringes[0].name,
             "description": fringes[0].description,
             "created_by": user.pk,
@@ -36,6 +37,7 @@ def test_get_budget_fringes(api_client, user, create_budget, create_fringe,
         },
         {
             "id": fringes[1].pk,
+            "type": "fringe",
             "name": fringes[1].name,
             "description": fringes[1].description,
             "created_by": user.pk,
@@ -69,6 +71,7 @@ def test_create_budget_fringe(api_client, user, create_budget, models):
     assert fringe is not None
     assert response.json() == {
         "id": fringe.pk,
+        "type": "fringe",
         "name": "Test Fringe",
         "description": None,
         "created_by": user.pk,
@@ -95,8 +98,8 @@ def test_bulk_create_budget_fringes(api_client, user, create_budget, models,
         create_budget_account, create_budget_subaccount):
     budget = create_budget()
     accounts = [
-        create_budget_account(budget=budget),
-        create_budget_account(budget=budget)
+        create_budget_account(parent=budget),
+        create_budget_account(parent=budget)
     ]
     # Do not disable the signals, because disabling the signals will prevent
     # the metrics on the SubAccount(s) (and thus the Account(s) and Budget) from
@@ -138,7 +141,6 @@ def test_bulk_create_budget_fringes(api_client, user, create_budget, models,
     # The Fringe(s) should not have an affect on the calculated value of the
     # Budget because they have not yet been tied to a specific SubAccount.
     assert response.json()['data']['estimated'] == 200.0
-    assert response.json()['data']['variance'] == 200.0
     assert response.json()['data']['actual'] == 0.0
 
     # Make sure the actual Fringe(s) were created in the database.
@@ -155,7 +157,6 @@ def test_bulk_create_budget_fringes(api_client, user, create_budget, models,
     # Budget because they have not yet been tied to a specific SubAccount.
     budget.refresh_from_db()
     assert budget.estimated == 200.0
-    assert budget.variance == 200.0
     assert budget.actual == 0.0
 
 
@@ -163,8 +164,8 @@ def test_bulk_update_budget_fringes(api_client, user, create_budget,
         create_fringe, create_budget_account, create_budget_subaccount):
     budget = create_budget()
     accounts = [
-        create_budget_account(budget=budget),
-        create_budget_account(budget=budget)
+        create_budget_account(parent=budget),
+        create_budget_account(parent=budget)
     ]
     fringes = [
         create_fringe(budget=budget, rate=0.5),
@@ -190,27 +191,28 @@ def test_bulk_update_budget_fringes(api_client, user, create_budget,
         )
     ]
     subaccounts[0].refresh_from_db()
-    assert subaccounts[0].estimated == 170.0
-    assert subaccounts[0].variance == 170.0
+    assert subaccounts[0].estimated == 100.0
+    assert subaccounts[0].fringe_contribution == 70.0
     assert subaccounts[0].actual == 0.0
 
     subaccounts[1].refresh_from_db()
-    assert subaccounts[1].estimated == 340.0
-    assert subaccounts[1].variance == 340.0
+    assert subaccounts[1].estimated == 200.0
+    assert subaccounts[1].fringe_contribution == 140.0
     assert subaccounts[1].actual == 0.0
 
     accounts[0].refresh_from_db()
-    assert accounts[0].estimated == 170.0
-    assert accounts[0].variance == 170.0
+    assert accounts[0].estimated == 100.0
+    assert accounts[0].fringe_contribution == 70.0
     assert accounts[0].actual == 0.0
 
     accounts[1].refresh_from_db()
-    assert accounts[1].estimated == 340.0
-    assert accounts[1].variance == 340.0
+    assert accounts[1].estimated == 200.0
+    assert accounts[1].fringe_contribution == 140.0
     assert accounts[1].actual == 0.0
 
     budget.refresh_from_db()
-    assert budget.estimated == 510.0
+    assert budget.estimated == 300.0
+    assert budget.fringe_contribution == 210.0
 
     api_client.force_login(user)
     response = api_client.patch(
@@ -225,8 +227,8 @@ def test_bulk_update_budget_fringes(api_client, user, create_budget,
     # The data in the response refers to base the entity we are updating, A.K.A.
     # the Budget.
     assert response.json()['data']['id'] == budget.pk
-    assert response.json()['data']['estimated'] == 690.0
-    assert response.json()['data']['variance'] == 690.0
+    assert response.json()['data']['estimated'] == 300.0
+    assert response.json()['data']['fringe_contribution'] == 390.0
     assert response.json()['data']['actual'] == 0.0
 
     # Make sure the actual Fringe(s) were updated in the database.
@@ -237,30 +239,30 @@ def test_bulk_update_budget_fringes(api_client, user, create_budget,
 
     # Make sure the actual SubAccount(s) were updated in the database.
     subaccounts[0].refresh_from_db()
-    assert subaccounts[0].estimated == 230.0
-    assert subaccounts[0].variance == 230.0
+    assert subaccounts[0].estimated == 100.0
+    assert subaccounts[0].fringe_contribution == 130.0
     assert subaccounts[0].actual == 0.0
 
     subaccounts[1].refresh_from_db()
-    assert subaccounts[1].estimated == 460.0
-    assert subaccounts[1].variance == 460.0
+    assert subaccounts[1].estimated == 200.0
+    assert subaccounts[1].fringe_contribution == 260.0
     assert subaccounts[1].actual == 0.0
 
     # Make sure the actual Account(s) were updated in the database.
     accounts[0].refresh_from_db()
-    assert accounts[0].estimated == 230.0
-    assert accounts[0].variance == 230.0
+    assert accounts[0].estimated == 100.0
+    assert accounts[0].fringe_contribution == 130.0
     assert accounts[0].actual == 0.0
 
     accounts[1].refresh_from_db()
-    assert accounts[1].estimated == 460.0
-    assert accounts[1].variance == 460.0
+    assert accounts[1].estimated == 200.0
+    assert accounts[1].fringe_contribution == 260.0
     assert accounts[1].actual == 0.0
 
     # Make sure the Budget was updated in the database.
     budget.refresh_from_db()
-    assert budget.estimated == 690.0
-    assert budget.variance == 690.0
+    assert budget.estimated == 300.0
+    assert budget.fringe_contribution == 390.0
     assert budget.actual == 0.0
 
 
@@ -268,8 +270,8 @@ def test_bulk_delete_fringes(api_client, user, create_budget, create_fringe,
         models, create_budget_account, create_budget_subaccount):
     budget = create_budget()
     accounts = [
-        create_budget_account(budget=budget),
-        create_budget_account(budget=budget)
+        create_budget_account(parent=budget),
+        create_budget_account(parent=budget)
     ]
     fringes = [
         create_fringe(budget=budget, rate=0.5),
@@ -295,29 +297,28 @@ def test_bulk_delete_fringes(api_client, user, create_budget, create_fringe,
         )
     ]
     subaccounts[0].refresh_from_db()
-    assert subaccounts[0].estimated == 170.0
-    assert subaccounts[0].variance == 170.0
+    assert subaccounts[0].estimated == 100.0
+    assert subaccounts[0].fringe_contribution == 70.0
     assert subaccounts[0].actual == 0.0
 
     subaccounts[1].refresh_from_db()
-    assert subaccounts[1].estimated == 340.0
-    assert subaccounts[1].variance == 340.0
+    assert subaccounts[1].estimated == 200.0
+    assert subaccounts[1].fringe_contribution == 140.0
     assert subaccounts[1].actual == 0.0
 
     accounts[0].refresh_from_db()
-    assert accounts[0].estimated == 170.0
-    assert accounts[0].variance == 170.0
+    assert accounts[0].estimated == 100.0
+    assert accounts[0].fringe_contribution == 70.0
     assert accounts[0].actual == 0.0
 
     accounts[1].refresh_from_db()
-    assert accounts[1].estimated == 340.0
-    assert accounts[1].variance == 340.0
+    assert accounts[1].estimated == 200.0
+    assert accounts[1].fringe_contribution == 140.0
     assert accounts[1].actual == 0.0
 
     budget.refresh_from_db()
-    assert budget.estimated == 510.0
-    assert budget.variance == 510.0
-    assert budget.actual == 0.0
+    assert budget.estimated == 300.0
+    assert budget.fringe_contribution == 210.0
 
     api_client.force_login(user)
     response = api_client.patch(
@@ -333,33 +334,32 @@ def test_bulk_delete_fringes(api_client, user, create_budget, create_fringe,
     # the Budget.
     assert response.json()['data']['id'] == budget.pk
     assert response.json()['data']['estimated'] == 300.0
-    assert response.json()['data']['variance'] == 300.0
     assert response.json()['data']['actual'] == 0.0
 
     # Make sure the actual SubAccount(s) were updated in the database.
     subaccounts[0].refresh_from_db()
     assert subaccounts[0].estimated == 100.0
-    assert subaccounts[0].variance == 100.0
+    assert subaccounts[0].fringe_contribution == 0.0
     assert subaccounts[0].actual == 0.0
 
     subaccounts[1].refresh_from_db()
     assert subaccounts[1].estimated == 200.0
-    assert subaccounts[1].variance == 200.0
+    assert subaccounts[1].fringe_contribution == 0.0
     assert subaccounts[1].actual == 0.0
 
     # Make sure the actual Account(s) were updated in the database.
     accounts[0].refresh_from_db()
     assert accounts[0].estimated == 100.0
-    assert accounts[0].variance == 100.0
+    assert accounts[0].fringe_contribution == 0.0
     assert accounts[0].actual == 0.0
 
     accounts[1].refresh_from_db()
     assert accounts[1].estimated == 200.0
-    assert accounts[1].variance == 200.0
+    assert accounts[1].fringe_contribution == 0.0
     assert accounts[1].actual == 0.0
 
     # Make sure the Budget was updated in the database.
     budget.refresh_from_db()
     assert budget.estimated == 300.0
-    assert budget.variance == 300.0
+    assert budget.fringe_contribution == 0.0
     assert budget.actual == 0.0

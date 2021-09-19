@@ -8,7 +8,7 @@ def test_create_actual(api_client, user, create_budget_account,
         create_budget, create_budget_subaccount, models):
     with signals.disable():
         budget = create_budget()
-        account = create_budget_account(budget=budget)
+        account = create_budget_account(parent=budget)
         subaccount = create_budget_subaccount(parent=account)
 
     api_client.force_login(user)
@@ -18,6 +18,7 @@ def test_create_actual(api_client, user, create_budget_account,
     assert response.status_code == 201
     assert response.json() == {
         "id": 1,
+        "type": "actual",
         "description": None,
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
@@ -47,8 +48,8 @@ def test_bulk_create_budget_actuals(api_client, user, create_budget,
         create_budget_account, create_budget_subaccount, models):
     budget = create_budget()
     accounts = [
-        create_budget_account(budget=budget),
-        create_budget_account(budget=budget)
+        create_budget_account(parent=budget),
+        create_budget_account(parent=budget)
     ]
     # Do not disable the signals, because disabling the signals will prevent
     # the metrics on the SubAccount(s) (and thus the Account(s) and Budget) from
@@ -99,7 +100,6 @@ def test_bulk_create_budget_actuals(api_client, user, create_budget,
     # the Budget.
     assert response.json()['data']['id'] == budget.pk
     assert response.json()['data']['estimated'] == 300.0
-    assert response.json()['data']['variance'] == 60.0
     assert response.json()['data']['actual'] == 240.0
 
     # Make sure the actual Actual(s) were created in the database.
@@ -129,29 +129,24 @@ def test_bulk_create_budget_actuals(api_client, user, create_budget,
     # Make sure the actual SubAccount(s) were updated in the database.
     subaccounts[0].refresh_from_db()
     assert subaccounts[0].estimated == 100.0
-    assert subaccounts[0].variance == 30.0
     assert subaccounts[0].actual == 70.0
 
     subaccounts[1].refresh_from_db()
     assert subaccounts[1].estimated == 200.0
-    assert subaccounts[1].variance == 30.0
     assert subaccounts[1].actual == 170.0
 
     # Make sure the actual Account(s) were updated in the database.
     accounts[0].refresh_from_db()
     assert accounts[0].estimated == 100.0
-    assert accounts[0].variance == 30.0
     assert accounts[0].actual == 70.0
 
     accounts[1].refresh_from_db()
     assert accounts[1].estimated == 200.0
-    assert accounts[1].variance == 30.0
     assert accounts[1].actual == 170.0
 
     # Make sure the Budget was updated in the database.
     budget.refresh_from_db()
     assert budget.estimated == 300.0
-    assert budget.variance == 60.0
     assert budget.actual == 240.0
 
 
@@ -160,8 +155,8 @@ def test_bulk_update_budget_actuals(api_client, user, create_budget,
         create_budget_account, create_budget_subaccount, create_actual):
     budget = create_budget()
     accounts = [
-        create_budget_account(budget=budget),
-        create_budget_account(budget=budget)
+        create_budget_account(parent=budget),
+        create_budget_account(parent=budget)
     ]
     # Do not disable the signals, because disabling the signals will prevent
     # the metrics on the SubAccount(s) (and thus the Account(s) and Budget) from
@@ -204,27 +199,22 @@ def test_bulk_update_budget_actuals(api_client, user, create_budget,
     ]
     subaccounts[0].refresh_from_db()
     assert subaccounts[0].estimated == 100.0
-    assert subaccounts[0].variance == 30.0
     assert subaccounts[0].actual == 70.0
 
     subaccounts[1].refresh_from_db()
     assert subaccounts[1].estimated == 200.0
-    assert subaccounts[1].variance == 30.0
     assert subaccounts[1].actual == 170.0
 
     accounts[0].refresh_from_db()
     assert accounts[0].estimated == 100.0
-    assert accounts[0].variance == 30.0
     assert accounts[0].actual == 70.0
 
     accounts[1].refresh_from_db()
     assert accounts[1].estimated == 200.0
-    assert accounts[1].variance == 30.0
     assert accounts[1].actual == 170.0
 
     budget.refresh_from_db()
     assert budget.estimated == 300.0
-    assert budget.variance == 60.0
     assert budget.actual == 240.0
 
     api_client.force_login(user)
@@ -244,7 +234,6 @@ def test_bulk_update_budget_actuals(api_client, user, create_budget,
     # the Budget.
     assert response.json()['data']['id'] == budget.pk
     assert response.json()['data']['estimated'] == 300.0
-    assert response.json()['data']['variance'] == 100.0
     assert response.json()['data']['actual'] == 200.0
 
     # Make sure the actual Actual(s) were updated in the database.
@@ -260,29 +249,24 @@ def test_bulk_update_budget_actuals(api_client, user, create_budget,
     # Make sure the actual SubAccount(s) were updated in the database.
     subaccounts[0].refresh_from_db()
     assert subaccounts[0].estimated == 100.0
-    assert subaccounts[0].variance == 50.0
     assert subaccounts[0].actual == 50.0
 
     subaccounts[1].refresh_from_db()
     assert subaccounts[1].estimated == 200.0
-    assert subaccounts[1].variance == 50.0
     assert subaccounts[1].actual == 150.0
 
     # Make sure the actual Account(s) were updated in the database.
     accounts[0].refresh_from_db()
     assert accounts[0].estimated == 100.0
-    assert accounts[0].variance == 50.0
     assert accounts[0].actual == 50.0
 
     accounts[1].refresh_from_db()
     assert accounts[1].estimated == 200.0
-    assert accounts[1].variance == 50.0
     assert accounts[1].actual == 150.0
 
     # Make sure the Budget was updated in the database.
     budget.refresh_from_db()
     assert budget.estimated == 300.0
-    assert budget.variance == 100.0
     assert budget.actual == 200.0
 
 
@@ -290,8 +274,8 @@ def test_bulk_delete_actuals(api_client, user, create_budget, create_actual,
         models, create_budget_account, create_budget_subaccount):
     budget = create_budget()
     accounts = [
-        create_budget_account(budget=budget),
-        create_budget_account(budget=budget)
+        create_budget_account(parent=budget),
+        create_budget_account(parent=budget)
     ]
     # Do not disable the signals, because disabling the signals will prevent
     # the metrics on the SubAccount(s) (and thus the Account(s) and Budget) from
@@ -334,27 +318,22 @@ def test_bulk_delete_actuals(api_client, user, create_budget, create_actual,
     ]
     subaccounts[0].refresh_from_db()
     assert subaccounts[0].estimated == 100.0
-    assert subaccounts[0].variance == 30.0
     assert subaccounts[0].actual == 70.0
 
     subaccounts[1].refresh_from_db()
     assert subaccounts[1].estimated == 200.0
-    assert subaccounts[1].variance == 30.0
     assert subaccounts[1].actual == 170.0
 
     accounts[0].refresh_from_db()
     assert accounts[0].estimated == 100.0
-    assert accounts[0].variance == 30.0
     assert accounts[0].actual == 70.0
 
     accounts[1].refresh_from_db()
     assert accounts[1].estimated == 200.0
-    assert accounts[1].variance == 30.0
     assert accounts[1].actual == 170.0
 
     budget.refresh_from_db()
     assert budget.estimated == 300.0
-    assert budget.variance == 60.0
     assert budget.actual == 240.0
 
     api_client.force_login(user)
@@ -371,33 +350,27 @@ def test_bulk_delete_actuals(api_client, user, create_budget, create_actual,
     # the Budget.
     assert response.json()['data']['id'] == budget.pk
     assert response.json()['data']['estimated'] == 300.0
-    assert response.json()['data']['variance'] == 140.0
     assert response.json()['data']['actual'] == 160.0
 
     # Make sure the actual SubAccount(s) were updated in the database.
     subaccounts[0].refresh_from_db()
     assert subaccounts[0].estimated == 100.0
-    assert subaccounts[0].variance == 100.0
     assert subaccounts[0].actual == 0.0
 
     subaccounts[1].refresh_from_db()
     assert subaccounts[1].estimated == 200.0
-    assert subaccounts[1].variance == 40.0
     assert subaccounts[1].actual == 160.0
 
     # Make sure the actual Account(s) were updated in the database.
     accounts[0].refresh_from_db()
     assert accounts[0].estimated == 100.0
-    assert accounts[0].variance == 100.0
     assert accounts[0].actual == 0.0
 
     accounts[1].refresh_from_db()
     assert accounts[1].estimated == 200.0
-    assert accounts[1].variance == 40.0
     assert accounts[1].actual == 160.0
 
     # Make sure the Budget was updated in the database.
     budget.refresh_from_db()
     assert budget.estimated == 300.0
-    assert budget.variance == 140.0
     assert budget.actual == 160.0

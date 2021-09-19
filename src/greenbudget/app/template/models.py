@@ -10,6 +10,7 @@ from .managers import TemplateManager
 @signals.model(flags='suppress_budget_update')
 class Template(BaseBudget):
     type = "template"
+
     community = models.BooleanField(default=False)
     hidden = models.BooleanField(default=False)
     objects = TemplateManager()
@@ -29,6 +30,11 @@ class Template(BaseBudget):
                 | models.Q(community=False, hidden=False)
             )
         )]
+
+    @property
+    def child_instance_cls(self):
+        from greenbudget.app.account.models import TemplateAccount
+        return TemplateAccount
 
     def derive(self, user, **kwargs):
         deriver = BudgetDeriver(self, user)

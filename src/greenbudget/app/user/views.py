@@ -6,7 +6,7 @@ from django.views.decorators.debug import sensitive_post_parameters
 from rest_framework import (
     viewsets, mixins, response, permissions, status, decorators)
 
-from greenbudget.app.common.exceptions import RateLimitedError
+from greenbudget.app.authentication.exceptions import RateLimitedError
 
 from .serializers import UserSerializer, UserRegistrationSerializer
 from .utils import upload_temp_user_image_to
