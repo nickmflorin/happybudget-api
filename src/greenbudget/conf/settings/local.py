@@ -15,7 +15,6 @@ APP_DOMAIN = '127.0.0.1:8000'
 APP_URL = 'http://%s' % APP_DOMAIN
 APP_V1_URL = os.path.join(APP_URL, "v1")
 FRONTEND_URL = "127.0.0.1:3000"
-COMPRESS_URL = os.path.join(APP_URL, "media/")
 
 EMAIL_HOST = 'localhost'
 DEFAULT_FILE_STORAGE = 'greenbudget.lib.django_utils.storages.LocalStorage'
