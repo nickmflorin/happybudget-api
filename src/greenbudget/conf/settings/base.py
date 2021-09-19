@@ -257,6 +257,8 @@ DATABASES = {
     },
 }
 
+FIXTURES = ['colors.json', 'subaccountunits.json', 'tags.json']
+
 ACCEPTED_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png']
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 

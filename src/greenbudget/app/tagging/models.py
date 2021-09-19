@@ -45,7 +45,10 @@ class Color(models.Model):
         ]
 
     def __str__(self):
-        return "%s: %s" % (self.name, self.code)
+        return "{name}: {code}".format(
+            name=self.name,
+            code=self.code
+        )
 
     def save(self, *args, **kwargs):
         try:
@@ -59,16 +62,22 @@ class Tag(PolymorphicModel):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     title = models.CharField(max_length=32)
-    plural_title = models.CharField(max_length=32, null=True)
+    plural_title = models.CharField(max_length=32, null=True, blank=True)
     order = models.IntegerField(null=True)
 
     class Meta:
         get_latest_by = "created_at"
         ordering = ("created_at",)
         verbose_name = "Tag"
-        verbose_name_plural = "Tags"
+        verbose_name_plural = "All Tags"
         unique_together = (('title', 'polymorphic_ctype_id'))
 
     def save(self, *args, **kwargs):
         setattr(self, '_ignore_reindex', kwargs.pop('ignore_reindex', False))
         super().save(*args, **kwargs)
+
+    def __str__(self):
+        return "<Tag title={title} order={order}>".format(
+            title=self.title,
+            order=self.order
+        )

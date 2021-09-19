@@ -35,9 +35,7 @@ class SubAccountUnit(Tag):
 
     def __str__(self):
         color_string = None if self.color is None else self.color.code
-        return "<{cls} id={id}, color={color}, title={title}>".format(
-            cls=self.__class__.__name__,
-            id=self.pk,
+        return "{title}: {color}".format(
             color=color_string,
             title=self.title
         )
@@ -182,8 +180,8 @@ class BudgetSubAccount(SubAccount):
     DERIVING_FIELDS = SubAccount.DERIVING_FIELDS + ["contact"]
 
     class Meta(SubAccount.Meta):
-        verbose_name = "Sub Account"
-        verbose_name_plural = "Sub Accounts"
+        verbose_name = "Budget Sub Account"
+        verbose_name_plural = "Budget Sub Accounts"
 
     def __str__(self):
         return "<{cls} id={id}, identifier={identifier}>".format(
@@ -226,8 +224,8 @@ class TemplateSubAccount(SubAccount):
     FIELDS_TO_DERIVE = FIELDS_TO_DUPLICATE
 
     class Meta(SubAccount.Meta):
-        verbose_name = "Sub Account"
-        verbose_name_plural = "Sub Accounts"
+        verbose_name = "Template Sub Account"
+        verbose_name_plural = "Template Sub Accounts"
 
     def __str__(self):
         return "<{cls} id={id}, identifier={identifier}>".format(

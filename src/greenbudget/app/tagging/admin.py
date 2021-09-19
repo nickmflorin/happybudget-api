@@ -1,4 +1,7 @@
 import logging
+from polymorphic.admin import (
+    PolymorphicParentModelAdmin, PolymorphicChildModelFilter,
+    PolymorphicChildModelAdmin)
 
 from django import forms
 from django.apps import apps
@@ -7,7 +10,9 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import IntegrityError
 
 from greenbudget.app.common.admin import color_icon
-from .models import Color
+from greenbudget.app.subaccount.models import SubAccountUnit
+
+from .models import Color, Tag
 
 
 logger = logging.getLogger("greenbudget")
@@ -17,6 +22,12 @@ class ColorAdminForm(forms.ModelForm):
     class Meta:
         model = Color
         fields = '__all__'
+
+
+class TagAdminForm(forms.ModelForm):
+    class Meta:
+        model = Tag
+        fields = ('order', 'title', 'plural_title')
 
 
 def assign_to_factory(model_cls):
@@ -37,6 +48,28 @@ def assign_to_factory(model_cls):
     return assign_to
 
 
+@admin.register(Tag)
+class TagAdmin(PolymorphicParentModelAdmin):
+    base_model = Tag
+    child_models = (SubAccountUnit,)
+    list_filter = (PolymorphicChildModelFilter,)
+    list_display = ("get_tag_type", "title", "order", "created_at", "updated_at")  # noqa
+    form = TagAdminForm
+    show_in_index = True
+
+    def get_tag_type(self, obj):
+        ct = ContentType.objects.get(pk=obj.polymorphic_ctype_id)
+        model_cls = ct.model_class()
+        return getattr(model_cls._meta, 'verbose_name', model_cls.__name__)
+
+    get_tag_type.short_description = 'Type'
+
+
+class TagChildAdmin(PolymorphicChildModelAdmin):
+    base_model = Tag
+
+
+@admin.register(Color)
 class ColorAdmin(admin.ModelAdmin):
     list_display = (
         "get_color_for_admin", "name", "code", "created_at", "get_usage")
@@ -74,6 +107,3 @@ class ColorAdmin(admin.ModelAdmin):
 
     get_color_for_admin.allow_tags = True
     get_color_for_admin.short_description = 'Color'
-
-
-admin.site.register(Color, ColorAdmin)

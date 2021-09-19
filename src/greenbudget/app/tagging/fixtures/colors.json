@@ -1,156 +1,324 @@
 [
-    {
-       "model":"tagging.color",
-       "pk":2,
-       "fields":{
-          "code":"#5157a9",
-          "created_at":"2021-05-02T02:48:46.585Z",
-          "content_types":[
-
-          ]
-       }
-    },
-    {
-       "model":"tagging.color",
-       "pk":5,
-       "fields":{
-          "code":"#797695",
-          "created_at":"2021-05-02T19:12:22.482Z",
-          "content_types":[
-
-          ]
-       }
-    },
-    {
-       "model":"tagging.color",
-       "pk":6,
-       "fields":{
-          "code":"#ff7165",
-          "created_at":"2021-05-02T19:12:22.484Z",
-          "content_types":[
-
-          ]
-       }
-    },
-    {
-       "model":"tagging.color",
-       "pk":7,
-       "fields":{
-          "code":"#80cbc4",
-          "created_at":"2021-05-02T19:12:22.486Z",
-          "content_types":[
-
-          ]
-       }
-    },
-    {
-       "model":"tagging.color",
-       "pk":8,
-       "fields":{
-          "code":"#ce93d8",
-          "created_at":"2021-05-02T19:12:22.488Z",
-          "content_types":[
-
-          ]
-       }
-    },
-    {
-       "model":"tagging.color",
-       "pk":9,
-       "fields":{
-          "code":"#fed835",
-          "created_at":"2021-05-02T19:12:22.489Z",
-          "content_types":[
-
-          ]
-       }
-    },
-    {
-       "model":"tagging.color",
-       "pk":10,
-       "fields":{
-          "code":"#c87987",
-          "created_at":"2021-05-02T19:12:22.491Z",
-          "content_types":[
-
-          ]
-       }
-    },
-    {
-       "model":"tagging.color",
-       "pk":11,
-       "fields":{
-          "code":"#69f0ae",
-          "created_at":"2021-05-02T19:12:22.493Z",
-          "content_types":[
-
-          ]
-       }
-    },
-    {
-       "model":"tagging.color",
-       "pk":12,
-       "fields":{
-          "code":"#a1887f",
-          "created_at":"2021-05-02T19:12:22.495Z",
-          "content_types":[
-
-          ]
-       }
-    },
-    {
-       "model":"tagging.color",
-       "pk":13,
-       "fields":{
-          "code":"#81d4fa",
-          "created_at":"2021-05-02T19:12:22.496Z",
-          "content_types":[
-
-          ]
-       }
-    },
-    {
-       "model":"tagging.color",
-       "pk":14,
-       "fields":{
-          "code":"#f75776",
-          "created_at":"2021-05-02T19:12:22.498Z",
-          "content_types":[
-
-          ]
-       }
-    },
-    {
-       "model":"tagging.color",
-       "pk":15,
-       "fields":{
-          "code":"#66bb6a",
-          "created_at":"2021-05-02T19:12:22.500Z",
-          "content_types":[
-
-          ]
-       }
-    },
-    {
-       "model":"tagging.color",
-       "pk":16,
-       "fields":{
-          "code":"#58add6",
-          "created_at":"2021-05-02T19:12:22.501Z",
-          "content_types":[
-
-          ]
-       }
-    },
-    {
-       "model":"tagging.color",
-       "pk":17,
-       "fields":{
-          "code":"#EFEFEF",
-          "created_at":"2021-05-02T19:12:22.503Z",
-          "content_types":[
-
-          ]
-       }
-    }
- ]
+{
+  "model": "tagging.color",
+  "pk": 1,
+  "fields": {
+    "code": "#EDAB69",
+    "name": "Orange",
+    "created_at": "2021-09-19T19:34:34.911Z",
+    "content_types": [
+      1,
+      3,
+      18
+    ]
+  }
+},
+{
+  "model": "tagging.color",
+  "pk": 2,
+  "fields": {
+    "code": "#7695D0",
+    "name": "Muted Blue",
+    "created_at": "2021-09-19T19:34:45.460Z",
+    "content_types": [
+      1,
+      3,
+      18
+    ]
+  }
+},
+{
+  "model": "tagging.color",
+  "pk": 3,
+  "fields": {
+    "code": "#76D0CA",
+    "name": "Teal",
+    "created_at": "2021-09-19T19:34:55.230Z",
+    "content_types": [
+      1,
+      3,
+      18
+    ]
+  }
+},
+{
+  "model": "tagging.color",
+  "pk": 4,
+  "fields": {
+    "code": "#886da8",
+    "name": "Barney",
+    "created_at": "2021-09-19T19:35:03.703Z",
+    "content_types": [
+      1,
+      3,
+      18
+    ]
+  }
+},
+{
+  "model": "tagging.color",
+  "pk": 5,
+  "fields": {
+    "code": "#B49A85",
+    "name": "Light Brown",
+    "created_at": "2021-09-19T19:35:13.319Z",
+    "content_types": [
+      1,
+      3,
+      18
+    ]
+  }
+},
+{
+  "model": "tagging.color",
+  "pk": 6,
+  "fields": {
+    "code": "#5E5E5E",
+    "name": "Onyx",
+    "created_at": "2021-09-19T19:35:23.130Z",
+    "content_types": [
+      1,
+      3,
+      18
+    ]
+  }
+},
+{
+  "model": "tagging.color",
+  "pk": 7,
+  "fields": {
+    "code": "#5AD198",
+    "name": "Mint",
+    "created_at": "2021-09-19T19:35:30.748Z",
+    "content_types": [
+      1,
+      3,
+      18
+    ]
+  }
+},
+{
+  "model": "tagging.color",
+  "pk": 8,
+  "fields": {
+    "code": "#F8C5CF",
+    "name": "Light Red",
+    "created_at": "2021-09-19T19:35:37.870Z",
+    "content_types": [
+      1,
+      3,
+      18
+    ]
+  }
+},
+{
+  "model": "tagging.color",
+  "pk": 9,
+  "fields": {
+    "code": "#BEEBFF",
+    "name": "Light Blue",
+    "created_at": "2021-09-19T19:35:46.226Z",
+    "content_types": [
+      1,
+      3,
+      18
+    ]
+  }
+},
+{
+  "model": "tagging.color",
+  "pk": 10,
+  "fields": {
+    "code": "#C8C4EA",
+    "name": "Lavender",
+    "created_at": "2021-09-19T19:35:54.825Z",
+    "content_types": [
+      1,
+      3,
+      18
+    ]
+  }
+},
+{
+  "model": "tagging.color",
+  "pk": 11,
+  "fields": {
+    "code": "#FFEDA0",
+    "name": "Yellow",
+    "created_at": "2021-09-19T19:36:05.256Z",
+    "content_types": [
+      1,
+      3,
+      18
+    ]
+  }
+},
+{
+  "model": "tagging.color",
+  "pk": 12,
+  "fields": {
+    "code": "#FFD2BA",
+    "name": "Salmon",
+    "created_at": "2021-09-19T19:36:12.923Z",
+    "content_types": [
+      1,
+      3,
+      18
+    ]
+  }
+},
+{
+  "model": "tagging.color",
+  "pk": 13,
+  "fields": {
+    "code": "#D5D5E5",
+    "name": "Light Purple",
+    "created_at": "2021-09-19T19:36:20.990Z",
+    "content_types": [
+      1,
+      3,
+      18
+    ]
+  }
+},
+{
+  "model": "tagging.color",
+  "pk": 14,
+  "fields": {
+    "code": "#5157a8",
+    "name": "Purple",
+    "created_at": "2021-09-19T19:36:29.158Z",
+    "content_types": [
+      1,
+      3,
+      18
+    ]
+  }
+},
+{
+  "model": "tagging.color",
+  "pk": 15,
+  "fields": {
+    "code": "#58add6",
+    "name": "Blue",
+    "created_at": "2021-09-19T19:36:37.558Z",
+    "content_types": [
+      1,
+      3,
+      18
+    ]
+  }
+},
+{
+  "model": "tagging.color",
+  "pk": 16,
+  "fields": {
+    "code": "#66bb6a",
+    "name": "Green",
+    "created_at": "2021-09-19T19:36:43.909Z",
+    "content_types": [
+      1,
+      3,
+      18
+    ]
+  }
+},
+{
+  "model": "tagging.color",
+  "pk": 17,
+  "fields": {
+    "code": "#f75776",
+    "name": "Pink",
+    "created_at": "2021-09-19T19:36:53.187Z",
+    "content_types": [
+      1,
+      3,
+      18
+    ]
+  }
+},
+{
+  "model": "tagging.color",
+  "pk": 18,
+  "fields": {
+    "code": "#81d4fa",
+    "name": "Sky Blue",
+    "created_at": "2021-09-19T19:37:01.310Z",
+    "content_types": [
+      1,
+      3,
+      18
+    ]
+  }
+},
+{
+  "model": "tagging.color",
+  "pk": 19,
+  "fields": {
+    "code": "#69f0ae",
+    "name": "Neon Green",
+    "created_at": "2021-09-19T19:37:18.833Z",
+    "content_types": [
+      1,
+      18,
+      3
+    ]
+  }
+},
+{
+  "model": "tagging.color",
+  "pk": 20,
+  "fields": {
+    "code": "#fed835",
+    "name": "Dark Yellow",
+    "created_at": "2021-09-19T19:37:30.645Z",
+    "content_types": [
+      1,
+      18,
+      3
+    ]
+  }
+},
+{
+  "model": "tagging.color",
+  "pk": 21,
+  "fields": {
+    "code": "#80cbc4",
+    "name": "Turqoise",
+    "created_at": "2021-09-19T19:37:41.418Z",
+    "content_types": [
+      1,
+      18,
+      3
+    ]
+  }
+},
+{
+  "model": "tagging.color",
+  "pk": 22,
+  "fields": {
+    "code": "#ff7165",
+    "name": "Volcano",
+    "created_at": "2021-09-19T19:37:52.624Z",
+    "content_types": [
+      1,
+      18,
+      3
+    ]
+  }
+},
+{
+  "model": "tagging.color",
+  "pk": 23,
+  "fields": {
+    "code": "#c87987",
+    "name": "Rose",
+    "created_at": "2021-09-19T19:38:04.718Z",
+    "content_types": [
+      1,
+      18,
+      3
+    ]
+  }
+}
+]

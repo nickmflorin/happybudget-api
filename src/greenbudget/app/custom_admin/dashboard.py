@@ -39,6 +39,7 @@ class Dashboard(BaseDashboard):
             column=1,
             collapsible=False,
             models=(
+                'greenbudget.app.tagging.models.Tag',
                 'greenbudget.app.tagging.models.Color',
                 'greenbudget.app.subaccount.models.SubAccountUnit',
             )

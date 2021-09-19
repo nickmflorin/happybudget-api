@@ -1,0 +1,146 @@
+[
+{
+  "model": "tagging.tag",
+  "pk": 1,
+  "fields": {
+    "polymorphic_ctype": 1,
+    "created_at": "2021-09-16T22:57:53.248Z",
+    "updated_at": "2021-09-19T21:06:02.438Z",
+    "title": "Minute",
+    "plural_title": "Minutes",
+    "order": 0
+  }
+},
+{
+  "model": "tagging.tag",
+  "pk": 2,
+  "fields": {
+    "polymorphic_ctype": 1,
+    "created_at": "2021-09-16T22:57:53.250Z",
+    "updated_at": "2021-09-19T21:06:02.440Z",
+    "title": "Hour",
+    "plural_title": "Hours",
+    "order": 1
+  }
+},
+{
+  "model": "tagging.tag",
+  "pk": 3,
+  "fields": {
+    "polymorphic_ctype": 1,
+    "created_at": "2021-09-16T22:57:53.252Z",
+    "updated_at": "2021-09-19T21:06:02.441Z",
+    "title": "Day",
+    "plural_title": "Days",
+    "order": 2
+  }
+},
+{
+  "model": "tagging.tag",
+  "pk": 4,
+  "fields": {
+    "polymorphic_ctype": 1,
+    "created_at": "2021-09-16T22:57:53.254Z",
+    "updated_at": "2021-09-19T21:06:02.442Z",
+    "title": "Night",
+    "plural_title": "Nights",
+    "order": 3
+  }
+},
+{
+  "model": "tagging.tag",
+  "pk": 5,
+  "fields": {
+    "polymorphic_ctype": 1,
+    "created_at": "2021-09-16T22:57:53.255Z",
+    "updated_at": "2021-09-19T21:06:02.443Z",
+    "title": "Week",
+    "plural_title": "Weeks",
+    "order": 4
+  }
+},
+{
+  "model": "tagging.tag",
+  "pk": 6,
+  "fields": {
+    "polymorphic_ctype": 1,
+    "created_at": "2021-09-16T22:57:53.257Z",
+    "updated_at": "2021-09-19T21:06:02.444Z",
+    "title": "Month",
+    "plural_title": "Months",
+    "order": 5
+  }
+},
+{
+  "model": "tagging.tag",
+  "pk": 7,
+  "fields": {
+    "polymorphic_ctype": 1,
+    "created_at": "2021-09-16T22:57:53.259Z",
+    "updated_at": "2021-09-19T21:06:02.445Z",
+    "title": "Allow",
+    "plural_title": null,
+    "order": 6
+  }
+},
+{
+  "model": "tagging.tag",
+  "pk": 8,
+  "fields": {
+    "polymorphic_ctype": 1,
+    "created_at": "2021-09-16T22:57:53.261Z",
+    "updated_at": "2021-09-19T21:06:02.446Z",
+    "title": "Flat",
+    "plural_title": null,
+    "order": 7
+  }
+},
+{
+  "model": "tagging.tag",
+  "pk": 9,
+  "fields": {
+    "polymorphic_ctype": 1,
+    "created_at": "2021-09-16T22:57:53.262Z",
+    "updated_at": "2021-09-19T21:06:02.447Z",
+    "title": "Feet",
+    "plural_title": null,
+    "order": 8
+  }
+},
+{
+  "model": "tagging.tag",
+  "pk": 10,
+  "fields": {
+    "polymorphic_ctype": 1,
+    "created_at": "2021-09-16T22:57:53.264Z",
+    "updated_at": "2021-09-19T21:06:02.448Z",
+    "title": "Fare",
+    "plural_title": null,
+    "order": 9
+  }
+},
+{
+  "model": "tagging.tag",
+  "pk": 12,
+  "fields": {
+    "polymorphic_ctype": 1,
+    "created_at": "2021-09-16T22:57:53.267Z",
+    "updated_at": "2021-09-19T21:06:02.450Z",
+    "title": "Person",
+    "plural_title": "Persons",
+    "order": 10
+  }
+},
+{
+  "model": "tagging.tag",
+  "pk": 13,
+  "fields": {
+    "polymorphic_ctype": 1,
+    "created_at": "2021-09-16T22:57:53.269Z",
+    "updated_at": "2021-09-19T21:06:02.451Z",
+    "title": "Each",
+    "plural_title": null,
+    "order": 11
+  }
+}
+]

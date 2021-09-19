@@ -1,33 +1,25 @@
 from django import forms
 from django.contrib import admin
-from django.contrib.contenttypes.models import ContentType
 
 from greenbudget.app.common.admin import color_icon
+from greenbudget.app.tagging.admin import TagAdminForm
+
 from .models import (
     SubAccountUnit, BudgetSubAccount, TemplateSubAccount)
 
 
-class SubAccountUnitForm(forms.ModelForm):
+class SubAccountUnitForm(TagAdminForm):
     class Meta:
         model = SubAccountUnit
-        fields = '__all__'
+        fields = TagAdminForm.Meta.fields + ('color', )
 
 
-def assign_to_factory(model_cls):
-    def assign_to(modeladmin, request, queryset):
-        ct = ContentType.objects.get_for_model(model_cls)
-        for obj in queryset.all():
-            obj.content_types.add(ct)
-            obj.save()
-
-    assign_to.short_description = 'Assign color to %s' % model_cls.__name__
-    return assign_to
-
-
+@admin.register(SubAccountUnit)
 class SubAccountUnitAdmin(admin.ModelAdmin):
     list_display = (
         "title", "get_color_for_admin", "order", "created_at", "updated_at")
     form = SubAccountUnitForm
+    show_in_index = True
 
     def get_color_for_admin(self, obj):
         if obj.color:
@@ -55,14 +47,11 @@ class TemplateSubAccountAdminForm(forms.ModelForm):
         fields = '__all__'
 
 
+@admin.register(BudgetSubAccount)
 class BudgetSubAccountAdmin(AccountAdmin):
     form = BudgetSubAccountAdminForm
 
 
+@admin.register(TemplateSubAccount)
 class TemplateSubAccountAdmin(AccountAdmin):
     form = TemplateSubAccountAdminForm
-
-
-admin.site.register(BudgetSubAccount, BudgetSubAccountAdmin)
-admin.site.register(TemplateSubAccount, TemplateSubAccountAdmin)
-admin.site.register(SubAccountUnit, SubAccountUnitAdmin)
