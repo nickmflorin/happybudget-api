@@ -9,7 +9,7 @@ def test_create_actual(api_client, user, create_budget_account, create_budget,
     with signals.disable():
         budget = create_budget()
         account = create_budget_account(budget=budget)
-        subaccount = create_budget_subaccount(budget=budget, parent=account)
+        subaccount = create_budget_subaccount(parent=account)
     api_client.force_login(user)
     # We do not have to provide the object_id and parent_type since we are
     # already creating it off of the endpoint for a specific subaccount.
@@ -47,7 +47,7 @@ def test_get_subaccount_actuals(api_client, user, create_budget_subaccount,
     with signals.disable():
         budget = create_budget()
         account = create_budget_account(budget=budget)
-        subaccount = create_budget_subaccount(budget=budget, parent=account)
+        subaccount = create_budget_subaccount(parent=account)
         actuals = [
             create_actual(subaccount=subaccount, budget=budget),
             create_actual(subaccount=subaccount, budget=budget)

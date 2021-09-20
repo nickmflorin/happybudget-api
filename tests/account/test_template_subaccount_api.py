@@ -14,15 +14,13 @@ def test_get_template_account_subaccounts(api_client, user, create_template,
         subaccounts = [
             create_template_subaccount(
                 parent=account,
-                budget=template,
                 created_at=datetime.datetime(2020, 1, 1)
             ),
             create_template_subaccount(
                 parent=account,
-                budget=template,
                 created_at=datetime.datetime(2020, 1, 2)
             ),
-            create_template_subaccount(parent=another_account, budget=template)
+            create_template_subaccount(parent=another_account)
         ]
     api_client.force_login(user)
     response = api_client.get("/v1/accounts/%s/subaccounts/" % account.pk)
@@ -82,12 +80,10 @@ def test_get_community_template_account_subaccounts(api_client, user,
         [
             create_template_subaccount(
                 parent=account,
-                budget=template,
                 created_at=datetime.datetime(2020, 1, 1)
             ),
             create_template_subaccount(
                 parent=account,
-                budget=template,
                 created_at=datetime.datetime(2020, 1, 2)
             )
         ]
@@ -107,12 +103,10 @@ def test_get_another_users_community_template_account_subaccounts(api_client,
         [
             create_template_subaccount(
                 parent=account,
-                budget=template,
                 created_at=datetime.datetime(2020, 1, 1)
             ),
             create_template_subaccount(
                 parent=account,
-                budget=template,
                 created_at=datetime.datetime(2020, 1, 2)
             )
         ]

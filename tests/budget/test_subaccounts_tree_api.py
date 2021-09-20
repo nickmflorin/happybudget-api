@@ -11,54 +11,44 @@ def test_get_subaccounts_tree(api_client, user, create_budget,
         ]
         first_level_subaccounts = [
             create_budget_subaccount(
-                budget=budget,
                 parent=accounts[0],
                 identifier="Sub Account A-A"
             ),
             create_budget_subaccount(
-                budget=budget,
                 parent=accounts[0],
                 identifier="Sub Account A-B"
             ),
             create_budget_subaccount(
-                budget=budget,
                 parent=accounts[0],
                 identifier="Sub Account A-C"
             ),
             create_budget_subaccount(
-                budget=budget,
                 parent=accounts[0],
                 identifier="Sub Account A-D"
             )
         ]
         second_level_subaccounts = [
             create_budget_subaccount(
-                budget=budget,
                 parent=first_level_subaccounts[0],
                 identifier="Sub Account A-A-A"
             ),
             create_budget_subaccount(
-                budget=budget,
                 parent=first_level_subaccounts[1],
                 identifier="Sub Account A-B-A"
             ),
             create_budget_subaccount(
-                budget=budget,
                 parent=first_level_subaccounts[1],
                 identifier="Sub Account A-B-B"
             ),
             create_budget_subaccount(
-                budget=budget,
                 parent=first_level_subaccounts[2],
                 identifier="Sub Account A-C-A"
             ),
             create_budget_subaccount(
-                budget=budget,
                 parent=first_level_subaccounts[2],
                 identifier="Sub Account A-C-B"
             ),
             create_budget_subaccount(
-                budget=budget,
                 parent=first_level_subaccounts[2],
                 identifier="Sub Account A-C-C"
             )
@@ -164,61 +154,51 @@ def test_search_subaccounts_tree(api_client, user, create_budget,
         ]
         first_level_subaccounts = [
             create_budget_subaccount(
-                budget=budget,
                 parent=accounts[0],
                 identifier="Sub Account A-A",
                 description="Jack",
             ),
             create_budget_subaccount(
-                budget=budget,
                 parent=accounts[0],
                 identifier="Sub Account A-B",
                 description="Jacky",
             ),
             create_budget_subaccount(
-                budget=budget,
                 parent=accounts[0],
                 identifier="Sub Account A-C"
             ),
             create_budget_subaccount(
-                budget=budget,
                 parent=accounts[0],
                 identifier="Sub Account A-D"
             )
         ]
         second_level_subaccounts = [
             create_budget_subaccount(
-                budget=budget,
                 parent=first_level_subaccounts[0],
                 identifier="Sub Account A-A-A",
                 description="Mufassa"
             ),
             create_budget_subaccount(
-                budget=budget,
                 parent=first_level_subaccounts[1],
                 identifier="Sub Account A-B-A",
                 description="Jack",
             ),
             create_budget_subaccount(
-                budget=budget,
                 parent=first_level_subaccounts[1],
                 identifier="Sub Account A-B-B",
                 description="Banana"
             ),
             create_budget_subaccount(
-                budget=budget,
                 parent=first_level_subaccounts[2],
                 identifier="Sub Account A-C-A",
                 description="Banana"
             ),
             create_budget_subaccount(
-                budget=budget,
                 parent=first_level_subaccounts[2],
                 identifier="Sub Account A-C-B",
                 description="Jack"
             ),
             create_budget_subaccount(
-                budget=budget,
                 parent=first_level_subaccounts[2],
                 identifier="Sub Account A-C-C",
                 description="Banana"

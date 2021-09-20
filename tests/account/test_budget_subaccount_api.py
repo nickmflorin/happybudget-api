@@ -14,15 +14,13 @@ def test_get_budget_account_subaccounts(api_client, user, create_budget_account,
         subaccounts = [
             create_budget_subaccount(
                 parent=account,
-                budget=budget,
                 created_at=datetime.datetime(2020, 1, 1)
             ),
             create_budget_subaccount(
                 parent=account,
-                budget=budget,
                 created_at=datetime.datetime(2020, 1, 2)
             ),
-            create_budget_subaccount(parent=another_account, budget=budget)
+            create_budget_subaccount(parent=another_account)
         ]
     api_client.force_login(user)
     response = api_client.get("/v1/accounts/%s/subaccounts/" % account.pk)

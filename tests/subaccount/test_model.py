@@ -13,7 +13,6 @@ def test_bulk_create_subaccounts(models, create_budget, create_budget_account,
     ]
     subaccounts = [
         models.BudgetSubAccount(
-            budget=budget,
             content_type=ContentType.objects.get_for_model(models.BudgetAccount),
             object_id=accounts[0].pk,
             identifier="Sub Account 1",
@@ -21,7 +20,6 @@ def test_bulk_create_subaccounts(models, create_budget, create_budget_account,
             updated_by=user
         ),
         models.BudgetSubAccount(
-            budget=budget,
             content_type=ContentType.objects.get_for_model(models.BudgetAccount),
             object_id=accounts[0].pk,
             identifier="Sub Account 2",
@@ -29,7 +27,6 @@ def test_bulk_create_subaccounts(models, create_budget, create_budget_account,
             updated_by=user
         ),
         models.BudgetSubAccount(
-            budget=budget,
             content_type=ContentType.objects.get_for_model(models.BudgetAccount),
             object_id=accounts[1].pk,
             identifier="Sub Account 3",
@@ -66,11 +63,7 @@ def test_budget_group_parent_constraint(create_budget_subaccount,
     another_account = create_budget_account(budget=budget)
     group = create_budget_subaccount_group(parent=account)
     with pytest.raises(IntegrityError):
-        create_budget_subaccount(
-            parent=another_account,
-            budget=budget,
-            group=group
-        )
+        create_budget_subaccount(parent=another_account, group=group)
 
 
 def test_fringes_constraint(create_budget_subaccount, create_budget_account,
@@ -78,7 +71,7 @@ def test_fringes_constraint(create_budget_subaccount, create_budget_account,
     budget = create_budget()
     another_budget = create_budget()
     account = create_budget_account(budget=budget)
-    subaccount = create_budget_subaccount(budget=budget, parent=account)
+    subaccount = create_budget_subaccount(parent=account)
     fringes = [
         create_fringe(budget=another_budget),
         create_fringe(budget=budget)
@@ -94,8 +87,4 @@ def test_template_group_parent_constraint(create_budget_subaccount,
     another_account = create_budget_account(budget=budget)
     group = create_budget_subaccount_group(parent=account)
     with pytest.raises(IntegrityError):
-        create_budget_subaccount(
-            parent=another_account,
-            budget=budget,
-            group=group
-        )
+        create_budget_subaccount(parent=another_account, group=group)

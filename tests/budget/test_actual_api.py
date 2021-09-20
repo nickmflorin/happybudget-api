@@ -9,7 +9,7 @@ def test_create_actual(api_client, user, create_budget_account,
     with signals.disable():
         budget = create_budget()
         account = create_budget_account(budget=budget)
-        subaccount = create_budget_subaccount(parent=account, budget=budget)
+        subaccount = create_budget_subaccount(parent=account)
 
     api_client.force_login(user)
     response = api_client.post("/v1/budgets/%s/actuals/" % budget.pk, data={
@@ -55,14 +55,12 @@ def test_bulk_create_budget_actuals(api_client, user, create_budget,
     # being calculated.
     subaccounts = [
         create_budget_subaccount(
-            budget=budget,
             parent=accounts[0],
             quantity=1,
             rate=100,
             multiplier=1
         ),
         create_budget_subaccount(
-            budget=budget,
             parent=accounts[1],
             quantity=2,
             rate=50,
@@ -170,14 +168,12 @@ def test_bulk_update_budget_actuals(api_client, user, create_budget,
     # being calculated.
     subaccounts = [
         create_budget_subaccount(
-            budget=budget,
             parent=accounts[0],
             quantity=1,
             rate=100,
             multiplier=1
         ),
         create_budget_subaccount(
-            budget=budget,
             parent=accounts[1],
             quantity=2,
             rate=50,
@@ -302,14 +298,12 @@ def test_bulk_delete_actuals(api_client, user, create_budget, create_actual,
     # being calculated.
     subaccounts = [
         create_budget_subaccount(
-            budget=budget,
             parent=accounts[0],
             quantity=1,
             rate=100,
             multiplier=1
         ),
         create_budget_subaccount(
-            budget=budget,
             parent=accounts[1],
             quantity=2,
             rate=50,

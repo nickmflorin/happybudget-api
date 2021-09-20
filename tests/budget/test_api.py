@@ -224,9 +224,8 @@ def test_get_budget_subaccounts(api_client, user, create_budget,
     with signals.disable():
         budget = create_budget()
         account = create_budget_account(budget=budget)
-        sub = create_budget_subaccount(
-            budget=budget, parent=account, identifier="Jack")
-        create_budget_subaccount(budget=budget, parent=account, identifier="Bob")
+        sub = create_budget_subaccount(parent=account, identifier="Jack")
+        create_budget_subaccount(parent=account, identifier="Bob")
     api_client.force_login(user)
     response = api_client.get(
         "/v1/budgets/%s/subaccounts/?search=%s"

@@ -13,6 +13,12 @@ from greenbudget.app.user.fields import UserFilteredQuerysetPKField
 from .models import Actual
 
 
+def get_budget(serializer):
+    import ipdb
+    ipdb.set_trace()
+    return serializer.instance.subaccount.budget
+
+
 class ActualSerializer(ModelSerializer):
     description = serializers.CharField(
         required=False,
@@ -46,6 +52,7 @@ class ActualSerializer(ModelSerializer):
     )
     subaccount = BudgetFilteredQuerysetPKField(
         queryset=BudgetSubAccount.objects.all(),
+        apply_filter=lambda qs, budget: qs.filter_by_budget(budget),
         required=False,
         allow_null=True
     )

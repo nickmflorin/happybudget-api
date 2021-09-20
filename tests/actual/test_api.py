@@ -6,7 +6,7 @@ def test_update_actual(api_client, user, create_budget_account,
         create_budget, create_actual, create_budget_subaccount):
     budget = create_budget()
     account = create_budget_account(budget=budget)
-    subaccount = create_budget_subaccount(parent=account, budget=budget)
+    subaccount = create_budget_subaccount(parent=account)
     actual = create_actual(subaccount=subaccount, budget=budget)
 
     api_client.force_login(user)
@@ -49,8 +49,8 @@ def test_change_actual_parent(api_client, user, create_budget_account,
         create_budget, create_actual, create_budget_subaccount):
     budget = create_budget()
     account = create_budget_account(budget=budget)
-    subaccount = create_budget_subaccount(parent=account, budget=budget)
-    another_subaccount = create_budget_subaccount(parent=account, budget=budget)
+    subaccount = create_budget_subaccount(parent=account)
+    another_subaccount = create_budget_subaccount(parent=account)
     actual = create_actual(subaccount=subaccount, budget=budget)
 
     api_client.force_login(user)
@@ -88,11 +88,12 @@ def test_change_actual_parent(api_client, user, create_budget_account,
 
 def test_change_actual_parent_invalid(api_client, user, create_budget_account,
         create_budget, create_actual, create_budget_subaccount):
+
     budgets = [create_budget(), create_budget()]
     account = create_budget_account(budget=budgets[0])
-    subaccount = create_budget_subaccount(parent=account, budget=budgets[0])
-    another_subaccount = create_budget_subaccount(
-        parent=account, budget=budgets[1])
+    subaccount = create_budget_subaccount(parent=account)
+    another_account = create_budget_account(budget=budgets[1])
+    another_subaccount = create_budget_subaccount(parent=another_account)
     actual = create_actual(subaccount=subaccount, budget=budgets[0])
 
     api_client.force_login(user)

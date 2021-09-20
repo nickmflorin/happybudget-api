@@ -38,14 +38,12 @@ def test_duplicate_template(user, create_template,
         subaccounts = [
             create_template_subaccount(
                 parent=accounts[0],
-                budget=original,
                 created_by=user,
                 updated_by=user,
                 group=subaccount_group
             ),
             create_template_subaccount(
                 parent=accounts[1],
-                budget=original,
                 created_by=user,
                 updated_by=user
             )
@@ -53,13 +51,11 @@ def test_duplicate_template(user, create_template,
         child_subaccounts = [
             create_template_subaccount(
                 parent=subaccounts[0],
-                budget=original,
                 created_by=user,
                 updated_by=user
             ),
             create_template_subaccount(
                 parent=subaccounts[1],
-                budget=original,
                 created_by=user,
                 updated_by=user
             )
@@ -213,14 +209,12 @@ def test_derive_budget(user, create_template, create_template_account,
         subaccounts = [
             create_template_subaccount(
                 parent=accounts[0],
-                budget=template,
                 created_by=admin_user,
                 updated_by=admin_user,
                 group=subaccount_group
             ),
             create_template_subaccount(
                 parent=accounts[1],
-                budget=template,
                 created_by=admin_user,
                 updated_by=admin_user
             )
@@ -228,13 +222,11 @@ def test_derive_budget(user, create_template, create_template_account,
         child_subaccounts = [
             create_template_subaccount(
                 parent=subaccounts[0],
-                budget=template,
                 created_by=admin_user,
                 updated_by=admin_user
             ),
             create_template_subaccount(
                 parent=subaccounts[1],
-                budget=template,
                 created_by=admin_user,
                 updated_by=admin_user
             )

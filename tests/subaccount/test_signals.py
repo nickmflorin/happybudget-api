@@ -13,7 +13,6 @@ def test_create_subaccount_recalculates(models, create_budget,
     budget = create_budget()
     account = create_budget_account(budget=budget)
     subaccount = models.BudgetSubAccount.objects.create(
-        budget=budget,
         parent=account,
         rate=1,
         multiplier=5,
@@ -31,7 +30,6 @@ def test_update_subaccount_recalculates(models, create_budget,
     budget = create_budget()
     account = create_budget_account(budget=budget)
     subaccount = models.BudgetSubAccount.objects.create(
-        budget=budget,
         parent=account,
         rate=1,
         multiplier=5,
@@ -56,7 +54,6 @@ def test_change_subaccount_parent_recalculates(models, create_budget,
     account = create_budget_account(budget=budget)
     another_account = create_budget_account(budget=budget)
     subaccount = models.BudgetSubAccount.objects.create(
-        budget=budget,
         parent=account,
         rate=1,
         multiplier=5,
@@ -88,7 +85,7 @@ def test_saving_subaccount_saves_budget(create_budget, create_budget_account,
     freezer.move_to('2017-05-20')
     budget = create_budget()
     account = create_budget_account(budget=budget)
-    subaccount = create_budget_subaccount(parent=account, budget=budget)
+    subaccount = create_budget_subaccount(parent=account)
     freezer.move_to('2019-05-20')
     subaccount.save()
     budget.refresh_from_db()
@@ -102,7 +99,6 @@ def test_remove_budget_subaccount_from_group_group_deleted(user, create_budget,
     account = create_budget_account(budget=budget)
     group = create_budget_subaccount_group(parent=account)
     subaccount = models.BudgetSubAccount.objects.create(
-        budget=budget,
         parent=account,
         identifier="Identifier",
         group=group,
@@ -121,7 +117,6 @@ def test_remove_template_subaccount_from_group_group_deleted(user, models,
     account = create_template_account(budget=template)
     group = create_template_subaccount_group(parent=account)
     subaccount = models.TemplateSubAccount.objects.create(
-        budget=template,
         parent=account,
         identifier="Identifier",
         group=group,
@@ -140,11 +135,10 @@ def test_remove_budget_subaccount_from_group_group_not_deleted(create_budget,
     account = create_budget_account(budget=budget)
     group = create_budget_subaccount_group(parent=account)
     subaccount = create_budget_subaccount(
-        budget=budget,
         parent=account,
         group=group
     )
-    create_budget_subaccount(budget=budget, parent=account, group=group)
+    create_budget_subaccount(parent=account, group=group)
     subaccount.group = None
     subaccount.save()
     assert models.BudgetSubAccountGroup.objects.first() == group
@@ -157,11 +151,10 @@ def test_remove_template_subaccount_from_group_group_not_deleted(models,
     account = create_template_account(budget=budget)
     group = create_template_subaccount_group(parent=account)
     subaccount = create_template_subaccount(
-        budget=budget,
         parent=account,
         group=group
     )
-    create_template_subaccount(budget=budget, parent=account, group=group)
+    create_template_subaccount(parent=account, group=group)
     subaccount.group = None
     subaccount.save()
     assert models.TemplateSubAccountGroup.objects.first() == group
@@ -176,7 +169,6 @@ def test_record_create_history(create_budget, create_budget_account, user,
     subaccount = models.BudgetSubAccount.objects.create(
         description="Description",
         identifier="Identifier",
-        budget=budget,
         updated_by=user,
         parent=account,
         created_by=user,
@@ -196,7 +188,6 @@ def test_record_field_change_history(create_budget, create_budget_account,
     subaccount = models.BudgetSubAccount(
         description="Description",
         identifier="Identifier",
-        budget=budget,
         parent=account,
         updated_by=user,
         created_by=user
@@ -223,7 +214,6 @@ def test_dont_record_field_change_history(create_budget, create_budget_account,
     subaccount = models.BudgetSubAccount(
         description="Description",
         identifier="Identifier",
-        budget=budget,
         parent=account,
         updated_by=user,
         created_by=user
@@ -244,7 +234,6 @@ def test_record_field_change_history_null_at_start(create_budget, models,
     subaccount = models.BudgetSubAccount(
         description=None,
         identifier="Identifier",
-        budget=budget,
         updated_by=user,
         parent=account,
         created_by=user

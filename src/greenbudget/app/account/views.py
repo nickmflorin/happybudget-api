@@ -181,8 +181,7 @@ class AccountSubAccountViewSet(
             created_by=self.request.user,
             object_id=self.account.pk,
             content_type=ContentType.objects.get_for_model(type(self.account)),
-            parent=self.account,
-            budget=self.account.budget
+            parent=self.account
         )
 
 
@@ -210,7 +209,6 @@ class GenericAccountViewSet(viewsets.GenericViewSet):
             child_cls=lambda context: context.view.child_instance_cls,
             child_serializer_cls=lambda context: context.view.child_serializer_cls,  # noqa
             filter_qs=lambda context: models.Q(
-                budget=context.instance.budget,
                 object_id=context.instance.pk,
                 content_type=ContentType.objects.get_for_model(
                     context.view.instance_cls)
@@ -221,8 +219,7 @@ class GenericAccountViewSet(viewsets.GenericViewSet):
             perform_create=lambda serializer, context: serializer.save(  # noqa
                 created_by=context.request.user,
                 updated_by=context.request.user,
-                parent=context.instance,
-                budget=context.instance.budget
+                parent=context.instance
             )
         )
     ]

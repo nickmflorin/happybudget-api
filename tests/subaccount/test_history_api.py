@@ -16,14 +16,12 @@ def test_get_subaccount_subaccounts_history(api_client, create_budget, user,
         account = create_budget_account(budget=budget)
         parent_subaccount = create_budget_subaccount(
             parent=account,
-            budget=budget,
             identifier="subaccount-a"
         )
         subaccount = create_budget_subaccount(
             parent=parent_subaccount,
             description="Original Description",
-            identifier="old_identifier",
-            budget=budget
+            identifier="old_identifier"
         )
     api_client.force_login(user)
     response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk, data={
@@ -142,8 +140,7 @@ def test_get_subaccount_history(api_client, create_budget, user,
         subaccount = create_budget_subaccount(
             parent=account,
             description="Original Description",
-            identifier="old_identifier",
-            budget=budget
+            identifier="old_identifier"
         )
     api_client.force_login(user)
     response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk, data={

@@ -15,7 +15,6 @@ def test_unit_properly_serializes(api_client, user, create_budget_subaccount,
         unit = create_subaccount_unit()
         subaccount = create_budget_subaccount(
             parent=account,
-            budget=budget,
             unit=unit
         )
     api_client.force_login(user)
@@ -38,7 +37,7 @@ def test_update_subaccount_unit(api_client, user, create_budget_subaccount,
     with signals.disable():
         budget = create_budget()
         account = create_budget_account(budget=budget)
-        subaccount = create_budget_subaccount(parent=account, budget=budget)
+        subaccount = create_budget_subaccount(parent=account)
         unit = create_subaccount_unit()
     api_client.force_login(user)
     response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk, data={
@@ -64,7 +63,7 @@ def test_update_subaccount_contact(api_client, user, create_budget_subaccount,
         budget = create_budget()
         account = create_budget_account(budget=budget)
         contact = create_contact(user=user)
-        subaccount = create_budget_subaccount(parent=account, budget=budget)
+        subaccount = create_budget_subaccount(parent=account)
     api_client.force_login(user)
     response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk, data={
         "contact": contact.pk
@@ -82,7 +81,7 @@ def test_update_subaccount_contact_wrong_user(api_client, user,
         budget = create_budget()
         account = create_budget_account(budget=budget)
         contact = create_contact(user=admin_user)
-        subaccount = create_budget_subaccount(parent=account, budget=budget)
+        subaccount = create_budget_subaccount(parent=account)
     api_client.force_login(user)
     response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk, data={
         "contact": contact.pk
@@ -96,7 +95,7 @@ def test_get_budget_subaccount(api_client, user, create_budget_subaccount,
     with signals.disable():
         budget = create_budget()
         account = create_budget_account(budget=budget)
-        subaccount = create_budget_subaccount(parent=account, budget=budget)
+        subaccount = create_budget_subaccount(parent=account)
 
     api_client.force_login(user)
     response = api_client.get("/v1/subaccounts/%s/" % subaccount.pk)
@@ -145,7 +144,7 @@ def test_get_template_subaccount(api_client, user, create_template_subaccount,
     with signals.disable():
         template = create_template()
         account = create_template_account(budget=template)
-        subaccount = create_template_subaccount(parent=account, budget=template)
+        subaccount = create_template_subaccount(parent=account)
 
     api_client.force_login(user)
     response = api_client.get("/v1/subaccounts/%s/" % subaccount.pk)
@@ -195,8 +194,7 @@ def test_update_budget_subaccount(api_client, user, create_budget_subaccount,
         subaccount = create_budget_subaccount(
             parent=account,
             description="Original Description",
-            identifier="Original identifier",
-            budget=budget
+            identifier="Original identifier"
         )
     api_client.force_login(user)
     response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk, data={
@@ -254,10 +252,7 @@ def test_update_subaccount_fringes(api_client, user, create_budget_subaccount,
         create_budget_account, create_budget, create_fringe):
     budget = create_budget()
     account = create_budget_account(budget=budget)
-    subaccount = create_budget_subaccount(
-        parent=account,
-        budget=budget
-    )
+    subaccount = create_budget_subaccount(parent=account)
     fringes = [create_fringe(budget=budget), create_fringe(budget=budget)]
     api_client.force_login(user)
     response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk, data={
@@ -279,7 +274,6 @@ def test_update_template_subaccount(api_client, user, create_template_account,
             parent=account,
             description="Original Description",
             identifier="Original identifier",
-            budget=template
         )
     api_client.force_login(user)
     response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk, data={
@@ -336,16 +330,13 @@ def test_get_budget_subaccount_subaccounts(api_client, user, create_budget,
     with signals.disable():
         budget = create_budget()
         account = create_budget_account(budget=budget)
-        parent = create_budget_subaccount(parent=account, budget=budget)
-        another_parent = create_budget_subaccount(parent=account, budget=budget)
+        parent = create_budget_subaccount(parent=account)
+        another_parent = create_budget_subaccount(parent=account)
         subaccounts = [
-            create_budget_subaccount(
-                parent=parent, budget=budget, identifier='A'),
-            create_budget_subaccount(
-                parent=parent, budget=budget, identifier='B'),
+            create_budget_subaccount(parent=parent, identifier='A'),
+            create_budget_subaccount(parent=parent, identifier='B'),
             create_budget_subaccount(
                 parent=another_parent,
-                budget=budget,
                 identifier='C'
             )
         ]
@@ -407,23 +398,20 @@ def test_get_template_subaccount_subaccounts(api_client, user, create_template,
     with signals.disable():
         template = create_template()
         account = create_template_account(budget=template)
-        parent = create_template_subaccount(parent=account, budget=template)
+        parent = create_template_subaccount(parent=account)
         another_parent = create_template_subaccount(
-            parent=account, budget=template)
+            parent=account)
         subaccounts = [
             create_template_subaccount(
                 parent=parent,
-                budget=template,
                 identifier='A'
             ),
             create_template_subaccount(
                 parent=parent,
-                budget=template,
                 identifier='B'
             ),
             create_template_subaccount(
                 parent=another_parent,
-                budget=template,
                 identifier='C'
             )
         ]
@@ -484,7 +472,6 @@ def test_remove_budget_subaccount_from_group(api_client, user, create_budget,
         group = create_budget_subaccount_group(parent=account)
         subaccount = create_budget_subaccount(
             parent=account,
-            budget=budget,
             group=group
         )
     api_client.force_login(user)
@@ -510,7 +497,6 @@ def test_remove_template_subaccount_from_group(api_client, user,
         group = create_template_subaccount_group(parent=account)
         subaccount = create_template_subaccount(
             parent=account,
-            budget=template,
             group=group
         )
     api_client.force_login(user)
@@ -534,15 +520,13 @@ def test_bulk_update_budget_subaccount_subaccounts(api_client, user,
     with signals.disable():
         budget = create_budget()
         account = create_budget_account(budget=budget)
-        subaccount = create_budget_subaccount(parent=account, budget=budget)
+        subaccount = create_budget_subaccount(parent=account)
         subaccounts = [
             create_budget_subaccount(
-                budget=budget,
                 parent=subaccount,
                 created_at=datetime.datetime(2020, 1, 1)
             ),
             create_budget_subaccount(
-                budget=budget,
                 parent=subaccount,
                 created_at=datetime.datetime(2020, 1, 2)
             )
@@ -621,10 +605,9 @@ def test_bulk_update_budget_subaccount_subaccounts_fringes(api_client, user,
     with signals.disable():
         budget = create_budget()
         account = create_budget_account(budget=budget)
-        subaccount = create_budget_subaccount(parent=account, budget=budget)
+        subaccount = create_budget_subaccount(parent=account)
         subaccounts = [
             create_budget_subaccount(
-                budget=budget,
                 parent=subaccount,
                 created_at=datetime.datetime(2020, 1, 1),
                 quantity=1,
@@ -632,7 +615,6 @@ def test_bulk_update_budget_subaccount_subaccounts_fringes(api_client, user,
                 multiplier=1
             ),
             create_budget_subaccount(
-                budget=budget,
                 parent=subaccount,
                 created_at=datetime.datetime(2020, 1, 2),
                 estimated=100,
@@ -708,20 +690,18 @@ def test_bulk_delete_budget_subaccount_subaccounts(api_client, user,
     with signals.disable():
         budget = create_budget()
         account = create_budget_account(budget=budget)
-        subaccount = create_budget_subaccount(parent=account, budget=budget)
+        subaccount = create_budget_subaccount(parent=account)
 
     # Do not do in the context of disabled signals because we need the values
     # of the different entities to be calculated.
     subaccounts = [
         create_budget_subaccount(
-            budget=budget,
             parent=subaccount,
             quantity=1,
             rate=100,
             multiplier=1
         ),
         create_budget_subaccount(
-            budget=budget,
             parent=subaccount,
             estimated=100,
             quantity=1,
@@ -774,10 +754,10 @@ def test_bulk_update_budget_subaccount_subaccounts_budget_updated_once(
     with signals.disable():
         budget = create_budget()
         account = create_budget_account(budget=budget)
-        subaccount = create_budget_subaccount(parent=account, budget=budget)
+        subaccount = create_budget_subaccount(parent=account)
         subaccounts = [
-            create_budget_subaccount(budget=budget, parent=subaccount),
-            create_budget_subaccount(budget=budget, parent=subaccount)
+            create_budget_subaccount(parent=subaccount),
+            create_budget_subaccount(parent=subaccount)
         ]
     api_client.force_login(user)
     with mock.patch('greenbudget.app.budget.models.Budget.save') as save:
@@ -807,15 +787,13 @@ def test_bulk_update_template_subaccount_subaccounts(api_client, user,
     with signals.disable():
         template = create_template()
         account = create_template_account(budget=template)
-        subaccount = create_template_subaccount(parent=account, budget=template)
+        subaccount = create_template_subaccount(parent=account)
         subaccounts = [
             create_template_subaccount(
-                budget=template,
                 parent=subaccount,
                 created_at=datetime.datetime(2020, 1, 1)
             ),
             create_template_subaccount(
-                budget=template,
                 parent=subaccount,
                 created_at=datetime.datetime(2020, 1, 2)
             )
@@ -885,20 +863,18 @@ def test_bulk_delete_template_subaccount_subaccounts(api_client, user,
     with signals.disable():
         template = create_template()
         account = create_template_account(budget=template)
-        subaccount = create_template_subaccount(parent=account, budget=template)
+        subaccount = create_template_subaccount(parent=account)
 
     # Do not do in the context of disabled signals because we need the values
     # of the different entities to be calculated.
     subaccounts = [
         create_template_subaccount(
-            budget=template,
             parent=subaccount,
             quantity=1,
             rate=100,
             multiplier=1
         ),
         create_template_subaccount(
-            budget=template,
             parent=subaccount,
             estimated=100,
             quantity=1,
@@ -942,10 +918,10 @@ def test_bulk_update_template_subaccount_subaccounts_template_updated_once(
     with signals.disable():
         template = create_template()
         account = create_template_account(budget=template)
-        subaccount = create_template_subaccount(parent=account, budget=template)
+        subaccount = create_template_subaccount(parent=account)
         subaccounts = [
-            create_template_subaccount(budget=template, parent=subaccount),
-            create_template_subaccount(budget=template, parent=subaccount)
+            create_template_subaccount(parent=subaccount),
+            create_template_subaccount(parent=subaccount)
         ]
     api_client.force_login(user)
     with mock.patch('greenbudget.app.template.models.Template.save') as save:
@@ -974,7 +950,7 @@ def test_bulk_create_budget_subaccount_subaccounts(api_client, user,
     with signals.disable():
         budget = create_budget()
         account = create_budget_account(budget=budget)
-        subaccount = create_budget_subaccount(parent=account, budget=budget)
+        subaccount = create_budget_subaccount(parent=account)
 
     api_client.force_login(user)
     response = api_client.patch(
@@ -1059,7 +1035,7 @@ def test_bulk_create_template_account_subaccounts(api_client, user,
     with signals.disable():
         template = create_template()
         account = create_template_account(budget=template)
-        subaccount = create_template_subaccount(parent=account, budget=template)
+        subaccount = create_template_subaccount(parent=account)
 
     freezer.move_to("2021-01-01")
     api_client.force_login(user)

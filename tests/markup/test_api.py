@@ -35,7 +35,7 @@ def test_get_budget_subaccount_markup(api_client, user, create_budget_account,
         create_budget_subaccount):
     budget = create_budget()
     account = create_budget_account(budget=budget)
-    subaccount = create_budget_subaccount(budget=budget, parent=account)
+    subaccount = create_budget_subaccount(parent=account)
     markup = create_budget_subaccount_markup(
         parent=account, children=[subaccount])
 
@@ -103,7 +103,7 @@ def test_update_budget_subaccount_markup(api_client, user, create_budget_account
         create_budget_subaccount):
     budget = create_budget()
     account = create_budget_account(budget=budget)
-    subaccount = create_budget_subaccount(budget=budget, parent=account)
+    subaccount = create_budget_subaccount(parent=account)
     markup = create_budget_subaccount_markup(parent=account)
 
     api_client.force_login(user)
@@ -158,7 +158,7 @@ def test_update_budget_subaccount_markup_not_same_parent(api_client, user,
     budget = create_budget()
     account = create_budget_account(budget=budget)
     another_account = create_budget_account(budget=budget)
-    subaccount = create_budget_subaccount(budget=budget, parent=another_account)
+    subaccount = create_budget_subaccount(parent=another_account)
     markup = create_budget_subaccount_markup(parent=account)
 
     api_client.force_login(user)
@@ -193,7 +193,7 @@ def test_remove_budget_subaccount_markup_child(api_client, user, models,
     budget = create_budget()
     another_budget = create_budget()
     account = create_budget_account(budget=another_budget)
-    subaccount = create_budget_subaccount(parent=account, budget=budget)
+    subaccount = create_budget_subaccount(parent=account)
     markup = create_budget_subaccount_markup(
         parent=budget, children=[subaccount])
 

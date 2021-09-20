@@ -10,11 +10,10 @@ def test_get_budget_subaccount_subaccount_groups(api_client, user,
     with signals.disable():
         budget = create_budget()
         account = create_budget_account(budget=budget)
-        subaccount = create_budget_subaccount(parent=account, budget=budget)
+        subaccount = create_budget_subaccount(parent=account)
         group = create_budget_subaccount_group(parent=subaccount)
         child_subaccount = create_budget_subaccount(
             parent=subaccount,
-            budget=budget,
             group=group
         )
     api_client.force_login(user)
@@ -43,11 +42,10 @@ def test_get_template_subaccount_subaccount_groups(api_client, user,
     with signals.disable():
         template = create_template()
         account = create_template_account(budget=template)
-        subaccount = create_template_subaccount(parent=account, budget=template)
+        subaccount = create_template_subaccount(parent=account)
         group = create_template_subaccount_group(parent=subaccount)
         child_subaccount = create_template_subaccount(
             parent=subaccount,
-            budget=template,
             group=group
         )
     api_client.force_login(user)
@@ -74,11 +72,8 @@ def test_create_budget_subaccount_subaccount_group(api_client, user,
     with signals.disable():
         budget = create_budget()
         account = create_budget_account(budget=budget)
-        subaccount = create_budget_subaccount(parent=account, budget=budget)
-        child_subaccount = create_budget_subaccount(
-            parent=subaccount,
-            budget=budget
-        )
+        subaccount = create_budget_subaccount(parent=account)
+        child_subaccount = create_budget_subaccount(parent=subaccount)
     api_client.force_login(user)
     response = api_client.post(
         "/v1/subaccounts/%s/groups/" % subaccount.pk, data={
@@ -117,11 +112,8 @@ def test_create_template_subaccount_subaccount_group(api_client, user,
     with signals.disable():
         template = create_template()
         account = create_template_account(budget=template)
-        subaccount = create_template_subaccount(parent=account, budget=template)
-        child_subaccount = create_template_subaccount(
-            parent=subaccount,
-            budget=template
-        )
+        subaccount = create_template_subaccount(parent=account)
+        child_subaccount = create_template_subaccount(parent=subaccount)
     api_client.force_login(user)
     response = api_client.post(
         "/v1/subaccounts/%s/groups/" % subaccount.pk, data={
@@ -157,15 +149,12 @@ def test_create_budget_subaccount_subaccount_group_invalid_child(api_client,
     with signals.disable():
         budget = create_budget()
         account = create_budget_account(budget=budget)
-        subaccount = create_budget_subaccount(parent=account, budget=budget)
-
+        subaccount = create_budget_subaccount(parent=account)
         # We are trying to create the grouping under `another_sub_account` but
         # including children that belong to `child_subaccount`, which should
         # trigger a 400 response.
-        another_sub_account = create_budget_subaccount(
-            parent=account, budget=budget)
-        child_subaccount = create_budget_subaccount(
-            parent=subaccount, budget=budget)
+        another_sub_account = create_budget_subaccount(parent=account)
+        child_subaccount = create_budget_subaccount(parent=subaccount)
 
     api_client.force_login(user)
     response = api_client.post(
@@ -184,15 +173,12 @@ def test_create_template_subaccount_subaccount_group_invalid_child(api_client,
     with signals.disable():
         template = create_template()
         account = create_template_account(budget=template)
-        subaccount = create_template_subaccount(parent=account, budget=template)
-
+        subaccount = create_template_subaccount(parent=account)
         # We are trying to create the grouping under `another_sub_account` but
         # including children that belong to `child_subaccount`, which should
         # trigger a 400 response.
-        another_sub_account = create_template_subaccount(
-            parent=account, budget=template)
-        child_subaccount = create_template_subaccount(
-            parent=subaccount, budget=template)
+        another_sub_account = create_template_subaccount(parent=account)
+        child_subaccount = create_template_subaccount(parent=subaccount)
 
     api_client.force_login(user)
     response = api_client.post(

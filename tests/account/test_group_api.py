@@ -13,7 +13,6 @@ def test_get_budget_account_subaccount_groups(api_client, user,
         group = create_budget_subaccount_group(parent=account)
         subaccount = create_budget_subaccount(
             parent=account,
-            budget=budget,
             group=group
         )
     api_client.force_login(user)
@@ -45,7 +44,6 @@ def test_get_template_account_subaccount_groups(api_client, user,
         group = create_template_subaccount_group(parent=account)
         subaccount = create_template_subaccount(
             parent=account,
-            budget=template,
             group=group
         )
     api_client.force_login(user)
@@ -72,7 +70,7 @@ def test_create_budget_account_subaccount_group(api_client, user,
     with signals.disable():
         budget = create_budget()
         account = create_budget_account(budget=budget)
-        subaccount = create_budget_subaccount(parent=account, budget=budget)
+        subaccount = create_budget_subaccount(parent=account)
 
     api_client.force_login(user)
     response = api_client.post("/v1/accounts/%s/groups/" % account.pk, data={
@@ -111,7 +109,7 @@ def test_create_template_account_subaccount_group(api_client, user,
     with signals.disable():
         template = create_template()
         account = create_template_account(budget=template)
-        subaccount = create_template_subaccount(parent=account, budget=template)
+        subaccount = create_template_subaccount(parent=account)
 
     api_client.force_login(user)
     response = api_client.post("/v1/accounts/%s/groups/" % account.pk, data={
@@ -151,8 +149,7 @@ def test_create_budget_account_subaccount_group_invalid_child(api_client, user,
         # trigger a 400 response.
         account = create_budget_account(budget=budget)
         another_account = create_budget_account(budget=budget)
-        subaccount = create_budget_subaccount(
-            parent=another_account, budget=budget)
+        subaccount = create_budget_subaccount(parent=another_account)
 
     api_client.force_login(user)
     response = api_client.post("/v1/accounts/%s/groups/" % account.pk, data={
@@ -173,10 +170,7 @@ def test_create_template_account_subaccount_group_invalid_child(api_client,
         # trigger a 400 response.
         account = create_template_account(budget=template)
         another_account = create_template_account(budget=template)
-        subaccount = create_template_subaccount(
-            parent=another_account,
-            budget=template
-        )
+        subaccount = create_template_subaccount(parent=another_account)
     api_client.force_login(user)
     response = api_client.post("/v1/accounts/%s/groups/" % account.pk, data={
         'name': 'Group Name',

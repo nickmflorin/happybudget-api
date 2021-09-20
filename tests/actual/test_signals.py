@@ -5,7 +5,7 @@ def test_create_actual_recalculates(create_budget_account, create_budget,
         create_actual, create_budget_subaccount):
     budget = create_budget()
     account = create_budget_account(budget=budget)
-    subaccount = create_budget_subaccount(parent=account, budget=budget)
+    subaccount = create_budget_subaccount(parent=account)
     create_actual(subaccount=subaccount, budget=budget, value=10)
 
     subaccount.refresh_from_db()
@@ -25,9 +25,9 @@ def test_create_actuals_in_bulk_context(create_budget_account, create_budget,
     account = create_budget_account(budget=budget)
     another_account = create_budget_account(budget=budget)
     subaccounts = [
-        create_budget_subaccount(parent=account, budget=budget),
-        create_budget_subaccount(parent=account, budget=budget),
-        create_budget_subaccount(parent=another_account, budget=budget)
+        create_budget_subaccount(parent=account),
+        create_budget_subaccount(parent=account),
+        create_budget_subaccount(parent=another_account)
     ]
 
     with signals.bulk_context:
@@ -60,7 +60,7 @@ def test_delete_actual_recalculates(create_budget_account, create_budget,
         create_actual, create_budget_subaccount):
     budget = create_budget()
     account = create_budget_account(budget=budget)
-    subaccount = create_budget_subaccount(parent=account, budget=budget)
+    subaccount = create_budget_subaccount(parent=account)
     actual = create_actual(subaccount=subaccount, budget=budget, value=10)
 
     subaccount.refresh_from_db()
@@ -88,10 +88,10 @@ def test_change_actual_subaccount_recalculates(create_budget_account,
         create_budget, create_actual, create_budget_subaccount):
     budget = create_budget()
     account = create_budget_account(budget=budget)
-    subaccount = create_budget_subaccount(parent=account, budget=budget)
+    subaccount = create_budget_subaccount(parent=account)
     actual = create_actual(subaccount=subaccount, budget=budget, value=10)
 
-    another_subaccount = create_budget_subaccount(parent=account, budget=budget)
+    another_subaccount = create_budget_subaccount(parent=account)
     actual.subaccount = another_subaccount
     actual.save()
 
@@ -112,7 +112,7 @@ def test_change_actual_value_recalculates(create_budget_account,
         create_budget, create_actual, create_budget_subaccount):
     budget = create_budget()
     account = create_budget_account(budget=budget)
-    subaccount = create_budget_subaccount(parent=account, budget=budget)
+    subaccount = create_budget_subaccount(parent=account)
     actual = create_actual(subaccount=subaccount, budget=budget, value=10)
 
     actual.value = 5

@@ -57,11 +57,6 @@ class SubAccount(PolymorphicModel):
         null=True
     )
     fringes = models.ManyToManyField(to='fringe.Fringe')
-    budget = models.ForeignKey(
-        to='budget.BaseBudget',
-        on_delete=models.CASCADE,
-        related_name='subaccounts'
-    )
     updated_by = models.ForeignKey(
         to='user.User',
         related_name='updated_subaccounts',
@@ -110,6 +105,10 @@ class SubAccount(PolymorphicModel):
     @property
     def ancestors(self):
         return self.parent.ancestors + [self.parent]
+
+    @property
+    def budget(self):
+        return self.parent.budget
 
     @property
     def parent_type(self):

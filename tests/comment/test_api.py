@@ -98,7 +98,7 @@ def test_get_subaccount_comment(api_client, user, create_comment,
         create_budget, create_budget_account, create_budget_subaccount):
     budget = create_budget()
     account = create_budget_account(budget=budget)
-    sub_account = create_budget_subaccount(budget=budget, parent=account)
+    sub_account = create_budget_subaccount(parent=account)
     comment = create_comment(user=user, content_object=sub_account)
     nested_comment = create_comment(content_object=comment, user=user)
     api_client.force_login(user)
@@ -214,7 +214,7 @@ def test_create_budget_subaccount_comment(api_client, user, create_budget,
         create_budget_account, create_budget_subaccount, models):
     budget = create_budget()
     account = create_budget_account(budget=budget)
-    subaccount = create_budget_subaccount(parent=account, budget=budget)
+    subaccount = create_budget_subaccount(parent=account)
     api_client.force_login(user)
     response = api_client.post(
         "/v1/subaccounts/%s/comments/" % subaccount.pk,

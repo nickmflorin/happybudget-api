@@ -28,7 +28,6 @@ def test_create_subaccount_with_fringes_estimates(create_budget,
     ]
     account = create_budget_account(budget=budget)
     subaccount = create_budget_subaccount(
-        budget=budget,
         parent=account,
         fringes=fringes,
         multiplier=1.0,
@@ -43,7 +42,6 @@ def test_add_fringe_to_subaccount_estimates(create_budget,
     budget = create_budget()
     account = create_budget_account(budget=budget)
     subaccount = create_budget_subaccount(
-        budget=budget,
         parent=account,
         multiplier=1.0,
         quantity=1.0,
@@ -65,7 +63,6 @@ def test_subacount_fringe_changes_restimates(create_budget,
     budget = create_budget()
     account = create_budget_account(budget=budget)
     subaccount = create_budget_subaccount(
-        budget=budget,
         parent=account,
         multiplier=1.0,
         quantity=1.0,

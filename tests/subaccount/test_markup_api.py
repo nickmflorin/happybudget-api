@@ -10,14 +10,8 @@ def test_get_budget_subaccount_subaccount_markups(api_client, user, models,
     with signals.disable():
         budget = create_budget()
         account = create_budget_account(budget=budget)
-        subaccount = create_budget_subaccount(
-            parent=account,
-            budget=budget,
-        )
-        child_subaccount = create_budget_subaccount(
-            parent=subaccount,
-            budget=budget,
-        )
+        subaccount = create_budget_subaccount(parent=account)
+        child_subaccount = create_budget_subaccount(parent=subaccount)
         markup = create_budget_subaccount_markup(
             parent=subaccount,
             children=[child_subaccount]
@@ -51,11 +45,8 @@ def test_create_budget_subaccount_subaccount_markup(api_client, user,
     with signals.disable():
         budget = create_budget()
         account = create_budget_account(budget=budget)
-        subaccount = create_budget_subaccount(parent=account, budget=budget)
-        child_subaccount = create_budget_subaccount(
-            parent=subaccount,
-            budget=budget,
-        )
+        subaccount = create_budget_subaccount(parent=account)
+        child_subaccount = create_budget_subaccount(parent=subaccount)
 
     api_client.force_login(user)
     response = api_client.post(
@@ -95,14 +86,9 @@ def test_create_budget_subaccount_subaccount_markup_invalid_child(api_client,
     with signals.disable():
         budget = create_budget()
         account = create_budget_account(budget=budget)
-        subaccount = create_budget_subaccount(
-            parent=account, budget=budget)
-        another_subaccount = create_budget_subaccount(
-            parent=account, budget=budget)
-        child_subaccount = create_budget_subaccount(
-            parent=another_subaccount,
-            budget=budget,
-        )
+        subaccount = create_budget_subaccount(parent=account)
+        another_subaccount = create_budget_subaccount(parent=account)
+        child_subaccount = create_budget_subaccount(parent=another_subaccount)
 
     api_client.force_login(user)
     response = api_client.post(

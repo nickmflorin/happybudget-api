@@ -11,18 +11,19 @@ class BudgetFilteredQuerysetPKField(serializers.PrimaryKeyRelatedField):
         **serializers.PrimaryKeyRelatedField.default_error_messages,
         ** {
             'does_not_exist': _(
-                'The instance "{pk_value}" - does not belong to the correct '
+                'The instance "{pk_value}" does not belong to the correct '
                 'budget.'
             ),
         }
     }
 
     def __init__(self, *args, **kwargs):
+        self._apply_filter = kwargs.pop('apply_filter', None)
         self._budget_getter = kwargs.pop('budget_getter', None)
         self._object_name = kwargs.pop('object_name', None)
         if self._object_name is not None:
             self.default_error_messages['does_not_exist'] = _(
-                'The %s "{pk_value}" - does not belong to the correct '
+                'The %s "{pk_value}" does not belong to the correct '
                 'budget.' % self._object_name
             )
         self._budget_field = kwargs.pop('budget_field', 'budget')
@@ -55,37 +56,14 @@ class BudgetFilteredQuerysetPKField(serializers.PrimaryKeyRelatedField):
         if budget is None:
             raise Exception("The budget must be present to use this field.")
 
+        if self._apply_filter is not None:
+            return self._apply_filter(qs, budget)
+
         filter_kwargs = {self._budget_field: budget}
         return qs.filter(**filter_kwargs)
 
 
-class AccountChildrenFilteredQuerysetPKField(BudgetFilteredQuerysetPKField):
-    """
-    A :obj:`serializers.PrimaryKeyRelatedField` that ensures that the children
-    :obj:`Account`(s) provided in the request belong to the same
-    :obj:`budget.Budget` as the object we are updating.
-    """
-    default_error_messages = {
-        **serializers.PrimaryKeyRelatedField.default_error_messages,
-        ** {
-            'does_not_exist': _(
-                'The instance "{pk_value}" - does not belong to the correct '
-                'budget or parent.'
-            ),
-        }
-    }
-
-    def __init__(self, *args, **kwargs):
-        self._parent_getter = kwargs.pop('parent_getter', None)
-        self._parent_field = kwargs.pop('parent_field', 'parent')
-        super().__init__(*args, **kwargs)
-
-        if self._object_name is not None:
-            self.default_error_messages['does_not_exist'] = _(
-                'The %s "{pk_value}" - does not belong to the correct '
-                'budget or parent.' % self._object_name
-            )
-        super().__init__(*args, **kwargs)
+class ContextParentMixin:
 
     def get_parent(self):
         original_serializer = find_field_original_serializer(self)
@@ -110,23 +88,75 @@ class AccountChildrenFilteredQuerysetPKField(BudgetFilteredQuerysetPKField):
             raise Exception("The parent must be present to use this field.")
         return parent
 
-    def get_queryset(self, budget=None):
+
+class AccountChildrenFilteredQuerysetPKField(
+        ContextParentMixin, BudgetFilteredQuerysetPKField):
+    """
+    A :obj:`serializers.PrimaryKeyRelatedField` that ensures that the children
+    :obj:`Account`(s) provided in the request belong to the same
+    :obj:`budget.Budget` as the object we are updating.
+    """
+    default_error_messages = {
+        **serializers.PrimaryKeyRelatedField.default_error_messages,
+        ** {
+            'does_not_exist': _(
+                'The instance "{pk_value}" does not belong to the correct '
+                'parent.'
+            ),
+        }
+    }
+
+    def __init__(self, *args, **kwargs):
+        self._parent_getter = kwargs.pop('parent_getter', None)
+        self._parent_field = kwargs.pop('parent_field', 'parent')
+        super().__init__(*args, **kwargs)
+
+        if self._object_name is not None:
+            self.default_error_messages['does_not_exist'] = _(
+                'The %s "{pk_value}" does not belong to the correct '
+                'budget.' % self._object_name
+            )
+        super().__init__(*args, **kwargs)
+
+    def get_queryset(self):
         parent = self.get_parent()
         return super().get_queryset(budget=parent)
 
 
 class SubAccountChildrenFilteredQuerysetPKField(
-        AccountChildrenFilteredQuerysetPKField):
+        ContextParentMixin, serializers.PrimaryKeyRelatedField):
     """
     A :obj:`serializers.PrimaryKeyRelatedField` that ensures that the children
     :obj:`SubAccount`(s) provided in the request belong to the same
     parent as the object we are updating.
     """
+    default_error_messages = {
+        **serializers.PrimaryKeyRelatedField.default_error_messages,
+        ** {
+            'does_not_exist': _(
+                'The instance "{pk_value}" does not belong to the correct '
+                'parent.'
+            ),
+        }
+    }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self._parent_getter = kwargs.pop('parent_getter', None)
+        self._parent_field = kwargs.pop('parent_field', 'parent')
+
+        self._object_name = kwargs.pop('object_name', None)
+        if self._object_name is not None:
+            self.default_error_messages['does_not_exist'] = _(
+                'The %s "{pk_value}" does not belong to the correct '
+                'budget.' % self._object_name
+            )
+        super().__init__(*args, **kwargs)
 
     def get_queryset(self):
         parent = self.get_parent()
-        qs = super(AccountChildrenFilteredQuerysetPKField,
-            self).get_queryset(budget=parent.budget)
+        qs = super().get_queryset()
         return qs.filter(
             content_type=ContentType.objects.get_for_model(type(parent)),
             object_id=parent.pk

@@ -150,12 +150,10 @@ def test_bulk_update_budget_account_subaccounts(api_client, user, create_budget,
         account = create_budget_account(budget=budget)
         subaccounts = [
             create_budget_subaccount(
-                budget=budget,
                 parent=account,
                 created_at=datetime.datetime(2020, 1, 1)
             ),
             create_budget_subaccount(
-                budget=budget,
                 parent=account,
                 created_at=datetime.datetime(2020, 1, 2)
             )
@@ -230,7 +228,6 @@ def test_bulk_update_budget_account_subaccounts_fringes(api_client, user,
         account = create_budget_account(budget=budget)
         subaccounts = [
             create_budget_subaccount(
-                budget=budget,
                 parent=account,
                 created_at=datetime.datetime(2020, 1, 1),
                 quantity=1,
@@ -238,7 +235,6 @@ def test_bulk_update_budget_account_subaccounts_fringes(api_client, user,
                 multiplier=1
             ),
             create_budget_subaccount(
-                budget=budget,
                 parent=account,
                 created_at=datetime.datetime(2020, 1, 2),
                 estimated=100,
@@ -311,14 +307,12 @@ def test_bulk_delete_budget_account_subaccounts(api_client, user,
 
     subaccounts = [
         create_budget_subaccount(
-            budget=budget,
             parent=account,
             quantity=1,
             rate=100,
             multiplier=1
         ),
         create_budget_subaccount(
-            budget=budget,
             parent=account,
             estimated=100,
             quantity=1,
@@ -366,12 +360,10 @@ def test_bulk_update_budget_account_subaccounts_budget_updated_once(api_client,
         account = create_budget_account(budget=budget)
         subaccounts = [
             create_budget_subaccount(
-                budget=budget,
                 parent=account,
                 created_at=datetime.datetime(2020, 1, 1)
             ),
             create_budget_subaccount(
-                budget=budget,
                 parent=account,
                 created_at=datetime.datetime(2020, 1, 2)
             )
@@ -406,12 +398,10 @@ def test_bulk_update_template_account_subaccounts(api_client, user,
         account = create_template_account(budget=template)
         subaccounts = [
             create_template_subaccount(
-                budget=template,
                 parent=account,
                 created_at=datetime.datetime(2020, 1, 1)
             ),
             create_template_subaccount(
-                budget=template,
                 parent=account,
                 created_at=datetime.datetime(2020, 1, 2)
             )
@@ -480,14 +470,12 @@ def test_bulk_delete_template_account_subaccounts(api_client, user,
 
     subaccounts = [
         create_template_subaccount(
-            budget=template,
             parent=account,
             quantity=1,
             rate=100,
             multiplier=1
         ),
         create_template_subaccount(
-            budget=template,
             parent=account,
             estimated=100,
             quantity=1,
@@ -530,12 +518,10 @@ def test_bulk_update_template_account_subaccounts_template_updated_once(
         account = create_template_account(budget=template)
         subaccounts = [
             create_template_subaccount(
-                budget=template,
                 parent=account,
                 created_at=datetime.datetime(2020, 1, 1)
             ),
             create_template_subaccount(
-                budget=template,
                 parent=account,
                 created_at=datetime.datetime(2020, 1, 2)
             )

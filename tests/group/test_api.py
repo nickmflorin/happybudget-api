@@ -58,7 +58,6 @@ def test_get_budget_subaccount_group(api_client, user, create_budget_account,
     group = create_budget_subaccount_group(parent=account)
     subaccount = create_budget_subaccount(
         parent=account,
-        budget=budget,
         group=group
     )
     api_client.force_login(user)
@@ -88,7 +87,6 @@ def test_get_template_subaccount_group(api_client, user, create_template,
     group = create_template_subaccount_group(parent=account)
     subaccount = create_template_subaccount(
         parent=account,
-        budget=template,
         group=group
     )
     api_client.force_login(user)
@@ -177,7 +175,7 @@ def test_update_budget_subaccount_group(api_client, user, create_budget_account,
         create_budget_subaccount_group):
     budget = create_budget()
     account = create_budget_account(budget=budget)
-    subaccount = create_budget_subaccount(parent=account, budget=budget)
+    subaccount = create_budget_subaccount(parent=account)
     group = create_budget_subaccount_group(parent=account)
 
     api_client.force_login(user)
@@ -214,7 +212,7 @@ def test_update_template_subaccount_group(api_client, user, create_template,
         create_template_subaccount_group):
     template = create_template()
     account = create_template_account(budget=template)
-    subaccount = create_template_subaccount(parent=account, budget=template)
+    subaccount = create_template_subaccount(parent=account)
     group = create_template_subaccount_group(parent=account)
 
     api_client.force_login(user)
@@ -276,7 +274,7 @@ def test_update_budget_subaccount_group_child_not_same_parent(api_client,
         create_budget, create_budget_subaccount_group):
     budget = create_budget()
     account = create_budget_account(budget=budget)
-    subaccount = create_budget_subaccount(parent=account, budget=budget)
+    subaccount = create_budget_subaccount(parent=account)
 
     another_account = create_budget_account(budget=budget)
     group = create_budget_subaccount_group(parent=another_account)
@@ -294,7 +292,7 @@ def test_update_template_subaccount_group_child_not_same_parent(api_client,
         create_template, create_template_subaccount_group):
     template = create_template()
     account = create_template_account(budget=template)
-    subaccount = create_template_subaccount(parent=account, budget=template)
+    subaccount = create_template_subaccount(parent=account)
 
     another_account = create_template_account(budget=template)
     group = create_template_subaccount_group(parent=another_account)
@@ -351,8 +349,7 @@ def test_budget_subaccount_group_account_already_in_group(api_client, user,
     budget = create_budget()
     account = create_budget_account(budget=budget)
     group = create_budget_subaccount_group(parent=account)
-    subaccount = create_budget_subaccount(
-        budget=budget, parent=account, group=group)
+    subaccount = create_budget_subaccount(parent=account, group=group)
     another_group = create_budget_subaccount_group(parent=account)
 
     api_client.force_login(user)
@@ -372,8 +369,7 @@ def test_template_subaccount_group_account_already_in_group(api_client, user,
     template = create_template()
     account = create_template_account(budget=template)
     group = create_template_subaccount_group(parent=account)
-    subaccount = create_template_subaccount(
-        budget=template, parent=account, group=group)
+    subaccount = create_template_subaccount(parent=account, group=group)
     another_group = create_template_subaccount_group(parent=account)
 
     api_client.force_login(user)

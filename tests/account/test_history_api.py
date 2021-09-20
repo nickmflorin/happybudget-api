@@ -177,8 +177,7 @@ def test_get_account_subaccounts_history(api_client, create_budget, user,
         subaccount = create_budget_subaccount(
             parent=account,
             description="Original Description",
-            identifier="old_identifier",
-            budget=budget
+            identifier="old_identifier"
         )
 
     api_client.force_login(user)

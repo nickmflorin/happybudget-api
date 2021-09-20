@@ -102,14 +102,12 @@ def test_bulk_create_budget_fringes(api_client, user, create_budget, models,
     # the metrics on the SubAccount(s) (and thus the Account(s) and Budget) from
     # being calculated.
     create_budget_subaccount(
-        budget=budget,
         parent=accounts[0],
         quantity=1,
         rate=100,
         multiplier=1
     )
     create_budget_subaccount(
-        budget=budget,
         parent=accounts[1],
         estimated=100,
         quantity=1,
@@ -177,7 +175,6 @@ def test_bulk_update_budget_fringes(api_client, user, create_budget,
     # being calculated.
     subaccounts = [
         create_budget_subaccount(
-            budget=budget,
             parent=accounts[0],
             quantity=1,
             rate=100,
@@ -185,7 +182,6 @@ def test_bulk_update_budget_fringes(api_client, user, create_budget,
             fringes=fringes
         ),
         create_budget_subaccount(
-            budget=budget,
             parent=accounts[1],
             quantity=2,
             rate=50,
@@ -284,7 +280,6 @@ def test_bulk_delete_fringes(api_client, user, create_budget, create_fringe,
     # being calculated.
     subaccounts = [
         create_budget_subaccount(
-            budget=budget,
             parent=accounts[0],
             quantity=1,
             rate=100,
@@ -292,7 +287,6 @@ def test_bulk_delete_fringes(api_client, user, create_budget, create_fringe,
             fringes=fringes
         ),
         create_budget_subaccount(
-            budget=budget,
             parent=accounts[1],
             quantity=2,
             rate=50,

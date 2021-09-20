@@ -10,10 +10,7 @@ def test_get_budget_account_subaccount_markups(api_client, user, models,
     with signals.disable():
         budget = create_budget()
         account = create_budget_account(budget=budget)
-        subaccount = create_budget_subaccount(
-            parent=account,
-            budget=budget,
-        )
+        subaccount = create_budget_subaccount(parent=account)
         markup = create_budget_subaccount_markup(
             parent=account,
             children=[subaccount]
@@ -47,7 +44,7 @@ def test_create_budget_account_subaccount_markup(api_client, user,
     with signals.disable():
         budget = create_budget()
         account = create_budget_account(budget=budget)
-        subaccount = create_budget_subaccount(parent=account, budget=budget)
+        subaccount = create_budget_subaccount(parent=account)
 
     api_client.force_login(user)
     response = api_client.post("/v1/accounts/%s/markups/" % account.pk, data={
@@ -84,10 +81,10 @@ def test_create_budget_account_subaccount_markup_invalid_child(api_client, user,
         create_budget_subaccount, create_budget_account, create_budget):
     with signals.disable():
         budget = create_budget()
+        another_budget = create_budget()
         account = create_budget_account(budget=budget)
-        another_account = create_budget_account(budget=budget)
-        subaccount = create_budget_subaccount(
-            parent=another_account, budget=budget)
+        another_account = create_budget_account(budget=another_budget)
+        subaccount = create_budget_subaccount(parent=another_account)
 
     api_client.force_login(user)
     response = api_client.post("/v1/accounts/%s/markups/" % account.pk, data={

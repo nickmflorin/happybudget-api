@@ -198,8 +198,8 @@ class BudgetSubAccountViewSet(
 
     def get_queryset(self):
         return BudgetSubAccount.objects \
-            .filter(budget=self.budget) \
-            .exclude(models.Q(identifier=None) & models.Q(description=None))
+            .exclude(models.Q(identifier=None) & models.Q(description=None)) \
+            .filter_by_budget(budget=self.budget)
 
     def filter_tree_querysets(self, top_level_qs, searched_qs):
         def handle_nested_level(obj):
@@ -274,10 +274,11 @@ class BudgetSubAccountViewSet(
 
         ['foo.barb.bara', 'foob.bara']
         """
-        top_level_qs = BudgetSubAccount.objects.filter(
-            budget=self.budget,
-            content_type=ContentType.objects.get_for_model(BudgetAccount)
-        ).exclude(models.Q(identifier=None) & models.Q(description=None))
+        top_level_qs = BudgetSubAccount.objects \
+            .filter(content_type=ContentType.objects.get_for_model(
+                BudgetAccount)) \
+            .exclude(models.Q(identifier=None) & models.Q(description=None)) \
+            .filter_by_budget(self.budget)
 
         queryset = self.filter_queryset(self.get_queryset())
         overall_qs, search_path = self.filter_tree_querysets(

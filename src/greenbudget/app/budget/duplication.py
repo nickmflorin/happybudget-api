@@ -263,7 +263,7 @@ class BulkBudgetOperation:
         subaccount_set = ObjectSet()
         for obj, parent in self.iterate_over_level(level=level):
             subaccount_set.existing.append(obj)
-            kwargs = {'budget': self.budget}
+            kwargs = {}
             if obj.group is not None:
                 assert len(group_set.duplicated) != 0
                 kwargs['group_id'] = group_set.map[obj.group.pk]

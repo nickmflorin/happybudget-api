@@ -194,7 +194,6 @@ class GenericSubAccountViewSet(viewsets.GenericViewSet):
             child_cls=lambda context: context.view.child_instance_cls,
             child_serializer_cls=lambda context: context.view.child_serializer_cls,  # noqa
             filter_qs=lambda context: models.Q(
-                budget=context.instance.budget,
                 object_id=context.instance.pk,
                 content_type=ContentType.objects.get_for_model(
                     context.view.instance_cls)
@@ -206,7 +205,6 @@ class GenericSubAccountViewSet(viewsets.GenericViewSet):
                 created_by=context.request.user,
                 updated_by=context.request.user,
                 parent=context.instance,
-                budget=context.instance.budget
             )
         )
     ]

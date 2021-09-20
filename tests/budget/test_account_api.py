@@ -204,14 +204,13 @@ def test_bulk_delete_budget_accounts(api_client, user, create_budget,
     # we can test whether or not the deletion recalculates the metrics on the
     # Budget.
     create_budget_subaccount(
-        budget=budget,
         parent=accounts[0],
         quantity=1,
         rate=100,
         multiplier=1
     )
     create_budget_subaccount(
-        budget=budget,
+
         parent=accounts[1],
         estimated=100,
         quantity=1,
