@@ -135,6 +135,7 @@ CREATE DATABASE postgres_greenbudget;
 CREATE USER greenbudget WITH PASSWORD '';
 GRANT ALL PRIVILEGES ON DATABASE postgres_greenbudget TO greenbudget;
 ALTER USER greenbudget CREATEDB;
+ALTER DATABASE postgres_greenbudget OWNER TO greenbudget;
 \q
 ```
 
