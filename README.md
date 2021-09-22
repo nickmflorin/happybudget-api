@@ -93,6 +93,50 @@ $ python src/manage.py runserver
 Then, migrate to the domain/port serving the Frontend (assuming that the Frontend server is running, this
 is usually at `127.0.0.1:3000`.
 
+#### Local Database
+
+We use `postgresql` for our local (and production) databases, with the exception being our tests which run on
+a lightweight `sqlite` database so they can do transactional tests that do not take forever to run.
+
+The database configuration parameters can be overridden in a `.env` file, but locally they default to the following
+if not present in the `.env` file:
+
+```bash
+DATABASE_NAME=postgres_greenbudget
+DATABASE_USER=greenbudget
+DATABASE_PASSWORD=''
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+```
+
+`postgresql` will, by default, setup a database named `postgres` with `postgres` as the user.  Additionally, `django`
+will try to (by default) use `django` as the `DATABASE_USER`.  To avoid complications around this, as well as complications
+that might arise from a developer already having the default `postgres` database name reserved for other purposes, we try to
+isolate these parameters to our use case.
+
+This is not to say that you cannot use the application on the default `postgresql` parameters - you can, you just have to set
+them in the `.env` file.
+
+For developers not familiar with `postgresql`, because we do not use the default `postgresql` parameters, you might see the following
+error when starting the server locally:
+
+```bash
+django.db.utils.OperationalError: FATAL:  role "greenbudget" does not exist
+```
+
+All this means is that we have to setup the database manually, since it is not already setup by `postgresql` by default (which
+it would be, if we were using the `postgres` database name and user).
+
+To setup the database, all we have to do is the following:
+
+```bash
+psql -d postgres  # Open the postgresql shell by connecting to the default database.
+CREATE DATABASE postgres_greenbudget;
+CREATE USER greenbudget WITH PASSWORD '';
+GRANT ALL PRIVILEGES ON DATABASE postgres_greenbudget TO greenbudget;
+\q
+```
+
 #### Local Domain Caveat
 
 Our authentication protocols rely on the ability to set cookies in the response that dictate user sessions and
