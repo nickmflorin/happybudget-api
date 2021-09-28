@@ -34,10 +34,6 @@ class Group(models.Model):
             content_types__app_label='group'
         )
     )
-    markups = models.ManyToManyField(
-        to='markup.Markup',
-        related_name='groups'
-    )
     content_type = models.ForeignKey(
         to=ContentType,
         on_delete=models.CASCADE,

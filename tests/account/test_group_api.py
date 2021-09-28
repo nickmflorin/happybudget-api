@@ -6,12 +6,11 @@ from greenbudget.app import signals
 @pytest.mark.freeze_time('2020-01-01')
 def test_get_budget_account_subaccount_groups(api_client, user,
         create_budget_subaccount, create_budget_account, create_budget,
-        create_group, create_markup):
+        create_group):
     with signals.disable():
         budget = create_budget()
         account = create_budget_account(parent=budget)
         group = create_group(parent=account)
-        markup = create_markup(parent=account, group=group)
         subaccount = create_budget_subaccount(parent=account, group=group)
 
     api_client.force_login(user)
@@ -27,8 +26,7 @@ def test_get_budget_account_subaccount_groups(api_client, user,
         "color": group.color,
         "updated_by": user.pk,
         "created_by": user.pk,
-        "children": [subaccount.pk],
-        "children_markups": [markup.pk]
+        "children": [subaccount.pk]
     }]
 
 
@@ -57,8 +55,7 @@ def test_get_template_account_subaccount_groups(api_client, user,
         "color": group.color,
         "updated_by": user.pk,
         "created_by": user.pk,
-        "children": [subaccount.pk],
-        "children_markups": []
+        "children": [subaccount.pk]
     }]
 
 
@@ -93,8 +90,7 @@ def test_create_budget_account_subaccount_group(api_client, user, create_budget,
         "updated_by": user.pk,
         "color": '#a1887f',
         "created_by": user.pk,
-        "children": [subaccount.pk],
-        "children_markups": []
+        "children": [subaccount.pk]
     }
 
 
@@ -132,8 +128,7 @@ def test_create_template_account_subaccount_group(api_client, user,
         "updated_by": user.pk,
         "color": '#a1887f',
         "created_by": user.pk,
-        "children": [subaccount.pk],
-        "children_markups": []
+        "children": [subaccount.pk]
     }
 
 

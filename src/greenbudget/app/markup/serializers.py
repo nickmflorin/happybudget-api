@@ -5,7 +5,6 @@ from greenbudget.lib.drf.serializers import ModelSerializer
 from greenbudget.lib.drf.fields import ModelChoiceField
 
 from greenbudget.app.budgeting.fields import TableChildrenPrimaryKeyRelatedField
-from greenbudget.app.group.models import Group
 
 from .models import Markup
 
@@ -14,24 +13,9 @@ class MarkupRemoveChildrenSerializer(ModelSerializer):
     children = TableChildrenPrimaryKeyRelatedField(
         many=True,
         obj_name='Markup',
-        required=False,
+        required=True,
         child_instance_cls=lambda parent: Markup.child_instance_cls_for_parent(
             parent),
-        additional_instance_query=lambda parent, instance: models.Q(
-            markups=instance
-        ),
-        error_message=(
-            'The child {child_instance_name} with ID {pk_value} either does '
-            'not exist, does not belong to the same parent '
-            '({parent_instance_name} with ID {parent_pk_value}) as the '
-            '{obj_name}, or is not a registered child of {obj_name}.'
-        )
-    )
-    groups = TableChildrenPrimaryKeyRelatedField(
-        many=True,
-        obj_name='Markup',
-        required=False,
-        child_instance_cls=Group,
         additional_instance_query=lambda parent, instance: models.Q(
             markups=instance
         ),
@@ -45,13 +29,10 @@ class MarkupRemoveChildrenSerializer(ModelSerializer):
 
     class Meta:
         model = Markup
-        fields = ('children', 'groups')
+        fields = ('children', )
 
     def update(self, instance, validated_data):
-        if 'groups' in validated_data:
-            instance.groups.remove(*validated_data['groups'])
-        if 'children' in validated_data:
-            instance.remove_children(*validated_data['children'])
+        instance.remove_children(*validated_data['children'])
         return instance
 
 
@@ -59,32 +40,13 @@ class MarkupAddChildrenSerializer(ModelSerializer):
     children = TableChildrenPrimaryKeyRelatedField(
         obj_name='Markup',
         many=True,
-        required=False,
+        required=True,
         child_instance_cls=lambda parent: Markup.child_instance_cls_for_parent(
             parent),
         exclude_instance_query=lambda parent, instance: models.Q(
             pk__in=[
                 obj[0]
-                for obj in list(instance.groups.only('pk').values_list('pk'))
-            ]
-        ),
-        error_message=(
-            'The child {child_instance_name} with ID {pk_value} either does '
-            'not exist, does not belong to the same parent '
-            '({parent_instance_name} with ID {parent_pk_value}) as the '
-            '{obj_name}, or is already a registered child of {obj_name}.'
-        )
-    )
-
-    groups = TableChildrenPrimaryKeyRelatedField(
-        obj_name='Markup',
-        many=True,
-        required=False,
-        child_instance_cls=Group,
-        exclude_instance_query=lambda parent, instance: models.Q(
-            pk__in=[
-                obj[0]
-                for obj in list(instance.groups.only('pk').values_list('pk'))
+                for obj in list(instance.children.only('pk').values_list('pk'))
             ]
         ),
         error_message=(
@@ -97,13 +59,10 @@ class MarkupAddChildrenSerializer(ModelSerializer):
 
     class Meta:
         model = Markup
-        fields = ('children', 'groups')
+        fields = ('children',)
 
     def update(self, instance, validated_data):
-        if 'groups' in validated_data:
-            instance.groups.add(*validated_data['groups'])
-        if 'children' in validated_data:
-            instance.add_children(*validated_data['children'])
+        instance.add_children(*validated_data['children'])
         return instance
 
 
@@ -139,27 +98,12 @@ class MarkupSerializer(ModelSerializer):
         child_instance_cls=lambda parent: Markup.child_instance_cls_for_parent(
             parent)
     )
-    groups = TableChildrenPrimaryKeyRelatedField(
-        obj_name='Markup',
-        many=True,
-        required=False,
-        child_instance_cls=Group
-    )
-    group = TableChildrenPrimaryKeyRelatedField(
-        obj_name='Markup',
-        required=False,
-        allow_null=True,
-        child_instance_cls=lambda parent: Group.child_instance_cls_for_parent(
-            parent),
-        write_only=True,
-    )
 
     class Meta:
         model = Markup
         fields = (
             'id', 'identifier', 'description', 'created_by', 'created_at',
-            'updated_by', 'updated_at', 'rate', 'unit', 'children',
-            'groups', 'type', 'group')
+            'updated_by', 'updated_at', 'rate', 'unit', 'children', 'type')
 
     def create(self, validated_data, **kwargs):
         children = validated_data.pop('children', None)

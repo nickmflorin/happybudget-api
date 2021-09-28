@@ -35,7 +35,6 @@ def test_get_budget_subaccount_subaccount_markups(api_client, user, models,
         "updated_at": "2020-01-01 00:00:00",
         "created_by": user.pk,
         "updated_by": user.pk,
-        "groups": [],
         "children": [child_subaccount.pk]
     }]
 
@@ -80,7 +79,6 @@ def test_create_budget_subaccount_subaccount_markup(api_client, user,
         "updated_at": "2020-01-01 00:00:00",
         "created_by": user.pk,
         "updated_by": user.pk,
-        "groups": [],
         "children": [child_subaccount.pk]
     }
 

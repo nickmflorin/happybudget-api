@@ -29,8 +29,7 @@ def test_get_budget_subaccount_subaccount_groups(api_client, user,
         "color": group.color,
         "updated_by": user.pk,
         "created_by": user.pk,
-        "children": [child_subaccount.pk],
-        "children_markups": []
+        "children": [child_subaccount.pk]
     }]
 
 
@@ -60,8 +59,7 @@ def test_get_template_subaccount_subaccount_groups(api_client, user,
         "color": group.color,
         "updated_by": user.pk,
         "created_by": user.pk,
-        "children": [child_subaccount.pk],
-        "children_markups": []
+        "children": [child_subaccount.pk]
     }]
 
 
@@ -99,8 +97,7 @@ def test_create_budget_subaccount_subaccount_group(api_client, user,
         "color": '#a1887f',
         "updated_by": user.pk,
         "created_by": user.pk,
-        "children": [child_subaccount.pk],
-        "children_markups": []
+        "children": [child_subaccount.pk]
     }
 
 
@@ -139,8 +136,7 @@ def test_create_template_subaccount_subaccount_group(api_client, user,
         "color": '#a1887f',
         "updated_by": user.pk,
         "created_by": user.pk,
-        "children": [child_subaccount.pk],
-        "children_markups": []
+        "children": [child_subaccount.pk]
     }
 
 

@@ -35,12 +35,6 @@ class Markup(models.Model):
         on_delete=models.CASCADE,
         editable=False
     )
-    group = models.ForeignKey(
-        to='group.Group',
-        null=True,
-        on_delete=models.SET_NULL,
-        related_name='children_markups'
-    )
     content_type = models.ForeignKey(
         to=ContentType,
         on_delete=models.CASCADE,

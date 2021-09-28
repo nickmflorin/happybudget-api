@@ -64,15 +64,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         fields = (
             'first_name', 'last_name', 'email', 'password')
 
-    def validate(self, attrs):
-        attrs.update(
-            is_admin=False,
-            is_staff=False,
-            is_superuser=False,
-            is_active=True
-        )
-        return attrs
-
 
 class SimpleUserSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(read_only=True)

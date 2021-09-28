@@ -15,7 +15,6 @@ def test_registration(api_client, models):
         "first_name": "Jack",
         "last_name": "Johnson",
         "email": "jjohnson@gmail.com",
-        "username": "jjohnson@gmail.com",
         "is_active": True,
         "is_admin": False,
         "is_superuser": False,
@@ -33,7 +32,6 @@ def test_registration(api_client, models):
     assert user.first_name == "Jack"
     assert user.last_name == "Johnson"
     assert user.email == "jjohnson@gmail.com"
-    assert user.username == "jjohnson@gmail.com"
     assert user.is_staff is False
     assert user.is_admin is False
     assert user.is_superuser is False
@@ -58,7 +56,6 @@ def test_update_logged_in_user(api_client, user):
         "first_name": "New First Name",
         "last_name": "New Last Name",
         "email": user.email,
-        "username": user.username,
         "is_active": True,
         "is_admin": False,
         "is_superuser": False,

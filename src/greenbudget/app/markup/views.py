@@ -51,7 +51,6 @@ class MarkupViewSet(
     def remove_children(self, request, *args, **kwargs):
         instance = self.get_object()
         original_pk = instance.pk
-
         serializer = MarkupRemoveChildrenSerializer(
             instance=instance,
             data=request.data,

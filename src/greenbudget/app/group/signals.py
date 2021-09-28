@@ -19,7 +19,6 @@ logger = logging.getLogger('signals')
 @dispatch.receiver(signals.pre_save, sender=TemplateAccount)
 @dispatch.receiver(signals.pre_save, sender=BudgetSubAccount)
 @dispatch.receiver(signals.pre_save, sender=TemplateSubAccount)
-@dispatch.receiver(signals.pre_save, sender=Markup)
 def validate_group(instance, **kwargs):
     if instance.group is not None:
         if instance.group.parent != instance.parent:
@@ -38,7 +37,6 @@ def validate_group(instance, **kwargs):
 @signals.field_changed_receiver('group', sender=TemplateAccount)
 @signals.field_changed_receiver('group', sender=BudgetSubAccount)
 @signals.field_changed_receiver('group', sender=TemplateSubAccount)
-@signals.field_changed_receiver('group', sender=Markup)
 def delete_empty_group(instance, **kwargs):
     # Check if the object had been previously assigned a Group that is now
     # empty after the object is moved out of the Group.

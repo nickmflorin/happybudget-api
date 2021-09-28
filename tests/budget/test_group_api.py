@@ -23,8 +23,7 @@ def test_get_budget_account_groups(api_client, user,
         "color": group.color,
         "updated_by": user.pk,
         "created_by": user.pk,
-        "children": [account.pk],
-        "children_markups": []
+        "children": [account.pk]
     }]
 
 
@@ -59,8 +58,7 @@ def test_create_budget_account_group(api_client, user, create_budget_account,
         "color": '#a1887f',
         "updated_by": user.pk,
         "created_by": user.pk,
-        "children": [account.pk],
-        "children_markups": []
+        "children": [account.pk]
     }
 
 

@@ -23,8 +23,7 @@ def test_get_template_account_groups(api_client, user, create_template,
         "color": group.color,
         "updated_by": user.pk,
         "created_by": user.pk,
-        "children": [account.pk],
-        "children_markups": []
+        "children": [account.pk]
     }]
 
 
@@ -59,8 +58,7 @@ def test_create_group(api_client, user, create_template,
         "color": '#a1887f',
         "updated_by": user.pk,
         "created_by": user.pk,
-        "children": [account.pk],
-        "children_markups": []
+        "children": [account.pk]
     }
 
 

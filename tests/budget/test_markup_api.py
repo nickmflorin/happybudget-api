@@ -26,7 +26,6 @@ def test_get_budget_account_markups(api_client, user, models,
         "updated_at": "2020-01-01 00:00:00",
         "created_by": user.pk,
         "updated_by": user.pk,
-        "groups": [],
         "children": [account.pk]
     }]
 
@@ -65,7 +64,6 @@ def test_create_markup(api_client, user, create_budget_account,
         "updated_at": "2020-01-01 00:00:00",
         "created_by": user.pk,
         "updated_by": user.pk,
-        "groups": [],
         "children": [account.pk]
     }
 

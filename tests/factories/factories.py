@@ -203,15 +203,6 @@ class MarkupFactory(CustomModelFactory):
                 self.accounts.add(child)
 
     @factory.post_generation
-    def groups(self, create, extracted, **kwargs):
-        if not create:
-            return
-        if extracted:
-            for child in extracted:
-                # pylint: disable=no-member
-                self.groups.add(child)
-
-    @factory.post_generation
     def subaccounts(self, create, extracted, **kwargs):
         if not create:
             return
@@ -229,15 +220,6 @@ class GroupFactory(CustomModelFactory):
 
     class Meta:
         model = Group
-
-    @factory.post_generation
-    def markups(self, create, extracted, **kwargs):
-        if not create:
-            return
-        if extracted:
-            for markup in extracted:
-                # pylint: disable=no-member
-                self.markups.add(markup)
 
 
 class AccountFactory(CustomModelFactory):

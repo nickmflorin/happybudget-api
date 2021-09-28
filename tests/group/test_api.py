@@ -19,8 +19,7 @@ def test_get_budget_account_group(api_client, user, create_budget_account,
         "color": None,
         "created_by": user.pk,
         "updated_by": user.pk,
-        "children": [account.pk],
-        "children_markups": []
+        "children": [account.pk]
     }
 
 
@@ -42,8 +41,7 @@ def test_get_template_account_group(api_client, user, create_template,
         "color": None,
         "created_by": user.pk,
         "updated_by": user.pk,
-        "children": [account.pk],
-        "children_markups": []
+        "children": [account.pk]
     }
 
 
@@ -69,8 +67,7 @@ def test_get_budget_subaccount_group(api_client, user, create_budget_account,
         "color": None,
         "updated_by": user.pk,
         "created_by": user.pk,
-        "children": [subaccount.pk],
-        "children_markups": []
+        "children": [subaccount.pk]
     }
 
 
@@ -96,33 +93,27 @@ def test_get_template_subaccount_group(api_client, user, create_template,
         "color": None,
         "updated_by": user.pk,
         "created_by": user.pk,
-        "children": [subaccount.pk],
-        "children_markups": []
+        "children": [subaccount.pk]
     }
 
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_update_budget_account_group(api_client, user, create_group,
-        create_budget_account, create_budget, create_markup):
+        create_budget_account, create_budget):
     budget = create_budget()
     account = create_budget_account(parent=budget)
     group = create_group(name="Group Name", parent=budget)
-    markups = [create_markup(parent=budget), create_markup(parent=budget)]
 
     api_client.force_login(user)
     response = api_client.patch("/v1/groups/%s/" % group.pk, data={
         'name': 'Group Name',
-        'children': [account.pk],
-        'children_markups': [m.pk for m in markups]
+        'children': [account.pk]
     })
     group.refresh_from_db()
     assert group.name == "Group Name"
     assert group.children.count() == 1
     assert group.children.first() == account
     assert group.parent == budget
-    assert group.children_markups.count() == 2
-    assert group.children_markups.all()[0] == markups[0]
-    assert group.children_markups.all()[1] == markups[1]
 
     assert response.json() == {
         "id": group.pk,
@@ -133,8 +124,7 @@ def test_update_budget_account_group(api_client, user, create_group,
         "color": None,
         "created_by": user.pk,
         "updated_by": user.pk,
-        "children": [account.pk],
-        "children_markups": [m.pk for m in markups]
+        "children": [account.pk]
     }
 
 
@@ -165,8 +155,7 @@ def test_update_template_account_group(api_client, user, create_template,
         "color": None,
         "created_by": user.pk,
         "updated_by": user.pk,
-        "children": [account.pk],
-        "children_markups": []
+        "children": [account.pk]
     }
 
 
@@ -200,8 +189,7 @@ def test_update_budget_subaccount_group(api_client, user, create_budget_account,
         "color": None,
         "updated_by": user.pk,
         "created_by": user.pk,
-        "children": [subaccount.pk],
-        "children_markups": []
+        "children": [subaccount.pk]
     }
 
 
@@ -235,8 +223,7 @@ def test_update_template_subaccount_group(api_client, user, create_template,
         "color": None,
         "updated_by": user.pk,
         "created_by": user.pk,
-        "children": [subaccount.pk],
-        "children_markups": []
+        "children": [subaccount.pk]
     }
 
 
