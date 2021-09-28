@@ -14,7 +14,7 @@ class BudgetPdfSerializer(serializers.ModelSerializer):
     markup_contribution = serializers.FloatField(read_only=True)
     children = AccountPdfSerializer(many=True, read_only=True)
     groups = GroupSerializer(many=True, read_only=True)
- 
+
     class Meta:
         model = Budget
         fields = (
