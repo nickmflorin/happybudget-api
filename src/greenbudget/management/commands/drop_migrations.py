@@ -5,11 +5,11 @@ from greenbudget.management.base import CustomCommand
 from greenbudget.management.decorators import debug_only
 
 
+@debug_only
 class Command(CustomCommand):
     def add_arguments(self, parser):
         parser.add_argument('--app')
 
-    @debug_only
     @management.base.no_translations
     def handle(self, *args, **options):
         deleted = 0

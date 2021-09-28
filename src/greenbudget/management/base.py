@@ -9,6 +9,9 @@ class CustomCommandMixin(object):
     def warn(self, value):
         self.prompt(value, style_func=self.style.WARNING)
 
+    def warning(self, value):
+        self.prompt(value, style_func=self.style.WARNING)
+
     def info(self, value):
         self.prompt(value, style_func=self.style.HTTP_NOT_MODIFIED)
 

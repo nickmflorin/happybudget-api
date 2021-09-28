@@ -4,14 +4,39 @@ from django.conf import settings
 from django.core import management
 
 
-def debug_only(func):
-    @functools.wraps(func)
-    def inner(*args, **kwargs):
+def debug_only(cls):
+    def add_arguments(instance, parser):
+        cls.__original_add_arguments__(instance, parser)
+        parser.add_argument(
+            '--force_prod',
+            action='store_true',
+            help='Force the command to run in production.',
+        )
+
+    def handle(instance, *args, **kwargs):
         if not settings.DEBUG:
-            raise management.base.CommandError(
-                "This command cannot be run in production.")
-        return func(*args, **kwargs)
-    return inner
+            if kwargs['force_prod'] is False:
+                raise management.base.CommandError(
+                    "This command cannot be run in production.")
+            else:
+                instance.warning(
+                    "You are about to run a debug only command in production, "
+                    "please make sure this is safe to do before continuing..."
+                )
+                if instance.query_boolean(prompt="Would you like to continue?"):
+                    return cls.__original_handle__(instance, *args, **kwargs)
+                else:
+                    instance.info("Aborting...")
+        else:
+            return cls.__original_handle__(instance, *args, **kwargs)
+
+    cls.__original_handle__ = cls.handle
+    cls.__original_add_arguments__ = cls.add_arguments
+
+    cls.add_arguments = add_arguments
+    cls.handle = handle
+
+    return cls
 
 
 def skippable(*prompts, argument=None):
