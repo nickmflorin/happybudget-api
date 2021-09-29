@@ -45,11 +45,10 @@ class AccountSerializer(AccountSimpleSerializer):
     markup_contribution = serializers.FloatField(read_only=True)
     children = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     group = TableChildrenPrimaryKeyRelatedField(
-        obj_name='Account',
+        obj_name='Group',
         required=False,
         allow_null=True,
-        child_instance_cls=lambda parent: Group.child_instance_cls_for_parent(
-            parent),
+        child_instance_cls=Group,
         write_only=True,
     )
 

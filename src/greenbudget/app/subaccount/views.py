@@ -24,7 +24,8 @@ from .serializers import (
     BudgetSubAccountSerializer,
     BudgetSubAccountDetailSerializer,
     TemplateSubAccountDetailSerializer,
-    SubAccountUnitSerializer
+    SubAccountUnitSerializer,
+    SubAccountSimpleSerializer
 )
 
 
@@ -168,6 +169,7 @@ class GenericSubAccountViewSet(viewsets.GenericViewSet):
     base_cls=lambda context: context.view.instance_cls,
     child_context_indicator='subaccount_context',
     get_budget=lambda instance: instance.budget,
+    child_context=lambda context: {"parent": context.instance},
     actions=[
         BulkDeleteAction(
             url_path='bulk-{action_name}-markups',
@@ -261,7 +263,13 @@ class SubAccountRecursiveViewSet(
     def instance_cls(self):
         return type(self.subaccount)
 
+    @property
+    def is_simple(self):
+        return 'simple' in self.request.query_params
+
     def get_serializer_class(self):
+        if self.is_simple:
+            return SubAccountSimpleSerializer
         if self.instance_cls is TemplateSubAccount:
             return TemplateSubAccountSerializer
         return BudgetSubAccountSerializer

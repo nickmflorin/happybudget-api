@@ -4,7 +4,8 @@ from django.db import models
 from rest_framework import viewsets, mixins, response, status, decorators
 
 from greenbudget.app.account.models import BudgetAccount
-from greenbudget.app.account.serializers import BudgetAccountSerializer
+from greenbudget.app.account.serializers import (
+    BudgetAccountSerializer, AccountSimpleSerializer)
 from greenbudget.app.account.views import GenericAccountViewSet
 from greenbudget.app.actual.models import Actual
 from greenbudget.app.actual.serializers import ActualSerializer
@@ -327,6 +328,15 @@ class BudgetAccountViewSet(
     budget_lookup_field = ("pk", "budget_pk")
     serializer_class = BudgetAccountSerializer
 
+    @property
+    def is_simple(self):
+        return 'simple' in self.request.query_params
+
+    def get_serializer_class(self):
+        if self.is_simple:
+            return AccountSimpleSerializer
+        return self.serializer_class
+
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context.update(
@@ -371,6 +381,7 @@ class GenericBudgetViewSet(viewsets.GenericViewSet):
     # in the response by default.  We do not want to double include it.
     include_budget_in_response=False,
     child_context_indicator='budget_context',
+    child_context=lambda context: {"parent": context.instance},
     perform_update=lambda serializer, context: serializer.save(
         updated_by=context.request.user
     ),

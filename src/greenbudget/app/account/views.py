@@ -17,6 +17,7 @@ from greenbudget.app.subaccount.models import (
 from greenbudget.app.subaccount.serializers import (
     BudgetSubAccountSerializer,
     TemplateSubAccountSerializer,
+    SubAccountSimpleSerializer
 )
 from greenbudget.app.subaccount.views import GenericSubAccountViewSet
 
@@ -122,6 +123,10 @@ class AccountSubAccountViewSet(
     """
     account_lookup_field = ("pk", "account_pk")
 
+    @property
+    def is_simple(self):
+        return 'simple' in self.request.query_params
+
     @cached_property
     def instance_cls(self):
         return type(self.account)
@@ -133,6 +138,8 @@ class AccountSubAccountViewSet(
         return TemplateSubAccount
 
     def get_serializer_class(self):
+        if self.is_simple:
+            return SubAccountSimpleSerializer
         if self.child_instance_cls is TemplateSubAccount:
             return TemplateSubAccountSerializer
         return BudgetSubAccountSerializer
@@ -183,6 +190,7 @@ class GenericAccountViewSet(viewsets.GenericViewSet):
     base_cls=lambda context: context.view.instance_cls,
     child_context_indicator='account_context',
     get_budget=lambda instance: instance.parent,
+    child_context=lambda context: {"parent": context.instance},
     actions=[
         BulkDeleteAction(
             url_path='bulk-{action_name}-markups',

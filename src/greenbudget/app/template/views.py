@@ -159,6 +159,7 @@ class GenericTemplateViewSet(viewsets.GenericViewSet):
     # Since the Template is the entity being updated, it will already be
     # included in the response by default.  We do not want to double include it.
     include_budget_in_response=False,
+    child_context=lambda context: {"parent": context.instance},
     budget_serializer=TemplateSerializer,
     perform_update=lambda serializer, context: serializer.save(  # noqa
         updated_by=context.request.user

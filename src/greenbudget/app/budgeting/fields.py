@@ -196,5 +196,3 @@ class BudgetFilteredQuerysetPKField(serializers.PrimaryKeyRelatedField):
 
         filter_kwargs = {self._budget_field: budget}
         return qs.filter(**filter_kwargs)
-
-

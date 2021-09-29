@@ -84,13 +84,13 @@ def test_create_budget_account(api_client, user, create_budget, models):
 
 
 def test_bulk_update_budget_accounts(api_client, user, create_budget,
-        create_budget_account):
-    with signals.disable():
-        budget = create_budget()
-        accounts = [
-            create_budget_account(parent=budget),
-            create_budget_account(parent=budget)
-        ]
+        create_budget_account, create_group):
+    budget = create_budget()
+    group = create_group(parent=budget)
+    accounts = [
+        create_budget_account(parent=budget),
+        create_budget_account(parent=budget)
+    ]
     api_client.force_login(user)
     response = api_client.patch(
         "/v1/budgets/%s/bulk-update-accounts/" % budget.pk,
@@ -100,10 +100,12 @@ def test_bulk_update_budget_accounts(api_client, user, create_budget,
                 {
                     'id': accounts[0].pk,
                     'description': 'New Description 1',
+                    'group': group.pk,
                 },
                 {
                     'id': accounts[1].pk,
                     'description': 'New Description 2',
+                    'group': group.pk,
                 }
             ]
         })
@@ -111,8 +113,10 @@ def test_bulk_update_budget_accounts(api_client, user, create_budget,
 
     accounts[0].refresh_from_db()
     assert accounts[0].description == "New Description 1"
+    assert accounts[0].group == group
     accounts[1].refresh_from_db()
     assert accounts[1].description == "New Description 2"
+    assert accounts[1].group == group
 
     # The data in the response refers to base the entity we are updating, A.K.A.
     # the Budget.

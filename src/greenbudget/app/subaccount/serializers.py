@@ -94,11 +94,10 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
     markup_contribution = serializers.FloatField(read_only=True)
     actual = serializers.FloatField(read_only=True)
     group = TableChildrenPrimaryKeyRelatedField(
-        obj_name='Sub Account',
+        obj_name='Group',
         required=False,
         allow_null=True,
-        child_instance_cls=lambda parent: Group.child_instance_cls_for_parent(
-            parent),
+        child_instance_cls=Group,
         write_only=True,
     )
     unit = TagField(
