@@ -62,14 +62,16 @@ def markups_changed(instance, reverse, action, **kwargs):
         BudgetSubAccount: estimate_subaccount
     }
     if action in ('post_add', 'post_remove'):
-        objs = kwargs['model'].objects.filter(pk__in=kwargs['pk_set'])
-        assert len(set([type(obj) for obj in objs])) in (0, 1)
         if reverse:
+            objs = kwargs['model'].objects.filter(pk__in=kwargs['pk_set'])
+            assert len(set([type(obj) for obj in objs])) in (0, 1)
+            # The instance here is the Markup instance being added.
             estimator = estimator_map[type(objs[0])]
             with signals.bulk_context:
                 for obj in objs:
                     estimator(obj)
         else:
+            # The instance here is the Account or SubAccount.
             estimator = estimator_map[type(instance)]
             estimator(instance)
 

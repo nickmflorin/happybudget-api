@@ -25,14 +25,18 @@ class MarkupViewSet(
     lookup_field = 'pk'
     serializer_class = MarkupSerializer
 
-    def get_serializer_context(self):
+    def get_serializer_context(self, parent=None):
         context = super().get_serializer_context()
         # The parent object is needed in context in order to update the children
         # of a Markup - but that will only happen in a PATCH request for this
         # view (POST request is handled by another view).
-        if self.detail is True:
+        if self.detail is True and parent is None:
             obj = self.get_object()
             context['parent'] = obj.parent
+        if parent is not None:
+            # The parent must be explicitly provided in some cases where the
+            # Markup instance may be deleted due to a lack of children.
+            context['parent'] = parent
         return context
 
     @cached_property
@@ -50,7 +54,14 @@ class MarkupViewSet(
         url_path='remove-children')
     def remove_children(self, request, *args, **kwargs):
         instance = self.get_object()
+
+        # We have to temporarily store the original values for these properties
+        # because when removing a Markup's children, the Markup may be deleted
+        # if it does not have anymore children after the designated children are
+        # removed.
         original_pk = instance.pk
+        original_parent = instance.parent
+
         serializer = MarkupRemoveChildrenSerializer(
             instance=instance,
             data=request.data,
@@ -61,13 +72,16 @@ class MarkupViewSet(
         instance = serializer.save()
 
         serializer_cls = self.get_serializer_class()
-        data = serializer_cls(instance).data
+        data = serializer_cls(
+            instance=instance,
+            context=self.get_serializer_context(parent=original_parent)
+        ).data
 
         # If the instance was deleted because it had no more children, we do
         # not want to return an instance with a null ID in the response - so
         # we must modify the response in this case.
         if instance.id is None:
-            data['id'] = original_pk
+            data['data']['id'] = original_pk
 
         return response.Response(data, status=status.HTTP_200_OK)
 
@@ -83,8 +97,11 @@ class MarkupViewSet(
         )
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
+
         serializer_cls = self.get_serializer_class()
-        return response.Response(
-            serializer_cls(instance).data,
-            status=status.HTTP_200_OK
-        )
+        data = serializer_cls(
+            instance=instance,
+            context=self.get_serializer_context()
+        ).data
+
+        return response.Response(data, status=status.HTTP_200_OK)

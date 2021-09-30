@@ -67,28 +67,18 @@ class PolymorphicNonPolymorphicSerializer(serializers.Serializer):
         config = self._find_config_for_instance(instance)
 
         options = {}
-        instance_type = getattr(instance, "type", None)
         if isinstance(config, (list, tuple)):
-            if len(config) != 1 and len(config) != 2 and len(config) != 3:
+            if len(config) not in (1, 2):
                 raise Exception("Invalid choice provided.")
             serializer_cls = self._configure_serializer_cls(config[0])
             if len(config) == 2:
-                if type(config[1]) is dict:
-                    options = config[1]
-                else:
-                    assert type(config[1]) is str, "Invalid choice."
-                    instance_type = config[1]
-            elif len(config) == 3:
-                assert type(config[1]) is str, "Invalid choice."
-                assert type(config[2]) is dict, \
+                assert type(config[1]) is dict, \
                     "Serializer keyword arguments must be a dict."
-                instance_type = config[1]
-                options = config[2]
+                options = config[1]
         else:
-            serializer_cls = self._configure_serializer_cls(config[0])
+            serializer_cls = self._configure_serializer_cls(config)
 
         data = serializer_cls(instance, **options).data
-        data["type"] = instance_type
         return data
 
 
@@ -98,78 +88,11 @@ class ModelSerializer(serializers.ModelSerializer):
     :obj:`serializers.ModelSerializer` that provides additional useful behavior
     for constructing tailored responses to fit the needs of the application.
 
-    The :obj:`ModelSerializer` provides (4) implementations that can
+    The :obj:`ModelSerializer` provides implementations that can
     be used to fine tune the behavior of a single serializer to fit multiple
     different use cases.  These implementations are:
 
-    (1) HTTP Field Toggling
-    -----------------------
-    This implementation allows the definitions of already defined fields on
-    the serializer to change depending on the context's HTTP request method
-    that the serializer is being used for.
-
-    This is extremely important when we want to use the same serializer for
-    both read/write operations where the serializer has foreign key or M2M
-    relationships.
-
-    The behavior toggling can be defined by including a `http_toggle`
-    :obj:`dict` on the serializer's Meta class which instructs the serializer
-    how to change field behavior for the provided HTTP methods.
-
-    Example:
-    ~~~~~~~
-    Let's assume with have a model `Child` and a model `Parent`, where `Child`
-    points to `Parent` by the means of a `ForeignKey` relationship:
-
-        class Child(db.Model):
-            name = models.CharField()
-            parent = models.ForeignKey(to=Parent, reverse_name="children")
-
-        class Parent(db.Model):
-            name = models.CharField()
-
-    Now, when we are sending PATCH/POST requests to either update a `Child`
-    instance or create a new `Child` instance, it is useful to specify the
-    `Parent` instance by it's Primary Key:
-
-        Request: POST "/children" { "parent": 1, "name": "Jack" }
-        Response: 201 {"parent": 1, "name": "Jack"}
-
-    However, when we want to send a GET request to either list all the instances
-    of `Child` or a single instance of `Child`, we want the parent to be
-    represented by a nested serializer.
-
-    This toggling can be accomplished by specifying the `http_toggle` attribute
-    on the associated serializer's Meta class to toggle the field to another
-    definition on specific HTTP requests:
-
-        class ParentSerializer(serializers.Serializer):
-            name = serializers.CharField()
-
-            class Meta:
-                model = Parent
-                fields = ('id', 'name')
-
-        class ChildSerializer(ModelSerializer):
-            name = serializers.CharField()
-            parent = ParentSerializer()
-
-            class Meta:
-                model = Child
-                http_toggle = {
-                    'parent': {
-                        ('POST', 'PATCH'):  (
-                            serializers.PrimaryKeyRelatedField,
-                            {"queryset": Parent.objects.all()}'
-                        )
-                    }
-                }
-
-    Now, when we send a POST/PATCH request to the endpoints associated with
-    the `Child` model, we can specify the `Parent` by it's primary key - but
-    still get the full serialized `Parent` on GET requests.
-
-    (2) Field Response Rendering
+    (1) Field Response Rendering
     ----------------------------
     This implementation is critically important to developing an API response
     contract that is consistent for a frontend client to use.
@@ -237,7 +160,7 @@ class ModelSerializer(serializers.ModelSerializer):
     we can still reference the `Parent` instance by PK for POST and PATCH
     requests.
 
-    (3) Explicit Field Nesting
+    (2) Explicit Field Nesting
     --------------------------
     This implementation allows fields to be included or excluded based on
     whether or not the serializer is nested inside of another serializer.
@@ -282,42 +205,6 @@ class ModelSerializer(serializers.ModelSerializer):
         self._nested = kwargs.pop('nested', False)
 
         super().__init__(*args, **kwargs)
-
-        # Fields that depend on HTTP methods have the lowest precedence.
-        toggle_when_nested = getattr(
-            self.Meta, 'http_toggle_when_nested', False)
-        if (hasattr(self.Meta, 'http_toggle')
-                and (self._nested is False or toggle_when_nested)):
-            if not isinstance(self.Meta.http_toggle, dict):
-                raise InvalidMetaValue('http_toggle', expected_type=dict)
-
-            for field, config in self.Meta.http_toggle.items():
-                if not isinstance(config, dict):
-                    raise InvalidMetaValue(
-                        'http_toggle.<value>', expected_type=dict)
-
-                if field not in self.fields:
-                    raise MissingSerializerField(field)
-
-                if self.context_request_method is not None:
-                    definition = None
-                    for k, v in config.items():
-                        if isinstance(k, tuple):
-                            if self.context_request_method.lower() in [
-                                    n.lower() for n in k]:
-                                definition = v
-                                break
-                        elif isinstance(k, str):
-                            if self.context_request_method.lower() == k.lower():
-                                definition = v
-                                break
-                        else:
-                            raise InvalidValue(
-                                'http_toggle.<field>.<key>',
-                                expected_type=(tuple, str)
-                            )
-                    if definition is not None:
-                        self.fields[field] = self._instantiate_field(definition)
 
         # Fields that are explicitly used to render responses take precedence
         # over HTTP toggled field behaviors - but not behaviors that are

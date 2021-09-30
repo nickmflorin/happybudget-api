@@ -3,7 +3,8 @@ from rest_framework import serializers, exceptions
 from greenbudget.lib import drf
 
 from greenbudget.app.budgeting.fields import TableChildrenPrimaryKeyRelatedField
-from greenbudget.app.budgeting.serializers import EntitySerializer
+from greenbudget.app.budgeting.serializers import (
+    SimpleEntityPolymorphicSerializer)
 from greenbudget.app.contact.models import Contact
 from greenbudget.app.fringe.models import Fringe
 from greenbudget.app.group.models import Group
@@ -149,8 +150,8 @@ class BudgetSubAccountSerializer(SubAccountSerializer):
 
 
 class BudgetSubAccountDetailSerializer(BudgetSubAccountSerializer):
-    ancestors = EntitySerializer(many=True, read_only=True)
-    siblings = EntitySerializer(many=True, read_only=True)
+    ancestors = SimpleEntityPolymorphicSerializer(many=True, read_only=True)
+    siblings = SimpleEntityPolymorphicSerializer(many=True, read_only=True)
 
     class Meta:
         model = BudgetSubAccount
@@ -165,8 +166,8 @@ class TemplateSubAccountSerializer(SubAccountSerializer):
 
 
 class TemplateSubAccountDetailSerializer(TemplateSubAccountSerializer):
-    ancestors = EntitySerializer(many=True, read_only=True)
-    siblings = EntitySerializer(many=True, read_only=True)
+    ancestors = SimpleEntityPolymorphicSerializer(many=True, read_only=True)
+    siblings = SimpleEntityPolymorphicSerializer(many=True, read_only=True)
 
     class Meta:
         model = TemplateSubAccount

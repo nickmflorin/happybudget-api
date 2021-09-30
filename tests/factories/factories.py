@@ -183,8 +183,6 @@ class MarkupFactory(CustomModelFactory):
     """
     A DjangoModelFactory to to create instances of :obj:`Markup`.
     """
-    rate = 1.00
-    unit = Markup.UNITS.percent
     created_by = factory.SubFactory(UserFactory)
     updated_by = factory.SubFactory(UserFactory)
     identifier = factory.Faker('name')
@@ -192,6 +190,10 @@ class MarkupFactory(CustomModelFactory):
 
     class Meta:
         model = Markup
+
+    class Params:
+        flat = factory.Trait(unit=Markup.UNITS.flat)
+        percent = factory.Trait(unit=Markup.UNITS.percent)
 
     @factory.post_generation
     def accounts(self, create, extracted, **kwargs):

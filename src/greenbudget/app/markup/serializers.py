@@ -5,6 +5,7 @@ from greenbudget.lib.drf.serializers import ModelSerializer
 from greenbudget.lib.drf.fields import ModelChoiceField
 
 from greenbudget.app.budgeting.fields import TableChildrenPrimaryKeyRelatedField
+from greenbudget.app.budgeting.serializers import BudgetParentContextSerializer
 
 from .models import Markup
 
@@ -66,7 +67,7 @@ class MarkupAddChildrenSerializer(ModelSerializer):
         return instance
 
 
-class MarkupSerializer(ModelSerializer):
+class MarkupSerializer(BudgetParentContextSerializer):
     id = serializers.IntegerField(read_only=True)
     type = serializers.CharField(read_only=True)
     identifier = serializers.CharField(

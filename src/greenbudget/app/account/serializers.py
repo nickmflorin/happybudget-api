@@ -4,7 +4,8 @@ from greenbudget.lib.drf.serializers import (
     ModelSerializer)
 
 from greenbudget.app.budgeting.fields import TableChildrenPrimaryKeyRelatedField
-from greenbudget.app.budgeting.serializers import EntitySerializer
+from greenbudget.app.budgeting.serializers import (
+    SimpleEntityPolymorphicSerializer)
 from greenbudget.app.group.models import Group
 from greenbudget.app.group.serializers import GroupSerializer
 from greenbudget.app.subaccount.serializers import SubAccountPdfSerializer
@@ -72,8 +73,8 @@ class BudgetAccountSerializer(AccountSerializer):
 
 
 class BudgetAccountDetailSerializer(BudgetAccountSerializer):
-    ancestors = EntitySerializer(many=True, read_only=True)
-    siblings = EntitySerializer(many=True, read_only=True)
+    ancestors = SimpleEntityPolymorphicSerializer(many=True, read_only=True)
+    siblings = SimpleEntityPolymorphicSerializer(many=True, read_only=True)
 
     class Meta(BudgetAccountSerializer.Meta):
         fields = BudgetAccountSerializer.Meta.fields + (
@@ -87,8 +88,8 @@ class TemplateAccountSerializer(AccountSerializer):
 
 
 class TemplateAccountDetailSerializer(TemplateAccountSerializer):
-    ancestors = EntitySerializer(many=True, read_only=True)
-    siblings = EntitySerializer(many=True, read_only=True)
+    ancestors = SimpleEntityPolymorphicSerializer(many=True, read_only=True)
+    siblings = SimpleEntityPolymorphicSerializer(many=True, read_only=True)
 
     class Meta(TemplateAccountSerializer.Meta):
         fields = TemplateAccountSerializer.Meta.fields + (

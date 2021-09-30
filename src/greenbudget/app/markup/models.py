@@ -90,17 +90,17 @@ class Markup(models.Model):
             return self.subaccounts
         return self.accounts
 
-    def set_children(self, children):
+    def set_children(self, *children):
         operator = self.get_children_operator()
-        operator.set(children)
+        operator.set(*children)
 
-    def remove_children(self, children):
+    def remove_children(self, *children):
         operator = self.get_children_operator()
-        operator.remove(children)
+        operator.remove(*children)
 
-    def add_children(self, children):
+    def add_children(self, *children):
         operator = self.get_children_operator()
-        operator.add(children)
+        operator.add(*children)
 
     @property
     def budget(self):

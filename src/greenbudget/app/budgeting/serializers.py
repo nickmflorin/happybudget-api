@@ -3,34 +3,70 @@ from greenbudget.lib.drf.bulk_serializers import (
     create_bulk_update_serializer as create_generic_bulk_update_serializer,
     create_bulk_delete_serializer as create_generic_bulk_delete_serializer
 )
-from greenbudget.lib.drf.serializers import PolymorphicNonPolymorphicSerializer
+from greenbudget.lib.drf.serializers import (
+    PolymorphicNonPolymorphicSerializer,
+    ModelSerializer
+)
 
 from greenbudget.app import signals
-from greenbudget.app.account.models import Account
+from greenbudget.app.account.models import (
+    Account, BudgetAccount, TemplateAccount)
 from greenbudget.app.budget.models import Budget
-from greenbudget.app.subaccount.models import SubAccount
+from greenbudget.app.subaccount.models import (
+    SubAccount, BudgetSubAccount, TemplateSubAccount)
 from greenbudget.app.template.models import Template
 
 
-class EntitySerializer(PolymorphicNonPolymorphicSerializer):
+class SimpleEntityPolymorphicSerializer(PolymorphicNonPolymorphicSerializer):
     choices = {
-        Account: (
-            "greenbudget.app.account.serializers.AccountSimpleSerializer",
-            "account"
-        ),
-        SubAccount: (
-            "greenbudget.app.subaccount.serializers.SubAccountSimpleSerializer",
-            "subaccount"
-        ),
-        Budget: (
-            "greenbudget.app.budget.serializers.BaseBudgetSerializer",
-            "budget"
-        ),
-        Template: (
-            "greenbudget.app.budget.serializers.BaseBudgetSerializer",
-            "template"
-        )
+        Account: "greenbudget.app.account.serializers.AccountSimpleSerializer",
+        SubAccount: "greenbudget.app.subaccount.serializers.SubAccountSimpleSerializer",  # noqa
+        Budget: "greenbudget.app.budget.serializers.BaseBudgetSerializer",
+        Template: "greenbudget.app.budget.serializers.BaseBudgetSerializer",
     }
+
+
+class EntityPolymorphicSerializer(PolymorphicNonPolymorphicSerializer):
+    choices = {
+        BudgetAccount: "greenbudget.app.account.serializers.BudgetAccountSerializer",  # noqa
+        BudgetSubAccount: "greenbudget.app.subaccount.serializers.BudgetSubAccountSerializer",  # noqa
+        TemplateAccount: "greenbudget.app.account.serializers.TemplateAccountSerializer",  # noqa
+        TemplateSubAccount: "greenbudget.app.subaccount.serializersTemplateSubAccountSerializer",  # noqa
+        Budget: "greenbudget.app.budget.serializers.BudgetSerializer",
+        Template: "greenbudget.app.template.serializers.TemplateSerializer",
+    }
+
+
+class BudgetParentContextSerializer(ModelSerializer):
+    class Meta:
+        abstract = True
+
+    def __init__(self, *args, **kwargs):
+        self._only_model = kwargs.pop('only_model', False)
+        super().__init__(*args, **kwargs)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if self._only_model:
+            return data
+
+        if self.context['request'].method in ('POST', 'PATCH'):
+            parent = instance.parent
+            parent.refresh_from_db()
+            if isinstance(parent, Budget):
+                return {
+                    "data": data,
+                    "budget": EntityPolymorphicSerializer(instance=parent).data
+                }
+            else:
+                budget = instance.parent.budget
+                budget.refresh_from_db()
+                return {
+                    "data": data,
+                    "budget": EntityPolymorphicSerializer(instance=budget).data,
+                    "parent": EntityPolymorphicSerializer(instance=parent).data,
+                }
+        return data
 
 
 def create_bulk_create_serializer(base_cls, child_cls, child_serializer_cls,

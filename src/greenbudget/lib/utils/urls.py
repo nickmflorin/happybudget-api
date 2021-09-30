@@ -208,23 +208,3 @@ def relativize_url(url):
     if netloc != possible_netloc:
         return url
     return urlunsplit(['', '', path, query_string, fragment])
-
-
-def validate_domain(url, white_list=None):
-    white_list = white_list or []
-
-    try:
-        url_scheme, netloc, path, query_string, fragment = urlsplit(url)
-    except ValueError:
-        return False
-    else:
-        if url_scheme != "https":
-            return False
-        elif not white_list:
-            return True
-        whitelist = {domain.strip() for domain in white_list.split(',')}
-        for domain in whitelist:
-            if netloc == domain or (
-                    domain[0] == "*" and netloc.endswith(domain[1:])):
-                return True
-        return False
