@@ -67,10 +67,6 @@ class Fringe(models.Model):
         )
 
     @property
-    def num_times_used(self):
-        return 1  # Temporary - needs to be built in.
-
-    @property
     def unit_name(self):
         if self.unit is None:
             return ""

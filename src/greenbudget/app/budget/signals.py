@@ -37,17 +37,9 @@ def mark_budget_updated(instance):
     queue_in_context=True
 )
 def estimate_budget(instance):
-    instance.establish_all()
-    logger.info(
-        "Updating %s %s -> Estimated: %s"
-        % (type(instance).__name__, instance.pk, instance.estimated)
-    )
+    instance.estimate()
     instance.save(
-        update_fields=[
-            'estimated',
-            'fringe_contribution',
-            'markup_contribution'
-        ],
+        update_fields=list(instance.CALCULATED_FIELDS),
         suppress_budget_update=True
     )
 
@@ -57,7 +49,7 @@ def estimate_budget(instance):
     queue_in_context=True
 )
 def actualize_budget(instance):
-    instance.establish_actual()
+    instance.actualize()
     logger.info(
         "Updating %s %s -> Actual: %s"
         % (type(instance).__name__, instance.pk, instance.actual)

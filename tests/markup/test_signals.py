@@ -34,10 +34,10 @@ def test_budget_account_markups_change(create_budget_account, create_budget,
         )
     ]
     account.refresh_from_db()
-    assert account.real_estimated == 1020.0
+    assert account.nominal_value + account.markup_contribution == 1020.0
 
     account.markups.remove(markups[0])
-    assert account.real_estimated == 920.0
+    assert account.nominal_value + account.markup_contribution == 920.0
 
 
 def test_budget_account_markup_changes(create_budget_account, create_budget,
@@ -72,13 +72,13 @@ def test_budget_account_markup_changes(create_budget_account, create_budget,
         )
     ]
     account.refresh_from_db()
-    assert account.real_estimated == 1020.0
+    assert account.nominal_value + account.markup_contribution == 1020.0
 
     markups[0].rate = 50
     markups[0].save()
 
     account.refresh_from_db()
-    assert account.real_estimated == 970.0
+    assert account.nominal_value + account.markup_contribution == 970.0
 
 
 def test_budget_subaccount_markups_change(create_budget_account, create_budget,
@@ -106,18 +106,18 @@ def test_budget_subaccount_markups_change(create_budget_account, create_budget,
         )
     ]
     subaccount.refresh_from_db()
-    assert subaccount.estimated == 400.0
-    assert subaccount.real_estimated == 620.0
+    assert subaccount.nominal_value == 400.0
+    assert subaccount.markup_contribution == 220.0
 
     account.refresh_from_db()
-    assert account.estimated == 400.0
-    assert account.real_estimated == 620.0
+    assert account.nominal_value == 400.0
+    assert account.accumulated_markup_contribution == 220.0
 
     subaccount.markups.remove(markups[0])
-    assert subaccount.estimated == 400.0
-    assert subaccount.real_estimated == 520.0
-    assert account.estimated == 400.0
-    assert account.real_estimated == 520.0
+    assert subaccount.nominal_value == 400.0
+    assert subaccount.markup_contribution == 120.0
+    assert account.nominal_value == 400.0
+    assert account.accumulated_markup_contribution == 120.0
 
 
 def test_budget_subaccount_markup_changed(create_budget_account, create_budget,
@@ -145,23 +145,23 @@ def test_budget_subaccount_markup_changed(create_budget_account, create_budget,
         )
     ]
     subaccount.refresh_from_db()
-    assert subaccount.estimated == 400.0
-    assert subaccount.real_estimated == 620.0
+    assert subaccount.nominal_value == 400.0
+    assert subaccount.markup_contribution == 220.0
 
     account.refresh_from_db()
-    assert account.estimated == 400.0
-    assert account.real_estimated == 620.0
+    assert account.nominal_value == 400.0
+    assert account.accumulated_markup_contribution == 220.0
 
     markups[0].rate = 50
     markups[0].save()
 
     subaccount.refresh_from_db()
-    assert subaccount.estimated == 400.0
-    assert subaccount.real_estimated == 570.0
+    assert subaccount.nominal_value == 400.0
+    assert subaccount.markup_contribution == 170.0
 
     account.refresh_from_db()
-    assert account.estimated == 400.0
-    assert account.real_estimated == 570.0
+    assert account.nominal_value == 400.0
+    assert account.accumulated_markup_contribution == 170.0
 
 
 def test_budget_account_markup_deleted(create_budget_account, create_budget,
@@ -196,10 +196,10 @@ def test_budget_account_markup_deleted(create_budget_account, create_budget,
         )
     ]
     account.refresh_from_db()
-    assert account.real_estimated == 1020.0
+    assert account.nominal_value + account.markup_contribution == 1020.0
     markups[0].delete()
     account.refresh_from_db()
-    assert account.real_estimated == 920.0
+    assert account.nominal_value + account.markup_contribution == 920.0
 
 
 def test_budget_subaccount_markup_deleted(create_budget_account, create_budget,
@@ -227,22 +227,22 @@ def test_budget_subaccount_markup_deleted(create_budget_account, create_budget,
         )
     ]
     subaccount.refresh_from_db()
-    assert subaccount.estimated == 400.0
-    assert subaccount.real_estimated == 620.0
+    assert subaccount.nominal_value == 400.0
+    assert subaccount.markup_contribution == 220.0
 
     account.refresh_from_db()
-    assert account.estimated == 400.0
-    assert account.real_estimated == 620.0
+    assert account.nominal_value == 400.0
+    assert account.accumulated_markup_contribution == 220.0
 
     markups[0].delete()
 
     subaccount.refresh_from_db()
-    assert subaccount.estimated == 400.0
-    assert subaccount.real_estimated == 520.0
+    assert subaccount.nominal_value == 400.0
+    assert subaccount.markup_contribution == 120.0
 
     account.refresh_from_db()
-    assert account.estimated == 400.0
-    assert account.real_estimated == 520.0
+    assert account.nominal_value == 400.0
+    assert account.accumulated_markup_contribution == 120.0
 
 
 def test_budget_account_markup_children_constraint(create_budget_account,

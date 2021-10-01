@@ -24,9 +24,11 @@ def test_get_template_accounts(api_client, user, create_template_account,
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
             "type": "account",
-            "estimated": 0.0,
-            "fringe_contribution": 0.0,
+            "nominal_value": 0.0,
+            "accumulated_value": 0.0,
+            "accumulated_fringe_contribution": 0.0,
             "markup_contribution": 0.0,
+            "accumulated_markup_contribution": 0.0,
             "actual": 0.0,
             "children": [],
             "created_by": user.pk,
@@ -39,10 +41,11 @@ def test_get_template_accounts(api_client, user, create_template_account,
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
             "type": "account",
-            "estimated": 0.0,
-            "fringe_contribution": 0.0,
+            "nominal_value": 0.0,
+            "accumulated_value": 0.0,
+            "accumulated_fringe_contribution": 0.0,
             "markup_contribution": 0.0,
-            "actual": 0.0,
+            "accumulated_markup_contribution": 0.0,
             "actual": 0.0,
             "children": [],
             "created_by": user.pk,
@@ -71,9 +74,11 @@ def test_create_template_account(api_client, user, create_template, models):
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
         "type": "account",
-        "estimated": 0.0,
-        "fringe_contribution": 0.0,
+        "nominal_value": 0.0,
+        "accumulated_value": 0.0,
+        "accumulated_fringe_contribution": 0.0,
         "markup_contribution": 0.0,
+        "accumulated_markup_contribution": 0.0,
         "actual": 0.0,
         "children": [],
         "created_by": user.pk,
@@ -115,7 +120,7 @@ def test_bulk_update_template_accounts(api_client, user, create_template,
     # The data in the response refers to base the entity we are updating, A.K.A.
     # the Budget.
     assert response.json()['data']['id'] == template.pk
-    assert response.json()['data']['estimated'] == 0.0
+    assert response.json()['data']['nominal_value'] == 0.0
     assert response.json()['data']['actual'] == 0.0
 
 
@@ -188,7 +193,7 @@ def test_bulk_create_template_accounts(api_client, user, create_template,
     # The data in the response refers to base the entity we are updating, A.K.A.
     # the Budget.
     assert response.json()['data']['id'] == template.pk
-    assert response.json()['data']['estimated'] == 0.0
+    assert response.json()['data']['nominal_value'] == 0.0
     assert response.json()['data']['actual'] == 0.0
 
 
@@ -211,9 +216,7 @@ def test_bulk_delete_template_accounts(api_client, user, create_template,
         multiplier=1
     )
     create_template_subaccount(
-
         parent=accounts[1],
-        estimated=100,
         quantity=1,
         rate=100,
         multiplier=1
@@ -229,9 +232,9 @@ def test_bulk_delete_template_accounts(api_client, user, create_template,
     # The data in the response refers to base the entity we are updating, A.K.A.
     # the Budget.
     assert response.json()['data']['id'] == template.pk
-    assert response.json()['data']['estimated'] == 0.0
+    assert response.json()['data']['nominal_value'] == 0.0
     assert response.json()['data']['actual'] == 0.0
 
     template.refresh_from_db()
-    assert template.estimated == 0.0
+    assert template.nominal_value == 0.0
     assert template.actual == 0.0

@@ -28,7 +28,6 @@ def test_get_template_fringes(api_client, user, create_template, create_fringe,
             "updated_at": "2020-01-01 00:00:00",
             "rate": fringes[0].rate,
             "cutoff": fringes[0].cutoff,
-            "num_times_used": fringes[0].num_times_used,
             "color": None,
             "unit": {
                 "id": fringes[0].unit,
@@ -46,7 +45,6 @@ def test_get_template_fringes(api_client, user, create_template, create_fringe,
             "updated_at": "2020-01-01 00:00:00",
             "rate": fringes[1].rate,
             "cutoff": fringes[1].cutoff,
-            "num_times_used": fringes[1].num_times_used,
             "color": None,
             "unit": {
                 "id": fringes[1].unit,
@@ -81,7 +79,6 @@ def test_create_template_fringe(api_client, user, create_template, models):
         "rate": 5.5,
         "cutoff": None,
         "color": None,
-        "num_times_used": fringe.num_times_used,
         "unit": {
             "id": 1,
             "name": models.Fringe.UNITS[1]
@@ -112,7 +109,6 @@ def test_bulk_create_template_fringes(api_client, user, create_template, models,
     )
     create_template_subaccount(
         parent=accounts[1],
-        estimated=100,
         quantity=1,
         rate=100,
         multiplier=1
@@ -140,7 +136,8 @@ def test_bulk_create_template_fringes(api_client, user, create_template, models,
     assert response.json()['data']['id'] == template.pk
     # The Fringe(s) should not have an affect on the calculated value of the
     # Budget because they have not yet been tied to a specific SubAccount.
-    assert response.json()['data']['estimated'] == 200.0
+    assert response.json()['data']['nominal_value'] == 200.0
+    assert response.json()['data']['accumulated_fringe_contribution'] == 0.0
     assert response.json()['data']['actual'] == 0.0
 
     # Make sure the actual Fringe(s) were created in the database.
@@ -156,7 +153,8 @@ def test_bulk_create_template_fringes(api_client, user, create_template, models,
     # The Fringe(s) should not have an affect on the calculated value of the
     # Budget because they have not yet been tied to a specific SubAccount.
     template.refresh_from_db()
-    assert template.estimated == 200.0
+    assert template.nominal_value == 200.0
+    assert template.accumulated_fringe_contribution == 0.0
     assert template.actual == 0.0
 
 
@@ -191,28 +189,28 @@ def test_bulk_update_template_fringes(api_client, user, create_template,
         )
     ]
     subaccounts[0].refresh_from_db()
-    assert subaccounts[0].estimated == 100.0
+    assert subaccounts[0].nominal_value == 100.0
     assert subaccounts[0].fringe_contribution == 70.0
     assert subaccounts[0].actual == 0.0
 
     subaccounts[1].refresh_from_db()
-    assert subaccounts[1].estimated == 200.0
+    assert subaccounts[1].nominal_value == 200.0
     assert subaccounts[1].fringe_contribution == 140.0
     assert subaccounts[1].actual == 0.0
 
     accounts[0].refresh_from_db()
-    assert accounts[0].estimated == 100.0
-    assert accounts[0].fringe_contribution == 70.0
+    assert accounts[0].nominal_value == 100.0
+    assert accounts[0].accumulated_fringe_contribution == 70.0
     assert accounts[0].actual == 0.0
 
     accounts[1].refresh_from_db()
-    assert accounts[1].estimated == 200.0
-    assert accounts[1].fringe_contribution == 140.0
+    assert accounts[1].nominal_value == 200.0
+    assert accounts[1].accumulated_fringe_contribution == 140.0
     assert accounts[1].actual == 0.0
 
     template.refresh_from_db()
-    assert template.estimated == 300.0
-    assert template.fringe_contribution == 210.0
+    assert template.nominal_value == 300.0
+    assert template.accumulated_fringe_contribution == 210.0
 
     api_client.force_login(user)
     response = api_client.patch(
@@ -227,8 +225,8 @@ def test_bulk_update_template_fringes(api_client, user, create_template,
     # The data in the response refers to base the entity we are updating, A.K.A.
     # the Budget.
     assert response.json()['data']['id'] == template.pk
-    assert response.json()['data']['estimated'] == 300.0
-    assert response.json()['data']['fringe_contribution'] == 390.0
+    assert response.json()['data']['nominal_value'] == 300.0
+    assert response.json()['data']['accumulated_fringe_contribution'] == 390.0
     assert response.json()['data']['actual'] == 0.0
 
     # Make sure the actual Fringe(s) were updated in the database.
@@ -239,30 +237,30 @@ def test_bulk_update_template_fringes(api_client, user, create_template,
 
     # Make sure the actual SubAccount(s) were updated in the database.
     subaccounts[0].refresh_from_db()
-    assert subaccounts[0].estimated == 100.0
+    assert subaccounts[0].nominal_value == 100.0
     assert subaccounts[0].fringe_contribution == 130.0
     assert subaccounts[0].actual == 0.0
 
     subaccounts[1].refresh_from_db()
-    assert subaccounts[1].estimated == 200.0
+    assert subaccounts[1].nominal_value == 200.0
     assert subaccounts[1].fringe_contribution == 260.0
     assert subaccounts[1].actual == 0.0
 
     # Make sure the actual Account(s) were updated in the database.
     accounts[0].refresh_from_db()
-    assert accounts[0].estimated == 100.0
-    assert accounts[0].fringe_contribution == 130.0
+    assert accounts[0].nominal_value == 100.0
+    assert accounts[0].accumulated_fringe_contribution == 130.0
     assert accounts[0].actual == 0.0
 
     accounts[1].refresh_from_db()
-    assert accounts[1].estimated == 200.0
-    assert accounts[1].fringe_contribution == 260.0
+    assert accounts[1].nominal_value == 200.0
+    assert accounts[1].accumulated_fringe_contribution == 260.0
     assert accounts[1].actual == 0.0
 
     # Make sure the Budget was updated in the database.
     template.refresh_from_db()
-    assert template.estimated == 300.0
-    assert template.fringe_contribution == 390.0
+    assert template.nominal_value == 300.0
+    assert template.accumulated_fringe_contribution == 390.0
     assert template.actual == 0.0
 
 
@@ -297,28 +295,28 @@ def test_bulk_delete_fringes(api_client, user, create_template, create_fringe,
         )
     ]
     subaccounts[0].refresh_from_db()
-    assert subaccounts[0].estimated == 100.0
+    assert subaccounts[0].nominal_value == 100.0
     assert subaccounts[0].fringe_contribution == 70.0
     assert subaccounts[0].actual == 0.0
 
     subaccounts[1].refresh_from_db()
-    assert subaccounts[1].estimated == 200.0
+    assert subaccounts[1].nominal_value == 200.0
     assert subaccounts[1].fringe_contribution == 140.0
     assert subaccounts[1].actual == 0.0
 
     accounts[0].refresh_from_db()
-    assert accounts[0].estimated == 100.0
-    assert accounts[0].fringe_contribution == 70.0
+    assert accounts[0].nominal_value == 100.0
+    assert accounts[0].accumulated_fringe_contribution == 70.0
     assert accounts[0].actual == 0.0
 
     accounts[1].refresh_from_db()
-    assert accounts[1].estimated == 200.0
-    assert accounts[1].fringe_contribution == 140.0
+    assert accounts[1].nominal_value == 200.0
+    assert accounts[1].accumulated_fringe_contribution == 140.0
     assert accounts[1].actual == 0.0
 
     template.refresh_from_db()
-    assert template.estimated == 300.0
-    assert template.fringe_contribution == 210.0
+    assert template.nominal_value == 300.0
+    assert template.accumulated_fringe_contribution == 210.0
 
     api_client.force_login(user)
     response = api_client.patch(
@@ -333,33 +331,33 @@ def test_bulk_delete_fringes(api_client, user, create_template, create_fringe,
     # The data in the response refers to base the entity we are updating, A.K.A.
     # the Budget.
     assert response.json()['data']['id'] == template.pk
-    assert response.json()['data']['estimated'] == 300.0
+    assert response.json()['data']['nominal_value'] == 300.0
     assert response.json()['data']['actual'] == 0.0
 
     # Make sure the actual SubAccount(s) were updated in the database.
     subaccounts[0].refresh_from_db()
-    assert subaccounts[0].estimated == 100.0
+    assert subaccounts[0].nominal_value == 100.0
     assert subaccounts[0].fringe_contribution == 0.0
     assert subaccounts[0].actual == 0.0
 
     subaccounts[1].refresh_from_db()
-    assert subaccounts[1].estimated == 200.0
+    assert subaccounts[1].nominal_value == 200.0
     assert subaccounts[1].fringe_contribution == 0.0
     assert subaccounts[1].actual == 0.0
 
     # Make sure the actual Account(s) were updated in the database.
     accounts[0].refresh_from_db()
-    assert accounts[0].estimated == 100.0
-    assert accounts[0].fringe_contribution == 0.0
+    assert accounts[0].nominal_value == 100.0
+    assert accounts[0].accumulated_fringe_contribution == 0.0
     assert accounts[0].actual == 0.0
 
     accounts[1].refresh_from_db()
-    assert accounts[1].estimated == 200.0
-    assert accounts[1].fringe_contribution == 0.0
+    assert accounts[1].nominal_value == 200.0
+    assert accounts[1].accumulated_fringe_contribution == 0.0
     assert accounts[1].actual == 0.0
 
     # Make sure the Budget was updated in the database.
     template.refresh_from_db()
-    assert template.estimated == 300.0
-    assert template.fringe_contribution == 0.0
+    assert template.nominal_value == 300.0
+    assert template.accumulated_fringe_contribution == 0.0
     assert template.actual == 0.0

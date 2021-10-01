@@ -20,9 +20,7 @@ class GroupSerializer(ModelSerializer):
     updated_by = serializers.PrimaryKeyRelatedField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
-    estimated = serializers.FloatField(read_only=True)
     color = ColorField(content_type_model=Group, required=False)
-    actual = serializers.FloatField(read_only=True)
     children = TableChildrenPrimaryKeyRelatedField(
         obj_name='Group',
         many=True,
@@ -35,7 +33,7 @@ class GroupSerializer(ModelSerializer):
         model = Group
         fields = (
             'id', 'name', 'created_by', 'created_at', 'updated_by',
-            'updated_at', 'color', 'estimated', 'children', 'actual', 'type')
+            'updated_at', 'color', 'children', 'type')
 
     def create(self, validated_data, **kwargs):
         children = validated_data.pop('children', [])

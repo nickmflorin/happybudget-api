@@ -26,12 +26,12 @@ def test_budget_subaccount_fringes_change(create_budget_account, create_budget,
         quantity=1,
         rate=100
     )
-    assert account.real_estimated == 225.0
-    assert subaccount.real_estimated == 225.0
+    assert account.nominal_value + account.accumulated_fringe_contribution == 225.0  # noqa
+    assert subaccount.nominal_value + subaccount.fringe_contribution == 225.0
 
     subaccount.fringes.remove(fringes[0])
-    assert account.real_estimated == 200.0
-    assert subaccount.real_estimated == 200.0
+    assert account.nominal_value + account.accumulated_fringe_contribution == 200.0  # noqa
+    assert subaccount.nominal_value + subaccount.fringe_contribution == 200.0
 
 
 def test_budget_subaccount_fringe_changed(create_budget_account, create_budget,
@@ -57,17 +57,17 @@ def test_budget_subaccount_fringe_changed(create_budget_account, create_budget,
         quantity=1,
         rate=100
     )
-    assert account.real_estimated == 225.0
-    assert subaccount.real_estimated == 225.0
+    assert account.nominal_value + account.accumulated_fringe_contribution == 225.0  # noqa
+    assert subaccount.nominal_value + subaccount.fringe_contribution == 225.0
 
     fringes[1].rate = 200.0
     fringes[1].save()
 
     account.refresh_from_db()
-    assert account.real_estimated == 325.0
+    assert account.nominal_value + account.accumulated_fringe_contribution == 325.0  # noqa
 
     subaccount.refresh_from_db()
-    assert subaccount.real_estimated == 325.0
+    assert subaccount.nominal_value + subaccount.fringe_contribution == 325.0
 
 
 def test_budget_subaccount_fringe_deleted(create_budget_account, create_budget,
@@ -93,16 +93,16 @@ def test_budget_subaccount_fringe_deleted(create_budget_account, create_budget,
         quantity=1,
         rate=100
     )
-    assert account.real_estimated == 225.0
-    assert subaccount.real_estimated == 225.0
+    assert account.nominal_value + account.accumulated_fringe_contribution == 225.0  # noqa
+    assert subaccount.nominal_value + subaccount.fringe_contribution == 225.0
 
     fringes[1].delete()
 
     account.refresh_from_db()
-    assert account.real_estimated == 125.0
+    assert account.nominal_value + account.accumulated_fringe_contribution == 125.0  # noqa
 
     subaccount.refresh_from_db()
-    assert subaccount.real_estimated == 125.0
+    assert subaccount.nominal_value + subaccount.fringe_contribution == 125.0
 
 
 def test_fringes_parent_constraint(create_budget_subaccount, create_budget,

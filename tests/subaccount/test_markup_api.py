@@ -56,24 +56,24 @@ def test_create_budget_subaccount_subaccount_markup(api_client, user,
     # Make sure all data is properly calculated before API request to avoid
     # confusion in source of potential errors.
     subaccounts[0].refresh_from_db()
-    assert subaccounts[0].estimated == 10.0
+    assert subaccounts[0].nominal_value == 10.0
     assert subaccounts[0].markup_contribution == 0.0
 
     subaccounts[1].refresh_from_db()
-    assert subaccounts[1].estimated == 10.0
+    assert subaccounts[1].nominal_value == 10.0
     assert subaccounts[1].markup_contribution == 0.0
 
     subaccount.refresh_from_db()
-    assert subaccount.estimated == 20.0
+    assert subaccount.nominal_value == 20.0
     assert subaccount.markup_contribution == 0.0
 
     account.refresh_from_db()
-    assert account.estimated == 20.0
-    assert account.markup_contribution == 0.0
+    assert account.nominal_value == 20.0
+    assert account.accumulated_markup_contribution == 0.0
 
     budget.refresh_from_db()
-    assert budget.estimated == 20.0
-    assert budget.markup_contribution == 0.0
+    assert budget.nominal_value == 20.0
+    assert budget.accumulated_markup_contribution == 0.0
 
     api_client.force_login(user)
     response = api_client.post(
@@ -87,21 +87,21 @@ def test_create_budget_subaccount_subaccount_markup(api_client, user,
     assert response.status_code == 201
 
     subaccounts[0].refresh_from_db()
-    assert subaccounts[0].estimated == 10.0
+    assert subaccounts[0].nominal_value == 10.0
     assert subaccounts[0].markup_contribution == 20.0
 
     subaccounts[1].refresh_from_db()
-    assert subaccounts[1].estimated == 10.0
+    assert subaccounts[1].nominal_value == 10.0
     assert subaccounts[1].markup_contribution == 20.0
 
     subaccount.refresh_from_db()
-    assert subaccount.markup_contribution == 40.0
+    assert subaccount.accumulated_markup_contribution == 40.0
 
     account.refresh_from_db()
-    assert account.markup_contribution == 40.0
+    assert account.accumulated_markup_contribution == 40.0
 
     budget.refresh_from_db()
-    assert budget.markup_contribution == 40.0
+    assert budget.accumulated_markup_contribution == 40.0
 
     markup = models.Markup.objects.first()
     assert markup is not None
@@ -128,12 +128,12 @@ def test_create_budget_subaccount_subaccount_markup(api_client, user,
         "children": [s.pk for s in subaccounts]
     }
 
-    assert response.json()["parent"]["markup_contribution"] == 40.0
-    assert response.json()["parent"]["estimated"] == 20.0
+    assert response.json()["parent"]["accumulated_markup_contribution"] == 40.0
+    assert response.json()["parent"]["nominal_value"] == 20.0
     assert response.json()["parent"]["type"] == "subaccount"
 
-    assert response.json()["budget"]["markup_contribution"] == 40.0
-    assert response.json()["budget"]["estimated"] == 20.0
+    assert response.json()["budget"]["accumulated_markup_contribution"] == 40.0
+    assert response.json()["budget"]["nominal_value"] == 20.0
 
 
 def test_create_budget_subaccount_subaccount_markup_invalid_child(api_client,
@@ -175,9 +175,9 @@ def test_bulk_delete_subaccount_markups(api_client, user, create_budget, models,
         parent=parent_subaccount,
         markups=markups
     )
-    assert budget.markup_contribution == 200.0
-    assert account.markup_contribution == 200.0
-    assert parent_subaccount.markup_contribution == 200.0
+    assert budget.accumulated_markup_contribution == 200.0
+    assert account.accumulated_markup_contribution == 200.0
+    assert parent_subaccount.accumulated_markup_contribution == 200.0
     assert subaccount.markup_contribution == 200.0
 
     api_client.force_login(user)
@@ -190,13 +190,13 @@ def test_bulk_delete_subaccount_markups(api_client, user, create_budget, models,
     assert models.Markup.objects.count() == 0
 
     budget.refresh_from_db()
-    assert budget.markup_contribution == 0.0
+    assert budget.accumulated_markup_contribution == 0.0
 
     account.refresh_from_db()
-    assert account.markup_contribution == 0.0
+    assert account.accumulated_markup_contribution == 0.0
 
     parent_subaccount.refresh_from_db()
-    assert parent_subaccount.markup_contribution == 0.0
+    assert parent_subaccount.accumulated_markup_contribution == 0.0
 
     subaccount.refresh_from_db()
     assert subaccount.markup_contribution == 0.0
@@ -204,11 +204,11 @@ def test_bulk_delete_subaccount_markups(api_client, user, create_budget, models,
     # The data in the response refers to base the entity we are updating, A.K.A.
     # the Sub Account.
     assert response.json()['data']['id'] == account.pk
-    assert response.json()['data']['estimated'] == 0.0
-    assert response.json()['data']['markup_contribution'] == 0.0
+    assert response.json()['data']['nominal_value'] == 0.0
+    assert response.json()['data']['accumulated_markup_contribution'] == 0.0
     assert response.json()['data']['actual'] == 0.0
 
     assert response.json()['budget']['id'] == budget.pk
-    assert response.json()['budget']['estimated'] == 0.0
-    assert response.json()['budget']['markup_contribution'] == 0.0
+    assert response.json()['budget']['nominal_value'] == 0.0
+    assert response.json()['budget']['accumulated_markup_contribution'] == 0.0
     assert response.json()['budget']['actual'] == 0.0

@@ -90,9 +90,12 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
     )
     rate = serializers.FloatField(required=False, allow_null=True)
     multiplier = serializers.FloatField(required=False, allow_null=True)
-    estimated = serializers.FloatField(read_only=True)
+    accumulated_value = serializers.FloatField(read_only=True)
+    nominal_value = serializers.FloatField(read_only=True)
     fringe_contribution = serializers.FloatField(read_only=True)
+    accumulated_fringe_contribution = serializers.FloatField(read_only=True)
     markup_contribution = serializers.FloatField(read_only=True)
+    accumulated_markup_contribution = serializers.FloatField(read_only=True)
     actual = serializers.FloatField(read_only=True)
     group = TableChildrenPrimaryKeyRelatedField(
         obj_name='Group',
@@ -127,11 +130,14 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
 
     class Meta:
         model = SubAccount
-        fields = SubAccountSimpleSerializer.Meta.fields + (
-            'identifier', 'created_by', 'updated_by', 'created_at',
-            'updated_at', 'quantity', 'rate', 'multiplier', 'unit', 'object_id',
-            'parent_type', 'estimated', 'children', 'fringes', 'contact',
-            'fringe_contribution', 'markup_contribution', 'actual', 'group')
+        fields = SubAccountSimpleSerializer.Meta.fields \
+            + SubAccount.CALCULATED_FIELDS \
+            + (
+                'created_by', 'updated_by', 'created_at', 'updated_at',
+                'quantity', 'rate', 'multiplier', 'unit', 'object_id',
+                'parent_type', 'children', 'fringes', 'contact', 'group',
+                'nominal_value'
+            )
 
     def validate(self, attrs):
         if self.instance is not None and self.instance.children.count() != 0:
@@ -175,17 +181,10 @@ class TemplateSubAccountDetailSerializer(TemplateSubAccountSerializer):
             'ancestors', 'siblings')
 
 
-class SubAccountPdfSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(read_only=True)
-    type = serializers.CharField(read_only=True)
-    identifier = serializers.CharField(read_only=True)
-    description = serializers.CharField(read_only=True)
+class SubAccountPdfSerializer(SubAccountSimpleSerializer):
+    type = serializers.CharField(read_only=True, source='pdf_type')
     quantity = serializers.IntegerField(read_only=True)
     rate = serializers.FloatField(read_only=True)
-    multiplier = serializers.FloatField(read_only=True)
-    estimated = serializers.FloatField(read_only=True)
-    fringe_contribution = serializers.FloatField(read_only=True)
-    markup_contribution = serializers.FloatField(read_only=True)
     unit = TagField(
         model_cls=SubAccountUnit,
         read_only=True,
@@ -200,11 +199,22 @@ class SubAccountPdfSerializer(serializers.ModelSerializer):
     children = serializers.SerializerMethodField()
     groups = GroupSerializer(many=True, read_only=True)
 
+    accumulated_value = serializers.FloatField(read_only=True)
+    nominal_value = serializers.FloatField(read_only=True)
+    fringe_contribution = serializers.FloatField(read_only=True)
+    accumulated_fringe_contribution = serializers.FloatField(read_only=True)
+    markup_contribution = serializers.FloatField(read_only=True)
+    accumulated_markup_contribution = serializers.FloatField(read_only=True)
+    actual = serializers.FloatField(read_only=True)
+
     class Meta:
         model = BudgetSubAccount
-        fields = ('id', 'identifier', 'description', 'quantity', 'rate',
-            'multiplier', 'estimated', 'unit', 'children', 'contact',
-            'groups', 'type', 'fringe_contribution', 'markup_contribution')
+        fields = SubAccountSimpleSerializer.Meta.fields \
+            + SubAccount.CALCULATED_FIELDS \
+            + (
+                'quantity', 'rate', 'multiplier', 'unit', 'children', 'contact',
+                'group', 'nominal_value'
+            )
         read_only_fields = fields
 
     def get_children(self, instance):

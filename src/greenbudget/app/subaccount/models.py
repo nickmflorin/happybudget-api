@@ -7,8 +7,9 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models, IntegrityError
 
 from greenbudget.lib.django_utils.models import optional_commit
-from greenbudget.app import signals
 
+from greenbudget.app import signals
+from greenbudget.app.budgeting.models import use_children
 from greenbudget.app.comment.models import Comment
 from greenbudget.app.fringe.utils import contribution_from_fringes
 from greenbudget.app.group.models import Group
@@ -44,18 +45,14 @@ class SubAccountUnit(Tag):
         )
 
 
-def use_subaccounts(fields):
-    def decorator(func):
-        @functools.wraps(func)
-        def inner(instance, *args, **kwargs):
-            kwargs['subaccounts'] = kwargs.get('subaccounts')
-            if kwargs['subaccounts'] is None:
-                kwargs['subaccounts'] = instance.children.exclude(
-                    pk__in=kwargs.get('subaccounts_to_be_deleted', []) or []
-                ).only(*fields).all()
-            func(instance, *args, **kwargs)
-        return inner
-    return decorator
+ESTIMATED_FIELDS = (
+    'accumulated_value',
+    'fringe_contribution',
+    'markup_contribution',
+    'accumulated_markup_contribution',
+    'accumulated_fringe_contribution'
+)
+CALCULATED_FIELDS = ESTIMATED_FIELDS + ('actual', )
 
 
 class SubAccount(PolymorphicModel):
@@ -68,9 +65,16 @@ class SubAccount(PolymorphicModel):
     rate = models.FloatField(null=True)
     multiplier = models.IntegerField(null=True)
     actual = models.FloatField(default=0.0)
-    estimated = models.FloatField(default=0.0)
+
+    ESTIMATED_FIELDS = ESTIMATED_FIELDS
+    CALCULATED_FIELDS = CALCULATED_FIELDS
+
+    # The sum of the nominal values of all of the children.
+    accumulated_value = models.FloatField(default=0.0)
     fringe_contribution = models.FloatField(default=0.0)
+    accumulated_fringe_contribution = models.FloatField(default=0.0)
     markup_contribution = models.FloatField(default=0.0)
+    accumulated_markup_contribution = models.FloatField(default=0.0)
 
     unit = models.ForeignKey(
         to='subaccount.SubAccountUnit',
@@ -115,9 +119,8 @@ class SubAccount(PolymorphicModel):
     non_polymorphic = models.Manager()
 
     DERIVING_FIELDS = ("quantity", "rate", "multiplier", "unit")
-    FIELDS_TO_DUPLICATE = (
-        'identifier', 'description', 'rate', 'quantity', 'multiplier',
-        'unit', 'fringe_contribution', 'estimated', 'markup_contribution')
+    FIELDS_TO_DUPLICATE = ('identifier', 'description') + DERIVING_FIELDS \
+        + CALCULATED_FIELDS
 
     class Meta:
         get_latest_by = "updated_at"
@@ -158,41 +161,78 @@ class SubAccount(PolymorphicModel):
         return parent
 
     @property
-    def raw_estimated_value(self):
+    def raw_value(self):
         multiplier = self.multiplier or 1.0
         if self.quantity is not None and self.rate is not None:
             return float(self.quantity) * float(self.rate) * float(multiplier)
         return 0.0
 
     @property
-    def fringed_estimated(self):
-        return self.estimated + self.fringe_contribution
+    def nominal_value(self):
+        if self.children.count() == 0:
+            return self.raw_value
+        return self.accumulated_value
 
     @property
-    def real_estimated(self):
-        return self.fringed_estimated + self.markup_contribution
+    def realized_value(self):
+        return self.nominal_value + self.accumulated_fringe_contribution \
+            + self.accumulated_markup_contribution
 
-    @optional_commit(["estimated"])
-    @use_subaccounts(["estimated"])
-    def establish_estimated(self, subaccounts, **kwargs):
-        if len(subaccounts) == 0:
-            self.estimated = self.raw_estimated_value
-        else:
-            self.estimated = functools.reduce(
-                lambda current, sub: current + sub.estimated,
-                subaccounts,
-                0
-            )
+    @optional_commit(["accumulated_value"])
+    @use_children(["accumulated_value"])
+    def accumulate_value(self, children, **kwargs):
+        self.accumulated_value = functools.reduce(
+            lambda current, sub: current + sub.nominal_value,
+            children,
+            0
+        )
+
+    @optional_commit(["accumulated_markup_contribution"])
+    @use_children(["accumulated_markup_contribution", "markup_contribution"])
+    def accumulate_markup_contribution(self, children, **kwargs):
+        self.accumulated_markup_contribution = functools.reduce(
+            lambda current, sub: current + sub.markup_contribution
+            + sub.accumulated_markup_contribution,
+            children,
+            0
+        )
+
+    @optional_commit(["accumulated_fringe_contribution"])
+    @use_children(["accumulated_fringe_contribution", "fringe_contribution"])
+    def accumulate_fringe_contribution(self, children, **kwargs):
+        self.accumulated_fringe_contribution = functools.reduce(
+            lambda current, sub: current + sub.fringe_contribution
+            + sub.accumulated_fringe_contribution,
+            children,
+            0
+        )
+
+    @optional_commit(["fringe_contribution"])
+    def establish_fringe_contribution(self, fringes_to_be_deleted=None):
+        fringes = self.fringes.exclude(pk__in=fringes_to_be_deleted or [])
+        self.fringe_contribution = contribution_from_fringes(
+            value=self.realized_value,
+            fringes=fringes
+        )
+
+    @optional_commit(["markup_contribution"])
+    def establish_markup_contribution(self, markups_to_be_deleted=None):
+        markups = self.markups.exclude(pk__in=markups_to_be_deleted or [])
+        # Markups are applied after the Fringes are applied to the value.
+        self.markup_contribution = contribution_from_markups(
+            value=self.realized_value + self.fringe_contribution,
+            markups=markups
+        )
 
     @optional_commit(["actual"])
-    @use_subaccounts(["actual"])
-    def establish_actual(self, subaccounts, **kwargs):
+    @use_children(["actual"])
+    def actualize(self, children, **kwargs):
         actuals = self.actuals.exclude(
             pk__in=kwargs.get('actuals_to_be_deleted', []) or [])
 
         self.actual = functools.reduce(
             lambda current, sub: current + sub.actual,
-            subaccounts,
+            children,
             0
         ) + functools.reduce(
             lambda current, actual: current + (actual.value or 0),
@@ -200,63 +240,28 @@ class SubAccount(PolymorphicModel):
             0
         )
 
-    @optional_commit(["fringe_contribution"])
-    @use_subaccounts(["fringe_contribution"])
-    def establish_fringe_contribution(self, subaccounts, **kwargs):
-        fringes = self.fringes.exclude(
-            pk__in=kwargs.get('fringes_to_be_deleted', []) or [])
-
-        self.fringe_contribution = contribution_from_fringes(
-            value=self.estimated,
-            fringes=fringes
-        ) + functools.reduce(
-            lambda current, sub: current + sub.fringe_contribution,
-            subaccounts,
-            0
-        )
-
-    @optional_commit(["markup_contribution"])
-    @use_subaccounts(["markup_contribution"])
-    def establish_markup_contribution(self, subaccounts, **kwargs):
-        markups = self.markups.exclude(
-            pk__in=kwargs.get('markups_to_be_deleted', []) or [])
-
-        # Markups are applied after the Fringes are applied to the value.
-        self.markup_contribution = contribution_from_markups(
-            value=self.fringed_estimated,
-            markups=markups
-        ) + functools.reduce(
-            lambda current, sub: current + sub.markup_contribution,
-            subaccounts,
-            0
-        )
-
-    @optional_commit(["markup_contribution", "fringe_contribution"])
-    @use_subaccounts(["markup_contribution", "fringe_contribution"])
-    def establish_contributions(self, subaccounts, **kwargs):
-        self.establish_fringe_contribution(subaccounts=subaccounts, **kwargs)
-        # Markups are applied after the Fringes are applied to the value.
-        self.establish_markup_contribution(subaccounts=subaccounts, **kwargs)
-
-    @optional_commit(["markup_contribution", "fringe_contribution", "estimated"])
-    def establish_all(self, **kwargs):
-        subaccounts = self.children.only(
-            'markup_contribution', 'fringe_contribution', 'estimated') \
-                .exclude(pk__in=kwargs.get('subaccounts_to_be_deleted') or []) \
-                .all()
-        self.establish_estimated(subaccounts=subaccounts, **kwargs)
-        self.establish_contributions(subaccounts=subaccounts, **kwargs)
+    @optional_commit(list(ESTIMATED_FIELDS))
+    def estimate(self, markups_to_be_deleted=None, fringes_to_be_deleted=None,
+            **kwargs):
+        children = self.children.only(*ESTIMATED_FIELDS) \
+            .exclude(pk__in=kwargs.get('children_to_be_deleted') or []).all()
+        self.accumulate_value(children=children, **kwargs)
+        self.accumulate_fringe_contribution(children=children, **kwargs)
+        self.accumulate_markup_contribution(children=children, **kwargs)
+        self.establish_fringe_contribution(
+            fringes_to_be_deleted=fringes_to_be_deleted)
+        self.establish_markup_contribution(
+            markups_to_be_deleted=markups_to_be_deleted)
 
 
 @signals.model(
     flags=['suppress_budget_update'],
     user_field='updated_by',
-    exclude_fields=[
-        'updated_by', 'created_by', 'estimated', 'actual',
-        'fringe_contribution', 'markup_contribution'
-    ]
+    exclude_fields=['updated_by', 'created_by'] + list(CALCULATED_FIELDS)
 )
 class BudgetSubAccount(SubAccount):
+    pdf_type = 'pdf-subaccount'
+
     contact = models.ForeignKey(
         to='contact.Contact',
         null=True,
@@ -269,8 +274,7 @@ class BudgetSubAccount(SubAccount):
 
     TRACK_MODEL_HISTORY = True
     TRACK_FIELD_CHANGE_HISTORY = (
-        'identifier', 'description', 'rate', 'quantity', 'multiplier',
-        'unit')
+        'identifier', 'description') + SubAccount.DERIVING_FIELDS
     DERIVING_FIELDS = SubAccount.DERIVING_FIELDS + ("contact", )
 
     class Meta(SubAccount.Meta):
@@ -293,10 +297,7 @@ class BudgetSubAccount(SubAccount):
 @signals.model(
     flags=['suppress_budget_update'],
     user_field='updated_by',
-    exclude_fields=[
-        'updated_by', 'created_by', 'estimated', 'fringe_contribution',
-        'markup_contribution'
-    ]
+    exclude_fields=['updated_by', 'created_by'] + list(CALCULATED_FIELDS)
 )
 class TemplateSubAccount(SubAccount):
     objects = SubAccountManager()

@@ -25,9 +25,11 @@ def test_get_budget_accounts(api_client, user, create_budget_account,
             "updated_at": "2020-01-01 00:00:00",
             "access": [],
             "type": "account",
-            "estimated": 0.0,
-            "fringe_contribution": 0.0,
+            "nominal_value": 0.0,
+            "accumulated_value": 0.0,
+            "accumulated_fringe_contribution": 0.0,
             "markup_contribution": 0.0,
+            "accumulated_markup_contribution": 0.0,
             "actual": 0.0,
             "children": [],
             "created_by": user.pk,
@@ -41,10 +43,11 @@ def test_get_budget_accounts(api_client, user, create_budget_account,
             "updated_at": "2020-01-01 00:00:00",
             "access": [],
             "type": "account",
-            "estimated": 0.0,
-            "fringe_contribution": 0.0,
+            "nominal_value": 0.0,
+            "accumulated_value": 0.0,
+            "accumulated_fringe_contribution": 0.0,
             "markup_contribution": 0.0,
-            "actual": 0.0,
+            "accumulated_markup_contribution": 0.0,
             "actual": 0.0,
             "children": [],
             "created_by": user.pk,
@@ -73,9 +76,11 @@ def test_create_budget_account(api_client, user, create_budget, models):
         "updated_at": "2020-01-01 00:00:00",
         "access": [],
         "type": "account",
-        "estimated": 0.0,
-        "fringe_contribution": 0.0,
+        "nominal_value": 0.0,
+        "accumulated_value": 0.0,
+        "accumulated_fringe_contribution": 0.0,
         "markup_contribution": 0.0,
+        "accumulated_markup_contribution": 0.0,
         "actual": 0.0,
         "children": [],
         "created_by": user.pk,
@@ -114,6 +119,7 @@ def test_bulk_update_budget_accounts(api_client, user, create_budget,
     accounts[0].refresh_from_db()
     assert accounts[0].description == "New Description 1"
     assert accounts[0].group == group
+
     accounts[1].refresh_from_db()
     assert accounts[1].description == "New Description 2"
     assert accounts[1].group == group
@@ -121,7 +127,7 @@ def test_bulk_update_budget_accounts(api_client, user, create_budget,
     # The data in the response refers to base the entity we are updating, A.K.A.
     # the Budget.
     assert response.json()['data']['id'] == budget.pk
-    assert response.json()['data']['estimated'] == 0.0
+    assert response.json()['data']['nominal_value'] == 0.0
     assert response.json()['data']['actual'] == 0.0
 
 
@@ -193,7 +199,7 @@ def test_bulk_create_budget_accounts(api_client, user, create_budget, models):
     # The data in the response refers to base the entity we are updating, A.K.A.
     # the Budget.
     assert response.json()['data']['id'] == budget.pk
-    assert response.json()['data']['estimated'] == 0.0
+    assert response.json()['data']['nominal_value'] == 0.0
     assert response.json()['data']['actual'] == 0.0
 
 
@@ -216,9 +222,7 @@ def test_bulk_delete_budget_accounts(api_client, user, create_budget,
         multiplier=1
     )
     create_budget_subaccount(
-
         parent=accounts[1],
-        estimated=100,
         quantity=1,
         rate=100,
         multiplier=1
@@ -234,9 +238,9 @@ def test_bulk_delete_budget_accounts(api_client, user, create_budget,
     # The data in the response refers to base the entity we are updating, A.K.A.
     # the Budget.
     assert response.json()['data']['id'] == budget.pk
-    assert response.json()['data']['estimated'] == 0.0
+    assert response.json()['data']['nominal_value'] == 0.0
     assert response.json()['data']['actual'] == 0.0
 
     budget.refresh_from_db()
-    assert budget.estimated == 0.0
+    assert budget.nominal_value == 0.0
     assert budget.actual == 0.0

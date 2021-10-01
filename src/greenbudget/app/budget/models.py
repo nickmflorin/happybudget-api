@@ -6,7 +6,10 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django.utils import timezone
 
+from greenbudget.lib.django_utils.models import optional_commit
+
 from greenbudget.app import signals
+from greenbudget.app.budgeting.models import use_children
 from greenbudget.app.comment.models import Comment
 from greenbudget.app.group.models import Group
 from greenbudget.app.user.utils import upload_user_image_to
@@ -23,6 +26,14 @@ def upload_to(instance, filename):
     )
 
 
+ESTIMATED_FIELDS = (
+    'accumulated_value',
+    'accumulated_markup_contribution',
+    'accumulated_fringe_contribution'
+)
+CALCULATED_FIELDS = ESTIMATED_FIELDS + ('actual', )
+
+
 class BaseBudget(PolymorphicModel):
     name = models.CharField(max_length=256)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -33,10 +44,6 @@ class BaseBudget(PolymorphicModel):
         on_delete=models.CASCADE,
         editable=False
     )
-    estimated = models.FloatField(default=0.0)
-    actual = models.FloatField(default=0.0)
-    fringe_contribution = models.FloatField(default=0.0)
-    markup_contribution = models.FloatField(default=0.0)
     image = models.ImageField(upload_to=upload_to, null=True)
 
     groups = GenericRelation(Group)
@@ -44,11 +51,16 @@ class BaseBudget(PolymorphicModel):
     objects = BaseBudgetManager()
     non_polymorphic = models.Manager()
 
+    ESTIMATED_FIELDS = ESTIMATED_FIELDS
+    CALCULATED_FIELDS = CALCULATED_FIELDS
+
+    actual = models.FloatField(default=0.0)
+    accumulated_value = models.FloatField(default=0.0)
+    accumulated_fringe_contribution = models.FloatField(default=0.0)
+    accumulated_markup_contribution = models.FloatField(default=0.0)
+
     FIELDS_TO_DERIVE = ()
-    FIELDS_TO_DUPLICATE = (
-        'image', 'name', 'actual', 'estimated', 'fringe_contribution',
-        'markup_contribution'
-    )
+    FIELDS_TO_DUPLICATE = ('image', 'name') + CALCULATED_FIELDS
 
     class Meta:
         get_latest_by = "updated_at"
@@ -64,76 +76,65 @@ class BaseBudget(PolymorphicModel):
         return duplicator.duplicate()
 
     @property
-    def fringed_estimated(self):
-        return self.estimated + self.fringe_contribution
+    def nominal_value(self):
+        return self.accumulated_value
 
     @property
-    def real_estimated(self):
-        return self.fringed_estimated + self.markup_contribution
+    def realized_value(self):
+        return self.nominal_value + self.accumulated_fringe_contribution \
+            + self.accumulated_markup_contribution
 
-    def establish_estimated(self, commit=False, accounts=None):
-        accounts = accounts or self.children.only('estimated').all()
-        self.estimated = functools.reduce(
-            lambda current, sub: current + sub.estimated,
-            accounts,
+    @optional_commit(["accumulated_value"])
+    @use_children(["nominal_value"])
+    def accumulate_value(self, children, **kwargs):
+        self.accumulated_value = functools.reduce(
+            lambda current, account: current + account.nominal_value,
+            children,
             0
         )
-        if commit:
-            self.save(update_fields=['estimated'])
 
-    def establish_actual(self, commit=False, accounts=None):
-        accounts = accounts or self.children.only('actual').all()
+    @optional_commit(["accumulated_markup_contribution"])
+    @use_children(["accumulated_markup_contribution", "markup_contribution"])
+    def accumulate_markup_contribution(self, children, **kwargs):
+        self.accumulated_markup_contribution = functools.reduce(
+            lambda current, account: current + account.markup_contribution
+            + account.accumulated_markup_contribution,
+            children,
+            0
+        )
+
+    @optional_commit(["accumulated_fringe_contribution"])
+    @use_children(["accumulated_fringe_contribution", "fringe_contribution"])
+    def accumulate_fringe_contribution(self, children, **kwargs):
+        self.accumulated_fringe_contribution = functools.reduce(
+            lambda current, account: current
+            + account.accumulated_fringe_contribution,
+            children,
+            0
+        )
+
+    @optional_commit(["actual"])
+    @use_children(["actual"])
+    def actualize(self, children, **kwargs):
         self.actual = functools.reduce(
-            lambda current, sub: current + sub.actual,
-            accounts,
+            lambda current, child: current + (child.actual or 0),
+            children,
             0
         )
-        if commit:
-            self.save(update_fields=['actual'])
 
-    def establish_fringe_contribution(self, commit=False, accounts=None):
-        accounts = accounts or self.children.only('fringe_contribution').all()
-        self.fringe_contribution = functools.reduce(
-            lambda current, sub: current + sub.fringe_contribution,
-            accounts,
-            0
-        )
-        if commit:
-            self.save(update_fields=['fringe_contribution'])
-
-    def establish_markup_contribution(self, commit=False, accounts=None):
-        accounts = accounts or self.children.only('markup_contribution').all()
-        self.markup_contribution = functools.reduce(
-            lambda current, sub: current + sub.markup_contribution,
-            accounts,
-            0
-        )
-        if commit:
-            self.save(update_fields=['markup_contribution'])
-
-    def establish_contributions(self, commit=False, accounts=None):
-        accounts = accounts or self.children.only(
-            'markup_contribution', 'fringe_contribution').all()
-        self.establish_fringe_contribution(accounts=accounts)
-        # Markups are applied after the Fringes are applied to the value.
-        self.establish_markup_contribution(accounts=accounts)
-        if commit:
-            self.save(
-                update_fields=['fringe_contribution', 'markup_contribution'])
-
-    def establish_all(self, commit=False):
-        accounts = self.children.only(
-            'markup_contribution', 'fringe_contribution', 'estimated').all()
-        self.establish_estimated(accounts=accounts)
-        self.establish_contributions(accounts=accounts)
-        if commit:
-            self.save(update_fields=[
-                'fringe_contribution', 'markup_contribution', 'estimated'])
+    @optional_commit(list(ESTIMATED_FIELDS))
+    def estimate(self, **kwargs):
+        children = self.children.only(*ESTIMATED_FIELDS) \
+            .exclude(pk__in=kwargs.get('children_to_be_deleted') or []).all()
+        self.accumulate_value(children=children, **kwargs)
+        self.accumulate_fringe_contribution(children=children, **kwargs)
+        self.accumulate_markup_contribution(children=children, **kwargs)
 
 
 @signals.model(flags='suppress_budget_update')
 class Budget(BaseBudget):
     type = "budget"
+    pdf_type = "pdf-budget"
 
     project_number = models.IntegerField(default=0)
     PRODUCTION_TYPES = Choices(

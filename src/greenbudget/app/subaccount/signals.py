@@ -16,12 +16,12 @@ logger = logging.getLogger('signals')
 @signals.bulk_context.handler(
     id=lambda instance: instance.pk,
     queue_in_context=True,
-    side_effect=lambda instance, subaccounts_to_be_deleted: [
+    side_effect=lambda instance, children_to_be_deleted: [
         signals.SideEffect(
             func=actualize_account,
             args=(instance.parent, ),
             kwargs={
-                'subaccounts_to_be_deleted': subaccounts_to_be_deleted
+                'children_to_be_deleted': children_to_be_deleted
             },
             # There are weird cases (like CASCADE deletes) where non-nullable
             # fields will be temporarily null - they just won't be saved in a
@@ -33,7 +33,7 @@ logger = logging.getLogger('signals')
             func=actualize_subaccount,
             args=(instance.parent, ),
             kwargs={
-                'subaccounts_to_be_deleted': subaccounts_to_be_deleted
+                'children_to_be_deleted': children_to_be_deleted
             },
             # There are weird cases (like CASCADE deletes) where non-nullable
             # fields will be temporarily null - they just won't be saved in a
@@ -44,15 +44,15 @@ logger = logging.getLogger('signals')
     ]
 )
 def actualize_subaccount(instance, actuals_to_be_deleted=None,
-        subaccounts_to_be_deleted=None):
+        children_to_be_deleted=None):
     """
     Reactualizes the :obj:`greenbudget.app.subaccount.models.SubAccount` based
     on the :obj:`greenbudget.app.actual.models.Actual`(s) associated with the
     instance.
     """
-    instance.establish_actual(
+    instance.actualize(
         actuals_to_be_deleted=actuals_to_be_deleted,
-        subaccounts_to_be_deleted=subaccounts_to_be_deleted
+        children_to_be_deleted=children_to_be_deleted
     )
     instance.save(update_fields=["actual"], suppress_budget_update=True)
 
@@ -60,12 +60,12 @@ def actualize_subaccount(instance, actuals_to_be_deleted=None,
 @signals.bulk_context.handler(
     id=lambda instance: instance.pk,
     queue_in_context=True,
-    side_effect=lambda instance, subaccounts_to_be_deleted: [
+    side_effect=lambda instance, children_to_be_deleted: [
         signals.SideEffect(
             func=estimate_account,
             args=(instance.parent, ),
             kwargs={
-                'subaccounts_to_be_deleted': subaccounts_to_be_deleted
+                'children_to_be_deleted': children_to_be_deleted
             },
             # There are weird cases (like CASCADE deletes) where non-nullable
             # fields will be temporarily null - they just won't be saved in a
@@ -77,7 +77,7 @@ def actualize_subaccount(instance, actuals_to_be_deleted=None,
             func=estimate_subaccount,
             args=(instance.parent, ),
             kwargs={
-                'subaccounts_to_be_deleted': subaccounts_to_be_deleted
+                'children_to_be_deleted': children_to_be_deleted
             },
             # There are weird cases (like CASCADE deletes) where non-nullable
             # fields will be temporarily null - they just won't be saved in a
@@ -88,23 +88,19 @@ def actualize_subaccount(instance, actuals_to_be_deleted=None,
     ]
 )
 def estimate_subaccount(instance, fringes_to_be_deleted=None,
-        markups_to_be_deleted=None, subaccounts_to_be_deleted=None):
+        markups_to_be_deleted=None, children_to_be_deleted=None):
     """
     Reestimates the :obj:`greenbudget.app.subaccount.models.SubAccount` based
     on the calculatable fields of the instance and the
     :obj:`greenbudget.app.fringe.models.Fringe`(s) associated with the instance.
     """
-    instance.establish_all(
+    instance.estimate(
         markups_to_be_deleted=markups_to_be_deleted,
         fringes_to_be_deleted=fringes_to_be_deleted,
-        subaccounts_to_be_deleted=subaccounts_to_be_deleted
+        children_to_be_deleted=children_to_be_deleted
     )
     instance.save(
-        update_fields=[
-            'estimated',
-            'fringe_contribution',
-            'markup_contribution'
-        ],
+        update_fields=list(instance.ESTIMATED_FIELDS),
         suppress_budget_update=True
     )
 
@@ -115,12 +111,12 @@ def estimate_subaccount(instance, fringes_to_be_deleted=None,
     # temporarily null.
     conditional=lambda parent: parent is not None,
     queue_in_context=True,
-    side_effect=lambda parent, subaccounts_to_be_deleted: [
+    side_effect=lambda parent, children_to_be_deleted: [
         signals.SideEffect(
             func=calculate_account,
             args=(parent,),
             kwargs={
-                'subaccounts_to_be_deleted': subaccounts_to_be_deleted
+                'children_to_be_deleted': children_to_be_deleted
             },
             conditional=not isinstance(
                 parent, (BudgetSubAccount, TemplateSubAccount))
@@ -129,26 +125,26 @@ def estimate_subaccount(instance, fringes_to_be_deleted=None,
             func=calculate_subaccount,
             args=(parent,),
             kwargs={
-                'subaccounts_to_be_deleted': subaccounts_to_be_deleted
+                'children_to_be_deleted': children_to_be_deleted
             },
             conditional=isinstance(
                 parent, (BudgetSubAccount, TemplateSubAccount))
         )
     ]
 )
-def calculate_parent(parent, subaccounts_to_be_deleted=None):
+def calculate_parent(parent, children_to_be_deleted=None):
     pass
 
 
 @signals.bulk_context.handler(
     id=lambda instance: instance.pk,
     queue_in_context=True,
-    side_effect=lambda instance, subaccounts_to_be_deleted: [
+    side_effect=lambda instance, children_to_be_deleted: [
         signals.SideEffect(
             func=estimate_subaccount,
             args=(instance,),
             kwargs={
-                'subaccounts_to_be_deleted': subaccounts_to_be_deleted
+                'children_to_be_deleted': children_to_be_deleted
             },
         ),
         signals.SideEffect(
@@ -156,12 +152,12 @@ def calculate_parent(parent, subaccounts_to_be_deleted=None):
             args=(instance, ),
             conditional=isinstance(instance, BudgetSubAccount),
             kwargs={
-                'subaccounts_to_be_deleted': subaccounts_to_be_deleted
+                'children_to_be_deleted': children_to_be_deleted
             },
         )
     ]
 )
-def calculate_subaccount(instance, subaccounts_to_be_deleted=None):
+def calculate_subaccount(instance, children_to_be_deleted=None):
     pass
 
 
@@ -187,7 +183,7 @@ def subaccount_created(instance, **kwargs):
 @dispatch.receiver(signals.post_delete, sender=BudgetSubAccount)
 @dispatch.receiver(signals.post_delete, sender=TemplateSubAccount)
 def subaccount_deleted(instance, **kwargs):
-    calculate_parent(instance.parent, subaccounts_to_be_deleted=[instance.pk])
+    calculate_parent(instance.parent, children_to_be_deleted=[instance.pk])
 
 
 @signals.any_fields_changed_receiver(

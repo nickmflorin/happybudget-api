@@ -71,14 +71,19 @@ class BudgetSerializer(BudgetSimpleSerializer):
     prelight_days = serializers.IntegerField(read_only=True)
     studio_shoot_days = serializers.IntegerField(read_only=True)
     location_days = serializers.IntegerField(read_only=True)
-    estimated = serializers.FloatField(read_only=True)
+
+    accumulated_value = serializers.FloatField(read_only=True)
+    nominal_value = serializers.FloatField(read_only=True)
+    accumulated_fringe_contribution = serializers.FloatField(read_only=True)
+    accumulated_markup_contribution = serializers.FloatField(read_only=True)
     actual = serializers.FloatField(read_only=True)
-    fringe_contribution = serializers.FloatField(read_only=True)
-    markup_contribution = serializers.FloatField(read_only=True)
 
     class Meta:
         model = Budget
-        fields = BudgetSimpleSerializer.Meta.fields + (
-            'project_number', 'production_type', 'shoot_date', 'delivery_date',
-            'build_days', 'prelight_days', 'studio_shoot_days', 'location_days',
-            'actual', 'estimated', 'fringe_contribution', 'markup_contribution')
+        fields = BudgetSimpleSerializer.Meta.fields \
+            + Budget.CALCULATED_FIELDS \
+            + (
+                'project_number', 'production_type', 'shoot_date',
+                'delivery_date', 'build_days', 'prelight_days',
+                'studio_shoot_days', 'location_days', 'nominal_value'
+            )

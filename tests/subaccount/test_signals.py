@@ -19,15 +19,15 @@ def test_delete_subaccount_recalculates(create_budget,
         multiplier=5,
         quantity=10,
     )
-    assert parent_subaccount.estimated == 50.0
-    assert subaccount.estimated == 50.0
-    assert account.estimated == 50.0
-    assert budget.estimated == 50.0
+    assert parent_subaccount.nominal_value == 50.0
+    assert subaccount.nominal_value == 50.0
+    assert account.nominal_value == 50.0
+    assert budget.nominal_value == 50.0
 
     subaccount.delete()
-    assert account.estimated == 0.0
-    assert budget.estimated == 0.0
-    assert parent_subaccount.estimated == 0.0
+    assert account.nominal_value == 0.0
+    assert budget.nominal_value == 0.0
+    assert parent_subaccount.nominal_value == 0.0
 
 
 def test_create_subaccount_recalculates(create_budget, create_budget_account,
@@ -40,9 +40,9 @@ def test_create_subaccount_recalculates(create_budget, create_budget_account,
         multiplier=5,
         quantity=10,
     )
-    assert subaccount.estimated == 50.0
-    assert account.estimated == 50.0
-    assert budget.estimated == 50.0
+    assert subaccount.nominal_value == 50.0
+    assert account.nominal_value == 50.0
+    assert budget.nominal_value == 50.0
 
 
 def test_update_subaccount_recalculates(create_budget, create_budget_account,
@@ -55,15 +55,15 @@ def test_update_subaccount_recalculates(create_budget, create_budget_account,
         multiplier=5,
         quantity=10,
     )
-    assert subaccount.estimated == 50.0
-    assert account.estimated == 50.0
-    assert budget.estimated == 50.0
+    assert subaccount.nominal_value == 50.0
+    assert account.nominal_value == 50.0
+    assert budget.nominal_value == 50.0
 
     subaccount.quantity = 1
     subaccount.save(update_fields=['quantity'])
-    assert subaccount.estimated == 5.0
-    assert account.estimated == 5.0
-    assert budget.estimated == 5.0
+    assert subaccount.nominal_value == 5.0
+    assert account.nominal_value == 5.0
+    assert budget.nominal_value == 5.0
 
 
 def test_change_subaccount_parent_recalculates(models, create_budget,
@@ -77,22 +77,22 @@ def test_change_subaccount_parent_recalculates(models, create_budget,
         multiplier=5,
         quantity=10,
     )
-    assert subaccount.estimated == 50.0
-    assert account.estimated == 50.0
-    assert budget.estimated == 50.0
-    assert another_account.estimated == 0.0
+    assert subaccount.nominal_value == 50.0
+    assert account.nominal_value == 50.0
+    assert budget.nominal_value == 50.0
+    assert another_account.nominal_value == 0.0
 
     subaccount.content_type = ContentType.objects.get_for_model(
         models.BudgetAccount)
     subaccount.object_id = another_account.pk
     subaccount.save(update_fields=['content_type', 'object_id'])
 
-    assert subaccount.estimated == 50.0
+    assert subaccount.nominal_value == 50.0
     another_account.refresh_from_db()
-    assert another_account.estimated == 50.0
+    assert another_account.nominal_value == 50.0
     account.refresh_from_db()
-    assert account.estimated == 0.0
-    assert budget.estimated == 50.0
+    assert account.nominal_value == 0.0
+    assert budget.nominal_value == 50.0
 
 
 @pytest.mark.freeze_time

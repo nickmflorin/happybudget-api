@@ -40,10 +40,14 @@ class AccountSerializer(AccountSimpleSerializer):
     updated_by = serializers.PrimaryKeyRelatedField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
-    estimated = serializers.FloatField(read_only=True)
-    actual = serializers.FloatField(read_only=True)
-    fringe_contribution = serializers.FloatField(read_only=True)
+
+    accumulated_value = serializers.FloatField(read_only=True)
+    nominal_value = serializers.FloatField(read_only=True)
+    accumulated_fringe_contribution = serializers.FloatField(read_only=True)
     markup_contribution = serializers.FloatField(read_only=True)
+    accumulated_markup_contribution = serializers.FloatField(read_only=True)
+    actual = serializers.FloatField(read_only=True)
+
     children = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     group = TableChildrenPrimaryKeyRelatedField(
         obj_name='Group',
@@ -55,9 +59,9 @@ class AccountSerializer(AccountSimpleSerializer):
 
     class Meta(AccountSimpleSerializer.Meta):
         fields = AccountSimpleSerializer.Meta.fields + (
-            'created_by', 'updated_by', 'created_at', 'updated_at', 'estimated',
-            'children', 'fringe_contribution', 'markup_contribution', 'actual',
-            'group')
+            'created_by', 'updated_by', 'created_at', 'updated_at',
+            'children', 'nominal_value', 'group'
+        ) + Account.CALCULATED_FIELDS
 
 
 class BudgetAccountSerializer(AccountSerializer):
@@ -96,21 +100,21 @@ class TemplateAccountDetailSerializer(TemplateAccountSerializer):
             "ancestors", "siblings")
 
 
-class AccountPdfSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(read_only=True)
-    type = serializers.CharField(read_only=True)
-    identifier = serializers.CharField(read_only=True)
-    description = serializers.CharField(read_only=True)
-    actual = serializers.FloatField(read_only=True)
-    estimated = serializers.FloatField(read_only=True)
-    fringe_contribution = serializers.FloatField(read_only=True)
+class AccountPdfSerializer(AccountSimpleSerializer):
+    type = serializers.CharField(read_only=True, source='pdf_type')
+    accumulated_value = serializers.FloatField(read_only=True)
+    nominal_value = serializers.FloatField(read_only=True)
+    accumulated_fringe_contribution = serializers.FloatField(read_only=True)
     markup_contribution = serializers.FloatField(read_only=True)
+    accumulated_markup_contribution = serializers.FloatField(read_only=True)
+    actual = serializers.FloatField(read_only=True)
+
     children = SubAccountPdfSerializer(many=True, read_only=True)
     groups = GroupSerializer(many=True, read_only=True)
 
     class Meta:
         model = BudgetAccount
-        fields = ('id', 'identifier', 'description', 'actual',
-            'estimated', 'children', 'groups', 'type', 'fringe_contribution',
-            'markup_contribution')
+        fields = AccountSimpleSerializer.Meta.fields \
+            + Account.CALCULATED_FIELDS \
+            + ('children', 'groups', 'nominal_value')
         read_only_fields = fields

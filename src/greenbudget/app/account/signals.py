@@ -21,17 +21,13 @@ logger = logging.getLogger('signals')
     )
 )
 def estimate_account(instance, markups_to_be_deleted=None,
-        subaccounts_to_be_deleted=None):
-    instance.establish_all(
+        children_to_be_deleted=None):
+    instance.estimate(
         markups_to_be_deleted=markups_to_be_deleted,
-        subaccounts_to_be_deleted=subaccounts_to_be_deleted
+        children_to_be_deleted=children_to_be_deleted
     )
     instance.save(
-        update_fields=[
-            'estimated',
-            'markup_contribution',
-            'fringe_contribution'
-        ],
+        update_fields=list(instance.ESTIMATED_FIELDS),
         suppress_budget_update=True
     )
 
@@ -44,21 +40,21 @@ def estimate_account(instance, markups_to_be_deleted=None,
         args=(instance.parent, )
     )
 )
-def actualize_account(instance, subaccounts_to_be_deleted=None):
-    instance.establish_actual(
-        subaccounts_to_be_deleted=subaccounts_to_be_deleted)
+def actualize_account(instance, children_to_be_deleted=None):
+    instance.actualize(
+        children_to_be_deleted=children_to_be_deleted)
     instance.save(update_fields=["actual"], suppress_budget_update=True)
 
 
 @signals.bulk_context.handler(
     id=lambda instance: instance.pk,
     queue_in_context=True,
-    side_effect=lambda instance, markups_to_be_deleted, subaccounts_to_be_deleted: [  # noqa
+    side_effect=lambda instance, markups_to_be_deleted, children_to_be_deleted: [  # noqa
         signals.SideEffect(
             func=estimate_account,
             args=(instance, ),
             kwargs={
-                'subaccounts_to_be_deleted': subaccounts_to_be_deleted,
+                'children_to_be_deleted': children_to_be_deleted,
                 'markups_to_be_deleted': markups_to_be_deleted
             }
         ),
@@ -66,14 +62,14 @@ def actualize_account(instance, subaccounts_to_be_deleted=None):
             func=actualize_account,
             args=(instance, ),
             kwargs={
-                'subaccounts_to_be_deleted': subaccounts_to_be_deleted,
+                'children_to_be_deleted': children_to_be_deleted,
             },
             conditional=isinstance(instance, BudgetAccount)
         )
     ]
 )
 def calculate_account(instance, markups_to_be_deleted=None,
-        subaccounts_to_be_deleted=None):
+        children_to_be_deleted=None):
     pass
 
 

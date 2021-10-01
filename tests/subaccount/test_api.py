@@ -112,9 +112,12 @@ def test_get_budget_subaccount(api_client, user, create_budget_subaccount,
         "type": "subaccount",
         "object_id": account.pk,
         "parent_type": "account",
-        "estimated": 0.0,
+        "nominal_value": 0.0,
+        "accumulated_value": 0.0,
         "fringe_contribution": 0.0,
+        "accumulated_fringe_contribution": 0.0,
         "markup_contribution": 0.0,
+        "accumulated_markup_contribution": 0.0,
         "actual": 0.0,
         "children": [],
         "fringes": [],
@@ -162,9 +165,12 @@ def test_get_template_subaccount(api_client, user, create_template_subaccount,
         "type": "subaccount",
         "object_id": account.pk,
         "parent_type": "account",
-        "estimated": 0.0,
+        "nominal_value": 0.0,
+        "accumulated_value": 0.0,
         "fringe_contribution": 0.0,
+        "accumulated_fringe_contribution": 0.0,
         "markup_contribution": 0.0,
+        "accumulated_markup_contribution": 0.0,
         "actual": 0.0,
         "children": [],
         "fringes": [],
@@ -221,9 +227,12 @@ def test_update_budget_subaccount(api_client, user, create_budget_subaccount,
         "type": "subaccount",
         "object_id": account.pk,
         "parent_type": "account",
-        "estimated": 15.0,
+        "nominal_value": 15.0,
+        "accumulated_value": 0.0,
         "fringe_contribution": 0.0,
+        "accumulated_fringe_contribution": 0.0,
         "markup_contribution": 0.0,
+        "accumulated_markup_contribution": 0.0,
         "actual": 0.0,
         "children": [],
         "fringes": [],
@@ -301,9 +310,12 @@ def test_update_template_subaccount(api_client, user, create_template_account,
         "type": "subaccount",
         "object_id": account.pk,
         "parent_type": "account",
-        "estimated": 15.0,
+        "nominal_value": 15.0,
+        "accumulated_value": 0.0,
         "fringe_contribution": 0.0,
+        "accumulated_fringe_contribution": 0.0,
         "markup_contribution": 0.0,
+        "accumulated_markup_contribution": 0.0,
         "actual": 0.0,
         "children": [],
         "fringes": [],
@@ -365,9 +377,12 @@ def test_get_budget_subaccount_subaccounts(api_client, user, create_budget,
             "type": "subaccount",
             "object_id": parent.pk,
             "parent_type": "subaccount",
-            "estimated": 0.0,
+            "nominal_value": 0.0,
+            "accumulated_value": 0.0,
             "fringe_contribution": 0.0,
+            "accumulated_fringe_contribution": 0.0,
             "markup_contribution": 0.0,
+            "accumulated_markup_contribution": 0.0,
             "actual": 0.0,
             "children": [],
             "fringes": [],
@@ -388,9 +403,12 @@ def test_get_budget_subaccount_subaccounts(api_client, user, create_budget,
             "type": "subaccount",
             "object_id": parent.pk,
             "parent_type": "subaccount",
-            "estimated": 0.0,
+            "nominal_value": 0.0,
+            "accumulated_value": 0.0,
             "fringe_contribution": 0.0,
+            "accumulated_fringe_contribution": 0.0,
             "markup_contribution": 0.0,
+            "accumulated_markup_contribution": 0.0,
             "actual": 0.0,
             "children": [],
             "fringes": [],
@@ -442,9 +460,12 @@ def test_get_template_subaccount_subaccounts(api_client, user, create_template,
             "type": "subaccount",
             "object_id": parent.pk,
             "parent_type": "subaccount",
-            "estimated": 0.0,
+            "nominal_value": 0.0,
+            "accumulated_value": 0.0,
             "fringe_contribution": 0.0,
+            "accumulated_fringe_contribution": 0.0,
             "markup_contribution": 0.0,
+            "accumulated_markup_contribution": 0.0,
             "actual": 0.0,
             "children": [],
             "fringes": [],
@@ -465,9 +486,12 @@ def test_get_template_subaccount_subaccounts(api_client, user, create_template,
             "type": "subaccount",
             "object_id": parent.pk,
             "parent_type": "subaccount",
-            "estimated": 0.0,
+            "nominal_value": 0.0,
+            "accumulated_value": 0.0,
             "fringe_contribution": 0.0,
+            "accumulated_fringe_contribution": 0.0,
             "markup_contribution": 0.0,
+            "accumulated_markup_contribution": 0.0,
             "actual": 0.0,
             "children": [],
             "fringes": [],
@@ -571,14 +595,14 @@ def test_bulk_update_budget_subaccount_subaccounts(api_client, user,
     # The data in the response refers to base the entity we are updating, A.K.A.
     # the SubAccount.
     assert response.json()['data']['id'] == subaccount.pk
-    assert response.json()['data']['estimated'] == 40.0
+    assert response.json()['data']['nominal_value'] == 40.0
     assert response.json()['data']['actual'] == 0.0
     assert len(response.json()['data']['children']) == 2
     assert response.json()['data']['children'][0] == subaccounts[0].pk
     assert response.json()['data']['children'][1] == subaccounts[1].pk
 
     assert response.json()['budget']['id'] == budget.pk
-    assert response.json()['budget']['estimated'] == 40.0
+    assert response.json()['budget']['nominal_value'] == 40.0
     assert response.json()['budget']['actual'] == 0.0
 
     # Make sure the SubAccount(s) are updated in the database.
@@ -594,19 +618,19 @@ def test_bulk_update_budget_subaccount_subaccounts(api_client, user,
 
     # Make sure the SubAccount is updated in the database.
     subaccount.refresh_from_db()
-    assert subaccount.estimated == 40.0
+    assert subaccount.nominal_value == 40.0
     assert subaccount.actual == 0.0
 
     # Make sure the Account is updated in the database.
     account.refresh_from_db()
-    assert account.estimated == 40.0
+    assert account.nominal_value == 40.0
     assert account.actual == 0.0
 
     # Make sure the Budget is updated in the database.
     budget.refresh_from_db()
     assert budget.updated_at == datetime.datetime(2021, 1, 1).replace(
         tzinfo=timezone.utc)
-    assert budget.estimated == 40.0
+    assert budget.nominal_value == 40.0
     assert budget.actual == 0.0
 
 
@@ -628,7 +652,6 @@ def test_bulk_update_budget_subaccount_subaccounts_fringes(api_client, user,
             create_budget_subaccount(
                 parent=subaccount,
                 created_at=datetime.datetime(2020, 1, 2),
-                estimated=100,
                 quantity=1,
                 rate=100,
                 multiplier=1
@@ -660,42 +683,42 @@ def test_bulk_update_budget_subaccount_subaccounts_fringes(api_client, user,
     # The data in the response refers to base the entity we are updating, A.K.A.
     # the SubAccount.
     assert response.json()['data']['id'] == subaccount.pk
-    assert response.json()['data']['estimated'] == 200.0
-    assert response.json()['data']['fringe_contribution'] == 70.0
+    assert response.json()['data']['nominal_value'] == 200.0
+    assert response.json()['data']['accumulated_fringe_contribution'] == 70.0
     assert response.json()['data']['actual'] == 0.0
     assert len(response.json()['data']['children']) == 2
     assert response.json()['data']['children'][0] == subaccounts[0].pk
     assert response.json()['data']['children'][1] == subaccounts[1].pk
 
     assert response.json()['budget']['id'] == budget.pk
-    assert response.json()['budget']['estimated'] == 200.0
-    assert response.json()['budget']['fringe_contribution'] == 70.0
+    assert response.json()['budget']['nominal_value'] == 200.0
+    assert response.json()['budget']['accumulated_fringe_contribution'] == 70.0
     assert response.json()['budget']['actual'] == 0.0
 
     # Make sure the Account is updated in the database.
     account.refresh_from_db()
-    assert account.estimated == 200.0
-    assert account.fringe_contribution == 70.0
+    assert account.nominal_value == 200.0
+    assert account.accumulated_fringe_contribution == 70.0
     assert account.actual == 0.0
 
     # Make sure the SubAccount is updated in the database.
     subaccount.refresh_from_db()
-    assert subaccount.estimated == 200.0
-    assert subaccount.fringe_contribution == 70.0
+    assert subaccount.nominal_value == 200.0
+    assert subaccount.accumulated_fringe_contribution == 70.0
     assert subaccount.actual == 0.0
 
     # Make sure the SubAccount(s) are updated in the database.
     subaccounts[0].refresh_from_db()
-    assert subaccounts[0].estimated == 100
+    assert subaccounts[0].nominal_value == 100
     assert subaccounts[0].fringe_contribution == 70.0
     subaccounts[1].refresh_from_db()
-    assert subaccounts[1].estimated == 100
+    assert subaccounts[1].nominal_value == 100
     assert subaccounts[1].fringe_contribution == 0.0
 
     # Make sure the Budget is updated in the database.
     budget.refresh_from_db()
-    assert budget.estimated == 200.0
-    assert budget.fringe_contribution == 70.0
+    assert budget.nominal_value == 200.0
+    assert budget.accumulated_fringe_contribution == 70.0
 
 
 def test_bulk_delete_budget_subaccount_subaccounts(api_client, user,
@@ -717,7 +740,6 @@ def test_bulk_delete_budget_subaccount_subaccounts(api_client, user,
         ),
         create_budget_subaccount(
             parent=subaccount,
-            estimated=100,
             quantity=1,
             rate=100,
             multiplier=1
@@ -735,27 +757,27 @@ def test_bulk_delete_budget_subaccount_subaccounts(api_client, user,
     # The data in the response refers to base the entity we are updating, A.K.A.
     # the SubAccount.
     assert response.json()['data']['id'] == subaccount.pk
-    assert response.json()['data']['estimated'] == 0.0
+    assert response.json()['data']['nominal_value'] == 0.0
     assert response.json()['data']['actual'] == 0.0
     assert len(response.json()['data']['children']) == 0
 
     assert response.json()['budget']['id'] == budget.pk
-    assert response.json()['budget']['estimated'] == 0.0
+    assert response.json()['budget']['nominal_value'] == 0.0
     assert response.json()['budget']['actual'] == 0.0
 
     # Make sure the SubAccount is updated in the database.
     subaccount.refresh_from_db()
-    assert subaccount.estimated == 0.0
+    assert subaccount.nominal_value == 0.0
     assert subaccount.actual == 0.0
 
     # Make sure the Account is updated in the database.
     account.refresh_from_db()
-    assert account.estimated == 0.0
+    assert account.nominal_value == 0.0
     assert account.actual == 0.0
 
     # Make sure the Budget is updated in the database.
     budget.refresh_from_db()
-    assert budget.estimated == 0.0
+    assert budget.nominal_value == 0.0
 
 
 def test_bulk_update_budget_subaccount_subaccounts_budget_updated_once(
@@ -833,13 +855,13 @@ def test_bulk_update_template_subaccount_subaccounts(api_client, user,
     # The data in the response refers to base the entity we are updating, A.K.A.
     # the SubAccount.
     assert response.json()['data']['id'] == subaccount.pk
-    assert response.json()['data']['estimated'] == 40.0
+    assert response.json()['data']['nominal_value'] == 40.0
     assert len(response.json()['data']['children']) == 2
     assert response.json()['data']['children'][0] == subaccounts[0].pk
     assert response.json()['data']['children'][1] == subaccounts[1].pk
 
     assert response.json()['budget']['id'] == template.pk
-    assert response.json()['budget']['estimated'] == 40.0
+    assert response.json()['budget']['nominal_value'] == 40.0
 
     # Make sure the SubAccount(s) are updated in the database.
     subaccounts[0].refresh_from_db()
@@ -854,17 +876,17 @@ def test_bulk_update_template_subaccount_subaccounts(api_client, user,
 
     # Make sure the SubAccount is updated in the database.
     subaccount.refresh_from_db()
-    assert subaccount.estimated == 40.0
+    assert subaccount.nominal_value == 40.0
 
     # Make sure the Account is updated in the database.
     account.refresh_from_db()
-    assert account.estimated == 40.0
+    assert account.nominal_value == 40.0
 
     # Make sure the Template is updated in the database.
     template.refresh_from_db()
     assert template.updated_at == datetime.datetime(2021, 1, 1).replace(
         tzinfo=timezone.utc)
-    assert template.estimated == 40.0
+    assert template.nominal_value == 40.0
 
 
 def test_bulk_delete_template_subaccount_subaccounts(api_client, user,
@@ -886,7 +908,6 @@ def test_bulk_delete_template_subaccount_subaccounts(api_client, user,
         ),
         create_template_subaccount(
             parent=subaccount,
-            estimated=100,
             quantity=1,
             rate=100,
             multiplier=1
@@ -903,23 +924,23 @@ def test_bulk_delete_template_subaccount_subaccounts(api_client, user,
     # The data in the response refers to base the entity we are updating, A.K.A.
     # the SubAccount.
     assert response.json()['data']['id'] == subaccount.pk
-    assert response.json()['data']['estimated'] == 0.0
+    assert response.json()['data']['nominal_value'] == 0.0
     assert len(response.json()['data']['children']) == 0
 
     assert response.json()['budget']['id'] == template.pk
-    assert response.json()['budget']['estimated'] == 0.0
+    assert response.json()['budget']['nominal_value'] == 0.0
 
     # Make sure the SubAccount is updated in the database.
     subaccount.refresh_from_db()
-    assert subaccount.estimated == 0.0
+    assert subaccount.nominal_value == 0.0
 
     # Make sure the Account is updated in the database.
     account.refresh_from_db()
-    assert account.estimated == 0.0
+    assert account.nominal_value == 0.0
 
     # Make sure the Template is updated in the database.
     template.refresh_from_db()
-    assert template.estimated == 0.0
+    assert template.nominal_value == 0.0
 
 
 def test_bulk_update_template_subaccount_subaccounts_template_updated_once(
@@ -985,23 +1006,23 @@ def test_bulk_create_budget_subaccount_subaccounts(api_client, user,
 
     assert len(response.json()['children']) == 2
     assert response.json()['children'][0]['id'] == subaccounts[0].pk
-    assert response.json()['children'][0]['estimated'] == 20.0
+    assert response.json()['children'][0]['nominal_value'] == 20.0
     assert response.json()['children'][0]['actual'] == 0.0
     assert response.json()['children'][1]['id'] == subaccounts[1].pk
-    assert response.json()['children'][1]['estimated'] == 20.0
+    assert response.json()['children'][1]['nominal_value'] == 20.0
     assert response.json()['children'][1]['actual'] == 0.0
 
     # The data in the response refers to base the entity we are updating, A.K.A.
     # the SubAccount.
     assert response.json()['data']['id'] == subaccount.pk
-    assert response.json()['data']['estimated'] == 40.0
+    assert response.json()['data']['nominal_value'] == 40.0
     assert response.json()['data']['actual'] == 0.0
     assert len(response.json()['data']['children']) == 2
     assert response.json()['data']['children'][0] == subaccounts[0].pk
     assert response.json()['data']['children'][1] == subaccounts[1].pk
 
     assert response.json()['budget']['id'] == budget.pk
-    assert response.json()['budget']['estimated'] == 40.0
+    assert response.json()['budget']['nominal_value'] == 40.0
     assert response.json()['budget']['actual'] == 0.0
 
     # Make sure the SubAccount(s) are updated in the database.
@@ -1017,17 +1038,17 @@ def test_bulk_create_budget_subaccount_subaccounts(api_client, user,
 
     # Make sure the SubAccount is updated in the database.
     subaccount.refresh_from_db()
-    assert subaccount.estimated == 40.0
+    assert subaccount.nominal_value == 40.0
     assert subaccount.actual == 0.0
 
     # Make sure the Account is updated in the database.
     account.refresh_from_db()
-    assert account.estimated == 40.0
+    assert account.nominal_value == 40.0
     assert account.actual == 0.0
 
     # Make sure the Budget is updated in the database.
     budget.refresh_from_db()
-    assert budget.estimated == 40.0
+    assert budget.nominal_value == 40.0
     assert budget.actual == 0.0
 
 
@@ -1065,13 +1086,13 @@ def test_bulk_create_template_account_subaccounts(api_client, user,
     # The data in the response refers to base the entity we are updating, A.K.A.
     # the SubAccount.
     assert response.json()['data']['id'] == subaccount.pk
-    assert response.json()['data']['estimated'] == 40.0
+    assert response.json()['data']['nominal_value'] == 40.0
     assert len(response.json()['data']['children']) == 2
     assert response.json()['data']['children'][0] == subaccounts[0].pk
     assert response.json()['data']['children'][1] == subaccounts[1].pk
 
     assert response.json()['budget']['id'] == template.pk
-    assert response.json()['budget']['estimated'] == 40.0
+    assert response.json()['budget']['nominal_value'] == 40.0
 
     # Make sure the SubAccount(s) are updated in the database.
     subaccounts[0].refresh_from_db()
@@ -1086,12 +1107,12 @@ def test_bulk_create_template_account_subaccounts(api_client, user,
 
     # Make sure the SubAccount is updated in the database.
     subaccount.refresh_from_db()
-    assert subaccount.estimated == 40.0
+    assert subaccount.nominal_value == 40.0
 
     # Make sure the Account is updated in the database.
     account.refresh_from_db()
-    assert account.estimated == 40.0
+    assert account.nominal_value == 40.0
 
     # Make sure the Template is updated in the database.
     template.refresh_from_db()
-    assert template.estimated == 40.0
+    assert template.nominal_value == 40.0
