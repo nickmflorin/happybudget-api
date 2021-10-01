@@ -15,6 +15,7 @@ from .exceptions import (
     PasswordResetLinkUsedError, InvalidResetToken,
     PasswordResetLinkExpiredError)
 from .models import ResetUID
+from .utils import validate_password
 
 
 class AbstractLoginSerializer(serializers.Serializer):
@@ -71,6 +72,10 @@ class ResetPasswordSerializer(serializers.Serializer):
         allow_blank=False,
         allow_null=False
     )
+
+    def validate_password(self, value):
+        validate_password(value)
+        return value
 
     def validate(self, attrs):
         try:

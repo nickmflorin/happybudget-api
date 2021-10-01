@@ -11,11 +11,11 @@ from greenbudget.app.authentication.models import ResetUID
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_login(user, api_client):
-    user.set_password("testpassword123")
+    user.set_password("hoopla@H9_12")
     user.save()
     response = api_client.post("/v1/auth/login/", data={
         "email": user.email,
-        "password": "testpassword123"
+        "password": "hoopla@H9_12"
     })
     assert response.status_code == 201
     assert 'greenbudgetjwt' in response.cookies
@@ -253,11 +253,33 @@ def test_reset_password(user, api_client, db):
     }
 
 
+@pytest.mark.parametrize("password", [
+    'hoopla',  # Not 8 characters long
+    'hoopla122412H',  # No special characters
+    'hoopla@JJ',  # No numbers
+    'hoopla123@',  # No capital letters
+])
+def test_reset_password_invalid_password(api_client, user, password):
+    reset_uid = ResetUID.objects.create(
+        token="token1234567",
+        used=False,
+        user=user,
+    )
+    response = api_client.post("/v1/auth/reset-password/", data={
+        "token": reset_uid.token,
+        "password": password,
+        "confirm": password,
+    })
+    assert response.status_code == 400
+    assert response.json()['errors'][0]['field'] == 'password'
+    assert response.json()['errors'][0]['code'] == 'invalid_password'
+
+
 def test_reset_password_invalid_token(api_client, db):
     response = api_client.post("/v1/auth/reset-password/", data={
         "token": "token1234567",
-        "password": "TestUserPassword4321$",
-        "confirm": "TestUserPassword4321$",
+        "password": "hoopla@H9_12$",
+        "confirm": "hoopla@H9_12$",
     })
     assert response.status_code == 403
     assert response.json() == {
@@ -283,8 +305,8 @@ def test_reset_password_token_expired(user, api_client, freezer):
 
     response = api_client.post("/v1/auth/reset-password/", data={
         "token": reset_uid.token,
-        "password": "TestUserPassword4321$",
-        "confirm": "TestUserPassword4321$",
+        "password": "hoopla@H9_12$",
+        "confirm": "hoopla@H9_12$",
     })
 
     assert response.status_code == 403

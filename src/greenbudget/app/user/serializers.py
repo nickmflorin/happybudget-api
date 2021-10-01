@@ -6,6 +6,8 @@ from greenbudget.lib.drf.fields import Base64ImageField
 from greenbudget.lib.drf.serializers import (
     ModelSerializer)
 
+from greenbudget.app.authentication.utils import validate_password
+
 from .models import User
 
 
@@ -27,6 +29,10 @@ class ChangePasswordSerializer(serializers.ModelSerializer):
         if not auth:
             raise exceptions.ValidationError("Invalid current password.")
         return current
+
+    def validate_password(self, value):
+        validate_password(value)
+        return value
 
     def update(self, instance, validated_data):
         instance.set_password(validated_data['password'])
@@ -63,6 +69,10 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         model = User
         fields = (
             'first_name', 'last_name', 'email', 'password')
+
+    def validate_password(self, value):
+        validate_password(value)
+        return value
 
 
 class SimpleUserSerializer(serializers.ModelSerializer):

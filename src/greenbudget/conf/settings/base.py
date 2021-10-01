@@ -13,6 +13,7 @@ from greenbudget.conf import Environments, config
 from .admin import *  # noqa
 from .aws import *  # noqa
 from .logging import *  # noqa
+from .password_validators import *  # noqa
 
 DEBUG = False
 

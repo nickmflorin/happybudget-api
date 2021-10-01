@@ -1,12 +1,30 @@
 import pytest
 
 
+@pytest.mark.parametrize("password", [
+    'hoopla',  # Not 8 characters long
+    'hoopla122412H',  # No special characters
+    'hoopla@JJ',  # No numbers
+    'hoopla123@',  # No capital letters
+])
+def test_registration_invalid_password(api_client, password):
+    response = api_client.post("/v1/users/registration/", data={
+        "first_name": "Jack",
+        "last_name": "Johnson",
+        "password": password,
+        "email": "jjohnson@gmail.com",
+    })
+    assert response.status_code == 400
+    assert response.json()['errors'][0]['field'] == 'password'
+    assert response.json()['errors'][0]['code'] == 'invalid_password'
+
+
 @pytest.mark.freeze_time('2020-01-01')
 def test_registration(api_client, models):
     response = api_client.post("/v1/users/registration/", data={
         "first_name": "Jack",
         "last_name": "Johnson",
-        "password": "Hoopla",
+        "password": "hoopla@H9_12",
         "email": "jjohnson@gmail.com",
     })
     assert response.status_code == 201
@@ -36,7 +54,7 @@ def test_registration(api_client, models):
     assert user.is_admin is False
     assert user.is_superuser is False
     assert user.is_active is True
-    assert user.check_password("Hoopla") is True
+    assert user.check_password("hoopla@H9_12") is True
 
     # The user should be saved as not being first time anymore, but the response
     # should indicate that it was their first time logging in.
