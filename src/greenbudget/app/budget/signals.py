@@ -38,6 +38,10 @@ def mark_budget_updated(instance):
 )
 def estimate_budget(instance):
     instance.estimate()
+    logger.info(
+        "Updating %s %s -> Accumulated Value: %s"
+        % (type(instance).__name__, instance.pk, instance.accumulated_value)
+    )
     instance.save(
         update_fields=list(instance.CALCULATED_FIELDS),
         suppress_budget_update=True
