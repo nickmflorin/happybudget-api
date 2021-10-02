@@ -213,7 +213,7 @@ class SubAccountPdfSerializer(SubAccountSimpleSerializer):
             + SubAccount.CALCULATED_FIELDS \
             + (
                 'quantity', 'rate', 'multiplier', 'unit', 'children', 'contact',
-                'group', 'nominal_value'
+                'group', 'nominal_value', 'groups'
             )
         read_only_fields = fields
 
