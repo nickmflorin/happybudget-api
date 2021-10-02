@@ -6,6 +6,8 @@ from django.contrib.contenttypes.models import ContentType
 
 from greenbudget.app import signals
 
+from .managers import MarkupManager
+
 
 @signals.model(
     flags=['suppress_budget_update', 'suppress_markups_changed'],
@@ -44,6 +46,8 @@ class Markup(models.Model):
     )
     object_id = models.PositiveIntegerField(db_index=True)
     parent = GenericForeignKey('content_type', 'object_id')
+
+    objects = MarkupManager()
 
     class Meta:
         get_latest_by = "updated_at"
