@@ -33,6 +33,9 @@ class SideEffect:
                 effect(context)
         return result
 
+    def __str__(self):
+        return '%s-%s' % (self.func.__name__, self._id)
+
     def bind(self, parent):
         self._id = self._id or parent._id
 
