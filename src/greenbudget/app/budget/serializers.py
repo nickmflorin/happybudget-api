@@ -4,6 +4,8 @@ from greenbudget.lib.drf.fields import (
     ModelChoiceField, Base64ImageField)
 from greenbudget.lib.drf.serializers import ModelSerializer
 
+from greenbudget.app.account.serializers import AccountPdfSerializer
+from greenbudget.app.group.serializers import GroupSerializer
 from greenbudget.app.template.models import Template
 
 from .models import BaseBudget, Budget
@@ -21,6 +23,25 @@ class BaseBudgetSerializer(ModelSerializer):
     class Meta:
         model = BaseBudget
         fields = ('id', 'name', 'type')
+
+
+class BudgetPdfSerializer(BaseBudgetSerializer):
+    type = serializers.CharField(read_only=True, source='pdf_type')
+    children = AccountPdfSerializer(many=True, read_only=True)
+    groups = GroupSerializer(many=True, read_only=True)
+
+    accumulated_value = serializers.FloatField(read_only=True)
+    nominal_value = serializers.FloatField(read_only=True)
+    accumulated_fringe_contribution = serializers.FloatField(read_only=True)
+    accumulated_markup_contribution = serializers.FloatField(read_only=True)
+    actual = serializers.FloatField(read_only=True)
+
+    class Meta:
+        model = Budget
+        fields = ('children', 'groups', 'nominal_value') \
+            + BaseBudgetSerializer.Meta.fields \
+            + Budget.CALCULATED_FIELDS
+        read_only_fields = fields
 
 
 class BudgetSimpleSerializer(BaseBudgetSerializer):

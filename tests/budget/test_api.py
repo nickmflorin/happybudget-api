@@ -249,3 +249,110 @@ def test_get_budget_subaccounts(api_client, user, create_budget,
         'description': sub.description,
         'type': 'subaccount',
     }]
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_get_budget_pdf(api_client, user, create_budget, models,
+        create_budget_account, create_budget_subaccount):
+    budget = create_budget()
+    account = create_budget_account(parent=budget)
+    subaccount = create_budget_subaccount(parent=account)
+    subaccounts = [
+        create_budget_subaccount(parent=subaccount),
+        create_budget_subaccount(parent=subaccount)
+    ]
+    api_client.force_login(user)
+    response = api_client.get("/v1/budgets/%s/pdf/" % budget.pk)
+    assert response.status_code == 200
+    assert response.json() == {
+        "id": budget.pk,
+        "name": budget.name,
+        "groups": [],
+        "nominal_value": 0.0,
+        "type": "pdf-budget",
+        "accumulated_value": 0.0,
+        "accumulated_markup_contribution": 0.0,
+        "accumulated_fringe_contribution": 0.0,
+        "actual": 0.0,
+        "children": [
+            {
+                "id": account.pk,
+                "identifier": account.identifier,
+                "type": "pdf-account",
+                "description": account.description,
+                "nominal_value": 0.0,
+                "accumulated_value": 0.0,
+                "markup_contribution": 0.0,
+                "accumulated_markup_contribution": 0.0,
+                "accumulated_fringe_contribution": 0.0,
+                "actual": 0.0,
+                "groups": [],
+                "children": [
+                    {
+                        "id": subaccount.pk,
+                        "identifier": subaccount.identifier,
+                        "type": "pdf-subaccount",
+                        "description": subaccount.description,
+                        "nominal_value": 0.0,
+                        "accumulated_value": 0.0,
+                        "fringe_contribution": 0.0,
+                        "markup_contribution": 0.0,
+                        "accumulated_markup_contribution": 0.0,
+                        "accumulated_fringe_contribution": 0.0,
+                        "actual": 0.0,
+                        "quantity": None,
+                        "rate": None,
+                        "multiplier": None,
+                        "unit": None,
+                        "contact": None,
+                        "group": None,
+                        "groups": [],
+                        "children": [
+                            {
+                                "id": subaccounts[0].pk,
+                                "identifier": subaccounts[0].identifier,
+                                "type": "pdf-subaccount",
+                                "description": subaccounts[0].description,
+                                "nominal_value": 0.0,
+                                "accumulated_value": 0.0,
+                                "fringe_contribution": 0.0,
+                                "markup_contribution": 0.0,
+                                "accumulated_markup_contribution": 0.0,
+                                "accumulated_fringe_contribution": 0.0,
+                                "actual": 0.0,
+                                "quantity": None,
+                                "rate": None,
+                                "multiplier": None,
+                                "unit": None,
+                                "children": [],
+                                "contact": None,
+                                "group": None,
+                                "groups": []
+                            },
+                            {
+                                "id": subaccounts[1].pk,
+                                "identifier": subaccounts[1].identifier,
+                                "type": "pdf-subaccount",
+                                "description": subaccounts[1].description,
+                                "nominal_value": 0.0,
+                                "accumulated_value": 0.0,
+                                "fringe_contribution": 0.0,
+                                "markup_contribution": 0.0,
+                                "accumulated_markup_contribution": 0.0,
+                                "accumulated_fringe_contribution": 0.0,
+                                "actual": 0.0,
+                                "quantity": None,
+                                "rate": None,
+                                "multiplier": None,
+                                "unit": None,
+                                "children": [],
+                                "contact": None,
+                                "group": None,
+                                "groups": []
+                            }
+                        ]
+                    }
+                ],
+            }
+        ],
+    }
