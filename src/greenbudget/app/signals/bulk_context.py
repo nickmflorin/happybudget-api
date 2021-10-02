@@ -168,33 +168,26 @@ class bulk_context_manager(threading.local):
                     )
             return f(**keyword_args)
 
-        def caller(*args, **kwargs):
-            conditional = kwargs.pop('conditional', None) \
-                or getattr(func, '__options__')['conditional']
-            if conditional is not None:
-                if hasattr(conditional, '__call__'):
-                    conditional = use_callback(conditional, *args, **kwargs)
+        def use_option(option_name, *a, **kw):
+            option_value = getattr(func, '__options__')[option_name]
+            if option_value is not None and hasattr(option_value, '__call__'):
+                return use_callback(option_value, *a, **kw)
+            return option_value
 
+        def caller(*args, **kwargs):
             # If the conditional evaluates to False, do not proceed with any
             # step (even getting the ID) as the ID callback might require state
             # that is guarded against with the conditional.
+            conditional = use_option('conditional', *args, **kwargs)
             if conditional is False:
                 return
 
-            id = kwargs.pop('id', None) or getattr(func, '__options__')['id']
-            if hasattr(id, '__call__'):
-                id = use_callback(id, *args, **kwargs)
-
-            side_effects = getattr(func, '__options__')['side_effect']
-            if hasattr(side_effects, '__call__'):
-                side_effects = use_callback(side_effects, *args, **kwargs)
-
             signature = SideEffect(
-                id=id,
+                id=use_option('id', *args, **kwargs),
                 func=func,
                 args=args,
                 kwargs=kwargs,
-                children=side_effects
+                children=use_option('side_effect', *args, **kwargs)
             )
             queue_in_context = getattr(func, '__options__')['queue_in_context']
             if self._active is False or queue_in_context is False:
