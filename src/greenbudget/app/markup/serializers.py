@@ -108,6 +108,7 @@ class MarkupSerializer(BudgetParentContextSerializer):
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
     rate = serializers.FloatField(required=False, allow_null=True)
+    actual = serializers.FloatField(read_only=True)
     unit = ModelChoiceField(
         required=False,
         choices=Markup.UNITS,
@@ -125,7 +126,8 @@ class MarkupSerializer(BudgetParentContextSerializer):
         model = Markup
         fields = (
             'id', 'identifier', 'description', 'created_by', 'created_at',
-            'updated_by', 'updated_at', 'rate', 'unit', 'children', 'type')
+            'updated_by', 'updated_at', 'rate', 'unit', 'children', 'type',
+            'actual')
 
     def create(self, validated_data, **kwargs):
         children = validated_data.pop('children', None)

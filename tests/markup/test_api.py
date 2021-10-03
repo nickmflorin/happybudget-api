@@ -18,6 +18,7 @@ def test_get_budget_account_markup(api_client, user, create_budget_account,
         "identifier": markup.identifier,
         "description": markup.description,
         "rate": markup.rate,
+        "actual": 0.0,
         "unit": {
             "id": markup.unit,
             "name": models.Markup.UNITS[markup.unit]
@@ -48,6 +49,7 @@ def test_get_budget_subaccount_markup(api_client, user, create_budget_account,
         "identifier": markup.identifier,
         "description": markup.description,
         "rate": markup.rate,
+        "actual": 0.0,
         "unit": {
             "id": markup.unit,
             "name": models.Markup.UNITS[markup.unit]
@@ -103,6 +105,7 @@ def test_update_budget_account_markup(api_client, user, create_budget_account,
         "identifier": markup.identifier,
         "description": markup.description,
         "rate": markup.rate,
+        "actual": 0.0,
         "unit": {
             "id": markup.unit,
             "name": models.Markup.UNITS[markup.unit]
@@ -164,6 +167,7 @@ def test_remove_budget_account_markup_children(api_client, user, create_markup,
         "identifier": markup.identifier,
         "description": markup.description,
         "rate": markup.rate,
+        "actual": 0.0,
         "unit": {
             "id": markup.unit,
             "name": models.Markup.UNITS[markup.unit]
@@ -219,6 +223,7 @@ def test_add_budget_account_markup_children(api_client, user, create_markup,
         "identifier": markup.identifier,
         "description": markup.description,
         "rate": markup.rate,
+        "actual": 0.0,
         "unit": {
             "id": markup.unit,
             "name": models.Markup.UNITS[markup.unit]
@@ -299,6 +304,7 @@ def test_update_budget_subaccount_markup(api_client, user, create_budget_account
         "identifier": markup.identifier,
         "description": markup.description,
         "rate": markup.rate,
+        "actual": 0.0,
         "unit": {
             "id": markup.unit,
             "name": models.Markup.UNITS[markup.unit]
@@ -385,6 +391,7 @@ def test_remove_budget_subaccount_markup_children(api_client, user, models,
         "identifier": markup.identifier,
         "description": markup.description,
         "rate": markup.rate,
+        "actual": 0.0,
         "unit": {
             "id": markup.unit,
             "name": models.Markup.UNITS[markup.unit]
@@ -464,6 +471,7 @@ def test_add_budget_subaccount_markup_children(api_client, user, create_markup,
         "identifier": markup.identifier,
         "description": markup.description,
         "rate": markup.rate,
+        "actual": 0.0,
         "unit": {
             "id": markup.unit,
             "name": models.Markup.UNITS[markup.unit]

@@ -18,6 +18,7 @@ def test_get_budget_account_markups(api_client, user, models,
         "identifier": markup.identifier,
         "description": markup.description,
         "rate": markup.rate,
+        "actual": 0.0,
         "unit": {
             "id": markup.unit,
             "name": models.Markup.UNITS[markup.unit]
@@ -96,6 +97,7 @@ def test_create_budget_markup(api_client, user, create_budget_subaccounts,
         "identifier": markup.identifier,
         "description": markup.description,
         "rate": markup.rate,
+        "actual": 0.0,
         "unit": {
             "id": markup.unit,
             "name": models.Markup.UNITS[markup.unit]
