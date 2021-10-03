@@ -137,6 +137,7 @@ def create_bulk_update_serializer(base_cls, child_cls, child_serializer_cls,
     class BulkUpdateSerializer(generic_serializer_cls):
         def update(self, instance, validated_data):
             data = validated_data.pop('data', [])
+            children = []
             with signals.bulk_context:
                 for child, change in data:
                     # At this point, the change already represents the
@@ -146,9 +147,10 @@ def create_bulk_update_serializer(base_cls, child_cls, child_serializer_cls,
                     serializer = child_serializer_cls(
                         partial=True, context=self._child_context)
                     serializer.update(child, {**validated_data, **change})
+                    children.append(child)
             # We have to refresh the instance from the DB because of the
             # changes that might have occurred due to the signals.
             instance.refresh_from_db()
-            return instance
+            return instance, children
 
     return BulkUpdateSerializer

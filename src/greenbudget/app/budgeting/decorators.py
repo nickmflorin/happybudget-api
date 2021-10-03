@@ -229,9 +229,11 @@ class bulk_update_action(bulk_action):
         )
 
     def decorated(self, view, request):
-        updated_instance = super().decorated(view, request)
+        instance, children = super().decorated(view, request)
         return self.render_response({
-            'data': self.base_serializer_cls(updated_instance).data})
+            'children': self.child_serializer_cls(children, many=True).data,
+            'data': self.base_serializer_cls(instance).data
+        }, status=status.HTTP_200_OK)
 
 
 class bulk_create_action(bulk_action):
