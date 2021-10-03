@@ -1,7 +1,9 @@
 from model_utils import Choices
 
-from django.contrib.contenttypes.fields import GenericRelation
-from django.db import models, IntegrityError
+from django.contrib.contenttypes.fields import (
+    GenericRelation, GenericForeignKey)
+from django.contrib.contenttypes.models import ContentType
+from django.db import models
 
 from greenbudget.app import signals
 from greenbudget.app.comment.models import Comment
@@ -52,12 +54,16 @@ class Actual(models.Model):
         on_delete=models.CASCADE,
         related_name='actuals'
     )
-    subaccount = models.ForeignKey(
-        to='subaccount.BudgetSubAccount',
-        on_delete=models.CASCADE,
-        related_name="actuals",
-        null=True
+    content_type = models.ForeignKey(
+        to=ContentType,
+        null=True,
+        on_delete=models.SET_NULL,
+        limit_choices_to=models.Q(app_label='markup', model='Markup')
+        | models.Q(app_label='subaccount', model='BudgetSubAccount')
     )
+    object_id = models.PositiveIntegerField(db_index=True, null=True)
+    owner = GenericForeignKey('content_type', 'object_id')
+
     comments = GenericRelation(Comment)
     objects = ActualManager()
 
@@ -68,27 +74,4 @@ class Actual(models.Model):
         verbose_name_plural = "Actual"
 
     def __str__(self):
-        return "<{cls} id={id}, value={value}, subaccount={subaccount}>".format(  # noqa
-            cls=self.__class__.__name__,
-            id=self.pk,
-            value=self.value,
-            subaccount=self.subaccount.pk if self.subaccount is not None else None  # noqa
-        )
-
-    def save(self, *args, **kwargs):
-        subaccount_budget = None
-        if self.subaccount is not None:
-            subaccount_budget = self.subaccount.budget
-
-        if subaccount_budget is not None and self.budget is not None \
-                and subaccount_budget != self.budget:
-            raise IntegrityError(
-                "The actual must belong to the same budget as it's subaccount.")
-
-        if self.contact is not None and self.contact.user != self.created_by:
-            raise IntegrityError(
-                "Cannot assign a contact created by one user to an actual "
-                "created by another user."
-            )
-
-        return super().save(*args, **kwargs)
+        return "Actual: %s" % self.value

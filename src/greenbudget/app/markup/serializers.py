@@ -67,6 +67,27 @@ class MarkupAddChildrenSerializer(ModelSerializer):
         return instance
 
 
+class MarkupSimpleSerializer(ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
+    type = serializers.CharField(read_only=True)
+    identifier = serializers.CharField(
+        required=False,
+        allow_blank=False,
+        allow_null=True,
+        trim_whitespace=False
+    )
+    description = serializers.CharField(
+        required=False,
+        allow_blank=False,
+        allow_null=True,
+        trim_whitespace=False
+    )
+
+    class Meta:
+        model = Markup
+        fields = ('id', 'identifier', 'description', 'type')
+
+
 class MarkupSerializer(BudgetParentContextSerializer):
     id = serializers.IntegerField(read_only=True)
     type = serializers.CharField(read_only=True)

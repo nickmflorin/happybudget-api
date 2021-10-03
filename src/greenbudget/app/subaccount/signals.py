@@ -21,6 +21,9 @@ logger = logging.getLogger('signals')
             func=actualize_account,
             args=(instance.parent, ),
             kwargs={
+                # We do not need to include the Markup(s) that will be deleted
+                # because the Markup(s) will not belong to the parent, only the
+                # instance being changed.
                 'children_to_be_deleted': children_to_be_deleted
             },
             # There are weird cases (like CASCADE deletes) where non-nullable
@@ -33,6 +36,9 @@ logger = logging.getLogger('signals')
             func=actualize_subaccount,
             args=(instance.parent, ),
             kwargs={
+                # We do not need to include the Markup(s) that will be deleted
+                # because the Markup(s) will not belong to the parent, only the
+                # instance being changed.
                 'children_to_be_deleted': children_to_be_deleted
             },
             # There are weird cases (like CASCADE deletes) where non-nullable
@@ -44,7 +50,7 @@ logger = logging.getLogger('signals')
     ]
 )
 def actualize_subaccount(instance, actuals_to_be_deleted=None,
-        children_to_be_deleted=None):
+        children_to_be_deleted=None, markups_to_be_deleted=None):
     """
     Reactualizes the :obj:`greenbudget.app.subaccount.models.SubAccount` based
     on the :obj:`greenbudget.app.actual.models.Actual`(s) associated with the
@@ -52,7 +58,8 @@ def actualize_subaccount(instance, actuals_to_be_deleted=None,
     """
     instance.actualize(
         actuals_to_be_deleted=actuals_to_be_deleted,
-        children_to_be_deleted=children_to_be_deleted
+        children_to_be_deleted=children_to_be_deleted,
+        markups_to_be_deleted=markups_to_be_deleted
     )
     instance.save(update_fields=["actual"], suppress_budget_update=True)
 
@@ -65,6 +72,9 @@ def actualize_subaccount(instance, actuals_to_be_deleted=None,
             func=estimate_account,
             args=(instance.parent, ),
             kwargs={
+                # We do not need to include the Markup(s) that will be deleted
+                # because the Markup(s) will not belong to the parent, only the
+                # instance being changed.
                 'children_to_be_deleted': children_to_be_deleted
             },
             # There are weird cases (like CASCADE deletes) where non-nullable
@@ -77,6 +87,9 @@ def actualize_subaccount(instance, actuals_to_be_deleted=None,
             func=estimate_subaccount,
             args=(instance.parent, ),
             kwargs={
+                # We do not need to include the Markup(s) that will be deleted
+                # because the Markup(s) will not belong to the parent, only the
+                # instance being changed.
                 'children_to_be_deleted': children_to_be_deleted
             },
             # There are weird cases (like CASCADE deletes) where non-nullable
@@ -139,12 +152,13 @@ def calculate_parent(parent, children_to_be_deleted=None):
 @signals.bulk_context.handler(
     id=lambda instance: instance.pk,
     queue_in_context=True,
-    side_effect=lambda instance, children_to_be_deleted: [
+    side_effect=lambda instance, children_to_be_deleted, markups_to_be_deleted: [  # noqa
         signals.SideEffect(
             func=estimate_subaccount,
             args=(instance,),
             kwargs={
-                'children_to_be_deleted': children_to_be_deleted
+                'children_to_be_deleted': children_to_be_deleted,
+                'markups_to_be_deleted': markups_to_be_deleted
             },
         ),
         signals.SideEffect(
@@ -152,12 +166,14 @@ def calculate_parent(parent, children_to_be_deleted=None):
             args=(instance, ),
             conditional=isinstance(instance, BudgetSubAccount),
             kwargs={
-                'children_to_be_deleted': children_to_be_deleted
+                'children_to_be_deleted': children_to_be_deleted,
+                'markups_to_be_deleted': markups_to_be_deleted
             },
         )
     ]
 )
-def calculate_subaccount(instance, children_to_be_deleted=None):
+def calculate_subaccount(instance, children_to_be_deleted=None,
+        markups_to_be_deleted=None):
     pass
 
 

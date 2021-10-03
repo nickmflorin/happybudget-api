@@ -1,10 +1,13 @@
+import functools
 from model_utils import Choices
 
 from django.db import models, IntegrityError
-from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.fields import (
+    GenericRelation, GenericForeignKey)
 from django.contrib.contenttypes.models import ContentType
 
 from greenbudget.app import signals
+from greenbudget.app.actual.models import Actual
 
 from .managers import MarkupManager
 
@@ -47,6 +50,8 @@ class Markup(models.Model):
     object_id = models.PositiveIntegerField(db_index=True)
     parent = GenericForeignKey('content_type', 'object_id')
 
+    actuals = GenericRelation(Actual)
+
     objects = MarkupManager()
 
     class Meta:
@@ -54,6 +59,14 @@ class Markup(models.Model):
         ordering = ('-created_at', )
         verbose_name = "Markup"
         verbose_name_plural = "Markups"
+
+    @property
+    def actual(self):
+        return functools.reduce(
+            lambda current, actual: current + (actual.value or 0),
+            self.actuals.only('value'),
+            0
+        )
 
     @classmethod
     def child_instance_cls_for_parent(cls, parent):
@@ -122,8 +135,4 @@ class Markup(models.Model):
         return self.children.count() == 0
 
     def __str__(self):
-        return "<{cls} identifier={identifier} parent={parent}>".format(
-            cls=self.__class__.__name__,
-            identifier=self.identifier,
-            parent=self.parent.id,
-        )
+        return "Markup: %s" % self.identifier

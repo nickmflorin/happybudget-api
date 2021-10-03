@@ -150,6 +150,7 @@ def test_bulk_delete_account_markups(api_client, user, create_budget, models,
         create_markup(parent=account, unit=models.Markup.UNITS.flat, rate=100)
     ]
     subaccount = create_budget_subaccount(parent=account, markups=markups)
+
     assert budget.accumulated_markup_contribution == 200.0
     assert account.accumulated_markup_contribution == 200.0
     assert subaccount.markup_contribution == 200.0

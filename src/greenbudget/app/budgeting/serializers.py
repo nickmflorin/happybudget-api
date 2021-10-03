@@ -50,6 +50,12 @@ class BudgetParentContextSerializer(ModelSerializer):
         if self._only_model:
             return data
 
+        if 'request' not in self.context:
+            raise Exception(
+                "The request must be provided in context when using %s."
+                % self.__class__.__name__
+            )
+
         if self.context['request'].method in ('POST', 'PATCH'):
             parent = instance.parent
             parent.refresh_from_db()

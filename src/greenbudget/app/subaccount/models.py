@@ -9,6 +9,7 @@ from django.db import models, IntegrityError
 from greenbudget.lib.django_utils.models import optional_commit
 
 from greenbudget.app import signals
+from greenbudget.app.actual.models import Actual
 from greenbudget.app.budgeting.models import use_children
 from greenbudget.app.comment.models import Comment
 from greenbudget.app.fringe.utils import contribution_from_fringes
@@ -114,6 +115,7 @@ class SubAccount(PolymorphicModel):
         related_name='subaccounts'
     )
     groups = GenericRelation(Group)
+    actuals = GenericRelation(Actual)
 
     objects = SubAccountManager()
     non_polymorphic = models.Manager()
@@ -226,13 +228,17 @@ class SubAccount(PolymorphicModel):
 
     @optional_commit(["actual"])
     @use_children(["actual"])
-    def actualize(self, children, **kwargs):
+    def actualize(self, children, markups_to_be_deleted=None, **kwargs):
+        markups = self.markups.exclude(pk__in=markups_to_be_deleted or [])
         actuals = self.actuals.exclude(
-            pk__in=kwargs.get('actuals_to_be_deleted', []) or [])
-
+            pk__in=kwargs.get('actuals_to_be_deleted', []) or []).only('value')
         self.actual = functools.reduce(
-            lambda current, sub: current + sub.actual,
+            lambda current, child: current + (child.actual or 0),
             children,
+            0
+        ) + functools.reduce(
+            lambda current, markup: current + (markup.actual or 0),
+            markups,
             0
         ) + functools.reduce(
             lambda current, actual: current + (actual.value or 0),

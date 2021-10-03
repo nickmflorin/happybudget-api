@@ -147,10 +147,15 @@ class Account(PolymorphicModel):
 
     @optional_commit(["actual"])
     @use_children(["actual"])
-    def actualize(self, children, **kwargs):
+    def actualize(self, children, markups_to_be_deleted=None, **kwargs):
+        markups = self.markups.exclude(pk__in=markups_to_be_deleted or [])
         self.actual = functools.reduce(
             lambda current, child: current + (child.actual or 0),
             children,
+            0
+        ) + functools.reduce(
+            lambda current, markup: current + (markup.actual or 0),
+            markups,
             0
         )
 

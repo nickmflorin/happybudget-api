@@ -142,7 +142,6 @@ class SubAccountActualsViewSet(
         context = super().get_serializer_context()
         context.update(
             budget=self.subaccount.budget,
-            subaccount=self.subaccount,
             subaccount_context=True
         )
         return context
@@ -154,7 +153,8 @@ class SubAccountActualsViewSet(
         serializer.save(
             updated_by=self.request.user,
             created_by=self.request.user,
-            subaccount=self.subaccount,
+            object_id=self.subaccount.pk,
+            content_type=ContentType.objects.get_for_model(type(self.subaccount)),  # noqa
             budget=self.subaccount.budget,
         )
 
@@ -295,6 +295,5 @@ class SubAccountRecursiveViewSet(
             created_by=self.request.user,
             object_id=self.subaccount.pk,
             content_type=ContentType.objects.get_for_model(type(self.subaccount)),  # noqa
-            parent=self.subaccount,
             budget=self.subaccount.budget
         )

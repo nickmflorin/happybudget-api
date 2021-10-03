@@ -40,9 +40,12 @@ def estimate_account(instance, markups_to_be_deleted=None,
         args=(instance.parent, )
     )
 )
-def actualize_account(instance, children_to_be_deleted=None):
+def actualize_account(instance, children_to_be_deleted=None,
+        markups_to_be_deleted=None):
     instance.actualize(
-        children_to_be_deleted=children_to_be_deleted)
+        children_to_be_deleted=children_to_be_deleted,
+        markups_to_be_deleted=markups_to_be_deleted
+    )
     instance.save(update_fields=["actual"], suppress_budget_update=True)
 
 
@@ -63,6 +66,7 @@ def actualize_account(instance, children_to_be_deleted=None):
             args=(instance, ),
             kwargs={
                 'children_to_be_deleted': children_to_be_deleted,
+                'markups_to_be_deleted': markups_to_be_deleted,
             },
             conditional=isinstance(instance, BudgetAccount)
         )

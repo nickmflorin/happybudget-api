@@ -12,5 +12,4 @@ class ActualAdminForm(forms.ModelForm):
 
 @admin.register(Actual)
 class ActualAdmin(admin.ModelAdmin):
-    list_display = (
-        "budget", "value", "owner", "created_by", "created_at")
+    list_display = ("budget", "value", "created_by", "created_at")

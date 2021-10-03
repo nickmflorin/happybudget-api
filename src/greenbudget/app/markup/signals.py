@@ -5,9 +5,10 @@ from django.db import IntegrityError
 
 from greenbudget.app import signals
 from greenbudget.app.account.models import BudgetAccount
-from greenbudget.app.account.signals import estimate_account
+from greenbudget.app.account.signals import calculate_account, estimate_account
 from greenbudget.app.subaccount.models import BudgetSubAccount
-from greenbudget.app.subaccount.signals import estimate_subaccount
+from greenbudget.app.subaccount.signals import (
+    calculate_subaccount, estimate_subaccount)
 
 from .models import Markup
 
@@ -44,36 +45,45 @@ def delete_empty_markups(instance, reverse, **kwargs):
                     pass
 
 
+def estimate_instance(instance, **kwargs):
+    calculator_map = {
+        BudgetAccount: estimate_account,
+        BudgetSubAccount: estimate_subaccount
+    }
+    calculator = calculator_map[type(instance)]
+    calculator(instance, **kwargs)
+
+
+def calculate_instance(instance, **kwargs):
+    calculator_map = {
+        BudgetAccount: calculate_account,
+        BudgetSubAccount: calculate_subaccount
+    }
+    calculator = calculator_map[type(instance)]
+    calculator(instance, **kwargs)
+
+
 @signals.any_fields_changed_receiver(fields=['unit', 'rate'], sender=Markup)
 def markup_changed(instance, **kwargs):
     with signals.bulk_context:
         for obj in instance.children.all():
-            if isinstance(obj, BudgetAccount):
-                estimate_account(obj)
-            else:
-                estimate_subaccount(obj)
+            estimate_instance(obj)
 
 
 @dispatch.receiver(signals.m2m_changed, sender=BudgetAccount.markups.through)
 @dispatch.receiver(signals.m2m_changed, sender=BudgetSubAccount.markups.through)
 def markups_changed(instance, reverse, action, **kwargs):
-    estimator_map = {
-        BudgetAccount: estimate_account,
-        BudgetSubAccount: estimate_subaccount
-    }
     if action in ('post_add', 'post_remove'):
         if reverse:
             objs = kwargs['model'].objects.filter(pk__in=kwargs['pk_set'])
             assert len(set([type(obj) for obj in objs])) in (0, 1)
             # The instance here is the Markup instance being added.
-            estimator = estimator_map[type(objs[0])]
             with signals.bulk_context:
                 for obj in objs:
-                    estimator(obj)
+                    calculate_instance(obj)
         else:
             # The instance here is the Account or SubAccount.
-            estimator = estimator_map[type(instance)]
-            estimator(instance)
+            calculate_instance(instance)
 
 
 @dispatch.receiver(signals.pre_delete, sender=Markup)
@@ -84,10 +94,7 @@ def markup_deleted(instance, **kwargs):
     # exclude the Markup that is about to be deleted.
     with signals.bulk_context:
         for obj in instance.children.all():
-            if isinstance(obj, BudgetAccount):
-                estimate_account(obj, markups_to_be_deleted=[instance.pk])
-            else:
-                estimate_subaccount(obj, markups_to_be_deleted=[instance.pk])
+            calculate_instance(obj, markups_to_be_deleted=[instance.pk])
 
 
 @dispatch.receiver(signals.m2m_changed, sender=BudgetAccount.markups.through)
