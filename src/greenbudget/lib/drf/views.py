@@ -9,8 +9,29 @@ from rest_framework.response import Response
 from rest_framework.serializers import as_serializer_error
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
 
+from greenbudget.lib.utils.urls import parse_ids_from_request
+
 
 logger = logging.getLogger('greenbudget')
+
+
+def filter_by_ids(cls):
+    original_get_queryset = cls.get_queryset
+
+    @property
+    def request_ids(instance):
+        return parse_ids_from_request(instance.request)
+
+    def get_queryset(instance, *args, **kwargs):
+        qs = original_get_queryset(instance, *args, **kwargs)
+        if instance.request_ids is not None:
+            qs = qs.filter(pk__in=instance.request_ids)
+        return qs
+
+    cls.request_ids = request_ids
+    if original_get_queryset is not None:
+        cls.get_queryset = get_queryset
+    return cls
 
 
 def exception_handler(exc, context):

@@ -3,6 +3,8 @@ from django.db import models
 
 from rest_framework import viewsets, mixins, response, status, decorators
 
+from greenbudget.lib.drf.views import filter_by_ids
+
 from greenbudget.app.account.models import BudgetAccount
 from greenbudget.app.account.serializers import (
     BudgetAccountSerializer, AccountSimpleSerializer)
@@ -31,6 +33,7 @@ from .serializers import (
 )
 
 
+@filter_by_ids
 class BudgetMarkupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -69,6 +72,7 @@ class BudgetMarkupViewSet(
         )
 
 
+@filter_by_ids
 class BudgetGroupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -108,6 +112,7 @@ class BudgetGroupViewSet(
         )
 
 
+@filter_by_ids
 class BudgetActualsViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
@@ -141,6 +146,7 @@ class BudgetActualsViewSet(
         )
 
 
+@filter_by_ids
 class BudgetFringeViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -176,6 +182,7 @@ class BudgetFringeViewSet(
         )
 
 
+@filter_by_ids
 class BudgetSubAccountViewSet(
     mixins.ListModelMixin,
     BudgetNestedMixin,
@@ -357,6 +364,7 @@ class BudgetSubAccountViewSet(
         return self.get_paginated_response(data)
 
 
+@filter_by_ids
 class BudgetAccountViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -414,12 +422,12 @@ class GenericBudgetViewSet(viewsets.GenericViewSet):
             return BudgetSimpleSerializer
         return BudgetSerializer
 
-    @ property
+    @property
     def serializer_class(self):
         return self.get_serializer_class()
 
 
-@ register_bulk_operations(
+@register_bulk_operations(
     base_cls=Budget,
     get_budget=lambda instance: instance,
     # Since the Budget is the entity being updated, it will already be included
@@ -513,13 +521,13 @@ class BudgetViewSet(
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
 
-    @ decorators.action(detail=True, methods=["GET"])
+    @decorators.action(detail=True, methods=["GET"])
     def pdf(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = BudgetPdfSerializer(instance)
         return response.Response(serializer.data, status=status.HTTP_200_OK)
 
-    @ decorators.action(detail=True, methods=["POST"])
+    @decorators.action(detail=True, methods=["POST"])
     def duplicate(self, request, *args, **kwargs):
         instance = self.get_object()
         duplicated = instance.duplicate(request.user)

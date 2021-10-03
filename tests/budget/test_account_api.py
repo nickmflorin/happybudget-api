@@ -1,6 +1,7 @@
 import pytest
 
 from greenbudget.app import signals
+from greenbudget.lib.utils.urls import add_query_params_to_url
 
 
 @pytest.mark.freeze_time('2020-01-01')
@@ -39,6 +40,44 @@ def test_get_budget_accounts(api_client, user, create_budget_account,
             "id": accounts[1].pk,
             "identifier": "%s" % accounts[1].identifier,
             "description": accounts[1].description,
+            "created_at": "2020-01-01 00:00:00",
+            "updated_at": "2020-01-01 00:00:00",
+            "access": [],
+            "type": "account",
+            "nominal_value": 0.0,
+            "accumulated_value": 0.0,
+            "accumulated_fringe_contribution": 0.0,
+            "markup_contribution": 0.0,
+            "accumulated_markup_contribution": 0.0,
+            "actual": 0.0,
+            "children": [],
+            "created_by": user.pk,
+            "updated_by": user.pk
+        }
+    ]
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_get_budget_accounts_filtered_by_id(api_client, user, create_budget,
+        create_budget_account):
+    with signals.disable():
+        budget = create_budget()
+        accounts = [
+            create_budget_account(parent=budget),
+            create_budget_account(parent=budget)
+        ]
+    api_client.force_login(user)
+    url = add_query_params_to_url(
+        "/v1/budgets/%s/accounts/" % budget.pk, ids=[accounts[0].pk, 400])
+
+    response = api_client.get(url)
+    assert response.status_code == 200
+    assert response.json()['count'] == 1
+    assert response.json()['data'] == [
+        {
+            "id": accounts[0].pk,
+            "identifier": "%s" % accounts[0].identifier,
+            "description": accounts[0].description,
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
             "access": [],

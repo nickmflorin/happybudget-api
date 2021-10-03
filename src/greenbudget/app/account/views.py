@@ -4,6 +4,8 @@ from django.utils.functional import cached_property
 
 from rest_framework import viewsets, mixins, permissions
 
+from greenbudget.lib.drf.views import filter_by_ids
+
 from greenbudget.app.account.models import Account
 from greenbudget.app.account.mixins import AccountNestedMixin
 from greenbudget.app.budgeting.decorators import (
@@ -29,6 +31,7 @@ from .serializers import (
 )
 
 
+@filter_by_ids
 class AccountMarkupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -69,6 +72,7 @@ class AccountMarkupViewSet(
         )
 
 
+@filter_by_ids
 class AccountGroupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -109,6 +113,7 @@ class AccountGroupViewSet(
         )
 
 
+@filter_by_ids
 class AccountSubAccountViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,

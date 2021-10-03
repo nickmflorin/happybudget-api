@@ -4,6 +4,8 @@ from django.utils.functional import cached_property
 
 from rest_framework import viewsets, mixins
 
+from greenbudget.lib.drf.views import filter_by_ids
+
 from greenbudget.app.actual.views import GenericActualViewSet
 from greenbudget.app.budgeting.decorators import (
     register_bulk_operations, BulkAction, BulkDeleteAction)
@@ -44,6 +46,7 @@ class SubAccountUnitViewSet(
         return SubAccountUnit.objects.all()
 
 
+@filter_by_ids
 class SubAccountMarkupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -84,6 +87,7 @@ class SubAccountMarkupViewSet(
         )
 
 
+@filter_by_ids
 class SubAccountGroupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -124,6 +128,7 @@ class SubAccountGroupViewSet(
         )
 
 
+@filter_by_ids
 class SubAccountActualsViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
@@ -245,6 +250,7 @@ class SubAccountViewSet(
         serializer.save(updated_by=self.request.user)
 
 
+@filter_by_ids
 class SubAccountRecursiveViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,

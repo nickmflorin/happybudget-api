@@ -16,7 +16,27 @@ __all__ = (
     'make_url_absolute',
     'relative_path_join',
     'safe_format_url',
+    'parse_ids_from_request'
 )
+
+
+def parse_ids_from_request(request):
+    ids = request.query_params.get('ids', None)
+    if ids is not None:
+        if ids.startswith('[') and ids.endswith(']'):
+            ids = ids[1:-1]
+        ids = [id.strip() for id in ids.split(',')]
+        numeric_ids = []
+        has_invalid = False
+        for id in ids:
+            try:
+                numeric_ids.append(int(id))
+            except ValueError:
+                has_invalid = True
+        if len(numeric_ids) == 0 and has_invalid:
+            return None
+        return numeric_ids
+    return None
 
 
 def get_base_url(url):
