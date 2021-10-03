@@ -8,7 +8,8 @@ from greenbudget.app.account.serializers import (
     BudgetAccountSerializer, AccountSimpleSerializer)
 from greenbudget.app.account.views import GenericAccountViewSet
 from greenbudget.app.actual.models import Actual
-from greenbudget.app.actual.serializers import ActualSerializer
+from greenbudget.app.actual.serializers import (
+    ActualSerializer, OwnerTreeNodeSerializer)
 from greenbudget.app.actual.views import GenericActualViewSet
 from greenbudget.app.budgeting.decorators import (
     register_bulk_operations, BulkAction, BulkDeleteAction)
@@ -19,8 +20,7 @@ from greenbudget.app.group.serializers import GroupSerializer
 from greenbudget.app.markup.models import Markup
 from greenbudget.app.markup.serializers import MarkupSerializer
 from greenbudget.app.subaccount.models import BudgetSubAccount
-from greenbudget.app.subaccount.serializers import (
-    SubAccountSimpleSerializer, SubAccountTreeNodeSerializer)
+from greenbudget.app.subaccount.serializers import SubAccountSimpleSerializer
 
 from .models import Budget
 from .mixins import BudgetNestedMixin
@@ -185,7 +185,6 @@ class BudgetSubAccountViewSet(
     ViewSet to handle requests to the following endpoints:
 
     (1) GET /budgets/<pk>/subaccounts/
-    (2) GET /budgets/<pk>/subaccounts/tree/
 
     Note that any given :obj:`greenbudget.app.subaccount.BudgetSubAccount`
     is not a direct child of the :obj:`greenbudget.app.budget.Budget` but
@@ -213,18 +212,42 @@ class BudgetSubAccountViewSet(
             .exclude(models.Q(identifier=None) & models.Q(description=None)) \
             .filter_by_budget(budget=self.budget)
 
-    def filter_tree_querysets(self, top_level_qs, searched_qs):
+    def filter_tree_querysets(self, subaccount_qs, markup_qs):
+        account_ct_id = ContentType.objects.get_for_model(BudgetAccount).pk
+        budget_ct_id = ContentType.objects.get_for_model(Budget).pk
+        subaccount_ct_id = ContentType.objects.get_for_model(BudgetSubAccount).pk  # noqa
+
+        # Perform the search filter on each of the markup and sub account
+        # querysets separately.
+        searched_markup_qs = self.filter_queryset(markup_qs)
+        searched_subaccount_qs = self.filter_queryset(subaccount_qs)
+
         def handle_nested_level(obj):
             qs = []
             search_path = []
-            if obj in searched_qs:
+            if obj in searched_subaccount_qs:
                 # Here, the element matches the search criteria, so we add it
                 # both to the overall queryset and to the search path.
                 qs.append(obj)
                 search_path.append(obj)
 
-            for subaccount in obj.children.all():
-                sub_qs, sub_path = handle_nested_level(subaccount)
+            # Note: This will only include markups for this level that are
+            # assigned sub accounts, but that is not a problem since we delete
+            # empty markups anyways.
+            # if obj.markups.count() != 0:
+            #     import ipdb
+            #     ipdb.set_trace()
+            for markup in markup_qs.filter(
+                content_type_id=subaccount_ct_id,
+                object_id=obj.id
+            ).only('pk').all():
+                # for markup in obj.markups.only('pk').all():
+                if markup in searched_markup_qs:
+                    qs.append(markup)
+                    search_path.append(markup)
+
+            for child in obj.children.only('pk').all():
+                sub_qs, sub_path = handle_nested_level(child)
                 if len(sub_qs) != 0:
                     if obj not in qs:
                         # Here, we do not add the element to the search path
@@ -242,13 +265,25 @@ class BudgetSubAccountViewSet(
         overall_qs = []
         overall_search_path = []
 
-        for subaccount in top_level_qs.all():
-            qs_ext, path_ext = handle_nested_level(subaccount)
+        # Since the Markup(s) at the Accounts level will not be nestled under
+        # the SubAccount(s), if any of these meet the search criteria they have
+        # to be added in separately because they will not be hit in the
+        # below recursion.
+        for child in markup_qs.filter(
+                content_type_id__in=[budget_ct_id, account_ct_id]):
+            if child in searched_markup_qs:
+                overall_qs.append(child)
+                overall_search_path.append(child)
+
+        # Start at the top level of SubAccounts - use recursion.
+        for child in subaccount_qs.filter(content_type_id=account_ct_id):
+            qs_ext, path_ext = handle_nested_level(child)
             overall_qs.extend(qs_ext)
             overall_search_path.extend(path_ext)
+
         return overall_qs, overall_search_path
 
-    @decorators.action(methods=["GET"], detail=False, url_path='tree')
+    @decorators.action(methods=["GET"], detail=False, url_path='owner-tree')
     def tree(self, request, *args, **kwargs):
         """
         Implements custom tree searching & pagination.
@@ -286,29 +321,38 @@ class BudgetSubAccountViewSet(
 
         ['foo.barb.bara', 'foob.bara']
         """
-        top_level_qs = BudgetSubAccount.objects \
-            .filter(content_type=ContentType.objects.get_for_model(
-                BudgetAccount)) \
-            .exclude(models.Q(identifier=None) & models.Q(description=None)) \
-            .filter_by_budget(self.budget)
+        account_ct_id = ContentType.objects.get_for_model(BudgetAccount).pk
+        budget_ct_id = ContentType.objects.get_for_model(Budget).pk
 
-        queryset = self.filter_queryset(self.get_queryset())
+        sub_account_qs = BudgetSubAccount.objects \
+            .exclude(models.Q(identifier=None) & models.Q(description=None)) \
+            .filter_by_budget(self.budget) \
+            .only('pk')
+
+        markup_qs = Markup.objects \
+            .exclude(models.Q(identifier=None) & models.Q(description=None)) \
+            .filter_by_budget(self.budget) \
+            .only('pk')
+
         overall_qs, search_path = self.filter_tree_querysets(
-            top_level_qs, queryset)
+            sub_account_qs,
+            markup_qs
+        )
 
         qs = self.paginate_queryset(overall_qs)
-
-        top_level_subaccounts = [
+        top_level = [
             obj for obj in qs
-            if obj.content_type == ContentType.objects.get_for_model(BudgetAccount)  # noqa
+            if (isinstance(obj, Markup)
+                and obj.content_type_id in [budget_ct_id, account_ct_id])
+            or obj.content_type_id == account_ct_id
         ]
-        non_top_level_subaccounts = [
+        non_top_level = [
             obj for obj in qs
-            if obj.content_type != ContentType.objects.get_for_model(BudgetAccount)  # noqa
+            if obj not in top_level
         ]
-        data = SubAccountTreeNodeSerializer(
-            top_level_subaccounts,
-            subset=non_top_level_subaccounts,
+        data = OwnerTreeNodeSerializer(
+            top_level,
+            subset=non_top_level,
             search_path=search_path,
             many=True
         ).data
@@ -331,7 +375,7 @@ class BudgetAccountViewSet(
     budget_lookup_field = ("pk", "budget_pk")
     serializer_class = BudgetAccountSerializer
 
-    @property
+    @ property
     def is_simple(self):
         return 'simple' in self.request.query_params
 
@@ -372,12 +416,12 @@ class GenericBudgetViewSet(viewsets.GenericViewSet):
             return BudgetSimpleSerializer
         return BudgetSerializer
 
-    @property
+    @ property
     def serializer_class(self):
         return self.get_serializer_class()
 
 
-@register_bulk_operations(
+@ register_bulk_operations(
     base_cls=Budget,
     get_budget=lambda instance: instance,
     # Since the Budget is the entity being updated, it will already be included
@@ -471,13 +515,13 @@ class BudgetViewSet(
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
 
-    @decorators.action(detail=True, methods=["GET"])
+    @ decorators.action(detail=True, methods=["GET"])
     def pdf(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = BudgetPdfSerializer(instance)
         return response.Response(serializer.data, status=status.HTTP_200_OK)
 
-    @decorators.action(detail=True, methods=["POST"])
+    @ decorators.action(detail=True, methods=["POST"])
     def duplicate(self, request, *args, **kwargs):
         instance = self.get_object()
         duplicated = instance.duplicate(request.user)
