@@ -231,20 +231,18 @@ class BudgetSubAccountViewSet(
                 qs.append(obj)
                 search_path.append(obj)
 
-            # Note: This will only include markups for this level that are
-            # assigned sub accounts, but that is not a problem since we delete
-            # empty markups anyways.
-            # if obj.markups.count() != 0:
-            #     import ipdb
-            #     ipdb.set_trace()
+            # Note: These are not markups assigned to the SubAcount `obj`, but
+            # are actually the Markup(s) that have the SubAccount `obj` as the
+            # parent.
             for markup in markup_qs.filter(
                 content_type_id=subaccount_ct_id,
                 object_id=obj.id
             ).only('pk').all():
-                # for markup in obj.markups.only('pk').all():
                 if markup in searched_markup_qs:
                     qs.append(markup)
                     search_path.append(markup)
+                    if markup.parent not in qs:
+                        qs.append(markup.parent)
 
             for child in obj.children.only('pk').all():
                 sub_qs, sub_path = handle_nested_level(child)
@@ -375,7 +373,7 @@ class BudgetAccountViewSet(
     budget_lookup_field = ("pk", "budget_pk")
     serializer_class = BudgetAccountSerializer
 
-    @ property
+    @property
     def is_simple(self):
         return 'simple' in self.request.query_params
 

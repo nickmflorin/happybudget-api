@@ -50,7 +50,8 @@ class ActualOwnerField(GenericRelatedField):
         # When bulk creating Actuals, even though the request method will be
         # PATCH there will not be an instance on the parent serializer.
         if request.method == 'PATCH' \
-                and self.context.get('bulk_create_context', False) is not True:
+                and self.context.get('bulk_create_context', False) is not True \
+                and self.context.get('bulk_update_context', False) is not True:
             budget = self.parent.instance.budget
         else:
             if 'budget' not in self.context:
