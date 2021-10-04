@@ -247,10 +247,9 @@ class SubAccount(PolymorphicModel):
         )
 
     @optional_commit(list(ESTIMATED_FIELDS))
-    def estimate(self, markups_to_be_deleted=None, fringes_to_be_deleted=None,
-            **kwargs):
-        children = self.children.only(*ESTIMATED_FIELDS) \
-            .exclude(pk__in=kwargs.get('children_to_be_deleted') or []).all()
+    @use_children(list(ESTIMATED_FIELDS))
+    def estimate(self, children, markups_to_be_deleted=None,
+            fringes_to_be_deleted=None, **kwargs):
         self.accumulate_value(children=children, **kwargs)
         self.accumulate_fringe_contribution(children=children, **kwargs)
         self.accumulate_markup_contribution(children=children, **kwargs)
