@@ -35,13 +35,26 @@ class FieldChanges(collections.Sequence):
         for change in self.changes:
             yield change
 
-    def get_change_for_field(self, field):
+    def has_changes_for_fields(self, *fields):
+        return all([
+            change is not None for change in
+            [self.get_change_for_field(field, strict=False) for field in fields]
+        ])
+
+    def remove_changes_for_fields(self, *fields, strict=False):
+        for field in fields:
+            change = self.get_change_for_field(field, strict=strict)
+            self.changes = [c for c in self if c != change]
+
+    def get_change_for_field(self, field, strict=False):
         try:
             return [
                 change for change in self.changes
                 if change.field == field
             ][0]
         except IndexError:
+            if strict:
+                raise IndexError("Field %s does not exist in changes." % field)
             return None
 
 

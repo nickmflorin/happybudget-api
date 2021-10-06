@@ -71,10 +71,11 @@ def suppress_signal(func, params=None):
 def any_fields_changed_receiver(fields, **kwargs):
     signal = any_fields_changed_signal(fields, **kwargs)
 
-    def decorator(func):
-        signal.connect(func, weak=False)
-        return func
-    return decorator
+    # @dispatch.receiver(signal, **kwargs)
+    # def decorator(func, **kwargs):
+    #     # signal.connect(func, weak=False)
+    #     return func
+    return dispatch.receiver(signal, **kwargs)
 
 
 def field_changed_receiver(field, **kwargs):

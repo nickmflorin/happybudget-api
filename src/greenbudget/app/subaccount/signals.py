@@ -1,9 +1,9 @@
 import logging
 
 from django import dispatch
-from django.contrib.contenttypes.models import ContentType
 
 from greenbudget.app import signals
+from greenbudget.app.signals.utils import generic_foreign_key_instance_change
 from greenbudget.app.account.signals import (
     estimate_account, actualize_account, calculate_account)
 
@@ -210,35 +210,49 @@ def subaccount_deleted(instance, **kwargs):
     fields=['object_id', 'content_type'],
     sender=TemplateSubAccount
 )
-def subaccount_parent_changed(instance, **kwargs):
-    changes = kwargs['changes']
+def subaccount_parent_changed(instance, changes, **kwargs):
+    parents_to_recalculate = []
 
-    previous_content_type_id = instance.content_type_id
-    new_content_type_id = instance.content_type_id
-    if changes.get_change_for_field('content_type') is not None:
-        content_type_change = changes.get_change_for_field('content_type')
-        previous_content_type_id = content_type_change.previous_value
-        new_content_type_id = content_type_change.value.pk
+    def mark_content_instance_change(*args, **kwargs):
+        old_instance, new_instance = generic_foreign_key_instance_change(
+            *args, **kwargs)
+        if old_instance not in parents_to_recalculate \
+                and old_instance is not None:
+            parents_to_recalculate.append(old_instance)
+        if new_instance not in parents_to_recalculate \
+                and new_instance is not None:
+            parents_to_recalculate.append(new_instance)
 
-    previous_object_id = instance.object_id
-    new_object_id = instance.object_id
-    if changes.get_change_for_field('object_id') is not None:
-        object_id_change = changes.get_change_for_field('object_id')
-        previous_object_id = object_id_change.previous_value
-        new_object_id = object_id_change.value
+    # If the object_id and content_type were changed at the same time, we need
+    # to handle that differently because they are fields that depend on one
+    # another.  If the object_id was changed and the content_type was changed,
+    # and we only address the object_id change first, we will most likely get
+    # a ObjectDoesNotExist error when fetching the model based on the CT
+    # with that object_id from the database.
+    if changes.has_changes_for_fields('object_id', 'content_type'):
+        obj_id_change = changes.get_change_for_field("object_id", strict=True)
+        ct_change = changes.get_change_for_field("content_type", strict=True)
+        mark_content_instance_change(
+            instance,
+            obj_id_change=obj_id_change,
+            ct_change=ct_change
+        )
+        # Remove the mutually changed fields from the set of all changes
+        # because they are already addressed.
+        changes.remove_changes_for_fields('object_id', 'content_type')
 
-    # NOTE: The object_id and content_type of a SubAccount can never be null.
-    previous_model_cls = ContentType.objects.get(
-        pk=previous_content_type_id).model_class()
-    previous_parent = previous_model_cls.objects.get(pk=previous_object_id)
+    # Address any leftover changes that occurred that were not consistent with
+    # an object_id - content_type simultaneous change.
+    for change in changes:
+        assert change.field in ('object_id', 'content_type')
+        mark_content_instance_change(
+            instance,
+            obj_id_change=change if change.field == 'object_id' else None,
+            ct_change=change if change.field == 'content_type' else None
+        )
 
-    new_model_cls = ContentType.objects.get(
-        pk=new_content_type_id).model_class()
-    new_parent = new_model_cls.objects.get(pk=new_object_id)
-
-    if new_parent != previous_parent:
-        calculate_parent(previous_parent)
-        calculate_parent(new_parent)
+    for obj in parents_to_recalculate:
+        calculate_parent(obj)
 
 
 @dispatch.receiver(signals.post_save, sender=BudgetSubAccount)
