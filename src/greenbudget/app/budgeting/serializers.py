@@ -49,29 +49,32 @@ class BudgetParentContextSerializer(ModelSerializer):
         data = super().to_representation(instance)
         if self._only_model:
             return data
+        if self.read_only is not True:
+            if 'request' not in self.context:
+                raise Exception(
+                    "The request must be provided in context when using %s."
+                    % self.__class__.__name__
+                )
 
-        if 'request' not in self.context:
-            raise Exception(
-                "The request must be provided in context when using %s."
-                % self.__class__.__name__
-            )
-
-        if self.context['request'].method in ('POST', 'PATCH'):
-            parent = instance.parent
-            parent.refresh_from_db()
-            if isinstance(parent, Budget):
-                return {
-                    "data": data,
-                    "budget": EntityPolymorphicSerializer(instance=parent).data
-                }
-            else:
-                budget = instance.parent.budget
-                budget.refresh_from_db()
-                return {
-                    "data": data,
-                    "budget": EntityPolymorphicSerializer(instance=budget).data,
-                    "parent": EntityPolymorphicSerializer(instance=parent).data,
-                }
+            if self.context['request'].method in ('POST', 'PATCH'):
+                parent = instance.parent
+                parent.refresh_from_db()
+                if isinstance(parent, Budget):
+                    return {
+                        "data": data,
+                        "budget": EntityPolymorphicSerializer(
+                            instance=parent).data
+                    }
+                else:
+                    budget = instance.parent.budget
+                    budget.refresh_from_db()
+                    return {
+                        "data": data,
+                        "budget": EntityPolymorphicSerializer(
+                            instance=budget).data,
+                        "parent": EntityPolymorphicSerializer(
+                            instance=parent).data,
+                    }
         return data
 
 

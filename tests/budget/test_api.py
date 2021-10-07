@@ -252,11 +252,16 @@ def test_get_budget_subaccounts(api_client, user, create_budget,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_budget_pdf(api_client, user, create_budget, models,
+def test_get_budget_pdf(api_client, user, create_budget, create_markup,
         create_budget_account, create_budget_subaccount):
     budget = create_budget()
-    account = create_budget_account(parent=budget)
-    subaccount = create_budget_subaccount(parent=account)
+    budget_markups = [create_markup(parent=budget)]
+    account = create_budget_account(parent=budget, markups=budget_markups)
+    account_markups = [create_markup(parent=account)]
+    subaccount = create_budget_subaccount(
+        parent=account,
+        markups=account_markups
+    )
     subaccounts = [
         create_budget_subaccount(parent=subaccount),
         create_budget_subaccount(parent=subaccount)
@@ -274,7 +279,23 @@ def test_get_budget_pdf(api_client, user, create_budget, models,
         "accumulated_markup_contribution": 0.0,
         "accumulated_fringe_contribution": 0.0,
         "actual": 0.0,
-        "children_markups": [],
+        "children_markups": [{
+            "id": budget_markups[0].pk,
+            "type": "markup",
+            "identifier": budget_markups[0].identifier,
+            "description": budget_markups[0].description,
+            "rate": budget_markups[0].rate,
+            "actual": 0.0,
+            "unit": {
+                "id": budget_markups[0].unit,
+                "name": budget_markups[0].UNITS[budget_markups[0].unit]
+            },
+            "created_at": "2020-01-01 00:00:00",
+            "updated_at": "2020-01-01 00:00:00",
+            "created_by": user.pk,
+            "updated_by": user.pk,
+            "children": [account.pk]
+        }],
         "children": [
             {
                 "id": account.pk,
@@ -288,7 +309,23 @@ def test_get_budget_pdf(api_client, user, create_budget, models,
                 "accumulated_fringe_contribution": 0.0,
                 "actual": 0.0,
                 "groups": [],
-                "children_markups": [],
+                "children_markups": [{
+                    "id": account_markups[0].pk,
+                    "type": "markup",
+                    "identifier": account_markups[0].identifier,
+                    "description": account_markups[0].description,
+                    "rate": account_markups[0].rate,
+                    "actual": 0.0,
+                    "unit": {
+                        "id": account_markups[0].unit,
+                        "name": account_markups[0].UNITS[account_markups[0].unit]
+                    },
+                    "created_at": "2020-01-01 00:00:00",
+                    "updated_at": "2020-01-01 00:00:00",
+                    "created_by": user.pk,
+                    "updated_by": user.pk,
+                    "children": [subaccount.pk]
+                }],
                 "children": [
                     {
                         "id": subaccount.pk,
