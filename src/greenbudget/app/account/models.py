@@ -11,6 +11,7 @@ from greenbudget.app.budgeting.models import use_children
 from greenbudget.app.comment.models import Comment
 from greenbudget.app.group.models import Group
 from greenbudget.app.history.models import Event
+from greenbudget.app.markup.models import Markup
 from greenbudget.app.markup.utils import contribution_from_markups
 from greenbudget.app.subaccount.models import SubAccount
 
@@ -183,6 +184,7 @@ class BudgetAccount(Account):
     )
     comments = GenericRelation(Comment)
     events = GenericRelation(Event)
+    children_markups = GenericRelation(Markup)
 
     TRACK_MODEL_HISTORY = True
     TRACK_FIELD_CHANGE_HISTORY = ['identifier', 'description']

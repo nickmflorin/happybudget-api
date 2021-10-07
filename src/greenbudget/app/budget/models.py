@@ -12,6 +12,7 @@ from greenbudget.app import signals
 from greenbudget.app.budgeting.models import use_children
 from greenbudget.app.comment.models import Comment
 from greenbudget.app.group.models import Group
+from greenbudget.app.markup.models import Markup
 from greenbudget.app.user.utils import upload_user_image_to
 
 from .duplication import BudgetDuplicator
@@ -157,6 +158,7 @@ class Budget(BaseBudget):
     location_days = models.IntegerField(default=0)
 
     comments = GenericRelation(Comment)
+    children_markups = GenericRelation(Markup)
 
     objects = BudgetManager()
     non_polymorphic = models.Manager()

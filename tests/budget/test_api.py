@@ -274,6 +274,7 @@ def test_get_budget_pdf(api_client, user, create_budget, models,
         "accumulated_markup_contribution": 0.0,
         "accumulated_fringe_contribution": 0.0,
         "actual": 0.0,
+        "children_markups": [],
         "children": [
             {
                 "id": account.pk,
@@ -287,6 +288,7 @@ def test_get_budget_pdf(api_client, user, create_budget, models,
                 "accumulated_fringe_contribution": 0.0,
                 "actual": 0.0,
                 "groups": [],
+                "children_markups": [],
                 "children": [
                     {
                         "id": subaccount.pk,
@@ -307,6 +309,7 @@ def test_get_budget_pdf(api_client, user, create_budget, models,
                         "contact": None,
                         "group": None,
                         "groups": [],
+                        "children_markups": [],
                         "children": [
                             {
                                 "id": subaccounts[0].pk,
@@ -325,6 +328,7 @@ def test_get_budget_pdf(api_client, user, create_budget, models,
                                 "multiplier": None,
                                 "unit": None,
                                 "children": [],
+                                "children_markups": [],
                                 "contact": None,
                                 "group": None,
                                 "groups": []
@@ -346,6 +350,7 @@ def test_get_budget_pdf(api_client, user, create_budget, models,
                                 "multiplier": None,
                                 "unit": None,
                                 "children": [],
+                                "children_markups": [],
                                 "contact": None,
                                 "group": None,
                                 "groups": []

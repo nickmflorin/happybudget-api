@@ -15,6 +15,7 @@ from greenbudget.app.comment.models import Comment
 from greenbudget.app.fringe.utils import contribution_from_fringes
 from greenbudget.app.group.models import Group
 from greenbudget.app.history.models import Event
+from greenbudget.app.markup.models import Markup
 from greenbudget.app.markup.utils import contribution_from_markups
 from greenbudget.app.tagging.models import Tag
 
@@ -275,6 +276,8 @@ class BudgetSubAccount(SubAccount):
     )
     comments = GenericRelation(Comment)
     events = GenericRelation(Event)
+    children_markups = GenericRelation(Markup)
+
     objects = SubAccountManager()
 
     TRACK_MODEL_HISTORY = True

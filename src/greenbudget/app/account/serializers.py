@@ -8,6 +8,7 @@ from greenbudget.app.budgeting.serializers import (
     SimpleEntityPolymorphicSerializer)
 from greenbudget.app.group.models import Group
 from greenbudget.app.group.serializers import GroupSerializer
+from greenbudget.app.markup.serializers import MarkupSerializer
 from greenbudget.app.subaccount.serializers import SubAccountPdfSerializer
 from greenbudget.app.user.models import User
 
@@ -108,7 +109,7 @@ class AccountPdfSerializer(AccountSimpleSerializer):
     markup_contribution = serializers.FloatField(read_only=True)
     accumulated_markup_contribution = serializers.FloatField(read_only=True)
     actual = serializers.FloatField(read_only=True)
-
+    children_markups = MarkupSerializer(many=True, read_only=True)
     children = SubAccountPdfSerializer(many=True, read_only=True)
     groups = GroupSerializer(many=True, read_only=True)
 
@@ -116,5 +117,5 @@ class AccountPdfSerializer(AccountSimpleSerializer):
         model = BudgetAccount
         fields = AccountSimpleSerializer.Meta.fields \
             + Account.CALCULATED_FIELDS \
-            + ('children', 'groups', 'nominal_value')
+            + ('children', 'groups', 'nominal_value', 'children_markups')
         read_only_fields = fields

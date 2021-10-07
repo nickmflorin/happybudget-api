@@ -9,6 +9,7 @@ from greenbudget.app.contact.models import Contact
 from greenbudget.app.fringe.models import Fringe
 from greenbudget.app.group.models import Group
 from greenbudget.app.group.serializers import GroupSerializer
+from greenbudget.app.markup.serializers import MarkupSerializer
 from greenbudget.app.tagging.fields import TagField
 from greenbudget.app.tagging.serializers import TagSerializer, ColorSerializer
 from greenbudget.app.user.fields import UserFilteredQuerysetPKField
@@ -165,7 +166,7 @@ class SubAccountPdfSerializer(SubAccountSimpleSerializer):
     )
     children = serializers.SerializerMethodField()
     groups = GroupSerializer(many=True, read_only=True)
-
+    children_markups = MarkupSerializer(many=True, read_only=True)
     accumulated_value = serializers.FloatField(read_only=True)
     nominal_value = serializers.FloatField(read_only=True)
     fringe_contribution = serializers.FloatField(read_only=True)
@@ -180,7 +181,7 @@ class SubAccountPdfSerializer(SubAccountSimpleSerializer):
             + SubAccount.CALCULATED_FIELDS \
             + (
                 'quantity', 'rate', 'multiplier', 'unit', 'children', 'contact',
-                'group', 'nominal_value', 'groups'
+                'group', 'nominal_value', 'groups', 'children_markups'
             )
         read_only_fields = fields
 
