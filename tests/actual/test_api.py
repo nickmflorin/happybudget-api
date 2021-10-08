@@ -61,8 +61,11 @@ def test_change_actual_parent_to_subaccount(api_client, user, create_budget,
     markup.refresh_from_db()
     assert markup.actual == 150.0
 
+    account.refresh_from_db()
+    assert account.actual == 150.0
+
     subaccount.refresh_from_db()
-    assert subaccount.actual == 150.0
+    assert subaccount.actual == 0.0
 
     api_client.force_login(user)
     response = api_client.patch(
@@ -98,12 +101,12 @@ def test_change_actual_parent_to_subaccount(api_client, user, create_budget,
             "description": subaccount.description
         }
     }
-    # The sub account will still have an actual value of 150.0 because it still
+    subaccount.refresh_from_db()
+    assert subaccount.actual == 100.0
+
+    # The account will still have an actual value of 150.0 because it still
     # has a sum of 150.0 across the actuals of it's children (actual child or
     # markup child).
-    subaccount.refresh_from_db()
-    assert subaccount.actual == 150.0
-
     account.refresh_from_db()
     assert account.actual == 150.0
 
@@ -130,6 +133,9 @@ def test_change_actual_parent_to_markup(api_client, user, create_budget,
 
     markup.refresh_from_db()
     assert markup.actual == 0.0
+
+    account.refresh_from_db()
+    assert account.actual == 150.0
 
     subaccount.refresh_from_db()
     assert subaccount.actual == 150.0
@@ -168,12 +174,12 @@ def test_change_actual_parent_to_markup(api_client, user, create_budget,
             "description": markup.description,
         }
     }
-    # The sub account will still have an actual value of 150.0 because it still
+    subaccount.refresh_from_db()
+    assert subaccount.actual == 50.0
+
+    # The account will still have an actual value of 150.0 because it still
     # has a sum of 150.0 across the actuals of it's children (actual child or
     # markup child).
-    subaccount.refresh_from_db()
-    assert subaccount.actual == 150.0
-
     account.refresh_from_db()
     assert account.actual == 150.0
 

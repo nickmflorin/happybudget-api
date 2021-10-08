@@ -100,7 +100,7 @@ def test_create_markup_actual(api_client, user, create_budget_account,
     assert account.actual == 20.0
 
     subaccount.refresh_from_db()
-    assert subaccount.actual == 20.0
+    assert subaccount.actual == 0.0
 
     markup.refresh_from_db()
     assert markup.actual == 20.0
@@ -223,11 +223,11 @@ def test_bulk_create_budget_actuals(api_client, user, create_budget,
     # Make sure the actual SubAccount(s) were updated in the database.
     subaccounts[0].refresh_from_db()
     assert subaccounts[0].nominal_value == 100.0
-    assert subaccounts[0].actual == 120.0  # 70.0 + 50.0 (Markup)
+    assert subaccounts[0].actual == 70.0
 
     subaccounts[1].refresh_from_db()
     assert subaccounts[1].nominal_value == 200.0
-    assert subaccounts[1].actual == 190.0  # 170.0 + 20.0 (Markup)
+    assert subaccounts[1].actual == 170.0
 
     # Make sure the actual Account(s) were updated in the database.
     accounts[0].refresh_from_db()
@@ -287,11 +287,11 @@ def test_bulk_update_budget_actuals(api_client, user, create_budget,
     # so we can more clearly understand why an error might occur.
     subaccounts[0].refresh_from_db()
     assert subaccounts[0].nominal_value == 100.0
-    assert subaccounts[0].actual == 30.0 + 40.0 + 20.0 + 10.0
+    assert subaccounts[0].actual == 30.0 + 40.0
 
     subaccounts[1].refresh_from_db()
     assert subaccounts[1].nominal_value == 200.0
-    assert subaccounts[1].actual == 160.0 + 10.0 + 50.0 + 40.0
+    assert subaccounts[1].actual == 160.0 + 10.0
 
     accounts[0].refresh_from_db()
     assert accounts[0].nominal_value == 100.0
@@ -337,11 +337,11 @@ def test_bulk_update_budget_actuals(api_client, user, create_budget,
     # Make sure the actual SubAccount(s) were updated in the database.
     subaccounts[0].refresh_from_db()
     assert subaccounts[0].nominal_value == 100.0
-    assert subaccounts[0].actual == 30.0 + 20.0 + 50.0 + 0.0
+    assert subaccounts[0].actual == 30.0 + 20.0
 
     subaccounts[1].refresh_from_db()
     assert subaccounts[1].nominal_value == 200.0
-    assert subaccounts[1].actual == 150.0 + 0.0 + 15.0 + 25.0
+    assert subaccounts[1].actual == 150.0 + 0.0
 
     # Make sure the actual Account(s) were updated in the database.
     accounts[0].refresh_from_db()
@@ -401,11 +401,11 @@ def test_bulk_delete_actuals(api_client, user, create_budget, create_actual,
     # so we can more clearly understand why an error might occur.
     subaccounts[0].refresh_from_db()
     assert subaccounts[0].nominal_value == 100.0
-    assert subaccounts[0].actual == 30.0 + 40.0 + 20.0 + 10.0
+    assert subaccounts[0].actual == 30.0 + 40.0
 
     subaccounts[1].refresh_from_db()
     assert subaccounts[1].nominal_value == 200.0
-    assert subaccounts[1].actual == 160.0 + 10.0 + 50.0 + 40.0
+    assert subaccounts[1].actual == 160.0 + 10.0
 
     accounts[0].refresh_from_db()
     assert accounts[0].nominal_value == 100.0
@@ -432,11 +432,11 @@ def test_bulk_delete_actuals(api_client, user, create_budget, create_actual,
     # Make sure the actual SubAccount(s) were updated in the database.
     subaccounts[0].refresh_from_db()
     assert subaccounts[0].nominal_value == 100.0
-    assert subaccounts[0].actual == 20.0 + 10.0
+    assert subaccounts[0].actual == 0.0
 
     subaccounts[1].refresh_from_db()
     assert subaccounts[1].nominal_value == 200.0
-    assert subaccounts[1].actual == 160.0 + 40.0
+    assert subaccounts[1].actual == 160.0
 
     # Make sure the actual Account(s) were updated in the database.
     accounts[0].refresh_from_db()

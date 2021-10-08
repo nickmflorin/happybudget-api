@@ -230,7 +230,12 @@ class SubAccount(PolymorphicModel):
     @optional_commit(["actual"])
     @use_children(["actual"])
     def actualize(self, children, markups_to_be_deleted=None, **kwargs):
-        markups = self.markups.exclude(pk__in=markups_to_be_deleted or [])
+        markups = self.children_markups.exclude(
+            pk__in=markups_to_be_deleted or [])
+        # Even though we delete Markup(s) that do not have any children, there
+        # is still an edge case where the child-less Markup can still exist at
+        # this point.
+        markups = [m for m in markups if not m.is_empty]
         actuals = self.actuals.exclude(
             pk__in=kwargs.get('actuals_to_be_deleted', []) or []).only('value')
         self.actual = functools.reduce(

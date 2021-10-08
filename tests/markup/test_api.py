@@ -614,42 +614,6 @@ def test_update_budget_subaccount_markup_child_not_same_parent(api_client, user,
     assert response.status_code == 400
 
 
-def test_remove_budget_account_markup_child(api_client, user, models,
-        create_budget_account, create_budget, create_markup):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    markup = create_markup(parent=budget, accounts=[account])
-
-    api_client.force_login(user)
-    response = api_client.patch(
-        "/v1/markups/%s/" % markup.pk,
-        # If not specified, children will be excluded from payload.
-        format='json',
-        data={'children': []}
-    )
-    assert response.status_code == 200
-    assert models.Markup.objects.count() == 0
-
-
-def test_remove_budget_subaccount_markup_child(api_client, user, models,
-        create_budget_account, create_budget, create_markup,
-        create_budget_subaccount):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    subaccount = create_budget_subaccount(parent=account)
-    markup = create_markup(parent=account, subaccounts=[subaccount])
-
-    api_client.force_login(user)
-    response = api_client.patch(
-        "/v1/markups/%s/" % markup.pk,
-        # If not specified, children will be excluded from payload.
-        format='json',
-        data={'children': []}
-    )
-    assert response.status_code == 200
-    assert models.Markup.objects.count() == 0
-
-
 def test_delete_budget_account_markup(api_client, user, create_budget, models,
         create_markup):
     budget = create_budget()
