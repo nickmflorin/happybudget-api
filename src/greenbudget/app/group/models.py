@@ -13,14 +13,14 @@ class Group(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(
         to='user.User',
-        related_name='created_groups_new',
+        related_name='created_groups',
         on_delete=models.CASCADE,
         editable=False
     )
     updated_at = models.DateTimeField(auto_now=True)
     updated_by = models.ForeignKey(
         to='user.User',
-        related_name='updated_groups_new',
+        related_name='updated_groups',
         on_delete=models.CASCADE,
         editable=False
     )
