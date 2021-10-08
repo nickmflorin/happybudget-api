@@ -1,5 +1,5 @@
 from django.db import models
-from rest_framework import serializers
+from rest_framework import serializers, exceptions
 
 from greenbudget.lib.drf.serializers import ModelSerializer
 from greenbudget.lib.drf.fields import ModelChoiceField
@@ -117,7 +117,7 @@ class MarkupSerializer(BudgetParentContextSerializer):
     children = TableChildrenPrimaryKeyRelatedField(
         obj_name='Markup',
         many=True,
-        required=False,
+        required=True,
         child_instance_cls=lambda parent: Markup.child_instance_cls_for_parent(
             parent)
     )
@@ -128,6 +128,12 @@ class MarkupSerializer(BudgetParentContextSerializer):
             'id', 'identifier', 'description', 'created_by', 'created_at',
             'updated_by', 'updated_at', 'rate', 'unit', 'children', 'type',
             'actual')
+
+    def validate_children(self, children):
+        if len(children) == 0:
+            raise exceptions.ValidationError(
+                "A markup must have at least 1 child.")
+        return children
 
     def create(self, validated_data, **kwargs):
         children = validated_data.pop('children', None)

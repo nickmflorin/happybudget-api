@@ -113,6 +113,19 @@ def test_create_budget_markup(api_client, user, create_budget_subaccounts,
     assert response.json()["budget"]["nominal_value"] == 20.0
 
 
+@pytest.mark.freeze_time('2020-01-01')
+def test_create_budget_markup_no_children(api_client, user, create_budget,
+        models):
+    budget = create_budget()
+    api_client.force_login(user)
+    response = api_client.post("/v1/budgets/%s/markups/" % budget.pk, data={
+        'identifier': 'Markup Identifier',
+        'rate': 20,
+        'unit': models.Markup.UNITS.flat
+    })
+    assert response.status_code == 400
+
+
 def test_create_markup_invalid_child(api_client, user,
         create_budget_account, create_budget):
     budget = create_budget()
