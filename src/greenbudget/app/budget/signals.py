@@ -52,8 +52,8 @@ def estimate_budget(instance):
     id=lambda instance: instance.pk,
     queue_in_context=True
 )
-def actualize_budget(instance):
-    instance.actualize()
+def actualize_budget(instance, markups_to_be_deleted=None):
+    instance.actualize(markups_to_be_deleted=markups_to_be_deleted)
     logger.info(
         "Updating %s %s -> Actual: %s"
         % (type(instance).__name__, instance.pk, instance.actual)

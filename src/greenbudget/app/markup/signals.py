@@ -4,11 +4,14 @@ from django import dispatch
 from django.db import IntegrityError
 
 from greenbudget.app import signals
+from greenbudget.app.signals.utils import generic_foreign_key_instance_change
 from greenbudget.app.account.models import BudgetAccount
-from greenbudget.app.account.signals import calculate_account, estimate_account
+from greenbudget.app.account.signals import actualize_account, estimate_account
+from greenbudget.app.budget.models import Budget
+from greenbudget.app.budget.signals import actualize_budget
 from greenbudget.app.subaccount.models import BudgetSubAccount
 from greenbudget.app.subaccount.signals import (
-    calculate_subaccount, estimate_subaccount)
+    actualize_subaccount, estimate_subaccount)
 
 from .models import Markup
 
@@ -54,10 +57,11 @@ def estimate_instance(instance, **kwargs):
     calculator(instance, **kwargs)
 
 
-def calculate_instance(instance, **kwargs):
+def actualize_parent(instance, **kwargs):
     calculator_map = {
-        BudgetAccount: calculate_account,
-        BudgetSubAccount: calculate_subaccount
+        Budget: actualize_budget,
+        BudgetAccount: actualize_account,
+        BudgetSubAccount: actualize_subaccount
     }
     calculator = calculator_map[type(instance)]
     calculator(instance, **kwargs)
@@ -80,21 +84,76 @@ def markups_changed(instance, reverse, action, **kwargs):
             # The instance here is the Markup instance being added.
             with signals.bulk_context:
                 for obj in objs:
-                    calculate_instance(obj)
+                    estimate_instance(obj)
         else:
             # The instance here is the Account or SubAccount.
-            calculate_instance(instance)
+            estimate_instance(instance)
 
 
 @dispatch.receiver(signals.pre_delete, sender=Markup)
 def markup_deleted(instance, **kwargs):
+    actualize_parent(instance.parent, markups_to_be_deleted=[instance.pk])
     # Note that we have to use the pre_delete signal because we still need to
     # determine which SubAccount(s) have to be reestimated.  We also have to
     # explicitly define the Markup(s) for the reestimation, so it knows to
     # exclude the Markup that is about to be deleted.
     with signals.bulk_context:
         for obj in instance.children.all():
-            calculate_instance(obj, markups_to_be_deleted=[instance.pk])
+            estimate_instance(obj, markups_to_be_deleted=[instance.pk])
+
+
+@dispatch.receiver(signals.post_create, sender=Markup)
+def markup_created(instance, **kwargs):
+    actualize_parent(instance.parent)
+
+
+@signals.any_fields_changed_receiver(
+    fields=['object_id', 'content_type'],
+    sender=Markup
+)
+def markup_parent_changed(instance, changes, **kwargs):
+    parents_to_reactualize = []
+
+    def mark_content_instance_change(*args, **kwargs):
+        old_instance, new_instance = generic_foreign_key_instance_change(
+            *args, **kwargs)
+        if old_instance not in parents_to_reactualize \
+                and old_instance is not None:
+            parents_to_reactualize.append(old_instance)
+        if new_instance not in parents_to_reactualize \
+                and new_instance is not None:
+            parents_to_reactualize.append(new_instance)
+
+    # If the object_id and content_type were changed at the same time, we need
+    # to handle that differently because they are fields that depend on one
+    # another.  If the object_id was changed and the content_type was changed,
+    # and we only address the object_id change first, we will most likely get
+    # a ObjectDoesNotExist error when fetching the model based on the CT
+    # with that object_id from the database.
+    if changes.has_changes_for_fields('object_id', 'content_type'):
+        obj_id_change = changes.get_change_for_field("object_id", strict=True)
+        ct_change = changes.get_change_for_field("content_type", strict=True)
+        mark_content_instance_change(
+            instance,
+            obj_id_change=obj_id_change,
+            ct_change=ct_change
+        )
+        # Remove the mutually changed fields from the set of all changes
+        # because they are already addressed.
+        changes.remove_changes_for_fields('object_id', 'content_type')
+
+    # Address any leftover changes that occurred that were not consistent with
+    # an object_id - content_type simultaneous change.
+    for change in changes:
+        assert change.field in ('object_id', 'content_type')
+        mark_content_instance_change(
+            instance,
+            obj_id_change=change if change.field == 'object_id' else None,
+            ct_change=change if change.field == 'content_type' else None
+        )
+
+    for obj in parents_to_reactualize:
+        actualize_parent(obj)
 
 
 @dispatch.receiver(signals.m2m_changed, sender=BudgetAccount.markups.through)
