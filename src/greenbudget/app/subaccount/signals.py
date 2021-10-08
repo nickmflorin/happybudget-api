@@ -1,6 +1,7 @@
 import logging
 
 from django import dispatch
+from django.db import IntegrityError
 
 from greenbudget.app import signals
 from greenbudget.app.signals.utils import generic_foreign_key_instance_change
@@ -253,6 +254,16 @@ def subaccount_parent_changed(instance, changes, **kwargs):
 
     for obj in parents_to_recalculate:
         calculate_parent(obj)
+
+
+@dispatch.receiver(signals.pre_save, sender=BudgetSubAccount)
+def validate_subaccount(instance, **kwargs):
+    if instance.contact is not None \
+            and instance.contact.user != instance.created_by:
+        raise IntegrityError(
+            "Cannot assign a contact created by one user to a sub account "
+            "created by another user."
+        )
 
 
 @dispatch.receiver(signals.post_save, sender=BudgetSubAccount)

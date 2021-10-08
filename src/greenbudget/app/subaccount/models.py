@@ -4,7 +4,7 @@ from polymorphic.models import PolymorphicModel
 from django.contrib.contenttypes.fields import (
     GenericForeignKey, GenericRelation)
 from django.contrib.contenttypes.models import ContentType
-from django.db import models, IntegrityError
+from django.db import models
 
 from greenbudget.lib.django_utils.models import optional_commit
 
@@ -291,15 +291,6 @@ class BudgetSubAccount(SubAccount):
 
     def __str__(self):
         return "Budget Sub Account: %s" % self.identifier
-
-    def save(self, *args, **kwargs):
-        # TODO: Use signals to validate this.
-        if self.contact is not None and self.contact.user != self.created_by:
-            raise IntegrityError(
-                "Cannot assign a contact created by one user to a sub account "
-                "created by another user."
-            )
-        return super().save(*args, **kwargs)
 
 
 @signals.model(
