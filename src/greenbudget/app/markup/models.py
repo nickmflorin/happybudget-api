@@ -29,23 +29,23 @@ class Markup(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(
         to='user.User',
-        related_name='created_new_markups',
+        related_name='created_markups',
         on_delete=models.CASCADE,
         editable=False
     )
     updated_at = models.DateTimeField(auto_now=True)
     updated_by = models.ForeignKey(
         to='user.User',
-        related_name='updated_new_markups',
+        related_name='updated_markups',
         on_delete=models.CASCADE,
         editable=False
     )
     content_type = models.ForeignKey(
         to=ContentType,
         on_delete=models.CASCADE,
-        limit_choices_to=models.Q(app_label='account', model='budgetaccount')
-        | models.Q(app_label='subaccount', model='budgetsubaccount')
-        | models.Q(app_label='budget', model='budget')
+        limit_choices_to=models.Q(app_label='account', model='account')
+        | models.Q(app_label='subaccount', model='subaccount')
+        | models.Q(app_label='budget', model='basebudget')
     )
     object_id = models.PositiveIntegerField(db_index=True)
     parent = GenericForeignKey('content_type', 'object_id')
@@ -70,13 +70,18 @@ class Markup(models.Model):
 
     @classmethod
     def child_instance_cls_for_parent(cls, parent):
-        from greenbudget.app.account.models import BudgetAccount
+        from greenbudget.app.account.models import (
+            BudgetAccount, TemplateAccount)
         from greenbudget.app.budget.models import Budget
-        from greenbudget.app.subaccount.models import BudgetSubAccount
+        from greenbudget.app.subaccount.models import (
+            BudgetSubAccount, TemplateSubAccount)
+        from greenbudget.app.template.models import Template
 
         mapping = {
             Budget: BudgetAccount,
+            Template: TemplateAccount,
             (BudgetAccount, BudgetSubAccount): BudgetSubAccount,
+            (TemplateAccount, TemplateSubAccount): TemplateSubAccount,
         }
         for k, v in mapping.items():
             if isinstance(parent, k):
@@ -100,10 +105,7 @@ class Markup(models.Model):
         return self.child_instance_cls.objects.filter(markups=self)
 
     def get_children_operator(self):
-        from greenbudget.app.account.models import BudgetAccount
-        from greenbudget.app.subaccount.models import BudgetSubAccount
-        if self.parent_instance_cls is BudgetAccount \
-                or self.parent_instance_cls is BudgetSubAccount:
+        if self.parent_instance_cls.type in ('account', 'subaccount'):
             return self.subaccounts
         return self.accounts
 

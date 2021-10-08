@@ -31,7 +31,7 @@ class EntityPolymorphicSerializer(PolymorphicNonPolymorphicSerializer):
         BudgetAccount: "greenbudget.app.account.serializers.BudgetAccountSerializer",  # noqa
         BudgetSubAccount: "greenbudget.app.subaccount.serializers.BudgetSubAccountSerializer",  # noqa
         TemplateAccount: "greenbudget.app.account.serializers.TemplateAccountSerializer",  # noqa
-        TemplateSubAccount: "greenbudget.app.subaccount.serializersTemplateSubAccountSerializer",  # noqa
+        TemplateSubAccount: "greenbudget.app.subaccount.serializers.TemplateSubAccountSerializer",  # noqa
         Budget: "greenbudget.app.budget.serializers.BudgetSerializer",
         Template: "greenbudget.app.template.serializers.TemplateSerializer",
     }
@@ -59,7 +59,7 @@ class BudgetParentContextSerializer(ModelSerializer):
             if self.context['request'].method in ('POST', 'PATCH'):
                 parent = instance.parent
                 parent.refresh_from_db()
-                if isinstance(parent, Budget):
+                if isinstance(parent, (Budget, Template)):
                     return {
                         "data": data,
                         "budget": EntityPolymorphicSerializer(

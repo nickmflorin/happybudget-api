@@ -2,11 +2,11 @@ import pytest
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_budget_account_markup(api_client, user, create_budget_account,
-        create_budget, create_markup, models):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    markup = create_markup(parent=budget, accounts=[account])
+def test_get_template_account_markup(api_client, user, create_template_account,
+        create_template, create_markup, models):
+    template = create_template()
+    account = create_template_account(parent=template)
+    markup = create_markup(parent=template, accounts=[account])
 
     api_client.force_login(user)
     response = api_client.get("/v1/markups/%s/" % markup.pk)
@@ -32,11 +32,12 @@ def test_get_budget_account_markup(api_client, user, create_budget_account,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_budget_subaccount_markup(api_client, user, create_budget_account,
-        create_budget, create_markup, models, create_budget_subaccount):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    subaccount = create_budget_subaccount(parent=account)
+def test_get_template_subaccount_markup(api_client, user, create_template,
+        create_template_account, create_markup, models,
+        create_template_subaccount):
+    template = create_template()
+    account = create_template_account(parent=template)
+    subaccount = create_template_subaccount(parent=account)
     markup = create_markup(parent=account, subaccounts=[subaccount])
 
     api_client.force_login(user)
@@ -63,19 +64,20 @@ def test_get_budget_subaccount_markup(api_client, user, create_budget_account,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_update_budget_account_markup_children(api_client, user, create_budget,
-        create_budget_account, create_markup, models, create_budget_subaccounts):
-    budget = create_budget()
+def test_update_template_account_markup_children(api_client, user, create_markup,
+        create_template, create_template_account, models,
+        create_template_subaccounts):
+    template = create_template()
     markups = [
-        create_markup(parent=budget, flat=True, rate=20),
-        create_markup(parent=budget, flat=True, rate=30)
+        create_markup(parent=template, flat=True, rate=20),
+        create_markup(parent=template, flat=True, rate=30)
     ]
     accounts = [
-        create_budget_account(parent=budget, markups=[markups[0]]),
-        create_budget_account(parent=budget, markups=[markups[1]])
+        create_template_account(parent=template, markups=[markups[0]]),
+        create_template_account(parent=template, markups=[markups[1]])
     ]
-    create_budget_subaccounts(parent=accounts[0], quantity=1, rate=10, count=2)
-    create_budget_subaccounts(parent=accounts[1], quantity=1, rate=10, count=2)
+    create_template_subaccounts(parent=accounts[0], quantity=1, rate=10, count=2)
+    create_template_subaccounts(parent=accounts[1], quantity=1, rate=10, count=2)
 
     # Make sure all data is properly calculated before API request to avoid
     # confusion in source of potential errors.
@@ -87,9 +89,9 @@ def test_update_budget_account_markup_children(api_client, user, create_budget,
     assert accounts[1].nominal_value == 20.0
     assert accounts[1].markup_contribution == 30.0
 
-    budget.refresh_from_db()
-    assert budget.nominal_value == 40.0
-    assert budget.accumulated_markup_contribution == 50.0
+    template.refresh_from_db()
+    assert template.nominal_value == 40.0
+    assert template.accumulated_markup_contribution == 50.0
 
     api_client.force_login(user)
     response = api_client.patch("/v1/markups/%s/" % markups[0].pk, data={
@@ -108,9 +110,9 @@ def test_update_budget_account_markup_children(api_client, user, create_budget,
     assert accounts[1].nominal_value == 20.0
     assert accounts[1].markup_contribution == 50.0
 
-    budget.refresh_from_db()
-    assert budget.nominal_value == 40.0
-    assert budget.accumulated_markup_contribution == 70.0
+    template.refresh_from_db()
+    assert template.nominal_value == 40.0
+    assert template.accumulated_markup_contribution == 70.0
 
     markups[0].refresh_from_db()
     assert markups[0].identifier == "Markup Identifier"
@@ -139,19 +141,20 @@ def test_update_budget_account_markup_children(api_client, user, create_budget,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_update_budget_account_markup_rate(api_client, user, create_budget,
-        create_budget_account, create_markup, models, create_budget_subaccounts):
-    budget = create_budget()
+def test_update_template_account_markup_rate(api_client, user, create_template,
+        create_template_account, create_markup, models,
+        create_template_subaccounts):
+    template = create_template()
     markups = [
-        create_markup(parent=budget, flat=True, rate=20),
-        create_markup(parent=budget, flat=True, rate=30)
+        create_markup(parent=template, flat=True, rate=20),
+        create_markup(parent=template, flat=True, rate=30)
     ]
     accounts = [
-        create_budget_account(parent=budget, markups=[markups[0]]),
-        create_budget_account(parent=budget, markups=[markups[1]])
+        create_template_account(parent=template, markups=[markups[0]]),
+        create_template_account(parent=template, markups=[markups[1]])
     ]
-    create_budget_subaccounts(parent=accounts[0], quantity=1, rate=10, count=2)
-    create_budget_subaccounts(parent=accounts[1], quantity=1, rate=10, count=2)
+    create_template_subaccounts(parent=accounts[0], quantity=1, rate=10, count=2)
+    create_template_subaccounts(parent=accounts[1], quantity=1, rate=10, count=2)
 
     # Make sure all data is properly calculated before API request to avoid
     # confusion in source of potential errors.
@@ -163,9 +166,9 @@ def test_update_budget_account_markup_rate(api_client, user, create_budget,
     assert accounts[1].nominal_value == 20.0
     assert accounts[1].markup_contribution == 30.0
 
-    budget.refresh_from_db()
-    assert budget.nominal_value == 40.0
-    assert budget.accumulated_markup_contribution == 50.0
+    template.refresh_from_db()
+    assert template.nominal_value == 40.0
+    assert template.accumulated_markup_contribution == 50.0
 
     api_client.force_login(user)
     response = api_client.patch("/v1/markups/%s/" % markups[0].pk, data={
@@ -184,9 +187,9 @@ def test_update_budget_account_markup_rate(api_client, user, create_budget,
     assert accounts[1].nominal_value == 20.0
     assert accounts[1].markup_contribution == 30.0
 
-    budget.refresh_from_db()
-    assert budget.nominal_value == 40.0
-    assert budget.accumulated_markup_contribution == 70.0
+    template.refresh_from_db()
+    assert template.nominal_value == 40.0
+    assert template.accumulated_markup_contribution == 70.0
 
     markups[0].refresh_from_db()
     assert markups[0].rate == 40.0
@@ -214,13 +217,14 @@ def test_update_budget_account_markup_rate(api_client, user, create_budget,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_remove_budget_account_markup_children(api_client, user, create_markup,
-        create_budget_account, create_budget, create_budget_subaccounts, models):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    create_budget_subaccounts(parent=account, quantity=1, rate=10, count=2)
+def test_remove_template_account_markup_children(api_client, user, create_markup,
+        create_template_account, create_template, create_template_subaccounts,
+        models):
+    template = create_template()
+    account = create_template_account(parent=template)
+    create_template_subaccounts(parent=account, quantity=1, rate=10, count=2)
     markup = create_markup(
-        parent=budget,
+        parent=template,
         flat=True,
         rate=20,
         accounts=[account]
@@ -232,9 +236,9 @@ def test_remove_budget_account_markup_children(api_client, user, create_markup,
     assert account.nominal_value == 20.0
     assert account.markup_contribution == 20.0
 
-    budget.refresh_from_db()
-    assert budget.nominal_value == 20.0
-    assert budget.accumulated_markup_contribution == 20.0
+    template.refresh_from_db()
+    assert template.nominal_value == 20.0
+    assert template.accumulated_markup_contribution == 20.0
 
     api_client.force_login(user)
     response = api_client.patch(
@@ -250,8 +254,8 @@ def test_remove_budget_account_markup_children(api_client, user, create_markup,
     account.refresh_from_db()
     assert account.markup_contribution == 0.0
 
-    budget.refresh_from_db()
-    assert budget.accumulated_markup_contribution == 0.0
+    template.refresh_from_db()
+    assert template.accumulated_markup_contribution == 0.0
 
     assert response.json()["data"] == {
         "id": markup.pk,
@@ -276,12 +280,13 @@ def test_remove_budget_account_markup_children(api_client, user, create_markup,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_add_budget_account_markup_children(api_client, user, create_markup,
-        create_budget_account, create_budget, create_budget_subaccounts, models):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    create_budget_subaccounts(parent=account, quantity=1, rate=10, count=2)
-    markup = create_markup(parent=budget, flat=True, rate=20)
+def test_add_template_account_markup_children(api_client, user, create_markup,
+        create_template_account, create_template, create_template_subaccounts,
+        models):
+    template = create_template()
+    account = create_template_account(parent=template)
+    create_template_subaccounts(parent=account, quantity=1, rate=10, count=2)
+    markup = create_markup(parent=template, flat=True, rate=20)
 
     # Make sure all data is properly calculated before API request to avoid
     # confusion in source of potential errors.
@@ -289,9 +294,9 @@ def test_add_budget_account_markup_children(api_client, user, create_markup,
     assert account.nominal_value == 20.0
     assert account.markup_contribution == 0.0
 
-    budget.refresh_from_db()
-    assert budget.nominal_value == 20.0
-    assert budget.accumulated_markup_contribution == 0.0
+    template.refresh_from_db()
+    assert template.nominal_value == 20.0
+    assert template.accumulated_markup_contribution == 0.0
 
     api_client.force_login(user)
     response = api_client.patch(
@@ -306,8 +311,8 @@ def test_add_budget_account_markup_children(api_client, user, create_markup,
     account.refresh_from_db()
     assert account.markup_contribution == 20.0
 
-    budget.refresh_from_db()
-    assert budget.accumulated_markup_contribution == 20.0
+    template.refresh_from_db()
+    assert template.accumulated_markup_contribution == 20.0
 
     assert response.json()["data"] == {
         "id": markup.pk,
@@ -332,11 +337,12 @@ def test_add_budget_account_markup_children(api_client, user, create_markup,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_update_budget_subaccount_markup(api_client, user, create_budget_account,
-        create_budget, create_markup, models, create_budget_subaccounts):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    subaccounts = create_budget_subaccounts(
+def test_update_template_subaccount_markup(api_client, user, create_template,
+        create_template_account, create_markup, models,
+        create_template_subaccounts):
+    template = create_template()
+    account = create_template_account(parent=template)
+    subaccounts = create_template_subaccounts(
         parent=account,
         quantity=1,
         rate=10,
@@ -358,9 +364,9 @@ def test_update_budget_subaccount_markup(api_client, user, create_budget_account
     assert account.nominal_value == 20.0
     assert account.markup_contribution == 0.0
 
-    budget.refresh_from_db()
-    assert budget.nominal_value == 20.0
-    assert budget.accumulated_markup_contribution == 0.0
+    template.refresh_from_db()
+    assert template.nominal_value == 20.0
+    assert template.accumulated_markup_contribution == 0.0
 
     api_client.force_login(user)
     response = api_client.patch("/v1/markups/%s/" % markup.pk, data={
@@ -380,8 +386,8 @@ def test_update_budget_subaccount_markup(api_client, user, create_budget_account
     account.refresh_from_db()
     assert account.accumulated_markup_contribution == 40.0
 
-    budget.refresh_from_db()
-    assert budget.accumulated_markup_contribution == 40.0
+    template.refresh_from_db()
+    assert template.accumulated_markup_contribution == 40.0
 
     markup.refresh_from_db()
     assert markup.identifier == "Markup Identifier"
@@ -416,12 +422,12 @@ def test_update_budget_subaccount_markup(api_client, user, create_budget_account
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_remove_budget_subaccount_markup_children(api_client, user, models,
-        create_budget_account, create_budget, create_budget_subaccounts,
+def test_remove_template_subaccount_markup_children(api_client, user, models,
+        create_template_account, create_template, create_template_subaccounts,
         create_markup):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    subaccounts = create_budget_subaccounts(
+    template = create_template()
+    account = create_template_account(parent=template)
+    subaccounts = create_template_subaccounts(
         parent=account,
         quantity=1,
         rate=10,
@@ -448,9 +454,9 @@ def test_remove_budget_subaccount_markup_children(api_client, user, models,
     assert account.nominal_value == 20.0
     assert account.accumulated_markup_contribution == 40.0
 
-    budget.refresh_from_db()
-    assert budget.nominal_value == 20.0
-    assert budget.accumulated_markup_contribution == 40.0
+    template.refresh_from_db()
+    assert template.nominal_value == 20.0
+    assert template.accumulated_markup_contribution == 40.0
 
     api_client.force_login(user)
     response = api_client.patch(
@@ -474,8 +480,8 @@ def test_remove_budget_subaccount_markup_children(api_client, user, models,
     account.refresh_from_db()
     assert account.accumulated_markup_contribution == 0.0
 
-    budget.refresh_from_db()
-    assert budget.accumulated_markup_contribution == 0.0
+    template.refresh_from_db()
+    assert template.accumulated_markup_contribution == 0.0
 
     assert response.json()["data"] == {
         "id": markup.pk,
@@ -503,11 +509,12 @@ def test_remove_budget_subaccount_markup_children(api_client, user, models,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_add_budget_subaccount_markup_children(api_client, user, create_markup,
-        create_budget_account, create_budget, create_budget_subaccounts, models):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    subaccounts = create_budget_subaccounts(
+def test_add_template_subaccount_markup_children(api_client, user, create_markup,
+        create_template_account, create_template, create_template_subaccounts,
+        models):
+    template = create_template()
+    account = create_template_account(parent=template)
+    subaccounts = create_template_subaccounts(
         parent=account,
         quantity=1,
         rate=10,
@@ -529,9 +536,9 @@ def test_add_budget_subaccount_markup_children(api_client, user, create_markup,
     assert account.nominal_value == 20.0
     assert account.accumulated_markup_contribution == 0.0
 
-    budget.refresh_from_db()
-    assert budget.nominal_value == 20.0
-    assert budget.accumulated_markup_contribution == 0.0
+    template.refresh_from_db()
+    assert template.nominal_value == 20.0
+    assert template.accumulated_markup_contribution == 0.0
 
     api_client.force_login(user)
     response = api_client.patch(
@@ -554,8 +561,8 @@ def test_add_budget_subaccount_markup_children(api_client, user, create_markup,
     account.refresh_from_db()
     assert account.accumulated_markup_contribution == 40.0
 
-    budget.refresh_from_db()
-    assert budget.accumulated_markup_contribution == 40.0
+    template.refresh_from_db()
+    assert template.accumulated_markup_contribution == 40.0
 
     assert response.json()["data"] == {
         "id": markup.pk,
@@ -582,12 +589,12 @@ def test_add_budget_subaccount_markup_children(api_client, user, create_markup,
     assert response.json()["budget"]["nominal_value"] == 20.0
 
 
-def test_update_budget_account_markup_child_not_same_parent(api_client, user,
-        create_budget_account, create_budget, create_markup):
-    budget = create_budget()
-    another_budget = create_budget()
-    account = create_budget_account(parent=another_budget)
-    markup = create_markup(parent=budget)
+def test_update_template_account_markup_child_not_same_parent(api_client, user,
+        create_template_account, create_template, create_markup):
+    template = create_template()
+    another_template = create_template()
+    account = create_template_account(parent=another_template)
+    markup = create_markup(parent=template)
 
     api_client.force_login(user)
     response = api_client.patch("/v1/markups/%s/" % markup.pk, data={
@@ -597,13 +604,13 @@ def test_update_budget_account_markup_child_not_same_parent(api_client, user,
     assert response.status_code == 400
 
 
-def test_update_budget_subaccount_markup_child_not_same_parent(api_client, user,
-        create_budget_account, create_budget, create_markup,
-        create_budget_subaccount):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    another_account = create_budget_account(parent=budget)
-    subaccount = create_budget_subaccount(parent=another_account)
+def test_update_template_subaccount_markup_child_not_same_parent(api_client,
+        user, create_template_account, create_template, create_markup,
+        create_template_subaccount):
+    template = create_template()
+    account = create_template_account(parent=template)
+    another_account = create_template_account(parent=template)
+    subaccount = create_template_subaccount(parent=another_account)
     markup = create_markup(parent=account)
 
     api_client.force_login(user)
@@ -614,10 +621,10 @@ def test_update_budget_subaccount_markup_child_not_same_parent(api_client, user,
     assert response.status_code == 400
 
 
-def test_delete_budget_account_markup(api_client, user, create_budget, models,
-        create_markup):
-    budget = create_budget()
-    markup = create_markup(parent=budget)
+def test_delete_template_account_markup(api_client, user, create_template,
+        models, create_markup):
+    template = create_template()
+    markup = create_markup(parent=template)
 
     api_client.force_login(user)
     response = api_client.delete("/v1/markups/%s/" % markup.pk)
@@ -625,10 +632,10 @@ def test_delete_budget_account_markup(api_client, user, create_budget, models,
     assert models.Markup.objects.count() == 0
 
 
-def test_delete_budget_subaccount_markup(api_client, user, create_budget,
-        models, create_budget_account, create_markup):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
+def test_delete_template_subaccount_markup(api_client, user, create_template,
+        models, create_template_account, create_markup):
+    template = create_template()
+    account = create_template_account(parent=template)
     markup = create_markup(parent=account)
 
     api_client.force_login(user)

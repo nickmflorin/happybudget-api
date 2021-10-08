@@ -191,7 +191,7 @@ def create_budget_subaccounts(create_budget_subaccount):
 
     Usage:
     -----
-    >>> def test_budget_subaccount(create_budget_subaccount):
+    >>> def test_budget_subaccount(create_budget_subaccounts):
     >>>     subaccounts = create_budget_subaccounts(name='Test', count=1)
     >>>     assert subaccounts[0].name == 'Test'
     """
@@ -221,6 +221,27 @@ def create_template_subaccount(user, db):
         kwargs.setdefault('created_by', user)
         kwargs.setdefault('updated_by', user)
         return TemplateSubAccountFactory(*args, **kwargs)
+    return inner
+
+
+@pytest.fixture
+def create_template_subaccounts(create_template_subaccount):
+    """
+    A fixture that creates a series of :obj:`TemplateSubAccount` instances using
+    the :obj:`TemplateSubAccountFactory`.
+
+    Usage:
+    -----
+    >>> def test_template_subaccount(create_template_subaccounts):
+    >>>     subaccounts = create_template_subaccounts(name='Test', count=1)
+    >>>     assert subaccounts[0].name == 'Test'
+    """
+    def inner(*args, **kwargs):
+        count = kwargs.pop('count', 1)
+        return [
+            create_template_subaccount(*args, **kwargs)
+            for i in range(count)
+        ]
     return inner
 
 

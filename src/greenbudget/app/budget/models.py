@@ -47,11 +47,6 @@ class BaseBudget(PolymorphicModel):
     )
     image = models.ImageField(upload_to=upload_to, null=True)
 
-    groups = GenericRelation(Group)
-
-    objects = BaseBudgetManager()
-    non_polymorphic = models.Manager()
-
     ESTIMATED_FIELDS = ESTIMATED_FIELDS
     CALCULATED_FIELDS = CALCULATED_FIELDS
 
@@ -60,8 +55,14 @@ class BaseBudget(PolymorphicModel):
     accumulated_fringe_contribution = models.FloatField(default=0.0)
     accumulated_markup_contribution = models.FloatField(default=0.0)
 
+    groups = GenericRelation(Group)
+    children_markups = GenericRelation(Markup)
+
     FIELDS_TO_DERIVE = ()
     FIELDS_TO_DUPLICATE = ('image', 'name') + CALCULATED_FIELDS
+
+    objects = BaseBudgetManager()
+    non_polymorphic = models.Manager()
 
     class Meta:
         get_latest_by = "updated_at"
@@ -168,7 +169,6 @@ class Budget(BaseBudget):
     location_days = models.IntegerField(default=0)
 
     comments = GenericRelation(Comment)
-    children_markups = GenericRelation(Markup)
 
     objects = BudgetManager()
     non_polymorphic = models.Manager()

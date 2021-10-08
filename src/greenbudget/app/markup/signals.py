@@ -5,11 +5,11 @@ from django.db import IntegrityError
 
 from greenbudget.app import signals
 from greenbudget.app.signals.utils import generic_foreign_key_instance_change
-from greenbudget.app.account.models import BudgetAccount
+from greenbudget.app.account.models import BudgetAccount, Account
 from greenbudget.app.account.signals import actualize_account, estimate_account
 from greenbudget.app.budget.models import Budget
 from greenbudget.app.budget.signals import actualize_budget
-from greenbudget.app.subaccount.models import BudgetSubAccount
+from greenbudget.app.subaccount.models import BudgetSubAccount, SubAccount
 from greenbudget.app.subaccount.signals import (
     actualize_subaccount, estimate_subaccount)
 
@@ -19,8 +19,8 @@ from .models import Markup
 logger = logging.getLogger('signals')
 
 
-@dispatch.receiver(signals.m2m_changed, sender=BudgetAccount.markups.through)
-@dispatch.receiver(signals.m2m_changed, sender=BudgetSubAccount.markups.through)
+@dispatch.receiver(signals.m2m_changed, sender=Account.markups.through)
+@dispatch.receiver(signals.m2m_changed, sender=SubAccount.markups.through)
 def delete_empty_markups(instance, reverse, **kwargs):
     if kwargs['action'] == 'post_remove':
         # Depending on whether or not the M2M was changed on the forward or
@@ -49,12 +49,17 @@ def delete_empty_markups(instance, reverse, **kwargs):
 
 
 def estimate_instance(instance, **kwargs):
-    calculator_map = {
-        BudgetAccount: estimate_account,
-        BudgetSubAccount: estimate_subaccount
+    mapping = {
+        Account: estimate_account,
+        SubAccount: estimate_subaccount
     }
-    calculator = calculator_map[type(instance)]
-    calculator(instance, **kwargs)
+    for k, v in mapping.items():
+        if isinstance(instance, k):
+            return v(instance, **kwargs)
+    raise IntegrityError(
+        "Unexpected instance %s - must be a valid Account/Sub Account."
+        % instance.__class__.__name__
+    )
 
 
 def actualize_parent(instance, **kwargs):
@@ -74,8 +79,8 @@ def markup_changed(instance, **kwargs):
             estimate_instance(obj)
 
 
-@dispatch.receiver(signals.m2m_changed, sender=BudgetAccount.markups.through)
-@dispatch.receiver(signals.m2m_changed, sender=BudgetSubAccount.markups.through)
+@dispatch.receiver(signals.m2m_changed, sender=Account.markups.through)
+@dispatch.receiver(signals.m2m_changed, sender=SubAccount.markups.through)
 def markups_changed(instance, reverse, action, **kwargs):
     if action in ('post_add', 'post_remove'):
         if reverse:
@@ -92,11 +97,19 @@ def markups_changed(instance, reverse, action, **kwargs):
 
 @dispatch.receiver(signals.pre_delete, sender=Markup)
 def markup_deleted(instance, **kwargs):
-    actualize_parent(instance.parent, markups_to_be_deleted=[instance.pk])
-    # Note that we have to use the pre_delete signal because we still need to
-    # determine which SubAccount(s) have to be reestimated.  We also have to
-    # explicitly define the Markup(s) for the reestimation, so it knows to
-    # exclude the Markup that is about to be deleted.
+    """
+    When a :obj:`greenbudget.app.markup.models.Markup` instance is deleted,
+    we need to both reactualize the parent of that instance and reestimate all
+    models for which that :obj:`greenbudget.app.markup.models.Markup` is
+    applied.
+
+    Note that we have to use the pre_delete signal because we still need to
+    determine which SubAccount(s) have to be reestimated.  We also have to
+    explicitly define the Markup(s) for the reestimation, so it knows to
+    exclude the Markup that is about to be deleted.
+    """
+    if isinstance(instance.parent, (Budget, BudgetAccount, BudgetSubAccount)):
+        actualize_parent(instance.parent, markups_to_be_deleted=[instance.pk])
     with signals.bulk_context:
         for obj in instance.children.all():
             estimate_instance(obj, markups_to_be_deleted=[instance.pk])
@@ -104,7 +117,8 @@ def markup_deleted(instance, **kwargs):
 
 @dispatch.receiver(signals.post_create, sender=Markup)
 def markup_created(instance, **kwargs):
-    actualize_parent(instance.parent)
+    if isinstance(instance.parent, (Budget, BudgetAccount, BudgetSubAccount)):
+        actualize_parent(instance.parent)
 
 
 @signals.any_fields_changed_receiver(
@@ -153,7 +167,8 @@ def markup_parent_changed(instance, changes, **kwargs):
         )
 
     for obj in parents_to_reactualize:
-        actualize_parent(obj)
+        if isinstance(obj, (Budget, BudgetAccount, BudgetSubAccount)):
+            actualize_parent(obj)
 
 
 @dispatch.receiver(signals.m2m_changed, sender=BudgetAccount.markups.through)

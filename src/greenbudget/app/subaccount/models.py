@@ -117,6 +117,7 @@ class SubAccount(PolymorphicModel):
     )
     groups = GenericRelation(Group)
     actuals = GenericRelation(Actual)
+    children_markups = GenericRelation(Markup)
 
     objects = SubAccountManager()
     non_polymorphic = models.Manager()
@@ -281,7 +282,6 @@ class BudgetSubAccount(SubAccount):
     )
     comments = GenericRelation(Comment)
     events = GenericRelation(Event)
-    children_markups = GenericRelation(Markup)
 
     objects = SubAccountManager()
 

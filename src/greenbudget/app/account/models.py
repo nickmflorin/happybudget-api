@@ -74,6 +74,7 @@ class Account(PolymorphicModel):
     )
     groups = GenericRelation(Group)
     children = GenericRelation(SubAccount)
+    children_markups = GenericRelation(Markup)
 
     objects = AccountManager()
     non_polymorphic = models.Manager()
@@ -189,7 +190,6 @@ class BudgetAccount(Account):
     )
     comments = GenericRelation(Comment)
     events = GenericRelation(Event)
-    children_markups = GenericRelation(Markup)
 
     TRACK_MODEL_HISTORY = True
     TRACK_FIELD_CHANGE_HISTORY = ['identifier', 'description']

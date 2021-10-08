@@ -65,7 +65,7 @@ class SubAccountMarkupViewSet(
 
     def get_queryset(self):
         return Markup.objects.filter(
-            content_type=ContentType.objects.get_for_model(BudgetSubAccount),
+            content_type=ContentType.objects.get_for_model(type(self.subaccount)),  # noqa
             object_id=self.subaccount.pk,
         )
 
@@ -82,7 +82,7 @@ class SubAccountMarkupViewSet(
             created_by=self.request.user,
             updated_by=self.request.user,
             object_id=self.subaccount.pk,
-            content_type=ContentType.objects.get_for_model(BudgetSubAccount),
+            content_type=ContentType.objects.get_for_model(type(self.subaccount)),  # noqa
             parent=self.subaccount
         )
 

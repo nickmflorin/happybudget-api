@@ -50,7 +50,7 @@ class AccountMarkupViewSet(
 
     def get_queryset(self):
         return Markup.objects.filter(
-            content_type=ContentType.objects.get_for_model(BudgetAccount),
+            content_type=ContentType.objects.get_for_model(type(self.account)),
             object_id=self.account.pk,
         )
 
@@ -67,7 +67,7 @@ class AccountMarkupViewSet(
             created_by=self.request.user,
             updated_by=self.request.user,
             object_id=self.account.pk,
-            content_type=ContentType.objects.get_for_model(BudgetAccount),
+            content_type=ContentType.objects.get_for_model(type(self.account)),
             parent=self.account
         )
 

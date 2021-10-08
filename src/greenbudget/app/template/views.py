@@ -3,16 +3,20 @@ from django.db import models
 from rest_framework import (
     viewsets, mixins, response, status, decorators, permissions)
 
+from greenbudget.lib.drf.views import filter_by_ids
+
 from greenbudget.app.account.models import TemplateAccount
 from greenbudget.app.account.serializers import TemplateAccountSerializer
 from greenbudget.app.account.views import GenericAccountViewSet
 from greenbudget.app.budgeting.decorators import (
-    register_bulk_operations, BulkAction)
+    register_bulk_operations, BulkAction, BulkDeleteAction)
 from greenbudget.app.authentication.permissions import IsAdminOrReadOnly
 from greenbudget.app.fringe.models import Fringe
 from greenbudget.app.fringe.serializers import FringeSerializer
 from greenbudget.app.group.models import Group
 from greenbudget.app.group.serializers import GroupSerializer
+from greenbudget.app.markup.models import Markup
+from greenbudget.app.markup.serializers import MarkupSerializer
 
 from .models import Template
 from .mixins import TemplateNestedMixin
@@ -20,6 +24,46 @@ from .permissions import TemplateObjPermission
 from .serializers import TemplateSerializer, TemplateSimpleSerializer
 
 
+@filter_by_ids
+class TemplateMarkupViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    TemplateNestedMixin,
+    viewsets.GenericViewSet
+):
+    """
+    Viewset to handle requests to the following endpoints:
+
+    (1) POST /templates/<pk>/markups/
+    (2) GET /templates/<pk>/markups/
+    """
+    lookup_field = 'pk'
+    serializer_class = MarkupSerializer
+    template_lookup_field = ("pk", "template_pk")
+
+    def get_queryset(self):
+        return Markup.objects.filter(
+            content_type=ContentType.objects.get_for_model(Template),
+            object_id=self.template.pk
+        )
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update(
+            parent=self.template,
+            budget_context=True
+        )
+        return context
+
+    def perform_create(self, serializer):
+        serializer.save(
+            created_by=self.request.user,
+            updated_by=self.request.user,
+            parent=self.template
+        )
+
+
+@filter_by_ids
 class TemplateGroupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -38,7 +82,7 @@ class TemplateGroupViewSet(
 
     def get_queryset(self):
         return Group.objects.filter(
-            content_type=ContentType.objects.get_for_model(type(self.template)),
+            content_type=ContentType.objects.get_for_model(Template),
             object_id=self.template.pk
         )
 
@@ -54,11 +98,12 @@ class TemplateGroupViewSet(
         serializer.save(
             created_by=self.request.user,
             updated_by=self.request.user,
-            content_type=ContentType.objects.get_for_model(type(self.template)),
+            content_type=ContentType.objects.get_for_model(Template),
             object_id=self.template.pk
         )
 
 
+@filter_by_ids
 class TemplateFringeViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -94,6 +139,7 @@ class TemplateFringeViewSet(
         )
 
 
+@filter_by_ids
 class TemplateAccountViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -174,6 +220,14 @@ class GenericTemplateViewSet(viewsets.GenericViewSet):
                 created_by=context.request.user,
                 updated_by=context.request.user,
                 parent=context.instance
+            ),
+        ),
+        BulkDeleteAction(
+            url_path='bulk-{action_name}-markups',
+            child_cls=Markup,
+            filter_qs=lambda context: models.Q(
+                content_type=ContentType.objects.get_for_model(Template),
+                object_id=context.instance.pk
             ),
         ),
         BulkAction(

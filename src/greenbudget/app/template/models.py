@@ -34,6 +34,9 @@ class Template(BaseBudget):
             )
         )]
 
+    def __str__(self):
+        return "Template: %s" % self.name
+
     @property
     def child_instance_cls(self):
         from greenbudget.app.account.models import TemplateAccount
