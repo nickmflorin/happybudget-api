@@ -1,10 +1,11 @@
-from django.contrib.contenttypes.models import ContentType
 from django.db.models import Case, Q, When, Value as V, BooleanField
 
 from polymorphic.managers import PolymorphicManager
 
 from greenbudget.lib.utils import concat
 from greenbudget.lib.django_utils.models import BulkCreatePolymorphicQuerySet
+
+from greenbudget.app.budgeting.utils import get_instance_cls
 
 
 class SubAccountQuerier(object):
@@ -28,21 +29,16 @@ class SubAccountQuerier(object):
             )
         ).filter(_ongoing=True)
 
-    @property
-    def account_model(self):
-        from greenbudget.app.account.models import BudgetAccount, TemplateAccount  # noqa
-        from .models import BudgetSubAccount, TemplateSubAccount
-        mapping = {
-            BudgetSubAccount: BudgetAccount,
-            TemplateAccount: TemplateSubAccount
-        }
-        return mapping[self.model]
-
     def _get_subaccount_levels(self, budget):
+        account_ct = get_instance_cls(
+            obj=budget,
+            as_content_type=True,
+            obj_type='account'
+        )
         subaccount_levels = []
         subaccounts = concat([
             [q[0] for q in account.children.only('pk').values_list('pk')]
-            for account in self.account_model.objects.filter(parent=budget)
+            for account in account_ct.model_class().objects.filter(parent=budget)
         ])
         while len(subaccounts) != 0:
             subaccount_levels.append(subaccounts)
@@ -54,17 +50,22 @@ class SubAccountQuerier(object):
         return subaccount_levels
 
     def _get_case_query(self, budget):
-        account_ct = ContentType.objects.get_for_model(self.account_model).id
-        subaccount_ct = ContentType.objects.get_for_model(self.model).id
-
+        account_ct = get_instance_cls(
+            obj=budget,
+            as_content_type=True,
+            obj_type='account'
+        )
+        subaccount_ct = get_instance_cls(
+            obj=budget,
+            as_content_type=True,
+            obj_type='subaccount'
+        )
         accounts = [
-            q[0] for q in self.account_model.objects.filter(parent=budget)
+            q[0] for q in account_ct.model_class().objects.filter(parent=budget)
             .only('pk').values_list('pk')
         ]
-
         query = Q(content_type_id=account_ct) & Q(object_id__in=accounts)
         subaccount_levels = self._get_subaccount_levels(budget)
-
         for level in subaccount_levels:
             query = query | (
                 Q(content_type_id=subaccount_ct) & Q(object_id__in=level))

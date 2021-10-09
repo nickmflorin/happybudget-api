@@ -51,8 +51,10 @@ class Markup(models.Model):
     parent = GenericForeignKey('content_type', 'object_id')
 
     actuals = GenericRelation(Actual)
-
     objects = MarkupManager()
+
+    FIELDS_TO_DUPLICATE = ('identifier', 'description', 'unit', 'rate')
+    FIELDS_TO_DERIVE = FIELDS_TO_DUPLICATE
 
     class Meta:
         get_latest_by = "updated_at"

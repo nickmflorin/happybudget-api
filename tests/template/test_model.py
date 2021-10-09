@@ -2,7 +2,7 @@ from greenbudget.app import signals
 
 
 def test_duplicate_template(user, create_template, create_template_account,
-        create_template_subaccount, create_fringe, create_group):
+        create_template_subaccount, create_fringe, create_group, create_markup):
     with signals.post_save.disable():
         original = create_template(created_by=user)
         fringes = [
@@ -17,12 +17,17 @@ def test_duplicate_template(user, create_template, create_template_account,
                 updated_by=user
             ),
         ]
+        template_markups = [
+            create_markup(parent=original, identifier="Template Markup A"),
+            create_markup(parent=original, identifier="Template Markup B")
+        ]
         account_group = create_group(parent=original)
         accounts = [
             create_template_account(
                 parent=original,
                 created_by=user,
                 updated_by=user,
+                markups=template_markups,
                 group=account_group,
             ),
             create_template_account(
@@ -32,12 +37,17 @@ def test_duplicate_template(user, create_template, create_template_account,
                 group=account_group,
             )
         ]
+        account_markups = [
+            create_markup(parent=accounts[0], identifier="Account Markup B"),
+            create_markup(parent=accounts[0], identifier="Account Markup B")
+        ]
         subaccount_group = create_group(parent=accounts[0])
         subaccounts = [
             create_template_subaccount(
                 parent=accounts[0],
                 created_by=user,
                 updated_by=user,
+                markups=account_markups,
                 group=subaccount_group
             ),
             create_template_subaccount(
@@ -64,6 +74,7 @@ def test_duplicate_template(user, create_template, create_template_account,
     assert template.name == original.name
     assert template.children.count() == 2
     assert template.created_by == user
+    assert template.children_markups.count() == 2
 
     assert template.groups.count() == 1
     budget_account_group = template.groups.first()
@@ -98,7 +109,8 @@ def test_duplicate_template(user, create_template, create_template_account,
     assert first_account.description == accounts[0].description
     assert first_account.created_by == user
     assert first_account.updated_by == user
-
+    assert first_account.children_markups.count() == 2
+    assert first_account.markups.count() == 2
     assert first_account.children.count() == 1
 
     assert first_account.groups.count() == 1
@@ -108,7 +120,7 @@ def test_duplicate_template(user, create_template, create_template_account,
 
     first_account_subaccount = first_account.children.first()
     assert first_account_subaccount.group == budget_subaccount_group
-
+    assert first_account_subaccount.markups.count() == 2
     assert first_account_subaccount.created_by == user
     assert first_account_subaccount.updated_by == user
     assert first_account_subaccount.identifier == subaccounts[0].identifier

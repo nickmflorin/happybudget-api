@@ -1,6 +1,7 @@
-from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models import Case, Q, When, Value as V, BooleanField
+
+from greenbudget.app.budgeting.utils import get_instance_cls
 
 
 class MarkupQuerier(object):
@@ -23,33 +24,29 @@ class MarkupQuerier(object):
             )
         ).filter(_ongoing=True)
 
-    @property
-    def account_model(self):
-        from greenbudget.app.account.models import BudgetAccount
-        return BudgetAccount
-
-    @property
-    def budget_model(self):
-        from greenbudget.app.budget.models import Budget
-        return Budget
-
-    @property
-    def subaccount_model(self):
-        from greenbudget.app.subaccount.models import BudgetSubAccount
-        return BudgetSubAccount
-
     def _get_case_query(self, budget):
-        budget_ct = ContentType.objects.get_for_model(self.budget_model).id
-        account_ct = ContentType.objects.get_for_model(self.account_model).id
-        subaccount_ct = ContentType.objects.get_for_model(
-            self.subaccount_model).id
-
+        budget_ct = get_instance_cls(
+            obj=budget,
+            as_content_type=True,
+            obj_type='budget'
+        )
+        account_ct = get_instance_cls(
+            obj=budget,
+            as_content_type=True,
+            obj_type='account'
+        )
+        subaccount_ct = get_instance_cls(
+            obj=budget,
+            as_content_type=True,
+            obj_type='subaccount'
+        )
         accounts = [
-            q[0] for q in self.account_model.objects.filter(parent=budget)
+            q[0] for q in account_ct.model_class().objects.filter(parent=budget)
             .only('pk').values_list('pk')
         ]
         subaccounts = [
-            q[0] for q in self.subaccount_model.objects.filter_by_budget(budget)
+            q[0] for q in subaccount_ct.model_class().objects
+            .filter_by_budget(budget)
             .only('pk').values_list('pk')
         ]
         return (Q(content_type_id=budget_ct) & Q(object_id=budget.pk)) \

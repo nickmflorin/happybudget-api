@@ -54,6 +54,10 @@ def concat(arrays):
     """
     Concatenates an array of arrays into a 1 dimensional array.
     """
+    if not isinstance(arrays, list):
+        raise ValueError("Can only concatenate objects of list type.")
+    elif len(arrays) == 0:
+        return []
     concatenated = arrays[0]
     if not isinstance(concatenated, list):
         raise ValueError(

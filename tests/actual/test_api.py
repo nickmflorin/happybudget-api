@@ -76,6 +76,7 @@ def test_change_actual_parent_to_subaccount(api_client, user, create_budget,
             "type": "subaccount"
         }}
     )
+
     assert response.status_code == 200
     assert response.json() == {
         "id": actuals[0].pk,

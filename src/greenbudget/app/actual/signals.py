@@ -47,16 +47,21 @@ def actual_deleted(instance, **kwargs):
 
 @dispatch.receiver(signals.pre_save, sender=Actual)
 def validate_actual(instance, **kwargs):
-    if instance.owner is not None and instance.owner.budget != instance.budget:
-        raise IntegrityError(
-            "Can only add actuals with the same parent as the instance."
-        )
-    elif instance.contact is not None \
-            and instance.contact.user != instance.created_by:
-        raise IntegrityError(
-            "Cannot assign a contact created by one user to an actual "
-            "created by another user."
-        )
+    try:
+        budget = instance.budget
+    except Actual.budget.RelatedObjectDoesNotExist:
+        pass
+    else:
+        if instance.owner is not None and instance.owner.budget != budget:
+            raise IntegrityError(
+                "Can only add actuals with the same parent as the instance."
+            )
+        elif instance.contact is not None \
+                and instance.contact.user != instance.created_by:
+            raise IntegrityError(
+                "Cannot assign a contact created by one user to an actual "
+                "created by another user."
+            )
 
 
 @signals.any_fields_changed_receiver(

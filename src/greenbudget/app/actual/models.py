@@ -67,6 +67,11 @@ class Actual(models.Model):
     comments = GenericRelation(Comment)
     objects = ActualManager()
 
+    FIELDS_TO_DUPLICATE = (
+        'purchase_order', 'description', 'date', 'payment_id', 'value',
+        'payment_method'
+    )
+
     class Meta:
         get_latest_by = "updated_at"
         ordering = ('created_at', )
