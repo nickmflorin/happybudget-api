@@ -1,10 +1,10 @@
-from django.db.utils import IntegrityError
-
 from greenbudget.app import signals
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+
+from greenbudget.app.budgeting.utils import get_child_instance_cls
 
 
 @signals.model('suppress_budget_update')
@@ -63,25 +63,7 @@ class Group(models.Model):
 
     @classmethod
     def child_instance_cls_for_parent(cls, parent):
-        from greenbudget.app.budget.models import Budget
-        from greenbudget.app.template.models import Template
-        from greenbudget.app.account.models import BudgetAccount, TemplateAccount  # noqa
-        from greenbudget.app.subaccount.models import (
-            BudgetSubAccount, TemplateSubAccount)
-
-        mapping = {
-            Budget: BudgetAccount,
-            Template: TemplateAccount,
-            (BudgetAccount, BudgetSubAccount): BudgetSubAccount,
-            (TemplateAccount, TemplateSubAccount): TemplateSubAccount
-        }
-        for k, v in mapping.items():
-            if isinstance(parent, k):
-                return v
-        raise IntegrityError(
-            "Unexpected instance %s - must be a valid parent of Group."
-            % parent.__class__.__name__
-        )
+        return get_child_instance_cls(parent)
 
     @property
     def child_instance_cls(self):

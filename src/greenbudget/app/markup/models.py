@@ -1,13 +1,14 @@
 import functools
 from model_utils import Choices
 
-from django.db import models, IntegrityError
+from django.db import models
 from django.contrib.contenttypes.fields import (
     GenericRelation, GenericForeignKey)
 from django.contrib.contenttypes.models import ContentType
 
 from greenbudget.app import signals
 from greenbudget.app.actual.models import Actual
+from greenbudget.app.budgeting.utils import get_child_instance_cls
 
 from .managers import MarkupManager
 
@@ -72,34 +73,15 @@ class Markup(models.Model):
 
     @classmethod
     def child_instance_cls_for_parent(cls, parent):
-        from greenbudget.app.account.models import (
-            BudgetAccount, TemplateAccount)
-        from greenbudget.app.budget.models import Budget
-        from greenbudget.app.subaccount.models import (
-            BudgetSubAccount, TemplateSubAccount)
-        from greenbudget.app.template.models import Template
-
-        mapping = {
-            Budget: BudgetAccount,
-            Template: TemplateAccount,
-            (BudgetAccount, BudgetSubAccount): BudgetSubAccount,
-            (TemplateAccount, TemplateSubAccount): TemplateSubAccount,
-        }
-        for k, v in mapping.items():
-            if isinstance(parent, k):
-                return v
-        raise IntegrityError(
-            "Unexpected instance %s - must be a valid parent of Group."
-            % parent.__class__.__name__
-        )
-
-    @property
-    def parent_instance_cls(self):
-        return type(self.parent)
+        return get_child_instance_cls(parent)
 
     @property
     def child_instance_cls(self):
         return self.child_instance_cls_for_parent(self.parent)
+
+    @property
+    def parent_instance_cls(self):
+        return type(self.parent)
 
     @property
     def children(self):

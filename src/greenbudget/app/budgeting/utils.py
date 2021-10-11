@@ -1,65 +1,76 @@
 from django.contrib.contenttypes.models import ContentType
-from django.db import IntegrityError
+from django.apps import apps
+
+
+def import_model_at_path(path):
+    return apps.get_model(
+        app_label=path.split('.')[0],
+        model_name=path.split('.')[1]
+    )
+
+
+def get_from_instance_mapping(mapping, obj):
+    def normalize(o):
+        if isinstance(o, str):
+            return import_model_at_path(o)
+        return o
+    for k, v in mapping.items():
+        normalized = tuple([normalize(ki) for ki in k]) \
+            if isinstance(k, tuple) else normalize(k)
+        if isinstance(obj, type) and obj in k:
+            if isinstance(normalized, tuple):
+                if obj in k:
+                    return v
+            else:
+                if obj is k:
+                    return v
+        elif not isinstance(obj, type) and isinstance(obj, normalized):
+            return v
+    obj_name = obj.__name__ if isinstance(obj, type) else obj.__class__.__name__
+    raise ValueError("Unexpected instance %s." % obj_name)
 
 
 def get_instance_cls(obj, obj_type, as_content_type=False):
-    from greenbudget.app.account.models import BudgetAccount, TemplateAccount
-    from greenbudget.app.budget.models import Budget
-    from greenbudget.app.subaccount.models import (
-        BudgetSubAccount, TemplateSubAccount)
-    from greenbudget.app.template.models import Template
-
     mapping = {
-        (Budget, BudgetAccount, BudgetSubAccount): {
-            'budget': Budget,
-            'account': BudgetAccount,
-            'subaccount': BudgetSubAccount
+        (
+            'budget.Budget',
+            'account.BudgetAccount',
+            'subaccount.BudgetSubAccount',
+        ): {
+            'budget': 'budget.Budget',
+            'account': 'account.BudgetAccount',
+            'subaccount': 'subaccount.BudgetSubAccount'
         },
-        (Template, TemplateAccount, TemplateSubAccount): {
-            'budget': Template,
-            'account': TemplateAccount,
-            'subaccount': TemplateSubAccount
+        (
+            'template.Template',
+            'account.TemplateAccount',
+            'subaccount.TemplateSubAccount',
+        ): {
+            'budget': 'template.Template',
+            'account': 'account.TemplateAccount',
+            'subaccount': 'subaccount.TemplateSubAccount',  # noqa
         },
     }
-    related_obj = None
-    for k, v in mapping.items():
-        if isinstance(obj, type) and obj in k:
-            related_obj = v[obj_type]
-            break
-        elif not isinstance(obj, type) and isinstance(obj, k):
-            related_obj = v[obj_type]
-            break
-    if related_obj is None:
-        obj_name = related_obj.__name__ if isinstance(related_obj, type) \
-            else related_obj.__class__.__name__
-        raise IntegrityError(
-            "Unexpected instance %s - could not determine %s model."
-            % (obj_name, obj_type)
-        )
+    subset = get_from_instance_mapping(mapping, obj)
+    if obj_type not in subset:
+        raise ValueError("Invalid object type %s." % obj_type)
+    related_obj = import_model_at_path(subset[obj_type])
     if as_content_type:
         return ContentType.objects.get_for_model(related_obj)
-    return obj
+    return related_obj
 
 
-def get_budget_instance_cls(obj, as_content_type=False):
-    return get_instance_cls(
-        obj=obj,
-        obj_type='budget',
-        as_content_type=as_content_type
-    )
-
-
-def get_account_instance_cls(obj, as_content_type=False):
-    return get_instance_cls(
-        obj=obj,
-        obj_type='account',
-        as_content_type=as_content_type
-    )
-
-
-def get_subaccount_instance_cls(obj, as_content_type=False):
-    return get_instance_cls(
-        obj=obj,
-        obj_type='subaccount',
-        as_content_type=as_content_type
-    )
+def get_child_instance_cls(obj, as_content_type=False):
+    mapping = {
+        'budget.Budget': 'account.BudgetAccount',
+        'template.Template': 'account.TemplateAccount',
+        ('account.BudgetAccount', 'subaccount.BudgetSubAccount'):
+            'subaccount.BudgetSubAccount',
+        ('account.TemplateAccount', 'subaccount.TemplateSubAccount'):
+            'subaccount.TemplateSubAccount'  # noqa
+    }
+    obj_cls = get_from_instance_mapping(mapping, obj)
+    related_obj = import_model_at_path(obj_cls)
+    if as_content_type:
+        return ContentType.objects.get_for_model(related_obj)
+    return related_obj
