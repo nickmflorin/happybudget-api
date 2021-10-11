@@ -111,7 +111,7 @@ def test_duplicate_budget(user, create_budget, create_fringe, create_markup,
     assert budget.actuals.count() == 4
     ASSERT_ACTUAL_FIELDS = (
         'purchase_order', 'description', 'date', 'payment_id', 'value',
-        'payment_method'
+        'actual_type'
     )
     for i, actual in enumerate(budget.actuals.all()):
         actuals[i].refresh_from_db()

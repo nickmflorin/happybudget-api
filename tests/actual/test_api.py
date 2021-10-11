@@ -1,5 +1,55 @@
 import pytest
 
+from greenbudget.app import signals
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_type_properly_serializes(api_client, user, create_actual, create_budget,
+        create_actual_type):
+    with signals.disable():
+        budget = create_budget()
+        actual_type = create_actual_type()
+        actual = create_actual(budget=budget, actual_type=actual_type)
+
+    api_client.force_login(user)
+    response = api_client.get("/v1/actuals/%s/" % actual.pk)
+    assert response.status_code == 200
+    assert response.json()['actual_type'] == {
+        'id': actual_type.pk,
+        "created_at": "2020-01-01 00:00:00",
+        "updated_at": "2020-01-01 00:00:00",
+        'title': actual_type.title,
+        'plural_title': actual_type.plural_title,
+        'order': actual_type.order,
+        'color': actual_type.color.code
+    }
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_update_actual_type(api_client, user, create_budget, create_actual,
+        create_actual_type):
+    with signals.disable():
+        budget = create_budget()
+        actual_type = create_actual_type()
+        actual = create_actual(budget=budget)
+
+    api_client.force_login(user)
+    response = api_client.patch("/v1/actuals/%s/" % actual.pk, data={
+        "actual_type": actual_type.pk
+    })
+    assert response.status_code == 200
+    actual.refresh_from_db()
+    assert response.json()['actual_type'] == {
+        'id': actual_type.pk,
+        "created_at": "2020-01-01 00:00:00",
+        "updated_at": "2020-01-01 00:00:00",
+        'title': actual_type.title,
+        'plural_title': actual_type.plural_title,
+        'order': actual_type.order,
+        'color': actual_type.color.code
+    }
+    assert actual.actual_type == actual_type
+
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_update_actual(api_client, user, create_budget_account,
@@ -12,7 +62,6 @@ def test_update_actual(api_client, user, create_budget_account,
     api_client.force_login(user)
     response = api_client.patch("/v1/actuals/%s/" % actual.pk, data={
         "payment_id": "Payment ID",
-        "payment_method": 1,
     })
 
     assert response.status_code == 200
@@ -29,10 +78,7 @@ def test_update_actual(api_client, user, create_budget_account,
         "contact": None,
         "created_by": user.pk,
         "updated_by": user.pk,
-        "payment_method": {
-            "id": 1,
-            "name": actual.PAYMENT_METHODS[1]
-        },
+        "actual_type": None,
         "owner": {
             "id": subaccount.pk,
             "type": "subaccount",
@@ -42,7 +88,6 @@ def test_update_actual(api_client, user, create_budget_account,
     }
     actual.refresh_from_db()
     assert actual.payment_id == "Payment ID"
-    assert actual.payment_method == 1
 
 
 @pytest.mark.freeze_time('2020-01-01')
@@ -91,10 +136,7 @@ def test_change_actual_parent_to_subaccount(api_client, user, create_budget,
         "contact": actuals[0].contact,
         "created_by": user.pk,
         "updated_by": user.pk,
-        "payment_method": {
-            "id": actuals[0].payment_method,
-            "name": actuals[0].PAYMENT_METHODS[actuals[0].payment_method]
-        },
+        "actual_type": None,
         "owner": {
             "id": subaccount.pk,
             "type": "subaccount",
@@ -164,10 +206,7 @@ def test_change_actual_parent_to_markup(api_client, user, create_budget,
         "contact": actuals[0].contact,
         "created_by": user.pk,
         "updated_by": user.pk,
-        "payment_method": {
-            "id": actuals[0].payment_method,
-            "name": actuals[0].PAYMENT_METHODS[actuals[0].payment_method]
-        },
+        "actual_type": None,
         "owner": {
             "id": markup.pk,
             "type": "markup",

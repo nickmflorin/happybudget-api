@@ -3,7 +3,7 @@ import factory
 from django.contrib.contenttypes.models import ContentType
 
 from greenbudget.app.account.models import BudgetAccount, TemplateAccount
-from greenbudget.app.actual.models import Actual
+from greenbudget.app.actual.models import Actual, ActualType
 from greenbudget.app.budget.models import Budget
 from greenbudget.app.comment.models import Comment
 from greenbudget.app.contact.models import Contact
@@ -352,6 +352,17 @@ class TemplateSubAccountFactory(
         model = TemplateSubAccount
 
 
+class ActualTypeFactory(
+        ConstantTimeMixin('created_at', 'updated_at'), TagFactory):
+    """
+    A DjangoModelFactory to create instances of :obj:`ActualType`.
+    """
+    color = factory.SubFactory(ColorFactory)
+
+    class Meta:
+        model = ActualType
+
+
 class ActualFactory(CustomModelFactory):
     """
     A DjangoModelFactory to create instances of :obj:`Actual`.
@@ -361,7 +372,6 @@ class ActualFactory(CustomModelFactory):
     description = factory.Faker('sentence')
     purchase_order = factory.Faker('random_number')
     value = 100.00
-    payment_method = Actual.PAYMENT_METHODS.check
 
     class Meta:
         model = Actual

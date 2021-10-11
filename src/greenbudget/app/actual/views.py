@@ -1,7 +1,22 @@
 from rest_framework import viewsets, mixins
 
-from .models import Actual
-from .serializers import ActualSerializer
+from .models import Actual, ActualType
+from .serializers import ActualSerializer, ActualTypeSerializer
+
+
+class ActualTypeViewSet(
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet
+):
+    """
+    Viewset to handle requests to the following endpoints:
+
+    (1) GET /actuals/types/
+    """
+    serializer_class = ActualTypeSerializer
+
+    def get_queryset(self):
+        return ActualType.objects.all()
 
 
 class GenericActualViewSet(viewsets.GenericViewSet):

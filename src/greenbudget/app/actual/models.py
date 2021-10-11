@@ -1,5 +1,3 @@
-from model_utils import Choices
-
 from django.contrib.contenttypes.fields import (
     GenericRelation, GenericForeignKey)
 from django.contrib.contenttypes.models import ContentType
@@ -7,8 +5,34 @@ from django.db import models
 
 from greenbudget.app import signals
 from greenbudget.app.comment.models import Comment
+from greenbudget.app.tagging.models import Tag
 
 from .managers import ActualManager
+
+
+class ActualType(Tag):
+    color = models.ForeignKey(
+        to="tagging.Color",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        limit_choices_to=models.Q(
+            content_types__model="actualtype",
+            content_types__app_label="actual"
+        ))
+
+    class Meta:
+        get_latest_by = "created_at"
+        ordering = ("order",)
+        verbose_name = "Actual Type"
+        verbose_name_plural = "Actual Types"
+
+    def __str__(self):
+        color_string = None if self.color is None else self.color.code
+        return "{title}: {color}".format(
+            color=color_string,
+            title=self.title
+        )
 
 
 @signals.model(
@@ -43,12 +67,11 @@ class Actual(models.Model):
     date = models.DateTimeField(null=True)
     payment_id = models.CharField(max_length=50, null=True)
     value = models.FloatField(null=True)
-    PAYMENT_METHODS = Choices(
-        (0, "check", "Check"),
-        (1, "card", "Card"),
-        (2, "wire", "Wire"),
+    actual_type = models.ForeignKey(
+        to='actual.ActualType',
+        on_delete=models.SET_NULL,
+        null=True
     )
-    payment_method = models.IntegerField(choices=PAYMENT_METHODS, null=True)
     budget = models.ForeignKey(
         to='budget.Budget',
         on_delete=models.CASCADE,
@@ -69,7 +92,7 @@ class Actual(models.Model):
 
     FIELDS_TO_DUPLICATE = (
         'purchase_order', 'description', 'date', 'payment_id', 'value',
-        'payment_method'
+        'actual_type'
     )
 
     class Meta:

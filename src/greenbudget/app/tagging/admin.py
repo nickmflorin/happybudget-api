@@ -7,7 +7,7 @@ from django import forms
 from django.apps import apps
 from django.contrib import admin
 from django.contrib.contenttypes.models import ContentType
-from django.db import IntegrityError
+from django.db import IntegrityError, models
 
 from greenbudget.app.custom_admin.utils import color_icon
 from greenbudget.app.subaccount.models import SubAccountUnit
@@ -28,6 +28,20 @@ class TagAdminForm(forms.ModelForm):
     class Meta:
         model = Tag
         fields = ('order', 'title', 'plural_title')
+
+    def clean(self):
+        data = super().clean()
+        # I don't understand why, but Django seems to handle the validation of
+        # the constraint:
+        #   unique_together = (('title', 'polymorphic_ctype_id'))
+        # properly when updating a model, but not when creating the model.
+        if self.instance.pk is None:
+            q = models.Q(title=data['title'])
+            existing = self.Meta.model.objects.filter(q)
+            if existing.count() != 0:
+                raise forms.ValidationError(
+                    "A model with this title already exists.")
+        return data
 
 
 def assign_to_factory(model_cls):

@@ -42,6 +42,7 @@ class Dashboard(BaseDashboard):
                 'greenbudget.app.tagging.models.Tag',
                 'greenbudget.app.tagging.models.Color',
                 'greenbudget.app.subaccount.models.SubAccountUnit',
+                'greenbudget.app.actual.models.ActualType',
             )
         ))
 

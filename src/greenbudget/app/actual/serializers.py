@@ -1,17 +1,18 @@
 from rest_framework import serializers
 
-from greenbudget.lib.drf.fields import ModelChoiceField, GenericRelatedField
-from greenbudget.lib.drf.serializers import (
-    ModelSerializer)
+from greenbudget.lib.drf.fields import GenericRelatedField
+from greenbudget.lib.drf.serializers import ModelSerializer
 
 from greenbudget.app.contact.models import Contact
 from greenbudget.app.markup.models import Markup
 from greenbudget.app.markup.serializers import MarkupSimpleSerializer
+from greenbudget.app.tagging.fields import TagField
+from greenbudget.app.tagging.serializers import TagSerializer, ColorSerializer
 from greenbudget.app.subaccount.models import BudgetSubAccount
 from greenbudget.app.subaccount.serializers import SubAccountSimpleSerializer
 from greenbudget.app.user.fields import UserFilteredQuerysetPKField
 
-from .models import Actual
+from .models import Actual, ActualType
 
 
 class OwnerTreeNodeSerializer(serializers.Serializer):
@@ -69,6 +70,14 @@ class ActualOwnerField(GenericRelatedField):
         return MarkupSimpleSerializer(instance=instance).data
 
 
+class ActualTypeSerializer(TagSerializer):
+    color = ColorSerializer(read_only=True)
+
+    class Meta:
+        model = ActualType
+        fields = TagSerializer.Meta.fields + ("color", )
+
+
 class ActualSerializer(ModelSerializer):
     type = serializers.CharField(read_only=True)
     description = serializers.CharField(
@@ -96,9 +105,10 @@ class ActualSerializer(ModelSerializer):
         allow_null=True
     )
     value = serializers.FloatField(required=False, allow_null=True)
-    payment_method = ModelChoiceField(
+    actual_type = TagField(
+        serializer_class=ActualTypeSerializer,
+        queryset=ActualType.objects.all(),
         required=False,
-        choices=Actual.PAYMENT_METHODS,
         allow_null=True
     )
     owner = ActualOwnerField(
@@ -118,4 +128,4 @@ class ActualSerializer(ModelSerializer):
         fields = (
             'id', 'description', 'created_by', 'updated_by', 'created_at',
             'updated_at', 'purchase_order', 'date', 'payment_id', 'value',
-            'payment_method', 'contact', 'owner', 'type')
+            'actual_type', 'contact', 'owner', 'type')

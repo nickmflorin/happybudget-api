@@ -121,7 +121,7 @@
 },
 {
   "model": "tagging.tag",
-  "pk": 12,
+  "pk": 11,
   "fields": {
     "polymorphic_ctype": ["subaccount", "subaccountunit"],
     "created_at": "2021-09-16T22:57:53.267Z",
@@ -133,7 +133,7 @@
 },
 {
   "model": "tagging.tag",
-  "pk": 13,
+  "pk": 12,
   "fields": {
     "polymorphic_ctype": ["subaccount", "subaccountunit"],
     "created_at": "2021-09-16T22:57:53.269Z",
@@ -141,6 +141,102 @@
     "title": "Each",
     "plural_title": null,
     "order": 11
+  }
+},
+{
+  "model": "tagging.tag",
+  "pk": 13,
+  "fields": {
+    "polymorphic_ctype": ["actual", "actual_type"],
+    "created_at": "2021-10-11T17:38:44.470Z",
+    "updated_at": "2021-10-11T17:51:39.562Z",
+    "title": "Projection",
+    "plural_title": null,
+    "order": 0
+  }
+},
+{
+  "model": "tagging.tag",
+  "pk": 14,
+  "fields": {
+    "polymorphic_ctype": ["actual", "actual_type"],
+    "created_at": "2021-10-11T17:38:53.301Z",
+    "updated_at": "2021-10-11T17:51:39.563Z",
+    "title": "Invoice",
+    "plural_title": null,
+    "order": 1
+  }
+},
+{
+  "model": "tagging.tag",
+  "pk": 15,
+  "fields": {
+    "polymorphic_ctype": ["actual", "actual_type"],
+    "created_at": "2021-10-11T17:39:04.093Z",
+    "updated_at": "2021-10-11T17:51:39.564Z",
+    "title": "Time Card",
+    "plural_title": null,
+    "order": 2
+  }
+},
+{
+  "model": "tagging.tag",
+  "pk": 16,
+  "fields": {
+    "polymorphic_ctype": ["actual", "actual_type"],
+    "created_at": "2021-10-11T17:39:12.012Z",
+    "updated_at": "2021-10-11T17:51:39.566Z",
+    "title": "Petty Cash",
+    "plural_title": null,
+    "order": 3
+  }
+},
+{
+  "model": "tagging.tag",
+  "pk": 17,
+  "fields": {
+    "polymorphic_ctype": ["actual", "actual_type"],
+    "created_at": "2021-10-11T17:39:18.762Z",
+    "updated_at": "2021-10-11T17:51:39.567Z",
+    "title": "Check",
+    "plural_title": null,
+    "order": 4
+  }
+},
+{
+  "model": "tagging.tag",
+  "pk": 18,
+  "fields": {
+    "polymorphic_ctype": ["actual", "actual_type"],
+    "created_at": "2021-10-11T17:40:18.858Z",
+    "updated_at": "2021-10-11T17:51:39.568Z",
+    "title": "Credit Card",
+    "plural_title": null,
+    "order": 5
+  }
+},
+{
+  "model": "tagging.tag",
+  "pk": 19,
+  "fields": {
+    "polymorphic_ctype": ["actual", "actual_type"],
+    "created_at": "2021-10-11T17:40:42.653Z",
+    "updated_at": "2021-10-11T17:51:39.570Z",
+    "title": "ETF",
+    "plural_title": null,
+    "order": 6
+  }
+},
+{
+  "model": "tagging.tag",
+  "pk": 20,
+  "fields": {
+    "polymorphic_ctype": ["actual", "actual_type"],
+    "created_at": "2021-10-11T17:40:53.532Z",
+    "updated_at": "2021-10-11T17:51:39.571Z",
+    "title": "Wire",
+    "plural_title": null,
+    "order": 7
   }
 }
 ]

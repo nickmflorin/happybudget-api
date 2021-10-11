@@ -28,6 +28,7 @@ class Color(models.Model):
         limit_choices_to=models.Q(app_label='group', model='group')
         | models.Q(app_label='fringe', model='fringe')
         | models.Q(app_label='subaccount', model='subaccountunit')
+        | models.Q(app_label='actual', model='actualtype')
     )
 
     objects = ColorManager()

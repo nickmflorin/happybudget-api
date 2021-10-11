@@ -29,7 +29,7 @@ def test_create_actual(api_client, user, create_budget_account, create_budget,
         "date": None,
         "payment_id": None,
         "value": None,
-        "payment_method": None,
+        "actual_type": None,
         "contact": None,
         "created_by": user.pk,
         "updated_by": user.pk,
@@ -73,10 +73,7 @@ def test_get_subaccount_actuals(api_client, user, create_budget_subaccount,
             "value": actuals[0].value,
             "created_by": user.pk,
             "updated_by": user.pk,
-            "payment_method": {
-                "id": actuals[0].payment_method,
-                "name": actuals[0].PAYMENT_METHODS[actuals[0].payment_method]
-            },
+            "actual_type": None,
             "owner": {
                 "id": subaccount.pk,
                 "type": "subaccount",
@@ -97,10 +94,7 @@ def test_get_subaccount_actuals(api_client, user, create_budget_subaccount,
             "value": actuals[1].value,
             "created_by": user.pk,
             "updated_by": user.pk,
-            "payment_method": {
-                "id": actuals[1].payment_method,
-                "name": actuals[1].PAYMENT_METHODS[actuals[1].payment_method]
-            },
+            "actual_type": None,
             "owner": {
                 "id": subaccount.pk,
                 "type": "subaccount",

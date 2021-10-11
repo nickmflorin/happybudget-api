@@ -1,0 +1,33 @@
+import pytest
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_unit_properly_serializes(api_client, user, create_actual_type):
+    types = [
+        create_actual_type(),
+        create_actual_type()
+    ]
+    api_client.force_login(user)
+    response = api_client.get("/v1/actuals/types/")
+    assert response.status_code == 200
+    assert response.json()['count'] == 2
+    assert response.json()['data'] == [
+        {
+            'id': types[0].pk,
+            "created_at": "2020-01-01 00:00:00",
+            "updated_at": "2020-01-01 00:00:00",
+            'title': types[0].title,
+            'plural_title': types[0].plural_title,
+            'order': types[0].order,
+            'color': types[0].color.code
+        },
+        {
+            'id': types[1].pk,
+            "created_at": "2020-01-01 00:00:00",
+            "updated_at": "2020-01-01 00:00:00",
+            'title': types[1].title,
+            'plural_title': types[1].plural_title,
+            'order': types[1].order,
+            'color': types[1].color.code
+        }
+    ]
