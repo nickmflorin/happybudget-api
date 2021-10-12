@@ -10,14 +10,7 @@ from greenbudget.app.contact.models import Contact
 from greenbudget.app.fringe.models import Fringe
 from greenbudget.app.group.models import Group
 from greenbudget.app.markup.models import Markup
-from greenbudget.app.pdf.models import (
-    HeaderTemplate,
-    HeadingBlock,
-    ParagraphBlock,
-    TextFragment,
-    TextFragmentGroup,
-    ExportField
-)
+from greenbudget.app.pdf.models import HeaderTemplate
 from greenbudget.app.subaccount.models import (
     BudgetSubAccount,
     TemplateSubAccount,
@@ -408,50 +401,6 @@ class ContactFactory(CustomModelFactory):
 
     class Meta:
         model = Contact
-
-
-class TextFragmentGroupFactory(CustomModelFactory):
-    """
-    A DjangoModelFactory to create instances of :obj:`TextFragmentGroup`.
-    """
-    class Meta:
-        model = TextFragmentGroup
-
-
-class TextFragmentFactory(CustomModelFactory):
-    """
-    A DjangoModelFactory to create instances of :obj:`TextFragment`.
-    """
-    text = factory.Faker('sentence')
-
-    class Meta:
-        model = TextFragment
-
-
-class HeadingBlockFactory(CustomModelFactory):
-    """
-    A DjangoModelFactory to create instances of :obj:`HeadingBlock`.
-    """
-    level = 2
-
-    class Meta:
-        model = HeadingBlock
-
-
-class ParagraphBlockFactory(CustomModelFactory):
-    """
-    A DjangoModelFactory to create instances of :obj:`ParagraphBlock`.
-    """
-    class Meta:
-        model = ParagraphBlock
-
-
-class ExportFieldFactory(CustomModelFactory):
-    """
-    A DjangoModelFactory to create instances of :obj:`ExportField`.
-    """
-    class Meta:
-        model = ExportField
 
 
 class HeaderTemplateFactory(CustomModelFactory):
