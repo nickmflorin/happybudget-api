@@ -44,11 +44,17 @@ class HeaderTemplateSerializer(SimpleHeaderTemplateSerializer):
         allow_null=True,
         allow_blank=True
     )
+    original = serializers.PrimaryKeyRelatedField(
+        write_only=True,
+        queryset=HeaderTemplate.objects.all(),
+        required=False
+    )
 
     class Meta:
         model = HeaderTemplate
         fields = SimpleHeaderTemplateSerializer.Meta.fields + (
-            'left_image', 'right_image', 'left_info', 'right_info', 'header')
+            'left_image', 'right_image', 'left_info', 'right_info', 'header',
+            'original')
 
     def validate_left_info(self, value):
         if value.strip() == "":
@@ -64,3 +70,14 @@ class HeaderTemplateSerializer(SimpleHeaderTemplateSerializer):
         if value.strip() == "":
             return None
         return value.strip()
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        original = attrs.pop('original', None)
+        if original is not None:
+            attrs.setdefault('header', original.left_info)
+            attrs.setdefault('left_info', original.left_info)
+            attrs.setdefault('right_info', original.right_info)
+            attrs.setdefault('left_image', original.left_image)
+            attrs.setdefault('right_image', original.right_image)
+        return attrs
