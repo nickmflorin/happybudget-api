@@ -17,13 +17,11 @@ def get_from_instance_mapping(mapping, obj):
     for k, v in mapping.items():
         normalized = tuple([normalize(ki) for ki in k]) \
             if isinstance(k, tuple) else normalize(k)
-        if isinstance(obj, type) and obj in k:
-            if isinstance(normalized, tuple):
-                if obj in k:
-                    return v
-            else:
-                if obj is k:
-                    return v
+        if isinstance(obj, type):
+            if isinstance(normalized, tuple) and obj in normalized:
+                return v
+            elif not isinstance(normalized, tuple) and obj is normalized:
+                return v
         elif not isinstance(obj, type) and isinstance(obj, normalized):
             return v
     obj_name = obj.__name__ if isinstance(obj, type) else obj.__class__.__name__

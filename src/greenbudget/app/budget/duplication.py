@@ -5,9 +5,9 @@ from typing import Any, List
 
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
-from django.utils.functional import cached_property
 
 from greenbudget.app import signals
+from greenbudget.app.budgeting.utils import get_instance_cls
 
 
 logger = logging.getLogger('greenbudget')
@@ -65,33 +65,6 @@ class BulkBudgetOperation:
         self.original = budget
         self.user = user
 
-    @cached_property
-    def budget_model_mapping(self):
-        from greenbudget.app.account.models import BudgetAccount
-        from greenbudget.app.subaccount.models import BudgetSubAccount
-        return {
-            'SubAccount': BudgetSubAccount,
-            'Account': BudgetAccount
-        }
-
-    @cached_property
-    def template_model_mapping(self):
-        from greenbudget.app.account.models import TemplateAccount
-        from greenbudget.app.subaccount.models import TemplateSubAccount
-        return {
-            'SubAccount': TemplateSubAccount,
-            'Account': TemplateAccount
-        }
-
-    @cached_property
-    def model_mapping(self):
-        from greenbudget.app.budget.models import Budget
-        from greenbudget.app.template.models import Template
-        return {
-            Budget: self.budget_model_mapping,
-            Template: self.template_model_mapping
-        }
-
     def iterate_over_level(self, level=1):
         def iterate_over_subaccounts(obj, current_level):
             for subaccount in obj.children.all():
@@ -107,10 +80,6 @@ class BulkBudgetOperation:
         if level >= 2:
             for account in self.original.children.all():
                 yield from iterate_over_subaccounts(account, 2)
-
-    def model_cls(self, common_name, base=None):
-        base = base or type(self.original)
-        return self.model_mapping[base][common_name]
 
     def instantiate_obj(self, obj, model_cls=None, **overrides):
         kwargs = {}
@@ -128,12 +97,6 @@ class BulkBudgetOperation:
             self.action_name, type(self.budget).__name__, self.budget.pk,
             message)
         logger.info(message)
-
-    def bulk_create(self, model_name, objs, **kwargs):
-        return self.model_cls(model_name).objects.bulk_create(objs, **kwargs)
-
-    def objects(self, model_name):
-        return self.model_cls(model_name).objects
 
     def bulk_create_non_polymorphic_set(self, model_cls, model_set):
         # For non-polymorphic models, we cannot leverage our custom
@@ -157,7 +120,7 @@ class BulkBudgetOperation:
         # to the individual SubAccount(s) as they are created.
         fringes_set = ObjectSet(existing=self.original.fringes.all())
         fringes_set.duplicated = [
-            self.instantiate_obj(fringe, budget=self.budget)
+            self.instantiate_obj(fringe, model_cls=Fringe, budget=self.budget)
             for fringe in fringes_set.existing
         ]
         return self.bulk_create_non_polymorphic_set(Fringe, fringes_set)
@@ -180,6 +143,7 @@ class BulkBudgetOperation:
                 parent = subaccount_set.get_duplicated(markup.parent.pk)
             instantiated_markups.append(self.instantiate_obj(
                 markup,
+                model_cls=Markup,
                 content_type=ContentType.objects.get_for_model(type(parent)),
                 object_id=parent.pk
             ))
@@ -200,6 +164,7 @@ class BulkBudgetOperation:
         account_group_set.duplicated = [
             self.instantiate_obj(
                 obj=group,
+                model_cls=Group,
                 content_type=ContentType.objects.get_for_model(type(new_parent)),  # noqa
                 object_id=new_parent.pk
             )
@@ -215,6 +180,8 @@ class BulkBudgetOperation:
 
     @log_after(entity="Account")
     def handle_accounts(self):
+        from greenbudget.app.account.models import BudgetAccount
+
         account_group_set = self.handle_account_groups()
         account_set = ObjectSet(existing=self.original.children.all())
         for account in account_set.existing:
@@ -223,11 +190,13 @@ class BulkBudgetOperation:
                 kwargs['group_id'] = account_group_set.get_duplicated(
                     account.group.pk).pk
             account_set.duplicated.append(self.instantiate_obj(
-                account, **kwargs))
+                account,
+                model_cls=BudgetAccount,
+                **kwargs
+            ))
 
-        account_set.duplicated = self.bulk_create(
-            model_name='Account',
-            objs=account_set.duplicated,
+        account_set.duplicated = BudgetAccount.objects.bulk_create(
+            account_set.duplicated,
             return_created_objects=True
         )
         return account_set
@@ -262,7 +231,8 @@ class BulkBudgetOperation:
             parent_cls = self.subaccount_parent_cls(parent)
             group_set_iteree = self.create_group_set_for_parent(
                 original_parent=parent,
-                new_parent=parent_cls.objects.get(pk=parent_set.map[parent.pk]),
+                new_parent=parent_cls.objects.get(
+                    pk=parent_set.map[parent.pk]),
                 persist=False,
                 already_duplicated_originals=[
                     obj.pk for obj in group_set.existing]
@@ -301,6 +271,8 @@ class BulkBudgetOperation:
         prefix=lambda level, parent_set: "Level %s:" % level
     )
     def handle_subaccounts_at_level(self, level, parent_set):
+        from greenbudget.app.subaccount.models import BudgetSubAccount
+
         group_set = self.handle_subaccount_groups(level, parent_set)
         # Now that we have duplicated the Groups that are used for this level,
         # we can duplicate the actual objects at this level, maintaining a map
@@ -323,7 +295,11 @@ class BulkBudgetOperation:
             )
             kwargs['parent'] = parent_cls.objects.get(pk=parent_set.map[parent.pk])  # noqa
 
-            duplicated_obj = self.instantiate_obj(obj, **kwargs)
+            duplicated_obj = self.instantiate_obj(
+                obj,
+                model_cls=BudgetSubAccount,
+                **kwargs
+            )
 
             # This is currently handled by a post_save signal in
             # greenbudget.app.subaccount.signals - but since we are disabling
@@ -335,9 +311,8 @@ class BulkBudgetOperation:
             subaccount_set.duplicated.append(duplicated_obj)
 
         if len(subaccount_set.duplicated) != 0:
-            subaccount_set.duplicated = self.bulk_create(
-                model_name='SubAccount',
-                objs=subaccount_set.duplicated,
+            subaccount_set.duplicated = BudgetSubAccount.objects.bulk_create(
+                subaccount_set.duplicated,
                 return_created_objects=True
             )
         return subaccount_set
@@ -358,6 +333,14 @@ class BulkBudgetOperation:
                 )
         handle_subaccount_level(parent_set=account_set)
         return subaccount_set
+
+    def subaccount_parent_cls(self, parent):
+        from greenbudget.app.account.models import BudgetAccount
+        from greenbudget.app.subaccount.models import BudgetSubAccount
+        if parent.type == "account":
+            return BudgetAccount
+        assert parent.type == "subaccount"
+        return BudgetSubAccount
 
 
 class BudgetDeriver(BulkBudgetOperation):
@@ -394,31 +377,11 @@ class BudgetDeriver(BulkBudgetOperation):
 
         return self.budget
 
-    def get_budget_form(self, obj):
-        for k, v in self.template_model_mapping.items():
-            if type(obj) is v:
-                return self.budget_model_mapping[k]
-        return None
-
     def instantiate_obj(self, obj, model_cls=None, **overrides):
-        model_cls = model_cls or self.get_budget_form(obj)
-        return super().instantiate_obj(obj, model_cls=model_cls, **overrides)
-
-    def bulk_create(self, model_name, objs, **kwargs):
-        model_cls = self.budget_model_mapping[model_name]
-        return model_cls.objects.bulk_create(objs, **kwargs)
-
-    def objects(self, model_name):
-        model_cls = self.template_model_mapping[model_name]
-        return model_cls.objects
-
-    def subaccount_parent_cls(self, parent):
         from greenbudget.app.budget.models import Budget
-        from greenbudget.app.template.models import Template
-        if type(parent) is self.model_cls('Account', base=Template):
-            return self.model_cls('Account', base=Budget)
-        assert type(parent) is self.model_cls('SubAccount', base=Template)
-        return self.model_cls('SubAccount', base=Budget)
+        if model_cls is None:
+            model_cls = get_instance_cls(obj=Budget, obj_type=obj.type)
+        return super().instantiate_obj(obj, model_cls=model_cls, **overrides)
 
 
 class BudgetDuplicator(BulkBudgetOperation):
@@ -456,16 +419,15 @@ class BudgetDuplicator(BulkBudgetOperation):
             self.handle_actuals(subaccount_set, markup_set)
         return self.budget
 
-    def subaccount_parent_cls(self, parent):
-        return type(parent)
-
     def handle_actuals(self, subaccount_set, markup_set):
         from greenbudget.app.actual.models import Actual
         from greenbudget.app.markup.models import Markup
         from greenbudget.app.subaccount.models import BudgetSubAccount
 
         duplicated_actuals = []
-        for actual in Actual.objects.filter(budget=self.original).all():
+        for actual in Actual.objects.filter(budget=self.original) \
+                .only('content_type', 'object_id') \
+                .all():
             kwargs = {'budget': self.budget}
             if actual.owner is not None:
                 assert isinstance(actual.owner, (Markup, BudgetSubAccount))
@@ -477,7 +439,8 @@ class BudgetDuplicator(BulkBudgetOperation):
                         actual.owner.pk).pk
                 kwargs['content_type'] = ContentType.objects.get_for_model(
                     type(actual.owner))
-            duplicated_actuals.append(self.instantiate_obj(actual, **kwargs))
+            duplicated_actuals.append(self.instantiate_obj(
+                actual, model_cls=Actual, **kwargs))
 
         # We do not have to worry about including the primary keys on the
         # bulk created Actual instances because we do not need to map the

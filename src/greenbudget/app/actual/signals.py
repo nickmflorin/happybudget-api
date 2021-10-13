@@ -54,8 +54,7 @@ def validate_actual(instance, **kwargs):
     else:
         if instance.owner is not None and instance.owner.budget != budget:
             raise IntegrityError(
-                "Can only add actuals with the same parent as the instance."
-            )
+                "Can only add actuals with the same parent as the instance.")
         elif instance.contact is not None \
                 and instance.contact.user != instance.created_by:
             raise IntegrityError(
