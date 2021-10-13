@@ -71,14 +71,14 @@
 },
 {
   "model": "subaccount.subaccountunit",
-  "pk": 12,
+  "pk": 11,
   "fields": {
     "color": 21
   }
 },
 {
   "model": "subaccount.subaccountunit",
-  "pk": 13,
+  "pk": 12,
   "fields": {
     "color": 1
   }
