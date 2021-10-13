@@ -50,7 +50,8 @@ class Fringe(models.Model):
             content_types__app_label='fringe'
         )
     )
-    FIELDS_TO_DUPLICATE = ('name', 'description', 'cutoff', 'rate', 'unit')
+    FIELDS_TO_DUPLICATE = (
+        'name', 'description', 'cutoff', 'rate', 'unit', 'color')
     FIELDS_TO_DERIVE = FIELDS_TO_DUPLICATE
     objects = FringeManager()
 
