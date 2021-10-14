@@ -32,7 +32,7 @@ def create_bulk_serializer(serializer_cls, model_cls=None, child_context=None,
     )
 
     class BulkSerializer(base_serializer_cls):
-        data = serializer_cls(many=True, required=False, nested=True)
+        data = serializer_cls(many=True, required=True, nested=True)
 
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)

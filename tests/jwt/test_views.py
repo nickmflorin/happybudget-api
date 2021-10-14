@@ -54,7 +54,7 @@ def test_validate_token_inactive_user(api_client, settings, user):
         'errors': [{
             'message': 'Your account is not active, please contact customer care.',  # noqa
             'code': 'account_disabled',
-            'error_type': 'global'
+            'error_type': 'auth'
         }]
     }
     assert 'greenbudgetjwt' not in response.cookies
@@ -75,7 +75,7 @@ def test_validate_token_unverified_user(api_client, settings, user):
         'errors': [{
             'message': 'The email address is not verified.',
             'code': 'email_not_verified',
-            'error_type': 'global'
+            'error_type': 'auth'
         }]
     }
     assert 'greenbudgetjwt' not in response.cookies

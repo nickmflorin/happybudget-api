@@ -90,16 +90,10 @@ def create_bulk_create_serializer(base_cls, child_cls, child_serializer_cls,
     class BulkCreateSerializer(generic_serializer_cls):
         def update(self, instance, validated_data):
             with signals.bulk_context:
-                if 'data' in validated_data:
-                    children = self.perform_children_write(
-                        [payload for payload in validated_data.pop('data')],
-                        **validated_data
-                    )
-                else:
-                    children = self.perform_children_write(
-                        [{} for _ in range(validated_data.pop('count'))],
-                        **validated_data
-                    )
+                children = self.perform_children_write(
+                    [payload for payload in validated_data.pop('data')],
+                    **validated_data
+                )
             # We have to refresh the instance from the DB because of the changes
             # that might have occurred due to the signals.
             instance.refresh_from_db()

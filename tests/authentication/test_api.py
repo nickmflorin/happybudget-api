@@ -65,7 +65,7 @@ def test_login_invalid_email(api_client, db):
     assert response.json() == {
         'errors': [{
             'message': 'The provided username does not exist in our system.',  # noqa
-            'error_type': 'global',
+            'error_type': 'auth',
             'code': 'email_does_not_exist'
         }]
     }
@@ -81,7 +81,7 @@ def test_login_invalid_password(user, api_client):
     assert response.json() == {
         'errors': [{
             'message': 'The provided password is invalid.',
-            'error_type': 'global',
+            'error_type': 'auth',
             'code': 'invalid_credentials'
         }]
     }
@@ -195,7 +195,7 @@ def test_social_login_invalid_token(api_client, create_user):
         "token_id": "invalid",
         'provider': 'google',
     })
-    assert response.status_code == 400
+    assert response.status_code == 403
     assert 'greenbudgetjwt' not in response.cookies
 
 
@@ -284,7 +284,7 @@ def test_reset_password_invalid_token(api_client, db):
     assert response.status_code == 403
     assert response.json() == {
         'errors': [{
-            'error_type': 'global',
+            'error_type': 'auth',
             'message': 'The provided token is invalid.',
             'code': 'invalid_reset_token'
         }]
@@ -312,7 +312,7 @@ def test_reset_password_token_expired(user, api_client, freezer):
     assert response.status_code == 403
     assert response.json() == {
         'errors': [{
-            'error_type': 'global',
+            'error_type': 'auth',
             'message': 'The password reset link has expired.',
             'code': 'password_reset_link_expired',
         }]
