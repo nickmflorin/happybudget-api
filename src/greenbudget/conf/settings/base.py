@@ -25,11 +25,11 @@ APPS_DIR = BASE_DIR / "app"
 TIME_ZONE = 'UTC'
 USE_TZ = True
 
-APP_DOMAIN = 'api.greenbudget.cloud/'
+APP_DOMAIN = 'api.greenbudget.io/'
 APP_URL = 'https://%s' % APP_DOMAIN
 APP_V1_URL = os.path.join(APP_URL, "v1")
 
-FRONTEND_URL = "https://dev.greenbudget.cloud/"
+FRONTEND_URL = "https://www.greenbudget.io/"
 
 SECRET_KEY = config(
     name='DJANGO_SECRET_KEY',
@@ -43,7 +43,7 @@ SECRET_KEY = config(
 # Email Configurations
 EMAIL_ENABLED = True
 FROM_EMAIL = 'support@nirvedacognition.ai'
-EMAIL_HOST = '.greenbudget.cloud'
+EMAIL_HOST = '.greenbudget.io'
 SMTP_EMAIL_PORT = 25
 
 PWD_RESET_LINK_EXPIRY_TIME_IN_HRS = 24
@@ -53,7 +53,7 @@ GOOGLE_OAUTH_API_URL = "https://www.googleapis.com/oauth2/v3/tokeninfo/"
 SESSION_COOKIE_NAME = 'greenbudgetsessionid'
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_DOMAIN = ".greenbudget.cloud"
+SESSION_COOKIE_DOMAIN = ".greenbudget.io"
 SESSION_COOKIE_AGE = 60 * 60 * 24
 #: Extend the session on every request
 SESSION_SAVE_EVERY_REQUEST = True
@@ -64,27 +64,26 @@ CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_NAME = 'greenbudgetcsrftoken'
 CSRF_COOKIE_SECURE = True
-CSRF_COOKIE_DOMAIN = ".greenbudget.cloud"
+CSRF_COOKIE_DOMAIN = ".greenbudget.io"
 CSRF_TRUSTED_ORIGINS = [
-    'https://app.greenbudget.cloud',
+    'https://www.greenbudget.io',
 ]
 CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_ALLOW_ALL = False
 CORS_ORIGIN_REGEX_WHITELIST = (
-    r'^(https?://)?([\w\.-]*?)\.greenbudget\.cloud:?[\d]*?$',
+    r'^(https?://)?([\w\.-]*?)\.greenbudget\.io:?[\d]*?$',
 )
 
 ALLOWED_HOSTS = [
-    'api.greenbudget.cloud',
+    'api.greenbudget.io',
     '172.31.88.83',
-    'gb-dev-lb-563148772.us-east-1.elb.amazonaws.com',  # Load Balancer
-    'django-env.eba-ijb6ap26.us-east-2.elasticbeanstalk.com',  # Prod EB
+    'gb-lb-1316251961.us-east-2.elb.amazonaws.com',  # Load Balancer
 ]
 
 # JWT Configuration
 JWT_COOKIE_SECURE = True
 JWT_TOKEN_COOKIE_NAME = 'greenbudgetjwt'
-JWT_COOKIE_DOMAIN = ".greenbudget.cloud"
+JWT_COOKIE_DOMAIN = ".greenbudget.io"
 SIMPLE_JWT = {
     'AUTH_TOKEN_CLASSES': (
         'greenbudget.app.jwt.tokens.GreenbudgetSlidingToken',),

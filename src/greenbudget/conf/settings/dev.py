@@ -16,17 +16,17 @@ from .base import (
 
 ENVIRONMENT = Environments.DEV
 
-APP_DOMAIN = 'devapi.greenbudget.cloud'
+APP_DOMAIN = 'devapi.greenbudget.io'
 APP_URL = 'http://%s' % APP_DOMAIN
 APP_V1_URL = os.path.join(APP_URL, "v1")
-FRONTEND_URL = "https://dev.greenbudget.cloud/"
+FRONTEND_URL = "https://dev.greenbudget.io/"
 
 CSRF_TRUSTED_ORIGINS = [
-    'https://dev.greenbudget.cloud',
+    'https://dev.greenbudget.io',
 ]
 
 ALLOWED_HOSTS = [
-    'devapi.greenbudget.cloud',
+    'devapi.greenbudget.io',
     'gb-dev-lb-563148772.us-east-1.elb.amazonaws.com',  # Load Balancer
 ]
 
