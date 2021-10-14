@@ -102,7 +102,6 @@ def test_verify_email(api_client, user):
     response = api_client.post("/v1/users/verify-email/", data={
         "token": str(token)
     })
-    print(response.json())
     assert response.status_code == 201
     user.refresh_from_db()
     assert user.is_verified

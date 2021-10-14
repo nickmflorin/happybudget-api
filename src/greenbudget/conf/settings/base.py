@@ -80,6 +80,8 @@ ALLOWED_HOSTS = [
     'gb-lb-1485149386.us-east-2.elb.amazonaws.com',  # Load Balancer
 ]
 
+EMAIL_VERIFICATION_SLIDING_TOKEN_REFRESH_LIFETIME = datetime.timedelta(hours=1)
+
 # JWT Configuration
 JWT_COOKIE_SECURE = True
 JWT_TOKEN_COOKIE_NAME = 'greenbudgetjwt'

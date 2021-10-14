@@ -7,7 +7,7 @@ from greenbudget.lib.drf.serializers import (
     ModelSerializer)
 
 from greenbudget.app.authentication.utils import validate_password
-from greenbudget.app.jwt.serializers import UserTokenSlidingSerializer
+from greenbudget.app.jwt.serializers import EmailTokenRefreshSerializer
 
 from .models import User
 
@@ -41,9 +41,9 @@ class ChangePasswordSerializer(serializers.ModelSerializer):
         return instance
 
 
-class UserEmailVerificationSerializer(UserTokenSlidingSerializer):
+class UserEmailVerificationSerializer(EmailTokenRefreshSerializer):
     def validate(self, attrs):
-        user = super().validate(attrs, require_verification=False)
+        user = super().validate(attrs)
         if user.is_verified:
             raise exceptions.ValidationError("User is already verified.")
         return {"user": user}
