@@ -98,7 +98,9 @@ def test_logout(user, api_client):
 @pytest.mark.freeze_time('2020-01-01')
 @override_settings(GOOGLE_OAUTH_API_URL="https://www.test-validate-user-token/")
 def test_social_login_user_exists(api_client, create_user):
-    user = create_user(email="jjohnson@gmail.com")
+    # A user with an unverified email should still be able to do social login
+    # and their email address should be considered verified afterwards.
+    user = create_user(email="jjohnson@gmail.com", is_verified=False)
     responses.add(
         method=responses.GET,
         url="https://www.test-validate-user-token/?id_token=testtoken",
@@ -113,6 +115,10 @@ def test_social_login_user_exists(api_client, create_user):
         'provider': 'google',
     })
     assert response.status_code == 201
+
+    user.refresh_from_db()
+    assert user.is_verified
+
     assert 'greenbudgetjwt' in response.cookies
     assert response.json() == {
         "id": 1,
@@ -155,6 +161,7 @@ def test_social_login_user_does_not_exist(api_client, models):
     assert user is not None
     assert user.first_name == "Jack"
     assert user.last_name == "Johnson"
+    assert user.is_verified
 
     assert response.status_code == 201
     assert 'greenbudgetjwt' in response.cookies
