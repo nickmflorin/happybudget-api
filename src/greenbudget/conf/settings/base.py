@@ -29,7 +29,7 @@ APP_DOMAIN = 'api.greenbudget.io/'
 APP_URL = 'https://%s' % APP_DOMAIN
 APP_V1_URL = os.path.join(APP_URL, "v1")
 
-FRONTEND_URL = "https://www.greenbudget.io/"
+FRONTEND_URL = "https://app.greenbudget.io/"
 
 SECRET_KEY = config(
     name='DJANGO_SECRET_KEY',
@@ -66,7 +66,7 @@ CSRF_COOKIE_NAME = 'greenbudgetcsrftoken'
 CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_DOMAIN = ".greenbudget.io"
 CSRF_TRUSTED_ORIGINS = [
-    'https://www.greenbudget.io',
+    'https://app.greenbudget.io',
 ]
 CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_ALLOW_ALL = False
