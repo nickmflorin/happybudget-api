@@ -40,7 +40,5 @@ def test_refresh_serializer_validate_success_returns_token(settings, freezer):
     freezer.move_to('2021-01-02')
     data = refresh_serializer.validate({'token': str(token)})
 
-    assert 'token' in data
-
-    new_token = GreenbudgetSlidingToken(data['token'])
+    new_token = GreenbudgetSlidingToken(data)
     assert new_token['exp'] > token['exp']

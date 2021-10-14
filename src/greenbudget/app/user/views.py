@@ -8,7 +8,8 @@ from rest_framework import (
 
 from greenbudget.app.authentication.exceptions import RateLimitedError
 
-from .serializers import UserSerializer, UserRegistrationSerializer
+from .serializers import (
+    UserSerializer, UserRegistrationSerializer, UserEmailVerificationSerializer)
 from .utils import upload_temp_user_image_to
 
 
@@ -28,6 +29,28 @@ def temp_upload_user_image_view(request):
     storage.save(image_name, image.file)
     file_url = storage.url(image_name)
     return response.Response({'fileUrl': file_url})
+
+
+class UserEmailVerificationView(
+        mixins.UpdateModelMixin, viewsets.GenericViewSet):
+    authentication_classes = []
+    permission_classes = (permissions.AllowAny, )
+    serializer_class = UserEmailVerificationSerializer
+
+    @sensitive_post_parameters_m('token')
+    def dispatch(self, request, *args, **kwargs):
+        return super().dispatch(request, *args, **kwargs)
+
+    # @ratelimit(key='user_or_ip', rate='3/s')  -> Needs to be fixed
+    def create(self, request, *args, **kwargs):
+        was_limited = getattr(request, 'limited', False)
+        if was_limited:
+            raise RateLimitedError()
+
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return response.Response({}, status=status.HTTP_201_CREATED)
 
 
 class UserRegistrationView(mixins.CreateModelMixin, viewsets.GenericViewSet):

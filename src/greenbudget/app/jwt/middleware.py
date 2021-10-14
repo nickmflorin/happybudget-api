@@ -71,7 +71,7 @@ class TokenCookieMiddleware(MiddlewareMixin):
                 settings.JWT_TOKEN_COOKIE_NAME, **cookie_kwargs)
             return response
         else:
-            if not is_active:
+            if not is_active or not request.cookie_user.is_verified:
                 return response
 
         # Update the JWT if the user is requesting the JWT refresh URL, the JWT

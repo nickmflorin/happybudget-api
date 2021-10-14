@@ -11,7 +11,8 @@ from django.utils import timezone
 from greenbudget.lib.django_utils.storages import get_image_filename
 from greenbudget.lib.utils.urls import add_query_params_to_url
 
-from .exceptions import InvalidSocialToken, InvalidSocialProvider
+from greenbudget.app.authentication.exceptions import (
+    InvalidSocialToken, InvalidSocialProvider)
 
 
 logger = logging.getLogger('greenbudget')

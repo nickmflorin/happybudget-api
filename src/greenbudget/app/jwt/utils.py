@@ -34,8 +34,7 @@ def get_user_from_token(token: Optional[str]) -> Union[
 
     if token is not None:
         refresh_serializer = TokenRefreshSlidingSerializer()
-        data = refresh_serializer.validate({'token': token})
-        token_obj = verify_token(data['token'])
+        token_obj = refresh_serializer.validate({'token': token})
         user_id = token_obj.get(api_settings.USER_ID_CLAIM)
         # This is an edge case where an old JWT might be stashed in the browser
         # but the user may have been deleted.

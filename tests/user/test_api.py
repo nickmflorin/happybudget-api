@@ -1,5 +1,7 @@
 import pytest
 
+from greenbudget.app.jwt.tokens import GreenbudgetSlidingToken
+
 
 @pytest.mark.parametrize("password", [
     'hoopla',  # Not 8 characters long
@@ -91,3 +93,31 @@ def test_update_logged_in_user(api_client, user):
     user.refresh_from_db()
     assert user.first_name == "New First Name"
     assert user.last_name == "New Last Name"
+
+
+def test_verify_email(api_client, user):
+    user.is_verified = False
+    user.save()
+    token = GreenbudgetSlidingToken.for_user(user)
+    response = api_client.post("/v1/users/verify-email/", data={
+        "token": str(token)
+    })
+    print(response.json())
+    assert response.status_code == 201
+    user.refresh_from_db()
+    assert user.is_verified
+
+
+def test_verify_email_invalid_token(api_client):
+    response = api_client.post("/v1/users/verify-email/", data={
+        "token": "hoopla",
+    })
+    assert response.status_code == 403
+    assert response.json() == {
+        'errors': [{
+            'message': 'Token is invalid or expired',
+            'code': 'token_not_valid',
+            'error_type': 'auth',
+            'force_logout': True
+        }]
+    }

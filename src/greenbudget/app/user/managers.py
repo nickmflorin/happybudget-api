@@ -1,7 +1,7 @@
 from django.contrib.auth.models import UserManager as DjangoUserManager
 from django.db import models
 
-from .exceptions import InvalidSocialToken
+from greenbudget.app.authentication.exceptions import InvalidSocialToken
 from .utils import get_google_user_from_token
 
 
@@ -65,15 +65,21 @@ class UserManager(UserQuerier, DjangoUserManager):
         google_user = get_google_user_from_token(token)
         return self.create(
             email=google_user.email,
+            is_verified=True,
             first_name=google_user.first_name,
             last_name=google_user.last_name
         )
 
     def get_or_create_from_google_token(self, token):
         try:
-            return self.get_from_google_token(token)
+            user = self.get_from_google_token(token)
         except self.model.DoesNotExist:
             return self.create_from_google_token(token)
+        else:
+            if not user.is_verified:
+                user.is_verified = True
+                user.save(update_fields=['is_verified'])
+            return user
 
     def get_from_social_token(self, token, provider):
         assert provider == "google", "Provider %s not supported." % provider

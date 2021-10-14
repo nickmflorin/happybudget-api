@@ -1,16 +1,8 @@
-from datetime import datetime
 from http.cookies import SimpleCookie
 import pytest
 
 from greenbudget.lib.utils.dateutils import api_datetime_string
 from greenbudget.app.jwt.tokens import GreenbudgetSlidingToken
-
-
-def test_moving_date(freezer):
-    now = datetime.now()
-    freezer.move_to('2017-05-20')
-    later = datetime.now()
-    assert now != later
 
 
 @pytest.mark.freeze_time('2020-01-01')
@@ -45,6 +37,48 @@ def test_validate_token(api_client, settings, user):
             "is_first_time": False
         }
     }
+
+
+def test_validate_token_inactive_user(api_client, settings, user):
+    api_client.force_login(user)
+
+    token = GreenbudgetSlidingToken.for_user(user)
+    api_client.cookies = SimpleCookie({
+        settings.JWT_TOKEN_COOKIE_NAME: str(token),
+    })
+    user.is_active = False
+    user.save()
+    response = api_client.post("/v1/jwt/validate/")
+    assert response.status_code == 403
+    assert response.json() == {
+        'errors': [{
+            'message': 'Your account is not active, please contact customer care.',  # noqa
+            'code': 'account_disabled',
+            'error_type': 'global'
+        }]
+    }
+    assert 'greenbudgetjwt' not in response.cookies
+
+
+def test_validate_token_unverified_user(api_client, settings, user):
+    api_client.force_login(user)
+
+    token = GreenbudgetSlidingToken.for_user(user)
+    api_client.cookies = SimpleCookie({
+        settings.JWT_TOKEN_COOKIE_NAME: str(token),
+    })
+    user.is_verified = False
+    user.save()
+    response = api_client.post("/v1/jwt/validate/")
+    assert response.status_code == 403
+    assert response.json() == {
+        'errors': [{
+            'message': 'The email address is not verified.',
+            'code': 'email_not_verified',
+            'error_type': 'global'
+        }]
+    }
+    assert 'greenbudgetjwt' not in response.cookies
 
 
 @pytest.mark.freeze_time('2020-01-01')

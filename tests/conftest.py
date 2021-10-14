@@ -65,6 +65,7 @@ def user(db):
         is_admin=False,
         is_staff=False,
         is_superuser=False,
+        is_verified=True,
         is_first_time=False
     )
     user.set_password("test-password")
@@ -81,6 +82,7 @@ def admin_user(db):
         is_active=True,
         is_admin=True,
         is_staff=False,
+        is_verified=True,
         is_superuser=False,
         is_first_time=False
     )
@@ -99,6 +101,7 @@ def staff_user(db):
         is_admin=False,
         is_staff=True,
         is_superuser=False,
+        is_verified=True,
         is_first_time=False
     )
     user.set_password("test-password")

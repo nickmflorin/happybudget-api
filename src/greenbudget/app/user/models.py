@@ -2,6 +2,7 @@ from timezone_field import TimeZoneField
 
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 from .managers import UserManager
 from .utils import get_user_from_social_token, upload_user_image_to
@@ -26,6 +27,13 @@ class User(AbstractUser):
     timezone = TimeZoneField(default='America/New_York')
     profile_image = models.ImageField(upload_to=upload_to, null=True)
     is_first_time = models.BooleanField(default=True)
+    is_verified = models.BooleanField(
+        _('verified'),
+        default=False,
+        help_text=_(
+            'Designates whether this user has verified their email address.'
+        ),
+    )
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['first_name', 'last_name']
