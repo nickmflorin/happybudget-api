@@ -11,8 +11,8 @@ from greenbudget.lib.drf.exceptions import InvalidFieldError
 from greenbudget.app.user.models import User
 
 from .exceptions import (
-    AccountDisabledError, InvalidCredentialsError, EmailDoesNotExist,
-    PasswordResetLinkUsedError, InvalidResetToken,
+    AccountDisabledError, EmailNotVerified, InvalidCredentialsError,
+    EmailDoesNotExist, PasswordResetLinkUsedError, InvalidResetToken,
     PasswordResetLinkExpiredError)
 from .models import ResetUID
 from .utils import validate_password
@@ -23,6 +23,8 @@ class AbstractLoginSerializer(serializers.Serializer):
     def validate(self, user):
         if not user.is_active:
             raise AccountDisabledError()
+        elif not user.is_verified:
+            raise EmailNotVerified()
         return {'user': user}
 
 
