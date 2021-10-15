@@ -60,12 +60,13 @@ def test_login_invalid_email(api_client, db):
         "email": "userdoesnotexist@gmail.com",
         "password": "fake-password",
     })
-    assert response.status_code == 403
+    assert response.status_code == 400
     assert 'greenbudgetjwt' not in response.cookies
     assert response.json() == {
         'errors': [{
             'message': 'The provided username does not exist in our system.',  # noqa
-            'error_type': 'auth',
+            'error_type': 'field',
+            'field': 'email',
             'code': 'email_does_not_exist'
         }]
     }
@@ -76,12 +77,13 @@ def test_login_invalid_password(user, api_client):
         "email": user.email,
         "password": "fake-password",
     })
-    assert response.status_code == 403
+    assert response.status_code == 400
     assert 'greenbudgetjwt' not in response.cookies
     assert response.json() == {
         'errors': [{
             'message': 'The provided password is invalid.',
-            'error_type': 'auth',
+            'error_type': 'field',
+            'field': 'password',
             'code': 'invalid_credentials'
         }]
     }
