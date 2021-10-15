@@ -16,6 +16,13 @@ logger = logging.getLogger('greenbudget')
 
 
 def filter_by_ids(cls):
+    """
+    A decorator for extensions of :obj:`rest_framework.views.ViewSet` that
+    will filter the queryset by a list of IDs provided as query params in
+    the URL.  Applicable for list related endpoints:
+
+    >>> GET /budgets/<id>/accounts?ids=[1, 2, 3]
+    """
     original_get_queryset = cls.get_queryset
 
     @property
@@ -155,8 +162,49 @@ def exception_handler(exc, context):
             'error_type': 'http'
         }]}
 
-    (5) Allows the exception to include information triggering a database
-        rollback for the transactions that occured within a view.
+    (5) Inclusion of Auth Sensitive Parameters
+
+        Currently, this pertains to two parameters:
+
+        (1) force_logout: Informs the frontend that we need to forcefully log
+            the :obj:`User` out of their session.  This applies mostly to JWT
+            token validation.
+
+            The JWT middleware will automatically include the `force_logout`
+            param at the top level of the response in the case that the JWT
+            validation fails on a given request:
+
+            >>> { errors: [...], force_logout: True }
+
+            However, we want the ability to control this more granularly on an
+            Exception basis.  If an authentication related Exception has the
+            attribute `force_logout = True`, here we will inform the JWT
+            middleware that we still want to force logout the :obj:`User` by
+            setting this parameter as an attribute on the
+            :obj:`response.Response`.
+
+            >>> setattr(response, '_force_logout', force_logout)
+
+        (2) user_id: Informs the frontend what :obj:`User` triggered the
+            authentication related exception for cases when the :obj:`User`
+            is not logged in.
+
+            This applies mostly to email confirmation, where we need to inform
+            the frontend  what :obj:`User` tried to login to the system without
+            actually logging them in.
+
+            For authentication related endpoints, we can include this information
+            by setting the `user_id` parameter on the Exception being raised.
+            Here, we then pull that `user_id` off of the raised Exception and
+            inform the JWT middleware what it's value is so that it can include
+            it in the top level of the response:
+
+            >>> { errors: [...], force_logout: True }
+
+            We do this by setting the `user_id` param on the
+            :obj:`response.Response` object:
+
+            >>> setattr(response, '_user_id', user_id)
     """
     def map_detail(detail, error_type, **kwargs):
         return {**{
@@ -187,6 +235,9 @@ def exception_handler(exc, context):
         detail_data = getattr(exc, 'detail_data', {})
         return map_details(exc.detail, error_type, **{**kwargs, **detail_data})
 
+    force_logout = None
+    user_id = None
+
     # In case a Django ValidationError is raised outside of a serializer's
     # validation methods (as might happen if we don't know the validation error
     # until we send a request to a third party API), convert to a DRF
@@ -215,9 +266,21 @@ def exception_handler(exc, context):
     # If the user submitted a request requiring authentication and they are not
     # authenticated, include information in the context so the FE can force log
     # out the user.
-    elif isinstance(exc, (AuthenticationFailed, exceptions.NotAuthenticated)):
+    elif isinstance(exc, (
+        AuthenticationFailed,
+        exceptions.AuthenticationFailed,
+        exceptions.NotAuthenticated,
+        exceptions.PermissionDenied
+    )):
         error_type = getattr(exc, 'error_type', 'auth')
-        data = map_details(exc.detail, error_type=error_type, force_logout=True)
+        kwargs = {'details': exc.detail, 'error_type': error_type}
+        # If the Exception includes a `force_logout` or `user_id` param, store
+        # the value so we can set it on the overall Response object for the
+        # JWT middleware.
+        force_logout = getattr(exc, 'force_logout', None)
+        user_id = getattr(exc, 'user_id', None)
+
+        data = map_details(**kwargs)
 
     elif isinstance(exc.detail, dict):
         error_type = getattr(exc, 'error_type', 'field')
@@ -226,7 +289,10 @@ def exception_handler(exc, context):
     else:
         data = map_exception_details(exc, default_error_type='global')
 
-    response_data = {'errors': data}
+    # We only include  force_logout in the response data if the force logout
+    # is performed by the JWT middleware.
+    data = {'errors': data, 'user_id': user_id}
+    response_data = dict((k, v) for k, v in data.items() if v is not None)
 
     # Allow the exception to include extra data that will be attributed to the
     # response at the top level, not individual errors.
@@ -234,4 +300,11 @@ def exception_handler(exc, context):
         response_data.update({k: v for k, v in exc.extra.items()})
 
     logger.info("There was a user error", extra=response_data)
-    return Response(response_data, status=exc.status_code)
+
+    response = Response(response_data, status=exc.status_code)
+
+    # Include meta information on response for JWT middleware.
+    setattr(response, '_force_logout', force_logout)
+    setattr(response, '_user_id', user_id)
+
+    return response

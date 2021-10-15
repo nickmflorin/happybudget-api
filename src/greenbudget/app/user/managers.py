@@ -53,9 +53,9 @@ class UserManager(UserQuerier, DjangoUserManager):
         kwargs.update(is_staff=True, is_superuser=True)
         return self._create_user(email, **kwargs)
 
-    def get_from_google_token(self, token):
+    def get_from_google_token(self, token_id):
         try:
-            google_user = get_google_user_from_token(token)
+            google_user = get_google_user_from_token(token_id)
         except InvalidSocialToken:
             raise self.model.DoesNotExist()
         else:
@@ -63,8 +63,8 @@ class UserManager(UserQuerier, DjangoUserManager):
             user.sync_with_social_provider(social_user=google_user)
             return user
 
-    def create_from_google_token(self, token):
-        google_user = get_google_user_from_token(token)
+    def create_from_google_token(self, token_id):
+        google_user = get_google_user_from_token(token_id)
         return self.create(
             email=google_user.email,
             is_verified=True,
@@ -72,25 +72,25 @@ class UserManager(UserQuerier, DjangoUserManager):
             last_name=google_user.last_name
         )
 
-    def get_or_create_from_google_token(self, token):
+    def get_or_create_from_google_token(self, token_id):
         try:
-            user = self.get_from_google_token(token)
+            user = self.get_from_google_token(token_id)
         except self.model.DoesNotExist:
-            return self.create_from_google_token(token)
+            return self.create_from_google_token(token_id)
         else:
             if not user.is_verified:
                 user.is_verified = True
                 user.save(update_fields=['is_verified'])
             return user
 
-    def get_from_social_token(self, token, provider):
+    def get_from_social_token(self, token_id, provider):
         assert provider == "google", "Provider %s not supported." % provider
-        return self.get_from_google_token(token)
+        return self.get_from_google_token(token_id)
 
-    def create_from_social_token(self, token, provider):
+    def create_from_social_token(self, token_id, provider):
         assert provider == "google", "Provider %s not supported." % provider
-        return self.create_from_google_token(token)
+        return self.create_from_google_token(token_id)
 
-    def get_or_create_from_social_token(self, token, provider):
+    def get_or_create_from_social_token(self, token_id, provider):
         assert provider == "google", "Provider %s not supported." % provider
-        return self.get_or_create_from_google_token(token)
+        return self.get_or_create_from_google_token(token_id)

@@ -80,7 +80,8 @@ ALLOWED_HOSTS = [
     'gb-lb-1485149386.us-east-2.elb.amazonaws.com',  # Load Balancer
 ]
 
-EMAIL_VERIFICATION_EXPIRY = datetime.timedelta(hours=1)
+EMAIL_VERIFICATION_JWT_EXPIRY = datetime.timedelta(hours=1)
+AUTH_JWT_EXPIRY = datetime.timedelta(days=3)
 
 # JWT Configuration
 JWT_COOKIE_SECURE = True
@@ -90,7 +91,7 @@ SIMPLE_JWT = {
     'AUTH_TOKEN_CLASSES': (
         'greenbudget.app.jwt.tokens.GreenbudgetSlidingToken',),
     'SLIDING_TOKEN_LIFETIME': datetime.timedelta(minutes=5),
-    'SLIDING_TOKEN_REFRESH_LIFETIME': datetime.timedelta(days=1),
+    'SLIDING_TOKEN_REFRESH_LIFETIME': AUTH_JWT_EXPIRY,
     # We can use the SECRET_KEY temporarily, but it is not as secure as using
     # an RSA fingerprint in an ENV file.
     # 'SIGNING_KEY': SECRET_KEY,
@@ -285,6 +286,11 @@ COMPRESS_PRECOMPILERS = (
     ('text/x-scss', 'django_libsass.SassCompiler'),
 )
 
+AUTHENTICATION_BACKENDS = (
+    'greenbudget.app.authentication.auth_backends.SessionAuthentication',
+    'greenbudget.app.authentication.auth_backends.ModelAuthentication'
+)
+
 REST_FRAMEWORK = {
     'DATETIME_FORMAT': '%Y-%m-%d %H:%M:%S',
     'NON_FIELD_ERRORS_KEY': '__all__',
@@ -295,9 +301,9 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
     ],
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.SessionAuthentication'
-    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'greenbudget.app.authentication.auth_backends.SessionAuthentication',
+    ),
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],

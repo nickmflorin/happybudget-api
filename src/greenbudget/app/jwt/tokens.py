@@ -14,5 +14,5 @@ class GreenbudgetSlidingToken(SlidingToken):
 
 class GreenbudgetEmailVerificationSlidingToken(GreenbudgetSlidingToken):
     def set_exp(self, *args, **kwargs):
-        kwargs['lifetime'] = settings.EMAIL_VERIFICATION_EXPIRY
+        kwargs['lifetime'] = settings.EMAIL_VERIFICATION_JWT_EXPIRY
         super().set_exp(*args, **kwargs)

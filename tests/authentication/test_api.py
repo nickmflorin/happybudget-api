@@ -9,26 +9,48 @@ from greenbudget.lib.utils.dateutils import api_datetime_string
 from greenbudget.app.authentication.models import ResetUID
 
 
-@pytest.mark.freeze_time('2020-01-01')
-def test_login(user, api_client):
-    user.set_password("hoopla@H9_12")
+@pytest.fixture
+def password():
+    return "hoopla@H9_12"
+
+
+@pytest.fixture
+def user_with_password(user, password):
+    user.set_password(password)
     user.save()
-    response = api_client.post("/v1/auth/login/", data={
-        "email": user.email,
-        "password": "hoopla@H9_12"
-    })
+    return user
+
+
+@pytest.fixture
+def login(api_client, user_with_password, password):
+    def inner(exclude=None, user_kwargs=None, **kwargs):
+        if user_kwargs:
+            for k, v in user_kwargs.items():
+                setattr(user_with_password, k, v)
+            user_with_password.save()
+        exclude = exclude or []
+        data = {"email": user_with_password.email, "password": password}
+        data.update(**kwargs)
+        data = dict((k, v) for k, v in data.items() if k not in exclude)
+        return api_client.post("/v1/auth/login/", data=data)
+    return inner
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_login(login, user_with_password):
+    response = login()
     assert response.status_code == 201
     assert 'greenbudgetjwt' in response.cookies
     assert response.json() == {
         "id": 1,
-        "first_name": user.first_name,
-        "last_name": user.last_name,
-        "email": user.email,
+        "first_name": user_with_password.first_name,
+        "last_name": user_with_password.last_name,
+        "email": user_with_password.email,
         "is_active": True,
         "is_admin": False,
         "is_superuser": False,
         "is_staff": False,
-        "full_name": user.full_name,
+        "full_name": user_with_password.full_name,
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
         "last_login": "2020-01-01 00:00:00",
@@ -39,29 +61,22 @@ def test_login(user, api_client):
     }
 
 
-def test_login_missing_password(user, api_client):
-    response = api_client.post("/v1/auth/login/", data={
-        "email": user.email,
-    })
+def test_login_missing_password(login):
+    response = login(exclude=["password"])
     assert response.status_code == 400
-    assert 'greenbudgetjwt' not in response.cookies
+    assert "greenbudgetjwt" not in response.cookies
 
 
-def test_login_missing_email(user, api_client):
-    response = api_client.post("/v1/auth/login/", data={
-        "password": user.password,
-    })
+def test_login_missing_email(login):
+    response = login(exclude=["email"])
     assert response.status_code == 400
-    assert 'greenbudgetjwt' not in response.cookies
+    assert "greenbudgetjwt" not in response.cookies
 
 
-def test_login_invalid_email(api_client, db):
-    response = api_client.post("/v1/auth/login/", data={
-        "email": "userdoesnotexist@gmail.com",
-        "password": "fake-password",
-    })
+def test_login_invalid_email(login):
+    response = login(email="userdoesnotexist@gmail.com")
     assert response.status_code == 400
-    assert 'greenbudgetjwt' not in response.cookies
+    assert "greenbudgetjwt" not in response.cookies
     assert response.json() == {
         'errors': [{
             'message': 'The provided username does not exist in our system.',  # noqa
@@ -72,19 +87,44 @@ def test_login_invalid_email(api_client, db):
     }
 
 
-def test_login_invalid_password(user, api_client):
-    response = api_client.post("/v1/auth/login/", data={
-        "email": user.email,
-        "password": "fake-password",
-    })
+def test_login_invalid_password(login):
+    response = login(password="fake")
     assert response.status_code == 400
-    assert 'greenbudgetjwt' not in response.cookies
+    assert "greenbudgetjwt" not in response.cookies
     assert response.json() == {
         'errors': [{
             'message': 'The provided password is invalid.',
             'error_type': 'field',
             'field': 'password',
             'code': 'invalid_credentials'
+        }]
+    }
+
+
+def test_login_account_disabled(login):
+    response = login(user_kwargs={'is_active': False})
+    assert response.status_code == 403
+    assert "greenbudgetjwt" not in response.cookies
+    assert response.json() == {
+        'user_id': 1,
+        'errors': [{
+            'message': 'Your account is not active, please contact customer care.',  # noqa
+            'code': 'account_disabled',
+            'error_type': 'auth'
+        }]
+    }
+
+
+def test_login_account_not_verified(login):
+    response = login(user_kwargs={'is_verified': False})
+    assert response.status_code == 403
+    assert "greenbudgetjwt" not in response.cookies
+    assert response.json() == {
+        'user_id': 1,
+        'errors': [{
+            'message': 'The email address is not verified.',
+            'code': 'email_not_verified',
+            'error_type': 'auth'
         }]
     }
 
@@ -229,34 +269,34 @@ def test_social_login_invalid_provider(api_client, create_user, db):
     assert 'greenbudgetjwt' not in response.cookies
 
 
-def test_reset_password(user, api_client, db):
+def test_reset_password(user_with_password, api_client):
     reset_uid = ResetUID.objects.create(
         token="token1234567",
         used=False,
-        user=user,
+        user=user_with_password,
     )
     response = api_client.post("/v1/auth/reset-password/", data={
         "token": reset_uid.token,
         "password": "TestUserPassword4321$",
         "confirm": "TestUserPassword4321$",
     })
-    user.refresh_from_db()
+    user_with_password.refresh_from_db()
     assert response.status_code == 201
     assert response.json() == {
-        'id': user.pk,
-        'first_name': user.first_name,
-        'last_name': user.last_name,
-        'full_name': user.full_name,
-        'email': user.email,
-        'is_active': user.is_active,
-        'is_admin': user.is_admin,
-        'is_superuser': user.is_superuser,
-        'is_staff': user.is_staff,
-        'date_joined': api_datetime_string(user.date_joined),
-        'updated_at': api_datetime_string(user.updated_at),
-        'created_at': api_datetime_string(user.created_at),
+        'id': user_with_password.pk,
+        'first_name': user_with_password.first_name,
+        'last_name': user_with_password.last_name,
+        'full_name': user_with_password.full_name,
+        'email': user_with_password.email,
+        'is_active': user_with_password.is_active,
+        'is_admin': user_with_password.is_admin,
+        'is_superuser': user_with_password.is_superuser,
+        'is_staff': user_with_password.is_staff,
+        'date_joined': api_datetime_string(user_with_password.date_joined),
+        'updated_at': api_datetime_string(user_with_password.updated_at),
+        'created_at': api_datetime_string(user_with_password.created_at),
         'last_login': None,
-        'timezone': str(user.timezone),
+        'timezone': str(user_with_password.timezone),
         "profile_image": None,
         "is_first_time": False,
     }
@@ -284,20 +324,14 @@ def test_reset_password_invalid_password(api_client, user, password):
     assert response.json()['errors'][0]['code'] == 'invalid_password'
 
 
-def test_reset_password_invalid_token(api_client, db):
+def test_reset_password_invalid_token(api_client):
     response = api_client.post("/v1/auth/reset-password/", data={
         "token": "token1234567",
         "password": "hoopla@H9_12$",
         "confirm": "hoopla@H9_12$",
     })
-    assert response.status_code == 403
-    assert response.json() == {
-        'errors': [{
-            'error_type': 'auth',
-            'message': 'The provided token is invalid.',
-            'code': 'invalid_reset_token'
-        }]
-    }
+    assert response.status_code == 400
+    assert response.json()['errors'][0]['code'] == 'does_not_exist'
 
 
 @override_settings(PWD_RESET_LINK_EXPIRY_TIME_IN_HRS=48)
@@ -317,13 +351,13 @@ def test_reset_password_token_expired(user, api_client, freezer):
         "password": "hoopla@H9_12$",
         "confirm": "hoopla@H9_12$",
     })
-
-    assert response.status_code == 403
+    assert response.status_code == 400
     assert response.json() == {
         'errors': [{
-            'error_type': 'auth',
-            'message': 'The password reset link has expired.',
-            'code': 'password_reset_link_expired',
+            'message': 'Token has expired.',
+            'code': 'invalid',
+            'error_type': 'field',
+            'field': 'token'
         }]
     }
 

@@ -51,10 +51,9 @@ class AbstractLoginView(generics.GenericAPIView):
             context={'request': request}
         )
         serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data['user']
+        user = serializer.validated_data
 
-        django_login(
-            request, user, backend='django.contrib.auth.backends.ModelBackend')
+        django_login(request, user)
 
         resp = response.Response(
             UserSerializer(user).data,
@@ -91,9 +90,7 @@ class ResetPasswordView(generics.GenericAPIView):
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data["user"]
-        user.set_password(serializer.validated_data["password"])
-        user.save()
+        user = serializer.save()
         return response.Response(
             UserSerializer(user).data,
             status=status.HTTP_201_CREATED
@@ -117,7 +114,7 @@ class ForgotPasswordView(generics.GenericAPIView):
             )
         else:
             if not user.is_active:
-                raise AccountDisabledError()
+                raise AccountDisabledError(user_id=user.id)
 
             reset_uid = ResetUID.objects.create(user=user)
             send_forgot_password_email(user, reset_uid.token)

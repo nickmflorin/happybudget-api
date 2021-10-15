@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta
+from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from unittest import mock
+from django.test.utils import override_settings
 
 import pytest
 
@@ -15,14 +17,15 @@ from greenbudget.app.user.models import User
 
 class TestGetUserFromTokens:
     def test_none_returns_anonymous_user(self):
-        user = get_user_from_token(None)
+        user, token_obj = get_user_from_token(None)
         assert isinstance(user, AnonymousUser)
+        assert token_obj is None
 
     def test_valid_access_token_returns_user(self, user):
         token = GreenbudgetSlidingToken.for_user(user)
         with mock.patch.object(
                 User.objects, 'get', return_value=user) as mock_fn:
-            returned_user = get_user_from_token(str(token))
+            returned_user, _ = get_user_from_token(str(token))
         assert returned_user.pk == user.pk
         assert mock_fn.mock_calls == [mock.call(pk=user.pk)]
 
@@ -32,7 +35,7 @@ class TestGetUserFromTokens:
         token.set_exp(from_time=datetime(2010, 1, 1))
         with mock.patch.object(
                 User.objects, 'get', return_value=user) as mock_fn:
-            returned_user = get_user_from_token(str(token))
+            returned_user, _ = get_user_from_token(str(token))
         assert returned_user.pk == user.pk
         assert mock_fn.mock_calls == [mock.call(pk=user.pk)]
 
@@ -45,7 +48,7 @@ class TestGetUserFromTokens:
             with pytest.raises(TokenExpiredError):
                 get_user_from_token(str(token))
 
-        assert mock_fn.call_count == 0
+        assert mock_fn.call_count == 1
 
 
 def test_verify_token_bad_token_raises_invalid_error():
@@ -53,32 +56,32 @@ def test_verify_token_bad_token_raises_invalid_error():
         verify_token('foo')
 
 
-def test_verify_token_invalid_token_raises_invalid_error():
-    token = GreenbudgetSlidingToken()
+def test_verify_token_invalid_token_raises_invalid_error(user):
+    token = GreenbudgetSlidingToken.for_user(user)
     token.payload.pop('jti')  # Remove jti claim to trigger verify failure
     with pytest.raises(TokenInvalidError):
         verify_token(str(token))
 
 
 @pytest.mark.freeze_time('2021-01-01')
-def test_refresh_serializer_validate_expired_token_raises_expired_error():
+def test_refresh_serializer_validate_expired_token_raises_expired_error(user):
     refresh_serializer = serializers.UserTokenRefreshSerializer()
-    token = GreenbudgetSlidingToken()
+    token = GreenbudgetSlidingToken.for_user(user)
     token.set_exp(claim='refresh_exp', from_time=datetime(2010, 1, 1))
     with pytest.raises(ExpiredToken):
         refresh_serializer.validate({'token': str(token)})
 
 
-@pytest.mark.skip("Figure out why this is not passing!")
+@override_settings(SIMPLE_JWT={
+    **settings.SIMPLE_JWT,
+    **{"SLIDING_TOKEN_REFRESH_LIFETIME": timedelta(days=30)}
+})
 @pytest.mark.freeze_time('2021-01-01')
-def test_refresh_serializer_validate_success_returns_token(settings, freezer):
-    settings.SIMPLE_JWT['SLIDING_TOKEN_REFRESH_LIFETIME'] = timedelta(hours=1)
-
+def test_refresh_serializer_validate_success_returns_token(user, freezer):
     refresh_serializer = serializers.UserTokenRefreshSerializer()
-    token = GreenbudgetSlidingToken()
+    token = GreenbudgetSlidingToken.for_user(user)
 
     freezer.move_to('2021-01-02')
-    data = refresh_serializer.validate({'token': str(token)})
-
-    new_token = GreenbudgetSlidingToken(data)
+    user, token_obj = refresh_serializer.validate({'token': str(token)})
+    new_token = GreenbudgetSlidingToken(str(token_obj))
     assert new_token['exp'] > token['exp']

@@ -8,7 +8,7 @@ from .views import (
 app_name = "authentication"
 
 urlpatterns = [
-    path('login/', csrf_exempt(LoginView.as_view())),
+    path('login/', csrf_exempt(LoginView.as_view()), name='login'),
     path('logout/', LogoutView.as_view()),
     path('reset-password/', ResetPasswordView.as_view()),
     path('forgot-password/', ForgotPasswordView.as_view()),

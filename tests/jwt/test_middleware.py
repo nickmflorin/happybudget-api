@@ -54,34 +54,34 @@ def test_process_request_get_user_called(middleware_patch, rf):
 def test_get_cookie_user_request_has_cached_user(middleware_patch, rf, user):
     request = rf.get('/')
     request._cached_cookie_user = user
-    with middleware_patch('get_user_from_token') as mock_fn:
+    with middleware_patch(
+            'get_user_from_token', return_value=(None, None)) as mock_fn:
         request_user = get_cookie_user(request)
         assert user == request_user
         assert mock_fn.call_count == 0
 
 
 def test_get_cookie_user_raises_expired_token(middleware_patch, rf):
-    msg = "Token 'exp' claim has expired"
     request = rf.get('/')
     with middleware_patch('get_user_from_token',
-            side_effect=TokenExpiredError(msg)):
-        with pytest.raises(ExpiredToken, match=msg):
+            side_effect=TokenExpiredError()):
+        with pytest.raises(ExpiredToken):
             get_cookie_user(request)
 
 
 def test_get_cookie_user_raises_invalid_token(middleware_patch, rf):
-    msg = "Token has wrong type"
     request = rf.get('/')
     with middleware_patch('get_user_from_token',
-            side_effect=TokenInvalidError(msg)):
-        with pytest.raises(InvalidToken, match=msg):
+            side_effect=TokenInvalidError()):
+        with pytest.raises(InvalidToken):
             get_cookie_user(request)
 
 
 def test_get_cookie_user_passes_cookie_args(settings, middleware_patch, rf):
     rf.cookies[settings.JWT_TOKEN_COOKIE_NAME] = 'token'
     request = rf.get('/')
-    with middleware_patch('get_user_from_token') as mock_fn:
+    with middleware_patch('get_user_from_token',
+            return_value=(None, None)) as mock_fn:
         get_cookie_user(request)
     assert mock_fn.mock_calls == [mock.call('token')]
 
@@ -110,16 +110,33 @@ def test_process_response_sets_cookies(settings, rf, user):
         assert mock_for_user.mock_calls == [mock.call(user)]
 
 
+def test_middleware_corrupted_token_deletes_cookies(settings, rf, user):
+    token = GreenbudgetSlidingToken.for_user(user)
+    token.set_exp(claim='refresh_exp')
+    user.delete()
+
+    middleware = TokenCookieMiddleware()
+
+    rf.cookies = SimpleCookie({settings.JWT_TOKEN_COOKIE_NAME: str(token)})
+    request = rf.get('/')
+
+    middleware.process_request(request)
+
+    response = HttpResponse()
+    response.set_cookie(settings.JWT_TOKEN_COOKIE_NAME, str(token))
+
+    new_response = middleware.process_response(request, response)
+    assert new_response.cookies[settings.JWT_TOKEN_COOKIE_NAME].value == ''
+
+
 @pytest.mark.freeze_time('2021-01-01')
-def test_middleware_expired_token_deletes_cookies(settings, rf):
-    token = GreenbudgetSlidingToken()
+def test_middleware_expired_token_deletes_cookies(settings, rf, user):
+    token = GreenbudgetSlidingToken.for_user(user)
     token.set_exp(claim='refresh_exp', from_time=datetime(2010, 1, 1))
 
     middleware = TokenCookieMiddleware()
 
-    rf.cookies = SimpleCookie({
-        settings.JWT_TOKEN_COOKIE_NAME: str(token),
-    })
+    rf.cookies = SimpleCookie({settings.JWT_TOKEN_COOKIE_NAME: str(token)})
     request = rf.get('/')
 
     middleware.process_request(request)
@@ -134,9 +151,7 @@ def test_middleware_expired_token_deletes_cookies(settings, rf):
 def test_middleware_invalid_token_deletes_cookies(settings, rf):
     middleware = TokenCookieMiddleware()
 
-    rf.cookies = SimpleCookie({
-        settings.JWT_TOKEN_COOKIE_NAME: 'invalid_token',
-    })
+    rf.cookies = SimpleCookie({settings.JWT_TOKEN_COOKIE_NAME: 'invalid_token'})
     request = rf.get('/')
 
     middleware.process_request(request)
@@ -146,14 +161,6 @@ def test_middleware_invalid_token_deletes_cookies(settings, rf):
 
     new_response = middleware.process_response(request, response)
     assert new_response.cookies[settings.JWT_TOKEN_COOKIE_NAME].value == ''
-
-
-def test_middleware_doesnt_set_cookie_for_get(settings, rf):
-    middleware = TokenCookieMiddleware()
-    request = rf.get("/")
-    middleware.process_request(request)
-    response = middleware.process_response(request, HttpResponse())
-    assert response.cookies.get(settings.JWT_TOKEN_COOKIE_NAME) is None
 
 
 @pytest.mark.parametrize("method", ['get', 'head', 'options'])

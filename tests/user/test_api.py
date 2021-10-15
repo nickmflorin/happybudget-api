@@ -110,19 +110,35 @@ def test_verify_email(api_client, user):
 
 
 @pytest.mark.freeze_time('2021-01-03')
-@override_settings(EMAIL_VERIFICATION_EXPIRY=datetime.timedelta(hours=24))
-def test_verify_email_expired_token(api_client):
-    token = GreenbudgetEmailVerificationSlidingToken()
+@override_settings(EMAIL_VERIFICATION_JWT_EXPIRY=datetime.timedelta(hours=24))
+def test_verify_email_expired_token(api_client, user):
+    token = GreenbudgetEmailVerificationSlidingToken.for_user(user)
     token.set_exp(claim='refresh_exp', from_time=datetime.datetime(2021, 1, 1))
     response = api_client.post("/v1/users/verify-email/", data={
         "token": str(token)
     })
     assert response.json() == {
+        'user_id': user.id,
         'errors': [{
-            'message': "Token 'refresh_exp' claim has expired",
+            'message': 'The provided token is expired.',
             'code': 'token_expired',
-            'error_type': 'auth',
-            'force_logout': True
+            'error_type': 'auth'
+        }]
+    }
+
+
+def test_verify_email_user_does_not_exist(api_client, user):
+    token = GreenbudgetEmailVerificationSlidingToken.for_user(user)
+    user.delete()
+    response = api_client.post("/v1/users/verify-email/", data={
+        "token": str(token)
+    })
+    assert response.status_code == 403
+    assert response.json() == {
+        'errors': [{
+            'message': 'Token is invalid.',
+            'code': 'token_not_valid',
+            'error_type': 'auth'
         }]
     }
 
@@ -134,9 +150,8 @@ def test_verify_email_invalid_token(api_client):
     assert response.status_code == 403
     assert response.json() == {
         'errors': [{
-            'message': 'Token is invalid or expired',
+            'message': 'Token is invalid.',
             'code': 'token_not_valid',
-            'error_type': 'auth',
-            'force_logout': True
+            'error_type': 'auth'
         }]
     }

@@ -43,7 +43,7 @@ class ChangePasswordSerializer(serializers.ModelSerializer):
 
 class UserEmailVerificationSerializer(EmailTokenRefreshSerializer):
     def validate(self, attrs):
-        user = super().validate(attrs)
+        user, _ = super().validate(attrs)
         if user.is_verified:
             raise exceptions.ValidationError("User is already verified.")
         return {"user": user}

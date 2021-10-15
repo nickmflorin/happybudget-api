@@ -6,14 +6,22 @@ and views
 """
 from django.utils.translation import ugettext_lazy as _
 
-from rest_framework import exceptions
 from rest_framework_simplejwt.exceptions import (
-    TokenError, InvalidToken as BaseInvalidToken)
+    TokenError as BaseTokenError, InvalidToken as BaseInvalidToken)
+
+from greenbudget.app.authentication.exceptions import PermissionDenied
 
 
 __all__ = (
     'TokenError', 'TokenInvalidError', 'TokenExpiredError', 'ExpiredToken',
     'InvalidToken')
+
+
+class TokenError(BaseTokenError):
+    def __init__(self, user_id=None):
+        if user_id is not None:
+            setattr(self, 'user_id', user_id)
+        super().__init__()
 
 
 class TokenInvalidError(TokenError):
@@ -24,11 +32,18 @@ class TokenInvalidError(TokenError):
     pass
 
 
+class TokenCorruptedError(TokenError):
+    """
+    An exception used by serializers when a token is invalid because it is
+    associated with an invalid user ID.
+    """
+    pass
+
+
 class TokenExpiredError(TokenError):
     """
     An exception used by serializers when a token is expired.
     """
-    pass
 
 
 class InvalidToken(BaseInvalidToken):
@@ -39,13 +54,13 @@ class InvalidToken(BaseInvalidToken):
     default_detail = _('Token is invalid.')
     default_code = 'token_not_valid'
 
-    def __init__(self, detail=None, code=None):
+    def __init__(self, detail=None, **kwargs):
         if detail == _('Token is invalid.'):
             detail = self.default_detail
         # DRF simplejwt does a weird thing with its exceptions, which messes up
-        # our error formatting. By calling AuthenticationFailed.__init__
+        # our error formatting. By calling PermissionDenied.__init__
         # directly, we skip their strange details transformation
-        exceptions.AuthenticationFailed.__init__(self, detail=detail, code=code)
+        PermissionDenied.__init__(self, detail=detail, **kwargs)
 
 
 class ExpiredToken(InvalidToken):
