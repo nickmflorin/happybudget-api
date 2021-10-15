@@ -1,6 +1,8 @@
 from django.utils.translation import gettext_lazy as _
 from rest_framework import exceptions
 
+from greenbudget.lib.drf.exceptions import InvalidFieldError
+
 
 class AuthErrorCodes(object):
     ACCOUNT_DISABLED = "account_disabled"
@@ -33,11 +35,10 @@ class PasswordResetLinkUsedError(exceptions.PermissionDenied):
     error_type = 'auth'
 
 
-class EmailDoesNotExist(exceptions.AuthenticationFailed):
+class EmailDoesNotExist(exceptions.ValidationError):
     default_detail = _(
         "The provided username does not exist in our system.")
     default_code = AuthErrorCodes.EMAIL_DOES_NOT_EXIST
-    error_type = 'auth'
 
 
 class EmailNotVerified(exceptions.AuthenticationFailed):
@@ -46,10 +47,9 @@ class EmailNotVerified(exceptions.AuthenticationFailed):
     error_type = 'auth'
 
 
-class InvalidCredentialsError(exceptions.AuthenticationFailed):
+class InvalidCredentialsError(InvalidFieldError):
     default_detail = _("The provided password is invalid.")
     default_code = AuthErrorCodes.INVALID_CREDENTIALS
-    error_type = 'auth'
 
 
 class InvalidResetToken(exceptions.PermissionDenied):

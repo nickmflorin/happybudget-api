@@ -11,14 +11,10 @@ from rest_framework_simplejwt.exceptions import TokenError
 
 from .tokens import GreenbudgetSlidingToken
 from .exceptions import ExpiredToken, InvalidToken, TokenExpiredError
-from .utils import get_user_from_token
+from .serializers import get_user_from_token, parse_token_from_request
 
 
 logger = logging.getLogger('backend')
-
-
-def parse_token_from_request(request):
-    return request.COOKIES.get(settings.JWT_TOKEN_COOKIE_NAME)
 
 
 def get_cookie_user(request):

@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import status
@@ -9,7 +8,7 @@ from greenbudget.app.user.serializers import UserSerializer
 
 from .auth_backends import (
     JWTCookieAuthentication, CsrfExcemptSessionAuthentication)
-from .serializers import UserTokenSlidingSerializer
+from .serializers import UserTokenRefreshSerializer, parse_token_from_request
 
 
 class TokenRefreshView(APIView):
@@ -27,8 +26,8 @@ class TokenValidateView(APIView):
         JWTCookieAuthentication, CsrfExcemptSessionAuthentication, )
 
     def post(self, request, *args, **kwargs):
-        token = request.COOKIES.get(settings.JWT_TOKEN_COOKIE_NAME)
-        serializer = UserTokenSlidingSerializer()
+        token = parse_token_from_request(request)
+        serializer = UserTokenRefreshSerializer()
         user = serializer.validate({"token": token})
         return Response({
             'user': UserSerializer(user).data,

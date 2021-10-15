@@ -54,7 +54,7 @@ class LoginSerializer(AbstractLoginSerializer):
     def validate(self, attrs):
         user = authenticate(self.context['request'], **attrs)
         if user is None:
-            raise InvalidCredentialsError()
+            raise InvalidCredentialsError('password')
         return super().validate(user)
 
 

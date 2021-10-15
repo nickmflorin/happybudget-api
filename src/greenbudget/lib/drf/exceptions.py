@@ -17,7 +17,7 @@ class CommonErrorCodes(object):
 class AbstractFieldError(exceptions.ValidationError):
     def __init__(self, *args, **kwargs):
         # pylint: disable=no-member
-        message = _(kwargs.pop("message", self.default_message))
+        message = _(kwargs.pop("message", self.default_detail))
         if len(args) > 1:
             super().__init__(_consolidate_field_errors(args, message), **kwargs)
         else:
@@ -85,7 +85,7 @@ class RequiredFieldError(AbstractFieldError):
     >>>    }
     """
     default_code = CommonErrorCodes.REQUIRED
-    default_message = "This field is required."
+    default_detail = "This field is required."
 
     @classmethod
     def from_data_check(cls, data, *fields, operator=any, exc_kwargs=None):
@@ -145,4 +145,4 @@ class InvalidFieldError(AbstractFieldError):
     >>>    }
     """
     default_code = CommonErrorCodes.INVALID
-    default_message = "This field is invalid."
+    default_detail = "This field is invalid."
