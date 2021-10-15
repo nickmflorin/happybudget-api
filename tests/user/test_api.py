@@ -1,6 +1,8 @@
+import datetime
+from django.test import override_settings
 import pytest
 
-from greenbudget.app.jwt.tokens import GreenbudgetSlidingToken
+from greenbudget.app.jwt.tokens import GreenbudgetEmailVerificationSlidingToken
 
 
 @pytest.mark.parametrize("password", [
@@ -98,13 +100,31 @@ def test_update_logged_in_user(api_client, user):
 def test_verify_email(api_client, user):
     user.is_verified = False
     user.save()
-    token = GreenbudgetSlidingToken.for_user(user)
+    token = GreenbudgetEmailVerificationSlidingToken.for_user(user)
     response = api_client.post("/v1/users/verify-email/", data={
         "token": str(token)
     })
     assert response.status_code == 201
     user.refresh_from_db()
     assert user.is_verified
+
+
+@pytest.mark.freeze_time('2021-01-03')
+@override_settings(EMAIL_VERIFICATION_EXPIRY=datetime.timedelta(hours=24))
+def test_verify_email_expired_token(api_client):
+    token = GreenbudgetEmailVerificationSlidingToken()
+    token.set_exp(claim='refresh_exp', from_time=datetime.datetime(2021, 1, 1))
+    response = api_client.post("/v1/users/verify-email/", data={
+        "token": str(token)
+    })
+    assert response.json() == {
+        'errors': [{
+            'message': "Token 'refresh_exp' claim has expired",
+            'code': 'token_expired',
+            'error_type': 'auth',
+            'force_logout': True
+        }]
+    }
 
 
 def test_verify_email_invalid_token(api_client):
