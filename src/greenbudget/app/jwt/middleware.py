@@ -141,11 +141,14 @@ class TokenCookieMiddleware(MiddlewareMixin):
         request.cookie_user = SimpleLazyObject(lambda: get_cookie_user(request))
 
     def process_response(self, request, response):
+        is_logout_url = request.path == reverse('authentication:logout')
         try:
             is_active = request.cookie_user and request.cookie_user.is_active
         except InvalidToken:
             return self.force_logout(request, response)
         else:
+            if is_logout_url:
+                return response
             # The response will have a `_force_logout` attribute if the
             # Exception that was raised to trigger the response had a
             # `force_logout` attribute that evalutes to True.

@@ -287,8 +287,8 @@ COMPRESS_PRECOMPILERS = (
 )
 
 AUTHENTICATION_BACKENDS = (
-    'greenbudget.app.authentication.auth_backends.SessionAuthentication',
-    'greenbudget.app.authentication.auth_backends.ModelAuthentication'
+    'greenbudget.app.authentication.backends.ModelAuthentication',
+    'greenbudget.app.authentication.backends.SocialModelAuthentication',
 )
 
 REST_FRAMEWORK = {
@@ -302,7 +302,7 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'greenbudget.app.authentication.auth_backends.SessionAuthentication',
+        'greenbudget.app.authentication.backends.SessionAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',

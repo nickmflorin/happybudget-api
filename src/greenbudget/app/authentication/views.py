@@ -12,6 +12,7 @@ from greenbudget.app.authentication.exceptions import AccountDisabledError
 from greenbudget.lib.drf.exceptions import (
     RequiredFieldError, InvalidFieldError)
 from greenbudget.app.authentication.exceptions import RateLimitedError
+from greenbudget.app.jwt.middleware import TokenCookieMiddleware
 from greenbudget.app.user.models import User
 from greenbudget.app.user.serializers import UserSerializer
 from greenbudget.app.user.utils import send_forgot_password_email
@@ -32,7 +33,10 @@ class LogoutView(views.APIView):
     def post(self, request, *args, **kwargs):
         logout(request)
         resp = response.Response(status=status.HTTP_201_CREATED)
-        resp.delete_cookie(settings.JWT_TOKEN_COOKIE_NAME)
+        resp.delete_cookie(
+            settings.JWT_TOKEN_COOKIE_NAME,
+            **TokenCookieMiddleware.cookie_kwargs
+        )
         return resp
 
 
@@ -51,7 +55,7 @@ class AbstractLoginView(generics.GenericAPIView):
             context={'request': request}
         )
         serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data
+        user = serializer.validated_data['user']
 
         django_login(request, user)
 

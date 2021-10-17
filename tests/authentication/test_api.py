@@ -1,4 +1,5 @@
 from datetime import timedelta, datetime
+from http.cookies import SimpleCookie
 import mock
 import pytest
 import responses
@@ -7,6 +8,7 @@ from django.test import override_settings
 
 from greenbudget.lib.utils.dateutils import api_datetime_string
 from greenbudget.app.authentication.models import ResetUID
+from greenbudget.app.jwt.tokens import GreenbudgetSlidingToken
 
 
 @pytest.fixture
@@ -129,8 +131,12 @@ def test_login_account_not_verified(login):
     }
 
 
-def test_logout(user, api_client):
+def test_logout(user, api_client, settings):
     api_client.force_login(user)
+    token = GreenbudgetSlidingToken.for_user(user)
+    api_client.cookies = SimpleCookie({
+        settings.JWT_TOKEN_COOKIE_NAME: str(token),
+    })
     response = api_client.post("/v1/auth/logout/")
     assert response.status_code == 201
     assert response.cookies['greenbudgetjwt'].value == ""

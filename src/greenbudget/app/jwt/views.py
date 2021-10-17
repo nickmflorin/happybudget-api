@@ -2,11 +2,11 @@ from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import status, response, views
 
-from greenbudget.app.authentication.auth_backends import (
+from greenbudget.app.authentication.backends import (
     CsrfExcemptCookieSessionAuthentication)
 from greenbudget.app.user.serializers import UserSerializer
 
-from .serializers import UserTokenRefreshSerializer, parse_token_from_request
+from .serializers import TokenRefreshSerializer, parse_token_from_request
 
 
 class TokenRefreshView(views.APIView):
@@ -23,7 +23,7 @@ class TokenValidateView(views.APIView):
 
     def post(self, request, *args, **kwargs):
         token = parse_token_from_request(request)
-        serializer = UserTokenRefreshSerializer(force_logout=True)
+        serializer = TokenRefreshSerializer(force_logout=True)
         user, _ = serializer.validate({"token": token})
         return response.Response({
             'user': UserSerializer(user).data,

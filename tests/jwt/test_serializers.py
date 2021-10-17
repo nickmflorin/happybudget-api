@@ -65,7 +65,7 @@ def test_verify_token_invalid_token_raises_invalid_error(user):
 
 @pytest.mark.freeze_time('2021-01-01')
 def test_refresh_serializer_validate_expired_token_raises_expired_error(user):
-    refresh_serializer = serializers.UserTokenRefreshSerializer()
+    refresh_serializer = serializers.TokenRefreshSerializer()
     token = GreenbudgetSlidingToken.for_user(user)
     token.set_exp(claim='refresh_exp', from_time=datetime(2010, 1, 1))
     with pytest.raises(ExpiredToken):
@@ -78,7 +78,7 @@ def test_refresh_serializer_validate_expired_token_raises_expired_error(user):
 })
 @pytest.mark.freeze_time('2021-01-01')
 def test_refresh_serializer_validate_success_returns_token(user, freezer):
-    refresh_serializer = serializers.UserTokenRefreshSerializer()
+    refresh_serializer = serializers.TokenRefreshSerializer()
     token = GreenbudgetSlidingToken.for_user(user)
 
     freezer.move_to('2021-01-02')

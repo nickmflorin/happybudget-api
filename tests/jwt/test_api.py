@@ -39,6 +39,23 @@ def test_validate_token(api_client, settings, user):
     }
 
 
+@pytest.mark.freeze_time('2020-01-01')
+def test_force_logout_on_token_removal(api_client, settings, user):
+    api_client.force_login(user)
+
+    token = GreenbudgetSlidingToken.for_user(user)
+    api_client.cookies = SimpleCookie({
+        settings.JWT_TOKEN_COOKIE_NAME: str(token),
+    })
+    response = api_client.post("/v1/jwt/validate/")
+    assert response.status_code == 201
+    assert 'greenbudgetjwt' in response.cookies
+
+    api_client.logout()
+    response = api_client.get("/v1/budgets/")
+    assert response.status_code == 403
+
+
 def test_validate_token_inactive_user(api_client, settings, user):
     token = GreenbudgetSlidingToken.for_user(user)
     api_client.cookies = SimpleCookie({
@@ -49,9 +66,10 @@ def test_validate_token_inactive_user(api_client, settings, user):
     response = api_client.post("/v1/jwt/validate/")
     assert response.status_code == 403
     assert response.json() == {
+        'user_id': user.pk,
         'errors': [{
-            'message': 'Authentication credentials were not provided.',
-            'code': 'not_authenticated',
+            'message': 'Your account is not active, please contact customer care.',  # noqa
+            'code': 'account_disabled',
             'error_type': 'auth'
         }]
     }
@@ -90,9 +108,10 @@ def test_validate_token_unverified_user(api_client, settings, user):
     response = api_client.post("/v1/jwt/validate/")
     assert response.status_code == 403
     assert response.json() == {
+        'user_id': user.pk,
         'errors': [{
-            'message': 'Authentication credentials were not provided.',
-            'code': 'not_authenticated',
+            'message': 'The email address is not verified.',
+            'code': 'email_not_verified',
             'error_type': 'auth'
         }]
     }
@@ -127,8 +146,8 @@ def test_validate_token_missing_token(api_client):
     assert response.status_code == 403
     assert response.json() == {
         'errors': [{
-            'message': 'Authentication credentials were not provided.',
-            'code': 'not_authenticated',
+            'message': 'User is not authenticated.',
+            'code': 'account_not_authenticated',
             'error_type': 'auth'
         }]
     }

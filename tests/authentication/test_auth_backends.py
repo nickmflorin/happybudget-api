@@ -4,7 +4,8 @@ from django.contrib.auth.models import AnonymousUser
 from rest_framework.request import Request
 from rest_framework.test import APIRequestFactory
 
-from greenbudget.app.authentication.auth_backends import (
+from greenbudget.app.authentication import exceptions
+from greenbudget.app.authentication.backends import (
     SessionAuthentication, CookieSessionAuthentication)
 
 
@@ -33,8 +34,8 @@ def test_session_failure_unauthenticated_user(api_rf, unauthorized_user):
     request = api_rf.get('/')
     request._request.user = unauthorized_user
     backend = SessionAuthentication()
-    auth_user = backend.authenticate(request)
-    assert auth_user is None
+    with pytest.raises(exceptions.NotAuthenticatedError):
+        backend.authenticate(request)
 
 
 def test_session_failure_inactive_user(api_rf, user):
@@ -43,8 +44,8 @@ def test_session_failure_inactive_user(api_rf, user):
     request = api_rf.get('/')
     request._request.user = user
     backend = SessionAuthentication()
-    auth_user = backend.authenticate(request)
-    assert auth_user is None
+    with pytest.raises(exceptions.AccountDisabledError):
+        backend.authenticate(request)
 
 
 def test_session_failure_unverified_user(api_rf, user):
@@ -53,8 +54,8 @@ def test_session_failure_unverified_user(api_rf, user):
     request = api_rf.get('/')
     request._request.user = user
     backend = SessionAuthentication()
-    auth_user = backend.authenticate(request)
-    assert auth_user is None
+    with pytest.raises(exceptions.EmailNotVerified):
+        backend.authenticate(request)
 
 
 def test_cookie_session_authenticate_successful(api_rf, user):
@@ -72,8 +73,8 @@ def test_cookie_session_failure_unauthenticated_user(api_rf, unauthorized_user):
     request = api_rf.get('/')
     request._request.cookie_user = unauthorized_user
     backend = CookieSessionAuthentication()
-    auth_user = backend.authenticate(request)
-    assert auth_user is None
+    with pytest.raises(exceptions.NotAuthenticatedError):
+        backend.authenticate(request)
 
 
 def test_cookie_session_failure_inactive_user(api_rf, user):
@@ -82,8 +83,8 @@ def test_cookie_session_failure_inactive_user(api_rf, user):
     request = api_rf.get('/')
     request._request.cookie_user = user
     backend = CookieSessionAuthentication()
-    auth_user = backend.authenticate(request)
-    assert auth_user is None
+    with pytest.raises(exceptions.AccountDisabledError):
+        backend.authenticate(request)
 
 
 def test_cookie_session_failure_unverified_user(api_rf, user):
@@ -92,5 +93,5 @@ def test_cookie_session_failure_unverified_user(api_rf, user):
     request = api_rf.get('/')
     request._request.cookie_user = user
     backend = CookieSessionAuthentication()
-    auth_user = backend.authenticate(request)
-    assert auth_user is None
+    with pytest.raises(exceptions.EmailNotVerified):
+        backend.authenticate(request)

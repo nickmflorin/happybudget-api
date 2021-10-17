@@ -6,6 +6,7 @@ from greenbudget.lib.drf.exceptions import InvalidFieldError
 
 class AuthErrorCodes(object):
     ACCOUNT_DISABLED = "account_disabled"
+    ACCOUNT_NOT_AUTHENTICATED = "account_not_authenticated"
     INVALID_CREDENTIALS = "invalid_credentials"
     EMAIL_DOES_NOT_EXIST = "email_does_not_exist"
     EMAIL_NOT_VERIFIED = "email_not_verified"
@@ -24,21 +25,26 @@ class PermissionDenied(exceptions.PermissionDenied):
         exceptions.PermissionDenied.__init__(self, *args, **kwargs)
 
 
+class NotAuthenticatedError(PermissionDenied):
+    default_detail = _("User is not authenticated.")
+    default_code = AuthErrorCodes.ACCOUNT_NOT_AUTHENTICATED
+
+
 class AccountDisabledError(PermissionDenied):
     default_detail = _(
         "Your account is not active, please contact customer care.")
     default_code = AuthErrorCodes.ACCOUNT_DISABLED
 
 
+class EmailNotVerified(PermissionDenied):
+    default_detail = _("The email address is not verified.")
+    default_code = AuthErrorCodes.EMAIL_NOT_VERIFIED
+
+
 class EmailDoesNotExist(InvalidFieldError):
     default_detail = _(
         "The provided username does not exist in our system.")
     default_code = AuthErrorCodes.EMAIL_DOES_NOT_EXIST
-
-
-class EmailNotVerified(PermissionDenied):
-    default_detail = _("The email address is not verified.")
-    default_code = AuthErrorCodes.EMAIL_NOT_VERIFIED
 
 
 class InvalidCredentialsError(InvalidFieldError):

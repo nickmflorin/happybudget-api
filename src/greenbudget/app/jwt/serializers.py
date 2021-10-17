@@ -5,8 +5,7 @@ from django.contrib.auth.models import AnonymousUser
 from rest_framework_simplejwt import serializers
 from rest_framework_simplejwt.settings import api_settings
 
-from greenbudget.app.authentication.exceptions import (
-    EmailNotVerified, AccountDisabledError)
+from greenbudget.app.authentication.backends import check_user_permissions
 
 from .exceptions import (
     InvalidToken, ExpiredToken, TokenExpiredError, TokenInvalidError,
@@ -61,10 +60,16 @@ def get_user_from_token(token, token_cls=None, strict=False):
 
 
 class TokenRefreshSerializer(serializers.TokenRefreshSlidingSerializer):
-    token_cls = GreenbudgetSlidingToken
 
     def __init__(self, *args, **kwargs):
+        default_token_cls = getattr(self, 'token_cls', GreenbudgetSlidingToken)
+        self.token_cls = kwargs.pop('token_cls', default_token_cls)
+
         self.force_logout = kwargs.pop('force_logout', None)
+
+        default_exclude_permissions = getattr(self, 'exclude_permissions', [])
+        self.exclude_permissions = kwargs.pop(
+            'exclude_permissions', default_exclude_permissions)
         super().__init__(*args, **kwargs)
 
     def validate(self, attrs):
@@ -86,26 +91,15 @@ class TokenRefreshSerializer(serializers.TokenRefreshSlidingSerializer):
                 user_id=getattr(e, 'user_id', None),
                 force_logout=self.force_logout
             ) from e
+        check_user_permissions(
+            user=user,
+            exclude_permissions=self.exclude_permissions,
+            raise_exception=True,
+            force_logout=self.force_logout
+        )
         return user, token_obj
 
 
 class EmailTokenRefreshSerializer(TokenRefreshSerializer):
     token_cls = GreenbudgetEmailVerificationSlidingToken
-
-    def validate(self, attrs):
-        user, token_obj = super().validate(attrs)
-        if not user.is_active:
-            raise AccountDisabledError(
-                user_id=user.id, force_logout=self.force_logout)
-        return user, token_obj
-
-
-class UserTokenRefreshSerializer(EmailTokenRefreshSerializer):
-    token_cls = GreenbudgetSlidingToken
-
-    def validate(self, attrs):
-        user, token_obj = super().validate(attrs)
-        if not user.is_verified:
-            raise EmailNotVerified(
-                user_id=user.id, force_logout=self.force_logout)
-        return user, token_obj
+    exclude_permissions = ['verified']

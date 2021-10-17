@@ -279,8 +279,14 @@ def exception_handler(exc, context):
         # JWT middleware.
         force_logout = getattr(exc, 'force_logout', None)
         user_id = getattr(exc, 'user_id', None)
-
         data = map_details(**kwargs)
+
+        # If the Exception was raised for a view that is authenticated, we
+        # need to tell the JWT middleware to force logout the user.
+        # view = context['view']
+        # user = context['request'].user
+        # if user.is_authenticated and len(view.authentication_classes) != 0:
+        #     force_logout = True
 
     elif isinstance(exc.detail, dict):
         error_type = getattr(exc, 'error_type', 'field')

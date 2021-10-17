@@ -8,7 +8,7 @@ from rest_framework import serializers, exceptions
 
 from greenbudget.lib.drf.exceptions import InvalidFieldError
 
-from .auth_backends import validate_if_user_can_log_in
+from .backends import check_user_permissions
 from .models import ResetUID
 from .utils import validate_password
 
@@ -18,7 +18,8 @@ class SocialLoginSerializer(serializers.Serializer):
     provider = serializers.ChoiceField(choices=["google"])
 
     def validate(self, attrs):
-        return authenticate(self.context['request'], **attrs)
+        user = authenticate(self.context['request'], **attrs)
+        return {"user": user}
 
 
 class LoginSerializer(serializers.Serializer):
@@ -26,7 +27,8 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(style={'input_type': 'password'})
 
     def validate(self, attrs):
-        return authenticate(self.context['request'], **attrs)
+        user = authenticate(self.context['request'], **attrs)
+        return {"user": user}
 
 
 class ResetPasswordSerializer(serializers.ModelSerializer):
@@ -65,7 +67,7 @@ class ResetPasswordSerializer(serializers.ModelSerializer):
             raise exceptions.ValidationError("Token was already used.")
         if token.created_at < expiry_time:
             raise exceptions.ValidationError("Token has expired.")
-        validate_if_user_can_log_in(token.user)
+        check_user_permissions(token.user, raise_exception=True)
         return token
 
     def create(self, validated_data):
