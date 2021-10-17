@@ -18,10 +18,8 @@ urlpatterns = [
     path('reset-password/', ResetPasswordView.as_view()),
     path('forgot-password/', ForgotPasswordView.as_view()),
     path('social-login/', csrf_exempt(SocialLoginView.as_view())),
-    path('verify-email/', csrf_exempt(EmailVerificationView.as_view({
-        'post': 'create',
-    }))),
+    path('verify-email/', csrf_exempt(EmailVerificationView.as_view())),
     path('send-verification-email/', csrf_exempt(
-        SendEmailVerificationView.as_view({'post': 'create'})
+        SendEmailVerificationView.as_view()
     )),
 ]

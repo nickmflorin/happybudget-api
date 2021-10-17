@@ -1,14 +1,12 @@
 from ratelimit.decorators import ratelimit
 
 from django.conf import settings
-from django.contrib.auth import logout, login as django_login
+from django.contrib.auth import logout
 from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.debug import sensitive_post_parameters
 
-from rest_framework import (
-    views, response, generics, status, mixins, viewsets, permissions)
-from rest_framework.permissions import AllowAny
+from rest_framework import views, response, generics, status, permissions
 from greenbudget.app.authentication.exceptions import AccountDisabledError
 
 from greenbudget.lib.drf.exceptions import (
@@ -55,7 +53,7 @@ class TokenValidateView(views.APIView):
 
 class LogoutView(views.APIView):
     authentication_classes = []
-    permission_classes = (AllowAny,)
+    permission_classes = (permissions.AllowAny,)
 
     def post(self, request, *args, **kwargs):
         logout(request)
@@ -67,9 +65,12 @@ class LogoutView(views.APIView):
         return resp
 
 
-class AbstractLoginView(generics.GenericAPIView):
+class AbstractUnauthenticatedView(generics.GenericAPIView):
     authentication_classes = []
-    permission_classes = (AllowAny, )
+    permission_classes = (permissions.AllowAny, )
+
+    def get_response_data(self, data):
+        return {}
 
     # @ratelimit(key='user_or_ip', rate='3/s')  -> Needs to be fixed
     def post(self, request, *args, **kwargs):
@@ -82,18 +83,20 @@ class AbstractLoginView(generics.GenericAPIView):
             context={'request': request}
         )
         serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data['user']
-
-        django_login(request, user)
-
-        resp = response.Response(
-            UserSerializer(user).data,
+        data = serializer.save()
+        return response.Response(
+            self.get_response_data(data),
             status=status.HTTP_201_CREATED
         )
+
+
+class AbstractLoginView(AbstractUnauthenticatedView):
+    def get_response_data(self, user):
+        data = UserSerializer(user).data
         if user.is_first_time is True:
             user.is_first_time = False
-            user.save()
-        return resp
+            user.save(update_fields=['is_first_time'])
+        return data
 
 
 class SocialLoginView(AbstractLoginView):
@@ -112,44 +115,16 @@ class LoginView(AbstractLoginView):
         return super(LoginView, self).dispatch(request, *args, **kwargs)
 
 
-class EmailVerificationView(
-        mixins.UpdateModelMixin, viewsets.GenericViewSet):
-    authentication_classes = []
-    permission_classes = (permissions.AllowAny, )
+class EmailVerificationView(AbstractUnauthenticatedView):
     serializer_class = EmailVerificationSerializer
 
     @sensitive_post_parameters_m('token')
     def dispatch(self, request, *args, **kwargs):
         return super().dispatch(request, *args, **kwargs)
 
-    # @ratelimit(key='user_or_ip', rate='3/s')  -> Needs to be fixed
-    def create(self, request, *args, **kwargs):
-        was_limited = getattr(request, 'limited', False)
-        if was_limited:
-            raise RateLimitedError()
 
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return response.Response({}, status=status.HTTP_201_CREATED)
-
-
-class SendEmailVerificationView(
-        mixins.UpdateModelMixin, viewsets.GenericViewSet):
-    authentication_classes = []
-    permission_classes = (permissions.AllowAny, )
+class SendEmailVerificationView(AbstractUnauthenticatedView):
     serializer_class = SendEmailVerificationSerializer
-
-    # @ratelimit(key='user_or_ip', rate='3/s')  -> Needs to be fixed
-    def create(self, request, *args, **kwargs):
-        was_limited = getattr(request, 'limited', False)
-        if was_limited:
-            raise RateLimitedError()
-
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return response.Response({}, status=status.HTTP_201_CREATED)
 
 
 class ResetPasswordView(generics.GenericAPIView):

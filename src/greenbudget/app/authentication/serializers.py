@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from django.conf import settings
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, login as django_login
 from django.utils import timezone
 
 from rest_framework_simplejwt.serializers import TokenRefreshSlidingSerializer
@@ -65,22 +65,24 @@ class EmailTokenRefreshSerializer(TokenRefreshSerializer):
     exclude_permissions = ['verified']
 
 
-class SocialLoginSerializer(serializers.Serializer):
+class AbstractLoginSerializer(serializers.Serializer):
+    def validate(self, attrs):
+        user = authenticate(self.context['request'], **attrs)
+        return {"user": user}
+
+    def create(self, validated_data):
+        django_login(self.context['request'], validated_data['user'])
+        return validated_data['user']
+
+
+class SocialLoginSerializer(AbstractLoginSerializer):
     token_id = serializers.CharField()
     provider = serializers.ChoiceField(choices=["google"])
 
-    def validate(self, attrs):
-        user = authenticate(self.context['request'], **attrs)
-        return {"user": user}
 
-
-class LoginSerializer(serializers.Serializer):
+class LoginSerializer(AbstractLoginSerializer):
     email = serializers.EmailField(required=True, allow_blank=False)
     password = serializers.CharField(style={'input_type': 'password'})
-
-    def validate(self, attrs):
-        user = authenticate(self.context['request'], **attrs)
-        return {"user": user}
 
 
 class EmailVerificationSerializer(EmailTokenRefreshSerializer):
