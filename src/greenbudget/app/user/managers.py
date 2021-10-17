@@ -2,7 +2,7 @@ from django.contrib.auth.models import UserManager as DjangoUserManager
 from django.db import models
 
 from greenbudget.app.authentication.exceptions import InvalidSocialToken
-from .utils import get_google_user_from_token
+from greenbudget.app.authentication.utils import get_google_user_from_token
 
 
 class UserQuerier(object):

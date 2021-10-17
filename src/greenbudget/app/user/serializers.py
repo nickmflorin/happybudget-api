@@ -7,7 +7,8 @@ from greenbudget.lib.drf.serializers import (
     ModelSerializer)
 
 from greenbudget.app.authentication.utils import validate_password
-from greenbudget.app.jwt.serializers import EmailTokenRefreshSerializer
+from greenbudget.app.authentication.serializers import (
+    EmailTokenRefreshSerializer)
 
 from .models import User
 

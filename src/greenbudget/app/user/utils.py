@@ -1,7 +1,3 @@
-import collections
-import logging
-import requests
-
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
@@ -10,16 +6,6 @@ from django.utils import timezone
 
 from greenbudget.lib.django_utils.storages import get_image_filename
 from greenbudget.lib.utils.urls import add_query_params_to_url
-
-from greenbudget.app.authentication.exceptions import (
-    InvalidSocialToken, InvalidSocialProvider)
-
-
-logger = logging.getLogger('greenbudget')
-
-
-SocialUser = collections.namedtuple(
-    'SocialUser', ['first_name', 'last_name', 'email'])
 
 
 def user_image_directory(user):
@@ -42,34 +28,6 @@ def upload_user_image_to(user, filename, directory=None, new_filename=None):
     if directory is not None:
         return f'{user_image_directory(user)}/{directory}/{filename}'
     return f'{user_image_directory(user)}/{filename}'
-
-
-def get_google_user_from_token(token):
-    url = add_query_params_to_url(settings.GOOGLE_OAUTH_API_URL, id_token=token)
-    try:
-        response = requests.get(url)
-    except requests.RequestException as e:
-        logger.error("Network Error Validating Google Token: %s" % e)
-        raise InvalidSocialToken()
-    else:
-        try:
-            response.raise_for_status()
-        except requests.exceptions.HTTPError as e:
-            logger.error("HTTP Error Validating Google Token: %s" % e)
-            raise InvalidSocialToken()
-        else:
-            data = response.json()
-            return SocialUser(
-                first_name=data['given_name'],
-                last_name=data['family_name'],
-                email=data['email']
-            )
-
-
-def get_user_from_social_token(token, provider):
-    if provider != "google":
-        raise InvalidSocialProvider()
-    return get_google_user_from_token(token)
 
 
 def send_forgot_password_email(user, token):

@@ -9,18 +9,19 @@ from django.http import HttpResponse
 from django.utils.http import http_date
 from django.urls import reverse
 
-from greenbudget.app.jwt.tokens import GreenbudgetSlidingToken
-import greenbudget.app.jwt.middleware
-from greenbudget.app.jwt.exceptions import (
+from greenbudget.app.authentication.tokens import AuthSlidingToken
+import greenbudget.app.authentication.middleware
+from greenbudget.app.authentication.exceptions import (
     TokenInvalidError, TokenExpiredError, ExpiredToken, InvalidToken)
-from greenbudget.app.jwt.middleware import (
+from greenbudget.app.authentication.middleware import (
     TokenCookieMiddleware, get_cookie_user)
 
 
 @pytest.fixture
 def middleware_patch():
     def mock_patch(attr, **kwargs):
-        return mock.patch.object(greenbudget.app.jwt.middleware, attr, **kwargs)
+        return mock.patch.object(
+            greenbudget.app.authentication.middleware, attr, **kwargs)
     return mock_patch
 
 
@@ -88,7 +89,7 @@ def test_get_cookie_user_passes_cookie_args(settings, middleware_patch, rf):
 
 @pytest.mark.freeze_time('2021-01-01')
 def test_process_response_sets_cookies(settings, rf, user):
-    token = GreenbudgetSlidingToken.for_user(user)
+    token = AuthSlidingToken.for_user(user)
 
     expire_date = datetime.now() + \
         settings.SIMPLE_JWT['SLIDING_TOKEN_REFRESH_LIFETIME']
@@ -99,7 +100,7 @@ def test_process_response_sets_cookies(settings, rf, user):
     response = HttpResponse()
     middleware = TokenCookieMiddleware()
 
-    with mock.patch.object(GreenbudgetSlidingToken, 'for_user',
+    with mock.patch.object(AuthSlidingToken, 'for_user',
             return_value=token) as mock_for_user:
         response = middleware.process_response(request, response)
         jwt_cookie = response.cookies[settings.JWT_TOKEN_COOKIE_NAME]
@@ -111,7 +112,7 @@ def test_process_response_sets_cookies(settings, rf, user):
 
 
 def test_middleware_corrupted_token_deletes_cookies(settings, rf, user):
-    token = GreenbudgetSlidingToken.for_user(user)
+    token = AuthSlidingToken.for_user(user)
     token.set_exp(claim='refresh_exp')
     user.delete()
 
@@ -131,7 +132,7 @@ def test_middleware_corrupted_token_deletes_cookies(settings, rf, user):
 
 @pytest.mark.freeze_time('2021-01-01')
 def test_middleware_expired_token_deletes_cookies(settings, rf, user):
-    token = GreenbudgetSlidingToken.for_user(user)
+    token = AuthSlidingToken.for_user(user)
     token.set_exp(claim='refresh_exp', from_time=datetime(2010, 1, 1))
 
     middleware = TokenCookieMiddleware()
@@ -168,7 +169,7 @@ def test_middleware_doesnt_update_cookie_for_read_only_methods(
         method, middleware_patch, user, settings, rf):
     middleware = TokenCookieMiddleware()
     rf.cookies = SimpleCookie({
-        settings.JWT_TOKEN_COOKIE_NAME: GreenbudgetSlidingToken.for_user(user),
+        settings.JWT_TOKEN_COOKIE_NAME: AuthSlidingToken.for_user(user),
     })
     request = getattr(rf, method)('/')
     response = HttpResponse()
@@ -184,7 +185,7 @@ def test_middleware_updates_cookie_for_write_methods(
         method, middleware_patch, user, settings, rf):
     middleware = TokenCookieMiddleware()
     rf.cookies = SimpleCookie({
-        settings.JWT_TOKEN_COOKIE_NAME: GreenbudgetSlidingToken.for_user(user),
+        settings.JWT_TOKEN_COOKIE_NAME: AuthSlidingToken.for_user(user),
     })
     request = getattr(rf, method)('/')
     response = HttpResponse()
@@ -200,9 +201,9 @@ def test_middleware_updates_cookie_at_refresh_endpoint(
         middleware_patch, user, settings, rf):
     middleware = TokenCookieMiddleware()
     rf.cookies = SimpleCookie({
-        settings.JWT_TOKEN_COOKIE_NAME: GreenbudgetSlidingToken.for_user(user),
+        settings.JWT_TOKEN_COOKIE_NAME: AuthSlidingToken.for_user(user),
     })
-    request = rf.get(reverse('jwt:refresh'))
+    request = rf.get(reverse('authentication:refresh'))
     response = HttpResponse()
     with mock.patch.object(response, 'set_cookie') as set_cookie:
         with middleware_patch('get_cookie_user', return_value=user):

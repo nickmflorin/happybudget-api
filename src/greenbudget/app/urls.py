@@ -14,6 +14,5 @@ urlpatterns = [
     path('pdf/', include('greenbudget.app.pdf.urls')),
     path('subaccounts/', include('greenbudget.app.subaccount.urls')),
     path('templates/', include('greenbudget.app.template.urls')),
-    path('jwt/', include('greenbudget.app.jwt.urls')),
     path('users/', include('greenbudget.app.user.urls')),
 ]

@@ -3,27 +3,54 @@ from ratelimit.decorators import ratelimit
 from django.conf import settings
 from django.contrib.auth import logout, login as django_login
 from django.utils.decorators import method_decorator
+from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.debug import sensitive_post_parameters
 
-from rest_framework import views, response, generics, status
+from rest_framework import (
+    views, response, generics, status, mixins, viewsets, permissions)
 from rest_framework.permissions import AllowAny
 from greenbudget.app.authentication.exceptions import AccountDisabledError
 
 from greenbudget.lib.drf.exceptions import (
     RequiredFieldError, InvalidFieldError)
 from greenbudget.app.authentication.exceptions import RateLimitedError
-from greenbudget.app.jwt.middleware import TokenCookieMiddleware
 from greenbudget.app.user.models import User
 from greenbudget.app.user.serializers import UserSerializer
 from greenbudget.app.user.utils import send_forgot_password_email
 
+from .backends import CsrfExcemptCookieSessionAuthentication
+from .middleware import TokenCookieMiddleware
 from .models import ResetUID
 from .serializers import (
-    LoginSerializer, SocialLoginSerializer, ResetPasswordSerializer)
+    LoginSerializer, SocialLoginSerializer, ResetPasswordSerializer,
+    SendEmailVerificationSerializer, EmailVerificationSerializer,
+    TokenRefreshSerializer)
+from .utils import parse_token_from_request
 
 
 def sensitive_post_parameters_m(*args):
     return method_decorator(sensitive_post_parameters(*args))
+
+
+class TokenRefreshView(views.APIView):
+    authentication_classes = (CsrfExcemptCookieSessionAuthentication, )
+
+    def get(self, request, *args, **kwargs):
+        return response.Response({
+            "detail": _("Successfully refreshed token."),
+        }, status=status.HTTP_200_OK)
+
+
+class TokenValidateView(views.APIView):
+    authentication_classes = (CsrfExcemptCookieSessionAuthentication, )
+
+    def post(self, request, *args, **kwargs):
+        token = parse_token_from_request(request)
+        serializer = TokenRefreshSerializer(force_logout=True)
+        user, _ = serializer.validate({"token": token})
+        return response.Response({
+            'user': UserSerializer(user).data,
+        }, status=status.HTTP_201_CREATED)
 
 
 class LogoutView(views.APIView):
@@ -83,6 +110,46 @@ class LoginView(AbstractLoginView):
     @sensitive_post_parameters_m('password')
     def dispatch(self, request, *args, **kwargs):
         return super(LoginView, self).dispatch(request, *args, **kwargs)
+
+
+class EmailVerificationView(
+        mixins.UpdateModelMixin, viewsets.GenericViewSet):
+    authentication_classes = []
+    permission_classes = (permissions.AllowAny, )
+    serializer_class = EmailVerificationSerializer
+
+    @sensitive_post_parameters_m('token')
+    def dispatch(self, request, *args, **kwargs):
+        return super().dispatch(request, *args, **kwargs)
+
+    # @ratelimit(key='user_or_ip', rate='3/s')  -> Needs to be fixed
+    def create(self, request, *args, **kwargs):
+        was_limited = getattr(request, 'limited', False)
+        if was_limited:
+            raise RateLimitedError()
+
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return response.Response({}, status=status.HTTP_201_CREATED)
+
+
+class SendEmailVerificationView(
+        mixins.UpdateModelMixin, viewsets.GenericViewSet):
+    authentication_classes = []
+    permission_classes = (permissions.AllowAny, )
+    serializer_class = SendEmailVerificationSerializer
+
+    # @ratelimit(key='user_or_ip', rate='3/s')  -> Needs to be fixed
+    def create(self, request, *args, **kwargs):
+        was_limited = getattr(request, 'limited', False)
+        if was_limited:
+            raise RateLimitedError()
+
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return response.Response({}, status=status.HTTP_201_CREATED)
 
 
 class ResetPasswordView(generics.GenericAPIView):

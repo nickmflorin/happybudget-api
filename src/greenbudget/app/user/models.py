@@ -5,8 +5,10 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
+from greenbudget.app.authentication.utils import get_user_from_social_token
+
 from .managers import UserManager
-from .utils import get_user_from_social_token, upload_user_image_to
+from .utils import upload_user_image_to
 
 
 def upload_to(instance, filename):

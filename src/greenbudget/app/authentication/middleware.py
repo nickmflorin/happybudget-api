@@ -10,10 +10,10 @@ from django.utils.http import http_date
 from rest_framework_simplejwt.settings import api_settings
 from rest_framework_simplejwt.exceptions import TokenError
 
-from .tokens import GreenbudgetSlidingToken
+from .tokens import AuthSlidingToken
 from .exceptions import (
     ExpiredToken, InvalidToken, TokenExpiredError, TokenCorruptedError)
-from .serializers import get_user_from_token, parse_token_from_request
+from .utils import get_user_from_token, parse_token_from_request
 
 
 logger = logging.getLogger('backend')
@@ -105,8 +105,8 @@ class TokenCookieMiddleware(MiddlewareMixin):
         (4) The :obj:`Request` pertains to a request to validate the JWT token.
         """
         is_missing_jwt = settings.JWT_TOKEN_COOKIE_NAME not in request.COOKIES
-        is_refresh_url = request.path == reverse('jwt:refresh')
-        is_validate_url = request.path == reverse('jwt:validate')
+        is_refresh_url = request.path == reverse('authentication:refresh')
+        is_validate_url = request.path == reverse('authentication:validate')
 
         is_write_method = request.method not in ('GET', 'HEAD', 'OPTIONS')
         is_admin = '/admin/' in request.path
@@ -120,7 +120,7 @@ class TokenCookieMiddleware(MiddlewareMixin):
         the `should_persist_cookie` method indicate that it should be persisted.
         """
         if self.should_persist_cookie(request):
-            token = GreenbudgetSlidingToken.for_user(request.cookie_user)
+            token = AuthSlidingToken.for_user(request.cookie_user)
             expires = http_date(
                 token[api_settings.SLIDING_TOKEN_REFRESH_EXP_CLAIM])
             response.set_cookie(

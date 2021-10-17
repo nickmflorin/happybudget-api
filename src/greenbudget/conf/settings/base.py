@@ -80,6 +80,7 @@ ALLOWED_HOSTS = [
     'gb-lb-1485149386.us-east-2.elb.amazonaws.com',  # Load Balancer
 ]
 
+FORGOT_PASSWORD_JWT_EXPIRY = datetime.timedelta(minutes=15)
 EMAIL_VERIFICATION_JWT_EXPIRY = datetime.timedelta(hours=1)
 AUTH_JWT_EXPIRY = datetime.timedelta(days=3)
 
@@ -89,7 +90,7 @@ JWT_TOKEN_COOKIE_NAME = 'greenbudgetjwt'
 JWT_COOKIE_DOMAIN = ".greenbudget.io"
 SIMPLE_JWT = {
     'AUTH_TOKEN_CLASSES': (
-        'greenbudget.app.jwt.tokens.GreenbudgetSlidingToken',),
+        'greenbudget.app.authentication.tokens.AuthSlidingToken',),
     'SLIDING_TOKEN_LIFETIME': datetime.timedelta(minutes=5),
     'SLIDING_TOKEN_REFRESH_LIFETIME': AUTH_JWT_EXPIRY,
     # We can use the SECRET_KEY temporarily, but it is not as secure as using
@@ -159,7 +160,6 @@ INSTALLED_APPS = [
     'greenbudget.app.tagging',
     'greenbudget.app.template',
     'greenbudget.app.user',
-    'greenbudget.app.jwt'
 ]
 
 AUTHENTICATION_BACKENDS = [
@@ -171,7 +171,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'greenbudget.app.jwt.middleware.TokenCookieMiddleware',
+    'greenbudget.app.authentication.middleware.TokenCookieMiddleware',
     'greenbudget.app.signals.middleware.ModelSignalMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
