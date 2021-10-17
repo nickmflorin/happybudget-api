@@ -267,3 +267,229 @@ dependencies to allow additional dependencies to be included for local developme
 that we do not want to add in a production environment. By default, when
 running `poetry install` it will include the development dependencies. In production,
 we use `poetry install --no-dev` so that development dependencies are not included.
+
+## Setting Up on EC2 Instance
+
+The setup instructions in this section describe the steps required to setup and run the
+API on a Linux EC2 AWS instance.  If a machine other than Linux is chosen, these steps
+will differ.
+
+These instructions do not detail how to setup the EC2 instance in AWS, but rather detail
+how to setup the API on an EC2 instance assuming it has already been creeated.
+
+Currently, we run EC2 instances for two separate environments:
+
+(1) `develop`: URL = `devapi.greenbudget.io`, `DJANGO_SETTINGS_MODULE` = `greenbudget.conf.settings.dev`
+(2) `prod`: URL = `api.greenbudget.io`, `DJANGO_SETTINGS_MODULE` = `greenbudget.conf.settings.prod`
+
+#### Step 1: Installing Git
+
+After SSH'ing into the EC2 instance, we first need to install `git` on the machine. To install `git`
+on the EC2 instance, simply run:
+
+```bash
+$ sudo yum update
+$ sudo yum install git -y
+```
+
+We then need to create the SSH keys for `git` that will authenticate the machine for SSH requests
+to `git`.
+
+```bash
+$ ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
+```
+
+A passphrase is not required for the SSH key, and the key should be saved in it's default location
+which is usually `~/.ssh/id_rsa`.
+
+We then need to modify the SSH configuration to automatically include this SSH key.  To do this,
+edit the `~/.ssh/config` file as follows:
+
+```bash
+$ sudo nano ~/.ssh/config
+```
+
+```
+Host *
+  AddKeysToAgent yes
+  IdentityFile ~/.ssh/id_rsa
+```
+
+This assumes that your SSH key was created in `~/.ssh/id_rsa`.
+
+Finally, we just need to start the `ssh-agent` in the background and add the newly created identity:
+
+```bash
+$ eval "$(ssh-agent -s)"
+$ ssh-add ~/.ssh/id_rsa
+```
+
+In order for `git` to allow SSH access to the machine, we now need to add that SSH key to `git`.  To do this,
+login to your GitHub account (or an organization GitHub account that has access to the repository) and go to
+the Settings page.  Under "SSH and GPG Keys", click "Add SSH Key".  Read the public key content on the machine
+and copy and paste it into the GitHub field:
+
+```bash
+tail ~/.ssh/id_rsa.pub
+```
+
+#### Step 2: Installing Docker
+
+We now need to install `docker` and `docker-compose` on the machine.  To install `docker`, run the following
+command:
+
+```bash
+$ sudo amazon-linux-extras install docker
+```
+
+Once `docker` is installed, we need to start the `docker` service and add the `ec2-user` to the `docker` group
+so we can execute `docker` commands without using `sudo`:
+
+```bash
+$ sudo service docker start
+$ sudo usermod -a -G docker ec2-user
+```
+
+Logout from the EC2 instance and then SSH back in.  Verify that you can run `docker` commands without `sudo`:
+
+```bash
+$ docker info
+```
+
+Finally, we simply need to install `docker-compose`:
+
+```bash
+$ sudo curl -L https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+```
+
+#### Step 3: Clone Repository
+
+After SSH'ing into the instance, we need to clone the `git` repository.  Make a top level directory `www` with the correct permissions
+and clone the repository into that directory:
+
+```bash
+$ sudo mkdir www
+$ sudo chmod 777 www
+$ chmod go-w ~/.ssh/config
+$ cd ./www
+$ git clone git@github.com:Saturation-IO/greenbudget-api.git
+$ cd ./greenbudget-api
+```
+
+We need to create a `.env` file to hold the sensitive keys required to run the API.  You should talk to a team member to get
+these key values before proceeding.  The `.env` file should look as follows:
+
+```
+DJANGO_SECRET_KEY=<DJANGO_SECRET_KEY>
+DJANGO_SETTINGS_MODULE=<DJANGO_SETTINGS_MODULE>
+
+DATABASE_NAME=<RDS_DATABASE_NAME>
+DATABASE_USER=<RDS_DATABASE_USER>
+DATABASE_PASSWORD=<RDS_DATABASE_PASSWORD>
+DATABASE_HOST=<RDS_DATABASE_HOST>
+DATABASE_PORT=5432
+
+AWS_STORAGE_BUCKET_NAME=<AWS_STORAGE_BUCKET_NAME>
+AWS_STORAGE_BUCKET_URL=<AWS_STORAGE_BUCKET_URL>
+AWS_S3_REGION_NAME=<AWS_S3_REGION_NAME>
+AWS_SECRET_ACCESS_KEY=<AWS_SECRET_ACCESS_KEY >
+AWS_ACCESS_KEY_ID=<AWS_ACCESS_KEY_ID>
+```
+
+Note that `DJANGO_SETTINGS_MODULE` will be set based on the environment of the EC2 instance.
+
+#### Step 4: Configuring Apache
+
+On the EC2 instance, we need to use Apache as a proxy to route requests on port `80` to requests
+on port `8000` where the application is running.  Requests are mapped to port `80` via the load balancer
+in AWS, which will route requests on port `443` (for HTTPS) to port `80`.
+
+First, we need to install `httpd`:
+
+```bash
+$ sudo yum install httpd
+```
+
+Next, we just need to edit the Apache configuration to route requests as described above:
+
+```bash
+$ cd /etc/httpd
+$ touch vhosts.conf
+$ sudo nano vhosts.conf
+```
+
+Add the following content to `vhosts.conf`:
+
+```
+<VirtualHost *:80>
+  ProxyPreserveHost On
+  ProxyRequests Off
+  ServerName viska.localhost
+  ProxyPass / http://localhost:8000/
+  ProxyPassReverse / http://localhost:8000/
+
+  Timeout 3600
+  ProxyTimeout 3600
+  ProxyBadHeader Ignore
+
+  ErrorLog "/var/log/httpd/gb-error_log"
+  CustomLog "/var/log/httpd/gb-access_log" common
+
+</VirtualHost>
+```
+
+Finally, run the `httpd` service in the background:
+
+```
+$ sudo service httpd start
+```
+
+#### Step 5: Running the Application
+
+When running the application, the `docker-compose` configuration file we use depends on the environment.  In the
+`prod` environment, the configuration file is simply `docker-compose.yml` - which is the default.  However, in
+the `dev` environment, we need to specify the configuration file as `docker-compose.dev.yml`.  For this reason, the
+directions to start the application in each environment differ slightly.
+
+##### Prod Environment
+
+Check your `.env` file and make sure that `DJANGO_SETTINGS_MODULE=greenbudget.conf.settings.prod`.  Then, check out the
+`master` branch:
+
+```bash
+$ git fetch origin master
+$ git checkout master
+$ git pull
+```
+
+Then, we simply need to build the container and bring it up and then run `Django` management commands _when applicable_.
+
+```bash
+$ docker-compose up -d --build
+$ docker-compose exec web python manage.py migrate
+$ docker-compose exec web python manage.py collectstatic
+$ docker-compose exec web python manage.py loadfixtures
+$ docker-compose exec web python manage.py createsuperuser
+```
+
+##### Dev Environment
+
+Check your `.env` file and make sure that `DJANGO_SETTINGS_MODULE=greenbudget.conf.settings.dev`.  Then, check out the
+`develop` branch:
+
+```bash
+$ git fetch origin develop
+$ git checkout develop
+$ git pull
+```
+
+Then, we simply need to build the container and bring it up and then run `Django` management commands _when applicable_.
+
+```bash
+$ docker-compose -f docker-compose.dev.yml up -d --build
+$ docker-compose -f docker-compose.dev.yml exec web python manage.py migrate
+$ docker-compose -f docker-compose.dev.yml exec web python manage.py collectstatic
+$ docker-compose -f docker-compose.dev.yml exec web python manage.py loadfixtures
+$ docker-compose -f docker-compose.dev.yml exec web python manage.py createsuperuser
+```
