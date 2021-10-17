@@ -5,7 +5,9 @@ from .views import (
     LoginView, LogoutView, ResetPasswordView, ForgotPasswordView,
     SocialLoginView)
 
+
 app_name = "authentication"
+
 
 urlpatterns = [
     path('login/', csrf_exempt(LoginView.as_view()), name='login'),
