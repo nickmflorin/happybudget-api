@@ -54,6 +54,18 @@ class UserEmailVerificationSerializer(EmailTokenRefreshSerializer):
         return validated_data["user"]
 
 
+class SendUserEmailVerificationSerializer(serializers.Serializer):
+    user = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.filter(is_active=True, is_verified=False),
+        required=True,
+        allow_null=False
+    )
+
+    def create(self, validated_data):
+        # Here is where we will send the user verification email.
+        return validated_data['user']
+
+
 class UserRegistrationSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(
         required=True,

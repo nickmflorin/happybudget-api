@@ -109,6 +109,31 @@ def test_verify_email(api_client, user):
     assert user.is_verified
 
 
+def test_send_verification_email(api_client, user):
+    user.is_verified = False
+    user.save()
+    response = api_client.post("/v1/users/send-verification-email/", data={
+        "user": user.pk
+    })
+    assert response.status_code == 201
+
+
+def test_send_verification_email_verified_user(api_client, user):
+    response = api_client.post("/v1/users/send-verification-email/", data={
+        "user": user.pk
+    })
+    assert response.status_code == 400
+
+
+def test_send_verification_email_inactive_user(api_client, user):
+    user.is_active = False
+    user.save()
+    response = api_client.post("/v1/users/send-verification-email/", data={
+        "user": user.pk
+    })
+    assert response.status_code == 400
+
+
 @pytest.mark.freeze_time('2021-01-03')
 @override_settings(EMAIL_VERIFICATION_JWT_EXPIRY=datetime.timedelta(hours=24))
 def test_verify_email_expired_token(api_client, user):
