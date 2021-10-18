@@ -12,7 +12,7 @@ def validate_email_token(api_client, user):
     def inner():
         token = AccessToken.for_user(user)
         return api_client.post(
-            "/v1/auth/validate-email-confirmation-token/",
+            "/v1/auth/validate-email-verification-token/",
             data={"token": str(token)}
         )
     return inner
@@ -25,24 +25,22 @@ def test_validate_email_token(validate_email_token, unverified_user):
     unverified_user.refresh_from_db()
     assert unverified_user.is_verified
     assert response.json() == {
-        'user': {
-            'id': unverified_user.pk,
-            'first_name': unverified_user.first_name,
-            'last_name': unverified_user.last_name,
-            'full_name': unverified_user.full_name,
-            'email': unverified_user.email,
-            'is_active': unverified_user.is_active,
-            'is_admin': unverified_user.is_admin,
-            'is_superuser': unverified_user.is_superuser,
-            'is_staff': unverified_user.is_staff,
-            'date_joined': api_datetime_string(unverified_user.date_joined),
-            'updated_at': api_datetime_string(unverified_user.updated_at),
-            'created_at': api_datetime_string(unverified_user.created_at),
-            'last_login': None,
-            'timezone': str(unverified_user.timezone),
-            "profile_image": None,
-            "is_first_time": False
-        }
+        'id': unverified_user.pk,
+        'first_name': unverified_user.first_name,
+        'last_name': unverified_user.last_name,
+        'full_name': unverified_user.full_name,
+        'email': unverified_user.email,
+        'is_active': unverified_user.is_active,
+        'is_admin': unverified_user.is_admin,
+        'is_superuser': unverified_user.is_superuser,
+        'is_staff': unverified_user.is_staff,
+        'date_joined': api_datetime_string(unverified_user.date_joined),
+        'updated_at': api_datetime_string(unverified_user.updated_at),
+        'created_at': api_datetime_string(unverified_user.created_at),
+        'last_login': None,
+        'timezone': str(unverified_user.timezone),
+        "profile_image": None,
+        "is_first_time": False
     }
 
 
@@ -52,7 +50,7 @@ def test_verify_email_expired_token(api_client, unverified_user):
     token = AccessToken.for_user(unverified_user)
     token.set_exp(claim='exp', from_time=datetime(2021, 1, 1))
     response = api_client.post(
-        "/v1/auth/validate-email-confirmation-token/",
+        "/v1/auth/validate-email-verification-token/",
         data={"token": str(token)}
     )
     assert response.json() == {
@@ -93,7 +91,7 @@ def test_validate_email_token_user_logged_in(validate_email_token,
 
 
 def test_validate_email_token_missing_token(api_client):
-    response = api_client.post("/v1/auth/validate-email-confirmation-token/")
+    response = api_client.post("/v1/auth/validate-email-verification-token/")
     assert response.status_code == 403
     assert response.json() == {
         'errors': [{
@@ -106,7 +104,7 @@ def test_validate_email_token_missing_token(api_client):
 
 def test_validate_email_token_invalid_token(api_client):
     response = api_client.post(
-        "/v1/auth/validate-email-confirmation-token/",
+        "/v1/auth/validate-email-verification-token/",
         data={"token": "hoopla"}
     )
     assert response.status_code == 403
@@ -122,14 +120,14 @@ def test_validate_email_token_invalid_token(api_client):
 def test_send_verification_email(api_client, user):
     user.is_verified = False
     user.save()
-    response = api_client.post("/v1/auth/send-verification-email/", data={
+    response = api_client.post("/v1/auth/verify-email/", data={
         "user": user.pk
     })
     assert response.status_code == 201
 
 
 def test_send_verification_email_verified_user(api_client, user):
-    response = api_client.post("/v1/auth/send-verification-email/", data={
+    response = api_client.post("/v1/auth/verify-email/", data={
         "user": user.pk
     })
     assert response.status_code == 400
@@ -138,7 +136,7 @@ def test_send_verification_email_verified_user(api_client, user):
 def test_send_verification_email_inactive_user(api_client, user):
     user.is_active = False
     user.save()
-    response = api_client.post("/v1/auth/send-verification-email/", data={
+    response = api_client.post("/v1/auth/verify-email/", data={
         "user": user.pk
     })
     assert response.status_code == 400

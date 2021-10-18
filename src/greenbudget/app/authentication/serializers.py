@@ -108,19 +108,15 @@ class LoginSerializer(AbstractLoginSerializer):
     password = serializers.CharField(style={'input_type': 'password'})
 
 
-class ForgotPasswordSerializer(serializers.Serializer):
+class RecoverPasswordSerializer(serializers.Serializer):
     email = UserEmailField(required=True, allow_blank=False)
-
-    def validate(self, attrs):
-        attrs = super().validate(attrs)
-        return {"user": attrs['email']}
 
     def create(self, validated_data):
         # Here is where we will send the user password recovery email.
-        return validated_data["user"]
+        return validated_data["email"]
 
 
-class SendEmailVerificationSerializer(serializers.Serializer):
+class VerifyEmailSerializer(serializers.Serializer):
     user = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.filter(is_active=True, is_verified=False),
         required=True,
@@ -139,6 +135,10 @@ class ResetPasswordSerializer(AuthTokenSerializer):
         allow_null=False,
         validators=[validate_password]
     )
+
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        return {"user": data["user"], "password": attrs["password"]}
 
     def create(self, validated_data):
         validated_data["user"].set_password(validated_data["password"])

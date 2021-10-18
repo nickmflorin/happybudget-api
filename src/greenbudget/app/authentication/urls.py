@@ -6,8 +6,8 @@ from .permissions import IsAnonymous
 from .serializers import EmailTokenSerializer, ResetPasswordSerializer
 from .tokens import AccessToken
 from .views import (
-    LoginView, LogoutView, ForgotPasswordView, SocialLoginView,
-    SendEmailVerificationView, TokenRefreshView, TokenValidateView)
+    LoginView, LogoutView, RecoverPasswordView, SocialLoginView,
+    VerifyEmailView, TokenRefreshView, TokenValidateView)
 
 
 app_name = "authentication"
@@ -27,7 +27,7 @@ urlpatterns = [
         authentication_classes=(),
         token_cls=AccessToken
     )),
-    path('validate-email-confirmation-token/', TokenValidateView.as_view(
+    path('validate-email-verification-token/', TokenValidateView.as_view(
         serializer_class=EmailTokenSerializer,
         token_cls=AccessToken,
         token_location='request',
@@ -42,9 +42,7 @@ urlpatterns = [
         permission_classes=(IsAnonymous, ),
         authentication_classes=(),
     )),
-    path('send-forgot-password-email/', ForgotPasswordView.as_view()),
+    path('recover-password/', RecoverPasswordView.as_view()),
     path('social-login/', csrf_exempt(SocialLoginView.as_view())),
-    path('send-verification-email/', csrf_exempt(
-        SendEmailVerificationView.as_view()
-    )),
+    path('verify-email/', csrf_exempt(VerifyEmailView.as_view())),
 ]

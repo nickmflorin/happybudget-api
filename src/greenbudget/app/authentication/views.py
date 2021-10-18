@@ -15,8 +15,8 @@ from .backends import CsrfExcemptCookieSessionAuthentication
 from .middleware import TokenCookieMiddleware
 from .permissions import IsAnonymous
 from .serializers import (
-    LoginSerializer, SocialLoginSerializer, SendEmailVerificationSerializer,
-    AuthTokenSerializer, ForgotPasswordSerializer)
+    LoginSerializer, SocialLoginSerializer, VerifyEmailSerializer,
+    AuthTokenSerializer, RecoverPasswordSerializer)
 from .utils import parse_token_from_request
 
 
@@ -63,9 +63,10 @@ class TokenValidateView(views.APIView):
         serializer = self.serializer_class(**serializer_kwargs, data=attrs)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
-        return response.Response({
-            'user': UserSerializer(user).data,
-        }, status=status.HTTP_201_CREATED)
+        return response.Response(
+            UserSerializer(user).data,
+            status=status.HTTP_201_CREATED
+        )
 
 
 class LogoutView(views.APIView):
@@ -132,9 +133,9 @@ class LoginView(AbstractLoginView):
         return super(LoginView, self).dispatch(request, *args, **kwargs)
 
 
-class SendEmailVerificationView(AbstractUnauthenticatedView):
-    serializer_class = SendEmailVerificationSerializer
+class VerifyEmailView(AbstractUnauthenticatedView):
+    serializer_class = VerifyEmailSerializer
 
 
-class ForgotPasswordView(AbstractUnauthenticatedView):
-    serializer_class = ForgotPasswordSerializer
+class RecoverPasswordView(AbstractUnauthenticatedView):
+    serializer_class = RecoverPasswordSerializer

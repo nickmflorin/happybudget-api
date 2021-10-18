@@ -20,24 +20,22 @@ def test_validate_sliding_token(jwt_authenticated_client, validate_sliding_token
     assert settings.JWT_TOKEN_COOKIE_NAME in response.cookies
 
     assert response.json() == {
-        'user': {
-            'id': user.pk,
-            'first_name': user.first_name,
-            'last_name': user.last_name,
-            'full_name': user.full_name,
-            'email': user.email,
-            'is_active': user.is_active,
-            'is_admin': user.is_admin,
-            'is_superuser': user.is_superuser,
-            'is_staff': user.is_staff,
-            'date_joined': api_datetime_string(user.date_joined),
-            'updated_at': api_datetime_string(user.updated_at),
-            'created_at': api_datetime_string(user.created_at),
-            'last_login': '2020-01-01 00:00:00',
-            'timezone': str(user.timezone),
-            "profile_image": None,
-            "is_first_time": False
-        }
+        'id': user.pk,
+        'first_name': user.first_name,
+        'last_name': user.last_name,
+        'full_name': user.full_name,
+        'email': user.email,
+        'is_active': user.is_active,
+        'is_admin': user.is_admin,
+        'is_superuser': user.is_superuser,
+        'is_staff': user.is_staff,
+        'date_joined': api_datetime_string(user.date_joined),
+        'updated_at': api_datetime_string(user.updated_at),
+        'created_at': api_datetime_string(user.created_at),
+        'last_login': '2020-01-01 00:00:00',
+        'timezone': str(user.timezone),
+        "profile_image": None,
+        "is_first_time": False
     }
 
 
