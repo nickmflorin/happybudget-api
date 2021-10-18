@@ -21,7 +21,7 @@ urlpatterns = [
         force_logout=True,
         authentication_classes=(CsrfExcemptCookieSessionAuthentication, ),
     ), name='validate'),
-    path('validate-forgot-password-token/', TokenValidateView.as_view(
+    path('validate-password-recovery-token/', TokenValidateView.as_view(
         token_location='request',
         permission_classes=(IsAnonymous, ),
         authentication_classes=(),

@@ -12,7 +12,7 @@ def validate_password_token(api_client, user):
     def inner():
         token = AccessToken.for_user(user)
         return api_client.post(
-            "/v1/auth/validate-forgot-password-token/",
+            "/v1/auth/validate-password-recovery-token/",
             data={"token": str(token)}
         )
     return inner
@@ -52,7 +52,7 @@ def test_verify_email_expired_token(api_client, unverified_user):
     token = AccessToken.for_user(unverified_user)
     token.set_exp(claim='exp', from_time=datetime(2021, 1, 1))
     response = api_client.post(
-        "/v1/auth/validate-forgot-password-token/",
+        "/v1/auth/validate-password-recovery-token/",
         data={"token": str(token)}
     )
     assert response.json() == {
@@ -108,7 +108,7 @@ def test_validate_password_token_user_logged_in(validate_password_token,
 
 
 def test_validate_password_token_missing_token(api_client):
-    response = api_client.post("/v1/auth/validate-forgot-password-token/")
+    response = api_client.post("/v1/auth/validate-password-recovery-token/")
     assert response.status_code == 403
     assert response.json() == {
         'errors': [{
@@ -121,7 +121,7 @@ def test_validate_password_token_missing_token(api_client):
 
 def test_validate_password_token_invalid_token(api_client):
     response = api_client.post(
-        "/v1/auth/validate-forgot-password-token/",
+        "/v1/auth/validate-password-recovery-token/",
         data={"token": "hoopla"}
     )
     assert response.status_code == 403
