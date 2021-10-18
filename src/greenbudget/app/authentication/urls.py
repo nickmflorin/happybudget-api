@@ -42,7 +42,7 @@ urlpatterns = [
         permission_classes=(IsAnonymous, ),
         authentication_classes=(),
     )),
-    path('forgot-password/', ForgotPasswordView.as_view()),
+    path('send-forgot-password-email/', ForgotPasswordView.as_view()),
     path('social-login/', csrf_exempt(SocialLoginView.as_view())),
     path('send-verification-email/', csrf_exempt(
         SendEmailVerificationView.as_view()

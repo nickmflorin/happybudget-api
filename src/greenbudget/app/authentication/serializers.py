@@ -3,7 +3,6 @@ from django.contrib.auth import (
 
 from rest_framework import serializers, exceptions
 
-from greenbudget.lib.drf.exceptions import InvalidFieldError
 from greenbudget.app.user.models import User
 
 from .backends import check_user_permissions
@@ -140,19 +139,6 @@ class ResetPasswordSerializer(AuthTokenSerializer):
         allow_null=False,
         validators=[validate_password]
     )
-    confirm = serializers.CharField(
-        required=True,
-        allow_blank=False,
-        allow_null=False,
-        validators=[validate_password]
-    )
-
-    def validate(self, attrs):
-        user, _ = super().validate(attrs)
-        if attrs["confirm"] != attrs["password"]:
-            raise InvalidFieldError("confirm",
-                message="The passwords do not match.")
-        return {"user": user}
 
     def create(self, validated_data):
         validated_data["user"].set_password(validated_data["password"])
