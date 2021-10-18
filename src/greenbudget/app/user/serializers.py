@@ -7,8 +7,6 @@ from greenbudget.lib.drf.serializers import (
     ModelSerializer)
 
 from greenbudget.app.authentication.utils import validate_password
-from greenbudget.app.authentication.serializers import (
-    EmailTokenRefreshSerializer)
 
 from .models import User
 
@@ -40,31 +38,6 @@ class ChangePasswordSerializer(serializers.ModelSerializer):
         instance.set_password(validated_data['password'])
         instance.save()
         return instance
-
-
-class UserEmailVerificationSerializer(EmailTokenRefreshSerializer):
-    def validate(self, attrs):
-        user, _ = super().validate(attrs)
-        if user.is_verified:
-            raise exceptions.ValidationError("User is already verified.")
-        return {"user": user}
-
-    def create(self, validated_data):
-        validated_data["user"].is_verified = True
-        validated_data["user"].save()
-        return validated_data["user"]
-
-
-class SendUserEmailVerificationSerializer(serializers.Serializer):
-    user = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.filter(is_active=True, is_verified=False),
-        required=True,
-        allow_null=False
-    )
-
-    def create(self, validated_data):
-        # Here is where we will send the user verification email.
-        return validated_data['user']
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):

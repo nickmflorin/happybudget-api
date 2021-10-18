@@ -42,7 +42,6 @@ SECRET_KEY = config(
 
 # Email Configurations
 EMAIL_ENABLED = True
-FROM_EMAIL = 'support@nirvedacognition.ai'
 EMAIL_HOST = '.greenbudget.io'
 SMTP_EMAIL_PORT = 25
 
@@ -80,9 +79,14 @@ ALLOWED_HOSTS = [
     'gb-lb-1485149386.us-east-2.elb.amazonaws.com',  # Load Balancer
 ]
 
-FORGOT_PASSWORD_JWT_EXPIRY = datetime.timedelta(minutes=15)
-EMAIL_VERIFICATION_JWT_EXPIRY = datetime.timedelta(hours=1)
-AUTH_JWT_EXPIRY = datetime.timedelta(days=3)
+# We store these externally because rest_framework_simplejwt's reload settings
+# does not work properly, which means that when we override these values in
+# tests they do not properly update on the tokens.  Instead, we manually set
+# these values inside the tokens __init__ methods so they reflect any changes
+# to settings that may occur.
+ACCESS_TOKEN_LIFETIME = datetime.timedelta(minutes=15)
+SLIDING_TOKEN_REFRESH_LIFETIME = datetime.timedelta(days=3)
+SLIDING_TOKEN_LIFETIME = datetime.timedelta(minutes=5)
 
 # JWT Configuration
 JWT_COOKIE_SECURE = True
@@ -90,9 +94,10 @@ JWT_TOKEN_COOKIE_NAME = 'greenbudgetjwt'
 JWT_COOKIE_DOMAIN = ".greenbudget.io"
 SIMPLE_JWT = {
     'AUTH_TOKEN_CLASSES': (
-        'greenbudget.app.authentication.tokens.AuthSlidingToken',),
-    'SLIDING_TOKEN_LIFETIME': datetime.timedelta(minutes=5),
-    'SLIDING_TOKEN_REFRESH_LIFETIME': AUTH_JWT_EXPIRY,
+        'greenbudget.app.authentication.tokens.SlidingToken',),
+    'SLIDING_TOKEN_LIFETIME': SLIDING_TOKEN_LIFETIME,
+    'ACCESS_TOKEN_LIFETIME': ACCESS_TOKEN_LIFETIME,
+    'SLIDING_TOKEN_REFRESH_LIFETIME': SLIDING_TOKEN_REFRESH_LIFETIME,
     # We can use the SECRET_KEY temporarily, but it is not as secure as using
     # an RSA fingerprint in an ENV file.
     # 'SIGNING_KEY': SECRET_KEY,

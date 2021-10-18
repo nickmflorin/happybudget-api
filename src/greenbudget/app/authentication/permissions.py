@@ -1,6 +1,13 @@
 from rest_framework import permissions
 
 
+class IsAnonymous(permissions.BasePermission):
+    message = "User already has an active session."
+
+    def has_permission(self, request, view):
+        return request.user is None or not request.user.is_authenticated
+
+
 class AdminPermissionMixin:
     def has_admin_permission(self, request, view):
         admin_permission = permissions.IsAdminUser()

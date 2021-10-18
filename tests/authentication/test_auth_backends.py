@@ -62,7 +62,6 @@ def test_cookie_session_authenticate_successful(api_rf, user):
     backend = CookieSessionAuthentication()
     request = api_rf.get('/')
     request._request.cookie_user = user
-
     auth_user = backend.authenticate(request)
     assert isinstance(auth_user, tuple), "Authentication unsuccessful."
     assert auth_user[0].pk == user.pk

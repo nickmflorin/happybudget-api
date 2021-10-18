@@ -1,24 +1,53 @@
 from django.conf import settings
 
-from rest_framework_simplejwt.tokens import SlidingToken
-from rest_framework_simplejwt.utils import datetime_to_epoch
+from rest_framework_simplejwt.settings import api_settings
+from rest_framework_simplejwt.tokens import (
+    Token as BaseToken,
+    SlidingToken as BaseSlidingToken,
+    AccessToken as BaseAccessToken,
+    BlacklistMixin
+)
 
 
-class AuthSlidingToken(SlidingToken):
+class Token(BaseToken):
+    """
+    An extension of :obj:`rest_framework_simplejwt.tokens.Token` that sets
+    the lifetime values of the token dynamically based on Django's settings,
+    not rest_framework_simplejwt`s settings.
 
-    def set_exp(self, claim='exp', from_time=None, lifetime=None):
-        super().set_exp(claim, from_time, lifetime)
-        # Store the iat (issued-at time)
-        self.payload['iat'] = datetime_to_epoch(from_time or self.current_time)
+    This is required for tests and other situations where the settings
+    configuration for these tokens might change, because the
+    rest_framework_simplejwt package does not do an adequate job adjusting
+    the token lifetimes when the settings change (because the lifetimes
+    are defined as static attributes, not defined dynamically in the __init__
+    method).
+    """
+
+    def __init__(self, token=None, verify=True, lifetime=None):
+        self.lifetime = lifetime or getattr(self, 'lifetime', None)
+        super().__init__(token=token, verify=verify)
 
 
-class EmailVerificationSlidingToken(AuthSlidingToken):
-    def set_exp(self, *args, **kwargs):
-        kwargs['lifetime'] = settings.EMAIL_VERIFICATION_JWT_EXPIRY
-        super().set_exp(*args, **kwargs)
+class SlidingToken(BlacklistMixin, Token):
+    token_type = BaseSlidingToken.token_type
+    lifetime = settings.SLIDING_TOKEN_LIFETIME
+
+    def __init__(self, *args, **kwargs):
+        kwargs['lifetime'] = settings.SLIDING_TOKEN_LIFETIME
+        super().__init__(*args, **kwargs)
+        if self.token is None:
+            # Set sliding refresh expiration claim if new token
+            self.set_exp(
+                api_settings.SLIDING_TOKEN_REFRESH_EXP_CLAIM,
+                from_time=self.current_time,
+                lifetime=settings.SLIDING_TOKEN_REFRESH_LIFETIME,
+            )
 
 
-class ForgotPasswordSlidingToken(AuthSlidingToken):
-    def set_exp(self, *args, **kwargs):
-        kwargs['lifetime'] = settings.FORGOT_PASSWORD_JWT_EXPIRY
-        super().set_exp(*args, **kwargs)
+class AccessToken(Token):
+    token_type = BaseAccessToken.token_type
+    lifetime = settings.ACCESS_TOKEN_LIFETIME
+
+    def __init__(self, *args, **kwargs):
+        kwargs['lifetime'] = settings.ACCESS_TOKEN_LIFETIME
+        super().__init__(*args, **kwargs)

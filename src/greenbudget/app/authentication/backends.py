@@ -83,7 +83,6 @@ class ModelAuthentication(ModelBackend):
                 user = get_user_model().objects.get(email=email)
             except get_user_model().DoesNotExist:
                 raise EmailDoesNotExist('email')
-
             if not user.check_password(password):
                 raise InvalidCredentialsError("password")
             check_user_permissions(user, raise_exception=True)

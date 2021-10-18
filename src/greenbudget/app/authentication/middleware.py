@@ -10,7 +10,7 @@ from django.utils.http import http_date
 from rest_framework_simplejwt.settings import api_settings
 from rest_framework_simplejwt.exceptions import TokenError
 
-from .tokens import AuthSlidingToken
+from .tokens import SlidingToken
 from .exceptions import (
     ExpiredToken, InvalidToken, TokenExpiredError, TokenCorruptedError)
 from .utils import get_user_from_token, parse_token_from_request
@@ -120,7 +120,7 @@ class TokenCookieMiddleware(MiddlewareMixin):
         the `should_persist_cookie` method indicate that it should be persisted.
         """
         if self.should_persist_cookie(request):
-            token = AuthSlidingToken.for_user(request.cookie_user)
+            token = SlidingToken.for_user(request.cookie_user)
             expires = http_date(
                 token[api_settings.SLIDING_TOKEN_REFRESH_EXP_CLAIM])
             response.set_cookie(

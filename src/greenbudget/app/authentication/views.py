@@ -1,4 +1,4 @@
-from ratelimit.decorators import ratelimit
+from ratelimit.decorators import ratelimit  # noqa
 
 from django.conf import settings
 from django.contrib.auth import logout
@@ -7,22 +7,16 @@ from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.debug import sensitive_post_parameters
 
 from rest_framework import views, response, generics, status, permissions
-from greenbudget.app.authentication.exceptions import AccountDisabledError
 
-from greenbudget.lib.drf.exceptions import (
-    RequiredFieldError, InvalidFieldError)
 from greenbudget.app.authentication.exceptions import RateLimitedError
-from greenbudget.app.user.models import User
 from greenbudget.app.user.serializers import UserSerializer
-from greenbudget.app.user.utils import send_forgot_password_email
 
 from .backends import CsrfExcemptCookieSessionAuthentication
 from .middleware import TokenCookieMiddleware
-from .models import ResetUID
+from .permissions import IsAnonymous
 from .serializers import (
-    LoginSerializer, SocialLoginSerializer, ResetPasswordSerializer,
-    SendEmailVerificationSerializer, EmailVerificationSerializer,
-    TokenRefreshSerializer)
+    LoginSerializer, SocialLoginSerializer, SendEmailVerificationSerializer,
+    AuthTokenSerializer, ForgotPasswordSerializer)
 from .utils import parse_token_from_request
 
 
@@ -40,12 +34,35 @@ class TokenRefreshView(views.APIView):
 
 
 class TokenValidateView(views.APIView):
+    serializer_class = None
+    token_location = 'cookies'
     authentication_classes = (CsrfExcemptCookieSessionAuthentication, )
+    force_logout = None
+    token_cls = None
+    exclude_permissions = None
+    serializer_class = AuthTokenSerializer
+
+    @sensitive_post_parameters_m('token')
+    def dispatch(self, request, *args, **kwargs):
+        return super().dispatch(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        token = parse_token_from_request(request)
-        serializer = TokenRefreshSerializer(force_logout=True)
-        user, _ = serializer.validate({"token": token})
+        serializer_kwargs = {
+            'force_logout': self.force_logout,
+            'token_cls': self.token_cls,
+            'exclude_permissions': self.exclude_permissions
+        }
+        # Only include arguments passed to the view into the serializer if
+        # they were actually provided.
+        serializer_kwargs = dict(
+            (k, v) for k, v in serializer_kwargs.items() if v is not None)
+        attrs = request.data
+        if self.token_location == 'cookies':
+            attrs = {"token": parse_token_from_request(request)}
+
+        serializer = self.serializer_class(**serializer_kwargs, data=attrs)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
         return response.Response({
             'user': UserSerializer(user).data,
         }, status=status.HTTP_201_CREATED)
@@ -67,7 +84,7 @@ class LogoutView(views.APIView):
 
 class AbstractUnauthenticatedView(generics.GenericAPIView):
     authentication_classes = []
-    permission_classes = (permissions.AllowAny, )
+    permission_classes = (IsAnonymous, )
 
     def get_response_data(self, data):
         return {}
@@ -115,53 +132,9 @@ class LoginView(AbstractLoginView):
         return super(LoginView, self).dispatch(request, *args, **kwargs)
 
 
-class EmailVerificationView(AbstractUnauthenticatedView):
-    serializer_class = EmailVerificationSerializer
-
-    @sensitive_post_parameters_m('token')
-    def dispatch(self, request, *args, **kwargs):
-        return super().dispatch(request, *args, **kwargs)
-
-
 class SendEmailVerificationView(AbstractUnauthenticatedView):
     serializer_class = SendEmailVerificationSerializer
 
 
-class ResetPasswordView(generics.GenericAPIView):
-    serializer_class = ResetPasswordSerializer
-    authentication_classes = []
-    permission_classes = []
-
-    @ratelimit(key='user_or_ip', rate='3/s')
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-        return response.Response(
-            UserSerializer(user).data,
-            status=status.HTTP_201_CREATED
-        )
-
-
-class ForgotPasswordView(generics.GenericAPIView):
-    authentication_classes = []
-    permission_classes = []
-
-    @ratelimit(key='user_or_ip', rate='3/s')
-    def post(self, request, *args, **kwargs):
-        if 'email' not in request.data:
-            raise RequiredFieldError('email')
-        try:
-            user = User.objects.get(email=request.data["email"])
-        except User.DoesNotExist:
-            raise InvalidFieldError('email',
-                message=("There is not a user associated with the provided "
-                    "email.")
-            )
-        else:
-            if not user.is_active:
-                raise AccountDisabledError(user_id=user.id)
-
-            reset_uid = ResetUID.objects.create(user=user)
-            send_forgot_password_email(user, reset_uid.token)
-            return response.Response(status=status.HTTP_201_CREATED)
+class ForgotPasswordView(AbstractUnauthenticatedView):
+    serializer_class = ForgotPasswordSerializer

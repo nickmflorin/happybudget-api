@@ -1,10 +1,5 @@
-from datetime import timedelta
-
-from django.conf import settings
-from django.contrib.auth import authenticate, login as django_login
-from django.utils import timezone
-
-from rest_framework_simplejwt.serializers import TokenRefreshSlidingSerializer
+from django.contrib.auth import (
+    authenticate, login as django_login, get_user_model)
 
 from rest_framework import serializers, exceptions
 
@@ -13,19 +8,33 @@ from greenbudget.app.user.models import User
 
 from .backends import check_user_permissions
 from .exceptions import (
-    TokenExpiredError, ExpiredToken, InvalidToken, TokenError)
-from .models import ResetUID
-from .tokens import AuthSlidingToken, EmailVerificationSlidingToken
+    TokenExpiredError, ExpiredToken, InvalidToken, TokenError,
+    EmailDoesNotExist)
+from .tokens import SlidingToken, AccessToken
 from .utils import validate_password, get_user_from_token
 
 
-class TokenRefreshSerializer(TokenRefreshSlidingSerializer):
+class UserEmailField(serializers.EmailField):
+    def run_validation(self, *args, **kwargs):
+        email = super().run_validation(*args, **kwargs)
+        try:
+            user = get_user_model().objects.get(email=email)
+        except get_user_model().DoesNotExist:
+            raise EmailDoesNotExist(self.source)
+        check_user_permissions(user, raise_exception=True)
+        return user
+
+
+class AuthTokenSerializer(serializers.Serializer):
+    token = serializers.CharField(
+        required=False, allow_null=True, allow_blank=True)
 
     def __init__(self, *args, **kwargs):
-        default_token_cls = getattr(self, 'token_cls', AuthSlidingToken)
+        default_token_cls = getattr(self, 'token_cls', SlidingToken)
         self.token_cls = kwargs.pop('token_cls', default_token_cls)
 
-        self.force_logout = kwargs.pop('force_logout', None)
+        default_force_logout = getattr(self, 'force_logout', None)
+        self.force_logout = kwargs.pop('force_logout', default_force_logout)
 
         default_exclude_permissions = getattr(self, 'exclude_permissions', [])
         self.exclude_permissions = kwargs.pop(
@@ -35,7 +44,7 @@ class TokenRefreshSerializer(TokenRefreshSlidingSerializer):
     def validate(self, attrs):
         try:
             user, token_obj = get_user_from_token(
-                token=attrs['token'],
+                token=attrs.get('token', None),
                 token_cls=self.token_cls,
                 strict=True
             )
@@ -57,12 +66,27 @@ class TokenRefreshSerializer(TokenRefreshSlidingSerializer):
             raise_exception=True,
             force_logout=self.force_logout
         )
-        return user, token_obj
+        return {"user": user, "token": token_obj}
+
+    def create(self, validated_data):
+        return validated_data["user"]
 
 
-class EmailTokenRefreshSerializer(TokenRefreshSerializer):
-    token_cls = EmailVerificationSlidingToken
+class EmailTokenSerializer(AuthTokenSerializer):
+    token_cls = AccessToken
     exclude_permissions = ['verified']
+
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        if data["user"].is_verified:
+            raise exceptions.ValidationError("User is already verified.")
+        return data
+
+    def create(self, validated_data):
+        user = super().create(validated_data)
+        user.is_verified = True
+        user.save(update_fields=["is_verified"])
+        return user
 
 
 class AbstractLoginSerializer(serializers.Serializer):
@@ -85,16 +109,15 @@ class LoginSerializer(AbstractLoginSerializer):
     password = serializers.CharField(style={'input_type': 'password'})
 
 
-class EmailVerificationSerializer(EmailTokenRefreshSerializer):
+class ForgotPasswordSerializer(serializers.Serializer):
+    email = UserEmailField(required=True, allow_blank=False)
+
     def validate(self, attrs):
-        user, _ = super().validate(attrs)
-        if user.is_verified:
-            raise exceptions.ValidationError("User is already verified.")
-        return {"user": user}
+        attrs = super().validate(attrs)
+        return {"user": attrs['email']}
 
     def create(self, validated_data):
-        validated_data["user"].is_verified = True
-        validated_data["user"].save()
+        # Here is where we will send the user password recovery email.
         return validated_data["user"]
 
 
@@ -110,54 +133,28 @@ class SendEmailVerificationSerializer(serializers.Serializer):
         return validated_data['user']
 
 
-class ResetPasswordSerializer(serializers.ModelSerializer):
-    token = serializers.SlugRelatedField(
-        queryset=ResetUID.objects.all(),
-        slug_field='token',
-        required=True,
-        allow_null=False
-    )
+class ResetPasswordSerializer(AuthTokenSerializer):
     password = serializers.CharField(
         required=True,
         allow_blank=False,
-        allow_null=False
+        allow_null=False,
+        validators=[validate_password]
     )
     confirm = serializers.CharField(
         required=True,
         allow_blank=False,
-        allow_null=False
+        allow_null=False,
+        validators=[validate_password]
     )
 
-    class Meta:
-        model = ResetUID
-        fields = ('token', 'password', 'confirm')
-
-    def validate_password(self, value):
-        validate_password(value)
-        return value
-
-    def validate_token(self, token):
-        expiry_time = timezone.now() - timedelta(
-            minutes=60 * settings.PWD_RESET_LINK_EXPIRY_TIME_IN_HRS)
-        if not timezone.is_aware(expiry_time):
-            expiry_time = timezone.make_aware(expiry_time)
-
-        if token.used:
-            raise exceptions.ValidationError("Token was already used.")
-        if token.created_at < expiry_time:
-            raise exceptions.ValidationError("Token has expired.")
-        check_user_permissions(token.user, raise_exception=True)
-        return token
-
-    def create(self, validated_data):
-        validated_data['token'].used = True
-        validated_data['token'].save(update_fields=['used'])
-        validated_data['token'].user.set_password(validated_data["password"])
-        validated_data['token'].user.save(update_fields=['password'])
-        return validated_data['token'].user
-
     def validate(self, attrs):
+        user, _ = super().validate(attrs)
         if attrs["confirm"] != attrs["password"]:
             raise InvalidFieldError("confirm",
                 message="The passwords do not match.")
-        return attrs
+        return {"user": user}
+
+    def create(self, validated_data):
+        validated_data["user"].set_password(validated_data["password"])
+        validated_data["user"].save(update_fields=["password"])
+        return validated_data["user"]

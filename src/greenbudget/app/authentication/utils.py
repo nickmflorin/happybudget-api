@@ -13,7 +13,7 @@ from greenbudget.lib.utils.urls import add_query_params_to_url
 from .exceptions import (
     BaseTokenError, TokenInvalidError, TokenCorruptedError, TokenExpiredError,
     InvalidSocialToken, InvalidSocialProvider)
-from .tokens import AuthSlidingToken
+from .tokens import SlidingToken
 
 
 logger = logging.getLogger('greenbudget')
@@ -32,7 +32,7 @@ def parse_token_from_request(request):
 
 
 def verify_token(token, token_cls=None):
-    token_cls = token_cls or AuthSlidingToken
+    token_cls = token_cls or SlidingToken
     assert token is not None and isinstance(token, str), \
         "The token must be a valid string."
     try:
@@ -50,8 +50,12 @@ def verify_token(token, token_cls=None):
         # This is an edge case where an old JWT might be stashed in the browser
         # but the user may have been deleted.
         raise TokenCorruptedError()
+
+    exp_claim = api_settings.SLIDING_TOKEN_REFRESH_EXP_CLAIM \
+        if token_cls is SlidingToken else "exp"
+
     try:
-        token_obj.check_exp(api_settings.SLIDING_TOKEN_REFRESH_EXP_CLAIM)
+        token_obj.check_exp(exp_claim)
     except BaseTokenError as e:
         raise TokenExpiredError(user_id=user_id) from e
     token_obj.set_exp()

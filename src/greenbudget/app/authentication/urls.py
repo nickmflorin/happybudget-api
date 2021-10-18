@@ -1,24 +1,49 @@
 from django.views.decorators.csrf import csrf_exempt
 from django.urls import path
 
+from .backends import CsrfExcemptCookieSessionAuthentication
+from .permissions import IsAnonymous
+from .serializers import EmailTokenSerializer, ResetPasswordSerializer
+from .tokens import AccessToken
 from .views import (
-    LoginView, LogoutView, ResetPasswordView, ForgotPasswordView,
-    SocialLoginView, EmailVerificationView, SendEmailVerificationView,
-    TokenRefreshView, TokenValidateView)
+    LoginView, LogoutView, ForgotPasswordView, SocialLoginView,
+    SendEmailVerificationView, TokenRefreshView, TokenValidateView)
 
 
 app_name = "authentication"
 
 
 urlpatterns = [
-    path('refresh/', TokenRefreshView.as_view(), name='refresh'),
-    path('validate/', TokenValidateView.as_view(), name='validate'),
     path('login/', csrf_exempt(LoginView.as_view()), name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),
-    path('reset-password/', ResetPasswordView.as_view()),
+    path('refresh/', TokenRefreshView.as_view(), name='refresh'),
+    path('validate/', TokenValidateView.as_view(
+        force_logout=True,
+        authentication_classes=(CsrfExcemptCookieSessionAuthentication, ),
+    ), name='validate'),
+    path('validate-forgot-password-token/', TokenValidateView.as_view(
+        token_location='request',
+        permission_classes=(IsAnonymous, ),
+        authentication_classes=(),
+        token_cls=AccessToken
+    )),
+    path('validate-email-confirmation-token/', TokenValidateView.as_view(
+        serializer_class=EmailTokenSerializer,
+        token_cls=AccessToken,
+        token_location='request',
+        permission_classes=(IsAnonymous, ),
+        authentication_classes=(),
+        exclude_permissions=["verified"]
+    )),
+    path('reset-password/', TokenValidateView.as_view(
+        serializer_class=ResetPasswordSerializer,
+        token_cls=AccessToken,
+        token_location='request',
+        permission_classes=(IsAnonymous, ),
+        authentication_classes=(),
+    )),
     path('forgot-password/', ForgotPasswordView.as_view()),
     path('social-login/', csrf_exempt(SocialLoginView.as_view())),
-    path('verify-email/', csrf_exempt(EmailVerificationView.as_view())),
     path('send-verification-email/', csrf_exempt(
         SendEmailVerificationView.as_view()
     )),

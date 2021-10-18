@@ -1,27 +1,4 @@
-from datetime import timedelta, datetime
-from http.cookies import SimpleCookie
-import mock
 import pytest
-import responses
-
-from django.test import override_settings
-
-from greenbudget.lib.utils.dateutils import api_datetime_string
-from greenbudget.app.authentication.models import ResetUID
-from greenbudget.app.authentication.tokens import (
-    AuthSlidingToken, EmailVerificationSlidingToken)
-
-
-@pytest.fixture
-def password():
-    return "hoopla@H9_12"
-
-
-@pytest.fixture
-def user_with_password(user, password):
-    user.set_password(password)
-    user.save()
-    return user
 
 
 @pytest.fixture
@@ -40,10 +17,10 @@ def login(api_client, user_with_password, password):
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_login(login, user_with_password):
+def test_login(login, user_with_password, settings):
     response = login()
     assert response.status_code == 201
-    assert 'greenbudgetjwt' in response.cookies
+    assert settings.JWT_TOKEN_COOKIE_NAME in response.cookies
     assert response.json() == {
         "id": 1,
         "first_name": user_with_password.first_name,
@@ -64,22 +41,22 @@ def test_login(login, user_with_password):
     }
 
 
-def test_login_missing_password(login):
+def test_login_missing_password(login, settings):
     response = login(exclude=["password"])
     assert response.status_code == 400
-    assert "greenbudgetjwt" not in response.cookies
+    assert settings.JWT_TOKEN_COOKIE_NAME not in response.cookies
 
 
-def test_login_missing_email(login):
+def test_login_missing_email(login, settings):
     response = login(exclude=["email"])
     assert response.status_code == 400
-    assert "greenbudgetjwt" not in response.cookies
+    assert settings.JWT_TOKEN_COOKIE_NAME not in response.cookies
 
 
-def test_login_invalid_email(login):
+def test_login_invalid_email(login, settings):
     response = login(email="userdoesnotexist@gmail.com")
     assert response.status_code == 400
-    assert "greenbudgetjwt" not in response.cookies
+    assert settings.JWT_TOKEN_COOKIE_NAME not in response.cookies
     assert response.json() == {
         'errors': [{
             'message': 'The provided username does not exist in our system.',  # noqa
@@ -90,10 +67,10 @@ def test_login_invalid_email(login):
     }
 
 
-def test_login_invalid_password(login):
+def test_login_invalid_password(login, settings):
     response = login(password="fake")
     assert response.status_code == 400
-    assert "greenbudgetjwt" not in response.cookies
+    assert settings.JWT_TOKEN_COOKIE_NAME not in response.cookies
     assert response.json() == {
         'errors': [{
             'message': 'The provided password is invalid.',
@@ -104,10 +81,10 @@ def test_login_invalid_password(login):
     }
 
 
-def test_login_account_disabled(login):
+def test_login_account_disabled(login, settings):
     response = login(user_kwargs={'is_active': False})
     assert response.status_code == 403
-    assert "greenbudgetjwt" not in response.cookies
+    assert settings.JWT_TOKEN_COOKIE_NAME not in response.cookies
     assert response.json() == {
         'user_id': 1,
         'errors': [{
@@ -118,10 +95,10 @@ def test_login_account_disabled(login):
     }
 
 
-def test_login_account_not_verified(login):
+def test_login_account_not_verified(login, settings):
     response = login(user_kwargs={'is_verified': False})
     assert response.status_code == 403
-    assert "greenbudgetjwt" not in response.cookies
+    assert settings.JWT_TOKEN_COOKIE_NAME not in response.cookies
     assert response.json() == {
         'user_id': 1,
         'errors': [{
@@ -132,563 +109,8 @@ def test_login_account_not_verified(login):
     }
 
 
-def test_logout(user, api_client, settings):
-    api_client.force_login(user)
-    token = AuthSlidingToken.for_user(user)
-    api_client.cookies = SimpleCookie({
-        settings.JWT_TOKEN_COOKIE_NAME: str(token),
-    })
-    response = api_client.post("/v1/auth/logout/")
+def test_logout(user, jwt_authenticated_client, settings):
+    jwt_authenticated_client.force_login(user)
+    response = jwt_authenticated_client.post("/v1/auth/logout/")
     assert response.status_code == 201
-    assert response.cookies['greenbudgetjwt'].value == ""
-
-
-@responses.activate
-@pytest.mark.freeze_time('2020-01-01')
-@override_settings(GOOGLE_OAUTH_API_URL="https://www.test-validate-user-token/")
-def test_social_login_user_exists(api_client, create_user):
-    # A user with an unverified email should still be able to do social login
-    # and their email address should be considered verified afterwards.
-    user = create_user(email="jjohnson@gmail.com", is_verified=False)
-    responses.add(
-        method=responses.GET,
-        url="https://www.test-validate-user-token/?id_token=testtoken",
-        json={
-            "family_name": "Johnson",
-            "given_name": "Jack",
-            "email": "jjohnson@gmail.com"
-        }
-    )
-    response = api_client.post("/v1/auth/social-login/", data={
-        "token_id": "testtoken",
-        'provider': 'google',
-    })
-    assert response.status_code == 201
-
-    user.refresh_from_db()
-    assert user.is_verified
-
-    assert 'greenbudgetjwt' in response.cookies
-    assert response.json() == {
-        "id": 1,
-        "first_name": user.first_name,
-        "last_name": user.last_name,
-        "email": user.email,
-        "is_active": True,
-        "is_admin": False,
-        "is_superuser": False,
-        "is_staff": False,
-        "full_name": user.full_name,
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
-        "last_login": "2020-01-01 00:00:00",
-        "date_joined": "2020-01-01 00:00:00",
-        "profile_image": None,
-        "timezone": "America/New_York",
-        "is_first_time": False,
-    }
-
-
-@responses.activate
-@pytest.mark.freeze_time('2020-01-01')
-@override_settings(GOOGLE_OAUTH_API_URL="https://www.test-validate-user-token/")
-def test_social_login_user_does_not_exist(api_client, models):
-    responses.add(
-        method=responses.GET,
-        url="https://www.test-validate-user-token/?id_token=testtoken",
-        json={
-            "family_name": "Johnson",
-            "given_name": "Jack",
-            "email": "jjohnson@gmail.com"
-        }
-    )
-    response = api_client.post("/v1/auth/social-login/", data={
-        "token_id": "testtoken",
-        'provider': 'google',
-    })
-    user = models.User.objects.filter(email="jjohnson@gmail.com").first()
-    assert user is not None
-    assert user.first_name == "Jack"
-    assert user.last_name == "Johnson"
-    assert user.is_verified
-
-    assert response.status_code == 201
-    assert 'greenbudgetjwt' in response.cookies
-    assert response.json() == {
-        "id": 1,
-        "first_name": user.first_name,
-        "last_name": user.last_name,
-        "email": user.email,
-        "is_active": True,
-        "is_admin": False,
-        "is_superuser": False,
-        "is_staff": False,
-        "full_name": user.full_name,
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
-        "last_login": "2020-01-01 00:00:00",
-        "date_joined": "2020-01-01 00:00:00",
-        "profile_image": None,
-        "timezone": "America/New_York",
-        "is_first_time": True,
-    }
-
-
-@responses.activate
-@override_settings(GOOGLE_OAUTH_API_URL="https://www.test-validate-user-token/")
-def test_social_login_invalid_token(api_client, create_user):
-    create_user(email="jjohnson@gmail.com")
-    responses.add(
-        method=responses.GET,
-        url="https://www.test-validate-user-token/?id_token=testtoken",
-        json={
-            "family_name": "Johnson",
-            "given_name": "Jack",
-            "email": "jjohnson@gmail.com"
-        }
-    )
-    response = api_client.post("/v1/auth/social-login/", data={
-        "token_id": "invalid",
-        'provider': 'google',
-    })
-    assert response.status_code == 403
-    assert 'greenbudgetjwt' not in response.cookies
-
-
-@responses.activate
-@override_settings(GOOGLE_OAUTH_API_URL="https://www.test-validate-user-token/")
-def test_social_login_invalid_provider(api_client, create_user, db):
-    create_user(email="jjohnson@gmail.com")
-    responses.add(
-        method=responses.GET,
-        url="https://www.test-validate-user-token/?id_token=testtoken",
-        json={
-            "family_name": "Johnson",
-            "given_name": "Jack",
-            "email": "jjohnson@gmail.com"
-        }
-    )
-    response = api_client.post("/v1/auth/social-login/", data={
-        "token_id": "invalid",
-        'provider': 'qanon',
-    })
-    assert response.status_code == 400
-    assert 'greenbudgetjwt' not in response.cookies
-
-
-def test_reset_password(user_with_password, api_client):
-    reset_uid = ResetUID.objects.create(
-        token="token1234567",
-        used=False,
-        user=user_with_password,
-    )
-    response = api_client.post("/v1/auth/reset-password/", data={
-        "token": reset_uid.token,
-        "password": "TestUserPassword4321$",
-        "confirm": "TestUserPassword4321$",
-    })
-    user_with_password.refresh_from_db()
-    assert response.status_code == 201
-    assert response.json() == {
-        'id': user_with_password.pk,
-        'first_name': user_with_password.first_name,
-        'last_name': user_with_password.last_name,
-        'full_name': user_with_password.full_name,
-        'email': user_with_password.email,
-        'is_active': user_with_password.is_active,
-        'is_admin': user_with_password.is_admin,
-        'is_superuser': user_with_password.is_superuser,
-        'is_staff': user_with_password.is_staff,
-        'date_joined': api_datetime_string(user_with_password.date_joined),
-        'updated_at': api_datetime_string(user_with_password.updated_at),
-        'created_at': api_datetime_string(user_with_password.created_at),
-        'last_login': None,
-        'timezone': str(user_with_password.timezone),
-        "profile_image": None,
-        "is_first_time": False,
-    }
-
-
-@pytest.mark.parametrize("password", [
-    'hoopla',  # Not 8 characters long
-    'hoopla122412H',  # No special characters
-    'hoopla@JJ',  # No numbers
-    'hoopla123@',  # No capital letters
-])
-def test_reset_password_invalid_password(api_client, user, password):
-    reset_uid = ResetUID.objects.create(
-        token="token1234567",
-        used=False,
-        user=user,
-    )
-    response = api_client.post("/v1/auth/reset-password/", data={
-        "token": reset_uid.token,
-        "password": password,
-        "confirm": password,
-    })
-    assert response.status_code == 400
-    assert response.json()['errors'][0]['field'] == 'password'
-    assert response.json()['errors'][0]['code'] == 'invalid_password'
-
-
-def test_reset_password_invalid_token(api_client):
-    response = api_client.post("/v1/auth/reset-password/", data={
-        "token": "token1234567",
-        "password": "hoopla@H9_12$",
-        "confirm": "hoopla@H9_12$",
-    })
-    assert response.status_code == 400
-    assert response.json()['errors'][0]['code'] == 'does_not_exist'
-
-
-@override_settings(PWD_RESET_LINK_EXPIRY_TIME_IN_HRS=48)
-@pytest.mark.freeze_time('2020-01-01')
-def test_reset_password_token_expired(user, api_client, freezer):
-    reset_uid = ResetUID.objects.create(
-        token="token1234567",
-        used=False,
-        user=user,
-    )
-    # Move Forward in Time 5 Hours + 5 Minutes, Just After Expiry
-    future_date = datetime(2020, 1, 1) + timedelta(minutes=60 * 48 + 5)
-    freezer.move_to(future_date)
-
-    response = api_client.post("/v1/auth/reset-password/", data={
-        "token": reset_uid.token,
-        "password": "hoopla@H9_12$",
-        "confirm": "hoopla@H9_12$",
-    })
-    assert response.status_code == 400
-    assert response.json() == {
-        'errors': [{
-            'message': 'Token has expired.',
-            'code': 'invalid',
-            'error_type': 'field',
-            'field': 'token'
-        }]
-    }
-
-
-@override_settings(
-    RESET_PWD_UI_LINK="https://greenbudget.io/changepassword",
-    FROM_EMAIL="greenbudget@gmail.com"
-)
-@pytest.mark.freeze_time('2020-01-01')
-def test_forgot_password(user, api_client):
-    # Mock the Email Generation
-    # Note that we cannot mock the email sending to test the contents of the
-    # email because the email contents are supplied as arguments in the
-    # EmailMultiAlternatives __init__ method, not the send() method.  Mocking an
-    # __init__ method properly is extremely difficult - so the best we can do
-    # is mock the render_to_string method an d make sure the supplied arguments
-    # are valid for the generated email.
-    with mock.patch('greenbudget.app.user.utils.render_to_string') as mocked:  # noqa
-        response = api_client.post("/v1/auth/forgot-password/", data={
-            "email": user.email
-        })
-
-    assert response.status_code == 201
-
-    assert ResetUID.objects.count() == 1
-    reset_uid = ResetUID.objects.first()
-    assert reset_uid.user == user
-
-    # Test Email Was Sent
-    assert mocked.called
-    assert mocked.call_args[0][0] == 'email/forgot_password.html'
-    assert mocked.call_args[0][1] == {
-        'PWD_RESET_LINK': (
-            'https://greenbudget.io/changepassword?token=%s'
-            % reset_uid.token
-        ),
-        'from_email': "greenbudget@gmail.com",
-        'EMAIL': user.email,
-        'year': 2020,
-        'NAME': "%s %s" % (user.first_name, user.last_name)
-    }
-
-
-@pytest.mark.freeze_time('2020-01-01')
-def test_validate_token(api_client, settings, user):
-    api_client.force_login(user)
-
-    token = AuthSlidingToken.for_user(user)
-    api_client.cookies = SimpleCookie({
-        settings.JWT_TOKEN_COOKIE_NAME: str(token),
-    })
-    response = api_client.post("/v1/auth/validate/")
-    assert response.status_code == 201
-    assert 'greenbudgetjwt' in response.cookies
-
-    assert response.json() == {
-        'user': {
-            'id': user.pk,
-            'first_name': user.first_name,
-            'last_name': user.last_name,
-            'full_name': user.full_name,
-            'email': user.email,
-            'is_active': user.is_active,
-            'is_admin': user.is_admin,
-            'is_superuser': user.is_superuser,
-            'is_staff': user.is_staff,
-            'date_joined': api_datetime_string(user.date_joined),
-            'updated_at': api_datetime_string(user.updated_at),
-            'created_at': api_datetime_string(user.created_at),
-            'last_login': '2020-01-01 00:00:00',
-            'timezone': str(user.timezone),
-            "profile_image": None,
-            "is_first_time": False
-        }
-    }
-
-
-@pytest.mark.freeze_time('2020-01-01')
-def test_force_logout_on_token_removal(api_client, settings, user):
-    api_client.force_login(user)
-
-    token = AuthSlidingToken.for_user(user)
-    api_client.cookies = SimpleCookie({
-        settings.JWT_TOKEN_COOKIE_NAME: str(token),
-    })
-    response = api_client.post("/v1/auth/validate/")
-    assert response.status_code == 201
-    assert 'greenbudgetjwt' in response.cookies
-
-    api_client.logout()
-    response = api_client.get("/v1/budgets/")
-    assert response.status_code == 403
-
-
-def test_validate_token_inactive_user(api_client, settings, user):
-    token = AuthSlidingToken.for_user(user)
-    api_client.cookies = SimpleCookie({
-        settings.JWT_TOKEN_COOKIE_NAME: str(token),
-    })
-    user.is_active = False
-    user.save()
-    response = api_client.post("/v1/auth/validate/")
-    assert response.status_code == 403
-    assert response.json() == {
-        'user_id': user.pk,
-        'errors': [{
-            'message': 'Your account is not active, please contact customer care.',  # noqa
-            'code': 'account_disabled',
-            'error_type': 'auth'
-        }]
-    }
-    assert 'greenbudgetjwt' not in response.cookies
-
-
-def test_validate_token_inactive_user_logged_in(api_client, settings, user):
-    api_client.force_login(user)
-    token = AuthSlidingToken.for_user(user)
-    api_client.cookies = SimpleCookie({
-        settings.JWT_TOKEN_COOKIE_NAME: str(token),
-    })
-    user.is_active = False
-    user.save()
-    response = api_client.post("/v1/auth/validate/")
-    assert response.status_code == 403
-    assert response.json() == {
-        'user_id': user.pk,
-        'force_logout': True,
-        'errors': [{
-            'message': 'Your account is not active, please contact customer care.',  # noqa
-            'code': 'account_disabled',
-            'error_type': 'auth'
-        }]
-    }
-    assert response.cookies['greenbudgetjwt'].value == ''
-
-
-def test_validate_token_unverified_user(api_client, settings, user):
-    token = AuthSlidingToken.for_user(user)
-    api_client.cookies = SimpleCookie({
-        settings.JWT_TOKEN_COOKIE_NAME: str(token),
-    })
-    user.is_verified = False
-    user.save()
-    response = api_client.post("/v1/auth/validate/")
-    assert response.status_code == 403
-    assert response.json() == {
-        'user_id': user.pk,
-        'errors': [{
-            'message': 'The email address is not verified.',
-            'code': 'email_not_verified',
-            'error_type': 'auth'
-        }]
-    }
-    assert 'greenbudgetjwt' not in response.cookies
-
-
-def test_validate_token_unverified_user_logged_in(api_client, settings, user):
-    api_client.force_login(user)
-    token = AuthSlidingToken.for_user(user)
-    api_client.cookies = SimpleCookie({
-        settings.JWT_TOKEN_COOKIE_NAME: str(token),
-    })
-    user.is_verified = False
-    user.save()
-    response = api_client.post("/v1/auth/validate/")
-
-    assert response.status_code == 403
-    assert response.json() == {
-        'user_id': user.pk,
-        'force_logout': True,
-        'errors': [{
-            'message': 'The email address is not verified.',
-            'code': 'email_not_verified',
-            'error_type': 'auth'
-        }]
-    }
-    assert response.cookies['greenbudgetjwt'].value == ''
-
-
-def test_validate_token_missing_token(api_client):
-    response = api_client.post("/v1/auth/validate/")
-    assert response.status_code == 403
-    assert response.json() == {
-        'errors': [{
-            'message': 'User is not authenticated.',
-            'code': 'account_not_authenticated',
-            'error_type': 'auth'
-        }]
-    }
-    assert 'greenbudgetjwt' not in response.cookies
-
-
-def test_validate_token_missing_token_logged_in(api_client, user):
-    api_client.force_login(user)
-    response = api_client.post("/v1/auth/validate/")
-    assert response.status_code == 403
-    assert response.json() == {
-        'force_logout': True,
-        'user_id': user.id,
-        'errors': [{
-            'message': 'Token is invalid.',
-            'code': 'token_not_valid',
-            'error_type': 'auth'
-        }]
-    }
-    assert response.cookies['greenbudgetjwt'].value == ''
-
-
-def test_validate_token_invalid_token(api_client, settings):
-    api_client.cookies = SimpleCookie({
-        settings.JWT_TOKEN_COOKIE_NAME: "invalid-token"
-    })
-    response = api_client.post("/v1/auth/validate/")
-    assert response.status_code == 403
-    assert response.json() == {
-        'force_logout': True,
-        'errors': [{
-            'message': 'Token is invalid.',
-            'code': 'token_not_valid',
-            'error_type': 'auth'
-        }]
-    }
-    assert response.cookies['greenbudgetjwt'].value == ''
-
-
-def test_validate_token_invalid_token_logged_in(api_client, user, settings):
-    api_client.force_login(user)
-    api_client.cookies = SimpleCookie({
-        settings.JWT_TOKEN_COOKIE_NAME: "invalid-token"
-    })
-    response = api_client.post("/v1/auth/validate/")
-    assert response.status_code == 403
-    assert response.json() == {
-        'force_logout': True,
-        'user_id': 1,
-        'errors': [{
-            'message': 'Token is invalid.',
-            'code': 'token_not_valid',
-            'error_type': 'auth'
-        }]
-    }
-    assert response.cookies['greenbudgetjwt'].value == ''
-
-
-def test_verify_email(api_client, user):
-    user.is_verified = False
-    user.save()
-    token = EmailVerificationSlidingToken.for_user(user)
-    response = api_client.post("/v1/auth/verify-email/", data={
-        "token": str(token)
-    })
-    assert response.status_code == 201
-    user.refresh_from_db()
-    assert user.is_verified
-
-
-def test_send_verification_email(api_client, user):
-    user.is_verified = False
-    user.save()
-    response = api_client.post("/v1/auth/send-verification-email/", data={
-        "user": user.pk
-    })
-    assert response.status_code == 201
-
-
-def test_send_verification_email_verified_user(api_client, user):
-    response = api_client.post("/v1/auth/send-verification-email/", data={
-        "user": user.pk
-    })
-    assert response.status_code == 400
-
-
-def test_send_verification_email_inactive_user(api_client, user):
-    user.is_active = False
-    user.save()
-    response = api_client.post("/v1/auth/send-verification-email/", data={
-        "user": user.pk
-    })
-    assert response.status_code == 400
-
-
-@pytest.mark.freeze_time('2021-01-03')
-@override_settings(EMAIL_VERIFICATION_JWT_EXPIRY=timedelta(hours=24))
-def test_verify_email_expired_token(api_client, user):
-    token = EmailVerificationSlidingToken.for_user(user)
-    token.set_exp(claim='refresh_exp', from_time=datetime(2021, 1, 1))
-    response = api_client.post("/v1/auth/verify-email/", data={
-        "token": str(token)
-    })
-    assert response.json() == {
-        'user_id': user.id,
-        'errors': [{
-            'message': 'The provided token is expired.',
-            'code': 'token_expired',
-            'error_type': 'auth'
-        }]
-    }
-
-
-def test_verify_email_user_does_not_exist(api_client, user):
-    token = EmailVerificationSlidingToken.for_user(user)
-    user.delete()
-    response = api_client.post("/v1/auth/verify-email/", data={
-        "token": str(token)
-    })
-    assert response.status_code == 403
-    assert response.json() == {
-        'errors': [{
-            'message': 'Token is invalid.',
-            'code': 'token_not_valid',
-            'error_type': 'auth'
-        }]
-    }
-
-
-def test_verify_email_invalid_token(api_client):
-    response = api_client.post("/v1/auth/verify-email/", data={
-        "token": "hoopla",
-    })
-    assert response.status_code == 403
-    assert response.json() == {
-        'errors': [{
-            'message': 'Token is invalid.',
-            'code': 'token_not_valid',
-            'error_type': 'auth'
-        }]
-    }
+    assert response.cookies[settings.JWT_TOKEN_COOKIE_NAME].value == ""
