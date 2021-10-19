@@ -52,7 +52,7 @@ class PasswordRecovery(Mail):
     def __init__(self, user, token, **kwargs):
         super().__init__(
             user=user,
-            data={'url': add_query_params_to_url(
+            data={'redirect_url': add_query_params_to_url(
                 settings.FRONTEND_PASSWORD_RECOVERY_URL,
                 token=token
             )},
