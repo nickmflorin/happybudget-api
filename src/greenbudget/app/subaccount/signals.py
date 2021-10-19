@@ -4,14 +4,25 @@ from django import dispatch
 from django.db import IntegrityError
 
 from greenbudget.app import signals
-from greenbudget.app.signals.utils import generic_foreign_key_instance_change
+from greenbudget.app.account.models import BudgetAccount, TemplateAccount
 from greenbudget.app.account.signals import (
     estimate_account, actualize_account, calculate_account)
+from greenbudget.app.signals.utils import generic_foreign_key_instance_change
 
 from .models import BudgetSubAccount, TemplateSubAccount
 
 
 logger = logging.getLogger('signals')
+
+
+def actualize_parent_conditional(instance, parents):
+    # There are weird cases (like CASCADE deletes) where non-nullable
+    # fields will be temporarily null - they just won't be saved in a
+    # NULL state.
+    correct_parent = instance.parent is not None \
+        and isinstance(instance.parent, parents)
+    change_occured = instance.actual != instance.previous_value('actual')
+    return correct_parent and change_occured
 
 
 @signals.bulk_context.handler(
@@ -27,11 +38,8 @@ logger = logging.getLogger('signals')
                 # instance being changed.
                 'children_to_be_deleted': children_to_be_deleted
             },
-            # There are weird cases (like CASCADE deletes) where non-nullable
-            # fields will be temporarily null - they just won't be saved in a
-            # NULL state.
-            conditional=instance.parent is not None and not isinstance(
-                instance.parent, (BudgetSubAccount, TemplateSubAccount))
+            conditional=actualize_parent_conditional(
+                instance, (BudgetAccount, TemplateAccount))
         ),
         signals.SideEffect(
             func=actualize_subaccount,
@@ -42,11 +50,8 @@ logger = logging.getLogger('signals')
                 # instance being changed.
                 'children_to_be_deleted': children_to_be_deleted
             },
-            # There are weird cases (like CASCADE deletes) where non-nullable
-            # fields will be temporarily null - they just won't be saved in a
-            # NULL state.
-            conditional=instance.parent is not None and isinstance(
-                instance.parent, (BudgetSubAccount, TemplateSubAccount))
+            conditional=actualize_parent_conditional(
+                instance, (BudgetSubAccount, TemplateSubAccount))
         )
     ]
 )
@@ -62,7 +67,8 @@ def actualize_subaccount(instance, actuals_to_be_deleted=None,
         children_to_be_deleted=children_to_be_deleted,
         markups_to_be_deleted=markups_to_be_deleted
     )
-    instance.save(update_fields=["actual"], suppress_budget_update=True)
+    if instance.actual != instance.previous_value('actual'):
+        instance.save(update_fields=["actual"], suppress_budget_update=True)
 
 
 @signals.bulk_context.handler(

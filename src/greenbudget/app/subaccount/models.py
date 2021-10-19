@@ -269,7 +269,7 @@ class SubAccount(PolymorphicModel):
 @signals.model(
     flags=['suppress_budget_update'],
     user_field='updated_by',
-    exclude_fields=['updated_by', 'created_by'] + list(CALCULATED_FIELDS)
+    exclude_fields=['updated_by', 'created_by']
 )
 class BudgetSubAccount(SubAccount):
     pdf_type = 'pdf-subaccount'
@@ -301,7 +301,7 @@ class BudgetSubAccount(SubAccount):
 @signals.model(
     flags=['suppress_budget_update'],
     user_field='updated_by',
-    exclude_fields=['updated_by', 'created_by'] + list(CALCULATED_FIELDS)
+    exclude_fields=['updated_by', 'created_by']
 )
 class TemplateSubAccount(SubAccount):
     objects = SubAccountManager()
