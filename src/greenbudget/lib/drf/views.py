@@ -235,8 +235,8 @@ def exception_handler(exc, context):
         detail_data = getattr(exc, 'detail_data', {})
         return map_details(exc.detail, error_type, **{**kwargs, **detail_data})
 
+    response_data = {}
     force_logout = None
-    user_id = None
 
     # In case a Django ValidationError is raised outside of a serializer's
     # validation methods (as might happen if we don't know the validation error
@@ -278,15 +278,16 @@ def exception_handler(exc, context):
         # the value so we can set it on the overall Response object for the
         # JWT middleware.
         force_logout = getattr(exc, 'force_logout', None)
-        user_id = getattr(exc, 'user_id', None)
-        data = map_details(**kwargs)
 
-        # If the Exception was raised for a view that is authenticated, we
-        # need to tell the JWT middleware to force logout the user.
-        # view = context['view']
-        # user = context['request'].user
-        # if user.is_authenticated and len(view.authentication_classes) != 0:
-        #     force_logout = True
+        user_id = getattr(exc, 'user_id', None)
+        request_user = context['request'].user
+
+        if user_id is not None:
+            response_data['user_id'] = user_id
+        elif request_user.is_authenticated:
+            response_data['user_id'] = request_user.pk
+
+        data = map_details(**kwargs)
 
     elif isinstance(exc.detail, dict):
         error_type = getattr(exc, 'error_type', 'field')
@@ -295,10 +296,9 @@ def exception_handler(exc, context):
     else:
         data = map_exception_details(exc, default_error_type='global')
 
-    # We only include  force_logout in the response data if the force logout
-    # is performed by the JWT middleware.
-    data = {'errors': data, 'user_id': user_id}
-    response_data = dict((k, v) for k, v in data.items() if v is not None)
+    response_data['errors'] = data
+    if force_logout:
+        response_data['force_logout'] = True
 
     # Allow the exception to include extra data that will be attributed to the
     # response at the top level, not individual errors.

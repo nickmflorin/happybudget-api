@@ -27,11 +27,6 @@ ALLOWED_HOSTS = [
     'gb-dev-lb-563148772.us-east-1.elb.amazonaws.com',  # Load Balancer
 ]
 
-# print("Adding EC2 IP Address to Allowed Hosts")
-# ec2_host_name = get_ec2_hostname()
-# if ec2_host_name is not None:
-#     ALLOWED_HOSTS.append(ec2_host_name)
-
 STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 STATIC_URL = config(
     name='AWS_STORAGE_BUCKET_URL',

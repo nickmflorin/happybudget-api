@@ -55,40 +55,17 @@ class TokenCookieMiddleware(MiddlewareMixin):
     def __init__(self, get_response=None):
         self.get_response = get_response
 
-    def force_logout(self, request, response, **kwargs):
+    def force_logout(self, request, response):
         # In some cases, the request will be a WSGIRequest object - this happens
         # during tests.
         if hasattr(request, 'session'):
             logout(request)
-
         # Browsers don't actually delete the cookie, they simply set the
         # cookie expiration date to a date in the past.  If the parameters
         # used to set the cookie are not the same as those used to delete
         # the cookie, the Browser cannot do this.
         response.delete_cookie(
             settings.JWT_TOKEN_COOKIE_NAME, **self.cookie_kwargs)
-
-        # Update the response body to include information informing the FE to
-        # potentially forcefully log the user out.  Note that in the case that
-        # there is a server error, the response object is HttpResponseServerError
-        # which does not have a `data` attribute.
-        if hasattr(response, 'data'):
-            response.data.update(
-                dict((k, v) for k, v in kwargs.items() if v is not None))
-
-            # Include a `force_logout` attribute in the response to inform the FE
-            # that we need to forcefully log the user out.
-            response.data.update(force_logout=True)
-
-            # If an Exception was raised that caused the rendered response
-            # includes a `user_id` attribute, that parameter will be set on the
-            # response object.  We need to include that value in the top level
-            # of the response for the FE.
-            if getattr(response, '_user_id', None) is not None:
-                response.data.update(user_id=getattr(response, '_user_id'))
-
-            response._is_rendered = False
-            response.render()
         return response
 
     def should_persist_cookie(self, request):
@@ -154,11 +131,7 @@ class TokenCookieMiddleware(MiddlewareMixin):
             if not is_active or not request.cookie_user.is_verified \
                     or force_logout is True:
                 if force_logout:
-                    return self.force_logout(
-                        request, response, user_id=request.cookie_user.pk)
-                elif hasattr(response, 'data') \
-                        and getattr(response, '_user_id', None) is not None:
-                    response.data.update(user_id=getattr(response, '_user_id'))
+                    return self.force_logout(request, response)
                 return response
 
         return self.persist_cookie(request, response)

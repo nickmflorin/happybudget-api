@@ -5,17 +5,17 @@ from greenbudget.lib.utils.dateutils import api_datetime_string
 
 
 @pytest.fixture
-def validate_sliding_token(jwt_authenticated_client):
+def validate_auth_token(jwt_authenticated_client):
     def inner():
         return jwt_authenticated_client.post("/v1/auth/validate/")
     return inner
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_validate_sliding_token(jwt_authenticated_client, validate_sliding_token,
+def test_validate_auth_token(jwt_authenticated_client, validate_auth_token,
         user, settings):
     jwt_authenticated_client.force_login(user)
-    response = validate_sliding_token()
+    response = validate_auth_token()
     assert response.status_code == 201
     assert settings.JWT_TOKEN_COOKIE_NAME in response.cookies
 
@@ -40,10 +40,10 @@ def test_validate_sliding_token(jwt_authenticated_client, validate_sliding_token
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_force_logout_on_sliding_token_removal(jwt_authenticated_client, user,
-        validate_sliding_token, settings):
+def test_force_logout_on_auth_token_removal(jwt_authenticated_client, user,
+        validate_auth_token, settings):
     jwt_authenticated_client.force_login(user)
-    response = validate_sliding_token()
+    response = validate_auth_token()
     assert response.status_code == 201
     assert settings.JWT_TOKEN_COOKIE_NAME in response.cookies
 
@@ -52,10 +52,10 @@ def test_force_logout_on_sliding_token_removal(jwt_authenticated_client, user,
     assert response.status_code == 403
 
 
-def test_validate_sliding_token_inactive_user(inactive_user, settings,
-        validate_sliding_token, jwt_authenticated_client):
+def test_validate_auth_token_inactive_user(inactive_user, settings,
+        validate_auth_token, jwt_authenticated_client):
     jwt_authenticated_client.force_login(inactive_user)
-    response = validate_sliding_token()
+    response = validate_auth_token()
     assert response.status_code == 403
     assert response.json() == {
         'user_id': inactive_user.pk,
@@ -69,10 +69,10 @@ def test_validate_sliding_token_inactive_user(inactive_user, settings,
     assert response.cookies[settings.JWT_TOKEN_COOKIE_NAME].value == ''
 
 
-def test_validate_sliding_token_unverified_user(validate_sliding_token,
+def test_validate_auth_token_unverified_user(validate_auth_token,
         unverified_user, jwt_authenticated_client, settings):
     jwt_authenticated_client.force_login(unverified_user)
-    response = validate_sliding_token()
+    response = validate_auth_token()
     assert response.status_code == 403
     assert response.json() == {
         'user_id': unverified_user.pk,
@@ -86,7 +86,7 @@ def test_validate_sliding_token_unverified_user(validate_sliding_token,
     assert response.cookies[settings.JWT_TOKEN_COOKIE_NAME].value == ''
 
 
-def test_validate_sliding_token_missing_token(api_client, user, settings):
+def test_validate_auth_token_missing_token(api_client, user, settings):
     api_client.force_login(user)
     response = api_client.post("/v1/auth/validate/")
     assert response.status_code == 403
@@ -102,7 +102,7 @@ def test_validate_sliding_token_missing_token(api_client, user, settings):
     assert response.cookies[settings.JWT_TOKEN_COOKIE_NAME].value == ''
 
 
-def test_validate_sliding_token_invalid_token(api_client, user, settings):
+def test_validate_auth_token_invalid_token(api_client, user, settings):
     api_client.force_login(user)
     api_client.cookies = SimpleCookie({
         settings.JWT_TOKEN_COOKIE_NAME: "invalid-token"
