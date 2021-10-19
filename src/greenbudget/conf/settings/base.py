@@ -26,7 +26,8 @@ TIME_ZONE = 'UTC'
 USE_TZ = True
 
 APP_DOMAIN = 'api.greenbudget.io/'
-APP_URL = LazySetting(lambda settings: 'https://%s' % str(settings.APP_DOMAIN))
+APP_URL = 'https://%s' % APP_DOMAIN
+
 APP_V1_URL = LazySetting(
     lambda settings: os.path.join(str(settings.APP_URL), "v1"))
 

@@ -15,6 +15,7 @@ from .base import (
 ENVIRONMENT = Environments.DEV
 
 APP_DOMAIN = 'devapi.greenbudget.io'
+APP_URL = 'https://%s' % APP_DOMAIN
 FRONTEND_URL = "https://dev.greenbudget.io/"
 
 CSRF_TRUSTED_ORIGINS = [
