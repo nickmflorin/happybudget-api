@@ -24,6 +24,7 @@ class AuthErrorCodes(object):
     INVALID_SOCIAL_PROVIDER = "invalid_social_provider"
     INVALID_TOKEN = "token_not_valid"
     EXPIRED_TOKEN = "token_expired"
+    EMAIL_ERROR = "email_error"
 
 
 class TokenError(BaseTokenError):
@@ -139,3 +140,8 @@ class InvalidSocialProvider(exceptions.AuthenticationFailed):
     default_detail = _(
         "The provided social provider is missing or invalid.")
     default_code = AuthErrorCodes.INVALID_SOCIAL_PROVIDER
+
+
+class EmailError(exceptions.ParseError):
+    default_detail = _("There was a problem sending the email.")
+    default_code = AuthErrorCodes.EMAIL_ERROR

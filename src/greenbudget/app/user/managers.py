@@ -45,8 +45,6 @@ class UserManager(UserQuerier, DjangoUserManager):
         kwargs.setdefault('is_superuser', False)
         kwargs.setdefault('is_admin', False)
         kwargs.setdefault('is_active', True)
-        # TODO: Remove me when we implement email verification!
-        kwargs.setdefault('is_verified', True)
         return self._create_user(email, **kwargs)
 
     def create_superuser(self, email, **kwargs):

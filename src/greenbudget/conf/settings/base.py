@@ -8,7 +8,7 @@ import datetime
 import os
 from pathlib import Path
 
-from greenbudget.conf import Environments, config
+from greenbudget.conf import Environments, config, LazySetting
 
 from .admin import *  # noqa
 from .aws import *  # noqa
@@ -26,10 +26,16 @@ TIME_ZONE = 'UTC'
 USE_TZ = True
 
 APP_DOMAIN = 'api.greenbudget.io/'
-APP_URL = 'https://%s' % APP_DOMAIN
-APP_V1_URL = os.path.join(APP_URL, "v1")
+APP_URL = LazySetting(lambda settings: 'https://%s' % str(settings.APP_DOMAIN))
+APP_V1_URL = LazySetting(
+    lambda settings: os.path.join(str(settings.APP_URL), "v1"))
 
 FRONTEND_URL = "https://app.greenbudget.io/"
+FRONTEND_EMAIL_CONFIRM_URL = LazySetting(
+    lambda settings: os.path.join(str(settings.FRONTEND_URL), "verify"))
+FRONTEND_PASSWORD_RECOVERY_URL = LazySetting(
+    lambda settings: os.path.join(str(settings.FRONTEND_URL), "recovery"))
+
 
 SECRET_KEY = config(
     name='DJANGO_SECRET_KEY',
@@ -42,8 +48,14 @@ SECRET_KEY = config(
 
 # Email Configurations
 EMAIL_ENABLED = True
-EMAIL_HOST = '.greenbudget.io'
-SMTP_EMAIL_PORT = 25
+FROM_EMAIL = "noreply@greenbudget.io"
+EMAIL_HOST = 'smtp.sendgrid.net'
+SENDGRID_API_KEY = config(
+    name='SENDGRID_API_KEY',
+    required=[Environments.PROD, Environments.DEV, Environments.LOCAL],
+)
+PASSWORD_RECOVERY_TEMPLATE_ID = "d-577a2dda8c2d4e3dabff2337240edf79"
+EMAIL_VERIFICATION_TEMPLATE_ID = "d-3f3c585c80514e46809b9d3a46134674"
 
 PWD_RESET_LINK_EXPIRY_TIME_IN_HRS = 24
 GOOGLE_OAUTH_API_URL = "https://www.googleapis.com/oauth2/v3/tokeninfo/"

@@ -1,12 +1,33 @@
-import os
 import csv
 from dotenv import load_dotenv
+import functools
 import logging
+import os
 import pathlib
 import sys
 
+from django.utils.functional import SimpleLazyObject
+
 
 logger = logging.getLogger('greenbudget')
+
+
+def suppress_with_setting(attr, value=False, suppressed_return_value=None):
+    def decorator(func):
+        @functools.wraps(func)
+        def inner(*args, **kwargs):
+            from django.conf import settings
+            current_value = getattr(settings, attr)
+            if current_value != value:
+                return func(*args, **kwargs)
+            logger.warn("Skipping call to %s because %s = %s." % (
+                func.__name__,
+                attr,
+                current_value
+            ))
+            return suppressed_return_value
+        return inner
+    return decorator
 
 
 class Environments:
@@ -145,3 +166,12 @@ class Config:
 
 
 config = Config()
+
+
+def get_lazy_setting(func):
+    from django.conf import settings
+    return func(settings)
+
+
+def LazySetting(func):
+    return SimpleLazyObject(lambda: get_lazy_setting(func))

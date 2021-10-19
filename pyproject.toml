@@ -45,6 +45,8 @@ django_compressor = "^2.4.1"
 django-libsass = "^0.8"
 watchtower = "^1.0.6"
 drf-nested-routers = "^0.93.3"
+sendgrid = "^6.8.3"
+python_http_client = "^3.3.3"
 
 [tool.poetry.extras]
 docs = [

@@ -5,7 +5,6 @@ from boto3 import session
 import logging
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
-import os
 
 from greenbudget.conf import Environments, config
 from greenbudget.conf.util import get_ec2_hostname
@@ -17,8 +16,6 @@ from .base import (
 ENVIRONMENT = Environments.DEV
 
 APP_DOMAIN = 'devapi.greenbudget.io'
-APP_URL = 'http://%s' % APP_DOMAIN
-APP_V1_URL = os.path.join(APP_URL, "v1")
 FRONTEND_URL = "https://dev.greenbudget.io/"
 
 CSRF_TRUSTED_ORIGINS = [

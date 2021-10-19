@@ -1,6 +1,4 @@
-
-from django.contrib.auth import authenticate
-from rest_framework import serializers, exceptions, validators
+from rest_framework import serializers, validators
 
 from greenbudget.lib.drf.fields import Base64ImageField
 from greenbudget.lib.drf.serializers import (
@@ -9,35 +7,6 @@ from greenbudget.lib.drf.serializers import (
 from greenbudget.app.authentication.utils import validate_password
 
 from .models import User
-
-
-class ChangePasswordSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(
-        required=True, allow_null=False, allow_blank=False)
-    current = serializers.CharField(
-        required=True, allow_null=False, allow_blank=False)
-
-    class Meta:
-        model = User
-        fields = ('password', 'current')
-
-    def validate_current(self, current):
-        auth = authenticate(
-            username=self.instance.get_username(),
-            password=current
-        )
-        if not auth:
-            raise exceptions.ValidationError("Invalid current password.")
-        return current
-
-    def validate_password(self, value):
-        validate_password(value)
-        return value
-
-    def update(self, instance, validated_data):
-        instance.set_password(validated_data['password'])
-        instance.save()
-        return instance
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):

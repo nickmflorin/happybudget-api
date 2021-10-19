@@ -305,7 +305,7 @@ def exception_handler(exc, context):
     if isinstance(getattr(exc, 'extra', None), Mapping):
         response_data.update({k: v for k, v in exc.extra.items()})
 
-    logger.info("There was a user error", extra=response_data)
+    logger.info("API Error", extra=response_data)
 
     response = Response(response_data, status=exc.status_code)
 

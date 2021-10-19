@@ -8,6 +8,7 @@ from greenbudget.app.user.models import User
 from .exceptions import (
     TokenExpiredError, ExpiredToken, InvalidToken, TokenError,
     EmailDoesNotExist)
+from .mail import send_email_verification_email, send_password_recovery_email
 from .permissions import IsAuthenticated, IsVerified
 from .tokens import SlidingToken, AccessToken
 from .utils import validate_password, get_user_from_token
@@ -56,7 +57,6 @@ class AuthTokenSerializer(serializers.Serializer):
 
 class EmailTokenSerializer(AuthTokenSerializer):
     token_cls = AccessToken
-    exclude_permissions = ['verified']
 
     def validate(self, attrs):
         data = super().validate(attrs)
@@ -105,7 +105,8 @@ class RecoverPasswordSerializer(serializers.Serializer):
         return {"user": user}
 
     def create(self, validated_data):
-        # Here is where we will send the user password recovery email.
+        token = AccessToken.for_user(validated_data["user"])
+        send_password_recovery_email(validated_data["user"], str(token))
         return validated_data["user"]
 
 
@@ -117,7 +118,8 @@ class VerifyEmailSerializer(serializers.Serializer):
     )
 
     def create(self, validated_data):
-        # Here is where we will send the user verification email.
+        token = AccessToken.for_user(validated_data["user"])
+        send_email_verification_email(validated_data["user"], str(token))
         return validated_data['user']
 
 
