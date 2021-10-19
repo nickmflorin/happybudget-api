@@ -185,6 +185,7 @@ AUTHENTICATION_BACKENDS = [
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
+    'greenbudget.app.middleware.HealthCheckMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
