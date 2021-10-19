@@ -175,7 +175,7 @@ def make_url_absolute(url, request=None, domain=None, scheme=None, base=None):
 
     scheme = url_scheme
     if not scheme:
-        scheme = urlsplit(settings.APP_URL).scheme
+        scheme = urlsplit(str(settings.APP_URL)).scheme
 
     if netloc:
         domain = netloc
@@ -205,7 +205,7 @@ def make_url_absolute(url, request=None, domain=None, scheme=None, base=None):
         if not scheme:
             scheme = "http%s" % ("s" if request.is_secure() else "")
     else:
-        domain = urlsplit(settings.APP_URL).netloc
+        domain = urlsplit(str(settings.APP_URL)).netloc
 
     return urlunsplit((scheme, domain, path, query_string, fragment))
 
@@ -224,7 +224,7 @@ def relativize_url(url):
     >>> "https://google.ai/v1/budgets/5"
     """
     scheme, netloc, path, query_string, fragment = urlsplit(url)
-    possible_netloc = urlsplit(settings.APP_URL)[1]
+    possible_netloc = urlsplit(str(settings.APP_URL))[1]
     if netloc != possible_netloc:
         return url
     return urlunsplit(['', '', path, query_string, fragment])

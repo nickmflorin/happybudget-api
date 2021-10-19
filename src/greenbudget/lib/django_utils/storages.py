@@ -10,7 +10,7 @@ class LocalStorage(FileSystemStorage):
         url = super().url(name)
         if url.startswith("/"):
             url = url[1:]
-        return os.path.join(settings.APP_URL, url)
+        return os.path.join(str(settings.APP_URL), url)
 
 
 class ImageExtensionError(Exception):
