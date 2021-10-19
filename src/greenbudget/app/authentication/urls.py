@@ -2,7 +2,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.urls import path
 
 from .backends import CsrfExcemptCookieSessionAuthentication
-from .permissions import IsAnonymous
+from .permissions import IsAnonymous, IsAuthenticated, IsNotVerified
 from .serializers import EmailTokenSerializer, ResetPasswordSerializer
 from .tokens import AccessToken
 from .views import (
@@ -33,7 +33,7 @@ urlpatterns = [
         token_location='request',
         permission_classes=(IsAnonymous, ),
         authentication_classes=(),
-        exclude_permissions=["verified"]
+        token_user_permission_classes=(IsAuthenticated, IsNotVerified)
     )),
     path('reset-password/', TokenValidateView.as_view(
         serializer_class=ResetPasswordSerializer,

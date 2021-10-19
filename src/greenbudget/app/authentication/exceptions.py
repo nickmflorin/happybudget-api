@@ -19,6 +19,7 @@ class AuthErrorCodes(object):
     INVALID_CREDENTIALS = "invalid_credentials"
     EMAIL_DOES_NOT_EXIST = "email_does_not_exist"
     EMAIL_NOT_VERIFIED = "email_not_verified"
+    EMAIL_VERIFIED = "email_verified"
     INVALID_SOCIAL_TOKEN = "invalid_social_token"
     INVALID_SOCIAL_PROVIDER = "invalid_social_provider"
     INVALID_TOKEN = "token_not_valid"
@@ -105,6 +106,11 @@ class AccountDisabledError(PermissionDenied):
 class EmailNotVerified(PermissionDenied):
     default_detail = _("The email address is not verified.")
     default_code = AuthErrorCodes.EMAIL_NOT_VERIFIED
+
+
+class EmailVerified(PermissionDenied):
+    default_detail = _("The email address is already verified.")
+    default_code = AuthErrorCodes.EMAIL_VERIFIED
 
 
 class EmailDoesNotExist(InvalidFieldError):

@@ -53,22 +53,7 @@ def test_force_logout_on_sliding_token_removal(jwt_authenticated_client, user,
 
 
 def test_validate_sliding_token_inactive_user(inactive_user, settings,
-        validate_sliding_token):
-    response = validate_sliding_token()
-    assert response.status_code == 403
-    assert response.json() == {
-        'user_id': inactive_user.pk,
-        'errors': [{
-            'message': 'Your account is not active, please contact customer care.',  # noqa
-            'code': 'account_disabled',
-            'error_type': 'auth'
-        }]
-    }
-    assert settings.JWT_TOKEN_COOKIE_NAME not in response.cookies
-
-
-def test_validate_sliding_token_inactive_user_logged_in(validate_sliding_token,
-        jwt_authenticated_client, inactive_user, settings):
+        validate_sliding_token, jwt_authenticated_client):
     jwt_authenticated_client.force_login(inactive_user)
     response = validate_sliding_token()
     assert response.status_code == 403
@@ -85,21 +70,6 @@ def test_validate_sliding_token_inactive_user_logged_in(validate_sliding_token,
 
 
 def test_validate_sliding_token_unverified_user(validate_sliding_token,
-        unverified_user, settings):
-    response = validate_sliding_token()
-    assert response.status_code == 403
-    assert response.json() == {
-        'user_id': unverified_user.pk,
-        'errors': [{
-            'message': 'The email address is not verified.',
-            'code': 'email_not_verified',
-            'error_type': 'auth'
-        }]
-    }
-    assert settings.JWT_TOKEN_COOKIE_NAME not in response.cookies
-
-
-def test_validate_sliding_token_unverified_user_logged_in(validate_sliding_token,
         unverified_user, jwt_authenticated_client, settings):
     jwt_authenticated_client.force_login(unverified_user)
     response = validate_sliding_token()
@@ -116,21 +86,7 @@ def test_validate_sliding_token_unverified_user_logged_in(validate_sliding_token
     assert response.cookies[settings.JWT_TOKEN_COOKIE_NAME].value == ''
 
 
-def test_validate_sliding_token_missing_token(api_client, settings):
-    response = api_client.post("/v1/auth/validate/")
-    assert response.status_code == 403
-    assert response.json() == {
-        'errors': [{
-            'message': 'User is not authenticated.',
-            'code': 'account_not_authenticated',
-            'error_type': 'auth'
-        }]
-    }
-    assert settings.JWT_TOKEN_COOKIE_NAME not in response.cookies
-
-
-def test_validate_sliding_token_missing_token_logged_in(api_client, user,
-        settings):
+def test_validate_sliding_token_missing_token(api_client, user, settings):
     api_client.force_login(user)
     response = api_client.post("/v1/auth/validate/")
     assert response.status_code == 403
@@ -146,25 +102,7 @@ def test_validate_sliding_token_missing_token_logged_in(api_client, user,
     assert response.cookies[settings.JWT_TOKEN_COOKIE_NAME].value == ''
 
 
-def test_validate_sliding_token_invalid_token(api_client, settings):
-    api_client.cookies = SimpleCookie({
-        settings.JWT_TOKEN_COOKIE_NAME: "invalid-token"
-    })
-    response = api_client.post("/v1/auth/validate/")
-    assert response.status_code == 403
-    assert response.json() == {
-        'force_logout': True,
-        'errors': [{
-            'message': 'Token is invalid.',
-            'code': 'token_not_valid',
-            'error_type': 'auth'
-        }]
-    }
-    assert response.cookies[settings.JWT_TOKEN_COOKIE_NAME].value == ''
-
-
-def test_validate_sliding_token_invalid_token_logged_in(api_client, user,
-        settings):
+def test_validate_sliding_token_invalid_token(api_client, user, settings):
     api_client.force_login(user)
     api_client.cookies = SimpleCookie({
         settings.JWT_TOKEN_COOKIE_NAME: "invalid-token"

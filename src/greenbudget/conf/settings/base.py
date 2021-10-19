@@ -310,7 +310,8 @@ REST_FRAMEWORK = {
         'greenbudget.app.authentication.backends.SessionAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+        'greenbudget.app.authentication.permissions.IsAuthenticated',
+        'greenbudget.app.authentication.permissions.IsVerified'
     ],
     'DEFAULT_PAGINATION_CLASS': 'greenbudget.lib.drf.pagination.Pagination',  # noqa
     'DEFAULT_THROTTLE_CLASSES': [

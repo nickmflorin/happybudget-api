@@ -5,23 +5,12 @@ from rest_framework import serializers, exceptions
 
 from greenbudget.app.user.models import User
 
-from .backends import check_user_permissions
 from .exceptions import (
     TokenExpiredError, ExpiredToken, InvalidToken, TokenError,
     EmailDoesNotExist)
+from .permissions import IsAuthenticated, IsVerified
 from .tokens import SlidingToken, AccessToken
 from .utils import validate_password, get_user_from_token
-
-
-class UserEmailField(serializers.EmailField):
-    def run_validation(self, *args, **kwargs):
-        email = super().run_validation(*args, **kwargs)
-        try:
-            user = get_user_model().objects.get(email=email)
-        except get_user_model().DoesNotExist:
-            raise EmailDoesNotExist(self.source)
-        check_user_permissions(user, raise_exception=True)
-        return user
 
 
 class AuthTokenSerializer(serializers.Serializer):
@@ -29,15 +18,13 @@ class AuthTokenSerializer(serializers.Serializer):
         required=False, allow_null=True, allow_blank=True)
 
     def __init__(self, *args, **kwargs):
+        self.check_permissions = kwargs.pop('check_permissions', None)
         default_token_cls = getattr(self, 'token_cls', SlidingToken)
         self.token_cls = kwargs.pop('token_cls', default_token_cls)
 
         default_force_logout = getattr(self, 'force_logout', None)
         self.force_logout = kwargs.pop('force_logout', default_force_logout)
 
-        default_exclude_permissions = getattr(self, 'exclude_permissions', [])
-        self.exclude_permissions = kwargs.pop(
-            'exclude_permissions', default_exclude_permissions)
         super().__init__(*args, **kwargs)
 
     def validate(self, attrs):
@@ -59,12 +46,8 @@ class AuthTokenSerializer(serializers.Serializer):
                 user_id=getattr(e, 'user_id', None),
                 force_logout=self.force_logout
             ) from e
-        check_user_permissions(
-            user=user,
-            exclude_permissions=self.exclude_permissions,
-            raise_exception=True,
-            force_logout=self.force_logout
-        )
+        if self.check_permissions is not None:
+            self.check_permissions(user, force_logout=self.force_logout)
         return {"user": user, "token": token_obj}
 
     def create(self, validated_data):
@@ -109,11 +92,21 @@ class LoginSerializer(AbstractLoginSerializer):
 
 
 class RecoverPasswordSerializer(serializers.Serializer):
-    email = UserEmailField(required=True, allow_blank=False)
+    email = serializers.EmailField(required=True, allow_blank=False)
+
+    def validate(self, attrs):
+        email = attrs['email']
+        try:
+            user = get_user_model().objects.get(email=email)
+        except get_user_model().DoesNotExist:
+            raise EmailDoesNotExist('email')
+        permissions = [IsAuthenticated(), IsVerified()]
+        [p.user_has_permission(user) for p in permissions]
+        return {"user": user}
 
     def create(self, validated_data):
         # Here is where we will send the user password recovery email.
-        return validated_data["email"]
+        return validated_data["user"]
 
 
 class VerifyEmailSerializer(serializers.Serializer):

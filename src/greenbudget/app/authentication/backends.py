@@ -1,4 +1,3 @@
-import collections
 import logging
 
 from django.contrib.auth import get_user_model
@@ -6,51 +5,11 @@ from django.contrib.auth.backends import ModelBackend
 
 from rest_framework import authentication
 
-from .exceptions import (
-    EmailNotVerified, AccountDisabledError, EmailDoesNotExist,
-    InvalidCredentialsError, NotAuthenticatedError)
+from .exceptions import InvalidCredentialsError, EmailDoesNotExist
+from .permissions import IsAuthenticated, IsVerified
 
 
 logger = logging.getLogger('greenbudget')
-
-
-UserPermissionValidator = collections.namedtuple(
-    'UserPermissionValidator', ['id', 'check', 'exception'])
-
-UserPermissionValidators = [
-    UserPermissionValidator(
-        id='authenticated',
-        check=lambda user: user is None or not user.is_authenticated,
-        exception=NotAuthenticatedError
-    ),
-    UserPermissionValidator(
-        id='active',
-        check=lambda user: not user.is_active,
-        exception=AccountDisabledError
-    ),
-    UserPermissionValidator(
-        id='verified',
-        check=lambda user: not user.is_verified,
-        exception=EmailNotVerified
-    )
-]
-
-
-def check_user_permissions(user, force_logout=False, raise_exception=False,
-        exclude_permissions=None):
-    exclude = exclude_permissions or []
-    for validator in [
-            v for v in UserPermissionValidators if v.id not in exclude]:
-        if validator.check(user) is True:
-            if raise_exception:
-                if user is not None and getattr(user, 'pk') is not None:
-                    raise validator.exception(
-                        user_id=user.pk,
-                        force_logout=force_logout
-                    )
-                raise validator.exception(force_logout=force_logout)
-            return False
-    return True
 
 
 class SocialModelAuthentication(ModelBackend):
@@ -65,7 +24,8 @@ class SocialModelAuthentication(ModelBackend):
                 token_id=token_id,
                 provider=provider
             )
-            check_user_permissions(user, raise_exception=True)
+            permissions = [IsAuthenticated(), IsVerified()]
+            [p.user_has_permission(user) for p in permissions]
             return user
         return None
 
@@ -85,7 +45,8 @@ class ModelAuthentication(ModelBackend):
                 raise EmailDoesNotExist('email')
             if not user.check_password(password):
                 raise InvalidCredentialsError("password")
-            check_user_permissions(user, raise_exception=True)
+            permissions = [IsAuthenticated(), IsVerified()]
+            [p.user_has_permission(user) for p in permissions]
             return user
         return None
 
@@ -103,19 +64,12 @@ class SessionAuthentication(authentication.SessionAuthentication):
     the proper actions to forcefully log the user out.
     """
     user_ref = 'user'
-    exclude_permissions = []
     csrf_excempt = False
 
-    def get_user_from_request(self, request):
-        return getattr(request._request, self.user_ref, None)
-
     def authenticate(self, request):
-        user = self.get_user_from_request(request)
-        check_user_permissions(
-            user=user,
-            raise_exception=True,
-            exclude_permissions=self.exclude_permissions
-        )
+        user = getattr(request._request, self.user_ref, None)
+        if not user or not user.is_active or not user.is_verified:
+            return None
         if not self.csrf_excempt:
             self.enforce_csrf(request)
         return (user, None)

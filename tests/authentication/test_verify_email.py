@@ -64,6 +64,8 @@ def test_verify_email_expired_token(api_client, unverified_user):
 
 
 def test_validate_email_token_inactive_user(inactive_user, validate_email_token):
+    inactive_user.is_verified = False
+    inactive_user.save()
     response = validate_email_token()
     assert response.status_code == 403
     assert response.json() == {

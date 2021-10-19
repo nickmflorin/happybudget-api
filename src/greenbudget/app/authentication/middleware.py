@@ -21,16 +21,14 @@ logger = logging.getLogger('backend')
 
 def get_cookie_user(request):
     if not hasattr(request, '_cached_cookie_user'):
-        user = getattr(request, 'user', None)
-        if user and user.is_active and user.is_verified:
-            request._cached_cookie_user = user
+        if getattr(request, 'user', None) \
+                and getattr(request, 'user').is_active \
+                and getattr(request, 'user').is_verified:
+            request._cached_cookie_user = request.user
         else:
-            # If there is no token on the request, the user will be the
-            # AnonymousUser() instance.
             raw_token = parse_token_from_request(request)
             try:
-                request._cached_cookie_user, _ = get_user_from_token(
-                    raw_token)
+                request._cached_cookie_user, _ = get_user_from_token(raw_token)
             except TokenCorruptedError as e:
                 logger.info("The provided token is corrupted.")
                 raise InvalidToken(*e.args) from e
