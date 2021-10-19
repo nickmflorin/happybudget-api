@@ -37,7 +37,7 @@ def estimate_account(instance, markups_to_be_deleted=None,
     queue_in_context=True,
     side_effect=lambda instance: signals.SideEffect(
         func=actualize_budget,
-        args=(instance.parent, )
+        args=(instance.parent, ),
     )
 )
 def actualize_account(instance, children_to_be_deleted=None,
@@ -46,7 +46,8 @@ def actualize_account(instance, children_to_be_deleted=None,
         children_to_be_deleted=children_to_be_deleted,
         markups_to_be_deleted=markups_to_be_deleted
     )
-    instance.save(update_fields=["actual"], suppress_budget_update=True)
+    if instance.actual != instance.previous_value('actual'):
+        instance.save(update_fields=["actual"], suppress_budget_update=True)
 
 
 @signals.bulk_context.handler(

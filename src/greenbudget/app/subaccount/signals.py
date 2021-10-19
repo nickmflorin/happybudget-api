@@ -21,8 +21,8 @@ def actualize_parent_conditional(instance, parents):
     # NULL state.
     correct_parent = instance.parent is not None \
         and isinstance(instance.parent, parents)
-    change_occured = instance.actual != instance.previous_value('actual')
-    return correct_parent and change_occured
+    # change_occured = instance.actual != instance.previous_value('actual')
+    return correct_parent
 
 
 @signals.bulk_context.handler(

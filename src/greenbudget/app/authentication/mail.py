@@ -108,8 +108,6 @@ def send_mail(mail):
 
 def send_email_verification_email(user, token):
     mail = EmailVerification(user, token)
-    print(mail.dynamic_template_data)
-    print(mail.get())
     return send_mail(mail)
 
 

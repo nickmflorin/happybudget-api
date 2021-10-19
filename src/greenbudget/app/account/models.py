@@ -180,7 +180,7 @@ class Account(PolymorphicModel):
 @signals.model(
     flags=['suppress_budget_update'],
     user_field='updated_by',
-    exclude_fields=['updated_by', 'created_by'] + list(CALCULATED_FIELDS)
+    exclude_fields=['updated_by', 'created_by']
 )
 class BudgetAccount(Account):
     pdf_type = "pdf-account"
@@ -209,7 +209,7 @@ class BudgetAccount(Account):
 @signals.model(
     flags=['suppress_budget_update'],
     user_field='updated_by',
-    exclude_fields=['updated_by', 'created_by'] + list(CALCULATED_FIELDS)
+    exclude_fields=['updated_by', 'created_by']
 )
 class TemplateAccount(Account):
     objects = AccountManager()

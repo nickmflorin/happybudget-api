@@ -75,10 +75,6 @@ class ModelFieldException(ModelException):
         return self.data.format(field=self._field, model=self.model.__name__)
 
 
-class InstanceNotSavedError(ModelException):
-    data = "The {model} instance has not yet been saved."
-
-
 class FieldDoesNotExistError(ModelFieldException):
     data = "Field {field} does not exist on model {model}."
 
@@ -252,8 +248,6 @@ class model:
         def previous_value(instance, field):
             if field not in instance.__tracked_fields:
                 raise FieldNotTrackedError(field, instance)
-            if instance.pk is None:
-                raise InstanceNotSavedError(instance)
             return instance.__data[field]
 
         def field_has_changed(instance, k):
@@ -261,22 +255,21 @@ class model:
                 return previous_value(instance, k) != getattr(instance, k)
             return previous_value(instance, k) != getattr(instance, '%s_id' % k)
 
+        def fields_have_changed(instance, *fields):
+            return any([f in instance.changed_fields for f in fields])
+
         @property
         def changed_fields(instance):
             changed = {}
             for k in instance.__tracked_fields:
-                try:
-                    did_change = field_has_changed(instance, k)
-                except InstanceNotSavedError:
-                    return {}
-                else:
-                    if did_change:
-                        changed[k] = FieldChange(
-                            field=k,
-                            value=getattr(instance, k),
-                            previous_value=previous_value(instance, k)
+                if field_has_changed(instance, k):
+                    changed[k] = FieldChange(
+                        field=k,
+                        value=getattr(instance, k),
+                        previous_value=previous_value(instance, k),
+                        field_instance=self.get_field_instance(cls, k)
 
-                        )
+                    )
             return changed
 
         def field_stored_in_local_memory(field):
@@ -335,9 +328,9 @@ class model:
 
         def store(instance):
             instance.__data = dict()
-            if instance.pk:
-                for f in instance.__tracked_fields:
-                    store_field(instance, f)
+            # if instance.pk:
+            for f in instance.__tracked_fields:
+                store_field(instance, f)
 
         def get_flag(instance, flag):
             if hasattr(instance, '_post_save_flags'):
@@ -409,6 +402,7 @@ class model:
 
         # Expose helper methods on the model class.
         cls.changed_fields = changed_fields
+        cls.fields_have_changed = fields_have_changed
         cls.field_has_changed = field_has_changed
         cls.previous_value = previous_value
         cls.get_flag = get_flag
