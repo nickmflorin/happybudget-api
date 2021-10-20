@@ -161,8 +161,13 @@ class Base64ImageField(serializers.ImageField):
                 # This can happen if there is an error retrieving the image from
                 # AWS.  Common case would be a 404 error if we had an image
                 # stored locally and we started using S3 in local dev mode.
-                logger.exception(
-                    "Received AWS error trying to serializer image.")
+                logger.exception("Could not find AWS image.")
+                return super().to_representation(instance)
+            except FileNotFoundError:
+                # This can happen if there is an error retrieving the image from
+                # local storage.  This happens a lot when switching between S3
+                # and local storage in local development.
+                logger.exception("Could not find image file locally.")
                 return super().to_representation(instance)
         return super().to_representation(instance)
 
