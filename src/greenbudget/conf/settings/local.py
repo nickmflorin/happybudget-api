@@ -1,7 +1,7 @@
 """
 Settings configuration file for dev environment.
 """
-from greenbudget.conf import Environments
+from greenbudget.conf import Environments, config
 
 from .base import *  # noqa
 
@@ -13,7 +13,7 @@ APP_DOMAIN = '127.0.0.1:8000'
 APP_URL = 'http://%s' % APP_DOMAIN
 FRONTEND_URL = "127.0.0.1:3000"
 
-DEFAULT_FILE_STORAGE = 'greenbudget.lib.django_utils.storages.LocalStorage'
+# DEFAULT_FILE_STORAGE = 'greenbudget.lib.django_utils.storages.LocalStorage'
 
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
@@ -35,7 +35,12 @@ CORS_ORIGIN_REGEX_WHITELIST = (
     r'^(https?://)?127.0.0.1:?[\d]*?$'
 )
 
-try:
-    from .local_overrride import *  # noqa
-except ImportError:
-    pass
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+STATIC_URL = config(
+    name='AWS_STORAGE_BUCKET_URL',
+    required=True,
+    validate=lambda value: (value.endswith(
+        '/'), "The URL must end with a trailing slash.")
+)

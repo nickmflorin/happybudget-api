@@ -12,6 +12,15 @@ from django.utils.functional import SimpleLazyObject
 logger = logging.getLogger('greenbudget')
 
 
+def get_lazy_setting(func):
+    from django.conf import settings
+    return func(settings)
+
+
+def LazySetting(func):
+    return SimpleLazyObject(lambda: get_lazy_setting(func))
+
+
 def suppress_with_setting(attr, value=False, suppressed_return_value=None):
     def decorator(func):
         @functools.wraps(func)
@@ -55,11 +64,14 @@ class ConfigError(Exception):
 
 class ConfigInvalidError(ConfigError):
 
-    def __init__(self, config_name):
+    def __init__(self, config_name, message=None):
         self.config_name = config_name
+        self.message = message
 
     def __str__(self):
-        return f"The {self.config_name} environment variable is invalid."
+        if self.message is None:
+            return f"The {self.config_name} environment variable is invalid."
+        return f"The {self.config_name} environment variable is invalid: {self.message}"  # noqa
 
 
 class ConfigRequiredError(ConfigError):
@@ -98,18 +110,13 @@ class Config:
             # This is a temporary hack to allow the .env file inside the docker
             # container to be found correctly.
             load_dotenv(dotenv_path=".env")
-            # if os.path.exists(".env"):
-            #     load_dotenv(dotenv_path=".env")
-            # else:
-            #     logger.warning(
-            #         "Could not find an ENV file at %s - not loading."
-            #         % dotenv_path)
 
-    def __call__(self, name, default='', cast=str, required=False):
+    def __call__(self, name, default='', cast=str, required=False, validate=None):  # noqa
         # Whether or not the configuration is required can be a function of
-        # the environment we are in.
+        # the environment we are in, specified as either a dict or an iterable.
         if isinstance(required, dict):
             required = required.get(self._environment, False)
+
         elif (not isinstance(required, str)
                 and hasattr(required, '__iter__')):
             required = self._environment in required
@@ -126,14 +133,37 @@ class Config:
                 self._values[name] = self._defaults[name] = default
             else:
                 try:
-                    self._values[name] = cast(value)
+                    v = cast(value)
                 except ValueError:
                     raise ConfigInvalidError(name)
+                else:
+                    if validate is not None:
+                        self.validate(name, v, validate)
+                    self._values[name] = v
 
             if required and not self._values[name]:
                 raise ConfigRequiredError(name)
 
         return self._values[name]
+
+    def validate(self, name, value, validator):
+        if not hasattr(validator, '__call__'):
+            raise Exception("Validator must be a callable.")
+
+        validated = validator(value)
+        if isinstance(validated, tuple):
+            if len(validated) not in (1, 2):
+                raise Exception(
+                    "Validation must return a tuple of length 1 or 2.")
+
+            is_valid = validated[0]
+            if is_valid is not True:
+                if len(validated) == 2:
+                    raise ConfigInvalidError(name, message=validated[1])
+                raise ConfigInvalidError(name)
+
+        elif validated is not True:
+            raise ConfigInvalidError(name)
 
     @staticmethod
     def csvlist(value):
@@ -166,12 +196,3 @@ class Config:
 
 
 config = Config()
-
-
-def get_lazy_setting(func):
-    from django.conf import settings
-    return func(settings)
-
-
-def LazySetting(func):
-    return SimpleLazyObject(lambda: get_lazy_setting(func))

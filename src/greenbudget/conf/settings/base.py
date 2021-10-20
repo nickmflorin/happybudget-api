@@ -47,6 +47,9 @@ SECRET_KEY = config(
     }
 )
 
+# Sentry Configuration
+SENTRY_DSN = "https://9eeab5e26f804bd582385ffc5eda991d@o591585.ingest.sentry.io/5740484"  # noqa
+
 # Email Configurations
 EMAIL_ENABLED = True
 FROM_EMAIL = "noreply@greenbudget.io"
@@ -148,6 +151,7 @@ INSTALLED_APPS = [
     'grappelli',
     'greenbudget',  # Must be before django authentication.
     'polymorphic',
+    'raven.contrib.django.raven_compat',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

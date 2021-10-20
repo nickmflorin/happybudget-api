@@ -1,7 +1,10 @@
 import base64
 import binascii
+import logging
 import imghdr
 import uuid
+
+from botocore import exceptions
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
@@ -11,6 +14,9 @@ from rest_framework import serializers
 
 from greenbudget.lib.django_utils.storages import (
     using_s3_storage, get_image_filename_extension)
+
+
+logger = logging.getLogger('greenbudget')
 
 
 def find_field_original_serializer(field):
@@ -147,8 +153,16 @@ class Base64ImageField(serializers.ImageField):
             try:
                 return ImageFieldFileSerializer(instance).data
             except ValueError:
-                # This will happen if hte instance does not have a file
+                # This can happen if the instance does not have a file
                 # associated with it.
+                logger.exception("Received error trying to serializer image.")
+                return super().to_representation(instance)
+            except exceptions.ClientError:
+                # This can happen if there is an error retrieving the image from
+                # AWS.  Common case would be a 404 error if we had an image
+                # stored locally and we started using S3 in local dev mode.
+                logger.exception(
+                    "Received AWS error trying to serializer image.")
                 return super().to_representation(instance)
         return super().to_representation(instance)
 
@@ -156,7 +170,7 @@ class Base64ImageField(serializers.ImageField):
         if data is not None:
             if isinstance(data, str):
                 if 'data:' in data and ';base64,' in data:
-                    header, data = data.split(';base64,')
+                    _, data = data.split(';base64,')
                 try:
                     decoded_file = base64.b64decode(data)
                 except TypeError:
