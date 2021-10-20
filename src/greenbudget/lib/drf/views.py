@@ -311,6 +311,5 @@ def exception_handler(exc, context):
 
     # Include meta information on response for JWT middleware.
     setattr(response, '_force_logout', force_logout)
-    setattr(response, '_user_id', user_id)
 
     return response
