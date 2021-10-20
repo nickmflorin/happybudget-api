@@ -4,11 +4,12 @@ from django import dispatch
 from django.db import IntegrityError
 
 from greenbudget.app import signals
-from greenbudget.app.signals.utils import generic_foreign_key_instance_change
 from greenbudget.app.account.models import BudgetAccount, Account
 from greenbudget.app.account.signals import actualize_account, estimate_account
-from greenbudget.app.budget.models import Budget
-from greenbudget.app.budget.signals import actualize_budget
+from greenbudget.app.budget.models import Budget, BaseBudget
+from greenbudget.app.budget.signals import actualize_budget, estimate_budget
+from greenbudget.app.budgeting.utils import get_from_instance_mapping
+from greenbudget.app.signals.utils import generic_foreign_key_instance_change
 from greenbudget.app.subaccount.models import BudgetSubAccount, SubAccount
 from greenbudget.app.subaccount.signals import (
     actualize_subaccount, estimate_subaccount)
@@ -31,7 +32,7 @@ def delete_empty_markups(instance, reverse, **kwargs):
             markups = Markup.objects.filter(pk__in=kwargs['pk_set']).all()
 
         for markup in markups:
-            if markup.is_empty:
+            if markup.is_empty and markup.unit == Markup.UNITS.percent:
                 logger.info(
                     "Deleting markup %s after it was removed from %s (id = %s) "
                     "because the markup no longer has any children."
@@ -53,30 +54,48 @@ def estimate_instance(instance, **kwargs):
         Account: estimate_account,
         SubAccount: estimate_subaccount
     }
-    for k, v in mapping.items():
-        if isinstance(instance, k):
-            return v(instance, **kwargs)
-    raise IntegrityError(
-        "Unexpected instance %s - must be a valid Account/Sub Account."
-        % instance.__class__.__name__
-    )
+    calculator = get_from_instance_mapping(mapping, instance)
+    calculator(instance, **kwargs)
+
+
+def estimate_parent(instance, **kwargs):
+    mapping = {
+        BaseBudget: estimate_budget,
+        Account: estimate_account,
+        SubAccount: estimate_subaccount
+    }
+    calculator = get_from_instance_mapping(mapping, instance)
+    calculator(instance, **kwargs)
 
 
 def actualize_parent(instance, **kwargs):
-    calculator_map = {
+    mapping = {
         Budget: actualize_budget,
         BudgetAccount: actualize_account,
         BudgetSubAccount: actualize_subaccount
     }
-    calculator = calculator_map[type(instance)]
+    calculator = get_from_instance_mapping(mapping, instance)
     calculator(instance, **kwargs)
 
 
 @signals.any_fields_changed_receiver(fields=['unit', 'rate'], sender=Markup)
-def markup_changed(instance, **kwargs):
-    with signals.bulk_context:
-        for obj in instance.children.all():
-            estimate_instance(obj)
+def markup_changed(instance, changes, **kwargs):
+    # Flat Markup(s) are not allowed to have children, so if the unit was
+    # changed to Flat we need to remove the children.  This will trigger the
+    # signal to reestimate the associated instances, but not the parent instance.
+    children_updated_from_clear = False
+    if instance.unit == Markup.UNITS.flat \
+            and changes.get_change_for_field('unit') is not None:
+        instance.clear_children()
+        children_updated_from_clear = True
+    # The parent instance needs to be recalculated because for Markups with
+    # unit FLAT, the parent will accumulate those Markup(s).
+    estimate_parent(instance.parent)
+
+    if not children_updated_from_clear:
+        with signals.bulk_context:
+            for obj in instance.children.all():
+                estimate_instance(obj)
 
 
 @dispatch.receiver(signals.m2m_changed, sender=Account.markups.through)
@@ -119,6 +138,7 @@ def markup_deleted(instance, **kwargs):
 def markup_created(instance, **kwargs):
     if isinstance(instance.parent, (Budget, BudgetAccount, BudgetSubAccount)):
         actualize_parent(instance.parent)
+    estimate_parent(instance.parent)
 
 
 @signals.any_fields_changed_receiver(
@@ -179,6 +199,11 @@ def validate_markup_children(instance, reverse, action, **kwargs):
         # reverse side of the field, the instance will refer to different
         # things.
         if reverse:
+            if instance.unit != Markup.UNITS.percent:
+                raise IntegrityError(
+                    "Can only add markups with unit `percent` as children of "
+                    "an Account/SubAccount."
+                )
             # The instance here is the Markup instance being added.
             children = kwargs['model'].objects.filter(pk__in=kwargs['pk_set'])
             for child in children:
@@ -191,7 +216,12 @@ def validate_markup_children(instance, reverse, action, **kwargs):
             # The instance here is the Account or SubAccount.
             markups = Markup.objects.filter(pk__in=kwargs['pk_set'])
             for markup in markups:
-                if markup.parent != instance.parent:
+                if markup.unit != Markup.UNITS.percent:
+                    raise IntegrityError(
+                        "Can only add markups with unit `percent` as children "
+                        "of an Account/SubAccount."
+                    )
+                elif markup.parent != instance.parent:
                     raise IntegrityError(
                         "Can only add markups to an instance that share "
                         "the same parent as the markups being added."

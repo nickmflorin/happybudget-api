@@ -155,7 +155,6 @@ class Base64ImageField(serializers.ImageField):
             except ValueError:
                 # This can happen if the instance does not have a file
                 # associated with it.
-                logger.exception("Received error trying to serializer image.")
                 return super().to_representation(instance)
             except exceptions.ClientError:
                 # This can happen if there is an error retrieving the image from

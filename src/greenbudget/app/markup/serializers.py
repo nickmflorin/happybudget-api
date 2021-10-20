@@ -1,8 +1,9 @@
 from django.db import models
-from rest_framework import serializers, exceptions
+from rest_framework import serializers
 
-from greenbudget.lib.drf.serializers import ModelSerializer
+from greenbudget.lib.drf.exceptions import InvalidFieldError
 from greenbudget.lib.drf.fields import ModelChoiceField
+from greenbudget.lib.drf.serializers import ModelSerializer
 
 from greenbudget.app.budgeting.fields import TableChildrenPrimaryKeyRelatedField
 from greenbudget.app.budgeting.serializers import BudgetParentContextSerializer
@@ -31,6 +32,12 @@ class MarkupRemoveChildrenSerializer(ModelSerializer):
     class Meta:
         model = Markup
         fields = ('children', )
+
+    def validate(self, attrs):
+        if self.instance.unit != Markup.UNITS.percent:
+            raise InvalidFieldError('children', message=(
+                "Markup must have unit `percent` to modify its children."))
+        return attrs
 
     def update(self, instance, validated_data):
         instance.remove_children(*validated_data['children'])
@@ -61,6 +68,12 @@ class MarkupAddChildrenSerializer(ModelSerializer):
     class Meta:
         model = Markup
         fields = ('children',)
+
+    def validate(self, attrs):
+        if self.instance.unit != Markup.UNITS.percent:
+            raise InvalidFieldError('children', message=(
+                "Markup must have unit `percent` to modify its children."))
+        return attrs
 
     def update(self, instance, validated_data):
         instance.add_children(*validated_data['children'])
@@ -110,14 +123,14 @@ class MarkupSerializer(BudgetParentContextSerializer):
     rate = serializers.FloatField(required=False, allow_null=True)
     actual = serializers.FloatField(read_only=True)
     unit = ModelChoiceField(
-        required=False,
+        required=True,
         choices=Markup.UNITS,
-        allow_null=True
+        allow_null=False,
     )
     children = TableChildrenPrimaryKeyRelatedField(
         obj_name='Markup',
         many=True,
-        required=True,
+        required=False,
         child_instance_cls=lambda parent: Markup.child_instance_cls_for_parent(
             parent)
     )
@@ -129,17 +142,34 @@ class MarkupSerializer(BudgetParentContextSerializer):
             'updated_by', 'updated_at', 'rate', 'unit', 'children', 'type',
             'actual')
 
-    def validate_children(self, children):
-        if len(children) == 0:
-            raise exceptions.ValidationError(
-                "A markup must have at least 1 child.")
-        return children
+    def validate(self, attrs):
+        # If creating a new instance (via POST) the unit will always be in the
+        # data.  Otherwise, the unit is either in the data (via PATCH) or we use
+        # the value of the current instance being updated.
+        if self.instance is None:
+            unit = attrs['unit']
+            children = attrs.get('children', [])
+        else:
+            # Be careful here with incorrect falsey values for `unit` (which
+            # can have value of 0).
+            unit = getattr(self.instance, 'unit')
+            children = attrs.get('children', getattr(self.instance, 'children'))
+            if 'unit' in attrs:
+                unit = attrs['unit']
+
+        if len(children) == 0 and unit == Markup.UNITS.percent:
+            raise InvalidFieldError('children', message=(
+                'A markup with unit `percent` must have at least 1 child.'))
+        elif len(children) != 0 and unit == Markup.UNITS.flat:
+            raise InvalidFieldError('children', message=(
+                'A markup with unit `flat` cannot have children.'))
+        return attrs
 
     def create(self, validated_data, **kwargs):
         children = validated_data.pop('children', None)
         instance = super().create(validated_data, **kwargs)
 
-        if children is not None:
+        if children is not None and instance.unit == Markup.UNITS.percent:
             instance.set_children(children)
 
         return instance
@@ -148,7 +178,16 @@ class MarkupSerializer(BudgetParentContextSerializer):
         children = validated_data.pop('children', None)
         instance = super().update(instance, validated_data, **kwargs)
 
-        if children is not None:
+        if children is not None and instance.unit == Markup.UNITS.percent:
             instance.set_children(children)
 
         return instance
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if instance.unit == Markup.UNITS.flat:
+            if self._only_model or self.read_only is True:
+                del data['children']
+            else:
+                del data['data']['children']
+        return data

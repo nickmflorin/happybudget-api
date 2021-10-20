@@ -9,7 +9,8 @@ from django.utils import timezone
 from greenbudget.lib.django_utils.models import optional_commit
 
 from greenbudget.app import signals
-from greenbudget.app.budgeting.models import use_children
+from greenbudget.app.budgeting.models import (
+    use_children, use_markup_children)
 from greenbudget.app.comment.models import Comment
 from greenbudget.app.group.models import Group
 from greenbudget.app.markup.models import Markup
@@ -87,8 +88,8 @@ class BaseBudget(PolymorphicModel):
             + self.accumulated_markup_contribution
 
     @optional_commit(["accumulated_value"])
-    @use_children(["nominal_value"])
-    def accumulate_value(self, children, **kwargs):
+    @use_children(["accumulated_value"])
+    def accumulate_value(self, children):
         self.accumulated_value = functools.reduce(
             lambda current, account: current + account.nominal_value,
             children,
@@ -97,17 +98,23 @@ class BaseBudget(PolymorphicModel):
 
     @optional_commit(["accumulated_markup_contribution"])
     @use_children(["accumulated_markup_contribution", "markup_contribution"])
-    def accumulate_markup_contribution(self, children, **kwargs):
+    @use_markup_children(['rate', 'unit'])
+    def accumulate_markup_contribution(self, children, children_markups):
+        markups = children_markups.filter(unit=Markup.UNITS.flat)
         self.accumulated_markup_contribution = functools.reduce(
             lambda current, account: current + account.markup_contribution
             + account.accumulated_markup_contribution,
             children,
             0
+        ) + functools.reduce(
+            lambda current, markup: current + markup.rate,
+            markups,
+            0
         )
 
     @optional_commit(["accumulated_fringe_contribution"])
-    @use_children(["accumulated_fringe_contribution", "fringe_contribution"])
-    def accumulate_fringe_contribution(self, children, **kwargs):
+    @use_children(["accumulated_fringe_contribution"])
+    def accumulate_fringe_contribution(self, children):
         self.accumulated_fringe_contribution = functools.reduce(
             lambda current, account: current
             + account.accumulated_fringe_contribution,
@@ -117,30 +124,38 @@ class BaseBudget(PolymorphicModel):
 
     @optional_commit(["actual"])
     @use_children(["actual"])
-    def actualize(self, children, markups_to_be_deleted=None, **kwargs):
-        markups = self.children_markups.exclude(
-            pk__in=markups_to_be_deleted or [])
+    @use_markup_children
+    def actualize(self, children, children_markups):
         # Even though we delete Markup(s) that do not have any children, there
         # is still an edge case where the child-less Markup can still exist at
         # this point.
-        markups = [m for m in markups if not m.is_empty]
+        markups = [m for m in children_markups if not m.is_empty]
         self.actual = functools.reduce(
-            lambda current, child: current + (child.actual or 0),
-            children,
-            0
-        ) + functools.reduce(
             lambda current, markup: current + (markup.actual or 0),
             markups,
+            0
+        ) + functools.reduce(
+            lambda current, child: current + (child.actual or 0),
+            children,
             0
         )
 
     @optional_commit(list(ESTIMATED_FIELDS))
-    def estimate(self, **kwargs):
-        children = self.children.only(*ESTIMATED_FIELDS) \
-            .exclude(pk__in=kwargs.get('children_to_be_deleted') or []).all()
-        self.accumulate_value(children=children, **kwargs)
-        self.accumulate_fringe_contribution(children=children, **kwargs)
-        self.accumulate_markup_contribution(children=children, **kwargs)
+    @use_children([
+        'accumulated_value',
+        'markup_contribution',
+        'accumulated_markup_contribution',
+        'accumulated_fringe_contribution',
+        'actual'
+    ])
+    @use_markup_children(['rate', 'unit'])
+    def estimate(self, children, children_markups):
+        self.accumulate_value(children=children)
+        self.accumulate_fringe_contribution(children=children)
+        self.accumulate_markup_contribution(
+            children=children,
+            children_markups=children_markups
+        )
 
 
 @signals.model(flags='suppress_budget_update')

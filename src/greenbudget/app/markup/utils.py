@@ -11,11 +11,9 @@ def contribution_from_markups(value, markups):
 
     additional_values = []
     for markup in [
-            m for m in markups if m.rate is not None and m.unit is not None]:
-        if markup.unit == Markup.UNITS.flat:
-            additional_values.append(markup.rate)
-        else:
-            additional_values.append(markup.rate * value)
+            m for m in markups if m.rate is not None
+            and m.unit == Markup.UNITS.percent]:
+        additional_values.append(markup.rate * value)
     return sum(additional_values)
 
 

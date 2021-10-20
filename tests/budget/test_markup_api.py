@@ -1,5 +1,8 @@
 import pytest
 
+from greenbudget.app import signals
+from greenbudget.app.markup.models import Markup
+
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_get_budget_account_markups(api_client, user, models,
@@ -32,7 +35,7 @@ def test_get_budget_account_markups(api_client, user, models,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_budget_markup(api_client, user, create_budget_subaccounts,
+def test_create_budget_flat_markup(api_client, user, create_budget_subaccounts,
         create_budget_account, create_budget, models):
     budget = create_budget()
     account = create_budget_account(parent=budget)
@@ -42,7 +45,6 @@ def test_create_budget_markup(api_client, user, create_budget_subaccounts,
         rate=10,
         count=2
     )
-
     # Make sure all data is properly calculated before API request to avoid
     # confusion in source of potential errors.
     subaccounts[0].refresh_from_db()
@@ -55,17 +57,98 @@ def test_create_budget_markup(api_client, user, create_budget_subaccounts,
 
     account.refresh_from_db()
     assert account.nominal_value == 20.0
-    assert account.markup_contribution == 0.0
+    assert account.accumulated_markup_contribution == 0.0
 
     budget.refresh_from_db()
     assert budget.nominal_value == 20.0
     assert budget.accumulated_markup_contribution == 0.0
 
     api_client.force_login(user)
-    response = api_client.post("/v1/budgets/%s/markups/" % budget.pk, data={
+    response = api_client.post("/v1/budgets/%s/markups/" % account.pk, data={
         'identifier': 'Markup Identifier',
         'rate': 20,
-        'unit': models.Markup.UNITS.flat,
+        'unit': models.Markup.UNITS.flat
+    })
+    assert response.status_code == 201
+
+    subaccounts[0].refresh_from_db()
+    assert subaccounts[0].nominal_value == 10.0
+    assert subaccounts[0].markup_contribution == 0.0
+
+    subaccounts[1].refresh_from_db()
+    assert subaccounts[1].nominal_value == 10.0
+    assert subaccounts[1].markup_contribution == 0.0
+
+    account.refresh_from_db()
+    assert account.nominal_value == 20.0
+    assert account.accumulated_markup_contribution == 0.0
+
+    budget.refresh_from_db()
+    assert budget.nominal_value == 20.0
+    assert budget.accumulated_markup_contribution == 20.0
+
+    markup = models.Markup.objects.first()
+    assert markup is not None
+    assert markup.identifier == "Markup Identifier"
+    # Flat Markup should not have any children.
+    assert markup.children.count() == 0
+    assert markup.parent == budget
+
+    assert response.json()["data"] == {
+        "id": markup.pk,
+        "type": "markup",
+        "identifier": markup.identifier,
+        "description": markup.description,
+        "rate": markup.rate,
+        "actual": 0.0,
+        "unit": {
+            "id": markup.unit,
+            "name": models.Markup.UNITS[markup.unit]
+        },
+        "created_at": "2020-01-01 00:00:00",
+        "updated_at": "2020-01-01 00:00:00",
+        "created_by": user.pk,
+        "updated_by": user.pk
+    }
+
+    assert response.json()["budget"]["accumulated_markup_contribution"] == 20.0
+    assert response.json()["budget"]["nominal_value"] == 20.0
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_create_budget_percent_markup(api_client, user, create_budget_account,
+        create_budget_subaccounts, create_budget, models):
+    budget = create_budget()
+    account = create_budget_account(parent=budget)
+    subaccounts = create_budget_subaccounts(
+        parent=account,
+        quantity=1,
+        rate=10,
+        count=2
+    )
+    # Make sure all data is properly calculated before API request to avoid
+    # confusion in source of potential errors.
+    subaccounts[0].refresh_from_db()
+    assert subaccounts[0].nominal_value == 10.0
+    assert subaccounts[0].markup_contribution == 0.0
+
+    subaccounts[1].refresh_from_db()
+    assert subaccounts[1].nominal_value == 10.0
+    assert subaccounts[1].markup_contribution == 0.0
+
+    account.refresh_from_db()
+    assert account.nominal_value == 20.0
+    assert account.accumulated_markup_contribution == 0.0
+
+    budget.refresh_from_db()
+    assert budget.nominal_value == 20.0
+    assert budget.accumulated_markup_contribution == 0.0
+
+    api_client.force_login(user)
+    response = api_client.post("/v1/budgets/%s/markups/" % account.pk, data={
+        'identifier': 'Markup Identifier',
+        'rate': 0.5,
+        'unit': models.Markup.UNITS.percent,
         'children': [account.pk],
     })
     assert response.status_code == 201
@@ -79,10 +162,12 @@ def test_create_budget_markup(api_client, user, create_budget_subaccounts,
     assert subaccounts[1].markup_contribution == 0.0
 
     account.refresh_from_db()
-    assert account.markup_contribution == 20.0
+    assert account.nominal_value == 20.0
+    assert account.markup_contribution == 10.0
+    assert account.accumulated_markup_contribution == 0.0
 
     budget.refresh_from_db()
-    assert budget.accumulated_markup_contribution == 20.0
+    assert budget.accumulated_markup_contribution == 10.0
 
     markup = models.Markup.objects.first()
     assert markup is not None
@@ -109,65 +194,136 @@ def test_create_budget_markup(api_client, user, create_budget_subaccounts,
         "children": [account.pk]
     }
 
-    assert response.json()["budget"]["accumulated_markup_contribution"] == 20.0
+    assert response.json()["budget"]["accumulated_markup_contribution"] == 10.0
     assert response.json()["budget"]["nominal_value"] == 20.0
 
 
-@pytest.mark.freeze_time('2020-01-01')
-def test_create_budget_markup_no_children(api_client, user, create_budget,
-        models):
-    budget = create_budget()
-    api_client.force_login(user)
-    response = api_client.post("/v1/budgets/%s/markups/" % budget.pk, data={
-        'identifier': 'Markup Identifier',
-        'rate': 20,
-        'unit': models.Markup.UNITS.flat
-    })
-    assert response.status_code == 400
-
-
-def test_create_markup_invalid_child(api_client, user,
-        create_budget_account, create_budget):
-    budget = create_budget()
-    another_budget = create_budget()
-    account = create_budget_account(parent=another_budget)
+def test_create_budget_percent_markup_invalid_child(api_client, user,
+        create_budget_account, create_budget, models):
+    with signals.disable():
+        budget = create_budget()
+        another_budget = create_budget()
+        account = create_budget_account(parent=another_budget)
 
     api_client.force_login(user)
     response = api_client.post("/v1/budgets/%s/markups/" % budget.pk, data={
         'children': [account.pk],
+        'rate': 20,
+        'unit': models.Markup.UNITS.percent,
     })
     assert response.status_code == 400
+    assert response.json() == {
+        'errors': [{
+            'message': (
+                'The child account with ID %s either does not exist '
+                'or does not belong to the same parent (budget with ID %s) as '
+                'the markup.' % (account.id, budget.id)
+            ),
+            'code': 'does_not_exist',
+            'error_type': 'field',
+            'field': 'children'
+        }]
+    }
+
+
+@pytest.mark.parametrize('data', [
+    {'children': [], 'rate': 20, 'unit': Markup.UNITS.percent},
+    {'rate': 20, 'unit': Markup.UNITS.percent}
+])
+def test_create_budget_percent_markup_no_children(api_client, user, data,
+        create_budget):
+    with signals.disable():
+        budget = create_budget()
+
+    api_client.force_login(user)
+    response = api_client.post("/v1/budgets/%s/markups/" % budget.pk, data=data)
+    assert response.status_code == 400
+    assert response.json() == {
+        'errors': [{
+            'message': 'A markup with unit `percent` must have at least 1 child.',  # noqa
+            'code': 'invalid',
+            'error_type': 'field',
+            'field': 'children'
+        }]
+    }
+
+
+def test_create_budget_budget_subaccount_flat_markup_children(api_client,
+        user, create_budget_account, create_budget, models):
+    with signals.disable():
+        budget = create_budget()
+        account = create_budget_account(parent=budget)
+
+    api_client.force_login(user)
+    response = api_client.post("/v1/budgets/%s/markups/" % account.pk, data={
+        'children': [account.pk],
+        'rate': 20,
+        'unit': models.Markup.UNITS.flat
+    })
+    assert response.status_code == 400
+    assert response.json() == {
+        'errors': [{
+            'message': 'A markup with unit `flat` cannot have children.',
+            'code': 'invalid',
+            'error_type': 'field',
+            'field': 'children'
+        }]
+    }
 
 
 def test_bulk_delete_budget_markups(api_client, user, create_budget, models,
-        create_budget_account, create_markup):
+        create_budget_account, create_markup, create_budget_subaccount):
     budget = create_budget()
     markups = [
         create_markup(parent=budget, unit=models.Markup.UNITS.flat, rate=100),
-        create_markup(parent=budget, unit=models.Markup.UNITS.flat, rate=100)
+        create_markup(parent=budget, unit=models.Markup.UNITS.flat, rate=100),
+        create_markup(
+            parent=budget,
+            unit=models.Markup.UNITS.percent,
+            rate=0.5
+        )
     ]
-    account = create_budget_account(parent=budget, markups=markups)
-    assert budget.accumulated_markup_contribution == 200.0
-    assert account.markup_contribution == 200.0
+    # Markups can only be assigned to an Account/SubAccount if they are percent
+    # based.
+    account = create_budget_account(parent=budget, markups=[markups[2]])
+    subaccount = create_budget_subaccount(
+        parent=account,
+        rate=10,
+        quantity=10,
+        multiplier=1
+    )
+
+    assert budget.nominal_value == 100.0
+    assert budget.accumulated_markup_contribution == 250.0
+    assert account.nominal_value == 100.0
+    assert account.markup_contribution == 50.0
+    assert account.accumulated_markup_contribution == 0.0
+    assert subaccount.nominal_value == 100.0
+    assert subaccount.markup_contribution == 0.0
 
     api_client.force_login(user)
     response = api_client.patch(
         "/v1/budgets/%s/bulk-delete-markups/" % budget.pk,
-        data={'ids': [m.pk for m in markups]}
+        data={'ids': [m.pk for m in [markups[0], markups[2]]]}
     )
 
     assert response.status_code == 200
-    assert models.Markup.objects.count() == 0
+    assert models.Markup.objects.count() == 1
 
     budget.refresh_from_db()
-    assert budget.accumulated_markup_contribution == 0.0
+    assert budget.nominal_value == 100.0
+    assert budget.accumulated_markup_contribution == 100.0
 
     account.refresh_from_db()
+    assert account.nominal_value == 100.0
     assert account.markup_contribution == 0.0
+    assert account.accumulated_markup_contribution == 0.0
 
-    # The data in the response refers to base the entity we are updating, A.K.A.
-    # the Budget.
+    subaccount.refresh_from_db()
+    assert subaccount.nominal_value == 100.0
+    assert subaccount.markup_contribution == 0.0
+
     assert response.json()['data']['id'] == budget.pk
-    assert response.json()['data']['nominal_value'] == 0.0
-    assert response.json()['data']['accumulated_markup_contribution'] == 0.0
+    assert response.json()['data']['nominal_value'] == 100.0
+    assert response.json()['data']['accumulated_markup_contribution'] == 100.0
     assert response.json()['data']['actual'] == 0.0

@@ -25,7 +25,7 @@ class Markup(models.Model):
         (0, "percent", "Percent"),
         (1, "flat", "Flat"),
     )
-    unit = models.IntegerField(choices=UNITS, default=UNITS.percent, null=True)
+    unit = models.IntegerField(choices=UNITS, default=UNITS.percent, null=False)
     rate = models.FloatField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(
@@ -96,6 +96,10 @@ class Markup(models.Model):
     def set_children(self, *children):
         operator = self.get_children_operator()
         operator.set(*children)
+
+    def clear_children(self):
+        operator = self.get_children_operator()
+        operator.set([])
 
     def remove_children(self, *children):
         operator = self.get_children_operator()

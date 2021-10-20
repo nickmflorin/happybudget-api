@@ -9,6 +9,28 @@ from .factories import (
     MarkupFactory, Lazy, ActualTypeFactory)
 
 
+def contextual_fixture(**contextuals):
+    default = contextuals.pop('default', 'budget')
+
+    def decorator(func):
+        @pytest.fixture
+        def fixture(user, db):
+            def inner(*args, **kw):
+                context = kw.pop('context', default)
+                factory = contextuals[context]
+                if hasattr(factory._meta.model, 'created_by'):
+                    kw.setdefault('created_by', user)
+                if hasattr(factory._meta.model, 'updated_by'):
+                    kw.setdefault('updated_by', user)
+                return factory(*args, **kw)
+            return inner
+
+        fixture.__name__ = func.__name__
+        return fixture
+
+    return decorator
+
+
 @pytest.fixture
 def create_color(db):
     """
@@ -84,6 +106,22 @@ def create_template(user, db):
     return inner
 
 
+@contextual_fixture(budget=BudgetFactory, template=TemplateFactory)
+def create_context_budget():
+    """
+    A fixture that creates a :obj:`Budget` or :obj:`Template` instance using
+    associated factories determined by the `context` argument provided to the
+    fixture.
+
+    Usage:
+    -----
+    >>> def test_context_budget(create_context_budget):
+    >>>     budget = create_context_budget(context='budget')
+    >>>     assert isinstance(budget, Budget)
+    """
+    pass
+
+
 @pytest.fixture
 def create_fringe(user, db):
     """
@@ -142,6 +180,25 @@ def create_template_account(user, db):
         kwargs.setdefault('updated_by', user)
         return TemplateAccountFactory(*args, **kwargs)
     return inner
+
+
+@contextual_fixture(
+    budget=BudgetAccountFactory,
+    template=TemplateAccountFactory
+)
+def create_account():
+    """
+    A fixture that creates a :obj:`BudgetAccount` or :obj:`TemplateAccount`
+    instance using associated factories determined by the `context` argument
+    provided to the fixture.
+
+    Usage:
+    -----
+    >>> def test_account(create_account):
+    >>>     subaccount = create_account(context='budget')
+    >>>     assert isinstance(subaccount, BudgetAccount)
+    """
+    pass
 
 
 @pytest.fixture
@@ -241,6 +298,48 @@ def create_template_subaccounts(create_template_subaccount):
             create_template_subaccount(*args, **kwargs)
             for i in range(count)
         ]
+    return inner
+
+
+@contextual_fixture(
+    budget=BudgetSubAccountFactory,
+    template=TemplateSubAccountFactory
+)
+def create_subaccount():
+    """
+    A fixture that creates a :obj:`BudgetSubAccount` or :obj:`TemplateSubAccount`
+    instance using associated factories determined by the `context` argument
+    provided to the fixture.
+
+    Usage:
+    -----
+    >>> def test_subaccount(create_subaccount):
+    >>>     subaccount = create_subaccount(context='budget')
+    >>>     assert isinstance(subaccount, BudgetSubAccount)
+    """
+    pass
+
+
+@pytest.fixture
+def create_subaccounts(create_budget_subaccounts, create_template_subaccounts):
+    """
+    A fixture that creates a series of :obj:`BudgetSubAccount` or
+    :obj:`TemplateSubAccount` instances using associated factories determined
+    by the `context` argument provided to the fixture.
+
+    Usage:
+    -----
+    >>> def test_subaccounts(create_subaccounts):
+    >>>     subaccounts = create_subaccounts(context='budget', count=2)
+    >>>     assert isinstance(subaccounts[0], BudgetSubAccount)
+    """
+    def inner(*args, **kwargs):
+        context = kwargs.pop('context', 'budget')
+        assert context in ('budget', 'template'), \
+            "Invalid context %s." % context
+        if context == 'budget':
+            return create_budget_subaccounts(*args, **kwargs)
+        return create_template_subaccounts(*args, **kwargs)
     return inner
 
 
