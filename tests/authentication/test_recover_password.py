@@ -115,6 +115,7 @@ def test_password_recovery_user_logged_in(api_client, user, path, extra_data):
     }})
     assert response.status_code == 403
     assert response.json() == {
+        'user_id': user.pk,
         'errors': [{
             'message': 'User already has an active session.',
             'code': 'permission_denied',

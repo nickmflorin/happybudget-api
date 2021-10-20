@@ -9,6 +9,25 @@ from greenbudget.app.authentication.utils import validate_password
 from .models import User
 
 
+class ChangePasswordSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(
+        required=True,
+        allow_blank=False,
+        allow_null=False,
+        validators=[validate_password],
+        style={'input_type': 'password'}
+    )
+
+    class Meta:
+        model = User
+        fields = ('password', )
+
+    def update(self, instance, validated_data):
+        instance.set_password(validated_data["password"])
+        instance.save()
+        return instance
+
+
 class UserRegistrationSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(
         required=True,
@@ -31,17 +50,13 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         required=True,
         allow_blank=False,
         allow_null=False,
+        validators=[validate_password],
         style={'input_type': 'password'}
     )
 
     class Meta:
         model = User
-        fields = (
-            'first_name', 'last_name', 'email', 'password')
-
-    def validate_password(self, value):
-        validate_password(value)
-        return value
+        fields = ('first_name', 'last_name', 'email', 'password')
 
 
 class SimpleUserSerializer(serializers.ModelSerializer):

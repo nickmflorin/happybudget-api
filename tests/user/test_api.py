@@ -91,3 +91,49 @@ def test_update_logged_in_user(api_client, user):
     user.refresh_from_db()
     assert user.first_name == "New First Name"
     assert user.last_name == "New Last Name"
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_change_password(api_client, user):
+    api_client.force_login(user)
+    response = api_client.patch("/v1/users/change-password/", data={
+        "password": "hoopla@H9_12",
+    })
+    assert response.status_code == 200
+    assert response.json() == {
+        "id": 1,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "email": user.email,
+        "is_active": True,
+        "is_admin": False,
+        "is_superuser": False,
+        "is_staff": False,
+        "full_name": user.full_name,
+        "created_at": "2020-01-01 00:00:00",
+        "updated_at": "2020-01-01 00:00:00",
+        "last_login": "2020-01-01 00:00:00",
+        "date_joined": "2020-01-01 00:00:00",
+        "profile_image": None,
+        "timezone": str(user.timezone),
+        "is_first_time": False,
+    }
+
+    user.refresh_from_db()
+    assert user.check_password("hoopla@H9_12")
+
+
+@pytest.mark.parametrize("password", [
+    'hoopla',  # Not 8 characters long
+    'hoopla122412H',  # No special characters
+    'hoopla@JJ',  # No numbers
+    'hoopla123@',  # No capital letters
+])
+def test_change_password_invalid_password(api_client, password, user):
+    api_client.force_login(user)
+    response = api_client.patch("/v1/users/change-password/", data={
+        "password": password,
+    })
+    assert response.status_code == 400
+    assert response.json()['errors'][0]['field'] == 'password'
+    assert response.json()['errors'][0]['code'] == 'invalid_password'

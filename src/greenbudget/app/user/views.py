@@ -8,7 +8,8 @@ from rest_framework import (
 
 from greenbudget.app.authentication.exceptions import RateLimitedError
 
-from .serializers import UserSerializer, UserRegistrationSerializer
+from .serializers import (
+    UserSerializer, UserRegistrationSerializer, ChangePasswordSerializer)
 from .utils import upload_temp_user_image_to
 
 
@@ -67,3 +68,23 @@ class ActiveUserViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
 
     def get_object(self):
         return self.request.user
+
+
+class ChangePasswordView(ActiveUserViewSet):
+    serializer_class = ChangePasswordSerializer
+
+    @sensitive_post_parameters_m('password')
+    def dispatch(self, request, *args, **kwargs):
+        return super().dispatch(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        serializer = self.serializer_class(
+            data=request.data,
+            instance=self.get_object()
+        )
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save()
+        return response.Response(
+            UserSerializer(instance).data,
+            status=status.HTTP_200_OK
+        )

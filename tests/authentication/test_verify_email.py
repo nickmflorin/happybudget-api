@@ -84,6 +84,7 @@ def test_validate_email_token_user_logged_in(validate_email_token,
     response = validate_email_token()
     assert response.status_code == 403
     assert response.json() == {
+        'user_id': inactive_user.pk,
         'errors': [{
             'message': 'User already has an active session.',
             'code': 'permission_denied',
