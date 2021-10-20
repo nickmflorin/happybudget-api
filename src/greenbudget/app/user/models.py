@@ -32,6 +32,10 @@ class User(AbstractUser):
         default=timezone.now,
         editable=False
     )
+    position = models.CharField(max_length=128, null=True)
+    company = models.CharField(max_length=128, null=True)
+    address = models.CharField(max_length=30, null=True)
+    phone_number = models.BigIntegerField(null=True)
     timezone = TimeZoneField(default='America/New_York')
     profile_image = models.ImageField(upload_to=upload_to, null=True, blank=True)
     is_first_time = models.BooleanField(default=True)

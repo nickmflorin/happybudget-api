@@ -92,6 +92,10 @@ class UserSerializer(ModelSerializer):
         validators=[
             validators.UniqueValidator(queryset=User.objects.all())]
     )
+    company = serializers.CharField(allow_null=True, required=False)
+    position = serializers.CharField(allow_null=True, required=False)
+    address = serializers.CharField(allow_null=True, required=False)
+    phone_number = serializers.IntegerField(allow_null=True, required=False)
     is_active = serializers.BooleanField(default=True, read_only=True)
     is_admin = serializers.BooleanField(default=False, read_only=True)
     is_staff = serializers.BooleanField(default=False, read_only=True)
@@ -111,4 +115,4 @@ class UserSerializer(ModelSerializer):
             'profile_image')
         fields = nested_fields + (
             'created_at', 'updated_at', 'last_login', 'date_joined', 'timezone',
-            'is_first_time')
+            'is_first_time', 'company', 'position', 'address', 'phone_number')
