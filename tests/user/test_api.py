@@ -1,4 +1,8 @@
+import mock
+from django.test import override_settings
 import pytest
+
+from greenbudget.app.authentication.tokens import AccessToken
 
 
 @pytest.mark.parametrize("password", [
@@ -20,35 +24,66 @@ def test_registration_invalid_password(api_client, password):
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_registration(api_client, models):
-    response = api_client.post("/v1/users/registration/", data={
-        "first_name": "Jack",
-        "last_name": "Johnson",
-        "password": "hoopla@H9_12",
-        "email": "jjohnson@gmail.com",
-    })
-    assert response.status_code == 201
-    assert response.json() == {
-        "id": 1,
-        "first_name": "Jack",
-        "last_name": "Johnson",
-        "email": "jjohnson@gmail.com",
-        "is_active": True,
-        "is_admin": False,
-        "is_superuser": False,
-        "is_staff": False,
-        "company": None,
-        "position": None,
-        "address": None,
-        "phone_number": None,
-        "full_name": "Jack Johnson",
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
-        "last_login": "2020-01-01 00:00:00",
-        "date_joined": "2020-01-01 00:00:00",
-        "profile_image": None,
-        "timezone": "America/New_York",
-        "is_first_time": True,
+@override_settings(
+    EMAIL_ENABLED=True,
+    FROM_EMAIL="noreply@greenbudget.io",
+    FRONTEND_EMAIL_CONFIRM_URL="https://app.greenbudget.io/verify"
+)
+def test_registration(api_client, models, settings, user):
+    # Use another user to generate the Access Token for mock purposes.
+    token = AccessToken.for_user(user)
+
+    def create_token(user):
+        return token
+
+    with mock.patch.object(AccessToken, 'for_user', create_token):
+        with mock.patch('greenbudget.app.authentication.mail.send_mail') as m:
+            response = api_client.post("/v1/users/registration/", data={
+                "first_name": "Jack",
+                "last_name": "Johnson",
+                "password": "hoopla@H9_12",
+                "email": "jjohnson@gmail.com",
+            })
+            assert response.status_code == 201
+            assert response.json() == {
+                "id": 2,
+                "first_name": "Jack",
+                "last_name": "Johnson",
+                "email": "jjohnson@gmail.com",
+                "is_active": True,
+                "is_admin": False,
+                "is_superuser": False,
+                "is_staff": False,
+                "company": None,
+                "position": None,
+                "address": None,
+                "phone_number": None,
+                "full_name": "Jack Johnson",
+                "created_at": "2020-01-01 00:00:00",
+                "updated_at": "2020-01-01 00:00:00",
+                "last_login": None,
+                "date_joined": "2020-01-01 00:00:00",
+                "profile_image": None,
+                "timezone": "America/New_York",
+                "is_first_time": True,
+            }
+
+    assert m.called
+    mail_obj = m.call_args[0][0]
+    assert mail_obj.get() == {
+        'from': {'email': "noreply@greenbudget.io"},
+        'template_id': settings.EMAIL_VERIFICATION_TEMPLATE_ID,
+        'personalizations': [
+            {
+                'to': [{'email': 'jjohnson@gmail.com'}],
+                'dynamic_template_data': {
+                    'redirect_url': (
+                        'https://app.greenbudget.io/verify?token=%s'
+                        % str(token)
+                    )
+                }
+            }
+        ]
     }
     user = models.User.objects.get(pk=response.json()['id'])
     assert user.first_name == "Jack"

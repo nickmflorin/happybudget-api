@@ -1,4 +1,3 @@
-from django.contrib.auth import login
 from django.core.files.storage import get_storage_class
 from django.utils.decorators import method_decorator
 from django.views.decorators.debug import sensitive_post_parameters
@@ -7,6 +6,7 @@ from rest_framework import (
     viewsets, mixins, response, permissions, status, decorators)
 
 from greenbudget.app.authentication.exceptions import RateLimitedError
+from greenbudget.app.authentication.mail import send_email_verification_email
 
 from .serializers import (
     UserSerializer, UserRegistrationSerializer, ChangePasswordSerializer)
@@ -50,8 +50,7 @@ class UserRegistrationView(mixins.CreateModelMixin, viewsets.GenericViewSet):
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
 
-        login(request, instance,
-            backend='django.contrib.auth.backends.ModelBackend')
+        send_email_verification_email(instance)
 
         resp = response.Response(
             UserSerializer(instance).data,

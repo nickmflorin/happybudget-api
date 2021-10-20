@@ -11,6 +11,7 @@ from greenbudget.conf import suppress_with_setting
 from greenbudget.lib.utils.urls import add_query_params_to_url
 
 from .exceptions import EmailError
+from .tokens import AccessToken
 
 
 logger = logging.getLogger("greenbudget")
@@ -106,11 +107,13 @@ def send_mail(mail):
         raise EmailError()
 
 
-def send_email_verification_email(user, token):
-    mail = EmailVerification(user, token)
+def send_email_verification_email(user, token=None):
+    token = token or AccessToken.for_user(user)
+    mail = EmailVerification(user, str(token))
     return send_mail(mail)
 
 
-def send_password_recovery_email(user, token):
-    mail = PasswordRecovery(user, token)
+def send_password_recovery_email(user, token=None):
+    token = token or AccessToken.for_user(user)
+    mail = PasswordRecovery(user, str(token))
     return send_mail(mail)

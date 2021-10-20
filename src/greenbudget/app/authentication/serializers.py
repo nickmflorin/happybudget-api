@@ -105,8 +105,7 @@ class RecoverPasswordSerializer(serializers.Serializer):
         return {"user": user}
 
     def create(self, validated_data):
-        token = AccessToken.for_user(validated_data["user"])
-        send_password_recovery_email(validated_data["user"], str(token))
+        send_password_recovery_email(validated_data["user"])
         return validated_data["user"]
 
 
@@ -118,8 +117,7 @@ class VerifyEmailSerializer(serializers.Serializer):
     )
 
     def create(self, validated_data):
-        token = AccessToken.for_user(validated_data["user"])
-        send_email_verification_email(validated_data["user"], str(token))
+        send_email_verification_email(validated_data["user"])
         return validated_data['user']
 
 

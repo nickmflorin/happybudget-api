@@ -1,4 +1,5 @@
 from datetime import timedelta, datetime
+import mock
 
 import pytest
 from django.test import override_settings
@@ -162,11 +163,41 @@ def test_password_recovery_invalid_token(api_client, path, extra_data):
     }
 
 
-def test_recover_password(user, api_client):
-    response = api_client.post("/v1/auth/recover-password/", data={
-        "email": user.email
-    })
+@override_settings(
+    EMAIL_ENABLED=True,
+    FROM_EMAIL="noreply@greenbudget.io",
+    FRONTEND_PASSWORD_RECOVERY_URL="https://app.greenbudget.io/recovery"
+)
+def test_recover_password(user, api_client, settings):
+    # Use another user to generate the Access Token for mock purposes.
+    token = AccessToken.for_user(user)
+
+    def create_token(user):
+        return token
+
+    with mock.patch.object(AccessToken, 'for_user', create_token):
+        with mock.patch('greenbudget.app.authentication.mail.send_mail') as m:
+            response = api_client.post("/v1/auth/recover-password/", data={
+                "email": user.email
+            })
     assert response.status_code == 201
+    assert m.called
+    mail_obj = m.call_args[0][0]
+    assert mail_obj.get() == {
+        'from': {'email': "noreply@greenbudget.io"},
+        'template_id': settings.PASSWORD_RECOVERY_TEMPLATE_ID,
+        'personalizations': [
+            {
+                'to': [{'email': user.email}],
+                'dynamic_template_data': {
+                    'redirect_url': (
+                        'https://app.greenbudget.io/recovery?token=%s'
+                        % str(token)
+                    )
+                }
+            }
+        ]
+    }
 
 
 def test_reset_password(user, api_client):

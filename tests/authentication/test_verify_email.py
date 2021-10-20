@@ -1,4 +1,5 @@
 from datetime import timedelta, datetime
+import mock
 
 import pytest
 from django.test import override_settings
@@ -124,26 +125,57 @@ def test_validate_email_token_invalid_token(api_client):
     }
 
 
-def test_send_verification_email(api_client, user):
-    user.is_verified = False
-    user.save()
-    response = api_client.post("/v1/auth/verify-email/", data={
-        "user": user.pk
-    })
+@override_settings(
+    EMAIL_ENABLED=True,
+    FROM_EMAIL="noreply@greenbudget.io",
+    FRONTEND_EMAIL_CONFIRM_URL="https://app.greenbudget.io/verify"
+)
+def test_send_verification_email(api_client, unverified_user, settings):
+    # Use another user to generate the Access Token for mock purposes.
+    token = AccessToken.for_user(unverified_user)
+
+    def create_token(user):
+        return token
+
+    with mock.patch.object(AccessToken, 'for_user', create_token):
+        with mock.patch('greenbudget.app.authentication.mail.send_mail') as m:
+            response = api_client.post("/v1/auth/verify-email/", data={
+                "user": unverified_user.pk
+            })
     assert response.status_code == 201
+
+    assert m.called
+    mail_obj = m.call_args[0][0]
+    assert mail_obj.get() == {
+        'from': {'email': "noreply@greenbudget.io"},
+        'template_id': settings.EMAIL_VERIFICATION_TEMPLATE_ID,
+        'personalizations': [
+            {
+                'to': [{'email': unverified_user.email}],
+                'dynamic_template_data': {
+                    'redirect_url': (
+                        'https://app.greenbudget.io/verify?token=%s'
+                        % str(token)
+                    )
+                }
+            }
+        ]
+    }
 
 
 def test_send_verification_email_verified_user(api_client, user):
-    response = api_client.post("/v1/auth/verify-email/", data={
-        "user": user.pk
-    })
+    with mock.patch('greenbudget.app.authentication.mail.send_mail') as m:
+        response = api_client.post("/v1/auth/verify-email/", data={
+            "user": user.pk
+        })
     assert response.status_code == 400
+    assert not m.called
 
 
-def test_send_verification_email_inactive_user(api_client, user):
-    user.is_active = False
-    user.save()
-    response = api_client.post("/v1/auth/verify-email/", data={
-        "user": user.pk
-    })
+def test_send_verification_email_inactive_user(api_client, inactive_user):
+    with mock.patch('greenbudget.app.authentication.mail.send_mail') as m:
+        response = api_client.post("/v1/auth/verify-email/", data={
+            "user": inactive_user.pk
+        })
     assert response.status_code == 400
+    assert not m.called
