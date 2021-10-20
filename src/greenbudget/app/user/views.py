@@ -52,13 +52,10 @@ class UserRegistrationView(mixins.CreateModelMixin, viewsets.GenericViewSet):
 
         send_email_verification_email(instance)
 
-        resp = response.Response(
+        return response.Response(
             UserSerializer(instance).data,
             status=status.HTTP_201_CREATED
         )
-        instance.is_first_time = False
-        instance.save()
-        return resp
 
 
 class ActiveUserViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
