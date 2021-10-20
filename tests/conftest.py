@@ -56,7 +56,12 @@ def api_client():
 
 
 @pytest.fixture
-def user(db):
+def user_password():
+    return 'hoopla@H9_145'
+
+
+@pytest.fixture
+def user(db, user_password):
     user = User.objects.create(
         email="test+user@gmail.com",
         first_name="Test",
@@ -68,13 +73,13 @@ def user(db):
         is_verified=True,
         is_first_time=False
     )
-    user.set_password("test-password")
+    user.set_password(user_password)
     user.save()
     return user
 
 
 @pytest.fixture
-def admin_user(db):
+def admin_user(db, user_password):
     user = User.objects.create(
         email="admin+user@gmail.com",
         first_name="Admin",
@@ -86,13 +91,13 @@ def admin_user(db):
         is_superuser=False,
         is_first_time=False
     )
-    user.set_password("test-password")
+    user.set_password(user_password)
     user.save()
     return user
 
 
 @pytest.fixture
-def staff_user(db):
+def staff_user(db, user_password):
     user = User.objects.create(
         email="staff+user@gmail.com",
         first_name="Staff",
@@ -104,7 +109,7 @@ def staff_user(db):
         is_verified=True,
         is_first_time=False
     )
-    user.set_password("test-password")
+    user.set_password(user_password)
     user.save()
     return user
 

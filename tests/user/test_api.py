@@ -95,10 +95,6 @@ def test_registration(api_client, models, settings, user):
     assert user.is_active is True
     assert user.check_password("hoopla@H9_12") is True
 
-    # The user should be saved as not being first time anymore, but the response
-    # should indicate that it was their first time logging in.
-    assert user.is_first_time is False
-
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_update_logged_in_user(api_client, user):
@@ -137,10 +133,11 @@ def test_update_logged_in_user(api_client, user):
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_change_password(api_client, user):
+def test_change_password(api_client, user, user_password):
     api_client.force_login(user)
     response = api_client.patch("/v1/users/change-password/", data={
-        "password": "hoopla@H9_12",
+        'password': user_password,
+        "new_password": "hoopla@H9_124334",
     })
     assert response.status_code == 200
     assert response.json() == {
@@ -167,7 +164,25 @@ def test_change_password(api_client, user):
     }
 
     user.refresh_from_db()
-    assert user.check_password("hoopla@H9_12")
+    assert user.check_password("hoopla@H9_124334")
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_change_password_invalid_password(api_client, user):
+    api_client.force_login(user)
+    response = api_client.patch("/v1/users/change-password/", data={
+        'password': 'hoopla',
+        "new_password": "hoopla@H9_155",
+    })
+    assert response.status_code == 400
+    assert response.json() == {
+        'errors': [{
+            'message': 'The provided password is invalid.',
+            'code': 'invalid_credentials',
+            'error_type': 'field',
+            'field': 'password'
+        }]
+    }
 
 
 @pytest.mark.parametrize("password", [
@@ -176,11 +191,13 @@ def test_change_password(api_client, user):
     'hoopla@JJ',  # No numbers
     'hoopla123@',  # No capital letters
 ])
-def test_change_password_invalid_password(api_client, password, user):
+def test_change_password_invalid_new_password(api_client, password, user,
+        user_password):
     api_client.force_login(user)
     response = api_client.patch("/v1/users/change-password/", data={
-        "password": password,
+        "new_password": password,
+        "password": user_password
     })
     assert response.status_code == 400
-    assert response.json()['errors'][0]['field'] == 'password'
+    assert response.json()['errors'][0]['field'] == 'new_password'
     assert response.json()['errors'][0]['code'] == 'invalid_password'

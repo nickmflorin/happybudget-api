@@ -6,8 +6,7 @@ from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.debug import sensitive_post_parameters
 
-from rest_framework import (
-    views, response, generics, status, permissions, exceptions)
+from rest_framework import views, response, generics, status, permissions
 
 from greenbudget.app.authentication.exceptions import RateLimitedError
 from greenbudget.app.user.serializers import UserSerializer
@@ -47,32 +46,11 @@ class TokenValidateView(views.APIView):
     def dispatch(self, request, *args, **kwargs):
         return super().dispatch(request, *args, **kwargs)
 
-    def get_token_user_permissions(self):
-        permissions = []
-        for p in self.token_user_permission_classes:
-            # Because of DRF's Meta classes on Permission objects, they do not
-            # technically extend each other.
-            if not hasattr(p, 'user_has_permission'):
-                raise Exception(
-                    "Token user permissions must extend UserPermission.")
-            permissions.append(p())
-        return permissions
-
-    def check_token_user_permissions(self, user, force_logout=False):
-        for permission in self.get_token_user_permissions():
-            if not permission.user_has_permission(
-                    user, force_logout=force_logout):
-                # The individual UserPermission(s) instances should raise a
-                # PermissionDenied exception, but we do here just in case for
-                # completeness sake.
-                raise exceptions.PermissionDenied(
-                    detail=getattr(permission, 'message', None))
-
     def post(self, request, *args, **kwargs):
         serializer_kwargs = {
             'force_logout': self.force_logout,
             'token_cls': self.token_cls,
-            'check_permissions': self.check_token_user_permissions,
+            'token_user_permission_classes': self.token_user_permission_classes,
         }
         # Only include arguments passed to the view into the serializer if
         # they were actually provided.

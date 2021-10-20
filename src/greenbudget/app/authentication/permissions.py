@@ -2,7 +2,29 @@ from rest_framework import permissions
 
 from .exceptions import (
     NotAuthenticatedError, AccountDisabledError, EmailNotVerified,
-    EmailVerified)
+    EmailVerified, PermissionDenied)
+
+
+def check_user_permissions(user, permissions=None, force_logout=True):
+    """
+    A method to evaluate a set of permisisons that extend :obj:`UserPermission`
+    in cases where we want to raise instances of
+    :obj:`exceptions.PermissionDenied` outside of the scope of DRF's
+    permissioning on views.
+    """
+    permissions = permissions or [IsAuthenticated(), IsVerified()]
+    permissions = [p() if isinstance(p, type) else p for p in permissions]
+    for permission in permissions:
+        if not hasattr(permission, 'user_has_permission'):
+            raise Exception("Permission must extend `UserPermission`.")
+        if not permission.user_has_permission(user, force_logout=force_logout):
+            # The individual UserPermission(s) instances should raise a
+            # PermissionDenied exception, but we do here just in case for
+            # completeness sake.
+            raise PermissionDenied(
+                detail=getattr(permission, 'message', None),
+                force_logout=force_logout
+            )
 
 
 class UserPermission(permissions.BasePermission):

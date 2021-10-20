@@ -9,7 +9,7 @@ from .exceptions import (
     TokenExpiredError, ExpiredToken, InvalidToken, TokenError,
     EmailDoesNotExist)
 from .mail import send_email_verification_email, send_password_recovery_email
-from .permissions import IsAuthenticated, IsVerified
+from .permissions import check_user_permissions
 from .tokens import SlidingToken, AccessToken
 from .utils import validate_password, get_user_from_token
 
@@ -19,7 +19,9 @@ class AuthTokenSerializer(serializers.Serializer):
         required=False, allow_null=True, allow_blank=True)
 
     def __init__(self, *args, **kwargs):
-        self.check_permissions = kwargs.pop('check_permissions', None)
+        self.token_user_permission_classes = kwargs.pop(
+            'token_user_permission_classes', None)
+
         default_token_cls = getattr(self, 'token_cls', SlidingToken)
         self.token_cls = kwargs.pop('token_cls', default_token_cls)
 
@@ -47,8 +49,12 @@ class AuthTokenSerializer(serializers.Serializer):
                 user_id=getattr(e, 'user_id', None),
                 force_logout=self.force_logout
             ) from e
-        if self.check_permissions is not None:
-            self.check_permissions(user, force_logout=self.force_logout)
+        if self.token_user_permission_classes is not None:
+            check_user_permissions(
+                user=user,
+                force_logout=self.force_logout,
+                permissions=self.token_user_permission_classes
+            )
         return {"user": user, "token": token_obj}
 
     def create(self, validated_data):
@@ -100,8 +106,7 @@ class RecoverPasswordSerializer(serializers.Serializer):
             user = get_user_model().objects.get(email=email)
         except get_user_model().DoesNotExist:
             raise EmailDoesNotExist('email')
-        permissions = [IsAuthenticated(), IsVerified()]
-        [p.user_has_permission(user) for p in permissions]
+        check_user_permissions(user)
         return {"user": user}
 
     def create(self, validated_data):

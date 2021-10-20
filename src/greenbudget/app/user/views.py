@@ -69,14 +69,15 @@ class ActiveUserViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
 class ChangePasswordView(ActiveUserViewSet):
     serializer_class = ChangePasswordSerializer
 
-    @sensitive_post_parameters_m('password')
+    @sensitive_post_parameters_m('password', 'new_password')
     def dispatch(self, request, *args, **kwargs):
         return super().dispatch(request, *args, **kwargs)
 
     def partial_update(self, request, *args, **kwargs):
         serializer = self.serializer_class(
             data=request.data,
-            instance=self.get_object()
+            instance=self.get_object(),
+            context={"request": request}
         )
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
