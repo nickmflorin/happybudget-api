@@ -33,8 +33,7 @@ class User(AbstractUser):
         editable=False
     )
     timezone = TimeZoneField(default='America/New_York')
-    profile_image = models.ImageField(
-        upload_to=upload_to, null=True, blank=True)
+    profile_image = models.ImageField(upload_to=upload_to, null=True, blank=True)
     is_first_time = models.BooleanField(default=True)
     is_verified = models.BooleanField(
         _('verified'),

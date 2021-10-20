@@ -30,7 +30,6 @@ class Token(BaseToken):
 
 class SlidingToken(BlacklistMixin, Token):
     token_type = BaseSlidingToken.token_type
-    lifetime = settings.SLIDING_TOKEN_LIFETIME
 
     def __init__(self, *args, **kwargs):
         kwargs['lifetime'] = settings.SLIDING_TOKEN_LIFETIME
@@ -46,7 +45,6 @@ class SlidingToken(BlacklistMixin, Token):
 
 class AccessToken(Token):
     token_type = BaseAccessToken.token_type
-    lifetime = settings.ACCESS_TOKEN_LIFETIME
 
     def __init__(self, *args, **kwargs):
         kwargs['lifetime'] = settings.ACCESS_TOKEN_LIFETIME
