@@ -57,17 +57,17 @@ class HeaderTemplateSerializer(SimpleHeaderTemplateSerializer):
             'original')
 
     def validate_left_info(self, value):
-        if value.strip() == "":
+        if value is None or value.strip() == "":
             return None
         return value.strip()
 
     def validate_right_info(self, value):
-        if value.strip() == "":
+        if value is None or value.strip() == "":
             return None
         return value.strip()
 
     def validate_header(self, value):
-        if value.strip() == "":
+        if value is None or value.strip() == "":
             return None
         return value.strip()
 
