@@ -11,19 +11,20 @@ from greenbudget.app.markup.models import Markup
 from .models import Actual
 
 
-def actualize_owner(owner, **kwargs):
+def actualize_owner(owner, actuals_to_be_deleted=None):
     assert isinstance(owner, (BudgetSubAccount, Markup))
     if isinstance(owner, BudgetSubAccount):
-        actualize_subaccount(owner, **kwargs)
+        actualize_subaccount(owner, actuals_to_be_deleted=actuals_to_be_deleted)
     else:
         # If the Actual is associated with a Markup instance, every Account
         # and/or SubAccount associated with that Markup instance must be
         # reactualized.  We do not have to actualize the Markup itself, because
         # it's actual value is calculated live with an @property.
         for account in owner.accounts.all():
-            actualize_account(account, **kwargs)
+            actualize_account(account)
         for subaccount in owner.subaccounts.all():
-            actualize_subaccount(subaccount, **kwargs)
+            actualize_subaccount(
+                subaccount, actuals_to_be_deleted=actuals_to_be_deleted)
 
 
 @dispatch.receiver(signals.post_create, sender=Actual)
