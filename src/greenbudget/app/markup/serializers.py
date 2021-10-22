@@ -186,7 +186,7 @@ class MarkupSerializer(BudgetParentContextSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
         if instance.unit == Markup.UNITS.flat:
-            if self._only_model or self.read_only is True:
+            if self._only_model or self.read_only is True or 'children' in data:
                 del data['children']
             else:
                 del data['data']['children']
