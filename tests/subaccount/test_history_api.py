@@ -11,7 +11,7 @@ from greenbudget.app import signals
 def test_get_subaccount_subaccounts_history(api_client, create_budget, user,
         create_budget_subaccount, create_budget_account, models):
 
-    with signals.post_create_by_user.disable():
+    with signals.disable():
         budget = create_budget()
         account = create_budget_account(parent=budget)
         parent_subaccount = create_budget_subaccount(
@@ -134,7 +134,7 @@ def test_get_subaccount_subaccounts_history(api_client, create_budget, user,
 @override_settings(TRACK_MODEL_HISTORY=True)
 def test_get_subaccount_history(api_client, create_budget, user,
         create_budget_account, create_budget_subaccount, models):
-    with signals.post_create_by_user.disable():
+    with signals.disable():
         budget = create_budget()
         account = create_budget_account(parent=budget)
         subaccount = create_budget_subaccount(

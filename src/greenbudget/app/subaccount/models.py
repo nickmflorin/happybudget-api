@@ -278,7 +278,10 @@ class SubAccount(PolymorphicModel):
 @signals.model(
     flags=['suppress_budget_update'],
     user_field='updated_by',
-    exclude_fields=['updated_by', 'created_by']
+    track_fields=['actual'],
+    dispatch_fields=[
+        'object_id', 'content_type', 'rate', 'quantity', 'multiplier', 'group'],
+    track_model_history=('identifier', 'description') + SubAccount.DERIVING_FIELDS  # noqa
 )
 class BudgetSubAccount(SubAccount):
     pdf_type = 'pdf-subaccount'
@@ -294,9 +297,7 @@ class BudgetSubAccount(SubAccount):
 
     objects = SubAccountManager()
 
-    TRACK_MODEL_HISTORY = True
-    TRACK_FIELD_CHANGE_HISTORY = (
-        'identifier', 'description') + SubAccount.DERIVING_FIELDS
+    TRACK_CREATE_HISTORY = True
     DERIVING_FIELDS = SubAccount.DERIVING_FIELDS + ("contact", )
 
     class Meta(SubAccount.Meta):
@@ -310,7 +311,9 @@ class BudgetSubAccount(SubAccount):
 @signals.model(
     flags=['suppress_budget_update'],
     user_field='updated_by',
-    exclude_fields=['updated_by', 'created_by']
+    track_fields=['actual'],
+    dispatch_fields=[
+        'object_id', 'content_type', 'rate', 'quantity', 'multiplier', 'group'],
 )
 class TemplateSubAccount(SubAccount):
     objects = SubAccountManager()

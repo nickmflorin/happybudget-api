@@ -36,46 +36,50 @@ def mark_budget_updated(instance):
     id=lambda instance: instance.pk,
     queue_in_context=True
 )
-def estimate_budget(instance):
-    instance.estimate()
+def estimate_budget(instance, children_to_be_deleted=None):
+    instance.estimate(children_to_be_deleted=children_to_be_deleted)
     logger.info(
         "Updating %s %s -> Accumulated Value: %s"
         % (type(instance).__name__, instance.pk, instance.accumulated_value)
     )
-    instance.save(
-        update_fields=list(instance.CALCULATED_FIELDS),
-        suppress_budget_update=True
-    )
+    instance.save(suppress_budget_update=True)
 
 
 @signals.bulk_context.handler(
     id=lambda instance: instance.pk,
     queue_in_context=True
 )
-def actualize_budget(instance, markups_to_be_deleted=None):
-    instance.actualize(markups_to_be_deleted=markups_to_be_deleted)
+def actualize_budget(instance, markups_to_be_deleted=None,
+        children_to_be_deleted=None):
+    instance.actualize(
+        markups_to_be_deleted=markups_to_be_deleted,
+        children_to_be_deleted=children_to_be_deleted
+    )
     logger.info(
         "Updating %s %s -> Actual: %s"
         % (type(instance).__name__, instance.pk, instance.actual)
     )
-    instance.save(update_fields=['actual'], suppress_budget_update=True)
+    if instance.actual != instance.previous_value('actual'):
+        instance.save(update_fields=['actual'], suppress_budget_update=True)
 
 
 @signals.bulk_context.handler(
-    id=lambda instance: instance.pk,
-    side_effect=lambda instance: [
+    id=lambda instance, children_to_be_deleted: instance.pk,
+    side_effect=lambda instance, children_to_be_deleted: [
         signals.SideEffect(
             func=estimate_budget,
-            args=(instance, )
+            args=(instance, ),
+            kwargs={'children_to_be_deleted': children_to_be_deleted},
         ),
         signals.SideEffect(
             func=actualize_budget,
             args=(instance, ),
-            conditional=isinstance(instance, Budget)
+            conditional=isinstance(instance, Budget),
+            kwargs={'children_to_be_deleted': children_to_be_deleted},
         )
     ]
 )
-def calculate_budget(instance):
+def calculate_budget(instance, children_to_be_deleted=None):
     pass
 
 

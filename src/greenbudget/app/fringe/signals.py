@@ -32,9 +32,14 @@ def fringe_deleted(instance, **kwargs):
             estimate_subaccount(subaccount, fringes_to_be_deleted=[instance.pk])
 
 
-@dispatch.receiver(signals.m2m_changed, sender=BudgetSubAccount.fringes.through)
 @dispatch.receiver(
-    signals.m2m_changed, sender=TemplateSubAccount.fringes.through)
+    signal=signals.m2m_changed,
+    sender=BudgetSubAccount.fringes.through
+)
+@dispatch.receiver(
+    signal=signals.m2m_changed,
+    sender=TemplateSubAccount.fringes.through
+)
 def fringes_changed(instance, action, reverse, **kwargs):
     if action in ('post_add', 'post_remove'):
         if reverse:

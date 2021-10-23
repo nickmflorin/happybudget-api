@@ -8,7 +8,7 @@ from django.test import override_settings
 from greenbudget.app import signals
 
 
-def test_delete_subaccount_recalculates(create_budget,
+def test_delete_subaccount_reestimates(create_budget,
         create_budget_account, create_budget_subaccount):
     budget = create_budget()
     account = create_budget_account(parent=budget)
@@ -30,7 +30,32 @@ def test_delete_subaccount_recalculates(create_budget,
     assert parent_subaccount.nominal_value == 0.0
 
 
-def test_create_subaccount_recalculates(create_budget, create_budget_account,
+def test_delete_subaccount_reactualizes(create_budget,
+        create_budget_account, create_budget_subaccount, create_actual):
+    budget = create_budget()
+    account = create_budget_account(parent=budget)
+    parent_subaccount = create_budget_subaccount(parent=account)
+    subaccount = create_budget_subaccount(
+        parent=parent_subaccount,
+        rate=1,
+        multiplier=5,
+        quantity=10,
+    )
+    create_actual(owner=subaccount, budget=budget, value=100.0)
+
+    assert budget.actual == 100.0
+    assert account.actual == 100.0
+    assert parent_subaccount.actual == 100.0
+    assert subaccount.actual == 100.0
+
+    subaccount.delete()
+
+    assert budget.actual == 0.0
+    assert account.actual == 0.0
+    assert parent_subaccount.actual == 0.0
+
+
+def test_create_subaccount_rereestimates(create_budget, create_budget_account,
         create_budget_subaccount):
     budget = create_budget()
     account = create_budget_account(parent=budget)
@@ -45,7 +70,7 @@ def test_create_subaccount_recalculates(create_budget, create_budget_account,
     assert budget.nominal_value == 50.0
 
 
-def test_update_subaccount_recalculates(create_budget, create_budget_account,
+def test_update_subaccount_rereestimates(create_budget, create_budget_account,
         create_budget_subaccount):
     budget = create_budget()
     account = create_budget_account(parent=budget)
@@ -61,12 +86,13 @@ def test_update_subaccount_recalculates(create_budget, create_budget_account,
 
     subaccount.quantity = 1
     subaccount.save(update_fields=['quantity'])
+
     assert subaccount.nominal_value == 5.0
     assert account.nominal_value == 5.0
     assert budget.nominal_value == 5.0
 
 
-def test_change_subaccount_parent_recalculates(models, create_budget,
+def test_change_subaccount_parent_reestimates(models, create_budget,
         create_budget_account, create_budget_subaccount):
     budget = create_budget()
     account = create_budget_account(parent=budget)
@@ -112,7 +138,7 @@ def test_saving_subaccount_saves_budget(create_budget, create_budget_account,
 @override_settings(TRACK_MODEL_HISTORY=True)
 def test_record_create_history(create_budget, create_budget_account, user,
         models):
-    with signals.post_create_by_user.disable():
+    with signals.disable():
         budget = create_budget()
         account = create_budget_account(parent=budget)
     subaccount = models.BudgetSubAccount.objects.create(

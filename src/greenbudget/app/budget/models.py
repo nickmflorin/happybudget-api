@@ -158,7 +158,7 @@ class BaseBudget(PolymorphicModel):
         )
 
 
-@signals.model(flags='suppress_budget_update')
+@signals.model(flags='suppress_budget_update', track_fields=['actual'])
 class Budget(BaseBudget):
     type = "budget"
     pdf_type = "pdf-budget"

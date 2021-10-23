@@ -99,7 +99,7 @@ def test_get_accounts_history(api_client, create_budget, user, models):
 @override_settings(TRACK_MODEL_HISTORY=True)
 def test_get_account_history(api_client, create_budget, create_budget_account,
         user, models):
-    with signals.post_create_by_user.disable():
+    with signals.disable():
         budget = create_budget()
         account = create_budget_account(
             parent=budget,
@@ -170,7 +170,7 @@ def test_get_account_history(api_client, create_budget, create_budget_account,
 def test_get_account_subaccounts_history(api_client, create_budget, user,
         create_budget_subaccount, create_budget_account, models):
 
-    with signals.post_create_by_user.disable():
+    with signals.disable():
         api_client.force_login(user)
         budget = create_budget()
         account = create_budget_account(parent=budget)

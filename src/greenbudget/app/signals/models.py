@@ -1,4 +1,5 @@
 import collections
+from copy import deepcopy
 import logging
 import threading
 
@@ -9,7 +10,9 @@ from django.db import models
 from greenbudget.conf import Environments
 from greenbudget.lib.utils import ensure_iterable
 
-from .signals import field_changed, fields_changed, post_create_by_user
+from .signals import (
+    field_changed, fields_changed, post_create_by_user, model_history_changed,
+    model_history_created)
 
 
 logger = logging.getLogger('signals')
@@ -75,6 +78,18 @@ class ModelFieldException(ModelException):
         return self.data.format(field=self._field, model=self.model.__name__)
 
 
+class CallableParameterException(Exception):
+    def __init__(self, param):
+        self._param = param
+
+    def __str__(self):
+        return (
+            "Parameter %s must either be an iterable, a single field "
+            " or a callable taking the application settings as it's first and "
+            "only argument." % self._param
+        )
+
+
 class FieldDoesNotExistError(ModelFieldException):
     data = "Field {field} does not exist on model {model}."
 
@@ -90,6 +105,23 @@ class FieldNotTrackedError(ModelFieldException):
 DISALLOWED_ATTRIBUTES = [('editable', False), ('primary_key', True)]
 DISALLOWED_FIELDS = [models.fields.AutoField, models.ManyToManyField]
 FIELDS_NOT_STORED_IN_MODEL_MEMORY = [models.ForeignKey, models.OneToOneField]
+
+
+def should_track_field_history(instance):
+    if getattr(settings, 'TRACK_MODEL_HISTORY', False) is False:
+        logger.info(
+            "Suppressing history tracking behavior for %s "
+            "because settings.TRACK_MODEL_HISTORY is either "
+            "not defined or False." % instance.__class__.__name__
+        )
+        return False
+    return True
+
+
+def should_track_create_history(instance):
+    if not should_track_field_history(instance):
+        return False
+    return getattr(instance, 'TRACK_CREATE_HISTORY', False)
 
 
 class model:
@@ -131,28 +163,93 @@ class model:
         # basis.
         self._flags = ensure_iterable(flags) + ['track_changes']
 
-        self._no_field_tracking = False
         self._track_all_fields = False
 
-        self._track_fields = []
+        self._track_fields = set([])
+        self._dispatch_fields = set([])
+        self._history_fields = set([])
         self._exclude_fields = ensure_iterable(kwargs.pop('exclude_fields', []))
 
         if 'track_fields' in kwargs:
+            track_fields = kwargs['track_fields']
             # If the `track_fields` argument is None or False, it means we do
             # not want to track fields at all.
-            if kwargs['track_fields'] in (None, False):
-                self._no_field_tracking = True
+            if track_fields in (None, False):
+                self._track_fields = set([])
             # If the `track_fields` argument is simply set to True, it means we
             # want to track all supported fields.
-            elif kwargs['track_fields'] is True:
+            elif track_fields is True:
                 self._track_all_fields = True
             else:
                 # Track just the explicitly provided fields.
-                self._track_fields = ensure_iterable(kwargs['track_fields'])
-        else:
-            # If no `track_fields` argument is supplied, it means we want to
-            # track all supported fields.
-            self._track_all_fields = True
+                if hasattr(track_fields, '__call__'):
+                    try:
+                        track_fields = track_fields(settings)
+                    except TypeError:
+                        raise CallableParameterException('track_fields')
+                self._track_fields = set([
+                    f for f in ensure_iterable(track_fields)
+                    if f not in self._exclude_fields
+                ])
+
+        if 'dispatch_fields' in kwargs:
+            dispatch_fields = kwargs['dispatch_fields']
+            # If the `dispatch_on_fields_changed` argument is None or False,
+            # it means we do not want to dispatch signals on changes to fields
+            # at all.
+            if dispatch_fields in (None, False):
+                self._dispatch_fields = set([])
+            # If the `dispatch_fields` argument is simply set to True,
+            # it means we want to dispatch signals on changes to all tracked
+            # fields.
+            elif dispatch_fields is True:
+                if len(self._track_fields) == 0:
+                    raise Exception(
+                        "Cannot dispatch fields if none are being tracked.")
+                self._dispatch_fields = deepcopy(self._track_fields)
+            else:
+                # Dispatch signals on changes for only the explicitly provided
+                # fields, either provided as a callablle or iterable.
+                if hasattr(dispatch_fields, '__call__'):
+                    try:
+                        dispatch_fields = dispatch_fields(settings)
+                    except TypeError:
+                        raise CallableParameterException('dispatch_fields')
+                self._dispatch_fields = set([
+                    f for f in ensure_iterable(dispatch_fields)
+                    if f not in self._exclude_fields
+                ])
+                self._track_fields = self._track_fields.union(
+                    self._dispatch_fields)
+
+        if 'track_model_history' in kwargs:
+            track_model_history = kwargs['track_model_history']
+            # If the `track_model_history` argument is None or False,
+            # it means we do not want to track the history of the model at all.
+            if track_model_history in (None, False):
+                self._history_fields = set([])
+            # If the `track_model_history` argument is simply set to True,
+            # it means we want to track history for all tracked fields.
+            elif track_model_history is True:
+                if len(self._track_fields) == 0:
+                    raise Exception(
+                        "Cannot track history of fields if none are being "
+                        "tracked."
+                    )
+                self._history_fields = deepcopy(self._track_fields)
+            else:
+                # Track model history of only explicitly provided fields.
+                if hasattr(track_model_history, '__call__'):
+                    try:
+                        track_model_history = track_model_history(settings)
+                    except TypeError:
+                        raise CallableParameterException('track_model_history')
+                self._history_fields = set([
+                    f for f in ensure_iterable(track_model_history)
+                    if f not in self._exclude_fields
+                ])
+                self._track_fields = self._track_fields.union(
+                    self._history_fields)
 
         # A field on the model that is used to determine the user performing
         # the action when the request is not available.
@@ -194,10 +291,7 @@ class model:
             raise FieldCannotBeTrackedError(field, cls)
 
     def tracked_fields(self, cls):
-        if self._no_field_tracking:
-            return []
-
-        elif self._track_all_fields:
+        if self._track_all_fields:
             tracked_fields = []
             unsupported_fields = []
             for field_obj in cls._meta.fields:
@@ -217,10 +311,19 @@ class model:
                 )
             return tracked_fields
         else:
+            # If we want to dispatch signals when a field is changed, we need
+            # to also track that field.  The same goes for fields that we want
+            # to track the model history of.
             for field in self._track_fields:
                 if field not in self._exclude_fields:
                     self.validate_field(cls, field)
-            return self._track_fields[:]
+            return deepcopy(self._track_fields)
+
+    def dispatched_fields(self, cls):
+        return deepcopy(self._dispatch_fields)
+
+    def history_fields(self, cls):
+        return deepcopy(self._history_fields)
 
     def set_flags(self, instance, **kwargs):
         self.clear_flags(instance)
@@ -245,9 +348,18 @@ class model:
         # The fields that are being tracked.
         cls.__tracked_fields = self.tracked_fields(cls)
 
-        def previous_value(instance, field):
+        # The fields that are being dispatched.
+        cls.__dispatched_fields = self.dispatched_fields(cls)
+
+        # The fields that are used to track model history.
+        cls.__history_fields = self.history_fields(cls)
+
+        def raise_if_field_not_tracked(instance, field):
             if field not in instance.__tracked_fields:
                 raise FieldNotTrackedError(field, instance)
+
+        def previous_value(instance, field):
+            instance.raise_if_field_not_tracked(field)
             return instance.__data[field]
 
         def field_has_changed(instance, k):
@@ -352,13 +464,24 @@ class model:
             are removed or the instance is created for the first time.
             """
             new_instance = instance.id is None
+
+            suppress_dispatch_fields = kwargs.pop(
+                'suppress_dispatch_fields', False)
+
+            # We need to provide this attribute to the post_save signal below
+            # so we can also suppress model create history.
+            # if suppress_history is not None:
+            suppress_history = kwargs.pop('suppress_history', None)
+            if suppress_history is not None and instance._state.adding:
+                setattr(instance, '__suppress_history', suppress_history)
+
             kwargs = self.set_flags(instance, **kwargs)
-
             save._original(instance, *args, **kwargs)
-
             update_fields = kwargs.pop('update_fields', None)
 
-            changes = []
+            dispatch_changes = []
+            history_changes = []
+
             if not new_instance and instance.get_flag('track_changes') is not False:  # noqa
                 for k in instance.__tracked_fields:
                     if update_fields is not None and k not in update_fields:
@@ -370,20 +493,38 @@ class model:
                             value=getattr(instance, k),
                             field_instance=self.get_field_instance(cls, k)
                         )
-                        changes.append(change)
-                        field_changed.send(
-                            sender=type(instance),
-                            instance=instance,
-                            change=change,
-                            user=self.get_user(instance)
-                        )
-                if changes:
+                        if k in instance.__dispatched_fields:
+                            dispatch_changes.append(change)
+                            if not suppress_dispatch_fields:
+                                field_changed.send(
+                                    sender=type(instance),
+                                    instance=instance,
+                                    change=change,
+                                    user=self.get_user(instance)
+                                )
+                        if k in instance.__history_fields:
+                            history_changes.append(change)
+
+                # Dispatch signals for the changed fields we are tracking.
+                if dispatch_changes and not suppress_dispatch_fields:
                     fields_changed.send(
                         sender=type(instance),
                         instance=instance,
-                        changes=FieldChanges(changes),
+                        changes=FieldChanges(dispatch_changes),
                         user=self.get_user(instance)
                     )
+
+                # Dispatch history signals for the changed fields we are
+                # tracking model history of.
+                if history_changes and not suppress_history:
+                    if should_track_field_history(instance):
+                        model_history_changed.send(
+                            sender=type(instance),
+                            instance=instance,
+                            changes=FieldChanges(history_changes),
+                            user=self.get_user(instance)
+                        )
+
             store(instance)
 
         def _post_init(sender, instance, **kwargs):
@@ -396,6 +537,14 @@ class model:
                     instance=instance,
                     user=self.get_user(instance)
                 )
+                suppress_history = getattr(instance, '__suppress_history', None)
+                if not suppress_history \
+                        and should_track_create_history(instance):
+                    model_history_created.send(
+                        sender=type(instance),
+                        instance=instance,
+                        user=self.get_user(instance)
+                    )
 
         models.signals.post_init.connect(_post_init, sender=cls, weak=False)
         models.signals.post_save.connect(_post_save, sender=cls, weak=False)
@@ -407,6 +556,7 @@ class model:
         cls.previous_value = previous_value
         cls.get_flag = get_flag
         cls.clear_flag = clear_flag
+        cls.raise_if_field_not_tracked = raise_if_field_not_tracked
 
         # Replace the model save method with the overridden one, but keep track
         # of the original save method so it can be reapplied.

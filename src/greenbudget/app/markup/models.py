@@ -15,7 +15,8 @@ from .managers import MarkupManager
 
 @signals.model(
     flags=['suppress_budget_update', 'suppress_markups_changed'],
-    user_field='updated_by'
+    user_field='updated_by',
+    dispatch_fields=['unit', 'rate', 'object_id', 'content_type']
 )
 class Markup(models.Model):
     type = "markup"

@@ -38,7 +38,8 @@ class ActualType(Tag):
 @signals.model(
     flags=['suppress_budget_update'],
     user_field='updated_by',
-    exclude_fields=['updated_by', 'created_by']
+    track_fields=['value'],
+    dispatch_fields=['value', 'object_id', 'content_type']
 )
 class Actual(models.Model):
     type = "actual"

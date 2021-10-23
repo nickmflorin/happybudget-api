@@ -68,7 +68,12 @@ def actualize_subaccount(instance, actuals_to_be_deleted=None,
         markups_to_be_deleted=markups_to_be_deleted
     )
     if instance.actual != instance.previous_value('actual'):
-        instance.save(update_fields=["actual"], suppress_budget_update=True)
+        instance.save(
+            update_fields=["actual"],
+            suppress_budget_update=True,
+            suppress_dispatch_fields=True,
+            suppress_history=True
+        )
 
 
 @signals.bulk_context.handler(
@@ -120,8 +125,9 @@ def estimate_subaccount(instance, fringes_to_be_deleted=None,
         children_to_be_deleted=children_to_be_deleted
     )
     instance.save(
-        update_fields=list(instance.ESTIMATED_FIELDS),
-        suppress_budget_update=True
+        suppress_budget_update=True,
+        suppress_dispatch_fields=True,
+        suppress_history=True
     )
 
 
@@ -206,7 +212,11 @@ def subaccount_created(instance, **kwargs):
 @dispatch.receiver(signals.post_delete, sender=BudgetSubAccount)
 @dispatch.receiver(signals.post_delete, sender=TemplateSubAccount)
 def subaccount_deleted(instance, **kwargs):
-    calculate_parent(instance.parent, children_to_be_deleted=[instance.pk])
+    # The SubAccount instance can be deleted in the process of deleting it's
+    # parent, at which point the parent will be None until that SubAccount
+    # instance is deleted.
+    if instance.parent is not None:
+        calculate_parent(instance.parent, children_to_be_deleted=[instance.pk])
 
 
 @signals.any_fields_changed_receiver(
@@ -283,13 +293,18 @@ def remove_parent_calculated_fields(instance, **kwargs):
             setattr(instance.parent, field, None)
         instance.parent.fringes.set([])
         if isinstance(instance.parent, BudgetSubAccount):
+            # We still want to track changes so that the removal of the fields
+            # causes a recalculation of the instance.
             instance.parent.save(
                 update_fields=instance.DERIVING_FIELDS,
-                track_changes=False,
+                suppress_history=True,
                 suppress_budget_update=True
             )
         else:
+            # We still want to track changes so that the removal of the fields
+            # causes a recalculation of the instance.
             instance.parent.save(
                 update_fields=instance.DERIVING_FIELDS,
-                suppress_budget_update=True
+                suppress_budget_update=True,
+                suppress_history=True
             )

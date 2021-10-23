@@ -75,11 +75,11 @@ def any_fields_changed_receiver(fields, **kwargs):
 
 def field_changed_receiver(field, **kwargs):
     signal = field_changed_signal(field, **kwargs)
-
-    def decorator(func):
-        signal.connect(func, weak=False)
-        return func
-    return decorator
+    return dispatch.receiver(signal, **kwargs)
+    # def decorator(func):
+    #     signal.connect(func, weak=False)
+    #     return func
+    # return decorator
 
 
 @dispatch.receiver(models.signals.post_save)

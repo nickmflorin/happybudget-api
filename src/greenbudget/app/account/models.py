@@ -189,7 +189,9 @@ class Account(PolymorphicModel):
 @signals.model(
     flags=['suppress_budget_update'],
     user_field='updated_by',
-    exclude_fields=['updated_by', 'created_by'],
+    track_fields=['actual'],
+    dispatch_fields=['group'],
+    track_model_history=['identifier', 'description']
 )
 class BudgetAccount(Account):
     pdf_type = "pdf-account"
@@ -200,10 +202,8 @@ class BudgetAccount(Account):
     comments = GenericRelation(Comment)
     events = GenericRelation(Event)
 
-    TRACK_MODEL_HISTORY = True
-    TRACK_FIELD_CHANGE_HISTORY = ['identifier', 'description']
-
     objects = AccountManager()
+    TRACK_CREATE_HISTORY = True
 
     class Meta(Account.Meta):
         verbose_name = "Account"
@@ -218,7 +218,8 @@ class BudgetAccount(Account):
 @signals.model(
     flags=['suppress_budget_update'],
     user_field='updated_by',
-    exclude_fields=['updated_by', 'created_by']
+    track_fields=['actual'],
+    dispatch_fields=['group']
 )
 class TemplateAccount(Account):
     objects = AccountManager()

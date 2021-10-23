@@ -250,22 +250,22 @@ def test_bulk_delete_budget_accounts(api_client, user, create_budget,
             create_budget_account(parent=budget),
             create_budget_account(parent=budget)
         ]
-    # We need to create SubAccount(s) so that the accounts themselves have
-    # calculated values, and thus the Budget itself has calculated values, so
-    # we can test whether or not the deletion recalculates the metrics on the
-    # Budget.
-    create_budget_subaccount(
-        parent=accounts[0],
-        quantity=1,
-        rate=100,
-        multiplier=1
-    )
-    create_budget_subaccount(
-        parent=accounts[1],
-        quantity=1,
-        rate=100,
-        multiplier=1
-    )
+        # We need to create SubAccount(s) so that the accounts themselves have
+        # calculated values, and thus the Budget itself has calculated values, so
+        # we can test whether or not the deletion recalculates the metrics on the
+        # Budget.
+        create_budget_subaccount(
+            parent=accounts[0],
+            quantity=1,
+            rate=100,
+            multiplier=1
+        )
+        create_budget_subaccount(
+            parent=accounts[1],
+            quantity=1,
+            rate=100,
+            multiplier=1
+        )
     api_client.force_login(user)
     response = api_client.patch(
         "/v1/budgets/%s/bulk-delete-accounts/" % budget.pk, data={

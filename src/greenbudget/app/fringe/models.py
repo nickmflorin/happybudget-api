@@ -9,7 +9,8 @@ from .managers import FringeManager, BudgetFringeManager, TemplateFringeManager
 
 @signals.model(
     flags='suppress_budget_update',
-    user_field='updated_by'
+    user_field='updated_by',
+    dispatch_fields=['rate', 'cutoff', 'unit']
 )
 class Fringe(models.Model):
     type = "fringe"
