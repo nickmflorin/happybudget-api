@@ -3,7 +3,7 @@ from ratelimit.decorators import ratelimit  # noqa
 from django.conf import settings
 from django.contrib.auth import logout
 from django.utils.decorators import method_decorator
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.views.decorators.debug import sensitive_post_parameters
 
 from rest_framework import views, response, generics, status, permissions

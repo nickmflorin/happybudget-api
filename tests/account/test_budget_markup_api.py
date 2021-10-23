@@ -53,7 +53,6 @@ def test_create_budget_account_flat_markup(api_client, user,
         rate=10,
         count=2
     )
-
     # Make sure all data is properly calculated before API request to avoid
     # confusion in source of potential errors.
     subaccounts[0].refresh_from_db()

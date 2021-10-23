@@ -147,8 +147,8 @@ class bulk_context_manager(threading.local):
 
     def call_in_queue(self, func):
         def use_callback(f, *a, **kw):
-            handler_argspec = inspect.getargspec(func)
-            callback_argspec = inspect.getargspec(f)
+            handler_argspec = inspect.getfullargspec(func)
+            callback_argspec = inspect.getfullargspec(f)
 
             keyword_args = {}
             defaults = get_function_keyword_defaults(func)

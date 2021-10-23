@@ -19,7 +19,7 @@ def conditionally_separate_strings(strings, separator=" "):
 
 
 def get_function_keyword_defaults(func):
-    arg_spec = inspect.getargspec(func)
+    arg_spec = inspect.getfullargspec(func)
     positional_count = len(arg_spec.args)
     defaults = {}
     if arg_spec.defaults is not None:

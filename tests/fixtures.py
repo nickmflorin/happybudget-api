@@ -10,13 +10,13 @@ from .factories import (
 
 
 def contextual_fixture(**contextuals):
-    default = contextuals.pop('default', 'budget')
-
     def decorator(func):
         @pytest.fixture
         def fixture(user, db):
             def inner(*args, **kw):
-                context = kw.pop('context', default)
+                if 'context' not in kw:
+                    raise Exception("Context not provided!")
+                context = kw.pop('context')
                 factory = contextuals[context]
                 if hasattr(factory._meta.model, 'created_by'):
                     kw.setdefault('created_by', user)
