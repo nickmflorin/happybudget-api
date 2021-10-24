@@ -8,26 +8,36 @@ from django.test import override_settings
 from greenbudget.app import signals
 
 
-def test_delete_subaccount_reestimates(create_budget,
-        create_budget_account, create_budget_subaccount):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    parent_subaccount = create_budget_subaccount(parent=account)
-    subaccount = create_budget_subaccount(
-        parent=parent_subaccount,
-        rate=1,
-        multiplier=5,
-        quantity=10,
-    )
+@pytest.mark.parametrize('context', ['budget', 'template'])
+@pytest.mark.freeze_time
+def test_delete_subaccount_reestimates(create_context_budget, create_account,
+        create_subaccount, context, freezer):
+    freezer.move_to('2017-05-20')
+    with signals.bulk_context:
+        budget = create_context_budget(context=context)
+        account = create_account(parent=budget, context=context)
+        parent_subaccount = create_subaccount(parent=account, context=context)
+        subaccount = create_subaccount(
+            parent=parent_subaccount,
+            rate=1,
+            multiplier=5,
+            quantity=10,
+            context=context
+        )
     assert parent_subaccount.nominal_value == 50.0
     assert subaccount.nominal_value == 50.0
     assert account.nominal_value == 50.0
     assert budget.nominal_value == 50.0
 
+    freezer.move_to('2019-05-20')
+
     subaccount.delete()
     assert account.nominal_value == 0.0
     assert budget.nominal_value == 0.0
     assert parent_subaccount.nominal_value == 0.0
+
+    assert budget.updated_at == datetime.datetime(
+        2019, 5, 20).replace(tzinfo=timezone.utc)
 
 
 def test_delete_subaccount_reactualizes(create_budget,
@@ -55,12 +65,14 @@ def test_delete_subaccount_reactualizes(create_budget,
     assert parent_subaccount.actual == 0.0
 
 
-def test_create_subaccount_rereestimates(create_budget, create_budget_account,
-        create_budget_subaccount):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    subaccount = create_budget_subaccount(
+@pytest.mark.parametrize('context', ['budget', 'template'])
+def test_create_subaccount_rereestimates(create_context_budget, create_account,
+        create_subaccount, context):
+    budget = create_context_budget(context=context)
+    account = create_account(parent=budget, context=context)
+    subaccount = create_subaccount(
         parent=account,
+        context=context,
         rate=1,
         multiplier=5,
         quantity=10,
@@ -70,12 +82,14 @@ def test_create_subaccount_rereestimates(create_budget, create_budget_account,
     assert budget.nominal_value == 50.0
 
 
-def test_update_subaccount_rereestimates(create_budget, create_budget_account,
-        create_budget_subaccount):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    subaccount = create_budget_subaccount(
+@pytest.mark.parametrize('context', ['budget', 'template'])
+def test_update_subaccount_rereestimates(create_context_budget, create_account,
+        create_subaccount, context):
+    budget = create_context_budget(context=context)
+    account = create_account(parent=budget, context=context)
+    subaccount = create_subaccount(
         parent=account,
+        context=context,
         rate=1,
         multiplier=5,
         quantity=10,
@@ -92,24 +106,26 @@ def test_update_subaccount_rereestimates(create_budget, create_budget_account,
     assert budget.nominal_value == 5.0
 
 
-def test_change_subaccount_parent_reestimates(models, create_budget,
-        create_budget_account, create_budget_subaccount):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    another_account = create_budget_account(parent=budget)
-    subaccount = create_budget_subaccount(
+@pytest.mark.parametrize('context', ['budget', 'template'])
+def test_change_subaccount_parent_reestimates(models, create_context_budget,
+        create_account, create_subaccount, context):
+    budget = create_context_budget(context=context)
+    account = create_account(parent=budget, context=context)
+    another_account = create_account(parent=budget, context=context)
+    subaccount = create_subaccount(
         parent=account,
         rate=1,
         multiplier=5,
         quantity=10,
+        context=context
     )
     assert subaccount.nominal_value == 50.0
     assert account.nominal_value == 50.0
     assert budget.nominal_value == 50.0
     assert another_account.nominal_value == 0.0
 
-    subaccount.content_type = ContentType.objects.get_for_model(
-        models.BudgetAccount)
+    ct = models.BudgetAccount if context == 'budget' else models.TemplateAccount
+    subaccount.content_type = ContentType.objects.get_for_model(ct)
     subaccount.object_id = another_account.pk
     subaccount.save(update_fields=['content_type', 'object_id'])
 
@@ -122,12 +138,13 @@ def test_change_subaccount_parent_reestimates(models, create_budget,
 
 
 @pytest.mark.freeze_time
-def test_saving_subaccount_saves_budget(create_budget, create_budget_account,
-        create_budget_subaccount, freezer):
+@pytest.mark.parametrize('context', ['budget', 'template'])
+def test_saving_subaccount_saves_budget(create_context_budget, create_account,
+        create_subaccount, freezer, context):
     freezer.move_to('2017-05-20')
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    subaccount = create_budget_subaccount(parent=account)
+    budget = create_context_budget(context=context)
+    account = create_account(parent=budget, context=context)
+    subaccount = create_subaccount(parent=account, context=context)
     freezer.move_to('2019-05-20')
     subaccount.save()
     budget.refresh_from_db()

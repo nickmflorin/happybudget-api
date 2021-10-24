@@ -39,7 +39,6 @@ class ContactViewSet(
         return context
 
     def get_queryset(self):
-        # TODO: Make sure this will not work for inactive users.
         return self.request.user.contacts.all()
 
     def perform_create(self, serializer):

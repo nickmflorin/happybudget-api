@@ -6,13 +6,15 @@ from django.test import override_settings
 from greenbudget.app import signals
 
 
-def test_delete_account_reestimates(create_budget, create_budget_account,
-        create_budget_subaccount):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    parent_subaccount = create_budget_subaccount(parent=account)
-    subaccount = create_budget_subaccount(
+@pytest.mark.parametrize('context', ['budget', 'template'])
+def test_delete_account_reestimates(create_context_budget, create_account,
+        create_subaccount, context):
+    budget = create_context_budget(context=context)
+    account = create_account(parent=budget, context=context)
+    parent_subaccount = create_subaccount(parent=account, context=context)
+    subaccount = create_subaccount(
         parent=parent_subaccount,
+        context=context,
         rate=1,
         multiplier=5,
         quantity=10,
@@ -50,12 +52,13 @@ def test_delete_account_reactualizes(create_budget, create_budget_account,
 
 
 @pytest.mark.freeze_time
-def test_saving_subaccount_saves_budget(create_budget, create_budget_account,
-        freezer):
+@pytest.mark.parametrize('context', ['budget', 'template'])
+def test_saving_subaccount_saves_budget(create_context_budget, create_account,
+        freezer, context):
     freezer.move_to('2017-05-20')
     with signals.post_save.disable():
-        budget = create_budget()
-        account = create_budget_account(parent=budget)
+        budget = create_context_budget(context=context)
+        account = create_account(parent=budget, context=context)
         freezer.move_to('2019-05-20')
     account.save()
     budget.refresh_from_db()
