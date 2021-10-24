@@ -52,7 +52,7 @@ coverage.xml
 
 # Django:
 *.log
-static/*
+src/greenbudget/static/
 
 
 # pyenv
