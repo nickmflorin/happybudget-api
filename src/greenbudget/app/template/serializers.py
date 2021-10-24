@@ -31,7 +31,6 @@ class TemplateSerializer(TemplateSimpleSerializer):
     hidden = serializers.BooleanField(required=False)
 
     nominal_value = serializers.FloatField(read_only=True)
-    accumulated_value = serializers.FloatField(read_only=True)
     accumulated_fringe_contribution = serializers.FloatField(read_only=True)
     accumulated_markup_contribution = serializers.FloatField(read_only=True)
     actual = serializers.FloatField(read_only=True)
@@ -39,7 +38,12 @@ class TemplateSerializer(TemplateSimpleSerializer):
     class Meta:
         model = Template
         fields = TemplateSimpleSerializer.Meta.fields \
-            + Template.CALCULATED_FIELDS \
+            + (
+                'nominal_value',
+                'actual',
+                'accumulated_markup_contribution',
+                'accumulated_fringe_contribution'
+            ) \
             + ('community', 'hidden', 'nominal_value')
 
     def validate(self, attrs):

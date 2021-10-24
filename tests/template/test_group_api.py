@@ -28,8 +28,8 @@ def test_get_template_account_groups(api_client, user, create_template,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_group(api_client, user, create_template,
-        create_template_account, models):
+def test_create_group(api_client, user, create_template, create_template_account,
+        models):
     with signals.disable():
         template = create_template()
         account = create_template_account(parent=template)
@@ -63,8 +63,8 @@ def test_create_group(api_client, user, create_template,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_group_invalid_child(api_client, user,
-        create_template_account, create_template):
+def test_create_group_invalid_child(api_client, user, create_template_account,
+        create_template):
     with signals.disable():
         template = create_template()
         another_template = create_template()

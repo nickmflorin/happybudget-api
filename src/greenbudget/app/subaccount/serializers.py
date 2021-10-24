@@ -58,7 +58,6 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
     )
     rate = serializers.FloatField(required=False, allow_null=True)
     multiplier = serializers.FloatField(required=False, allow_null=True)
-    accumulated_value = serializers.FloatField(read_only=True)
     nominal_value = serializers.FloatField(read_only=True)
     fringe_contribution = serializers.FloatField(read_only=True)
     accumulated_fringe_contribution = serializers.FloatField(read_only=True)
@@ -99,12 +98,18 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
     class Meta:
         model = SubAccount
         fields = SubAccountSimpleSerializer.Meta.fields \
-            + SubAccount.CALCULATED_FIELDS \
+            + (
+                'nominal_value',
+                'actual',
+                'fringe_contribution',
+                'markup_contribution',
+                'accumulated_markup_contribution',
+                'accumulated_fringe_contribution'
+            ) \
             + (
                 'created_by', 'updated_by', 'created_at', 'updated_at',
                 'quantity', 'rate', 'multiplier', 'unit', 'object_id',
-                'parent_type', 'children', 'fringes', 'contact', 'group',
-                'nominal_value'
+                'parent_type', 'children', 'fringes', 'contact', 'group'
             )
 
     def validate(self, attrs):
@@ -167,7 +172,6 @@ class SubAccountPdfSerializer(SubAccountSimpleSerializer):
     children = serializers.SerializerMethodField()
     groups = GroupSerializer(many=True, read_only=True)
     children_markups = MarkupSerializer(many=True, read_only=True)
-    accumulated_value = serializers.FloatField(read_only=True)
     nominal_value = serializers.FloatField(read_only=True)
     fringe_contribution = serializers.FloatField(read_only=True)
     accumulated_fringe_contribution = serializers.FloatField(read_only=True)
@@ -178,10 +182,17 @@ class SubAccountPdfSerializer(SubAccountSimpleSerializer):
     class Meta:
         model = BudgetSubAccount
         fields = SubAccountSimpleSerializer.Meta.fields \
-            + SubAccount.CALCULATED_FIELDS \
+            + (
+                'nominal_value',
+                'actual',
+                'fringe_contribution',
+                'markup_contribution',
+                'accumulated_markup_contribution',
+                'accumulated_fringe_contribution'
+            ) \
             + (
                 'quantity', 'rate', 'multiplier', 'unit', 'children', 'contact',
-                'group', 'nominal_value', 'groups', 'children_markups'
+                'group', 'groups', 'children_markups'
             )
         read_only_fields = fields
 

@@ -41,7 +41,6 @@ class AccountSerializer(AccountSimpleSerializer):
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
 
-    accumulated_value = serializers.FloatField(read_only=True)
     nominal_value = serializers.FloatField(read_only=True)
     accumulated_fringe_contribution = serializers.FloatField(read_only=True)
     markup_contribution = serializers.FloatField(read_only=True)
@@ -61,7 +60,12 @@ class AccountSerializer(AccountSimpleSerializer):
         fields = AccountSimpleSerializer.Meta.fields + (
             'created_by', 'updated_by', 'created_at', 'updated_at',
             'children', 'nominal_value', 'group'
-        ) + Account.CALCULATED_FIELDS
+        ) + (
+            'markup_contribution',
+            'accumulated_markup_contribution',
+            'accumulated_fringe_contribution',
+            'actual'
+        )
 
 
 class BudgetAccountSerializer(AccountSerializer):
@@ -102,7 +106,6 @@ class TemplateAccountDetailSerializer(TemplateAccountSerializer):
 
 class AccountPdfSerializer(AccountSimpleSerializer):
     type = serializers.CharField(read_only=True, source='pdf_type')
-    accumulated_value = serializers.FloatField(read_only=True)
     nominal_value = serializers.FloatField(read_only=True)
     accumulated_fringe_contribution = serializers.FloatField(read_only=True)
     markup_contribution = serializers.FloatField(read_only=True)
@@ -115,6 +118,11 @@ class AccountPdfSerializer(AccountSimpleSerializer):
     class Meta:
         model = BudgetAccount
         fields = AccountSimpleSerializer.Meta.fields \
-            + Account.CALCULATED_FIELDS \
-            + ('children', 'groups', 'nominal_value', 'children_markups')
+            + ('children', 'groups', 'nominal_value', 'children_markups') \
+            + (
+                'markup_contribution',
+                'accumulated_markup_contribution',
+                'accumulated_fringe_contribution',
+                'actual'
+            )
         read_only_fields = fields

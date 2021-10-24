@@ -31,7 +31,6 @@ class BudgetPdfSerializer(BaseBudgetSerializer):
     children = AccountPdfSerializer(many=True, read_only=True)
     groups = GroupSerializer(many=True, read_only=True)
     children_markups = MarkupSerializer(many=True, read_only=True)
-    accumulated_value = serializers.FloatField(read_only=True)
     nominal_value = serializers.FloatField(read_only=True)
     accumulated_fringe_contribution = serializers.FloatField(read_only=True)
     accumulated_markup_contribution = serializers.FloatField(read_only=True)
@@ -39,9 +38,14 @@ class BudgetPdfSerializer(BaseBudgetSerializer):
 
     class Meta:
         model = Budget
-        fields = ('children', 'groups', 'nominal_value', 'children_markups') \
+        fields = ('children', 'groups', 'children_markups') \
             + BaseBudgetSerializer.Meta.fields \
-            + Budget.CALCULATED_FIELDS
+            + (
+                'nominal_value',
+                'actual',
+                'accumulated_markup_contribution',
+                'accumulated_fringe_contribution'
+        )
         read_only_fields = fields
 
 
@@ -94,7 +98,6 @@ class BudgetSerializer(BudgetSimpleSerializer):
     studio_shoot_days = serializers.IntegerField(read_only=True)
     location_days = serializers.IntegerField(read_only=True)
 
-    accumulated_value = serializers.FloatField(read_only=True)
     nominal_value = serializers.FloatField(read_only=True)
     accumulated_fringe_contribution = serializers.FloatField(read_only=True)
     accumulated_markup_contribution = serializers.FloatField(read_only=True)
@@ -103,9 +106,14 @@ class BudgetSerializer(BudgetSimpleSerializer):
     class Meta:
         model = Budget
         fields = BudgetSimpleSerializer.Meta.fields \
-            + Budget.CALCULATED_FIELDS \
+            + (
+                'nominal_value',
+                'actual',
+                'accumulated_markup_contribution',
+                'accumulated_fringe_contribution'
+            ) \
             + (
                 'project_number', 'production_type', 'shoot_date',
                 'delivery_date', 'build_days', 'prelight_days',
-                'studio_shoot_days', 'location_days', 'nominal_value'
+                'studio_shoot_days', 'location_days',
             )
