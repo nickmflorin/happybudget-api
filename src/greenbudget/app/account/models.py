@@ -158,13 +158,9 @@ class Account(PolymorphicModel):
     @use_children(["actual"])
     @use_markup_children
     def actualize(self, children, children_markups):
-        # Even though we delete Markup(s) that do not have any children, there
-        # is still an edge case where the child-less Markup can still exist at
-        # this point.
-        markups = [m for m in children_markups if not m.is_empty]
         self.actual = functools.reduce(
             lambda current, markup: current + (markup.actual or 0),
-            markups,
+            children_markups,
             0
         ) + functools.reduce(
             lambda current, child: current + (child.actual or 0),

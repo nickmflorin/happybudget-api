@@ -88,6 +88,7 @@ def markup_changed(instance, changes, **kwargs):
             and changes.get_change_for_field('unit') is not None:
         instance.clear_children()
         children_updated_from_clear = True
+
     # The parent instance needs to be recalculated because for Markups with
     # unit FLAT, the parent will accumulate those Markup(s).
     estimate_parent(instance.parent)
@@ -114,30 +115,69 @@ def markups_changed(instance, reverse, action, **kwargs):
             estimate_instance(instance)
 
 
-@dispatch.receiver(signals.pre_delete, sender=Markup)
+@dispatch.receiver(signals.post_delete, sender=Markup)
 def markup_deleted(instance, **kwargs):
     """
-    When a :obj:`greenbudget.app.markup.models.Markup` instance is deleted,
-    we need to both reactualize the parent of that instance and reestimate all
-    models for which that :obj:`greenbudget.app.markup.models.Markup` is
-    applied.
+    When a :obj:`Markup` instance is deleted, we need to reactualize the parent
+    of that instance.  If the :obj:`Markup` is of type FLAT, then we also need
+    to reestimate the parent, because that parent will have an accumulated
+    markup contribution that includes this :obj:`Markup` being deleted.
 
-    Note that we have to use the pre_delete signal because we still need to
-    determine which SubAccount(s) have to be reestimated.  We also have to
-    explicitly define the Markup(s) for the reestimation, so it knows to
-    exclude the Markup that is about to be deleted.
+    Note:
+    ----
+    The `pre_delete` signal is not needed here, because we are not accessing
+    the M2M `children` property of the :obj:`Markup` instance.
+
+    Furthermore, the `pre_delete` signal here will conflict with the
+    `pre_delete` signal associated with the :obj:`Actual`, if the :obj:`Markup`
+    is also associated with :obj:`Actual`(s).  This is because deleting the
+    :obj:`Markup` will cause a CASCADE delete of the associated :obj:`Actual`(s),
+    and we do not have the context of what :obj:`Markup` is about to be deleted
+    in the `pre_delete` signal for the :obj:`Actual`.
     """
-    if isinstance(instance.parent, (Budget, BudgetAccount, BudgetSubAccount)):
-        actualize_parent(instance.parent, markups_to_be_deleted=[instance.pk])
-    with signals.bulk_context:
-        for obj in instance.children.all():
-            estimate_instance(obj, markups_to_be_deleted=[instance.pk])
+    try:
+        # The Markup may be being deleted because of a CASCADE delete from its
+        # parent.
+        parent = instance.parent
+    except instance.parent.DoesNotExist:
+        pass
+    else:
+        # Actualization does not apply to the Template domain.
+        if isinstance(parent, (Budget, BudgetAccount, BudgetSubAccount)):
+            actualize_parent(parent)
+        if instance.unit == Markup.UNITS.flat:
+            estimate_parent(parent)
+
+
+@dispatch.receiver(signals.pre_delete, sender=Markup)
+def markup_to_be_deleted(instance, **kwargs):
+    """
+    If the :obj:`Markup` is of type PERCENT, then we need to reestimate all
+    models for which that PERCENT :obj:`Markup` is applied.
+
+    Note:
+    ----
+    The `pre_delete` signal is required here because we need to access the M2M
+    `children` property of the :obj:`Markup` - which will be empty by the time
+    the `post_delete` signal is received.
+    """
+    if instance.unit == Markup.UNITS.percent:
+        with signals.bulk_context:
+            # Note: We cannot access instance.children.all() because that will
+            # perform a DB query at which point the query will result in 0
+            # children since the instance is being deleted.
+            for obj in instance.accounts.all():
+                estimate_account(obj, markups_to_be_deleted=[instance.pk])
+            for obj in instance.subaccounts.all():
+                estimate_subaccount(obj, markups_to_be_deleted=[instance.pk])
 
 
 @dispatch.receiver(signals.post_create, sender=Markup)
 def markup_created(instance, **kwargs):
+    # Actualization does not apply to the Template domain.
     if isinstance(instance.parent, (Budget, BudgetAccount, BudgetSubAccount)):
-        actualize_parent(instance.parent)
+        if instance.actuals.count() != 0:
+            actualize_parent(instance.parent)
     estimate_parent(instance.parent)
 
 

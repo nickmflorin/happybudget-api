@@ -1251,26 +1251,784 @@ def test_update_account_markup_child_not_same_parent(api_client, user,
     assert response.status_code == 400
 
 
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_delete_budget_markup(api_client, user, create_context_budget, models,
-        create_markup, context):
-    budget = create_context_budget(context=context)
-    markup = create_markup(parent=budget, percent=True)
+def test_delete_budget_flat_markup(api_client, user, create_budget, models,
+        create_markup, create_budget_account, create_budget_subaccounts,
+        create_actual):
+    budget = create_budget()
+    markups = [
+        create_markup(parent=budget, flat=True, rate=100),
+        create_markup(parent=budget, percent=True, rate=0.1)
+    ]
+    create_actual(owner=markups[0], value=100, budget=budget)
+    create_actual(owner=markups[1], value=100, budget=budget)
+    account = create_budget_account(parent=budget, markups=[markups[1]])
+    create_budget_subaccounts(
+        count=2,
+        rate=10,
+        multiplier=1,
+        quantity=1,
+        parent=account
+    )
+
+    account.refresh_from_db()
+    assert account.actual == 0.0
+    assert account.nominal_value == 20.0
+    assert account.markup_contribution == 2.0
+
+    budget.refresh_from_db()
+    assert budget.actual == 200.0
+    assert budget.nominal_value == 20.0
+    assert budget.accumulated_markup_contribution == 102.0
 
     api_client.force_login(user)
-    response = api_client.delete("/v1/markups/%s/" % markup.pk)
+    response = api_client.delete("/v1/markups/%s/" % markups[0].pk)
     assert response.status_code == 204
-    assert models.Markup.objects.count() == 0
+    assert models.Markup.objects.count() == 1
+
+    account.refresh_from_db()
+    assert account.actual == 0.0
+    assert account.nominal_value == 20.0
+    assert account.markup_contribution == 2.0
+
+    budget.refresh_from_db()
+    assert budget.nominal_value == 20.0
+    assert budget.actual == 100.0
+    assert budget.accumulated_markup_contribution == 2.0
 
 
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_delete_account_markup(api_client, user, create_context_budget,
-        models, create_account, create_markup, context):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
-    markup = create_markup(parent=account, percent=True)
+def test_delete_template_flat_markup(api_client, user, create_template, models,
+        create_markup, create_template_account, create_template_subaccounts):
+    budget = create_template()
+    markups = [
+        create_markup(parent=budget, flat=True, rate=100),
+        create_markup(parent=budget, percent=True, rate=0.1)
+    ]
+    account = create_template_account(parent=budget, markups=[markups[1]])
+    create_template_subaccounts(
+        count=2,
+        rate=10,
+        multiplier=1,
+        quantity=1,
+        parent=account
+    )
+
+    account.refresh_from_db()
+    assert account.nominal_value == 20.0
+    assert account.markup_contribution == 2.0
+
+    budget.refresh_from_db()
+    assert budget.nominal_value == 20.0
+    assert budget.accumulated_markup_contribution == 102.0
 
     api_client.force_login(user)
-    response = api_client.delete("/v1/markups/%s/" % markup.pk)
+    response = api_client.delete("/v1/markups/%s/" % markups[0].pk)
     assert response.status_code == 204
-    assert models.Markup.objects.count() == 0
+    assert models.Markup.objects.count() == 1
+
+    account.refresh_from_db()
+    assert account.nominal_value == 20.0
+    assert account.markup_contribution == 2.0
+
+    budget.refresh_from_db()
+    assert budget.nominal_value == 20.0
+    assert budget.accumulated_markup_contribution == 2.0
+
+
+def test_delete_budget_percent_markup(api_client, user, create_budget, models,
+        create_markup, create_budget_account, create_budget_subaccounts,
+        create_actual):
+    budget = create_budget()
+    markups = [
+        create_markup(parent=budget, flat=True, rate=100),
+        create_markup(parent=budget, percent=True, rate=0.1)
+    ]
+    create_actual(owner=markups[0], value=100, budget=budget)
+    create_actual(owner=markups[1], value=100, budget=budget)
+    account = create_budget_account(parent=budget, markups=[markups[1]])
+    create_budget_subaccounts(
+        count=2,
+        rate=10,
+        multiplier=1,
+        quantity=1,
+        parent=account
+    )
+
+    account.refresh_from_db()
+    assert account.actual == 0.0
+    assert account.nominal_value == 20.0
+    assert account.markup_contribution == 2.0
+
+    budget.refresh_from_db()
+    assert budget.actual == 200.0
+    assert budget.nominal_value == 20.0
+    assert budget.accumulated_markup_contribution == 102.0
+
+    api_client.force_login(user)
+    response = api_client.delete("/v1/markups/%s/" % markups[1].pk)
+    assert response.status_code == 204
+    assert models.Markup.objects.count() == 1
+
+    account.refresh_from_db()
+    assert account.actual == 0.0
+    assert account.nominal_value == 20.0
+    assert account.markup_contribution == 0.0
+
+    budget.refresh_from_db()
+    assert budget.actual == 100.0
+    assert budget.nominal_value == 20.0
+    assert budget.accumulated_markup_contribution == 100.0
+
+
+def test_delete_template_percent_markup(api_client, user, create_template,
+        models, create_markup, create_budget_account,
+        create_template_subaccounts):
+    budget = create_template()
+    markups = [
+        create_markup(parent=budget, flat=True, rate=100),
+        create_markup(parent=budget, percent=True, rate=0.1)
+    ]
+    account = create_budget_account(parent=budget, markups=[markups[1]])
+    create_template_subaccounts(
+        count=2,
+        rate=10,
+        multiplier=1,
+        quantity=1,
+        parent=account
+    )
+
+    account.refresh_from_db()
+    assert account.nominal_value == 20.0
+    assert account.markup_contribution == 2.0
+
+    budget.refresh_from_db()
+    assert budget.nominal_value == 20.0
+    assert budget.accumulated_markup_contribution == 102.0
+
+    api_client.force_login(user)
+    response = api_client.delete("/v1/markups/%s/" % markups[1].pk)
+    assert response.status_code == 204
+    assert models.Markup.objects.count() == 1
+
+    account.refresh_from_db()
+    assert account.nominal_value == 20.0
+    assert account.markup_contribution == 0.0
+
+    budget.refresh_from_db()
+    assert budget.nominal_value == 20.0
+    assert budget.accumulated_markup_contribution == 100.0
+
+
+def test_delete_budget_account_flat_markup(api_client, user, create_budget,
+        models, create_markup, create_budget_account, create_budget_subaccount,
+        create_actual):
+    budget = create_budget()
+    account = create_budget_account(parent=budget)
+    markups = [
+        create_markup(parent=account, flat=True, rate=100),
+        create_markup(parent=account, percent=True, rate=0.1)
+    ]
+    create_actual(owner=markups[0], value=100, budget=budget)
+    create_actual(owner=markups[1], value=100, budget=budget)
+    subaccounts = [
+        create_budget_subaccount(
+            rate=10,
+            multiplier=1,
+            quantity=1,
+            parent=account,
+            markups=[markups[1]]
+        ),
+        create_budget_subaccount(
+            rate=10,
+            multiplier=1,
+            quantity=1,
+            parent=account,
+            markups=[markups[1]]
+        )
+    ]
+
+    subaccounts[0].refresh_from_db()
+    assert subaccounts[0].nominal_value == 10.0
+    assert subaccounts[0].markup_contribution == 1.0
+    assert subaccounts[0].actual == 0.0
+
+    subaccounts[1].refresh_from_db()
+    assert subaccounts[1].nominal_value == 10.0
+    assert subaccounts[1].markup_contribution == 1.0
+    assert subaccounts[1].actual == 0.0
+
+    account.refresh_from_db()
+    assert account.actual == 200.0
+    assert account.nominal_value == 20.0
+    assert account.markup_contribution == 0.0
+    assert account.accumulated_markup_contribution == 102.0
+
+    budget.refresh_from_db()
+    assert budget.actual == 200.0
+    assert budget.nominal_value == 20.0
+    assert budget.accumulated_markup_contribution == 102.0
+
+    api_client.force_login(user)
+    response = api_client.delete("/v1/markups/%s/" % markups[0].pk)
+    assert response.status_code == 204
+    assert models.Markup.objects.count() == 1
+
+    subaccounts[0].refresh_from_db()
+    assert subaccounts[0].nominal_value == 10.0
+    assert subaccounts[0].markup_contribution == 1.0
+    assert subaccounts[0].actual == 0.0
+
+    subaccounts[1].refresh_from_db()
+    assert subaccounts[1].nominal_value == 10.0
+    assert subaccounts[1].markup_contribution == 1.0
+    assert subaccounts[1].actual == 0.0
+
+    account.refresh_from_db()
+    assert account.actual == 100.0
+    assert account.nominal_value == 20.0
+    assert account.markup_contribution == 0.0
+    assert account.accumulated_markup_contribution == 2.0
+
+    budget.refresh_from_db()
+    assert budget.actual == 100.0
+    assert budget.nominal_value == 20.0
+    assert budget.accumulated_markup_contribution == 2.0
+
+
+def test_delete_template_account_flat_markup(api_client, user, create_template,
+        models, create_markup, create_template_account,
+        create_template_subaccount):
+    budget = create_template()
+    account = create_template_account(parent=budget)
+    markups = [
+        create_markup(parent=account, flat=True, rate=100),
+        create_markup(parent=account, percent=True, rate=0.1)
+    ]
+    subaccounts = [
+        create_template_subaccount(
+            rate=10,
+            multiplier=1,
+            quantity=1,
+            parent=account,
+            markups=[markups[1]]
+        ),
+        create_template_subaccount(
+            rate=10,
+            multiplier=1,
+            quantity=1,
+            parent=account,
+            markups=[markups[1]]
+        )
+    ]
+
+    subaccounts[0].refresh_from_db()
+    assert subaccounts[0].nominal_value == 10.0
+    assert subaccounts[0].markup_contribution == 1.0
+
+    subaccounts[1].refresh_from_db()
+    assert subaccounts[1].nominal_value == 10.0
+    assert subaccounts[1].markup_contribution == 1.0
+
+    account.refresh_from_db()
+    assert account.nominal_value == 20.0
+    assert account.markup_contribution == 0.0
+    assert account.accumulated_markup_contribution == 102.0
+
+    budget.refresh_from_db()
+    assert budget.nominal_value == 20.0
+    assert budget.accumulated_markup_contribution == 102.0
+
+    api_client.force_login(user)
+    response = api_client.delete("/v1/markups/%s/" % markups[0].pk)
+    assert response.status_code == 204
+    assert models.Markup.objects.count() == 1
+
+    subaccounts[0].refresh_from_db()
+    assert subaccounts[0].nominal_value == 10.0
+    assert subaccounts[0].markup_contribution == 1.0
+
+    subaccounts[1].refresh_from_db()
+    assert subaccounts[1].nominal_value == 10.0
+    assert subaccounts[1].markup_contribution == 1.0
+
+    account.refresh_from_db()
+    assert account.nominal_value == 20.0
+    assert account.markup_contribution == 0.0
+    assert account.accumulated_markup_contribution == 2.0
+
+    budget.refresh_from_db()
+    assert budget.nominal_value == 20.0
+    assert budget.accumulated_markup_contribution == 2.0
+
+
+def test_delete_budget_account_percent_markup(api_client, user, create_budget,
+        models, create_markup, create_budget_account, create_budget_subaccount,
+        create_actual):
+    budget = create_budget()
+    account = create_budget_account(parent=budget)
+    markups = [
+        create_markup(parent=account, flat=True, rate=100),
+        create_markup(parent=account, percent=True, rate=0.1)
+    ]
+    create_actual(owner=markups[0], value=100, budget=budget)
+    create_actual(owner=markups[1], value=100, budget=budget)
+    subaccounts = [
+        create_budget_subaccount(
+            rate=10,
+            multiplier=1,
+            quantity=1,
+            parent=account,
+            markups=[markups[1]]
+        ),
+        create_budget_subaccount(
+            rate=10,
+            multiplier=1,
+            quantity=1,
+            parent=account,
+            markups=[markups[1]]
+        )
+    ]
+
+    subaccounts[0].refresh_from_db()
+    assert subaccounts[0].nominal_value == 10.0
+    assert subaccounts[0].markup_contribution == 1.0
+    assert subaccounts[0].actual == 0.0
+
+    subaccounts[1].refresh_from_db()
+    assert subaccounts[1].nominal_value == 10.0
+    assert subaccounts[1].markup_contribution == 1.0
+    assert subaccounts[1].actual == 0.0
+
+    account.refresh_from_db()
+    assert account.actual == 200.0
+    assert account.nominal_value == 20.0
+    assert account.markup_contribution == 0.0
+    assert account.accumulated_markup_contribution == 102.0
+
+    budget.refresh_from_db()
+    assert budget.actual == 200.0
+    assert budget.nominal_value == 20.0
+    assert budget.accumulated_markup_contribution == 102.0
+
+    api_client.force_login(user)
+    response = api_client.delete("/v1/markups/%s/" % markups[1].pk)
+    assert response.status_code == 204
+    assert models.Markup.objects.count() == 1
+
+    subaccounts[0].refresh_from_db()
+    assert subaccounts[0].nominal_value == 10.0
+    assert subaccounts[0].markup_contribution == 0.0
+    assert subaccounts[0].actual == 0.0
+
+    subaccounts[1].refresh_from_db()
+    assert subaccounts[1].nominal_value == 10.0
+    assert subaccounts[1].markup_contribution == 0.0
+    assert subaccounts[1].actual == 0.0
+
+    account.refresh_from_db()
+    assert account.actual == 100.0
+    assert account.nominal_value == 20.0
+    assert account.markup_contribution == 0.0
+    assert account.accumulated_markup_contribution == 100.0
+
+    budget.refresh_from_db()
+    assert budget.actual == 100.0
+    assert budget.nominal_value == 20.0
+    assert budget.accumulated_markup_contribution == 100.0
+
+
+def test_delete_template_account_percent_markup(api_client, user, create_markup,
+        create_template, models, create_template_account,
+        create_template_subaccount):
+    budget = create_template()
+    account = create_template_account(parent=budget)
+    markups = [
+        create_markup(parent=account, flat=True, rate=100),
+        create_markup(parent=account, percent=True, rate=0.1)
+    ]
+    subaccounts = [
+        create_template_subaccount(
+            rate=10,
+            multiplier=1,
+            quantity=1,
+            parent=account,
+            markups=[markups[1]]
+        ),
+        create_template_subaccount(
+            rate=10,
+            multiplier=1,
+            quantity=1,
+            parent=account,
+            markups=[markups[1]]
+        )
+    ]
+
+    subaccounts[0].refresh_from_db()
+    assert subaccounts[0].nominal_value == 10.0
+    assert subaccounts[0].markup_contribution == 1.0
+
+    subaccounts[1].refresh_from_db()
+    assert subaccounts[1].nominal_value == 10.0
+    assert subaccounts[1].markup_contribution == 1.0
+
+    account.refresh_from_db()
+    assert account.nominal_value == 20.0
+    assert account.markup_contribution == 0.0
+    assert account.accumulated_markup_contribution == 102.0
+
+    budget.refresh_from_db()
+    assert budget.nominal_value == 20.0
+    assert budget.accumulated_markup_contribution == 102.0
+
+    api_client.force_login(user)
+    response = api_client.delete("/v1/markups/%s/" % markups[1].pk)
+    assert response.status_code == 204
+    assert models.Markup.objects.count() == 1
+
+    subaccounts[0].refresh_from_db()
+    assert subaccounts[0].nominal_value == 10.0
+    assert subaccounts[0].markup_contribution == 0.0
+
+    subaccounts[1].refresh_from_db()
+    assert subaccounts[1].nominal_value == 10.0
+    assert subaccounts[1].markup_contribution == 0.0
+
+    account.refresh_from_db()
+    assert account.nominal_value == 20.0
+    assert account.markup_contribution == 0.0
+    assert account.accumulated_markup_contribution == 100.0
+
+    budget.refresh_from_db()
+    assert budget.nominal_value == 20.0
+    assert budget.accumulated_markup_contribution == 100.0
+
+
+def test_delete_budget_subaccount_flat_markup(api_client, user, create_budget,
+        models, create_markup, create_budget_account, create_budget_subaccount,
+        create_actual):
+    budget = create_budget()
+    account = create_budget_account(parent=budget)
+    subaccount = create_budget_subaccount(parent=account)
+    markups = [
+        create_markup(parent=subaccount, flat=True, rate=100),
+        create_markup(parent=subaccount, percent=True, rate=0.1)
+    ]
+    create_actual(owner=markups[0], value=100, budget=budget)
+    create_actual(owner=markups[1], value=100, budget=budget)
+    subaccounts = [
+        create_budget_subaccount(
+            rate=10,
+            multiplier=1,
+            quantity=1,
+            parent=subaccount,
+            markups=[markups[1]]
+        ),
+        create_budget_subaccount(
+            rate=10,
+            multiplier=1,
+            quantity=1,
+            parent=subaccount,
+            markups=[markups[1]]
+        )
+    ]
+
+    subaccounts[0].refresh_from_db()
+    assert subaccounts[0].nominal_value == 10.0
+    assert subaccounts[0].markup_contribution == 1.0
+    assert subaccounts[0].actual == 0.0
+
+    subaccounts[1].refresh_from_db()
+    assert subaccounts[1].nominal_value == 10.0
+    assert subaccounts[1].markup_contribution == 1.0
+    assert subaccounts[1].actual == 0.0
+
+    subaccount.refresh_from_db()
+    assert subaccount.actual == 200.0
+    assert subaccount.nominal_value == 20.0
+    assert subaccount.markup_contribution == 0.0
+    assert subaccount.accumulated_markup_contribution == 102.0
+
+    account.refresh_from_db()
+    assert account.actual == 200.0
+    assert account.nominal_value == 20.0
+    assert account.markup_contribution == 0.0
+    assert account.accumulated_markup_contribution == 102.0
+
+    budget.refresh_from_db()
+    assert budget.actual == 200.0
+    assert budget.nominal_value == 20.0
+    assert budget.accumulated_markup_contribution == 102.0
+
+    api_client.force_login(user)
+    response = api_client.delete("/v1/markups/%s/" % markups[0].pk)
+    assert response.status_code == 204
+    assert models.Markup.objects.count() == 1
+
+    subaccounts[0].refresh_from_db()
+    assert subaccounts[0].nominal_value == 10.0
+    assert subaccounts[0].markup_contribution == 1.0
+    assert subaccounts[0].actual == 0.0
+
+    subaccounts[1].refresh_from_db()
+    assert subaccounts[1].nominal_value == 10.0
+    assert subaccounts[1].markup_contribution == 1.0
+    assert subaccounts[1].actual == 0.0
+
+    subaccount.refresh_from_db()
+    assert subaccount.actual == 100.0
+    assert subaccount.nominal_value == 20.0
+    assert subaccount.markup_contribution == 0.0
+    assert subaccount.accumulated_markup_contribution == 2.0
+
+    account.refresh_from_db()
+    assert account.actual == 100.0
+    assert account.nominal_value == 20.0
+    assert account.markup_contribution == 0.0
+    assert account.accumulated_markup_contribution == 2.0
+
+    budget.refresh_from_db()
+    assert budget.actual == 100.0
+    assert budget.nominal_value == 20.0
+    assert budget.accumulated_markup_contribution == 2.0
+
+
+def test_delete_budget_subaccount_percent_markup(api_client, user, create_budget,
+        models, create_markup, create_budget_account, create_budget_subaccount,
+        create_actual):
+    budget = create_budget()
+    account = create_budget_account(parent=budget)
+    subaccount = create_budget_subaccount(parent=account)
+    markups = [
+        create_markup(parent=subaccount, flat=True, rate=100),
+        create_markup(parent=subaccount, percent=True, rate=0.1)
+    ]
+    create_actual(owner=markups[0], value=100, budget=budget)
+    create_actual(owner=markups[1], value=100, budget=budget)
+    subaccounts = [
+        create_budget_subaccount(
+            rate=10,
+            multiplier=1,
+            quantity=1,
+            parent=subaccount,
+            markups=[markups[1]]
+        ),
+        create_budget_subaccount(
+            rate=10,
+            multiplier=1,
+            quantity=1,
+            parent=subaccount,
+            markups=[markups[1]]
+        )
+    ]
+
+    subaccounts[0].refresh_from_db()
+    assert subaccounts[0].nominal_value == 10.0
+    assert subaccounts[0].markup_contribution == 1.0
+    assert subaccounts[0].actual == 0.0
+
+    subaccounts[1].refresh_from_db()
+    assert subaccounts[1].nominal_value == 10.0
+    assert subaccounts[1].markup_contribution == 1.0
+    assert subaccounts[1].actual == 0.0
+
+    subaccount.refresh_from_db()
+    assert subaccount.actual == 200.0
+    assert subaccount.nominal_value == 20.0
+    assert subaccount.markup_contribution == 0.0
+    assert subaccount.accumulated_markup_contribution == 102.0
+
+    account.refresh_from_db()
+    assert account.actual == 200.0
+    assert account.nominal_value == 20.0
+    assert account.markup_contribution == 0.0
+    assert account.accumulated_markup_contribution == 102.0
+
+    budget.refresh_from_db()
+    assert budget.actual == 200.0
+    assert budget.nominal_value == 20.0
+    assert budget.accumulated_markup_contribution == 102.0
+
+    api_client.force_login(user)
+    response = api_client.delete("/v1/markups/%s/" % markups[1].pk)
+    assert response.status_code == 204
+    assert models.Markup.objects.count() == 1
+
+    subaccounts[0].refresh_from_db()
+    assert subaccounts[0].nominal_value == 10.0
+    assert subaccounts[0].markup_contribution == 0.0
+    assert subaccounts[0].actual == 0.0
+
+    subaccounts[1].refresh_from_db()
+    assert subaccounts[1].nominal_value == 10.0
+    assert subaccounts[1].markup_contribution == 0.0
+    assert subaccounts[1].actual == 0.0
+
+    subaccount.refresh_from_db()
+    assert subaccount.actual == 100.0
+    assert subaccount.nominal_value == 20.0
+    assert subaccount.markup_contribution == 0.0
+    assert subaccount.accumulated_markup_contribution == 100.0
+
+    account.refresh_from_db()
+    assert account.actual == 100.0
+    assert account.nominal_value == 20.0
+    assert account.markup_contribution == 0.0
+    assert account.accumulated_markup_contribution == 100.0
+
+    budget.refresh_from_db()
+    assert budget.actual == 100.0
+    assert budget.nominal_value == 20.0
+    assert budget.accumulated_markup_contribution == 100.0
+
+
+def test_delete_template_subaccount_flat_markup(api_client, user, models,
+        create_template, create_markup, create_template_account,
+        create_template_subaccount):
+    budget = create_template()
+    account = create_template_account(parent=budget)
+    subaccount = create_template_subaccount(parent=account)
+    markups = [
+        create_markup(parent=subaccount, flat=True, rate=100),
+        create_markup(parent=subaccount, percent=True, rate=0.1)
+    ]
+    subaccounts = [
+        create_template_subaccount(
+            rate=10,
+            multiplier=1,
+            quantity=1,
+            parent=subaccount,
+            markups=[markups[1]]
+        ),
+        create_template_subaccount(
+            rate=10,
+            multiplier=1,
+            quantity=1,
+            parent=subaccount,
+            markups=[markups[1]]
+        )
+    ]
+
+    subaccounts[0].refresh_from_db()
+    assert subaccounts[0].nominal_value == 10.0
+    assert subaccounts[0].markup_contribution == 1.0
+
+    subaccounts[1].refresh_from_db()
+    assert subaccounts[1].nominal_value == 10.0
+    assert subaccounts[1].markup_contribution == 1.0
+
+    subaccount.refresh_from_db()
+    assert subaccount.nominal_value == 20.0
+    assert subaccount.markup_contribution == 0.0
+    assert subaccount.accumulated_markup_contribution == 102.0
+
+    account.refresh_from_db()
+    assert account.nominal_value == 20.0
+    assert account.markup_contribution == 0.0
+    assert account.accumulated_markup_contribution == 102.0
+
+    budget.refresh_from_db()
+    assert budget.nominal_value == 20.0
+    assert budget.accumulated_markup_contribution == 102.0
+
+    api_client.force_login(user)
+    response = api_client.delete("/v1/markups/%s/" % markups[0].pk)
+    assert response.status_code == 204
+    assert models.Markup.objects.count() == 1
+
+    subaccounts[0].refresh_from_db()
+    assert subaccounts[0].nominal_value == 10.0
+    assert subaccounts[0].markup_contribution == 1.0
+
+    subaccounts[1].refresh_from_db()
+    assert subaccounts[1].nominal_value == 10.0
+    assert subaccounts[1].markup_contribution == 1.0
+
+    subaccount.refresh_from_db()
+    assert subaccount.nominal_value == 20.0
+    assert subaccount.markup_contribution == 0.0
+    assert subaccount.accumulated_markup_contribution == 2.0
+
+    account.refresh_from_db()
+    assert account.nominal_value == 20.0
+    assert account.markup_contribution == 0.0
+    assert account.accumulated_markup_contribution == 2.0
+
+    budget.refresh_from_db()
+    assert budget.nominal_value == 20.0
+    assert budget.accumulated_markup_contribution == 2.0
+
+
+def test_delete_template_subaccount_percent_markup(api_client, user, models,
+        create_template, create_markup, create_template_account,
+        create_template_subaccount):
+    budget = create_template()
+    account = create_template_account(parent=budget)
+    subaccount = create_template_subaccount(parent=account)
+    markups = [
+        create_markup(parent=subaccount, flat=True, rate=100),
+        create_markup(parent=subaccount, percent=True, rate=0.1)
+    ]
+    subaccounts = [
+        create_template_subaccount(
+            rate=10,
+            multiplier=1,
+            quantity=1,
+            parent=subaccount,
+            markups=[markups[1]]
+        ),
+        create_template_subaccount(
+            rate=10,
+            multiplier=1,
+            quantity=1,
+            parent=subaccount,
+            markups=[markups[1]]
+        )
+    ]
+
+    subaccounts[0].refresh_from_db()
+    assert subaccounts[0].nominal_value == 10.0
+    assert subaccounts[0].markup_contribution == 1.0
+
+    subaccounts[1].refresh_from_db()
+    assert subaccounts[1].nominal_value == 10.0
+    assert subaccounts[1].markup_contribution == 1.0
+
+    subaccount.refresh_from_db()
+    assert subaccount.nominal_value == 20.0
+    assert subaccount.markup_contribution == 0.0
+    assert subaccount.accumulated_markup_contribution == 102.0
+
+    account.refresh_from_db()
+    assert account.nominal_value == 20.0
+    assert account.markup_contribution == 0.0
+    assert account.accumulated_markup_contribution == 102.0
+
+    budget.refresh_from_db()
+    assert budget.nominal_value == 20.0
+    assert budget.accumulated_markup_contribution == 102.0
+
+    api_client.force_login(user)
+    response = api_client.delete("/v1/markups/%s/" % markups[1].pk)
+    assert response.status_code == 204
+    assert models.Markup.objects.count() == 1
+
+    subaccounts[0].refresh_from_db()
+    assert subaccounts[0].nominal_value == 10.0
+    assert subaccounts[0].markup_contribution == 0.0
+
+    subaccounts[1].refresh_from_db()
+    assert subaccounts[1].nominal_value == 10.0
+    assert subaccounts[1].markup_contribution == 0.0
+
+    subaccount.refresh_from_db()
+    assert subaccount.nominal_value == 20.0
+    assert subaccount.markup_contribution == 0.0
+    assert subaccount.accumulated_markup_contribution == 100.0
+
+    account.refresh_from_db()
+    assert account.nominal_value == 20.0
+    assert account.markup_contribution == 0.0
+    assert account.accumulated_markup_contribution == 100.0
+
+    budget.refresh_from_db()
+    assert budget.nominal_value == 20.0
+    assert budget.accumulated_markup_contribution == 100.0

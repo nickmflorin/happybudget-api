@@ -15,9 +15,10 @@ logger = logging.getLogger('signals')
 @signals.bulk_context.handler(
     id=lambda instance: instance.pk,
     queue_in_context=True,
-    side_effect=lambda instance: signals.SideEffect(
+    side_effect=lambda instance, markups_to_be_deleted: signals.SideEffect(
         func=estimate_budget,
-        args=(instance.parent, )
+        args=(instance.parent, ),
+        kwargs={'markups_to_be_deleted': markups_to_be_deleted}
     )
 )
 def estimate_account(instance, markups_to_be_deleted=None,

@@ -2,6 +2,9 @@ from django import dispatch
 from django.db import IntegrityError
 
 from greenbudget.app import signals
+from greenbudget.app.account.models import BudgetAccount
+from greenbudget.app.budget.models import Budget
+from greenbudget.app.budget.signals import actualize_budget
 from greenbudget.app.signals.utils import generic_foreign_key_instance_change
 from greenbudget.app.account.signals import actualize_account
 from greenbudget.app.subaccount.models import BudgetSubAccount
@@ -11,20 +14,22 @@ from greenbudget.app.markup.models import Markup
 from .models import Actual
 
 
-def actualize_owner(owner, actuals_to_be_deleted=None):
+def actualize_owner(owner):
     assert isinstance(owner, (BudgetSubAccount, Markup))
     if isinstance(owner, BudgetSubAccount):
-        actualize_subaccount(owner, actuals_to_be_deleted=actuals_to_be_deleted)
+        actualize_subaccount(owner)
     else:
-        # If the Actual is associated with a Markup instance, every Account
-        # and/or SubAccount associated with that Markup instance must be
-        # reactualized.  We do not have to actualize the Markup itself, because
-        # it's actual value is calculated live with an @property.
-        for account in owner.accounts.all():
-            actualize_account(account)
-        for subaccount in owner.subaccounts.all():
-            actualize_subaccount(
-                subaccount, actuals_to_be_deleted=actuals_to_be_deleted)
+        # If the Actual is associated with a Markup instance, the parent of
+        # that Markup instance must be reactualized. We do not have to actualize
+        # the Markup itself, because it's actual value is calculated live with
+        # an @property.
+        assert isinstance(owner.parent, (Budget, BudgetAccount, BudgetSubAccount))  # noqa
+        if isinstance(owner.parent, Budget):
+            actualize_budget(owner.parent)
+        elif isinstance(owner.parent, BudgetAccount):
+            actualize_account(owner.parent)
+        else:
+            actualize_subaccount(owner.parent)
 
 
 @dispatch.receiver(signals.post_create, sender=Actual)
@@ -33,17 +38,10 @@ def actual_created(instance, **kwargs):
         actualize_owner(instance.owner)
 
 
-@dispatch.receiver(signals.pre_delete, sender=Actual)
+@dispatch.receiver(signals.post_delete, sender=Actual)
 def actual_deleted(instance, **kwargs):
-    # Note that we have to use the pre_delete signal because we still need to
-    # determine which SubAccount(s) have to be reactualized.  We also have to
-    # explicitly define the Actuals(s) for the reactualization, so it knows to
-    # exclude the Actual that is about to be deleted.
     if instance.owner is not None:
-        actualize_owner(
-            instance.owner,
-            actuals_to_be_deleted=[instance.pk]
-        )
+        actualize_owner(instance.owner)
 
 
 @dispatch.receiver(signals.pre_save, sender=Actual)

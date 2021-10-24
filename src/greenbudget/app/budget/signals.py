@@ -36,8 +36,12 @@ def mark_budget_updated(instance):
     id=lambda instance: instance.pk,
     queue_in_context=True
 )
-def estimate_budget(instance, children_to_be_deleted=None):
-    instance.estimate(children_to_be_deleted=children_to_be_deleted)
+def estimate_budget(instance, children_to_be_deleted=None,
+        markups_to_be_deleted=None):
+    instance.estimate(
+        children_to_be_deleted=children_to_be_deleted,
+        markups_to_be_deleted=markups_to_be_deleted
+    )
     logger.info(
         "Updating %s %s -> Accumulated Value: %s"
         % (type(instance).__name__, instance.pk, instance.accumulated_value)
@@ -64,22 +68,29 @@ def actualize_budget(instance, markups_to_be_deleted=None,
 
 
 @signals.bulk_context.handler(
-    id=lambda instance, children_to_be_deleted: instance.pk,
-    side_effect=lambda instance, children_to_be_deleted: [
+    id=lambda instance: instance.pk,
+    side_effect=lambda instance, children_to_be_deleted, markups_to_be_deleted: [  # noqa
         signals.SideEffect(
             func=estimate_budget,
             args=(instance, ),
-            kwargs={'children_to_be_deleted': children_to_be_deleted},
+            kwargs={
+                'children_to_be_deleted': children_to_be_deleted,
+                'markups_to_be_deleted': markups_to_be_deleted
+            },
         ),
         signals.SideEffect(
             func=actualize_budget,
             args=(instance, ),
             conditional=isinstance(instance, Budget),
-            kwargs={'children_to_be_deleted': children_to_be_deleted},
+            kwargs={
+                'children_to_be_deleted': children_to_be_deleted,
+                'markups_to_be_deleted': markups_to_be_deleted
+            },
         )
     ]
 )
-def calculate_budget(instance, children_to_be_deleted=None):
+def calculate_budget(instance, children_to_be_deleted=None,
+        markups_to_be_deleted=None):
     pass
 
 
