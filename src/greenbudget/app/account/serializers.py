@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
-from greenbudget.lib.drf.serializers import (
-    ModelSerializer)
+from greenbudget.lib.drf.serializers import ModelSerializer
 
 from greenbudget.app.budgeting.fields import TableChildrenPrimaryKeyRelatedField
 from greenbudget.app.budgeting.serializers import (

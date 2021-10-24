@@ -4,8 +4,7 @@ from rest_framework_nested import routers
 from greenbudget.lib.drf.router import combine_routers
 
 from greenbudget.app.comment.urls import budget_comments_urlpatterns
-from greenbudget.app.history.urls import (
-    actuals_history_urlpatterns, accounts_history_urlpatterns)
+from greenbudget.app.history.urls import accounts_history_urlpatterns
 
 from .views import (
     BudgetViewSet,
@@ -41,12 +40,10 @@ budget_groups_router = routers.NestedSimpleRouter(
 budget_groups_router.register(
     r'groups', BudgetGroupViewSet, basename='budget-group')
 
-budget_actuals_router = routers.SimpleRouter()
+budget_actuals_router = routers.NestedSimpleRouter(
+    router, r'', lookup='budget')
 budget_actuals_router.register(
-    r'', BudgetActualsViewSet, basename='budget-actual')
-budget_actuals_urlpatterns = budget_actuals_router.urls + [
-    path('history/', include(actuals_history_urlpatterns)),
-]
+    r'actuals', BudgetActualsViewSet, basename='budget-actual')
 
 budget_accounts_router = routers.SimpleRouter()
 budget_accounts_router.register(
@@ -60,11 +57,11 @@ urlpatterns = combine_routers(
     budget_fringes_router,
     budget_subaccounts_router,
     budget_groups_router,
-    budget_markup_router
+    budget_markup_router,
+    budget_actuals_router
 ) + [
     path('<int:budget_pk>/', include([
         path('accounts/', include(budget_accounts_urlpatterns)),
-        path('actuals/', include(budget_actuals_urlpatterns)),
         path('comments/', include(budget_comments_urlpatterns)),
     ]))
 ]

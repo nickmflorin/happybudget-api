@@ -3,8 +3,6 @@ from rest_framework import viewsets, mixins
 
 from greenbudget.app.account.models import BudgetAccount
 from greenbudget.app.account.mixins import AccountNestedMixin
-from greenbudget.app.actual.models import Actual
-from greenbudget.app.actual.mixins import ActualNestedMixin
 from greenbudget.app.budget.mixins import BudgetNestedMixin
 from greenbudget.app.subaccount.models import BudgetSubAccount
 from greenbudget.app.subaccount.mixins import SubAccountNestedMixin
@@ -116,45 +114,5 @@ class SubAccountHistoryViewSet(
         content_type = ContentType.objects.get_for_model(BudgetSubAccount)
         return Event.objects.filter(
             object_id=self.subaccount.pk,
-            content_type=content_type
-        )
-
-
-class ActualsHistoryViewSet(
-    mixins.ListModelMixin,
-    BudgetNestedMixin,
-    GenericHistoryViewset
-):
-    """
-    ViewSet to handle requests to the following endpoints:
-
-    (1) GET /budgets/<pk>/actuals/history/
-    """
-    budget_lookup_field = ("pk", "budget_pk")
-
-    def get_queryset(self):
-        content_type = ContentType.objects.get_for_model(Actual)
-        return Event.objects.filter(
-            object_id__in=[actual.pk for actual in self.budget.actuals.all()],
-            content_type=content_type
-        )
-
-
-class ActualHistoryViewSet(
-    mixins.ListModelMixin,
-    ActualNestedMixin,
-    GenericHistoryViewset
-):
-    """
-    ViewSet to handle requests to the following endpoints:
-
-    (1) GET /actuals/<pk>/history/
-    """
-    actual_lookup_field = ("pk", "actual_pk")
-
-    def get_queryset(self):
-        content_type = ContentType.objects.get_for_model(Actual)
-        return Event.objects.filter(
-            object_id=self.actual.pk,
             content_type=content_type
         )

@@ -20,7 +20,6 @@ def test_create_actual_recalculates(create_budget_account, create_budget,
 
 def test_create_actuals_in_bulk_context(create_budget_account, create_budget,
         create_actual, create_budget_subaccount):
-
     budget = create_budget()
     account = create_budget_account(parent=budget)
     another_account = create_budget_account(parent=budget)
