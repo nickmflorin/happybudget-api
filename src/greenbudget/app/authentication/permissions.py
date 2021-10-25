@@ -46,7 +46,9 @@ class IsAuthenticated(UserPermission):
 
 
 class IsNotVerified(UserPermission):
-    def user_has_permission(self, user):
+    def user_has_permission(self, user, force_logout=False):
+        # Force logout param is required for checking permissions manually via
+        # the views.
         if user is None or not user.is_authenticated:
             raise Exception(
                 "The `IsNotVerified` permission should always come after the "
