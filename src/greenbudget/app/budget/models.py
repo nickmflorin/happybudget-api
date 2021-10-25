@@ -6,11 +6,7 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django.utils import timezone
 
-from greenbudget.lib.django_utils.models import optional_commit
-
 from greenbudget.app import signals
-from greenbudget.app.budgeting.models import (
-    use_children, use_markup_children)
 from greenbudget.app.comment.models import Comment
 from greenbudget.app.group.models import Group
 from greenbudget.app.markup.models import Markup
@@ -87,20 +83,18 @@ class BaseBudget(PolymorphicModel):
         return self.nominal_value + self.accumulated_fringe_contribution \
             + self.accumulated_markup_contribution
 
-    @optional_commit(["accumulated_value"])
-    @use_children(["accumulated_value"])
-    def accumulate_value(self, children):
+    def accumulate_value(self, children=None):
+        children = children or self.children.all()
         self.accumulated_value = functools.reduce(
             lambda current, account: current + account.nominal_value,
             children,
             0
         )
 
-    @optional_commit(["accumulated_markup_contribution"])
-    @use_children(["accumulated_markup_contribution", "markup_contribution"])
-    @use_markup_children(['rate', 'unit'])
-    def accumulate_markup_contribution(self, children, children_markups):
-        markups = children_markups.filter(unit=Markup.UNITS.flat)
+    def accumulate_markup_contribution(self, children=None, to_be_deleted=None):
+        children = children or self.children.all()
+        markups = self.children_markups.filter(
+            unit=Markup.UNITS.flat).exclude(pk__in=to_be_deleted or [])
         self.accumulated_markup_contribution = functools.reduce(
             lambda current, account: current + account.markup_contribution
             + account.accumulated_markup_contribution,
@@ -112,9 +106,8 @@ class BaseBudget(PolymorphicModel):
             0
         )
 
-    @optional_commit(["accumulated_fringe_contribution"])
-    @use_children(["accumulated_fringe_contribution"])
-    def accumulate_fringe_contribution(self, children):
+    def accumulate_fringe_contribution(self, children=None):
+        children = children or self.children.all()
         self.accumulated_fringe_contribution = functools.reduce(
             lambda current, account: current
             + account.accumulated_fringe_contribution,
@@ -122,13 +115,11 @@ class BaseBudget(PolymorphicModel):
             0
         )
 
-    @optional_commit(["actual"])
-    @use_children(["actual"])
-    @use_markup_children
-    def actualize(self, children, children_markups):
+    def actualize(self, children=None, markups_to_be_deleted=None):
+        children = children or self.children.all()
         self.actual = functools.reduce(
             lambda current, markup: current + (markup.actual or 0),
-            children_markups,
+            self.children_markups.exclude(pk__in=markups_to_be_deleted or []),
             0
         ) + functools.reduce(
             lambda current, child: current + (child.actual or 0),
@@ -136,21 +127,13 @@ class BaseBudget(PolymorphicModel):
             0
         )
 
-    @optional_commit(list(ESTIMATED_FIELDS))
-    @use_children([
-        'accumulated_value',
-        'markup_contribution',
-        'accumulated_markup_contribution',
-        'accumulated_fringe_contribution',
-        'actual'
-    ])
-    @use_markup_children(['rate', 'unit'])
-    def estimate(self, children, children_markups):
+    def estimate(self, markups_to_be_deleted=None):
+        children = self.children.all()
         self.accumulate_value(children=children)
         self.accumulate_fringe_contribution(children=children)
         self.accumulate_markup_contribution(
             children=children,
-            children_markups=children_markups
+            to_be_deleted=markups_to_be_deleted
         )
 
 

@@ -1,6 +1,7 @@
 import logging
 
 from django import dispatch
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
 
 from greenbudget.app import signals
@@ -21,52 +22,34 @@ def actualize_parent_conditional(instance, parents):
     # NULL state.
     correct_parent = instance.parent is not None \
         and isinstance(instance.parent, parents)
-    # change_occured = instance.actual != instance.previous_value('actual')
     return correct_parent
 
 
 @signals.bulk_context.handler(
     id=lambda instance: instance.pk,
     queue_in_context=True,
-    side_effect=lambda instance, children_to_be_deleted: [
+    side_effect=lambda instance: [
         signals.SideEffect(
             func=actualize_account,
             args=(instance.parent, ),
-            kwargs={
-                # We do not need to include the Markup(s) that will be deleted
-                # because the Markup(s) will not belong to the parent, only the
-                # instance being changed.
-                'children_to_be_deleted': children_to_be_deleted
-            },
             conditional=actualize_parent_conditional(
                 instance, (BudgetAccount, TemplateAccount))
         ),
         signals.SideEffect(
             func=actualize_subaccount,
             args=(instance.parent, ),
-            kwargs={
-                # We do not need to include the Markup(s) that will be deleted
-                # because the Markup(s) will not belong to the parent, only the
-                # instance being changed.
-                'children_to_be_deleted': children_to_be_deleted
-            },
             conditional=actualize_parent_conditional(
                 instance, (BudgetSubAccount, TemplateSubAccount))
         )
     ]
 )
-def actualize_subaccount(instance, actuals_to_be_deleted=None,
-        children_to_be_deleted=None, markups_to_be_deleted=None):
+def actualize_subaccount(instance, markups_to_be_deleted=None):
     """
     Reactualizes the :obj:`greenbudget.app.subaccount.models.SubAccount` based
     on the :obj:`greenbudget.app.actual.models.Actual`(s) associated with the
     instance.
     """
-    instance.actualize(
-        actuals_to_be_deleted=actuals_to_be_deleted,
-        children_to_be_deleted=children_to_be_deleted,
-        markups_to_be_deleted=markups_to_be_deleted
-    )
+    instance.actualize(markups_to_be_deleted=markups_to_be_deleted)
     if instance.actual != instance.previous_value('actual'):
         instance.save(
             update_fields=["actual"],
@@ -79,16 +62,10 @@ def actualize_subaccount(instance, actuals_to_be_deleted=None,
 @signals.bulk_context.handler(
     id=lambda instance: instance.pk,
     queue_in_context=True,
-    side_effect=lambda instance, children_to_be_deleted: [
+    side_effect=lambda instance: [
         signals.SideEffect(
             func=estimate_account,
             args=(instance.parent, ),
-            kwargs={
-                # We do not need to include the Markup(s) that will be deleted
-                # because the Markup(s) will not belong to the parent, only the
-                # instance being changed.
-                'children_to_be_deleted': children_to_be_deleted
-            },
             # There are weird cases (like CASCADE deletes) where non-nullable
             # fields will be temporarily null - they just won't be saved in a
             # NULL state.
@@ -98,12 +75,6 @@ def actualize_subaccount(instance, actuals_to_be_deleted=None,
         signals.SideEffect(
             func=estimate_subaccount,
             args=(instance.parent, ),
-            kwargs={
-                # We do not need to include the Markup(s) that will be deleted
-                # because the Markup(s) will not belong to the parent, only the
-                # instance being changed.
-                'children_to_be_deleted': children_to_be_deleted
-            },
             # There are weird cases (like CASCADE deletes) where non-nullable
             # fields will be temporarily null - they just won't be saved in a
             # NULL state.
@@ -113,7 +84,7 @@ def actualize_subaccount(instance, actuals_to_be_deleted=None,
     ]
 )
 def estimate_subaccount(instance, fringes_to_be_deleted=None,
-        markups_to_be_deleted=None, children_to_be_deleted=None):
+        markups_to_be_deleted=None):
     """
     Reestimates the :obj:`greenbudget.app.subaccount.models.SubAccount` based
     on the calculatable fields of the instance and the
@@ -122,7 +93,6 @@ def estimate_subaccount(instance, fringes_to_be_deleted=None,
     instance.estimate(
         markups_to_be_deleted=markups_to_be_deleted,
         fringes_to_be_deleted=fringes_to_be_deleted,
-        children_to_be_deleted=children_to_be_deleted
     )
     instance.save(
         suppress_budget_update=True,
@@ -137,56 +107,43 @@ def estimate_subaccount(instance, fringes_to_be_deleted=None,
     # temporarily null.
     conditional=lambda parent: parent is not None,
     queue_in_context=True,
-    side_effect=lambda parent, children_to_be_deleted: [
+    side_effect=lambda parent: [
         signals.SideEffect(
             func=calculate_account,
             args=(parent,),
-            kwargs={
-                'children_to_be_deleted': children_to_be_deleted
-            },
             conditional=not isinstance(
                 parent, (BudgetSubAccount, TemplateSubAccount))
         ),
         signals.SideEffect(
             func=calculate_subaccount,
             args=(parent,),
-            kwargs={
-                'children_to_be_deleted': children_to_be_deleted
-            },
             conditional=isinstance(
                 parent, (BudgetSubAccount, TemplateSubAccount))
         )
     ]
 )
-def calculate_parent(parent, children_to_be_deleted=None):
+def calculate_parent(parent):
     pass
 
 
 @signals.bulk_context.handler(
     id=lambda instance: instance.pk,
     queue_in_context=True,
-    side_effect=lambda instance, children_to_be_deleted, markups_to_be_deleted: [  # noqa
+    side_effect=lambda instance, markups_to_be_deleted: [
         signals.SideEffect(
             func=estimate_subaccount,
             args=(instance,),
-            kwargs={
-                'children_to_be_deleted': children_to_be_deleted,
-                'markups_to_be_deleted': markups_to_be_deleted
-            },
+            kwargs={'markups_to_be_deleted': markups_to_be_deleted},
         ),
         signals.SideEffect(
             func=actualize_subaccount,
             args=(instance, ),
             conditional=isinstance(instance, BudgetSubAccount),
-            kwargs={
-                'children_to_be_deleted': children_to_be_deleted,
-                'markups_to_be_deleted': markups_to_be_deleted
-            },
+            kwargs={'markups_to_be_deleted': markups_to_be_deleted},
         )
     ]
 )
-def calculate_subaccount(instance, children_to_be_deleted=None,
-        markups_to_be_deleted=None):
+def calculate_subaccount(instance, markups_to_be_deleted=None):
     pass
 
 
@@ -212,11 +169,17 @@ def subaccount_created(instance, **kwargs):
 @dispatch.receiver(signals.post_delete, sender=BudgetSubAccount)
 @dispatch.receiver(signals.post_delete, sender=TemplateSubAccount)
 def subaccount_deleted(instance, **kwargs):
-    # The SubAccount instance can be deleted in the process of deleting it's
-    # parent, at which point the parent will be None until that SubAccount
-    # instance is deleted.
-    if instance.parent is not None:
-        calculate_parent(instance.parent, children_to_be_deleted=[instance.pk])
+    try:
+        parent = instance.parent
+    except ObjectDoesNotExist:
+        # The Account instance can be deleted in the process of deleting it's
+        # parent, at which point the parent will be None or raise a DoesNotExist
+        # Exception, until that Account instance is deleted.
+        pass
+    else:
+        if parent is None:
+            return
+        calculate_parent(parent)
 
 
 @signals.any_fields_changed_receiver(
@@ -292,19 +255,10 @@ def remove_parent_calculated_fields(instance, **kwargs):
         for field in instance.DERIVING_FIELDS:
             setattr(instance.parent, field, None)
         instance.parent.fringes.set([])
-        if isinstance(instance.parent, BudgetSubAccount):
-            # We still want to track changes so that the removal of the fields
-            # causes a recalculation of the instance.
-            instance.parent.save(
-                update_fields=instance.DERIVING_FIELDS,
-                suppress_history=True,
-                suppress_budget_update=True
-            )
-        else:
-            # We still want to track changes so that the removal of the fields
-            # causes a recalculation of the instance.
-            instance.parent.save(
-                update_fields=instance.DERIVING_FIELDS,
-                suppress_budget_update=True,
-                suppress_history=True
-            )
+        # We still want to track changes so that the removal of the fields
+        # causes a recalculation of the instance.
+        instance.parent.save(
+            update_fields=instance.DERIVING_FIELDS,
+            suppress_history=True,
+            suppress_budget_update=True
+        )

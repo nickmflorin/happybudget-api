@@ -1,5 +1,3 @@
-import functools
-
 from polymorphic.models import PolymorphicModel
 from polymorphic.query import PolymorphicQuerySet
 
@@ -9,17 +7,6 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import (
     models, connections, connection, transaction, IntegrityError)
 from django.utils.functional import partition
-
-
-def optional_commit(fields):
-    def decorator(func):
-        @functools.wraps(func)
-        def inner(instance, *args, **kwargs):
-            func(instance, *args, **kwargs)
-            if kwargs.get('commit', False) is True:
-                instance.save(update_fields=fields)
-        return inner
-    return decorator
 
 
 class InvalidModelFieldValueError(IntegrityError):
@@ -69,8 +56,11 @@ class PrePKBulkCreateQuerySet(models.QuerySet):
 
         for i, instance in enumerate(instances):
             setattr(instance, 'pk', max_id + i + 1)
-        return super().bulk_create(instances,
-                batch_size=batch_size, ignore_conflicts=ignore_conflicts)
+        return super().bulk_create(
+            instances,
+            batch_size=batch_size,
+            ignore_conflicts=ignore_conflicts
+        )
 
 
 class BulkCreatePolymorphicQuerySet(PolymorphicQuerySet):

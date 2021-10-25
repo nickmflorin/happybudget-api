@@ -4,16 +4,16 @@ from greenbudget.lib.django_utils.models import PrePKBulkCreateQuerySet
 from greenbudget.app.budget.query import BudgetAncestorQuerier
 
 
-class MarkupQuerier(BudgetAncestorQuerier):
+class GroupQuerier(BudgetAncestorQuerier):
     pass
 
 
-class MarkupQuery(MarkupQuerier, PrePKBulkCreateQuerySet):
+class GroupQuery(GroupQuerier, PrePKBulkCreateQuerySet):
     pass
 
 
-class MarkupManager(MarkupQuerier, models.Manager):
-    queryset_class = MarkupQuery
+class GroupManager(GroupQuerier, models.Manager):
+    queryset_class = GroupQuery
 
     def get_queryset(self):
         return self.queryset_class(self.model)

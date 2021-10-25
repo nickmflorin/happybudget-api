@@ -98,32 +98,21 @@ class BulkBudgetOperation:
             message)
         logger.info(message)
 
-    def bulk_create_non_polymorphic_set(self, model_cls, model_set):
-        # For non-polymorphic models, we cannot leverage our custom
-        # Polymorphic Bulk Create manager which will return the created IDs.
-        # Note: This workaround is query intensive, and if there is a way to
-        # speed it up, we should do that.
-        original_ids = [
-            obj[0]
-            for obj in list(model_cls.objects.only('pk').values_list('pk'))
-        ]
-        model_cls.objects.bulk_create(model_set.duplicated)
-        model_set.duplicated = model_cls.objects.exclude(
-            pk__in=original_ids).order_by('pk')
-        assert len(model_set.duplicated) == len(model_set.existing)
-        return model_set
-
     @log_after(entity="Fringe")
     def handle_fringes(self):
         from greenbudget.app.fringe.models import Fringe
         # We duplicate all of the associated Fringes at once, and then tie them
         # to the individual SubAccount(s) as they are created.
         fringes_set = ObjectSet(existing=self.original.fringes.all())
-        fringes_set.duplicated = [
-            self.instantiate_obj(fringe, model_cls=Fringe, budget=self.budget)
-            for fringe in fringes_set.existing
-        ]
-        return self.bulk_create_non_polymorphic_set(Fringe, fringes_set)
+        fringes_set.duplicated = Fringe.objects.bulk_create(
+            instances=[
+                self.instantiate_obj(
+                    fringe, model_cls=Fringe, budget=self.budget)
+                for fringe in fringes_set.existing
+            ],
+            predetermine_pks=True
+        )
+        return fringes_set
 
     @log_after(entity="Markup")
     def handle_markups(self, account_set, subaccount_set):
@@ -147,8 +136,11 @@ class BulkBudgetOperation:
                 content_type=ContentType.objects.get_for_model(type(parent)),
                 object_id=parent.pk
             ))
-        markup_set.duplicated = instantiated_markups
-        return self.bulk_create_non_polymorphic_set(Markup, markup_set)
+        markup_set.duplicated = Markup.objects.bulk_create(
+            instances=instantiated_markups,
+            predetermine_pks=True
+        )
+        return markup_set
 
     def create_group_set_for_parent(self, original_parent, new_parent,
             persist=True, already_duplicated_originals=None):
@@ -171,7 +163,10 @@ class BulkBudgetOperation:
             for group in account_group_set.existing
         ]
         if persist:
-            self.bulk_create_non_polymorphic_set(Group, account_group_set)
+            account_group_set.duplicated = Group.objects.bulk_create(
+                instances=account_group_set.duplicated,
+                predetermine_pks=True
+            )
         return account_group_set
 
     @log_after(entity="Account Group")
@@ -239,7 +234,10 @@ class BulkBudgetOperation:
             )
             group_set.add(group_set_iteree)
 
-        self.bulk_create_non_polymorphic_set(Group, group_set)
+        group_set.duplicated = Group.objects.bulk_create(
+            instances=group_set.duplicated,
+            predetermine_pks=True
+        )
         return group_set
 
     def assign_markups_to_accounts(self, account_set, markups_set):

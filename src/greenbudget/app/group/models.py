@@ -6,6 +6,8 @@ from django.db import models
 
 from greenbudget.app.budgeting.utils import get_child_instance_cls
 
+from .managers import GroupManager
+
 
 @signals.model('suppress_budget_update')
 class Group(models.Model):
@@ -46,6 +48,8 @@ class Group(models.Model):
 
     FIELDS_TO_DUPLICATE = ("name", "color")
     FIELDS_TO_DERIVE = ("name", "color")
+
+    objects = GroupManager()
 
     class Meta:
         get_latest_by = "created_at"

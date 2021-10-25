@@ -1,6 +1,7 @@
 import logging
 
 from django import dispatch
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
 
 from greenbudget.app import signals
@@ -136,12 +137,15 @@ def markup_deleted(instance, **kwargs):
     in the `pre_delete` signal for the :obj:`Actual`.
     """
     try:
-        # The Markup may be being deleted because of a CASCADE delete from its
-        # parent.
         parent = instance.parent
-    except instance.parent.DoesNotExist:
+    except ObjectDoesNotExist:
+        # The Markup instance can be deleted in the process of deleting it's
+        # parent, at which point the parent will be None or raise a DoesNotExist
+        # Exception, until that Markup instance is deleted.
         pass
     else:
+        if parent is None:
+            return
         # Actualization does not apply to the Template domain.
         if isinstance(parent, (Budget, BudgetAccount, BudgetSubAccount)):
             actualize_parent(parent)

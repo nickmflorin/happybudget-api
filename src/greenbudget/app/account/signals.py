@@ -22,12 +22,8 @@ logger = logging.getLogger('signals')
         kwargs={'markups_to_be_deleted': markups_to_be_deleted}
     )
 )
-def estimate_account(instance, markups_to_be_deleted=None,
-        children_to_be_deleted=None):
-    instance.estimate(
-        markups_to_be_deleted=markups_to_be_deleted,
-        children_to_be_deleted=children_to_be_deleted
-    )
+def estimate_account(instance, markups_to_be_deleted=None):
+    instance.estimate(markups_to_be_deleted=markups_to_be_deleted)
     instance.save(
         suppress_budget_update=True,
         suppress_dispatch_fields=True,
@@ -43,12 +39,8 @@ def estimate_account(instance, markups_to_be_deleted=None,
         args=(instance.parent, ),
     )
 )
-def actualize_account(instance, children_to_be_deleted=None,
-        markups_to_be_deleted=None):
-    instance.actualize(
-        children_to_be_deleted=children_to_be_deleted,
-        markups_to_be_deleted=markups_to_be_deleted
-    )
+def actualize_account(instance, markups_to_be_deleted=None):
+    instance.actualize(markups_to_be_deleted=markups_to_be_deleted)
     if instance.actual != instance.previous_value('actual'):
         instance.save(
             update_fields=["actual"],
@@ -61,28 +53,21 @@ def actualize_account(instance, children_to_be_deleted=None,
 @signals.bulk_context.handler(
     id=lambda instance: instance.pk,
     queue_in_context=True,
-    side_effect=lambda instance, markups_to_be_deleted, children_to_be_deleted: [  # noqa
+    side_effect=lambda instance, markups_to_be_deleted: [
         signals.SideEffect(
             func=estimate_account,
             args=(instance, ),
-            kwargs={
-                'children_to_be_deleted': children_to_be_deleted,
-                'markups_to_be_deleted': markups_to_be_deleted
-            }
+            kwargs={'markups_to_be_deleted': markups_to_be_deleted}
         ),
         signals.SideEffect(
             func=actualize_account,
             args=(instance, ),
-            kwargs={
-                'children_to_be_deleted': children_to_be_deleted,
-                'markups_to_be_deleted': markups_to_be_deleted,
-            },
+            kwargs={'markups_to_be_deleted': markups_to_be_deleted, },
             conditional=isinstance(instance, BudgetAccount)
         )
     ]
 )
-def calculate_account(instance, markups_to_be_deleted=None,
-        children_to_be_deleted=None):
+def calculate_account(instance, markups_to_be_deleted=None):
     pass
 
 
@@ -95,13 +80,14 @@ def account_created(instance, **kwargs):
 @dispatch.receiver(signals.post_delete, sender=BudgetAccount)
 @dispatch.receiver(signals.post_delete, sender=TemplateAccount)
 def account_deleted(instance, **kwargs):
-    # The Account instance can be deleted in the process of deleting it's
-    # parent, at which point the parent will be None or raise a DoesNotExist
-    # Exception, until that Account instance is deleted.
     try:
         parent = instance.parent
     except ObjectDoesNotExist:
+        # The Account instance can be deleted in the process of deleting it's
+        # parent, at which point the parent will be None or raise a DoesNotExist
+        # Exception, until that Account instance is deleted.
         pass
     else:
-        if parent is not None:
-            calculate_budget(parent, children_to_be_deleted=[instance.pk])
+        if parent is None:
+            return
+        calculate_budget(parent)

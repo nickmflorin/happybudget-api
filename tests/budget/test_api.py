@@ -216,12 +216,24 @@ def test_duplicate_budget(api_client, user, create_budget, models):
     }
 
 
-def test_delete_budget(api_client, user, create_budget, models):
-    api_client.force_login(user)
+def test_delete_budget(api_client, user, create_budget, models,
+        create_budget_account, create_budget_subaccounts):
     budget = create_budget()
+    accounts = [
+        create_budget_account(parent=budget),
+        create_budget_account(parent=budget),
+        create_budget_account(parent=budget)
+    ]
+    create_budget_subaccounts(count=6, parent=accounts[0])
+    create_budget_subaccounts(count=6, parent=accounts[1])
+    create_budget_subaccounts(count=6, parent=accounts[2])
+
+    api_client.force_login(user)
     response = api_client.delete("/v1/budgets/%s/" % budget.pk)
     assert response.status_code == 204
-    assert models.Budget.objects.first() is None
+    assert models.Budget.objects.count() == 0
+    assert models.Account.objects.count() == 0
+    assert models.SubAccount.objects.count() == 0
 
 
 def test_get_budget_subaccounts(api_client, user, create_budget,
