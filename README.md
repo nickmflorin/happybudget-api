@@ -154,26 +154,6 @@ variable) is `greenbudget.conf.settings.local`.  If you need to override certain
 local development, `greenbudget.conf.settings.local` should not be edited but instead a `greenbudget.conf.settings.local_override`
 Python file should be created.
 
-##### Local Override Use Case
-
-A common use case for overriding the local settings configuration might be to run the application using an `sqlite`
-database (not the default `postgresql` database).  To do this, create `greenbudget.conf.settings.local` as
-follows:
-
-```python
-import dj_database_url
-from .base import BASE_DIR
-
-DATABASES = {
-    'default': dj_database_url.parse('sqlite:///%s/db.sqlite3' % BASE_DIR)  # noqa
-}
-```
-
-When `greenbudget.conf.settings.local` is loaded, it will look for a `local_override` file in the same
-directory, and if it exists, will import the settings configurations in that file after the configurations
-in the local file are loaded.
-
-
 ## Testing
 
 See the ReadMe in `testing/ReadMe.md`.
