@@ -188,9 +188,9 @@ def markup_created(instance, **kwargs):
 def markup_parent_changed(instance, changes, **kwargs):
     parents_to_reactualize = []
 
-    def mark_content_instance_change(*args, **kwargs):
+    def mark_content_instance_change(*a, **kw):
         old_instance, new_instance = generic_foreign_key_instance_change(
-            *args, **kwargs)
+            *a, **kw)
         if old_instance not in parents_to_reactualize \
                 and old_instance is not None:
             parents_to_reactualize.append(old_instance)
