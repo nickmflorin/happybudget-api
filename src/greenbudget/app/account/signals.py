@@ -1,6 +1,7 @@
 import logging
 
 from django import dispatch
+from django.core.exceptions import ObjectDoesNotExist
 
 from greenbudget.app import signals
 from greenbudget.app.budget.signals import (
@@ -95,7 +96,12 @@ def account_created(instance, **kwargs):
 @dispatch.receiver(signals.post_delete, sender=TemplateAccount)
 def account_deleted(instance, **kwargs):
     # The Account instance can be deleted in the process of deleting it's
-    # parent, at which point the parent will be None until that Account
-    # instance is deleted.
-    if instance.parent is not None:
-        calculate_budget(instance.parent, children_to_be_deleted=[instance.pk])
+    # parent, at which point the parent will be None or raise a DoesNotExist
+    # Exception, until that Account instance is deleted.
+    try:
+        parent = instance.parent
+    except ObjectDoesNotExist:
+        pass
+    else:
+        if parent is not None:
+            calculate_budget(parent, children_to_be_deleted=[instance.pk])
