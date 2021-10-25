@@ -25,7 +25,10 @@ class SocialModelAuthentication(ModelBackend):
                 provider=provider
             )
             permissions = [IsAuthenticated(), IsVerified()]
-            [p.user_has_permission(user) for p in permissions]
+            [
+                p.user_has_permission(user, force_logout=False)
+                for p in permissions
+            ]
             return user
         return None
 
@@ -46,7 +49,10 @@ class ModelAuthentication(ModelBackend):
             if not user.check_password(password):
                 raise InvalidCredentialsError("password")
             permissions = [IsAuthenticated(), IsVerified()]
-            [p.user_has_permission(user) for p in permissions]
+            [
+                p.user_has_permission(user, force_logout=False)
+                for p in permissions
+            ]
             return user
         return None
 
