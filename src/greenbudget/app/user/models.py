@@ -1,3 +1,4 @@
+import stripe
 from timezone_field import TimeZoneField
 
 from django.contrib.auth.models import AbstractUser
@@ -5,7 +6,9 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from greenbudget.app import signals
-from greenbudget.app.authentication.utils import get_user_from_social_token
+from greenbudget.app.authentication.utils import (
+    get_user_from_social_token, parse_user_id_from_token)
+from greenbudget.app.billing import StripeCustomer
 from greenbudget.app.io.utils import upload_user_image_to
 
 from .managers import UserManager, UnapprovedUserManager
@@ -54,6 +57,7 @@ class User(AbstractUser):
             'Designates whether this user has verified their email address.'
         ),
     )
+    stripe_id = models.CharField(max_length=128, blank=True, null=True)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['first_name', 'last_name']
@@ -86,6 +90,84 @@ class User(AbstractUser):
         if self.last_name is None or self.last_name == "":
             self.last_name = social_user.last_name
         self.save()
+
+    def cache_stripe_from_token(self, token_obj):
+        if parse_user_id_from_token(token_obj) != self.id:
+            raise Exception(
+                "The provided token is not associated with this user.")
+
+        if self.stripe_customer is not None:
+            self.stripe_customer.cache_from_token(token_obj)
+        elif self.stripe_id is not None and self.is_authenticated \
+                and self.is_verified:
+            self._stripe_customer = StripeCustomer.from_token(
+                token_obj=token_obj,
+                user=self
+            )
+
+    def flush_stripe_cache(self):
+        if self.stripe_customer is not None:
+            self.stripe_customer.flush_cache()
+
+    def update_or_create_stripe_customer(self, metadata=None):
+        customer_kwargs = {
+            'name': self.full_name,
+            'email': self.email,
+            'metadata': {'user_id': self.pk}
+        }
+        # TODO: Eventually we will need to include the address in the Stripe
+        # customer data when we have split the address field into it's
+        # appropriate component parts.
+        if metadata is not None:
+            customer_kwargs['metadata'].update(metadata)
+
+        if not self.stripe_id:
+            stripe_customer = stripe.Customer.create(**customer_kwargs)
+            self.stripe_id = stripe_customer.id
+        else:
+            stripe.Customer.modify(self.stripe_id, **customer_kwargs)
+
+        # Refresh / populate the stripe_customer attribute.
+        self.stripe_customer = self.stripe_id
+        return self.stripe_customer
+
+    def get_or_create_stripe_customer(self, metadata=None):
+        if self.stripe_id is None:
+            return self.update_or_create_stripe_customer(metadata=metadata)
+        return self.stripe_customer
+
+    @property
+    def stripe_customer(self):
+        if not hasattr(self, '_stripe_customer') and self.stripe_id:
+            self._stripe_customer = StripeCustomer(self)
+        return getattr(self, '_stripe_customer', None)
+
+    @stripe_customer.setter
+    def stripe_customer(self, value):
+        if isinstance(value, str):
+            self.stripe_id = value
+        elif isinstance(value, stripe.Customer):
+            self.stripe_id = value['id']
+        elif isinstance(value, StripeCustomer):
+            self.stripe_id = value.stripe_id
+            self._stripe_customer = value
+            return
+        else:
+            raise ValueError("Invalid stripe_customer %s" % value)
+
+        self._stripe_customer = StripeCustomer(self)
+
+    @property
+    def billing_status(self):
+        if self.stripe_customer:
+            return self.stripe_customer.billing_status
+        return None
+
+    @property
+    def product_id(self):
+        if self.stripe_customer:
+            return self.stripe_customer.product_id
+        return None
 
 
 class UnapprovedUser(User):

@@ -131,11 +131,11 @@ def test_duplicate_budget(api_client, user, create_budget, models):
     original = create_budget(created_by=user)
     api_client.force_login(user)
     response = api_client.post("/v1/budgets/%s/duplicate/" % original.pk)
+    assert response.status_code == 201
 
     assert models.Budget.objects.count() == 2
     budget = models.Budget.objects.all()[1]
 
-    assert response.status_code == 201
     assert response.json() == {
         "id": budget.pk,
         "name": original.name,

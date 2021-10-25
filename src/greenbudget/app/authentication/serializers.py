@@ -9,12 +9,10 @@ from greenbudget.app.user.mail import (
 )
 from greenbudget.app.user.models import User
 
-from .exceptions import (
-    TokenExpiredError, ExpiredToken, InvalidToken, TokenError,
-    EmailDoesNotExist)
+from .exceptions import EmailDoesNotExist
 from .permissions import check_user_permissions
 from .tokens import AuthToken, AccessToken
-from .utils import validate_password, get_user_from_token
+from .utils import validate_password, parse_token
 
 
 class BaseTokenValidationSerializer(serializers.Serializer):
@@ -34,31 +32,19 @@ class BaseTokenValidationSerializer(serializers.Serializer):
         super().__init__(*args, **kwargs)
 
     def validate(self, attrs):
-        try:
-            user, token_obj = get_user_from_token(
-                token=attrs.get('token', None),
-                token_cls=self.token_cls,
-                strict=True
-            )
-        except TokenExpiredError as e:
-            raise ExpiredToken(
-                *e.args,
-                user_id=getattr(e, 'user_id', None),
-                force_logout=self.force_logout
-            ) from e
-        except TokenError as e:
-            raise InvalidToken(
-                *e.args,
-                user_id=getattr(e, 'user_id', None),
-                force_logout=self.force_logout
-            ) from e
+        user, token_obj = parse_token(
+            token=attrs.pop('token', None),
+            token_cls=self.token_cls,
+            api_context=True
+        )
         if self.token_user_permission_classes is not None:
             check_user_permissions(
                 user=user,
                 force_logout=self.force_logout,
                 permissions=self.token_user_permission_classes
             )
-        return {"user": user, "token": token_obj}
+        attrs.update(user=user, token=token_obj)
+        return attrs
 
     def create(self, validated_data):
         return validated_data["user"]
@@ -66,6 +52,22 @@ class BaseTokenValidationSerializer(serializers.Serializer):
 
 class AuthTokenSerializer(BaseTokenValidationSerializer):
     token_cls = AuthToken
+    force_reload_from_stripe = serializers.BooleanField(default=False)
+
+    def create(self, validated_data):
+        user = super().create(validated_data)
+
+        # If the request indicates to force reload the data from Stripe, we
+        # clear the cache so that when the properties are accessed by the
+        # UserSerializer, they are reloaded from Stripe's API.
+        if validated_data['force_reload_from_stripe']:
+            user.flush_stripe_cache()
+        # If the request did not indicate to force reload the data from Stripe,
+        # we want to update any values that are not already cached with values
+        # cached in the JWT token.
+        else:
+            user.cache_stripe_from_token(validated_data['token'])
+        return user
 
 
 class EmailTokenSerializer(BaseTokenValidationSerializer):

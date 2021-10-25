@@ -33,7 +33,9 @@ class Token(BaseToken):
 class AuthToken(BlacklistMixin, Token):
     """
     Token used for verifying user authentication and identity in the
-    application and maintaining their logged in state.
+    application and maintaining their logged in state.  Additionally, the
+    token is used for maintaining the billing/subscription status of the
+    user.
     """
     token_type = SlidingToken.token_type
 
@@ -47,6 +49,15 @@ class AuthToken(BlacklistMixin, Token):
                 from_time=self.current_time,
                 lifetime=settings.SLIDING_TOKEN_REFRESH_LIFETIME,
             )
+
+    @classmethod
+    def for_user(cls, user):
+        token = super().for_user(user)
+        token.payload.update(
+            billing_status=user.billing_status,
+            product_id=user.product_id
+        )
+        return token
 
 
 class AccessToken(Token):

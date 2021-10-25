@@ -2,6 +2,7 @@ from http.cookies import SimpleCookie
 import pytest
 
 from greenbudget.lib.utils.dateutils import api_datetime_string
+from greenbudget.app.authentication.tokens import AuthToken
 
 
 @pytest.fixture
@@ -13,35 +14,58 @@ def validate_auth_token(jwt_authenticated_client):
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_validate_auth_token(jwt_authenticated_client, validate_auth_token,
-        user, settings):
-    jwt_authenticated_client.force_login(user)
+        settings, standard_product_user):
+    jwt_authenticated_client.force_login(standard_product_user)
     response = validate_auth_token()
     assert response.status_code == 201
     assert settings.JWT_TOKEN_COOKIE_NAME in response.cookies
 
     assert response.json() == {
-        'id': user.pk,
-        'first_name': user.first_name,
-        'last_name': user.last_name,
-        'full_name': user.full_name,
-        'email': user.email,
-        'is_active': user.is_active,
-        'is_admin': user.is_admin,
-        'is_superuser': user.is_superuser,
-        'is_staff': user.is_staff,
-        "company": user.company,
-        "position": user.position,
-        "address": user.address,
-        "phone_number": user.phone_number,
-        'date_joined': api_datetime_string(user.date_joined),
+        'id': standard_product_user.pk,
+        'first_name': standard_product_user.first_name,
+        'last_name': standard_product_user.last_name,
+        'full_name': standard_product_user.full_name,
+        'email': standard_product_user.email,
+        'is_active': standard_product_user.is_active,
+        'is_admin': standard_product_user.is_admin,
+        'is_superuser': standard_product_user.is_superuser,
+        'is_staff': standard_product_user.is_staff,
+        "company": standard_product_user.company,
+        "position": standard_product_user.position,
+        "address": standard_product_user.address,
+        "phone_number": standard_product_user.phone_number,
+        'date_joined': api_datetime_string(standard_product_user.date_joined),
         'last_login': '2020-01-01 00:00:00',
-        'timezone': str(user.timezone),
+        'timezone': str(standard_product_user.timezone),
         "profile_image": None,
-        "is_first_time": False
+        "is_first_time": False,
+        "product_id": "standard",
+        "billing_status": "active"
     }
 
 
-@pytest.mark.freeze_time('2020-01-01')
+def test_validate_auth_token_twice_fetches_from_stripe_once(settings,
+        api_client, validate_auth_token, mock_stripe, standard_product_user):
+    token = AuthToken.for_user(standard_product_user)
+    api_client.cookies = SimpleCookie({
+        settings.JWT_TOKEN_COOKIE_NAME: str(token),
+    })
+    api_client.force_login(standard_product_user)
+    response = validate_auth_token()
+    assert response.status_code == 201
+    assert settings.JWT_TOKEN_COOKIE_NAME in response.cookies
+    assert response.json()['product_id'] == 'standard'
+    assert response.json()['billing_status'] == 'active'
+
+    response = validate_auth_token()
+    assert response.status_code == 201
+    assert settings.JWT_TOKEN_COOKIE_NAME in response.cookies
+    assert response.json()['product_id'] == 'standard'
+    assert response.json()['billing_status'] == 'active'
+
+    assert mock_stripe.Customer.retrieve.call_count == 1
+
+
 def test_force_logout_on_auth_token_removal(jwt_authenticated_client, user,
         validate_auth_token, settings):
     jwt_authenticated_client.force_login(user)

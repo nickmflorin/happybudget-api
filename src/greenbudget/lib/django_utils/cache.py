@@ -27,6 +27,9 @@ class endpoint_cache:
     def __call__(self, cls):
         return self.decorate(cls)
 
+    def post_cache(self, cache_key):
+        pass
+
     def invalidate(self, key):
         if not settings.CACHE_ENABLED:
             return

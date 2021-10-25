@@ -1,22 +1,53 @@
-import logging
-
 from django.conf import settings
-from django.contrib.auth import logout
+from django.contrib import auth
+from django.contrib.auth.middleware import AuthenticationMiddleware
 from django.urls import reverse
 from django.utils.deprecation import MiddlewareMixin
 from django.utils.functional import SimpleLazyObject
 from django.utils.http import http_date
 
 from rest_framework_simplejwt.settings import api_settings
-from rest_framework_simplejwt.exceptions import TokenError
 
 from .tokens import AuthToken
-from .exceptions import (
-    ExpiredToken, InvalidToken, TokenExpiredError, TokenCorruptedError)
-from .utils import get_user_from_token, parse_token_from_request
+from .exceptions import InvalidToken
+from .utils import parse_token_from_request, parse_token
 
 
-logger = logging.getLogger('backend')
+def user_can_proceed(user):
+    return user.is_authenticated and user.is_verified and user.is_approved
+
+
+def get_user(request):
+    if not hasattr(request, '_cached_user'):
+        user = auth.get_user(request)
+        if user_can_proceed(user) and user.stripe_id is not None:
+            raw_token = parse_token_from_request(request)
+            _, token_obj = parse_token(raw_token, api_context=True)
+            # Use the JWT token to prepopulate billing related values on the
+            # user to avoid unnecessary requests to Stripe's API.
+            user.cache_stripe_from_token(token_obj)
+        request._cached_user = user
+        # Both middlewares present here are concerned with the user that is
+        # parsed from the JWT token.  Since obtaining the user from the JWT
+        # token involves a DB query, we want to set the result on the request
+        # so that subsequent middlewares can access the same result without
+        # having to re-parse the JWT token and make an additional DB query.
+        request._parsed_token_user = user
+    return request._cached_user
+
+
+class BillingTokenCookieMiddleware(AuthenticationMiddleware):
+    """
+    Middleware that automatically maintains a :obj:`User`'s billing status
+    using JWT tokens stored in cookies.  The JWT tokens contain billing
+    information about the user which we can use to avoid unnecessary and
+    redundant requests to Stripe's API.
+    """
+
+    def process_request(self, request):
+        if not hasattr(request, 'session'):
+            return super().process_request(request)
+        request.user = SimpleLazyObject(lambda: get_user(request))
 
 
 def get_cookie_user(request):
@@ -24,30 +55,30 @@ def get_cookie_user(request):
     # process of validating the JWT authentication token.
     is_validate_url = request.path == reverse('authentication:validate')
     if not hasattr(request, '_cached_cookie_user'):
-        if getattr(request, 'user', None) \
-                and getattr(request, 'user').is_active \
-                and getattr(request, 'user').is_approved \
-                and getattr(request, 'user').is_verified \
+        request_user = getattr(request, 'user', None)
+        if request_user and user_can_proceed(request_user) \
                 and not is_validate_url:
             request._cached_cookie_user = request.user
         else:
-            raw_token = parse_token_from_request(request)
-            try:
-                request._cached_cookie_user, _ = get_user_from_token(raw_token)
-            except TokenCorruptedError as e:
-                logger.info("The provided token is corrupted.")
-                raise InvalidToken(*e.args) from e
-            except TokenExpiredError as e:
-                logger.info("The provided token has expired.")
-                raise ExpiredToken(*e.args) from e
-            except TokenError as e:
-                logger.info("The provided token is invalid.")
-                raise InvalidToken(*e.args) from e
+            # If the token was already parsed from the previous middleware
+            # (AuthenticationBillingMiddleware), we do not want to reparse the
+            # token and obtain the user because it involves an extra DB query.
+            #
+            # Since we accessed a property on request.user (in the first
+            # conditional to check if the user can proceed), the lazy evaluated
+            # `get_user` method will have been called, which means the
+            # `parsed_token_user` attribute should be on the request.
+            if hasattr(request, '_parsed_token_user'):
+                request._cached_cookie_user = request._parsed_token_user
+            else:
+                raw_token = parse_token_from_request(request)
+                request._cached_cookie_user, _ = parse_token(
+                    raw_token, api_context=True)
 
     return request._cached_cookie_user
 
 
-class TokenCookieMiddleware(MiddlewareMixin):
+class AuthTokenCookieMiddleware(MiddlewareMixin):
     """
     Middleware that automatically maintains a :obj:`User`'s authenticated
     state using cookies for JWT authentication.
@@ -60,19 +91,23 @@ class TokenCookieMiddleware(MiddlewareMixin):
     def __init__(self, get_response=None):
         self.get_response = get_response
 
-    def force_logout(self, request, response):
-        # In some cases, the request will be a WSGIRequest object - this happens
-        # during tests.
-        if hasattr(request, 'session'):
-            logout(request)
+    @classmethod
+    def delete_cookie(cls, response):
         # Browsers don't actually delete the cookie, they simply set the
         # cookie expiration date to a date in the past.  If the parameters
         # used to set the cookie are not the same as those used to delete
         # the cookie, the Browser cannot do this.
         if settings.JWT_TOKEN_COOKIE_NAME in response.cookies:
             response.delete_cookie(
-                settings.JWT_TOKEN_COOKIE_NAME, **self.cookie_kwargs)
+                settings.JWT_TOKEN_COOKIE_NAME, **cls.cookie_kwargs)
         return response
+
+    def force_logout(self, request, response):
+        # In some cases, the request will be a WSGIRequest object - this happens
+        # during tests.
+        if hasattr(request, 'session'):
+            auth.logout(request)
+        return self.delete_cookie(response)
 
     def should_persist_cookie(self, request):
         """
@@ -99,20 +134,18 @@ class TokenCookieMiddleware(MiddlewareMixin):
         if the :obj:`User` is authenticated and the conditions dictated by
         the `should_persist_cookie` method indicate that it should be persisted.
         """
-        if self.should_persist_cookie(request):
-            token = AuthToken.for_user(request.cookie_user)
-            expires = http_date(
-                token[api_settings.SLIDING_TOKEN_REFRESH_EXP_CLAIM])
-            response.set_cookie(
-                settings.JWT_TOKEN_COOKIE_NAME,
-                str(token),
-                expires=expires,
-                secure=settings.JWT_COOKIE_SECURE or None,
-                **self.cookie_kwargs,
-                httponly=False,
-                samesite=False
-            )
-        return response
+        token = AuthToken.for_user(request.cookie_user)
+        expires = http_date(
+            token[api_settings.SLIDING_TOKEN_REFRESH_EXP_CLAIM])
+        response.set_cookie(
+            settings.JWT_TOKEN_COOKIE_NAME,
+            str(token),
+            expires=expires,
+            secure=settings.JWT_COOKIE_SECURE or None,
+            **self.cookie_kwargs,
+            httponly=False,
+            samesite=False
+        )
 
     def process_request(self, request):
         assert hasattr(settings, 'JWT_TOKEN_COOKIE_NAME'), (
@@ -129,6 +162,7 @@ class TokenCookieMiddleware(MiddlewareMixin):
         else:
             if is_logout_url:
                 return response
+
             # The response will have a `_force_logout` attribute if the
             # Exception that was raised to trigger the response had a
             # `force_logout` attribute that evalutes to True.
@@ -138,4 +172,6 @@ class TokenCookieMiddleware(MiddlewareMixin):
                     or force_logout is True:
                 return self.force_logout(request, response)
 
-        return self.persist_cookie(request, response)
+        if self.should_persist_cookie(request):
+            self.persist_cookie(request, response)
+        return response

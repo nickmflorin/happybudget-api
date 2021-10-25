@@ -16,6 +16,7 @@ from .jwt_rsa_fingerprint import __JWT_SIGNING_KEY, __JWT_VERIFYING_KEY
 from .logging import *  # noqa
 from .password_validators import *  # noqa
 from .email import *  # noqa
+from .stripe import *  # noqa
 
 DEBUG = False
 
@@ -165,9 +166,11 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'greenbudget.app.middleware.HealthCheckMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    # This middleware must come before authentication middleware classes.
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'greenbudget.app.authentication.middleware.TokenCookieMiddleware',
+    # This middleware must come before the TokenCookieMiddleware.
+    'greenbudget.app.authentication.middleware.BillingTokenCookieMiddleware',
+    'greenbudget.app.authentication.middleware.AuthTokenCookieMiddleware',
     'greenbudget.app.signals.middleware.ModelSignalMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -264,7 +267,7 @@ ELASTICACHE_ENDPOINT = config(
     }
 )
 
-CACHE_ENABLED = False
+CACHE_ENABLED = True
 CACHE_LOCATION = f"redis://{ELASTICACHE_ENDPOINT}/0"
 CACHE_EXPIRY = 5 * 60 * 60
 

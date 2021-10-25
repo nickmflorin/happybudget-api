@@ -40,6 +40,7 @@ def test_login(login, user_with_password, settings):
         "profile_image": None,
         "timezone": "America/New_York",
         "is_first_time": False,
+        "stripe_product": None,
     }
 
 

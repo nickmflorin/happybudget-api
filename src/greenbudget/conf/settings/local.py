@@ -11,7 +11,7 @@ ENVIRONMENT = Environments.LOCAL
 
 APP_DOMAIN = 'local.greenbudget.io:8000'
 APP_URL = 'http://%s' % APP_DOMAIN
-FRONTEND_URL = "local.greenbudget.io"
+FRONTEND_URL = "http://local.greenbudget.io:3000"
 
 DEFAULT_FILE_STORAGE = 'greenbudget.app.io.storages.LocalStorage'
 
@@ -50,4 +50,4 @@ CACHES = {
     }
 }
 
-CACHE_ENABLED = False
+CACHE_ENABLED = True

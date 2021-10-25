@@ -7,16 +7,18 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 
 from rest_framework_simplejwt.settings import api_settings
+from rest_framework_simplejwt.exceptions import TokenError
 
 from greenbudget.lib.utils.urls import add_query_params_to_url
 
 from .exceptions import (
     BaseTokenError, TokenInvalidError, TokenCorruptedError, TokenExpiredError,
-    InvalidSocialToken, InvalidSocialProvider)
+    InvalidSocialToken, InvalidSocialProvider, InvalidToken, ExpiredToken)
 from .tokens import AuthToken
 
 
 logger = logging.getLogger('greenbudget')
+
 
 SocialUser = collections.namedtuple(
     'SocialUser', ['first_name', 'last_name', 'email'])
@@ -31,7 +33,42 @@ def parse_token_from_request(request):
     return request.COOKIES.get(settings.JWT_TOKEN_COOKIE_NAME)
 
 
-def verify_token(token, token_cls=None):
+def parse_user_id_from_token(token_obj):
+    return token_obj.get(api_settings.USER_ID_CLAIM)
+
+
+def parse_token(token, token_cls=None, api_context=False, force_logout=False):
+    # If the function is being run in the API context, perform the logic and
+    # convert any raised exceptions to REST Exceptions that will properly render
+    # via the API.
+    if api_context:
+        try:
+            return parse_token(token, token_cls=None)
+        except TokenCorruptedError as e:
+            logger.info("The provided token is corrupted.")
+            raise InvalidToken(
+                *e.args,
+                user_id=getattr(e, 'user_id', None),
+                force_logout=force_logout
+            ) from e
+        except TokenExpiredError as e:
+            logger.info("The provided token has expired.")
+            raise ExpiredToken(
+                *e.args,
+                user_id=getattr(e, 'user_id', None),
+                force_logout=force_logout
+            ) from e
+        except TokenError as e:
+            logger.info("The provided token is invalid.")
+            raise InvalidToken(
+                *e.args,
+                user_id=getattr(e, 'user_id', None),
+                force_logout=force_logout
+            ) from e
+
+    if token is None:
+        return AnonymousUser(), None
+
     token_cls = token_cls or AuthToken
     assert token is not None and isinstance(token, str), \
         "The token must be a valid string."
@@ -43,7 +80,7 @@ def verify_token(token, token_cls=None):
     # We need to parse and verify the user ID associated with the token in order
     # to include that information in the TokenExpiredError exception which
     # funnels to the Front End and is needed for email verification purposes.
-    user_id = token_obj.get(api_settings.USER_ID_CLAIM)
+    user_id = parse_user_id_from_token(token_obj)
     try:
         user = get_user_model().objects.get(pk=user_id)
     except get_user_model().DoesNotExist:
@@ -64,14 +101,6 @@ def verify_token(token, token_cls=None):
     except BaseTokenError as e:
         raise TokenInvalidError(user_id=user_id) from e
     return user, token_obj
-
-
-def get_user_from_token(token, token_cls=None, strict=False):
-    if token is not None:
-        return verify_token(token, token_cls=token_cls)
-    if strict:
-        raise TokenInvalidError()
-    return AnonymousUser(), None
 
 
 def get_google_user_from_token(token):

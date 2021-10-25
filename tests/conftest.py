@@ -20,6 +20,7 @@ from greenbudget.app.template.models import Template
 from greenbudget.app.user.models import User
 
 from .fixtures import *  # noqa
+from .stripe_fixtures import *  # noqa
 
 
 @pytest.fixture(autouse=True)
@@ -138,6 +139,19 @@ def user(db, user_password):
 @pytest.fixture
 def unapproved_user(user):
     user.is_approved = False
+    user.save()
+    return user
+
+
+@pytest.fixture
+def standard_product_user(user, mock_stripe):
+    stripe_customer = mock_stripe.Customer.create(email=user.email)
+    stripe_product = mock_stripe.Product.create(internal_id="standard")
+    mock_stripe.Subscription.create(
+        product_id=stripe_product.id,
+        customer_id=stripe_customer.id
+    )
+    user.stripe_id = stripe_customer.id
     user.save()
     return user
 

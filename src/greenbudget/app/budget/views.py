@@ -11,6 +11,7 @@ from greenbudget.app.actual.models import Actual
 from greenbudget.app.actual.serializers import (
     ActualSerializer, ActualOwnerSerializer)
 from greenbudget.app.actual.views import GenericActualViewSet
+from greenbudget.app.billing.permissions import BudgetCountProductPermission
 from greenbudget.app.budgeting.decorators import (
     register_bulk_operations, BulkAction, BulkDeleteAction)
 from greenbudget.app.fringe.models import Fringe
@@ -317,6 +318,11 @@ class BudgetViewSet(
     (11) GET /budgets/<pk>/pdf/
     (12) POST /budgets/<pk>/duplicate/
     """
+    extra_permission_classes = BudgetCountProductPermission(
+        products=["standard", "premium"],
+        max_count=1,
+        actions=["duplicate", "create"]
+    )
 
     def get_queryset(self):
         return Budget.objects.filter(created_by=self.request.user).all()

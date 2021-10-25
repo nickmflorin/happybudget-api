@@ -132,10 +132,13 @@ class UserSerializer(serializers.ModelSerializer):
     timezone = serializers.CharField()
     profile_image = Base64ImageField(required=False, allow_null=True)
     is_first_time = serializers.BooleanField(read_only=True)
+    product_id = serializers.CharField(read_only=True)
+    billing_status = serializers.CharField(read_only=True)
 
     class Meta:
         model = User
         fields = ('id', 'first_name', 'last_name', 'email',
             'is_active', 'is_admin', 'is_superuser', 'is_staff', 'full_name',
             'profile_image', 'last_login', 'date_joined', 'timezone',
-            'is_first_time', 'company', 'position', 'address', 'phone_number')
+            'is_first_time', 'company', 'position', 'address', 'phone_number',
+            'product_id', 'billing_status')

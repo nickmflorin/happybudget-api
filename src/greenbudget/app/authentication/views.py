@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.contrib.auth import logout
 from django.utils.decorators import method_decorator
 from django.views.decorators.debug import sensitive_post_parameters
@@ -8,7 +7,7 @@ from rest_framework import views, response, generics, status, permissions
 from greenbudget.app.user.serializers import UserSerializer
 
 from .backends import CsrfExcemptCookieSessionAuthentication
-from .middleware import TokenCookieMiddleware
+from .middleware import AuthTokenCookieMiddleware
 from .permissions import IsAnonymous, IsAuthenticated, IsVerified, IsApproved
 from .serializers import (
     LoginSerializer, SocialLoginSerializer, VerifyEmailSerializer,
@@ -33,11 +32,12 @@ class TokenValidateView(views.APIView):
     def dispatch(self, request, *args, **kwargs):
         return super().dispatch(request, *args, **kwargs)
 
-    def post(self, request, *args, **kwargs):
+    def get_serializer(self, request, *args, **kwargs):
         serializer_kwargs = {
             'force_logout': self.force_logout,
             'token_cls': self.token_cls,
             'token_user_permission_classes': self.token_user_permission_classes,
+            'context': {'request': request}
         }
         # Only include arguments passed to the view into the serializer if
         # they were actually provided.
@@ -45,10 +45,14 @@ class TokenValidateView(views.APIView):
             (k, v) for k, v in serializer_kwargs.items() if v is not None)
         attrs = request.data
         if self.token_location == 'cookies':
-            attrs = {"token": parse_token_from_request(request)}
+            attrs.update(token=parse_token_from_request(request))
 
         serializer = self.serializer_class(**serializer_kwargs, data=attrs)
         serializer.is_valid(raise_exception=True)
+        return serializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(request, *args, **kwargs)
         user = serializer.save()
         return response.Response(
             UserSerializer(user).data,
@@ -63,11 +67,7 @@ class LogoutView(views.APIView):
     def post(self, request, *args, **kwargs):
         logout(request)
         resp = response.Response(status=status.HTTP_201_CREATED)
-        resp.delete_cookie(
-            settings.JWT_TOKEN_COOKIE_NAME,
-            **TokenCookieMiddleware.cookie_kwargs
-        )
-        return resp
+        return AuthTokenCookieMiddleware.delete_cookie(resp)
 
 
 class AbstractUnauthenticatedView(generics.GenericAPIView):
