@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from greenbudget.lib.drf.fields import Base64ImageField
+from greenbudget.app.io.fields import Base64ImageField
 
 from .models import HeaderTemplate
 

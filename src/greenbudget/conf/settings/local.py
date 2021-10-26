@@ -13,7 +13,7 @@ APP_DOMAIN = '127.0.0.1:8000'
 APP_URL = 'http://%s' % APP_DOMAIN
 FRONTEND_URL = "127.0.0.1:3000"
 
-DEFAULT_FILE_STORAGE = 'greenbudget.lib.django_utils.storages.LocalStorage'
+DEFAULT_FILE_STORAGE = 'greenbudget.app.io.storages.LocalStorage'
 
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False

@@ -1,8 +1,8 @@
 from rest_framework import serializers
 
-from greenbudget.lib.drf.fields import ModelChoiceField, Base64ImageField
-from greenbudget.lib.drf.serializers import (
-    ModelSerializer)
+from greenbudget.lib.drf.fields import ModelChoiceField
+from greenbudget.lib.drf.serializers import ModelSerializer
+from greenbudget.app.io.fields import Base64ImageField
 
 from .models import Contact
 

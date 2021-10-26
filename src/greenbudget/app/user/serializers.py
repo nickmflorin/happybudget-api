@@ -1,11 +1,10 @@
 from rest_framework import serializers, validators
 
-from greenbudget.lib.drf.fields import Base64ImageField
-from greenbudget.lib.drf.serializers import (
-    ModelSerializer)
+from greenbudget.lib.drf.serializers import ModelSerializer
 
 from greenbudget.app.authentication.exceptions import InvalidCredentialsError
 from greenbudget.app.authentication.utils import validate_password
+from greenbudget.app.io.fields import Base64ImageField
 
 from .models import User
 

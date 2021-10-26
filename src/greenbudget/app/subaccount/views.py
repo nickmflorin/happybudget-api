@@ -4,7 +4,7 @@ from django.utils.functional import cached_property
 
 from rest_framework import viewsets, mixins
 
-from greenbudget.lib.drf.views import filter_by_ids
+from greenbudget.app.views import filter_by_ids
 
 from greenbudget.app.actual.views import GenericActualViewSet
 from greenbudget.app.budgeting.decorators import (

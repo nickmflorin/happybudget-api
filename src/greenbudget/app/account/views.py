@@ -4,7 +4,7 @@ from django.utils.functional import cached_property
 
 from rest_framework import viewsets, mixins, permissions
 
-from greenbudget.lib.drf.views import filter_by_ids
+from greenbudget.app.views import filter_by_ids
 
 from greenbudget.app.account.models import Account
 from greenbudget.app.account.mixins import AccountNestedMixin

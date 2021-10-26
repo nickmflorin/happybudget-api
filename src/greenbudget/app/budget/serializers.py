@@ -1,11 +1,11 @@
 from rest_framework import serializers, exceptions
 
-from greenbudget.lib.drf.fields import (
-    ModelChoiceField, Base64ImageField)
+from greenbudget.lib.drf.fields import ModelChoiceField
 from greenbudget.lib.drf.serializers import ModelSerializer
 
 from greenbudget.app.account.serializers import AccountPdfSerializer
 from greenbudget.app.group.serializers import GroupSerializer
+from greenbudget.app.io.fields import Base64ImageField
 from greenbudget.app.markup.serializers import MarkupSerializer
 from greenbudget.app.template.models import Template
 

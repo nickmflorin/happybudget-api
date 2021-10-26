@@ -1,34 +1,17 @@
-from django.core.files.storage import get_storage_class
 from django.utils.decorators import method_decorator
 from django.views.decorators.debug import sensitive_post_parameters
 
-from rest_framework import (
-    viewsets, mixins, response, permissions, status, decorators)
+from rest_framework import viewsets, mixins, response, permissions, status
 
 from greenbudget.app.authentication.exceptions import RateLimitedError
 from greenbudget.app.authentication.mail import send_email_verification_email
 
 from .serializers import (
     UserSerializer, UserRegistrationSerializer, ChangePasswordSerializer)
-from .utils import upload_temp_user_image_to
 
 
 def sensitive_post_parameters_m(*args):
     return method_decorator(sensitive_post_parameters(*args))
-
-
-@decorators.api_view(['POST'])
-def temp_upload_user_image_view(request):
-    image = request.data['image']
-    storage_cls = get_storage_class()
-    storage = storage_cls()
-    image_name = upload_temp_user_image_to(
-        user=request.user,
-        filename=image.name
-    )
-    storage.save(image_name, image.file)
-    file_url = storage.url(image_name)
-    return response.Response({'fileUrl': file_url})
 
 
 class UserRegistrationView(mixins.CreateModelMixin, viewsets.GenericViewSet):

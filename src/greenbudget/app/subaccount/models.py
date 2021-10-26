@@ -58,6 +58,19 @@ class SubAccount(PolymorphicModel):
     type = "subaccount"
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(
+        to='user.User',
+        related_name='updated_subaccounts',
+        on_delete=models.CASCADE,
+        editable=False
+    )
+    created_by = models.ForeignKey(
+        to='user.User',
+        related_name='created_subaccounts',
+        on_delete=models.CASCADE,
+        editable=False
+    )
+
     identifier = models.CharField(null=True, max_length=128)
     description = models.CharField(null=True, max_length=128)
     quantity = models.IntegerField(null=True)
@@ -74,25 +87,13 @@ class SubAccount(PolymorphicModel):
     accumulated_fringe_contribution = models.FloatField(default=0.0)
     markup_contribution = models.FloatField(default=0.0)
     accumulated_markup_contribution = models.FloatField(default=0.0)
-
     unit = models.ForeignKey(
         to='subaccount.SubAccountUnit',
         on_delete=models.SET_NULL,
         null=True
     )
     fringes = models.ManyToManyField(to='fringe.Fringe')
-    updated_by = models.ForeignKey(
-        to='user.User',
-        related_name='updated_subaccounts',
-        on_delete=models.CASCADE,
-        editable=False
-    )
-    created_by = models.ForeignKey(
-        to='user.User',
-        related_name='created_subaccounts',
-        on_delete=models.CASCADE,
-        editable=False
-    )
+    # attachments = models.ManyToManyField(to='io.Attachment')
     content_type = models.ForeignKey(
         to=ContentType,
         on_delete=models.CASCADE,

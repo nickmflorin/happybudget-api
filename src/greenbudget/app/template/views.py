@@ -3,7 +3,7 @@ from django.db import models
 from rest_framework import (
     viewsets, mixins, response, status, decorators, permissions)
 
-from greenbudget.lib.drf.views import filter_by_ids
+from greenbudget.app.views import filter_by_ids
 
 from greenbudget.app.account.models import TemplateAccount
 from greenbudget.app.account.serializers import TemplateAccountSerializer

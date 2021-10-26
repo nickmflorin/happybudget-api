@@ -1,6 +1,7 @@
 import mock
-from django.test import override_settings
 import pytest
+
+from django.test import override_settings
 
 from greenbudget.app.authentication.tokens import AccessToken
 

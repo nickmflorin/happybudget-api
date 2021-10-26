@@ -21,7 +21,7 @@ TRACK_MODEL_HISTORY = False
 
 # Eventually we should configure these for a temporary test directory.
 STATICFILES_STORAGE = None
-DEFAULT_FILE_STORAGE = None
+DEFAULT_FILE_STORAGE = 'greenbudget.app.io.storages.LocalStorage'
 
 # Disable logging in tests
 LOGGING['loggers'] = {  # noqa

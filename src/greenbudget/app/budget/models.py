@@ -10,7 +10,7 @@ from greenbudget.app import signals
 from greenbudget.app.comment.models import Comment
 from greenbudget.app.group.models import Group
 from greenbudget.app.markup.models import Markup
-from greenbudget.app.user.utils import upload_user_image_to
+from greenbudget.app.io.utils import upload_user_image_to
 
 from .duplication import BudgetDuplicator
 from .managers import BudgetManager, BaseBudgetManager

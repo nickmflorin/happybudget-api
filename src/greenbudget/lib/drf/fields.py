@@ -1,22 +1,7 @@
-import base64
-import binascii
-import logging
-import imghdr
-import uuid
-
-from botocore import exceptions
-
 from django.core.exceptions import ObjectDoesNotExist
-from django.core.files.base import ContentFile
 from django.utils.translation import gettext_lazy as _
 
 from rest_framework import serializers
-
-from greenbudget.lib.django_utils.storages import (
-    using_s3_storage, get_image_filename_extension)
-
-
-logger = logging.getLogger('greenbudget')
 
 
 def find_field_original_serializer(field):
@@ -108,84 +93,3 @@ class ModelChoiceField(serializers.ChoiceField):
         if value is not None:
             return {'id': value, 'name': self.choices[value]}
         return value
-
-
-class ImageFieldFileSerializer(serializers.Serializer):
-    url = serializers.URLField(read_only=True)
-    size = serializers.IntegerField(read_only=True)
-    width = serializers.IntegerField(read_only=True)
-    height = serializers.IntegerField(read_only=True)
-    extension = serializers.SerializerMethodField()
-
-    def get_extension(self, instance):
-        # Note that imghdr uses the local file system, so it will look at the
-        # file in the local file system.  This only works when we are in local
-        # development, because we are using
-        # django.core.files.storage.FileSystemStorage.  When we are are in
-        # a production/dev environment, and we are using
-        # storages.backends.s3boto3.S3Boto3Storage, we need to use an alternate
-        # method to find the extension.
-        if using_s3_storage():
-            extension = get_image_filename_extension(instance.name)
-        else:
-            extension = imghdr.what(instance.path)
-        return "jpg" if extension == "jpeg" else extension
-
-
-def is_base64_encoded_string(data):
-    if 'data:' in data and ';base64,' in data:
-        _, data = data.split(';base64,')
-    try:
-        return base64.b64encode(base64.b64decode(data)) == data
-    except binascii.Error:
-        return False
-
-
-class Base64ImageField(serializers.ImageField):
-    """
-    A :obj:`rest_framework.serializers.ImageField` field that allows image
-    uploads via raw POST data.  It uses base64 for encoding/decoding the
-    contents of the file.
-    """
-
-    def to_representation(self, instance):
-        if instance is not None:
-            try:
-                return ImageFieldFileSerializer(instance).data
-            except ValueError:
-                # This can happen if the instance does not have a file
-                # associated with it.
-                return super().to_representation(instance)
-            except exceptions.ClientError:
-                # This can happen if there is an error retrieving the image from
-                # AWS.  Common case would be a 404 error if we had an image
-                # stored locally and we started using S3 in local dev mode.
-                logger.exception("Could not find AWS image.")
-                return super().to_representation(instance)
-            except FileNotFoundError:
-                # This can happen if there is an error retrieving the image from
-                # local storage.  This happens a lot when switching between S3
-                # and local storage in local development.
-                logger.exception("Could not find image file locally.")
-                return super().to_representation(instance)
-        return super().to_representation(instance)
-
-    def to_internal_value(self, data):
-        if data is not None:
-            if isinstance(data, str):
-                if 'data:' in data and ';base64,' in data:
-                    _, data = data.split(';base64,')
-                try:
-                    decoded_file = base64.b64decode(data)
-                except TypeError:
-                    self.fail('invalid_image')
-                file_name = str(uuid.uuid4())[:12]
-                file_extension = self.get_file_extension(file_name, decoded_file)
-                complete_file_name = "%s.%s" % (file_name, file_extension, )
-                data = ContentFile(decoded_file, name=complete_file_name)
-
-        return super(Base64ImageField, self).to_internal_value(data)
-
-    def get_file_extension(self, file_name, decoded_file):
-        extension = imghdr.what(file_name, decoded_file)
-        return "jpg" if extension == "jpeg" else extension

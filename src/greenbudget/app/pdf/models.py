@@ -1,7 +1,7 @@
 from django.core.validators import MinLengthValidator
 from django.db import models
 
-from greenbudget.app.user.utils import upload_user_image_to
+from greenbudget.app.io.utils import upload_user_image_to
 
 
 def upload_to(instance, filename):

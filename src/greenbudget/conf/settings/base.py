@@ -176,6 +176,7 @@ INSTALLED_APPS = [
     'greenbudget.app.fringe',
     'greenbudget.app.group',
     'greenbudget.app.history',
+    'greenbudget.app.io',
     'greenbudget.app.markup',
     'greenbudget.app.pdf',
     'greenbudget.app.subaccount',
@@ -317,8 +318,7 @@ AUTHENTICATION_BACKENDS = (
 REST_FRAMEWORK = {
     'DATETIME_FORMAT': '%Y-%m-%d %H:%M:%S',
     'NON_FIELD_ERRORS_KEY': '__all__',
-    'EXCEPTION_HANDLER': (
-        'greenbudget.lib.drf.views.exception_handler'),
+    'EXCEPTION_HANDLER': 'greenbudget.app.views.exception_handler',
     'DEFAULT_FILTER_BACKENDS': [
         'rest_framework_filters.backends.RestFrameworkFilterBackend',
         'rest_framework.filters.SearchFilter',
@@ -331,7 +331,7 @@ REST_FRAMEWORK = {
         'greenbudget.app.authentication.permissions.IsAuthenticated',
         'greenbudget.app.authentication.permissions.IsVerified'
     ],
-    'DEFAULT_PAGINATION_CLASS': 'greenbudget.lib.drf.pagination.Pagination',  # noqa
+    'DEFAULT_PAGINATION_CLASS': 'greenbudget.lib.drf.pagination.Pagination',
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
         'rest_framework.throttling.UserRateThrottle'

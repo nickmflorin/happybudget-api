@@ -3,7 +3,7 @@ from model_utils import Choices
 from django.db import models
 
 from greenbudget.lib.utils import conditionally_separate_strings
-from greenbudget.app.user.utils import upload_user_image_to
+from greenbudget.app.io.utils import upload_user_image_to
 
 
 def upload_to(instance, filename):
