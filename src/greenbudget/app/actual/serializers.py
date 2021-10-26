@@ -4,6 +4,8 @@ from greenbudget.lib.drf.fields import GenericRelatedField
 from greenbudget.lib.drf.serializers import ModelSerializer
 
 from greenbudget.app.contact.models import Contact
+from greenbudget.app.io.models import Attachment
+from greenbudget.app.io.serializers import SimpleAttachmentSerializer
 from greenbudget.app.markup.models import Markup
 from greenbudget.app.markup.serializers import MarkupSimpleSerializer
 from greenbudget.app.tagging.fields import TagField
@@ -104,6 +106,11 @@ class ActualSerializer(ModelSerializer):
         allow_blank=False,
         allow_null=True
     )
+    attachments = serializers.PrimaryKeyRelatedField(
+        queryset=Attachment.objects.all(),
+        required=False,
+        many=True
+    )
     value = serializers.FloatField(required=False, allow_null=True)
     actual_type = TagField(
         serializer_class=ActualTypeSerializer,
@@ -128,4 +135,10 @@ class ActualSerializer(ModelSerializer):
         fields = (
             'id', 'description', 'created_by', 'updated_by', 'created_at',
             'updated_at', 'purchase_order', 'date', 'payment_id', 'value',
-            'actual_type', 'contact', 'owner', 'type')
+            'actual_type', 'contact', 'owner', 'type', 'attachments')
+        response = {
+            'attachments': (
+                SimpleAttachmentSerializer,
+                {'many': True}
+            )
+        }

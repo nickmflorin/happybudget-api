@@ -74,6 +74,9 @@ class IsVerified(UserPermission):
         return True
 
 
+DEFAULT_PERMISSIONS = (IsAuthenticated, IsVerified)
+
+
 class IsAnonymous(permissions.BasePermission):
     message = "User already has an active session."
 

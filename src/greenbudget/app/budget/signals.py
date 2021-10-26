@@ -13,7 +13,7 @@ from greenbudget.app.markup.models import Markup
 from greenbudget.app.subaccount.models import (
     BudgetSubAccount, TemplateSubAccount)
 
-from .models import Budget
+from .models import Budget, BaseBudget
 
 
 logger = logging.getLogger('signals')
@@ -90,3 +90,8 @@ def calculate_budget(instance, markups_to_be_deleted=None):
 @signals.suppress_signal('suppress_budget_update')
 def update_budget_updated_at(instance, **kwargs):
     mark_budget_updated(instance.budget)
+
+
+@dispatch.receiver(signals.post_delete, sender=BaseBudget)
+def budget_deleted(instance, **kwargs):
+    instance.image.delete(False)

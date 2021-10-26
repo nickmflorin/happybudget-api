@@ -21,7 +21,7 @@ def test_type_properly_serializes(api_client, user, create_actual, create_budget
         'title': actual_type.title,
         'plural_title': actual_type.plural_title,
         'order': actual_type.order,
-        'color': actual_type.color.code
+        'color': actual_type.color.code,
     }
 
 
@@ -79,6 +79,7 @@ def test_update_actual(api_client, user, create_budget_account,
         "created_by": user.pk,
         "updated_by": user.pk,
         "actual_type": None,
+        "attachments": [],
         "owner": {
             "id": subaccount.pk,
             "type": "subaccount",
@@ -137,6 +138,7 @@ def test_change_actual_parent_to_subaccount(api_client, user, create_budget,
         "created_by": user.pk,
         "updated_by": user.pk,
         "actual_type": None,
+        "attachments": [],
         "owner": {
             "id": subaccount.pk,
             "type": "subaccount",
@@ -207,6 +209,7 @@ def test_change_actual_parent_to_markup(api_client, user, create_budget,
         "created_by": user.pk,
         "updated_by": user.pk,
         "actual_type": None,
+        "attachments": [],
         "owner": {
             "id": markup.pk,
             "type": "markup",

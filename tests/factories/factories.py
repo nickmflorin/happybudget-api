@@ -9,6 +9,7 @@ from greenbudget.app.comment.models import Comment
 from greenbudget.app.contact.models import Contact
 from greenbudget.app.fringe.models import Fringe
 from greenbudget.app.group.models import Group
+from greenbudget.app.io.models import Attachment
 from greenbudget.app.markup.models import Markup
 from greenbudget.app.pdf.models import HeaderTemplate
 from greenbudget.app.subaccount.models import (
@@ -330,6 +331,14 @@ class BudgetSubAccountFactory(
     class Meta:
         model = BudgetSubAccount
 
+    @factory.post_generation
+    def attachments(self, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for attachment in extracted:
+                self.attachments.add(attachment)
+
 
 class TemplateSubAccountFactory(
         ConstantTimeMixin('created_at'), SubAccountFactory):
@@ -368,6 +377,14 @@ class ActualFactory(CustomModelFactory):
 
     class Meta:
         model = Actual
+
+    @factory.post_generation
+    def attachments(self, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for attachment in extracted:
+                self.attachments.add(attachment)
 
 
 class CommentFactory(CustomModelFactory):
@@ -411,3 +428,13 @@ class HeaderTemplateFactory(CustomModelFactory):
 
     class Meta:
         model = HeaderTemplate
+
+
+class AttachmentFactory(CustomModelFactory):
+    """
+    A DjangoModelFactory to create instances of :obj:`Attachment`.
+    """
+    created_by = factory.SubFactory(UserFactory)
+
+    class Meta:
+        model = Attachment

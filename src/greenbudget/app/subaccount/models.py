@@ -93,7 +93,6 @@ class SubAccount(PolymorphicModel):
         null=True
     )
     fringes = models.ManyToManyField(to='fringe.Fringe')
-    # attachments = models.ManyToManyField(to='io.Attachment')
     content_type = models.ForeignKey(
         to=ContentType,
         on_delete=models.CASCADE,
@@ -262,7 +261,7 @@ class SubAccount(PolymorphicModel):
 )
 class BudgetSubAccount(SubAccount):
     pdf_type = 'pdf-subaccount'
-
+    attachments = models.ManyToManyField(to='io.Attachment')
     contact = models.ForeignKey(
         to='contact.Contact',
         null=True,

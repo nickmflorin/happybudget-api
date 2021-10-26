@@ -1,6 +1,6 @@
 from rest_framework import serializers, exceptions
 
-from greenbudget.lib import drf
+from greenbudget.lib.drf.serializers import ModelSerializer
 
 from greenbudget.app.budgeting.fields import TableChildrenPrimaryKeyRelatedField
 from greenbudget.app.budgeting.serializers import (
@@ -9,6 +9,8 @@ from greenbudget.app.contact.models import Contact
 from greenbudget.app.fringe.models import Fringe
 from greenbudget.app.group.models import Group
 from greenbudget.app.group.serializers import GroupSerializer
+from greenbudget.app.io.models import Attachment
+from greenbudget.app.io.serializers import SimpleAttachmentSerializer
 from greenbudget.app.markup.serializers import MarkupSerializer
 from greenbudget.app.tagging.fields import TagField
 from greenbudget.app.tagging.serializers import TagSerializer, ColorSerializer
@@ -26,7 +28,7 @@ class SubAccountUnitSerializer(TagSerializer):
         fields = TagSerializer.Meta.fields + ("color", )
 
 
-class SubAccountSimpleSerializer(drf.serializers.ModelSerializer):
+class SubAccountSimpleSerializer(ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     type = serializers.CharField(read_only=True)
     identifier = serializers.CharField(
@@ -99,17 +101,12 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
         model = SubAccount
         fields = SubAccountSimpleSerializer.Meta.fields \
             + (
-                'nominal_value',
-                'actual',
-                'fringe_contribution',
-                'markup_contribution',
-                'accumulated_markup_contribution',
-                'accumulated_fringe_contribution'
-            ) \
-            + (
                 'created_by', 'updated_by', 'created_at', 'updated_at',
                 'quantity', 'rate', 'multiplier', 'unit', 'object_id',
-                'parent_type', 'children', 'fringes', 'contact', 'group'
+                'parent_type', 'children', 'fringes', 'contact', 'group',
+                'nominal_value', 'actual', 'fringe_contribution',
+                'markup_contribution', 'accumulated_markup_contribution',
+                'accumulated_fringe_contribution'
             )
 
     def validate(self, attrs):
@@ -123,23 +120,35 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
 
 
 class BudgetSubAccountSerializer(SubAccountSerializer):
-    class Meta:
+    attachments = serializers.PrimaryKeyRelatedField(
+        queryset=Attachment.objects.all(),
+        required=False,
+        many=True
+    )
+
+    class Meta(SubAccountSerializer.Meta):
         model = BudgetSubAccount
-        fields = SubAccountSerializer.Meta.fields
+        fields = SubAccountSerializer.Meta.fields + ('attachments', )
+        response = {
+            'attachments': (
+                SimpleAttachmentSerializer,
+                {'many': True}
+            )
+        }
 
 
 class BudgetSubAccountDetailSerializer(BudgetSubAccountSerializer):
     ancestors = SimpleEntityPolymorphicSerializer(many=True, read_only=True)
     siblings = SimpleEntityPolymorphicSerializer(many=True, read_only=True)
 
-    class Meta:
+    class Meta(BudgetSubAccountSerializer.Meta):
         model = BudgetSubAccount
         fields = BudgetSubAccountSerializer.Meta.fields + (
             'ancestors', 'siblings')
 
 
 class TemplateSubAccountSerializer(SubAccountSerializer):
-    class Meta:
+    class Meta(SubAccountSerializer.Meta):
         model = TemplateSubAccount
         fields = SubAccountSerializer.Meta.fields
 
@@ -148,7 +157,7 @@ class TemplateSubAccountDetailSerializer(TemplateSubAccountSerializer):
     ancestors = SimpleEntityPolymorphicSerializer(many=True, read_only=True)
     siblings = SimpleEntityPolymorphicSerializer(many=True, read_only=True)
 
-    class Meta:
+    class Meta(TemplateSubAccountSerializer.Meta):
         model = TemplateSubAccount
         fields = TemplateSubAccountSerializer.Meta.fields + (
             'ancestors', 'siblings')
@@ -183,16 +192,11 @@ class SubAccountPdfSerializer(SubAccountSimpleSerializer):
         model = BudgetSubAccount
         fields = SubAccountSimpleSerializer.Meta.fields \
             + (
-                'nominal_value',
-                'actual',
-                'fringe_contribution',
-                'markup_contribution',
+                'quantity', 'rate', 'multiplier', 'unit', 'children', 'contact',
+                'group', 'groups', 'children_markups', 'nominal_value', 'actual',
+                'fringe_contribution', 'markup_contribution',
                 'accumulated_markup_contribution',
                 'accumulated_fringe_contribution'
-            ) \
-            + (
-                'quantity', 'rate', 'multiplier', 'unit', 'children', 'contact',
-                'group', 'groups', 'children_markups'
             )
         read_only_fields = fields
 

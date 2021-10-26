@@ -64,7 +64,7 @@ class Actual(models.Model):
         on_delete=models.SET_NULL,
         related_name='assigned_actuals'
     )
-    # attachments = models.ManyToManyField(to='io.Attachment')
+    attachments = models.ManyToManyField(to='io.Attachment')
     purchase_order = models.CharField(null=True, max_length=128)
     date = models.DateTimeField(null=True)
     payment_id = models.CharField(max_length=50, null=True)

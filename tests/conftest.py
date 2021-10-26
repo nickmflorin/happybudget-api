@@ -1,8 +1,12 @@
+from io import BytesIO
 import logging
+from PIL import Image
 import pytest
 import requests
 
 from django.contrib.contenttypes.models import ContentType
+from django.core.files.uploadedfile import SimpleUploadedFile
+
 from rest_framework.test import APIClient
 
 from greenbudget.app.fringe.models import Fringe
@@ -53,6 +57,26 @@ def api_client():
             super().force_login(user, **kwargs)
 
     return GreenbudgetApiClient()
+
+
+@pytest.fixture(autouse=True)
+def temp_media_root(tmpdir, settings):
+    settings.MEDIA_ROOT = tmpdir
+
+
+@pytest.fixture
+def test_image():
+    image = BytesIO()
+    Image.new('RGB', (100, 100)).save(image, 'jpeg')
+    image.seek(0)
+    return image
+
+
+@pytest.fixture
+def test_uploaded_file(test_image):
+    def inner(name):
+        return SimpleUploadedFile(name, test_image.getvalue())
+    return inner
 
 
 @pytest.fixture

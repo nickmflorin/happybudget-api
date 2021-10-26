@@ -125,6 +125,7 @@ def test_get_budget_subaccount(api_client, user, create_budget_subaccount,
         "updated_by": user.pk,
         "unit": None,
         "contact": None,
+        "attachments": [],
         "ancestors": [
             {
                 "type": "budget",
@@ -238,6 +239,7 @@ def test_update_budget_subaccount(api_client, user, create_budget_subaccount,
         "updated_by": user.pk,
         "unit": None,
         "contact": None,
+        "attachments": [],
         "ancestors": [
             {
                 "type": "budget",
@@ -384,7 +386,8 @@ def test_get_budget_subaccount_subaccounts(api_client, user, create_budget,
             "created_by": user.pk,
             "updated_by": user.pk,
             "contact": None,
-            "unit": None
+            "unit": None,
+            "attachments": [],
         },
         {
             "id": subaccounts[1].pk,
@@ -409,7 +412,8 @@ def test_get_budget_subaccount_subaccounts(api_client, user, create_budget,
             "created_by": user.pk,
             "updated_by": user.pk,
             "contact": None,
-            "unit": None
+            "unit": None,
+            "attachments": [],
         },
     ]
 

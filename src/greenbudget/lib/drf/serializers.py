@@ -144,14 +144,6 @@ class ModelSerializer(serializers.ModelSerializer):
 
             class Meta:
                 model = Child
-                http_toggle = {
-                    'parent': {
-                        ('POST', 'PATCH'):  (
-                            serializers.PrimaryKeyRelatedField,
-                            {"queryset": Parent.objects.all()}'
-                        )
-                    }
-                }
                 response = {
                     'parent': ParentSerializer
                 }
@@ -254,12 +246,6 @@ class ModelSerializer(serializers.ModelSerializer):
             if isinstance(definition[0], str):
                 serializer_cls = import_at_module_path(definition[0])
             return serializer_cls(**definition[1])
-
-    @property
-    def context_request_method(self):
-        if 'request' in self.context:
-            return self.context['request'].method
-        return None
 
     def to_representation(self, instance):
         if not self._response and getattr(self.Meta, 'response', {}):

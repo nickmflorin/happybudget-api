@@ -1,13 +1,13 @@
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from rest_framework import (
-    viewsets, mixins, response, status, decorators, permissions)
+from rest_framework import viewsets, mixins, response, status, decorators
 
 from greenbudget.app.views import filter_by_ids
 
 from greenbudget.app.account.models import TemplateAccount
 from greenbudget.app.account.serializers import TemplateAccountSerializer
 from greenbudget.app.account.views import GenericAccountViewSet
+from greenbudget.app.authentication.permissions import DEFAULT_PERMISSIONS
 from greenbudget.app.budgeting.decorators import (
     register_bulk_operations, BulkAction, BulkDeleteAction)
 from greenbudget.app.authentication.permissions import IsAdminOrReadOnly
@@ -265,10 +265,7 @@ class TemplateViewSet(
     (9) PATCH /templates/<pk>/bulk-update-fringes/
     (10) PATCH /templates/<pk>/bulk-create-fringes/
     """
-    permission_classes = (
-        permissions.IsAuthenticated,
-        TemplateObjPermission
-    )
+    permission_classes = DEFAULT_PERMISSIONS + (TemplateObjPermission, )
 
     def get_queryset(self):
         qs = Template.objects.all()
@@ -300,10 +297,7 @@ class TemplateCommunityViewSet(
     (1) GET /templates/community/
     (2) POST /templates/community/
     """
-    permission_classes = (
-        permissions.IsAuthenticated,
-        IsAdminOrReadOnly
-    )
+    permission_classes = DEFAULT_PERMISSIONS + (IsAdminOrReadOnly, )
 
     def get_serializer_context(self):
         context = super().get_serializer_context()

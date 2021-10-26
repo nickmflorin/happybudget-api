@@ -9,7 +9,7 @@ class SubAccountNestedMixin(NestedObjectViewMixin):
     A mixin for views that extend off of an subaccount's detail endpoint.
     """
     view_name = 'subaccount'
-    permission_classes = (SubAccountObjPermission, )
+    subaccount_permission_classes = (SubAccountObjPermission, )
 
     @property
     def subaccount_polymorphic_instance(self):

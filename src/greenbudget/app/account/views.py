@@ -2,12 +2,13 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils.functional import cached_property
 
-from rest_framework import viewsets, mixins, permissions
+from rest_framework import viewsets, mixins
 
 from greenbudget.app.views import filter_by_ids
 
 from greenbudget.app.account.models import Account
 from greenbudget.app.account.mixins import AccountNestedMixin
+from greenbudget.app.authentication.permissions import DEFAULT_PERMISSIONS
 from greenbudget.app.budgeting.decorators import (
     register_bulk_operations, BulkAction, BulkDeleteAction)
 from greenbudget.app.group.models import Group
@@ -240,10 +241,7 @@ class AccountViewSet(
     (4) PATCH /accounts/<pk>/bulk-update-subaccounts/
     (5) PATCH /accounts/<pk>/bulk-create-subaccounts/
     """
-    permission_classes = (
-        permissions.IsAuthenticated,
-        AccountObjPermission,
-    )
+    permission_classes = DEFAULT_PERMISSIONS + (AccountObjPermission, )
 
     @cached_property
     def instance_cls(self):

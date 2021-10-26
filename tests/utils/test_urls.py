@@ -38,7 +38,7 @@ class TestMakeUrlAbsolute:
             scheme="http",
             domain="google.com"
         )
-        assert absolute_url == "https://google.com/api/document/5"
+        assert absolute_url == "http://google.com/api/document/5"
 
     @override_settings(APP_URL="https://greenbudget.com")
     def test_make_absolute_url_absolute(self):

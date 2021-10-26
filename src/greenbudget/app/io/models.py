@@ -3,7 +3,7 @@ from django.db import models
 from greenbudget.app.io.utils import upload_user_file_to
 
 
-def upload_to(instance, filename):
+def upload_attachment_to(instance, filename):
     return upload_user_file_to(
         user=instance.created_by,
         filename=filename,
@@ -20,7 +20,7 @@ class Attachment(models.Model):
         on_delete=models.CASCADE,
         editable=False
     )
-    file = models.FileField(upload_to=upload_to, null=False)
+    file = models.FileField(upload_to=upload_attachment_to, null=False)
 
     class Meta:
         get_latest_by = "created_at"

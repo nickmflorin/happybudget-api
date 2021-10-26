@@ -236,7 +236,7 @@ def subaccount_parent_changed(instance, changes, **kwargs):
 
 
 @dispatch.receiver(signals.pre_save, sender=BudgetSubAccount)
-def validate_subaccount(instance, **kwargs):
+def validate_subaccount_contact(instance, **kwargs):
     if instance.contact is not None \
             and instance.contact.user != instance.created_by:
         raise IntegrityError(
