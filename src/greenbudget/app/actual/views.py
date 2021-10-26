@@ -1,4 +1,4 @@
-from rest_framework import viewsets, mixins, decorators, response, status
+from rest_framework import viewsets, mixins, response, status
 
 from greenbudget.app.authentication.permissions import DEFAULT_PERMISSIONS
 from greenbudget.app.io.serializers import (
@@ -28,6 +28,7 @@ class ActualTypeViewSet(
 class ActualAttachmentViewSet(
     mixins.ListModelMixin,
     mixins.DestroyModelMixin,
+    mixins.CreateModelMixin,
     ActualNestedMixin,
     viewsets.GenericViewSet
 ):
@@ -36,12 +37,25 @@ class ActualAttachmentViewSet(
 
     (1) GET /actuals/<pk>/attachments/
     (2) DELETE /actuals/<pk>/attachments/pk/
+    (3) POST /actuals/<pk>/attachments/
     """
     actual_lookup_field = ("pk", "actual_pk")
     serializer_class = AttachmentSerializer
+    lookup_field = "pk"
 
     def get_queryset(self):
         return self.actual.attachments.all()
+
+    def create(self, request, *args, **kwargs):
+        serializer = UploadAttachmentSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        attachment = serializer.save(created_by=request.user)
+        self.actual.attachments.add(attachment)
+        root_serializer_class = self.get_serializer_class()
+        return response.Response(
+            root_serializer_class(instance=attachment).data,
+            status=status.HTTP_200_OK
+        )
 
 
 class GenericActualViewSet(viewsets.GenericViewSet):
@@ -76,17 +90,3 @@ class ActualsViewSet(
 
     def get_queryset(self):
         return Actual.objects.all()
-
-    @decorators.action(
-        detail=True, methods=["PATCH"], url_path='upload-attachment')
-    def upload_attachment(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = UploadAttachmentSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        attachment = serializer.save(created_by=request.user)
-        instance.attachments.add(attachment)
-        root_serializer_class = self.get_serializer_class()
-        return response.Response(
-            root_serializer_class(instance=instance).data,
-            status=status.HTTP_200_OK
-        )

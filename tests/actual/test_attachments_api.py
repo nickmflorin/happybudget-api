@@ -122,6 +122,7 @@ def test_update_attachments(api_client, user, create_actual, create_budget,
 
 
 @pytest.mark.freeze_time('2020-01-01')
+@override_settings(APP_URL="https://api.greenbudget.com")
 def test_upload_attachment(api_client, user, create_actual, create_budget,
         create_attachment, test_uploaded_file, models):
     budget = create_budget()
@@ -135,8 +136,8 @@ def test_upload_attachment(api_client, user, create_actual, create_budget,
     )
     uploaded_file = test_uploaded_file('test.jpeg')
     api_client.force_login(user)
-    response = api_client.patch(
-        "/v1/actuals/%s/upload-attachment/" % actual.pk,
+    response = api_client.post(
+        "/v1/actuals/%s/attachments/" % actual.pk,
         data={'file': uploaded_file}
     )
 
@@ -146,12 +147,13 @@ def test_upload_attachment(api_client, user, create_actual, create_budget,
     assert actual.attachments.count() == 3
 
     assert models.Attachment.objects.count() == 3
-
-    assert 'attachments' in response.json()
-    assert response.json()['attachments'] == [
-        {'id': attachments[0].pk,
-            'name': 'attachment1.jpeg', 'extension': 'jpeg'},
-        {'id': attachments[1].pk,
-            'name': 'attachment2.jpeg', 'extension': 'jpeg'},
-        {'id': 3, 'name': 'test.jpeg', 'extension': 'jpeg'}
-    ]
+    assert response.json() == {
+        'id': 3,
+        'name': 'test.jpeg',
+        'extension': 'jpeg',
+        'size': 823,
+        'url': (
+            'https://api.greenbudget.com/'
+            'media/users/1/attachments/test.jpeg'
+        )
+    }

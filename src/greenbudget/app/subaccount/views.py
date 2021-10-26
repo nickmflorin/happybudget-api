@@ -2,7 +2,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils.functional import cached_property
 
-from rest_framework import viewsets, mixins, decorators, response, status
+from rest_framework import viewsets, mixins, response, status
 
 from greenbudget.app.views import filter_by_ids
 
@@ -169,6 +169,7 @@ class SubAccountActualsViewSet(
 class SubAccountAttachmentViewSet(
     mixins.ListModelMixin,
     mixins.DestroyModelMixin,
+    mixins.CreateModelMixin,
     SubAccountNestedMixin,
     viewsets.GenericViewSet
 ):
@@ -177,12 +178,25 @@ class SubAccountAttachmentViewSet(
 
     (1) GET /subaccounts/<pk>/attachments/
     (2) DELETE /subaccounts/<pk>/attachments/pk/
+    (3) POST /subaccounts/<pk>/attachments/
     """
     subaccount_lookup_field = ("pk", "subaccount_pk")
     serializer_class = AttachmentSerializer
+    lookup_field = "pk"
 
     def get_queryset(self):
         return self.subaccount.attachments.all()
+
+    def create(self, request, *args, **kwargs):
+        serializer = UploadAttachmentSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        attachment = serializer.save(created_by=request.user)
+        self.subaccount.attachments.add(attachment)
+        root_serializer_class = self.get_serializer_class()
+        return response.Response(
+            root_serializer_class(instance=attachment).data,
+            status=status.HTTP_200_OK
+        )
 
 
 class GenericSubAccountViewSet(viewsets.GenericViewSet):
@@ -269,21 +283,6 @@ class SubAccountViewSet(
 
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
-
-    @decorators.action(
-        detail=True, methods=["PATCH"], url_path='upload-attachment')
-    def upload_attachment(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = UploadAttachmentSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        attachment = serializer.save(created_by=request.user)
-        instance.attachments.add(attachment)
-
-        root_serializer_class = self.get_serializer_class()
-        return response.Response(
-            root_serializer_class(instance=instance).data,
-            status=status.HTTP_200_OK
-        )
 
 
 @filter_by_ids
