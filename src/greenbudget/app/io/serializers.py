@@ -31,7 +31,7 @@ class ImageFieldFileSerializer(serializers.Serializer):
         # storages.backends.s3boto3.S3Boto3Storage, we need to use an alternate
         # method to find the extension.
         if using_s3_storage():
-            return parse_image_filename(instance.name)[1]
+            return parse_image_filename(instance.name, strict=False)[1]
         return imghdr.what(instance.path)
 
 
@@ -53,7 +53,7 @@ class SimpleAttachmentSerializer(serializers.ModelSerializer):
         # storages.backends.s3boto3.S3Boto3Storage, we need to use an alternate
         # method to find the extension.
         if using_s3_storage():
-            return parse_filename(instance.file.name)[1]
+            return parse_filename(instance.file.name, strict=False)[1]
         return imghdr.what(instance.file.path)
 
     def get_name(self, instance):

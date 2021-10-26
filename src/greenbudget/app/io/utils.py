@@ -52,12 +52,14 @@ def upload_user_file_to(user, filename, directory=None):
     return f'{user_storage_directory(user)}/{filename}'
 
 
-def parse_filename(filename, supported=None):
+def parse_filename(filename, supported=None, strict=True):
     boolean_mask = [x for x in [s == '.' for s in filename] if x is True]
     if len(boolean_mask) == 0:
         raise MissingFileExtension(filename=filename)
     elif len(boolean_mask) != 1:
-        raise FileNameError(filename=filename)
+        # Currently, there are some images saved with double extensions.
+        if strict:
+            raise FileNameError(filename=filename)
     ext = filename.split('.')[-1].strip().lower()
     if ext == "":
         raise MissingFileExtension(filename=filename)
@@ -67,4 +69,8 @@ def parse_filename(filename, supported=None):
 
 
 def parse_image_filename(filename, strict=True):
-    return parse_filename(filename, supported=settings.ACCEPTED_IMAGE_EXTENSIONS)
+    return parse_filename(
+        filename=filename,
+        supported=settings.ACCEPTED_IMAGE_EXTENSIONS,
+        strict=strict
+    )
