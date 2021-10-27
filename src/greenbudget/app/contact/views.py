@@ -31,7 +31,7 @@ class ContactViewSet(
     lookup_field = 'pk'
     serializer_class = ContactSerializer
     ordering_fields = ['updated_at', 'first_name', 'last_name', 'created_at']
-    search_fields = ['first_name', 'last_name', 'role', 'city', 'country']
+    search_fields = ['first_name', 'last_name']
 
     def get_serializer_context(self):
         context = super().get_serializer_context()

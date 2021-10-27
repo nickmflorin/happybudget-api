@@ -23,7 +23,7 @@ class ContactSerializer(ModelSerializer):
     company = serializers.CharField(allow_null=True, required=False)
     position = serializers.CharField(allow_null=True, required=False)
     city = serializers.CharField(allow_null=True, required=False)
-    phone_number = serializers.IntegerField(allow_null=True, required=False)
+    phone_number = serializers.CharField(allow_null=True, required=False)
     email = serializers.EmailField(allow_null=True, required=False)
     rate = serializers.IntegerField(allow_null=True, required=False)
     image = Base64ImageField(required=False, allow_null=True)

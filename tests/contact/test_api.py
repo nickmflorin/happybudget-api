@@ -102,7 +102,7 @@ def test_create_contact(api_client, user, models):
     assert contact.first_name == "Jack"
     assert contact.last_name == "Johnson"
     assert contact.contact_type == 1
-    assert contact.phone_number == 15183696530
+    assert contact.phone_number == "15183696530"
     assert contact.email == "jjohnson@gmail.com"
     assert contact.company == "Boeing"
 
@@ -115,7 +115,7 @@ def test_create_contact(api_client, user, models):
         "updated_at": "2020-01-01 00:00:00",
         "city": "New York",
         "rate": 5,
-        "phone_number": 15183696530,
+        "phone_number": "15183696530",
         "email": "jjohnson@gmail.com",
         "full_name": "Jack Johnson",
         "company": "Boeing",
@@ -277,7 +277,7 @@ def test_bulk_create_contacts(api_client, user, models):
             "city": contacts[1].city,
             "rate": contacts[1].rate,
             "company": "Boeing",
-            "phone_number": 15183696530,
+            "phone_number": '15183696530',
             "email": 'jjohnson@gmail.com',
             "full_name": contacts[1].full_name,
             "position": contacts[1].position,
@@ -317,6 +317,6 @@ def test_bulk_update_contacts(api_client, user, create_contact, models):
     assert contacts[0].first_name == "Jack"
     assert contacts[0].last_name == "Johnson"
 
-    assert contacts[1].phone_number == 15183696530
+    assert contacts[1].phone_number == "15183696530"
     assert contacts[1].email == 'jjohnson@gmail.com'
     assert contacts[1].company == "Boeing"

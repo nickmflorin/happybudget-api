@@ -34,7 +34,7 @@ class Contact(models.Model):
     position = models.CharField(max_length=128, null=True)
     company = models.CharField(max_length=128, null=True)
     city = models.CharField(max_length=30, null=True)
-    phone_number = models.BigIntegerField(null=True)
+    phone_number = models.CharField(max_length=128, null=True)
     email = models.EmailField(null=True)
     rate = models.IntegerField(null=True)
     image = models.ImageField(upload_to=upload_to, null=True)
