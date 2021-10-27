@@ -7,7 +7,11 @@ class IOErrorCodes:
     INVALID_FILE_EXTENSION = "invalid_file_extension"
 
 
-class FileNameError(exceptions.ValidationError):
+class FileError(exceptions.ValidationError):
+    pass
+
+
+class FileNameError(FileError):
     default_detail = _("The file name is invalid.")
     default_code = IOErrorCodes.INVALID_FILE_NAME
     default_info_detail = "The file name `{filename}` is invalid."
@@ -22,7 +26,7 @@ class FileNameError(exceptions.ValidationError):
             )
 
 
-class FileExtensionError(exceptions.ValidationError):
+class FileExtensionError(FileError):
     default_detail = _("The file extension is invalid.")
     default_code = IOErrorCodes.INVALID_FILE_EXTENSION
     default_info_detail = "The file extension `{ext}` is invalid."

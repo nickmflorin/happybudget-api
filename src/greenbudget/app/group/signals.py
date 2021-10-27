@@ -37,24 +37,24 @@ def validate_group(instance, **kwargs):
 @signals.field_changed_receiver('group', sender=TemplateAccount)
 @signals.field_changed_receiver('group', sender=BudgetSubAccount)
 @signals.field_changed_receiver('group', sender=TemplateSubAccount)
-def delete_empty_group(instance, **kwargs):
+def delete_empty_group(instance, change, **kwargs):
     # Check if the object had been previously assigned a Group that is now
     # empty after the object is moved out of the Group.
-    if kwargs['change'].previous_value is not None:
+    if change.previous_value is not None:
         if instance.__class__.objects.filter(
-                group_id=kwargs['change'].previous_value).count() == 0:
+                group_id=change.previous_value).count() == 0:
             logger.info(
                 "Deleting group %s after it was removed from %s (id = %s) "
                 "because the group no longer has any children."
                 % (
-                    kwargs['change'].previous_value,
+                    change.previous_value,
                     instance.__class__.__name__,
                     instance.pk
                 )
             )
             # We have to be concerned with race conditions here.
             try:
-                group = Group.objects.get(pk=kwargs['change'].previous_value)
+                group = Group.objects.get(pk=change.previous_value)
             except Group.DoesNotExist:
                 pass
             else:

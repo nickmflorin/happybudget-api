@@ -1,10 +1,12 @@
 import imghdr
+import logging
 import os
 
 from django.core.files.storage import get_storage_class
 
 from rest_framework import serializers
 
+from .exceptions import FileError
 from .models import Attachment
 from .storages import using_s3_storage
 from .utils import (
@@ -13,6 +15,9 @@ from .utils import (
     upload_temp_user_image_to,
     upload_temp_user_file_to
 )
+
+
+logger = logging.getLogger('greenbudget')
 
 
 class ImageFieldFileSerializer(serializers.Serializer):
@@ -25,13 +30,16 @@ class ImageFieldFileSerializer(serializers.Serializer):
     def get_extension(self, instance):
         # Note that imghdr uses the local file system, so it will look at the
         # file in the local file system.  This only works when we are in local
-        # development, because we are using
-        # django.core.files.storage.FileSystemStorage.  When we are are in
-        # a production/dev environment, and we are using
-        # storages.backends.s3boto3.S3Boto3Storage, we need to use an alternate
-        # method to find the extension.
+        # development, because we are using Django's FileSystemStorage.
         if using_s3_storage():
-            return parse_image_filename(instance.name, strict=False)[1]
+            try:
+                return parse_image_filename(instance.name, strict=False)[1]
+            except FileError as e:
+                logger.error("Corrupted image name stored in AWS.", extra={
+                    "name": instance.name,
+                    "exception": e
+                })
+                return None
         return imghdr.what(instance.path)
 
 
@@ -47,13 +55,16 @@ class SimpleAttachmentSerializer(serializers.ModelSerializer):
     def get_extension(self, instance):
         # Note that imghdr uses the local file system, so it will look at the
         # file in the local file system.  This only works when we are in local
-        # development, because we are using
-        # django.core.files.storage.FileSystemStorage.  When we are are in
-        # a production/dev environment, and we are using
-        # storages.backends.s3boto3.S3Boto3Storage, we need to use an alternate
-        # method to find the extension.
+        # development, because we are using Django's FileSystemStorage.
         if using_s3_storage():
-            return parse_filename(instance.file.name, strict=False)[1]
+            try:
+                return parse_filename(instance.file.name, strict=False)[1]
+            except FileError as e:
+                logger.error("Corrupted attachment name stored in AWS.", extra={
+                    "name": instance.name,
+                    "exception": e
+                })
+                return None
         return imghdr.what(instance.file.path)
 
     def get_name(self, instance):
@@ -81,7 +92,16 @@ class UploadAttachmentSerializer(serializers.ModelSerializer):
         return attrs
 
 
-class TempFileSerializer(serializers.Serializer):
+class AbstractTempSerializer(serializers.Serializer):
+
+    def create(self, validated_data):
+        storage_cls = get_storage_class()
+        storage = storage_cls()
+        storage.save(validated_data["filename"], validated_data["file"].file)
+        return storage.url(validated_data["filename"])
+
+
+class TempFileSerializer(AbstractTempSerializer):
     file = serializers.FileField()
 
     def validate(self, attrs):
@@ -92,14 +112,8 @@ class TempFileSerializer(serializers.Serializer):
         )
         return {'file': attrs['file'], "filename": filename}
 
-    def create(self, validated_data):
-        storage_cls = get_storage_class()
-        storage = storage_cls()
-        storage.save(validated_data["filename"], validated_data["file"].file)
-        return storage.url(validated_data["filename"])
 
-
-class TempImageSerializer(serializers.Serializer):
+class TempImageSerializer(AbstractTempSerializer):
     image = serializers.ImageField()
 
     def validate(self, attrs):
@@ -108,10 +122,4 @@ class TempImageSerializer(serializers.Serializer):
             user=request.user,
             filename=attrs['image'].name
         )
-        return {'image': attrs['image'], "image_name": image_name}
-
-    def create(self, validated_data):
-        storage_cls = get_storage_class()
-        storage = storage_cls()
-        storage.save(validated_data["image_name"], validated_data["image"].file)
-        return storage.url(validated_data["image_name"])
+        return {'file': attrs['image'], "filename": image_name}

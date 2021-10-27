@@ -52,15 +52,12 @@ def upload_user_file_to(user, filename, directory=None):
     return f'{user_storage_directory(user)}/{filename}'
 
 
-# We need to tailor this for cases where we are reading the image and just
-# return None, because we don't want exceptions to be raised when serializers
-# are used in read cases, blocking login and other crucial operations.
 def parse_filename(filename, supported=None, strict=True):
     boolean_mask = [x for x in [s == '.' for s in filename] if x is True]
     if len(boolean_mask) == 0:
         raise MissingFileExtension(filename=filename)
     elif len(boolean_mask) != 1:
-        # Currently, there are some images saved with double extensions.
+        # Currently, there are some images in AWS with double extensions.
         if strict:
             raise FileNameError(filename=filename)
     ext = filename.split('.')[-1].strip().lower()
