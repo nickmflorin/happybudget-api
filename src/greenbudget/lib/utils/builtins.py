@@ -1,11 +1,5 @@
-import hashlib
 import importlib
 import inspect
-import json
-import re
-from typing import Dict, Any
-
-from .dateutils import ensure_datetime
 
 
 def conditionally_separate_strings(strings, separator=" "):
@@ -30,13 +24,6 @@ def get_function_keyword_defaults(func):
             arg_spec.defaults
         ))
     return defaults
-
-
-def hash_dict(dictionary: Dict[str, Any]) -> str:
-    dhash = hashlib.md5()
-    encoded = json.dumps(dictionary, sort_keys=True).encode()
-    dhash.update(encoded)
-    return dhash.hexdigest()
 
 
 def import_at_module_path(module_path):
@@ -73,116 +60,6 @@ def concat(arrays):
                 )
             concatenated += array
     return concatenated
-
-
-def is_datetime(value):
-    """
-    Returns whether or not the value is a valid :obj:`datetime.datetime`
-    instance, a valid :obj:`datetime.date` instance, or a string that can be
-    converted to either.
-    """
-    try:
-        ensure_datetime(value)
-    except ValueError:
-        return False
-    else:
-        return True
-
-
-def find_in_dict(data, keys):
-    """
-    Finds the value in a potentially nested dictionary by a key or set of
-    nested keys.
-
-    Parameters:
-    ----------
-    data: :obj:`dict`
-        The dictionary for which we want to find the value indexed by the
-        potentially nested keys.
-    keys: :obj:`list`, :obj:`tuple`, :obj:`str`
-        Either an iterable of nested keys or a single key for which we want
-        to locate the associated value in the dictionary for.
-
-    Example:
-    -------
-    >>> data = {'foo': {'bar': 'banana'}}
-    >>> find_in_dict(data, 'foo')
-    >>> {'bar': 'banana'}
-    >>> find_in_dict(data, ['foo', 'bar'])
-    >>> 'banana'
-    """
-    if hasattr(keys, '__iter__') and not isinstance(keys, str):
-        if len(keys) == 1:
-            return data[keys[0]]
-        current = data[keys[0]]
-        for key in keys[1:]:
-            current = current[key]
-        return current
-    return data[keys]
-
-
-def place_in_dict(data, keys, value):
-    """
-    Places a value in a potentially nested dictionary at the location defined
-    by a set potentially nested keys.
-
-    Parameters:
-    ----------
-    data: :obj:`dict`
-        The dictionary for which the value will be stored in.
-    keys: :obj:`list`, :obj:`tuple`, :obj:`str`
-        Either an iterable of nested keys or a single key that defines the
-        location in the dictionary for which the value should be stored.
-    value:
-        The value to store in the dictionary.
-
-    Example:
-    -------
-    >>> data = {'foo': {'bar': 'banana'}}
-    >>> place_in_dict(data, 'foo', 'bar')
-    >>> data
-    >>> {'foo': 'bar'}
-    >>> place_in_dict(data, ['foo', 'bar'], 'bar')
-    >>> data
-    >>> {'foo': {'bar': 'bar'}}
-    """
-    if hasattr(keys, '__iter__') and not isinstance(keys, str):
-        if len(keys) == 1:
-            data[keys[0]] = value
-            return
-        current = data[keys[0]]
-        for key in keys[1:-1]:
-            current = current[key]
-        current[keys[-1]] = value
-    else:
-        data[keys] = value
-
-
-def find_string_formatted_arguments(value):
-    """
-    Finds arguments in a string that are meant to be string formatted.
-
-    Example:
-    -------
-    >>> value = "{argument1}, the fox jumped over the {argument2}"
-    >>> find_string_formatted_arguments(value)
-    >>> ["argument1", "argument2"]
-    """
-    regex = '[^{\}]+(?=})'  # noqa
-    matches = re.findall(regex, value)
-    if matches is None:
-        return []
-
-    arguments = []
-    index = 0
-    while True:
-        try:
-            arguments.append(matches[index])
-        except IndexError:
-            break
-        else:
-            index += 1
-    return arguments
 
 
 def ensure_iterable(value, strict=False, cast=list):

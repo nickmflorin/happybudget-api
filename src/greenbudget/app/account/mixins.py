@@ -11,12 +11,5 @@ class AccountNestedMixin(NestedObjectViewMixin):
     account_permission_classes = (AccountObjPermission, )
     view_name = 'account'
 
-    @property
-    def account_polymorphic_instance(self):
-        return None
-
     def get_account_queryset(self, request):
-        qs = Account.objects.all()
-        if self.account_polymorphic_instance is not None:
-            qs = qs.instance_of(self.account_polymorphic_instance)
-        return qs
+        return Account.objects.all()

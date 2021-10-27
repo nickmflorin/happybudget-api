@@ -1,84 +1,9 @@
 import pytest
 
 from django.http import QueryDict
-from django.test import override_settings
 
 from greenbudget.lib.utils.urls import (
-    add_query_params_to_url, get_query_params, get_base_url,
-    relativize_url, make_url_absolute, safe_format_url)
-
-
-def test_safe_format_url():
-    url = "https://greenbudget.io/services/{service}/{id}"
-    formatted = safe_format_url(url, service="test")
-    assert formatted == "https://greenbudget.io/services/test/{id}"
-
-    formatted = safe_format_url(url, service='test', id=5)
-    assert formatted == "https://greenbudget.io/services/test/5"
-
-
-class TestMakeUrlAbsolute:
-    @override_settings(APP_URL="https://greenbudget.com")
-    def test_make_url_absolute(self):
-        """
-        If the request and the explicit scheme/domain are not provided, the
-        URL should be made absolute in the context of the APP_URL
-        in settings.
-        """
-        absolute_url = make_url_absolute("/api/document/5")
-        assert absolute_url == "https://greenbudget.com/api/document/5"
-
-    def test_make_url_absolute_explicit_scheme_domain(self):
-        """
-        If the scheme and/or domain are explicitly provided, they should be
-        used over the domain/scheme of the APP_URL in settings.
-        """
-        absolute_url = make_url_absolute(
-            "/api/document/5",
-            scheme="http",
-            domain="google.com"
-        )
-        assert absolute_url == "http://google.com/api/document/5"
-
-    @override_settings(APP_URL="https://greenbudget.com")
-    def test_make_absolute_url_absolute(self):
-        """
-        If the URL is already absolute, the URL should be unchanged.
-        """
-        absolute_url = make_url_absolute(
-            "https://greenbudget.com/api/document/5")
-        assert absolute_url == "https://greenbudget.com/api/document/5"
-
-
-class TestRelativizeUrl:
-    @override_settings(APP_URL="https://greenbudget.com")
-    def test_relativize_greenbudget_url_different_scheme(self):
-        """
-        If the scheme differs from the APP_URL in settings, the
-        URL should still be relativized.
-        """
-        relativized_url = relativize_url(
-            "http://greenbudget.com/api/document/5")
-        assert relativized_url == "/api/document/5"
-
-    @override_settings(APP_URL="http://greenbudget.com")
-    def test_relativize_greenbudget_url(self):
-        """
-        If the URL is absolute in the context of the APP_URL, the
-        URL relative to that scheme/domain should be returned.
-        """
-        relativized_url = relativize_url(
-            "http://greenbudget.com/api/document/5")
-        assert relativized_url == "/api/document/5"
-
-    @override_settings(APP_URL="http://greenbudget.com")
-    def test_relativize_url_different_netloc(self):
-        """
-        If the URL is absolute in the context of another domain, the URL
-        should be unchanged.
-        """
-        relativized_url = relativize_url("http://google.com/api/document/5")
-        assert relativized_url == "http://google.com/api/document/5"
+    add_query_params_to_url, get_query_params, get_base_url)
 
 
 class TestGetBaseUrl:
