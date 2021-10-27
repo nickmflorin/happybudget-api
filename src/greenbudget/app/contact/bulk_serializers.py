@@ -17,9 +17,7 @@ def create_bulk_delete_serializer(user):
 
     class BulkDeleteSerializer(generic_serializer_cls):
         # Note: We have to use the .save() method instead of .update() or
-        # .create() because this is not a ModelSerializer - the .update() or
-        # .create() methods must return an instance, which is not applicable
-        # here.
+        # .create() because we are not returning an instance.
         def save(self):
             for child in self.validated_data['ids']:
                 child.delete()
@@ -35,9 +33,7 @@ def create_bulk_create_serializer():
 
     class BulkCreateSerializer(generic_serializer_cls):
         # Note: We have to use the .save() method instead of .update() or
-        # .create() because this is not a ModelSerializer - the .update() or
-        # .create() methods must return an instance, which is not applicable
-        # here.
+        # .create() because we are not returning an instance.
         def save(self, **kwargs):
             data = [payload for payload in self.validated_data.pop('data', [])]
             children = self.perform_children_write(data, **kwargs)
@@ -55,16 +51,14 @@ def create_bulk_update_serializer(user):
 
     class BulkUpdateSerializer(generic_serializer_cls):
         # Note: We have to use the .save() method instead of .update() or
-        # .create() because this is not a ModelSerializer - the .update() or
-        # .create() methods must return an instance, which is not applicable
-        # here.
+        # .create() because we are not returning an instance.
         def save(self):
             data = self.validated_data.pop('data', [])
             for child, change in data:
-                # At this point, the change already represents the
-                # validated data for that specific serializer.  So we do
-                # not need to pass in the validated data on __init__
-                # and rerun validation.
+                # At this point, the change already represents the validated
+                # data for that specific serializer - so we do not need to
+                # pass the validated data back in on __init__, which would
+                # rerun the validation.
                 serializer = ContactSerializer(partial=True)
                 serializer.update(child, {**self.validated_data, **change})
 

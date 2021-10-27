@@ -25,9 +25,6 @@ logger = logging.getLogger('signals')
 @dispatch.receiver(signals.m2m_changed, sender=SubAccount.markups.through)
 def delete_empty_markups(instance, reverse, **kwargs):
     if kwargs['action'] == 'post_remove':
-        # Depending on whether or not the M2M was changed on the forward or
-        # reverse side of the field, the instance will refer to different
-        # things.
         markups = [instance]
         if not reverse:
             markups = Markup.objects.filter(pk__in=kwargs['pk_set']).all()
@@ -238,35 +235,30 @@ def markup_parent_changed(instance, changes, **kwargs):
 @dispatch.receiver(signals.m2m_changed, sender=BudgetAccount.markups.through)
 @dispatch.receiver(signals.m2m_changed, sender=BudgetSubAccount.markups.through)
 def validate_markup_children(instance, reverse, action, **kwargs):
+    def validate_parent(a, b):
+        if a.parent != b.parent:
+            raise IntegrityError(
+                "Can only add markups to an instance that share "
+                "the same parent as the markups being added."
+            )
+
+    def validate_unit(obj):
+        if obj.unit != Markup.UNITS.percent:
+            raise IntegrityError(
+                "Can only add markups with unit `percent` as children of "
+                "an Account/SubAccount."
+            )
+
     if action == 'pre_add':
-        # Depending on whether or not the M2M was changed on the forward or
-        # reverse side of the field, the instance will refer to different
-        # things.
         if reverse:
-            if instance.unit != Markup.UNITS.percent:
-                raise IntegrityError(
-                    "Can only add markups with unit `percent` as children of "
-                    "an Account/SubAccount."
-                )
+            validate_unit(instance)
             # The instance here is the Markup instance being added.
             children = kwargs['model'].objects.filter(pk__in=kwargs['pk_set'])
             for child in children:
-                if child.parent != instance.parent:
-                    raise IntegrityError(
-                        "Can only add markups to an instance that share "
-                        "the same parent as the markups being added."
-                    )
+                validate_parent(instance, child)
         else:
             # The instance here is the Account or SubAccount.
             markups = Markup.objects.filter(pk__in=kwargs['pk_set'])
             for markup in markups:
-                if markup.unit != Markup.UNITS.percent:
-                    raise IntegrityError(
-                        "Can only add markups with unit `percent` as children "
-                        "of an Account/SubAccount."
-                    )
-                elif markup.parent != instance.parent:
-                    raise IntegrityError(
-                        "Can only add markups to an instance that share "
-                        "the same parent as the markups being added."
-                    )
+                validate_unit(markup)
+                validate_parent(instance, markup)
