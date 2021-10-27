@@ -6,7 +6,7 @@ from django.contrib.auth.backends import ModelBackend
 from rest_framework import authentication
 
 from .exceptions import InvalidCredentialsError, EmailDoesNotExist
-from .permissions import IsAuthenticated, IsVerified
+from .permissions import check_user_permissions
 
 
 logger = logging.getLogger('greenbudget')
@@ -24,11 +24,7 @@ class SocialModelAuthentication(ModelBackend):
                 token_id=token_id,
                 provider=provider
             )
-            permissions = [IsAuthenticated(), IsVerified()]
-            [
-                p.user_has_permission(user, force_logout=False)
-                for p in permissions
-            ]
+            check_user_permissions(user, force_logout=False)
             return user
         return None
 
@@ -48,11 +44,7 @@ class ModelAuthentication(ModelBackend):
                 raise EmailDoesNotExist('email')
             if not user.check_password(password):
                 raise InvalidCredentialsError("password")
-            permissions = [IsAuthenticated(), IsVerified()]
-            [
-                p.user_has_permission(user, force_logout=False)
-                for p in permissions
-            ]
+            check_user_permissions(user, force_logout=False)
             return user
         return None
 

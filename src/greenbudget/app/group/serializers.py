@@ -57,10 +57,18 @@ class GroupSerializer(ModelSerializer):
         children = validated_data.pop('children', [])
         instance = super().update(instance, validated_data, **kwargs)
 
+        # We have to both remove children that are not included in the payload
+        # and add the children that are included in the payload.
+        for child in instance.children.all():
+            if child not in children:
+                child.group = None
+                child.save(update_fields=["group"])
+
         # After we update the Group, we must associate the provided children
         # with the Group we just updated.
         for child in children:
-            child.group = instance
-            child.save(update_fields=['group'])
+            if child not in instance.children.all():
+                child.group = instance
+                child.save(update_fields=['group'])
 
         return instance

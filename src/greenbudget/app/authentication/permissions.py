@@ -5,6 +5,42 @@ from .exceptions import (
     EmailVerified, PermissionDenied)
 
 
+class UserPermission(permissions.BasePermission):
+    def has_permission(self, request, view):
+        user = getattr(request, 'user', None)
+        return self.user_has_permission(user)
+
+
+class IsAuthenticated(UserPermission):
+    def user_has_permission(self, user, force_logout=True):
+        if user is None or not user.is_authenticated:
+            raise NotAuthenticatedError(force_logout=force_logout)
+        if not user.is_active:
+            raise AccountDisabledError(
+                user_id=getattr(user, 'pk'),
+                force_logout=force_logout
+            )
+        return True
+
+
+class IsVerified(UserPermission):
+    def user_has_permission(self, user, force_logout=True):
+        if user is None or not user.is_authenticated:
+            raise Exception(
+                "The `IsVerified` permission should always come after the "
+                "`IsAuthenticated` permission."
+            )
+        if not user.is_verified:
+            raise EmailNotVerified(
+                user_id=getattr(user, 'pk'),
+                force_logout=force_logout
+            )
+        return True
+
+
+DEFAULT_PERMISSIONS = (IsAuthenticated, IsVerified)
+
+
 def check_user_permissions(user, permissions=None, force_logout=True):
     """
     A method to evaluate a set of permisisons that extend :obj:`UserPermission`
@@ -27,24 +63,6 @@ def check_user_permissions(user, permissions=None, force_logout=True):
             )
 
 
-class UserPermission(permissions.BasePermission):
-    def has_permission(self, request, view):
-        user = getattr(request, 'user', None)
-        return self.user_has_permission(user)
-
-
-class IsAuthenticated(UserPermission):
-    def user_has_permission(self, user, force_logout=True):
-        if user is None or not user.is_authenticated:
-            raise NotAuthenticatedError(force_logout=force_logout)
-        if not user.is_active:
-            raise AccountDisabledError(
-                user_id=getattr(user, 'pk'),
-                force_logout=force_logout
-            )
-        return True
-
-
 class IsNotVerified(UserPermission):
     def user_has_permission(self, user, force_logout=False):
         # Force logout param is required for checking permissions manually via
@@ -57,24 +75,6 @@ class IsNotVerified(UserPermission):
         if user.is_verified:
             raise EmailVerified(user_id=getattr(user, 'pk'))
         return True
-
-
-class IsVerified(UserPermission):
-    def user_has_permission(self, user, force_logout=True):
-        if user is None or not user.is_authenticated:
-            raise Exception(
-                "The `IsVerified` permission should always come after the "
-                "`IsAuthenticated` permission."
-            )
-        if not user.is_verified:
-            raise EmailNotVerified(
-                user_id=getattr(user, 'pk'),
-                force_logout=force_logout
-            )
-        return True
-
-
-DEFAULT_PERMISSIONS = (IsAuthenticated, IsVerified)
 
 
 class IsAnonymous(permissions.BasePermission):

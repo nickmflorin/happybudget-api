@@ -2,11 +2,12 @@ import pytest
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_budget_account_group(api_client, user, create_budget_account,
-        create_budget, create_group):
-    budget = create_budget()
+@pytest.mark.parametrize('context', ['budget', 'template'])
+def test_get_account_group(api_client, user, create_account, create_group,
+        create_context_budget, context):
+    budget = create_context_budget(context=context)
     group = create_group(parent=budget)
-    account = create_budget_account(parent=budget, group=group)
+    account = create_account(parent=budget, group=group, context=context)
     api_client.force_login(user)
     response = api_client.get("/v1/groups/%s/" % group.pk)
     assert response.status_code == 200
@@ -24,11 +25,17 @@ def test_get_budget_account_group(api_client, user, create_budget_account,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_template_account_group(api_client, user, create_template,
-        create_template_account, create_group):
-    template = create_template()
-    group = create_group(parent=template)
-    account = create_template_account(parent=template, group=group)
+@pytest.mark.parametrize('context', ['budget', 'template'])
+def test_get_subaccount_group(api_client, user, create_account, create_group,
+        context, create_subaccount, create_context_budget):
+    budget = create_context_budget(context=context)
+    account = create_account(parent=budget, context=context)
+    group = create_group(parent=account)
+    subaccount = create_subaccount(
+        parent=account,
+        group=group,
+        context=context
+    )
     api_client.force_login(user)
     response = api_client.get("/v1/groups/%s/" % group.pk)
     assert response.status_code == 200
@@ -39,32 +46,6 @@ def test_get_template_account_group(api_client, user, create_template,
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
         "color": None,
-        "created_by": user.pk,
-        "updated_by": user.pk,
-        "children": [account.pk]
-    }
-
-
-@pytest.mark.freeze_time('2020-01-01')
-def test_get_budget_subaccount_group(api_client, user, create_budget_account,
-        create_budget_subaccount, create_budget, create_group):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    group = create_group(parent=account)
-    subaccount = create_budget_subaccount(
-        parent=account,
-        group=group
-    )
-    api_client.force_login(user)
-    response = api_client.get("/v1/groups/%s/" % group.pk)
-    assert response.status_code == 200
-    assert response.json() == {
-        "id": 1,
-        "type": "group",
-        "name": group.name,
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
-        "color": None,
         "updated_by": user.pk,
         "created_by": user.pk,
         "children": [subaccount.pk]
@@ -72,36 +53,11 @@ def test_get_budget_subaccount_group(api_client, user, create_budget_account,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_template_subaccount_group(api_client, user, create_template,
-        create_template_subaccount, create_template_account, create_group):
-    template = create_template()
-    account = create_template_account(parent=template)
-    group = create_group(parent=account)
-    subaccount = create_template_subaccount(
-        parent=account,
-        group=group
-    )
-    api_client.force_login(user)
-    response = api_client.get("/v1/groups/%s/" % group.pk)
-    assert response.status_code == 200
-    assert response.json() == {
-        "id": 1,
-        "type": "group",
-        "name": group.name,
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
-        "color": None,
-        "updated_by": user.pk,
-        "created_by": user.pk,
-        "children": [subaccount.pk]
-    }
-
-
-@pytest.mark.freeze_time('2020-01-01')
-def test_update_budget_account_group(api_client, user, create_group,
-        create_budget_account, create_budget):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
+@pytest.mark.parametrize('context', ['budget', 'template'])
+def test_update_account_group(api_client, user, create_group, create_account,
+        create_context_budget, context):
+    budget = create_context_budget(context=context)
+    account = create_account(parent=budget, context=context)
     group = create_group(name="Group Name", parent=budget)
 
     api_client.force_login(user)
@@ -129,22 +85,26 @@ def test_update_budget_account_group(api_client, user, create_group,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_update_template_account_group(api_client, user, create_template,
-        create_template_account, create_group):
-    template = create_template()
-    account = create_template_account(parent=template)
-    group = create_group(name="Group Name", parent=template)
+@pytest.mark.parametrize('context', ['budget', 'template'])
+def test_update_subaccount_group(api_client, user, create_account, create_group,
+        create_subaccount, create_context_budget, context):
+    budget = create_context_budget(context=context)
+    account = create_account(parent=budget, context=context)
+    subaccount = create_subaccount(parent=account, context=context)
+    group = create_group(parent=account)
 
     api_client.force_login(user)
     response = api_client.patch("/v1/groups/%s/" % group.pk, data={
         'name': 'Group Name',
-        'children': [account.pk],
+        'children': [subaccount.pk]
     })
+    assert response.status_code == 200
+
     group.refresh_from_db()
     assert group.name == "Group Name"
     assert group.children.count() == 1
-    assert group.children.first() == account
-    assert group.parent == template
+    assert group.children.first() == subaccount
+    assert group.parent == account
 
     assert response.json() == {
         "id": group.pk,
@@ -153,40 +113,6 @@ def test_update_template_account_group(api_client, user, create_template,
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
         "color": None,
-        "created_by": user.pk,
-        "updated_by": user.pk,
-        "children": [account.pk]
-    }
-
-
-@pytest.mark.freeze_time('2020-01-01')
-def test_update_budget_subaccount_group(api_client, user, create_budget_account,
-        create_budget_subaccount, create_budget, create_group):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    subaccount = create_budget_subaccount(parent=account)
-    group = create_group(parent=account)
-
-    api_client.force_login(user)
-    response = api_client.patch("/v1/groups/%s/" % group.pk, data={
-        'name': 'Group Name',
-        'children': [subaccount.pk]
-    })
-    assert response.status_code == 200
-
-    group.refresh_from_db()
-    assert group.name == "Group Name"
-    assert group.children.count() == 1
-    assert group.children.first() == subaccount
-    assert group.parent == account
-
-    assert response.json() == {
-        "id": 1,
-        "type": "group",
-        "name": "Group Name",
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
-        "color": None,
         "updated_by": user.pk,
         "created_by": user.pk,
         "children": [subaccount.pk]
@@ -194,44 +120,54 @@ def test_update_budget_subaccount_group(api_client, user, create_budget_account,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_update_template_subaccount_group(api_client, user, create_template,
-        create_template_subaccount, create_template_account, create_group):
-    template = create_template()
-    account = create_template_account(parent=template)
-    subaccount = create_template_subaccount(parent=account)
+@pytest.mark.parametrize('context', ['budget', 'template'])
+def test_remove_subaccount_group_children(api_client, user, create_account,
+        create_group, create_subaccount, create_context_budget, context):
+    budget = create_context_budget(context=context)
+    account = create_account(parent=budget, context=context)
     group = create_group(parent=account)
-
+    subaccounts = [
+        create_subaccount(
+            parent=account,
+            context=context,
+            group=group
+        ),
+        create_subaccount(
+            parent=account,
+            context=context,
+            group=group
+        )
+    ]
     api_client.force_login(user)
     response = api_client.patch("/v1/groups/%s/" % group.pk, data={
-        'name': 'Group Name',
-        'children': [subaccount.pk]
+        'children': [subaccounts[0].pk]
     })
     assert response.status_code == 200
 
     group.refresh_from_db()
-    assert group.name == "Group Name"
     assert group.children.count() == 1
-    assert group.children.first() == subaccount
+    assert group.children.first() == subaccounts[0]
     assert group.parent == account
 
     assert response.json() == {
-        "id": 1,
+        "id": group.pk,
         "type": "group",
-        "name": "Group Name",
+        "name": group.name,
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
         "color": None,
         "updated_by": user.pk,
         "created_by": user.pk,
-        "children": [subaccount.pk]
+        "children": [subaccounts[0].pk]
     }
 
 
-def test_update_budget_account_group_child_not_same_parent(api_client, user,
-        create_budget_account, create_budget, create_group):
-    budget = create_budget()
-    another_budget = create_budget()
-    account = create_budget_account(parent=another_budget)
+@pytest.mark.parametrize('context', ['budget', 'template'])
+def test_update_account_group_child_not_same_parent(api_client, user,
+        create_account, create_context_budget, create_group, context):
+    budget = create_context_budget(context=context)
+    another_budget = create_context_budget(context=context)
+    account = create_account(parent=another_budget, context=context)
     group = create_group(parent=budget)
     api_client.force_login(user)
     response = api_client.patch("/v1/groups/%s/" % group.pk, data={
@@ -240,28 +176,15 @@ def test_update_budget_account_group_child_not_same_parent(api_client, user,
     assert response.status_code == 400
 
 
-def test_update_template_account_group_child_not_same_parent(api_client,
-        create_group, create_template_account, create_template, user):
-    template = create_template()
-    another_template = create_template()
-    account = create_template_account(parent=another_template)
-    group = create_group(parent=template)
-
-    api_client.force_login(user)
-    response = api_client.patch("/v1/groups/%s/" % group.pk, data={
-        'children': [account.pk],
-    })
-    assert response.status_code == 400
-
-
-def test_update_budget_subaccount_group_child_not_same_parent(api_client,
-        user, create_budget_subaccount, create_budget_account, create_budget,
+@pytest.mark.parametrize('context', ['budget', 'template'])
+def test_update_subaccount_group_child_not_same_parent(api_client, context,
+        user, create_subaccount, create_account, create_context_budget,
         create_group):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    subaccount = create_budget_subaccount(parent=account)
+    budget = create_context_budget(context=context)
+    account = create_account(parent=budget, context=context)
+    subaccount = create_subaccount(parent=account, context=context)
 
-    another_account = create_budget_account(parent=budget)
+    another_account = create_account(parent=budget, context=context)
     group = create_group(parent=another_account)
 
     api_client.force_login(user)
@@ -272,29 +195,12 @@ def test_update_budget_subaccount_group_child_not_same_parent(api_client,
     assert response.json()['errors'][0]['code'] == 'does_not_exist'
 
 
-def test_update_template_subaccount_group_child_not_same_parent(api_client,
-        user, create_template_subaccount, create_template_account,
-        create_template, create_group):
-    template = create_template()
-    account = create_template_account(parent=template)
-    subaccount = create_template_subaccount(parent=account)
-
-    another_account = create_template_account(parent=template)
-    group = create_group(parent=another_account)
-
-    api_client.force_login(user)
-    response = api_client.patch("/v1/groups/%s/" % group.pk, data={
-        'children': [subaccount.pk],
-    })
-    assert response.status_code == 400
-    assert response.json()['errors'][0]['code'] == 'does_not_exist'
-
-
-def test_budget_account_group_account_already_in_group(api_client, user,
-        create_budget_account, create_budget, create_group, models):
-    budget = create_budget()
+@pytest.mark.parametrize('context', ['budget', 'template'])
+def test_account_group_account_already_in_group(api_client, user, context,
+        create_account, create_context_budget, create_group, models):
+    budget = create_context_budget(context=context)
     group = create_group(parent=budget)
-    account = create_budget_account(parent=budget, group=group)
+    account = create_account(parent=budget, group=group, context=context)
     another_group = create_group(parent=budget)
 
     api_client.force_login(user)
@@ -308,31 +214,14 @@ def test_budget_account_group_account_already_in_group(api_client, user,
     assert models.Group.objects.count() == 1
 
 
-def test_template_account_group_account_already_in_group(api_client, user,
-        create_template_account, create_template, models, create_group):
-    template = create_template()
-    group = create_group(parent=template)
-    account = create_template_account(parent=template, group=group)
-    another_group = create_group(parent=template)
-
-    api_client.force_login(user)
-    response = api_client.patch("/v1/groups/%s/" % another_group.pk, data={
-        'children': [account.pk]
-    })
-    assert response.status_code == 200
-    account.refresh_from_db()
-    assert account.group == another_group
-    # The group should be deleted since it has become empty.
-    assert models.Group.objects.count() == 1
-
-
-def test_budget_subaccount_group_account_already_in_group(api_client, user,
-        create_budget_account, create_budget, create_group, models,
-        create_budget_subaccount):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
+@pytest.mark.parametrize('context', ['budget', 'template'])
+def test_subaccount_group_account_already_in_group(api_client, user, context,
+        create_account, create_context_budget, create_group, models,
+        create_subaccount):
+    budget = create_context_budget(context=context)
+    account = create_account(parent=budget, context=context)
     group = create_group(parent=account)
-    subaccount = create_budget_subaccount(parent=account, group=group)
+    subaccount = create_subaccount(parent=account, group=group, context=context)
     another_group = create_group(parent=account)
 
     api_client.force_login(user)
@@ -346,29 +235,10 @@ def test_budget_subaccount_group_account_already_in_group(api_client, user,
     assert models.Group.objects.count() == 1
 
 
-def test_template_subaccount_group_account_already_in_group(api_client, user,
-        create_template_account, create_template, create_template_subaccount,
-        create_group, models):
-    template = create_template()
-    account = create_template_account(parent=template)
-    group = create_group(parent=account)
-    subaccount = create_template_subaccount(parent=account, group=group)
-    another_group = create_group(parent=account)
-
-    api_client.force_login(user)
-    response = api_client.patch("/v1/groups/%s/" % another_group.pk, data={
-        'children': [subaccount.pk]
-    })
-    assert response.status_code == 200
-    subaccount.refresh_from_db()
-    assert subaccount.group == another_group
-    # The group should be deleted since it has become empty.
-    assert models.Group.objects.count() == 1
-
-
-def test_delete_budget_account_group(api_client, user, create_budget, models,
-        create_group):
-    budget = create_budget()
+@pytest.mark.parametrize('context', ['budget', 'template'])
+def test_delete_account_group(api_client, user, create_context_budget, models,
+        create_group, context):
+    budget = create_context_budget(context=context)
     group = create_group(parent=budget)
 
     api_client.force_login(user)
@@ -378,35 +248,11 @@ def test_delete_budget_account_group(api_client, user, create_budget, models,
     assert models.Group.objects.count() == 0
 
 
-def test_delete_template_account_group(api_client, user, create_template,
-        create_group, models):
-    template = create_template()
-    group = create_group(parent=template)
-
-    api_client.force_login(user)
-    response = api_client.delete("/v1/groups/%s/" % group.pk)
-    assert response.status_code == 204
-
-    assert models.Group.objects.count() == 0
-
-
-def test_delete_budget_subaccount_group(api_client, user, create_budget_account,
-        create_budget, create_group, models):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    group = create_group(parent=account)
-
-    api_client.force_login(user)
-    response = api_client.delete("/v1/groups/%s/" % group.pk)
-    assert response.status_code == 204
-
-    assert models.Group.objects.count() == 0
-
-
-def test_delete_template_subaccount_group(api_client, user, create_template,
-        create_template_account, create_group, models):
-    template = create_template()
-    account = create_template_account(parent=template)
+@pytest.mark.parametrize('context', ['budget', 'template'])
+def test_delete_subaccount_group(api_client, user, create_account, context,
+        create_context_budget, create_group, models):
+    budget = create_context_budget(context=context)
+    account = create_account(parent=budget, context=context)
     group = create_group(parent=account)
 
     api_client.force_login(user)
