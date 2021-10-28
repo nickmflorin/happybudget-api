@@ -35,3 +35,12 @@ def attachments_to_changed(instance, reverse, action, **kwargs):
             [validate(instance, obj) for obj in objs]
         else:
             [validate(obj, instance) for obj in objs]
+    elif action == 'post_remove':
+        if reverse and instance.subaccounts.count() == 0 \
+                and instance.actuals.count() == 0:
+            instance.delete()
+        elif not reverse:
+            objs = kwargs['model'].objects.filter(pk__in=kwargs['pk_set'])
+            for obj in objs:
+                if obj.subaccounts.count() == 0 and obj.actuals.count() == 0:
+                    obj.delete()

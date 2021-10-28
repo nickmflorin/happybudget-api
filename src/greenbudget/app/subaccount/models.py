@@ -261,7 +261,10 @@ class SubAccount(PolymorphicModel):
 )
 class BudgetSubAccount(SubAccount):
     pdf_type = 'pdf-subaccount'
-    attachments = models.ManyToManyField(to='io.Attachment')
+    attachments = models.ManyToManyField(
+        to='io.Attachment',
+        related_name='subaccounts'
+    )
     contact = models.ForeignKey(
         to='contact.Contact',
         null=True,
