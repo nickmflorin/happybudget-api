@@ -57,7 +57,8 @@ class Actual(models.Model):
         on_delete=models.CASCADE,
         editable=False
     )
-    description = models.CharField(null=True, max_length=128)
+    name = models.CharField(null=True, max_length=128)
+    notes = models.CharField(null=True, max_length=256)
     contact = models.ForeignKey(
         to='contact.Contact',
         null=True,
@@ -93,8 +94,8 @@ class Actual(models.Model):
     objects = ActualManager()
 
     FIELDS_TO_DUPLICATE = (
-        'purchase_order', 'description', 'date', 'payment_id', 'value',
-        'actual_type'
+        'purchase_order', 'name', 'date', 'payment_id', 'value',
+        'actual_type', 'notes'
     )
 
     class Meta:

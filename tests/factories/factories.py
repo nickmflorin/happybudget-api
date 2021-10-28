@@ -371,7 +371,8 @@ class ActualFactory(CustomModelFactory):
     """
     created_by = factory.SubFactory(UserFactory)
     updated_by = factory.SubFactory(UserFactory)
-    description = factory.Faker('sentence')
+    name = factory.Faker('name')
+    notes = factory.Faker('sentence')
     purchase_order = factory.Faker('random_number')
     value = 100.00
 

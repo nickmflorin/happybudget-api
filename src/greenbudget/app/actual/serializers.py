@@ -82,7 +82,13 @@ class ActualTypeSerializer(TagSerializer):
 
 class ActualSerializer(ModelSerializer):
     type = serializers.CharField(read_only=True)
-    description = serializers.CharField(
+    name = serializers.CharField(
+        required=False,
+        allow_blank=False,
+        allow_null=True,
+        trim_whitespace=False
+    )
+    notes = serializers.CharField(
         required=False,
         allow_blank=False,
         allow_null=True,
@@ -133,9 +139,10 @@ class ActualSerializer(ModelSerializer):
     class Meta:
         model = Actual
         fields = (
-            'id', 'description', 'created_by', 'updated_by', 'created_at',
+            'id', 'name', 'created_by', 'updated_by', 'created_at',
             'updated_at', 'purchase_order', 'date', 'payment_id', 'value',
-            'actual_type', 'contact', 'owner', 'type', 'attachments')
+            'actual_type', 'contact', 'owner', 'type', 'attachments',
+            'notes')
         response = {
             'attachments': (
                 SimpleAttachmentSerializer,
