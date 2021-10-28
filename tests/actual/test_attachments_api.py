@@ -4,6 +4,7 @@ from django.test import override_settings
 
 
 @pytest.mark.freeze_time('2020-01-01')
+@override_settings(APP_URL="https://api.greenbudget.com")
 def test_attachments_properly_serializes(api_client, user, create_actual,
         create_budget, create_attachment):
     budget = create_budget()
@@ -20,10 +21,24 @@ def test_attachments_properly_serializes(api_client, user, create_actual,
     assert response.status_code == 200
     assert 'attachments' in response.json()
     assert response.json()['attachments'] == [
-        {'id': attachments[0].pk,
-            'name': 'attachment1.jpeg', 'extension': 'jpeg'},
-        {'id': attachments[1].pk,
-            'name': 'attachment2.jpeg', 'extension': 'jpeg'}
+        {
+            'id': attachments[0].pk,
+            'name': 'attachment1.jpeg',
+            'extension': 'jpeg',
+            'url': (
+                'https://api.greenbudget.com'
+                '/media/users/1/attachments/attachment1.jpeg'
+            )
+        },
+        {
+            'id': attachments[1].pk,
+            'name': 'attachment2.jpeg',
+            'extension': 'jpeg',
+            'url': (
+                'https://api.greenbudget.com'
+                '/media/users/1/attachments/attachment2.jpeg'
+            )
+        }
     ]
 
 
@@ -89,6 +104,7 @@ def test_delete_attachment(api_client, user, create_actual, create_budget,
 
 
 @pytest.mark.freeze_time('2020-01-01')
+@override_settings(APP_URL="https://api.greenbudget.com")
 def test_update_attachments(api_client, user, create_actual, create_budget,
         create_attachment):
     budget = create_budget()
@@ -112,12 +128,33 @@ def test_update_attachments(api_client, user, create_actual, create_budget,
 
     assert 'attachments' in response.json()
     assert response.json()['attachments'] == [
-        {'id': attachments[0].pk,
-            'name': 'attachment1.jpeg', 'extension': 'jpeg'},
-        {'id': attachments[1].pk,
-            'name': 'attachment2.jpeg', 'extension': 'jpeg'},
-        {'id': additional_attachment.pk,
-            'name': 'attachment3.jpeg', 'extension': 'jpeg'}
+        {
+            'id': attachments[0].pk,
+            'name': 'attachment1.jpeg',
+            'extension': 'jpeg',
+            'url': (
+                'https://api.greenbudget.com'
+                '/media/users/1/attachments/attachment1.jpeg'
+            )
+        },
+        {
+            'id': attachments[1].pk,
+            'name': 'attachment2.jpeg',
+            'extension': 'jpeg',
+            'url': (
+                'https://api.greenbudget.com'
+                '/media/users/1/attachments/attachment2.jpeg'
+            )
+        },
+        {
+            'id': additional_attachment.pk,
+            'name': 'attachment3.jpeg',
+            'extension': 'jpeg',
+            'url': (
+                'https://api.greenbudget.com'
+                '/media/users/1/attachments/attachment3.jpeg'
+            )
+        }
     ]
 
 

@@ -47,10 +47,11 @@ class SimpleAttachmentSerializer(serializers.ModelSerializer):
     id = serializers.PrimaryKeyRelatedField(read_only=True)
     name = serializers.SerializerMethodField()
     extension = serializers.SerializerMethodField()
+    url = serializers.URLField(read_only=True, source='file.url')
 
     class Meta:
         model = Attachment
-        fields = ('id', 'name', 'extension')
+        fields = ('id', 'name', 'extension', 'url')
 
     def get_extension(self, instance):
         # Note that imghdr uses the local file system, so it will look at the
@@ -72,12 +73,11 @@ class SimpleAttachmentSerializer(serializers.ModelSerializer):
 
 
 class AttachmentSerializer(SimpleAttachmentSerializer):
-    url = serializers.URLField(read_only=True, source='file.url')
     size = serializers.IntegerField(read_only=True, source='file.size')
 
     class Meta(SimpleAttachmentSerializer.Meta):
         model = Attachment
-        fields = SimpleAttachmentSerializer.Meta.fields + ('size', 'url')
+        fields = SimpleAttachmentSerializer.Meta.fields + ('size', )
 
 
 class UploadAttachmentSerializer(serializers.ModelSerializer):
