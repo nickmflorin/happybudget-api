@@ -42,7 +42,7 @@ class FileExtensionError(FileError):
 
 
 class MissingFileExtension(FileNameError):
-    default_detail = _("The file name extension is missing an extension.")
+    default_detail = _("The file name is missing an extension.")
     default_info_detail = "The file name `{filename}` is missing an extension."
 
 

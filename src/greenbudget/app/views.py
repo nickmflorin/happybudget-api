@@ -290,8 +290,18 @@ def exception_handler(exc, context):
         data = map_details(**kwargs)
 
     elif isinstance(exc.detail, dict):
-        error_type = getattr(exc, 'error_type', 'field')
+        default_error_type = 'field'
+        if '__all__' in exc.detail:
+            default_error_type = 'global'
+
+        error_type = getattr(exc, 'error_type', default_error_type)
         data = map_exception_details(exc, error_type=error_type)
+
+        for err in data:
+            if err['error_type'] == 'global':
+                assert err['field'] == '__all__', \
+                    "Invalid field included for global error!"
+                del err["field"]
 
     else:
         data = map_exception_details(exc, default_error_type='global')
