@@ -60,7 +60,7 @@ class Markup(models.Model):
 
     class Meta:
         get_latest_by = "updated_at"
-        ordering = ('-created_at', )
+        ordering = ('created_at', )
         verbose_name = "Markup"
         verbose_name_plural = "Markups"
 

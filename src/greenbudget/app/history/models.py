@@ -38,7 +38,7 @@ class Event(PolymorphicModel):
         # models.
         base_manager_name = 'non_polymorphic'
         get_latest_by = "created_at"
-        ordering = ('-created_at', )
+        ordering = ('created_at', )
         verbose_name = "Event"
         verbose_name_plural = "Events"
 
@@ -54,7 +54,7 @@ class CreateEvent(Event):
 
     class Meta:
         get_latest_by = "created_at"
-        ordering = ('-created_at', )
+        ordering = ('created_at', )
         verbose_name = "Create Event"
         verbose_name_plural = "Create Events"
 
@@ -69,7 +69,7 @@ class FieldAlterationEvent(Event):
 
     class Meta:
         get_latest_by = "created_at"
-        ordering = ('-created_at', )
+        ordering = ('created_at', )
         verbose_name = "Field Alteration Event"
         verbose_name_plural = "Field Alteration Events"
 
