@@ -1,93 +1,22 @@
-import logging
-
 from django import dispatch
-from django.core.exceptions import ObjectDoesNotExist
 
 from greenbudget.app import signals
-from greenbudget.app.budget.signals import (
-    estimate_budget, actualize_budget, calculate_budget)
-
 from .models import BudgetAccount, TemplateAccount
 
 
-logger = logging.getLogger('signals')
-
-
-@signals.bulk_context.handler(
-    id=lambda instance: instance.pk,
-    queue_in_context=True,
-    side_effect=lambda instance, markups_to_be_deleted: signals.SideEffect(
-        func=estimate_budget,
-        args=(instance.parent, ),
-        kwargs={'markups_to_be_deleted': markups_to_be_deleted}
-    )
-)
-def estimate_account(instance, markups_to_be_deleted=None):
-    instance.estimate(markups_to_be_deleted=markups_to_be_deleted)
-    instance.save(
-        suppress_budget_update=True,
-        suppress_dispatch_fields=True,
-        suppress_history=True
-    )
-
-
-@signals.bulk_context.handler(
-    id=lambda instance: instance.pk,
-    queue_in_context=True,
-    side_effect=lambda instance: signals.SideEffect(
-        func=actualize_budget,
-        args=(instance.parent, ),
-    )
-)
-def actualize_account(instance, markups_to_be_deleted=None):
-    instance.actualize(markups_to_be_deleted=markups_to_be_deleted)
-    if instance.actual != instance.previous_value('actual'):
-        instance.save(
-            update_fields=["actual"],
-            suppress_budget_update=True,
-            suppress_history=True,
-            suppress_dispatch_fields=True,
-        )
-
-
-@signals.bulk_context.handler(
-    id=lambda instance: instance.pk,
-    queue_in_context=True,
-    side_effect=lambda instance, markups_to_be_deleted: [
-        signals.SideEffect(
-            func=estimate_account,
-            args=(instance, ),
-            kwargs={'markups_to_be_deleted': markups_to_be_deleted}
-        ),
-        signals.SideEffect(
-            func=actualize_account,
-            args=(instance, ),
-            kwargs={'markups_to_be_deleted': markups_to_be_deleted, },
-            conditional=isinstance(instance, BudgetAccount)
-        )
-    ]
-)
-def calculate_account(instance, markups_to_be_deleted=None):
-    pass
-
-
-@dispatch.receiver(signals.post_create, sender=BudgetAccount)
-@dispatch.receiver(signals.post_create, sender=TemplateAccount)
-def account_created(instance, **kwargs):
-    calculate_budget(instance.parent, )
+@dispatch.receiver(signals.post_save, sender=BudgetAccount)
+@dispatch.receiver(signals.post_save, sender=TemplateAccount)
+def account_saved(instance, **kwargs):
+    instance.invalidate_caches(entities=["detail"])
+    instance.parent.invalidate_caches(entities=["children"])
+    with signals.post_save.disable(sender=type(instance)):
+        instance.calculate(commit=True, trickle=True)
 
 
 @dispatch.receiver(signals.post_delete, sender=BudgetAccount)
 @dispatch.receiver(signals.post_delete, sender=TemplateAccount)
 def account_deleted(instance, **kwargs):
-    try:
-        parent = instance.parent
-    except ObjectDoesNotExist:
-        # The Account instance can be deleted in the process of deleting it's
-        # parent, at which point the parent will be None or raise a DoesNotExist
-        # Exception, until that Account instance is deleted.
-        pass
-    else:
-        if parent is None:
-            return
-        calculate_budget(parent)
+    instance.invalidate_caches(entities=["detail"])
+    if instance.intermittent_parent is not None:
+        instance.intermittent_parent.invalidate_caches(entities=["children"])
+        instance.intermittent_parent.calculate(commit=True)

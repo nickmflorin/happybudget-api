@@ -116,9 +116,8 @@ def test_create_markup_actual(api_client, user, create_budget_account,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_bulk_create_budget_actuals(api_client, user, create_budget,
-        create_budget_account, create_budget_subaccount, models,
-        create_markup):
+def test_bulk_create_actuals(api_client, user, create_budget, create_markup,
+        create_budget_account, create_budget_subaccount, models):
     budget = create_budget()
     accounts = [
         create_budget_account(parent=budget),
@@ -144,6 +143,7 @@ def test_bulk_create_budget_actuals(api_client, user, create_budget,
             markups=[markups[1]]
         )
     ]
+
     api_client.force_login(user)
     response = api_client.patch(
         "/v1/budgets/%s/bulk-create-actuals/" % budget.pk,
@@ -249,9 +249,8 @@ def test_bulk_create_budget_actuals(api_client, user, create_budget,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_bulk_update_budget_actuals(api_client, user, create_budget,
-        create_budget_account, create_budget_subaccount, create_actual,
-        create_markup):
+def test_bulk_update_actuals(api_client, user, create_budget, create_markup,
+        create_budget_account, create_budget_subaccount, create_actual):
     budget = create_budget()
     accounts = [
         create_budget_account(parent=budget),
@@ -360,6 +359,120 @@ def test_bulk_update_budget_actuals(api_client, user, create_budget,
     budget.refresh_from_db()
     assert budget.nominal_value == 300.0
     assert budget.actual == 290.0
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_change_actual_owner_in_bulk_update(api_client, user, create_budget,
+        create_budget_account, create_budget_subaccount, create_actual,
+        create_markup):
+
+    budget = create_budget()
+    accounts = [
+        create_budget_account(parent=budget),
+        create_budget_account(parent=budget)
+    ]
+    markups = [
+        create_markup(parent=accounts[0]),
+        create_markup(parent=accounts[1])
+    ]
+    subaccounts = [
+        create_budget_subaccount(
+            parent=accounts[0],
+            quantity=1,
+            rate=100,
+            multiplier=1,
+        ),
+        create_budget_subaccount(
+            parent=accounts[1],
+            quantity=2,
+            rate=50,
+            multiplier=2,
+        )
+    ]
+    actuals = [
+        create_actual(owner=subaccounts[0], budget=budget, value=40.0),
+        create_actual(owner=subaccounts[0], budget=budget, value=30.0),
+        create_actual(owner=subaccounts[1], budget=budget, value=160.0),
+        create_actual(owner=subaccounts[1], budget=budget, value=10.0),
+        create_actual(owner=markups[0], budget=budget, value=20.0),
+        create_actual(owner=markups[0], budget=budget, value=10.0),
+        create_actual(owner=markups[1], budget=budget, value=50.0),
+        create_actual(owner=markups[1], budget=budget, value=40.0),
+    ]
+
+    # Make sure everything is calculated correctly before updating via the API
+    # so we can more clearly understand why an error might occur.
+    subaccounts[0].refresh_from_db()
+    assert subaccounts[0].nominal_value == 100.0
+    assert subaccounts[0].actual == 30.0 + 40.0
+
+    subaccounts[1].refresh_from_db()
+    assert subaccounts[1].nominal_value == 200.0
+    assert subaccounts[1].actual == 160.0 + 10.0
+
+    accounts[0].refresh_from_db()
+    assert accounts[0].nominal_value == 100.0
+    assert accounts[0].actual == 30.0 + 40.0 + 20.0 + 10.0
+
+    accounts[1].refresh_from_db()
+    assert accounts[1].nominal_value == 200.0
+    assert accounts[1].actual == 160.0 + 10.0 + 50.0 + 40.0
+
+    budget.refresh_from_db()
+    assert budget.nominal_value == 300.0
+    assert budget.actual == 360.0
+
+    api_client.force_login(user)
+    response = api_client.patch(
+        "/v1/budgets/%s/bulk-update-actuals/" % budget.pk,
+        format='json',
+        data={'data': [{
+            "id": actuals[0].pk,
+            "owner": {
+                "id": markups[0].pk,
+                "type": "markup"
+            }
+        }]}
+    )
+
+    assert response.status_code == 200
+    actuals[0].refresh_from_db()
+    assert actuals[0].owner == markups[0]
+
+    markups[0].refresh_from_db()
+    assert markups[0].actual == 70.0
+
+    subaccounts[0].refresh_from_db()
+    assert subaccounts[0].actual == 30.0
+
+    # The data in the response refers to base the entity we are updating, A.K.A.
+    # the Budget.
+    assert response.json()['data']['id'] == budget.pk
+    assert response.json()['data']['nominal_value'] == 300.0
+    assert response.json()['data']['actual'] == 360.0
+
+    # Make sure the actual SubAccount(s) were updated in the database.
+    subaccounts[0].refresh_from_db()
+    assert subaccounts[0].nominal_value == 100.0
+    assert subaccounts[0].actual == 30.0
+
+    subaccounts[1].refresh_from_db()
+    assert subaccounts[1].nominal_value == 200.0
+    assert subaccounts[1].actual == 160.0 + 10.0
+
+    # Make sure the actual Account(s) were updated in the database.
+    accounts[0].refresh_from_db()
+    assert accounts[0].nominal_value == 100.0
+    assert accounts[0].actual == 30.0 + 40.0 + 20.0 + 10.0
+
+    accounts[1].refresh_from_db()
+    assert accounts[1].nominal_value == 200.0
+    assert accounts[1].actual == 160.0 + 10.0 + 50.0 + 40.0
+
+    # Make sure the Budget was updated in the database.
+    budget.refresh_from_db()
+    assert budget.nominal_value == 300.0
+    assert budget.actual == 360.0
 
 
 def test_bulk_delete_actuals(api_client, user, create_budget, create_actual,

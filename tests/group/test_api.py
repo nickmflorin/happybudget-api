@@ -195,7 +195,7 @@ def test_update_subaccount_group_child_not_same_parent(api_client, context,
     assert response.json()['errors'][0]['code'] == 'does_not_exist'
 
 
-@pytest.mark.parametrize('context', ['budget', 'template'])
+@pytest.mark.parametrize('context', ['budget'])
 def test_account_group_account_already_in_group(api_client, user, context,
         create_account, create_context_budget, create_group, models):
     budget = create_context_budget(context=context)

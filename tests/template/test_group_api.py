@@ -1,15 +1,12 @@
 import pytest
 
-from greenbudget.app import signals
-
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_get_template_account_groups(api_client, user, create_template,
         create_template_account, create_group):
-    with signals.disable():
-        template = create_template()
-        group = create_group(parent=template)
-        account = create_template_account(parent=template, group=group)
+    template = create_template()
+    group = create_group(parent=template)
+    account = create_template_account(parent=template, group=group)
     api_client.force_login(user)
     response = api_client.get("/v1/templates/%s/groups/" % template.pk)
     assert response.status_code == 200
@@ -30,9 +27,8 @@ def test_get_template_account_groups(api_client, user, create_template,
 @pytest.mark.freeze_time('2020-01-01')
 def test_create_group(api_client, user, create_template, create_template_account,
         models):
-    with signals.disable():
-        template = create_template()
-        account = create_template_account(parent=template)
+    template = create_template()
+    account = create_template_account(parent=template)
 
     api_client.force_login(user)
     response = api_client.post("/v1/templates/%s/groups/" % template.pk, data={
@@ -65,13 +61,12 @@ def test_create_group(api_client, user, create_template, create_template_account
 @pytest.mark.freeze_time('2020-01-01')
 def test_create_group_invalid_child(api_client, user, create_template_account,
         create_template):
-    with signals.disable():
-        template = create_template()
-        another_template = create_template()
-        # We are trying to create the grouping under `template` but including
-        # children that belong to `another_template`, which should trigger a 400
-        # response.
-        account = create_template_account(parent=another_template)
+    template = create_template()
+    another_template = create_template()
+    # We are trying to create the grouping under `template` but including
+    # children that belong to `another_template`, which should trigger a 400
+    # response.
+    account = create_template_account(parent=another_template)
 
     api_client.force_login(user)
     response = api_client.post("/v1/templates/%s/groups/" % template.pk, data={

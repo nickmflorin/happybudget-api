@@ -7,11 +7,7 @@ from greenbudget.app import signals
 from .managers import FringeManager, BudgetFringeManager, TemplateFringeManager
 
 
-@signals.model(
-    flags='suppress_budget_update',
-    user_field='updated_by',
-    dispatch_fields=['rate', 'cutoff', 'unit']
-)
+@signals.model(user_field='updated_by')
 class Fringe(models.Model):
     type = "fringe"
     name = models.CharField(max_length=128, null=True)

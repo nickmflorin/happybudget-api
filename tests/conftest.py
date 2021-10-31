@@ -47,6 +47,7 @@ def disable_logging(caplog):
     caplog.set_level(logging.CRITICAL, logger="factory")
     caplog.set_level(logging.CRITICAL, logger="faker.factory")
     caplog.set_level(logging.CRITICAL, logger="factory-boy")
+    caplog.set_level(logging.INFO, logger="greenbudget")
 
 
 @pytest.fixture

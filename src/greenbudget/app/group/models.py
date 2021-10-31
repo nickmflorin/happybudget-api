@@ -9,7 +9,7 @@ from greenbudget.app.budgeting.utils import get_child_instance_cls
 from .managers import GroupManager
 
 
-@signals.model('suppress_budget_update')
+@signals.model()
 class Group(models.Model):
     type = "group"
     created_at = models.DateTimeField(auto_now_add=True)

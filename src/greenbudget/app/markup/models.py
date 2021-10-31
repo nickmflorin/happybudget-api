@@ -1,23 +1,27 @@
 import functools
+import logging
 from model_utils import Choices
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.contrib.contenttypes.fields import (
     GenericRelation, GenericForeignKey)
 from django.contrib.contenttypes.models import ContentType
 
 from greenbudget.app import signals
+from greenbudget.app.account.cache import account_markups_cache
 from greenbudget.app.actual.models import Actual
+from greenbudget.app.budget.cache import budget_markups_cache
 from greenbudget.app.budgeting.utils import get_child_instance_cls
+from greenbudget.app.subaccount.cache import subaccount_markups_cache
 
 from .managers import MarkupManager
 
 
-@signals.model(
-    flags=['suppress_budget_update', 'suppress_markups_changed'],
-    user_field='updated_by',
-    dispatch_fields=['unit', 'rate', 'object_id', 'content_type']
-)
+logger = logging.getLogger('greenbudget')
+
+
+@signals.model(user_field='updated_by')
 class Markup(models.Model):
     type = "markup"
     identifier = models.CharField(null=True, max_length=128)
@@ -58,6 +62,12 @@ class Markup(models.Model):
     FIELDS_TO_DUPLICATE = ('identifier', 'description', 'unit', 'rate')
     FIELDS_TO_DERIVE = FIELDS_TO_DUPLICATE
 
+    caches = {
+        ('subaccount', ): subaccount_markups_cache,
+        ('account', ): account_markups_cache,
+        ('budget', 'template'): budget_markups_cache
+    }
+
     class Meta:
         get_latest_by = "updated_at"
         ordering = ('created_at', )
@@ -88,6 +98,28 @@ class Markup(models.Model):
     def children(self):
         # Note that Groups are not included as children.
         return self.child_instance_cls.objects.filter(markups=self)
+
+    @property
+    def intermittent_parent(self):
+        try:
+            return self.parent
+        except ObjectDoesNotExist:
+            # The Account instance can be deleted in the process of deleting
+            # it's parent, at which point the parent will be None or raise a
+            # DoesNotExist Exception, until that Account instance is deleted.
+            pass
+
+    def invalidate_caches(self):
+        parent = self.intermittent_parent
+        if parent is None:
+            logger.warn(
+                "Cannot invalidate Markup caches because parent is not "
+                "defined anymore."
+            )
+        else:
+            for k, v in self.caches.items():
+                if parent.type in k:
+                    v.invalidate(parent)
 
     def get_children_operator(self):
         if self.parent_instance_cls.type in ('account', 'subaccount'):

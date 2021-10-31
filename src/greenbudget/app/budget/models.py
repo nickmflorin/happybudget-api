@@ -1,19 +1,31 @@
+import datetime
 import functools
+import logging
 from model_utils import Choices
-from polymorphic.models import PolymorphicModel
 
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django.utils import timezone
 
 from greenbudget.app import signals
-from greenbudget.app.comment.models import Comment
+from greenbudget.app.budgeting.models import BudgetingPolymorphicModel
 from greenbudget.app.group.models import Group
 from greenbudget.app.markup.models import Markup
 from greenbudget.app.io.utils import upload_user_image_to
 
+from .cache import (
+    budget_markups_cache,
+    budget_detail_cache,
+    budget_accounts_cache,
+    budget_groups_cache,
+    budget_fringes_cache,
+    budget_actuals_cache
+)
 from .duplication import BudgetDuplicator
 from .managers import BudgetManager, BaseBudgetManager
+
+
+logger = logging.getLogger('greenbudget')
 
 
 def upload_to(instance, filename):
@@ -32,7 +44,7 @@ ESTIMATED_FIELDS = (
 CALCULATED_FIELDS = ESTIMATED_FIELDS + ('actual', )
 
 
-class BaseBudget(PolymorphicModel):
+class BaseBudget(BudgetingPolymorphicModel):
     name = models.CharField(max_length=256)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -61,6 +73,15 @@ class BaseBudget(PolymorphicModel):
     objects = BaseBudgetManager()
     non_polymorphic = models.Manager()
 
+    CACHES = [
+        budget_detail_cache,
+        budget_markups_cache,
+        budget_groups_cache,
+        budget_fringes_cache,
+        budget_actuals_cache,
+        budget_accounts_cache
+    ]
+
     class Meta:
         get_latest_by = "updated_at"
         ordering = ('-updated_at', )
@@ -83,18 +104,29 @@ class BaseBudget(PolymorphicModel):
         return self.nominal_value + self.accumulated_fringe_contribution \
             + self.accumulated_markup_contribution
 
+    def mark_updated(self):
+        logger.debug(
+            "Marking Budget %s Updated at %s"
+            % (self.pk, datetime.datetime.now())
+        )
+        self.save(update_fields=['updated_at'])
+
     def accumulate_value(self, children=None):
         children = children or self.children.all()
+        previous_value = self.accumulated_value
         self.accumulated_value = functools.reduce(
             lambda current, account: current + account.nominal_value,
             children,
             0
         )
+        return previous_value != self.accumulated_value
 
     def accumulate_markup_contribution(self, children=None, to_be_deleted=None):
         children = children or self.children.all()
         markups = self.children_markups.filter(
             unit=Markup.UNITS.flat).exclude(pk__in=to_be_deleted or [])
+
+        previous_value = self.accumulated_markup_contribution
         self.accumulated_markup_contribution = functools.reduce(
             lambda current, account: current + account.markup_contribution
             + account.accumulated_markup_contribution,
@@ -105,39 +137,43 @@ class BaseBudget(PolymorphicModel):
             markups,
             0
         )
+        return self.accumulated_markup_contribution != previous_value
 
     def accumulate_fringe_contribution(self, children=None):
         children = children or self.children.all()
+        previous_value = self.accumulated_fringe_contribution
         self.accumulated_fringe_contribution = functools.reduce(
             lambda current, account: current
             + account.accumulated_fringe_contribution,
             children,
             0
         )
+        return self.accumulated_fringe_contribution != previous_value
 
-    def actualize(self, children=None, markups_to_be_deleted=None):
-        children = children or self.children.all()
-        self.actual = functools.reduce(
-            lambda current, markup: current + (markup.actual or 0),
-            self.children_markups.exclude(pk__in=markups_to_be_deleted or []),
-            0
-        ) + functools.reduce(
-            lambda current, child: current + (child.actual or 0),
-            children,
-            0
-        )
+    def estimate(self, **kwargs):
+        children, kwargs = self.children_from_kwargs(**kwargs)
 
-    def estimate(self, markups_to_be_deleted=None):
-        children = self.children.all()
-        self.accumulate_value(children=children)
-        self.accumulate_fringe_contribution(children=children)
-        self.accumulate_markup_contribution(
-            children=children,
-            to_be_deleted=markups_to_be_deleted
-        )
+        alterations = [
+            self.accumulate_value(children=children),
+            self.accumulate_fringe_contribution(children=children),
+            self.accumulate_markup_contribution(
+                children=children,
+                to_be_deleted=kwargs.get('markups_to_be_deleted', [])
+            )
+        ]
+        if any(alterations) and kwargs.get('commit', False):
+            logger.debug(
+                "Updating %s %s -> Accumulated Value: %s"
+                % (type(self).__name__, self.pk, self.accumulated_value)
+            )
+            self.save(update_fields=self.reestimated_fields)
+        return any(alterations)
+
+    def calculate(self, **kwargs):
+        return self.estimate(**kwargs)
 
 
-@signals.model(flags='suppress_budget_update', track_fields=['actual'])
+@signals.model()
 class Budget(BaseBudget):
     type = "budget"
     pdf_type = "pdf-budget"
@@ -162,8 +198,6 @@ class Budget(BaseBudget):
     studio_shoot_days = models.IntegerField(default=0)
     location_days = models.IntegerField(default=0)
 
-    comments = GenericRelation(Comment)
-
     objects = BudgetManager()
     non_polymorphic = models.Manager()
 
@@ -180,3 +214,47 @@ class Budget(BaseBudget):
     def child_instance_cls(self):
         from greenbudget.app.account.models import BudgetAccount
         return BudgetAccount
+
+    def actualize(self, **kwargs):
+        children, kwargs = self.children_from_kwargs(**kwargs)
+        markups_to_be_deleted = kwargs.get('markups_to_be_deleted', []) or []
+
+        previous_value = self.actual
+        self.actual = functools.reduce(
+            lambda current, markup: current + (markup.actual or 0),
+            self.children_markups.exclude(pk__in=markups_to_be_deleted),
+            0
+        ) + functools.reduce(
+            lambda current, child: current + (child.actual or 0),
+            children,
+            0
+        )
+        if previous_value != self.actual and kwargs.get('commit', False):
+            logger.debug(
+                "Updating %s %s -> Actual: %s"
+                % (type(self).__name__, self.pk, self.actual)
+            )
+            self.save(update_fields=['actual'])
+        return previous_value != self.actual
+
+    def calculate(self, **kwargs):
+        children, kwargs = self.children_from_kwargs(**kwargs)
+        commit = kwargs.pop('commit', False)
+        alterations = [
+            super().calculate(
+                children=children,
+                trickle=False,
+                commit=False,
+                **kwargs
+            ),
+            self.actualize(
+                children=children,
+                trickle=False,
+                commit=False,
+                **kwargs
+            )
+        ]
+        if any(alterations) and commit:
+            self.save(
+                update_fields=tuple(self.reestimated_fields) + ('actual', ))
+        return any(alterations)

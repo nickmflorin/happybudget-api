@@ -1,15 +1,12 @@
 import pytest
 
-from greenbudget.app import signals
-
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_type_properly_serializes(api_client, user, create_actual, create_budget,
         create_actual_type):
-    with signals.disable():
-        budget = create_budget()
-        actual_type = create_actual_type()
-        actual = create_actual(budget=budget, actual_type=actual_type)
+    budget = create_budget()
+    actual_type = create_actual_type()
+    actual = create_actual(budget=budget, actual_type=actual_type)
 
     api_client.force_login(user)
     response = api_client.get("/v1/actuals/%s/" % actual.pk)
@@ -28,10 +25,9 @@ def test_type_properly_serializes(api_client, user, create_actual, create_budget
 @pytest.mark.freeze_time('2020-01-01')
 def test_update_actual_type(api_client, user, create_budget, create_actual,
         create_actual_type):
-    with signals.disable():
-        budget = create_budget()
-        actual_type = create_actual_type()
-        actual = create_actual(budget=budget)
+    budget = create_budget()
+    actual_type = create_actual_type()
+    actual = create_actual(budget=budget)
 
     api_client.force_login(user)
     response = api_client.patch("/v1/actuals/%s/" % actual.pk, data={
@@ -196,6 +192,7 @@ def test_change_actual_parent_to_markup(api_client, user, create_budget,
             "type": "markup"
         }}
     )
+
     assert response.status_code == 200
     assert response.json() == {
         "id": actuals[0].pk,

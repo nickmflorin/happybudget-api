@@ -1,18 +1,16 @@
 import pytest
 
-from greenbudget.app import signals
 from greenbudget.lib.utils.urls import add_query_params_to_url
 
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_get_budget_accounts(api_client, user, create_budget_account,
         create_budget):
-    with signals.disable():
-        budget = create_budget()
-        accounts = [
-            create_budget_account(parent=budget),
-            create_budget_account(parent=budget)
-        ]
+    budget = create_budget()
+    accounts = [
+        create_budget_account(parent=budget),
+        create_budget_account(parent=budget)
+    ]
     api_client.force_login(user)
     response = api_client.get("/v1/budgets/%s/accounts/" % budget.pk)
     assert response.status_code == 200
@@ -58,12 +56,11 @@ def test_get_budget_accounts(api_client, user, create_budget_account,
 @pytest.mark.freeze_time('2020-01-01')
 def test_get_budget_accounts_filtered_by_id(api_client, user, create_budget,
         create_budget_account):
-    with signals.disable():
-        budget = create_budget()
-        accounts = [
-            create_budget_account(parent=budget),
-            create_budget_account(parent=budget)
-        ]
+    budget = create_budget()
+    accounts = [
+        create_budget_account(parent=budget),
+        create_budget_account(parent=budget)
+    ]
     api_client.force_login(user)
     url = add_query_params_to_url(
         "/v1/budgets/%s/accounts/" % budget.pk, ids=[accounts[0].pk, 400])
@@ -168,13 +165,12 @@ def test_bulk_update_budget_accounts(api_client, user, create_budget,
 
 def test_bulk_update_budget_accounts_outside_budget(api_client, user,
         create_budget, create_budget_account):
-    with signals.disable():
-        budget = create_budget()
-        another_budget = create_budget()
-        accounts = [
-            create_budget_account(parent=budget),
-            create_budget_account(parent=another_budget)
-        ]
+    budget = create_budget()
+    another_budget = create_budget()
+    accounts = [
+        create_budget_account(parent=budget),
+        create_budget_account(parent=another_budget)
+    ]
     api_client.force_login(user)
     response = api_client.patch(
         "/v1/budgets/%s/bulk-update-accounts/" % budget.pk,
@@ -240,28 +236,27 @@ def test_bulk_create_budget_accounts(api_client, user, create_budget, models):
 
 def test_bulk_delete_budget_accounts(api_client, user, create_budget,
         create_budget_account, create_budget_subaccount, models):
-    with signals.disable():
-        budget = create_budget()
-        accounts = [
-            create_budget_account(parent=budget),
-            create_budget_account(parent=budget)
-        ]
-        # We need to create SubAccount(s) so that the accounts themselves have
-        # calculated values, and thus the Budget itself has calculated values, so
-        # we can test whether or not the deletion recalculates the metrics on the
-        # Budget.
-        create_budget_subaccount(
-            parent=accounts[0],
-            quantity=1,
-            rate=100,
-            multiplier=1
-        )
-        create_budget_subaccount(
-            parent=accounts[1],
-            quantity=1,
-            rate=100,
-            multiplier=1
-        )
+    budget = create_budget()
+    accounts = [
+        create_budget_account(parent=budget),
+        create_budget_account(parent=budget)
+    ]
+    # We need to create SubAccount(s) so that the accounts themselves have
+    # calculated values, and thus the Budget itself has calculated values, so
+    # we can test whether or not the deletion recalculates the metrics on the
+    # Budget.
+    create_budget_subaccount(
+        parent=accounts[0],
+        quantity=1,
+        rate=100,
+        multiplier=1
+    )
+    create_budget_subaccount(
+        parent=accounts[1],
+        quantity=1,
+        rate=100,
+        multiplier=1
+    )
     api_client.force_login(user)
     response = api_client.patch(
         "/v1/budgets/%s/bulk-delete-accounts/" % budget.pk, data={

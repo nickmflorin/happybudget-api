@@ -15,7 +15,6 @@ def test_markup_changed_to_flat(create_account, create_context_budget,
         rate=10,
         count=2
     )
-
     assert account.nominal_value == 800.0
     assert account.markup_contribution == 0.0
     markups = [

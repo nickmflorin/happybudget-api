@@ -2,8 +2,6 @@ import pytest
 
 from greenbudget.lib.utils.dateutils import api_datetime_string
 
-from greenbudget.app import signals
-
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_get_budgets(api_client, user, create_budget):
@@ -238,11 +236,11 @@ def test_delete_budget(api_client, user, create_budget, models,
 
 def test_get_budget_subaccounts(api_client, user, create_budget,
         create_budget_account, create_budget_subaccount):
-    with signals.disable():
-        budget = create_budget()
-        account = create_budget_account(parent=budget)
-        sub = create_budget_subaccount(parent=account, identifier="Jack")
-        create_budget_subaccount(parent=account, identifier="Bob")
+    budget = create_budget()
+    account = create_budget_account(parent=budget)
+    sub = create_budget_subaccount(parent=account, identifier="Jack")
+    create_budget_subaccount(parent=account, identifier="Bob")
+
     api_client.force_login(user)
     response = api_client.get(
         "/v1/budgets/%s/subaccounts/?search=%s"

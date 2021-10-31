@@ -1,21 +1,18 @@
 import pytest
 
-from greenbudget.app import signals
 from greenbudget.app.markup.models import Markup
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_template_account_markups(api_client, user, models,
-        create_template_account, create_template, create_markup,
-        create_template_subaccount):
-    with signals.disable():
-        template = create_template()
-        account = create_template_account(parent=template)
-        markup = create_markup(parent=account)
-        subaccounts = [
-            create_template_subaccount(parent=account, markups=[markup]),
-            create_template_subaccount(parent=account, markups=[markup])
-        ]
+def test_get_template_account_markups(api_client, user, models, create_template,
+        create_template_account, create_markup, create_template_subaccount):
+    template = create_template()
+    account = create_template_account(parent=template)
+    markup = create_markup(parent=account)
+    subaccounts = [
+        create_template_subaccount(parent=account, markups=[markup]),
+        create_template_subaccount(parent=account, markups=[markup])
+    ]
 
     api_client.force_login(user)
     response = api_client.get("/v1/accounts/%s/markups/" % account.pk)
@@ -42,9 +39,8 @@ def test_get_template_account_markups(api_client, user, models,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_template_account_flat_markup(api_client, user,
-        create_template_subaccounts, create_template_account, create_template,
-        models):
+def test_create_template_account_flat_markup(api_client, user, create_template,
+        create_template_subaccounts, create_template_account, models):
     template = create_template()
     account = create_template_account(parent=template)
     subaccounts = create_template_subaccounts(
@@ -53,7 +49,6 @@ def test_create_template_account_flat_markup(api_client, user,
         rate=10,
         count=2
     )
-
     # Make sure all data is properly calculated before API request to avoid
     # confusion in source of potential errors.
     subaccounts[0].refresh_from_db()
@@ -126,9 +121,8 @@ def test_create_template_account_flat_markup(api_client, user,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_template_account_percent_markup(api_client, user,
-        create_template_subaccounts, create_template_account, create_template,
-        models):
+def test_create_template_account_percent_markup(api_client, user, models,
+        create_template_subaccounts, create_template_account, create_template):
     template = create_template()
     account = create_template_account(parent=template)
     subaccounts = create_template_subaccounts(
@@ -212,15 +206,14 @@ def test_create_template_account_percent_markup(api_client, user,
     assert response.json()["budget"]["nominal_value"] == 20.0
 
 
-def test_create_template_account_percent_markup_invalid_child(
-        api_client, user, create_template_subaccount, create_template_account,
-        create_template, models):
-    with signals.disable():
-        template = create_template()
-        another_template = create_template()
-        account = create_template_account(parent=template)
-        another_account = create_template_account(parent=another_template)
-        subaccount = create_template_subaccount(parent=another_account)
+def test_create_template_account_percent_markup_invalid_child(api_client, user,
+        create_template_subaccount, create_template_account, create_template,
+        models):
+    template = create_template()
+    another_template = create_template()
+    account = create_template_account(parent=template)
+    another_account = create_template_account(parent=another_template)
+    subaccount = create_template_subaccount(parent=another_account)
 
     api_client.force_login(user)
     response = api_client.post("/v1/accounts/%s/markups/" % account.pk, data={
@@ -249,9 +242,8 @@ def test_create_template_account_percent_markup_invalid_child(
 ])
 def test_create_template_account_percent_markup_no_children(
         api_client, user, create_template_account, create_template, data):
-    with signals.disable():
-        template = create_template()
-        account = create_template_account(parent=template)
+    template = create_template()
+    account = create_template_account(parent=template)
 
     api_client.force_login(user)
     response = api_client.post(
@@ -267,13 +259,11 @@ def test_create_template_account_percent_markup_no_children(
     }
 
 
-def test_create_template_account_flat_markup_children(api_client,
-        user, create_template_subaccount, create_template_account,
-        create_template, models):
-    with signals.disable():
-        template = create_template()
-        account = create_template_account(parent=template)
-        subaccount = create_template_subaccount(parent=account)
+def test_create_template_account_flat_markup_children(api_client, user, models,
+        create_template_subaccount, create_template_account, create_template):
+    template = create_template()
+    account = create_template_account(parent=template)
+    subaccount = create_template_subaccount(parent=account)
 
     api_client.force_login(user)
     response = api_client.post("/v1/accounts/%s/markups/" % account.pk, data={

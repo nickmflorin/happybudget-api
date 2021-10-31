@@ -17,7 +17,6 @@ TIME_ZONE = 'UTC'
 EMAIL_ENABLED = False
 CELERY_ENABLED = False
 RATELIMIT_ENABLE = False
-TRACK_MODEL_HISTORY = False
 
 APP_DOMAIN = 'testserver/'
 APP_URL = 'http://%s' % APP_DOMAIN
@@ -44,3 +43,12 @@ DATABASES = {
     'default': dj_database_url.parse('sqlite:///%s/test.sqlite3' % ROOT_DIR)
 }
 DATABASES['default']['ATOMIC_REQUESTS'] = True
+
+CACHE_ENABLED = False
+# We still define the CACHES so that in the case we are testing the cache, AWS
+# ElastiCache will not be used.
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'
+    }
+}

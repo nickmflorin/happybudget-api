@@ -5,7 +5,6 @@ from django.contrib.contenttypes.models import ContentType
 from greenbudget.app.account.models import BudgetAccount, TemplateAccount
 from greenbudget.app.actual.models import Actual, ActualType
 from greenbudget.app.budget.models import Budget
-from greenbudget.app.comment.models import Comment
 from greenbudget.app.contact.models import Contact
 from greenbudget.app.fringe.models import Fringe
 from greenbudget.app.group.models import Group
@@ -386,21 +385,6 @@ class ActualFactory(CustomModelFactory):
         if extracted:
             for attachment in extracted:
                 self.attachments.add(attachment)
-
-
-class CommentFactory(CustomModelFactory):
-    """
-    A DjangoModelFactory to create instances of :obj:`Comment`.
-    """
-    text = factory.Faker('sentence')
-    user = factory.SubFactory(UserFactory)
-    content_object = factory.SubFactory(BudgetFactory)
-    content_type = factory.LazyAttribute(
-        lambda o: ContentType.objects.get_for_model(o.content_object))
-    object_id = factory.SelfAttribute('content_object.pk')
-
-    class Meta:
-        model = Comment
 
 
 class ContactFactory(CustomModelFactory):

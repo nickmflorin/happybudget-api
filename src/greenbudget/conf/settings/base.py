@@ -142,9 +142,6 @@ SIMPLE_JWT = {
 
 AUTH_USER_MODEL = 'user.User'
 
-# Temporarily turning off for now until we build out more.
-TRACK_MODEL_HISTORY = False
-
 INSTALLED_APPS = [
     'compressor',
     'grappelli.dashboard',
@@ -170,12 +167,10 @@ INSTALLED_APPS = [
     'greenbudget.app.authentication',
     'greenbudget.app.budget',
     'greenbudget.app.budgeting',
-    'greenbudget.app.comment',
     'greenbudget.app.contact',
     'greenbudget.app.custom_admin',
     'greenbudget.app.fringe',
     'greenbudget.app.group',
-    'greenbudget.app.history',
     'greenbudget.app.io',
     'greenbudget.app.markup',
     'greenbudget.app.pdf',
@@ -282,6 +277,35 @@ DATABASES = {
         'PASSWORD': DATABASE_PASSWORD,
         'PORT': DATABASE_PORT
     },
+}
+
+ELASTICACHE_ENDPOINT = config(
+    name='ELASTICACHE_ENDPOINT',
+    required=[Environments.PROD, Environments.DEV],
+    default={
+        Environments.TEST: '',
+        Environments.LOCAL: ''
+    }
+)
+
+CACHE_ENABLED = True
+CACHE_LOCATION = f"redis://{ELASTICACHE_ENDPOINT}/0"
+CACHE_EXPIRY = 5 * 60 * 60
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': CACHE_LOCATION,
+        'OPTIONS': {
+            'REDIS_CLIENT_CLASS': 'rediscluster.RedisCluster',
+            'CONNECTION_POOL_CLASS': (
+                'rediscluster.connection.ClusterConnectionPool'),
+            'CONNECTION_POOL_KWARGS': {
+                # AWS ElastiCache has configuration commands disabled.
+                'skip_full_coverage_check': True
+            }
+        }
+    }
 }
 
 FIXTURES = [

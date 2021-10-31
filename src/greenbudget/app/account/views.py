@@ -24,6 +24,12 @@ from greenbudget.app.subaccount.serializers import (
 )
 from greenbudget.app.subaccount.views import GenericSubAccountViewSet
 
+from .cache import (
+    account_subaccounts_cache,
+    account_groups_cache,
+    account_markups_cache,
+    account_detail_cache
+)
 from .models import BudgetAccount, TemplateAccount
 from .permissions import AccountObjPermission
 from .serializers import (
@@ -33,6 +39,7 @@ from .serializers import (
 
 
 @filter_by_ids
+@account_markups_cache(get_key_from_view=lambda view: view.account.pk)
 class AccountMarkupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -74,6 +81,7 @@ class AccountMarkupViewSet(
 
 
 @filter_by_ids
+@account_groups_cache(get_key_from_view=lambda view: view.account.pk)
 class AccountGroupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -115,6 +123,7 @@ class AccountGroupViewSet(
 
 
 @filter_by_ids
+@account_subaccounts_cache(get_key_from_view=lambda view: view.account.pk)
 class AccountSubAccountViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -181,7 +190,7 @@ class AccountSubAccountViewSet(
 class GenericAccountViewSet(viewsets.GenericViewSet):
     lookup_field = 'pk'
     ordering_fields = ['updated_at', 'created_at']
-    search_fields = ['description']
+    search_fields = ['identifier', 'description']
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -226,6 +235,7 @@ class GenericAccountViewSet(viewsets.GenericViewSet):
         )
     ]
 )
+@account_detail_cache(get_key_from_view=lambda view: view.instance.pk)
 class AccountViewSet(
     mixins.UpdateModelMixin,
     mixins.RetrieveModelMixin,
@@ -244,9 +254,12 @@ class AccountViewSet(
     permission_classes = DEFAULT_PERMISSIONS + (AccountObjPermission, )
 
     @cached_property
+    def instance(self):
+        return self.get_object()
+
+    @property
     def instance_cls(self):
-        instance = self.get_object()
-        return type(instance)
+        return type(self.instance)
 
     @property
     def child_instance_cls(self):

@@ -23,28 +23,28 @@ class ActionContext:
 
 
 class BaseBulkAction:
-    def __init__(self, url_path: str, child_cls: type, filter_qs: Any = None):
+    def __init__(self, url_path: str, filter_qs: Any = None):
         self.url_path = url_path
-        self.child_cls = child_cls
         self.filter_qs = filter_qs
 
 
 class BulkDeleteAction(BaseBulkAction):
     action_names = ["delete"]
 
-    def __init__(self, url_path, child_cls, **kwargs):
-        super().__init__(url_path, child_cls, filter_qs=kwargs.get('filter_qs'))
-        self._init(**kwargs)
+    def __init__(self, url_path: str, child_cls: type, **kwargs):
+        super().__init__(url_path, filter_qs=kwargs.get('filter_qs'))
+        self._init(child_cls, **kwargs)
 
-    def _init(self, **kwargs):
+    def _init(self, child_cls: type, **kwargs):
+        self.child_cls = child_cls
         self.perform_destroy = kwargs.get('perform_destroy', None)
 
 
 class BulkCreateAction(BaseBulkAction):
     action_names = ["create"]
 
-    def __init__(self, url_path, child_cls, child_serializer_cls, **kwargs):
-        super().__init__(url_path, child_cls, filter_qs=kwargs.get('filter_qs'))
+    def __init__(self, url_path, child_serializer_cls, **kwargs):
+        super().__init__(url_path, filter_qs=kwargs.get('filter_qs'))
         self._init(child_serializer_cls, **kwargs)
 
     def _init(self, child_serializer_cls, **kwargs):
@@ -56,8 +56,8 @@ class BulkCreateAction(BaseBulkAction):
 class BulkUpdateAction(BaseBulkAction):
     action_names = ["update"]
 
-    def __init__(self, url_path, child_cls, child_serializer_cls, **kwargs):
-        super().__init__(url_path, child_cls, filter_qs=kwargs.get('filter_qs'))
+    def __init__(self, url_path, child_serializer_cls, **kwargs):
+        super().__init__(url_path, filter_qs=kwargs.get('filter_qs'))
         self._init(child_serializer_cls, **kwargs)
 
     def _init(self, child_serializer_cls, **kwargs):
@@ -70,8 +70,8 @@ class BulkAction(BaseBulkAction):
     action_names = ["delete", "create", "update"]
 
     def __init__(self, url_path, child_cls, child_serializer_cls, **kwargs):
-        super().__init__(url_path, child_cls, filter_qs=kwargs.get('filter_qs'))
-        BulkDeleteAction._init(self, **kwargs)
+        super().__init__(url_path, filter_qs=kwargs.get('filter_qs'))
+        BulkDeleteAction._init(self, child_cls, **kwargs)
         BulkCreateAction._init(self, child_serializer_cls, **kwargs)
         BulkUpdateAction._init(self, child_serializer_cls, **kwargs)
 
@@ -222,7 +222,6 @@ class bulk_update_action(bulk_action):
     def get_serializer_class(self):
         return create_bulk_update_serializer(
             base_cls=self.base_cls,
-            child_cls=self.child_cls,
             child_serializer_cls=self.child_serializer_cls,
             filter_qs=self.filter_qs,
             child_context=self.child_context
@@ -244,7 +243,6 @@ class bulk_create_action(bulk_action):
     def get_serializer_class(self):
         return create_bulk_create_serializer(
             base_cls=self.base_cls,
-            child_cls=self.child_cls,
             child_serializer_cls=self.child_serializer_cls,
             child_context=self.child_context
         )

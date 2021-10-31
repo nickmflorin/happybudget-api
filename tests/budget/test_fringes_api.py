@@ -1,17 +1,14 @@
 import pytest
 
-from greenbudget.app import signals
-
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_get_budget_fringes(api_client, user, create_budget, create_fringe,
         models):
-    with signals.disable():
-        budget = create_budget()
-        fringes = [
-            create_fringe(budget=budget),
-            create_fringe(budget=budget)
-        ]
+    budget = create_budget()
+    fringes = [
+        create_fringe(budget=budget),
+        create_fringe(budget=budget)
+    ]
     api_client.force_login(user)
     response = api_client.get("/v1/budgets/%s/fringes/" % budget.pk)
     assert response.status_code == 200

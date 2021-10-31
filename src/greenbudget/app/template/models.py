@@ -7,7 +7,7 @@ from greenbudget.app.budget.duplication import BudgetDeriver
 from .managers import TemplateManager
 
 
-@signals.model(flags='suppress_budget_update', track_fields=['actual'])
+@signals.model()
 class Template(BaseBudget):
     type = "template"
 

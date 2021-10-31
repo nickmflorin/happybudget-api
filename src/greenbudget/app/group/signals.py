@@ -4,15 +4,42 @@ from django import dispatch
 from django.db import IntegrityError
 
 from greenbudget.app import signals
-from greenbudget.app.account.models import BudgetAccount, TemplateAccount
+from greenbudget.app.account.cache import account_groups_cache
+from greenbudget.app.account.models import (
+    Account, BudgetAccount, TemplateAccount)
+from greenbudget.app.budget.cache import budget_groups_cache
+from greenbudget.app.budget.models import BaseBudget
 from greenbudget.app.markup.models import Markup
+from greenbudget.app.subaccount.cache import subaccount_groups_cache
 from greenbudget.app.subaccount.models import (
-    BudgetSubAccount, TemplateSubAccount)
+    SubAccount, BudgetSubAccount, TemplateSubAccount)
 
 from .models import Group
 
 
 logger = logging.getLogger('signals')
+
+
+def invalidate_parent_groups_cache(instances):
+    instances = instances if hasattr(instances, '__iter__') else [instances]
+    for instance in instances:
+        assert isinstance(instance.parent, (Account, SubAccount, BaseBudget))
+        if isinstance(instance.parent, Account):
+            account_groups_cache.invalidate(instance.parent)
+        elif isinstance(instance.parent, SubAccount):
+            subaccount_groups_cache.invalidate(instance.parent)
+        else:
+            budget_groups_cache.invalidate(instance.parent)
+
+
+@dispatch.receiver(signals.post_save, sender=Group)
+def group_saved(instance, **kwargs):
+    invalidate_parent_groups_cache(instance)
+
+
+@dispatch.receiver(signals.pre_delete, sender=Group)
+def group_to_be_deleted(instance, **kwargs):
+    invalidate_parent_groups_cache(instance)
 
 
 @dispatch.receiver(signals.pre_save, sender=BudgetAccount)
@@ -41,21 +68,4 @@ def delete_empty_group(instance, change, **kwargs):
     # Check if the object had been previously assigned a Group that is now
     # empty after the object is moved out of the Group.
     if change.previous_value is not None:
-        if instance.__class__.objects.filter(
-                group_id=change.previous_value).count() == 0:
-            logger.info(
-                "Deleting group %s after it was removed from %s (id = %s) "
-                "because the group no longer has any children."
-                % (
-                    change.previous_value,
-                    instance.__class__.__name__,
-                    instance.pk
-                )
-            )
-            # We have to be concerned with race conditions here.
-            try:
-                group = Group.objects.get(pk=change.previous_value)
-            except Group.DoesNotExist:
-                pass
-            else:
-                group.delete()
+        type(instance).objects.bulk_delete_empty_groups([change.previous_value])

@@ -43,26 +43,32 @@ class Signal(dispatch.Signal):
             registry.add(self)
 
     @contextlib.contextmanager
-    def _disable(self):
-        self._disabled = True
+    def _disable(self, sender=None):
+        self._disabled = sender if sender is not None else True
         try:
             yield self
         finally:
             self._disabled = False
 
-    def disable(self, *args):
+    def disabled(self, sender):
+        if type(self._disabled) is bool:
+            return self._disabled
+        return sender is self._disabled
+
+    def disable(self, *args, **kwargs):
+        sender = kwargs.pop('sender', None)
         if len(args) == 1 and hasattr(args[0], '__call__'):
             func = args[0]
 
             @functools.wraps(func)
             def decorated(*args, **kwargs):
-                with self._disable():
+                with self._disable(sender=sender):
                     return func(*args, **kwargs)
             return decorated
-        return self._disable()
+        return self._disable(sender=sender)
 
     def send(self, sender, **named):
-        if self._disabled:
+        if self.disabled(sender):
             return
         return super().send(sender, **named)
 

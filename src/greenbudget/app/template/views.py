@@ -1,3 +1,4 @@
+from functools import cached_property
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from rest_framework import viewsets, mixins, response, status, decorators
@@ -8,6 +9,13 @@ from greenbudget.app.account.models import TemplateAccount
 from greenbudget.app.account.serializers import TemplateAccountSerializer
 from greenbudget.app.account.views import GenericAccountViewSet
 from greenbudget.app.authentication.permissions import DEFAULT_PERMISSIONS
+from greenbudget.app.budget.cache import (
+    budget_groups_cache,
+    budget_accounts_cache,
+    budget_markups_cache,
+    budget_detail_cache,
+    budget_fringes_cache
+)
 from greenbudget.app.budgeting.decorators import (
     register_bulk_operations, BulkAction, BulkDeleteAction)
 from greenbudget.app.authentication.permissions import IsAdminOrReadOnly
@@ -25,6 +33,7 @@ from .serializers import TemplateSerializer, TemplateSimpleSerializer
 
 
 @filter_by_ids
+@budget_markups_cache(get_key_from_view=lambda view: view.template.pk)
 class TemplateMarkupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -64,6 +73,7 @@ class TemplateMarkupViewSet(
 
 
 @filter_by_ids
+@budget_groups_cache(get_key_from_view=lambda view: view.template.pk)
 class TemplateGroupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -104,6 +114,7 @@ class TemplateGroupViewSet(
 
 
 @filter_by_ids
+@budget_fringes_cache(get_key_from_view=lambda view: view.template.pk)
 class TemplateFringeViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -140,6 +151,7 @@ class TemplateFringeViewSet(
 
 
 @filter_by_ids
+@budget_accounts_cache(get_key_from_view=lambda view: view.template.pk)
 class TemplateAccountViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -243,6 +255,7 @@ class GenericTemplateViewSet(viewsets.GenericViewSet):
         )
     ]
 )
+@budget_detail_cache(get_key_from_view=lambda view: view.instance.pk)
 class TemplateViewSet(
     mixins.CreateModelMixin,
     mixins.UpdateModelMixin,
@@ -266,6 +279,10 @@ class TemplateViewSet(
     (10) PATCH /templates/<pk>/bulk-create-fringes/
     """
     permission_classes = DEFAULT_PERMISSIONS + (TemplateObjPermission, )
+
+    @cached_property
+    def instance(self):
+        return self.get_object()
 
     def get_queryset(self):
         qs = Template.objects.all()

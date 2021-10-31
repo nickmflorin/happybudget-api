@@ -1,3 +1,4 @@
+from functools import cached_property
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
@@ -24,6 +25,14 @@ from greenbudget.app.markup.serializers import MarkupSerializer
 from greenbudget.app.subaccount.models import BudgetSubAccount
 from greenbudget.app.subaccount.serializers import SubAccountSimpleSerializer
 
+from .cache import (
+    budget_accounts_cache,
+    budget_groups_cache,
+    budget_markups_cache,
+    budget_detail_cache,
+    budget_actuals_cache,
+    budget_fringes_cache
+)
 from .models import Budget
 from .mixins import BudgetNestedMixin
 from .serializers import (
@@ -34,6 +43,7 @@ from .serializers import (
 
 
 @filter_by_ids
+@budget_markups_cache(get_key_from_view=lambda view: view.budget.pk)
 class BudgetMarkupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -73,6 +83,7 @@ class BudgetMarkupViewSet(
 
 
 @filter_by_ids
+@budget_groups_cache(get_key_from_view=lambda view: view.budget.pk)
 class BudgetGroupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -113,6 +124,7 @@ class BudgetGroupViewSet(
 
 
 @filter_by_ids
+@budget_actuals_cache(get_key_from_view=lambda view: view.budget.pk)
 class BudgetActualsViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
@@ -147,6 +159,7 @@ class BudgetActualsViewSet(
 
 
 @filter_by_ids
+@budget_fringes_cache(get_key_from_view=lambda view: view.budget.pk)
 class BudgetFringeViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -365,6 +378,7 @@ class BudgetSubAccountViewSet(
 
 
 @filter_by_ids
+@budget_accounts_cache(get_key_from_view=lambda view: view.budget.pk)
 class BudgetAccountViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -482,6 +496,7 @@ class GenericBudgetViewSet(viewsets.GenericViewSet):
         )
     ]
 )
+@budget_detail_cache(get_key_from_view=lambda view: view.instance.pk)
 class BudgetViewSet(
     mixins.CreateModelMixin,
     mixins.UpdateModelMixin,
@@ -506,6 +521,9 @@ class BudgetViewSet(
     (11) GET /budgets/<pk>/pdf/
     (12) POST /budgets/<pk>/duplicate/
     """
+    @cached_property
+    def instance(self):
+        return self.get_object()
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -523,14 +541,12 @@ class BudgetViewSet(
 
     @decorators.action(detail=True, methods=["GET"])
     def pdf(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = BudgetPdfSerializer(instance)
+        serializer = BudgetPdfSerializer(self.instance)
         return response.Response(serializer.data, status=status.HTTP_200_OK)
 
     @decorators.action(detail=True, methods=["POST"])
     def duplicate(self, request, *args, **kwargs):
-        instance = self.get_object()
-        duplicated = instance.duplicate(request.user)
+        duplicated = self.instance.duplicate(request.user)
         return response.Response(
             self.serializer_class(duplicated).data,
             status=status.HTTP_201_CREATED

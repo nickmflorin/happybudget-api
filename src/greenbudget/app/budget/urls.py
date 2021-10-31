@@ -3,9 +3,6 @@ from rest_framework_nested import routers
 
 from greenbudget.lib.drf.router import combine_routers
 
-from greenbudget.app.comment.urls import budget_comments_urlpatterns
-from greenbudget.app.history.urls import accounts_history_urlpatterns
-
 from .views import (
     BudgetViewSet,
     BudgetFringeViewSet,
@@ -48,9 +45,6 @@ budget_actuals_router.register(
 budget_accounts_router = routers.SimpleRouter()
 budget_accounts_router.register(
     r'', BudgetAccountViewSet, basename='budget-account')
-budget_accounts_urlpatterns = [
-    path('history/', include(accounts_history_urlpatterns)),
-] + budget_accounts_router.urls
 
 urlpatterns = combine_routers(
     router,
@@ -61,7 +55,6 @@ urlpatterns = combine_routers(
     budget_actuals_router
 ) + [
     path('<int:budget_pk>/', include([
-        path('accounts/', include(budget_accounts_urlpatterns)),
-        path('comments/', include(budget_comments_urlpatterns)),
+        path('accounts/', include(budget_accounts_router.urls)),
     ]))
 ]

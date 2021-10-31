@@ -49,12 +49,6 @@ LOGGING = {
             'stream': sys.stdout,
             'formatter': 'dynamic'
         },
-        'history.handler': {
-            'level': logging.INFO,
-            'class': 'logging.StreamHandler',
-            'stream': sys.stdout,
-            'formatter': 'dynamic'
-        },
         'django.server': {
             'level': logging.INFO,
             'class': 'logging.StreamHandler',
@@ -97,11 +91,6 @@ LOGGING = {
         'requests': {'level': logging.WARNING},
         'greenbudget': {
             'handlers': ['greenbudget.handler', 'sentry'],
-            'level': logging.INFO,
-            'propagate': False,
-        },
-        'history': {
-            'handlers': ['history.handler'],
             'level': logging.INFO,
             'propagate': False,
         },

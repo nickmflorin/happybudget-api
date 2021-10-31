@@ -1,6 +1,5 @@
 import pytest
 
-from greenbudget.app import signals
 from greenbudget.app.markup.models import Markup
 
 
@@ -200,10 +199,9 @@ def test_create_budget_percent_markup(api_client, user, create_budget_account,
 
 def test_create_budget_percent_markup_invalid_child(api_client, user,
         create_budget_account, create_budget, models):
-    with signals.disable():
-        budget = create_budget()
-        another_budget = create_budget()
-        account = create_budget_account(parent=another_budget)
+    budget = create_budget()
+    another_budget = create_budget()
+    account = create_budget_account(parent=another_budget)
 
     api_client.force_login(user)
     response = api_client.post("/v1/budgets/%s/markups/" % budget.pk, data={
@@ -232,9 +230,7 @@ def test_create_budget_percent_markup_invalid_child(api_client, user,
 ])
 def test_create_budget_percent_markup_no_children(api_client, user, data,
         create_budget):
-    with signals.disable():
-        budget = create_budget()
-
+    budget = create_budget()
     api_client.force_login(user)
     response = api_client.post("/v1/budgets/%s/markups/" % budget.pk, data=data)
     assert response.status_code == 400
@@ -250,9 +246,8 @@ def test_create_budget_percent_markup_no_children(api_client, user, data,
 
 def test_create_budget_budget_subaccount_flat_markup_children(api_client,
         user, create_budget_account, create_budget, models):
-    with signals.disable():
-        budget = create_budget()
-        account = create_budget_account(parent=budget)
+    budget = create_budget()
+    account = create_budget_account(parent=budget)
 
     api_client.force_login(user)
     response = api_client.post("/v1/budgets/%s/markups/" % account.pk, data={

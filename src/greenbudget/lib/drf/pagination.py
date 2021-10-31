@@ -61,9 +61,11 @@ class Pagination(pagination.PageNumberPagination):
     page_size_query_param = 'page_size'
 
     def paginate_queryset(self, queryset, request, view=None):
-        # Allow the pagination to be completely turned off on a per-request
-        # basis.
-        if 'no_pagination' in request.query_params:
+        # We do not want to paginate requests unless the page and page_size
+        # parameters are included, because we want to be able to cache the
+        # results.
+        if 'page' not in request.query_params \
+                and 'page_size' not in request.query_params:
             self._no_pagination = True
             return queryset
         return super().paginate_queryset(queryset, request, view)

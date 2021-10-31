@@ -1,27 +1,24 @@
 import datetime
 import pytest
 
-from greenbudget.app import signals
-
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_get_template_account_subaccounts(api_client, user, create_template,
         create_template_account, create_template_subaccount):
-    with signals.disable():
-        template = create_template()
-        account = create_template_account(parent=template)
-        another_account = create_template_account(parent=template)
-        subaccounts = [
-            create_template_subaccount(
-                parent=account,
-                created_at=datetime.datetime(2020, 1, 1)
-            ),
-            create_template_subaccount(
-                parent=account,
-                created_at=datetime.datetime(2020, 1, 2)
-            ),
-            create_template_subaccount(parent=another_account)
-        ]
+    template = create_template()
+    account = create_template_account(parent=template)
+    another_account = create_template_account(parent=template)
+    subaccounts = [
+        create_template_subaccount(
+            parent=account,
+            created_at=datetime.datetime(2020, 1, 1)
+        ),
+        create_template_subaccount(
+            parent=account,
+            created_at=datetime.datetime(2020, 1, 2)
+        ),
+        create_template_subaccount(parent=another_account)
+    ]
     api_client.force_login(user)
     response = api_client.get("/v1/accounts/%s/subaccounts/" % account.pk)
     assert response.status_code == 200
@@ -49,7 +46,6 @@ def test_get_template_account_subaccounts(api_client, user, create_template,
             "fringes": [],
             "created_by": user.pk,
             "updated_by": user.pk,
-            "contact": None,
             "unit": None
         },
         {
@@ -74,7 +70,6 @@ def test_get_template_account_subaccounts(api_client, user, create_template,
             "fringes": [],
             "created_by": user.pk,
             "updated_by": user.pk,
-            "contact": None,
             "unit": None
         },
     ]
@@ -84,19 +79,18 @@ def test_get_template_account_subaccounts(api_client, user, create_template,
 def test_get_community_template_account_subaccounts(api_client, user,
         staff_user, create_template, create_template_account,
         create_template_subaccount):
-    with signals.disable():
-        template = create_template(community=True, created_by=staff_user)
-        account = create_template_account(parent=template)
-        [
-            create_template_subaccount(
-                parent=account,
-                created_at=datetime.datetime(2020, 1, 1)
-            ),
-            create_template_subaccount(
-                parent=account,
-                created_at=datetime.datetime(2020, 1, 2)
-            )
-        ]
+    template = create_template(community=True, created_by=staff_user)
+    account = create_template_account(parent=template)
+    [
+        create_template_subaccount(
+            parent=account,
+            created_at=datetime.datetime(2020, 1, 1)
+        ),
+        create_template_subaccount(
+            parent=account,
+            created_at=datetime.datetime(2020, 1, 2)
+        )
+    ]
     api_client.force_login(user)
     response = api_client.get("/v1/accounts/%s/subaccounts/" % account.pk)
     assert response.status_code == 403
@@ -106,20 +100,19 @@ def test_get_community_template_account_subaccounts(api_client, user,
 def test_get_another_users_community_template_account_subaccounts(api_client,
         create_user, staff_user, create_template, create_template_account,
         create_template_subaccount):
-    with signals.disable():
-        user = create_user(is_staff=True)
-        template = create_template(community=True, created_by=user)
-        account = create_template_account(parent=template)
-        [
-            create_template_subaccount(
-                parent=account,
-                created_at=datetime.datetime(2020, 1, 1)
-            ),
-            create_template_subaccount(
-                parent=account,
-                created_at=datetime.datetime(2020, 1, 2)
-            )
-        ]
+    user = create_user(is_staff=True)
+    template = create_template(community=True, created_by=user)
+    account = create_template_account(parent=template)
+    [
+        create_template_subaccount(
+            parent=account,
+            created_at=datetime.datetime(2020, 1, 1)
+        ),
+        create_template_subaccount(
+            parent=account,
+            created_at=datetime.datetime(2020, 1, 2)
+        )
+    ]
     api_client.force_login(staff_user)
     response = api_client.get("/v1/accounts/%s/subaccounts/" % account.pk)
     assert response.status_code == 200
@@ -129,9 +122,8 @@ def test_get_another_users_community_template_account_subaccounts(api_client,
 @pytest.mark.freeze_time('2020-01-01')
 def test_create_template_subaccount(api_client, user, create_template_account,
         create_template, models):
-    with signals.disable():
-        template = create_template()
-        account = create_template_account(parent=template)
+    template = create_template()
+    account = create_template_account(parent=template)
     api_client.force_login(user)
     response = api_client.post(
         "/v1/accounts/%s/subaccounts/" % account.pk,
@@ -156,7 +148,6 @@ def test_create_template_subaccount(api_client, user, create_template_account,
         "rate": None,
         "multiplier": None,
         "unit": None,
-        "contact": None,
         "type": "subaccount",
         "object_id": account.pk,
         "parent_type": "account",
@@ -168,7 +159,6 @@ def test_create_template_subaccount(api_client, user, create_template_account,
         "actual": 0.0,
         "children": [],
         "fringes": [],
-        "contact": None,
         "created_by": user.pk,
         "updated_by": user.pk,
     }

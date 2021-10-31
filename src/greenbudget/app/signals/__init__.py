@@ -1,4 +1,3 @@
-from .bulk_context import *  # noqa
 from .signal import Signal  # noqa
 from .receivers import *  # noqa
 from .signal import disable, registry  # noqa

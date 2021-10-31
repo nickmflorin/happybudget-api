@@ -3,8 +3,6 @@ from datetime import timezone
 import pytest
 import mock
 
-from greenbudget.app import signals
-
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_get_budget_account(api_client, user, create_budget_account,
@@ -157,19 +155,18 @@ def test_update_template_account(api_client, user, create_template,
 @pytest.mark.freeze_time('2020-01-01')
 def test_bulk_update_budget_account_subaccounts(api_client, user, create_budget,
         create_budget_account, create_budget_subaccount, freezer):
-    with signals.disable():
-        budget = create_budget()
-        account = create_budget_account(parent=budget)
-        subaccounts = [
-            create_budget_subaccount(
-                parent=account,
-                created_at=datetime.datetime(2020, 1, 1)
-            ),
-            create_budget_subaccount(
-                parent=account,
-                created_at=datetime.datetime(2020, 1, 2)
-            )
-        ]
+    budget = create_budget()
+    account = create_budget_account(parent=budget)
+    subaccounts = [
+        create_budget_subaccount(
+            parent=account,
+            created_at=datetime.datetime(2020, 1, 1)
+        ),
+        create_budget_subaccount(
+            parent=account,
+            created_at=datetime.datetime(2020, 1, 2)
+        )
+    ]
     api_client.force_login(user)
     freezer.move_to("2021-01-01")
     response = api_client.patch(
@@ -231,44 +228,37 @@ def test_bulk_update_budget_account_subaccounts(api_client, user, create_budget,
 def test_bulk_update_budget_account_subaccounts_fringes(api_client, user,
         create_budget, create_budget_account, create_budget_subaccount,
         create_fringe):
-    with signals.disable():
-        budget = create_budget()
-        account = create_budget_account(parent=budget)
-        subaccounts = [
-            create_budget_subaccount(
-                parent=account,
-                created_at=datetime.datetime(2020, 1, 1),
-                quantity=1,
-                rate=100,
-                multiplier=1
-            ),
-            create_budget_subaccount(
-                parent=account,
-                created_at=datetime.datetime(2020, 1, 2),
-                quantity=1,
-                rate=100,
-                multiplier=1
-            )
-        ]
-        fringes = [
-            create_fringe(budget=budget, rate=0.5),
-            create_fringe(budget=budget, rate=0.2)
-        ]
+    budget = create_budget()
+    account = create_budget_account(parent=budget)
+    subaccounts = [
+        create_budget_subaccount(
+            parent=account,
+            created_at=datetime.datetime(2020, 1, 1),
+            quantity=1,
+            rate=100,
+            multiplier=1
+        ),
+        create_budget_subaccount(
+            parent=account,
+            created_at=datetime.datetime(2020, 1, 2),
+            quantity=1,
+            rate=100,
+            multiplier=1
+        )
+    ]
+    fringes = [
+        create_fringe(budget=budget, rate=0.5),
+        create_fringe(budget=budget, rate=0.2)
+    ]
     api_client.force_login(user)
     response = api_client.patch(
         "/v1/accounts/%s/bulk-update-subaccounts/" % account.pk,
         format='json',
         data={
-            'data': [
-                {
-                    'id': subaccounts[0].pk,
-                    'fringes': [f.pk for f in fringes]
-                },
-                {
-                    'id': subaccounts[1].pk,
-                    'description': 'New Desc',
-                }
-            ]
+            'data': [{
+                'id': subaccounts[0].pk,
+                'fringes': [f.pk for f in fringes]
+            }]
         })
 
     assert response.status_code == 200
@@ -308,12 +298,10 @@ def test_bulk_update_budget_account_subaccounts_fringes(api_client, user,
     assert budget.accumulated_fringe_contribution == 70.0
 
 
-def test_bulk_delete_budget_account_subaccounts(api_client, user,
-        create_budget, create_budget_account, create_budget_subaccount,
-        models):
-    with signals.disable():
-        budget = create_budget()
-        account = create_budget_account(parent=budget)
+def test_bulk_delete_budget_account_subaccounts(api_client, user, models,
+        create_budget, create_budget_account, create_budget_subaccount):
+    budget = create_budget()
+    account = create_budget_account(parent=budget)
 
     subaccounts = [
         create_budget_subaccount(
@@ -361,19 +349,18 @@ def test_bulk_delete_budget_account_subaccounts(api_client, user,
 
 def test_bulk_update_budget_account_subaccounts_budget_updated_once(api_client,
         user, create_budget, create_budget_account, create_budget_subaccount):
-    with signals.disable():
-        budget = create_budget()
-        account = create_budget_account(parent=budget)
-        subaccounts = [
-            create_budget_subaccount(
-                parent=account,
-                created_at=datetime.datetime(2020, 1, 1)
-            ),
-            create_budget_subaccount(
-                parent=account,
-                created_at=datetime.datetime(2020, 1, 2)
-            )
-        ]
+    budget = create_budget()
+    account = create_budget_account(parent=budget)
+    subaccounts = [
+        create_budget_subaccount(
+            parent=account,
+            created_at=datetime.datetime(2020, 1, 1)
+        ),
+        create_budget_subaccount(
+            parent=account,
+            created_at=datetime.datetime(2020, 1, 2)
+        )
+    ]
     api_client.force_login(user)
     with mock.patch('greenbudget.app.budget.signals.Budget.save') as save:
         response = api_client.patch(
@@ -396,22 +383,20 @@ def test_bulk_update_budget_account_subaccounts_budget_updated_once(api_client,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_bulk_update_template_account_subaccounts(api_client, user,
-        create_template, create_template_account, create_template_subaccount,
-        freezer):
-    with signals.disable():
-        template = create_template()
-        account = create_template_account(parent=template)
-        subaccounts = [
-            create_template_subaccount(
-                parent=account,
-                created_at=datetime.datetime(2020, 1, 1)
-            ),
-            create_template_subaccount(
-                parent=account,
-                created_at=datetime.datetime(2020, 1, 2)
-            )
-        ]
+def test_bulk_update_template_account_subaccounts(api_client, user, freezer,
+        create_template, create_template_account, create_template_subaccount):
+    template = create_template()
+    account = create_template_account(parent=template)
+    subaccounts = [
+        create_template_subaccount(
+            parent=account,
+            created_at=datetime.datetime(2020, 1, 1)
+        ),
+        create_template_subaccount(
+            parent=account,
+            created_at=datetime.datetime(2020, 1, 2)
+        )
+    ]
 
     api_client.force_login(user)
     freezer.move_to("2021-01-01")
@@ -467,13 +452,10 @@ def test_bulk_update_template_account_subaccounts(api_client, user,
     assert template.nominal_value == 40.0
 
 
-def test_bulk_delete_template_account_subaccounts(api_client, user,
-        create_template, create_template_account, create_template_subaccount,
-        models):
-    with signals.disable():
-        template = create_template()
-        account = create_template_account(parent=template)
-
+def test_bulk_delete_template_account_subaccounts(api_client, user, models,
+        create_template, create_template_account, create_template_subaccount):
+    template = create_template()
+    account = create_template_account(parent=template)
     subaccounts = [
         create_template_subaccount(
             parent=account,
@@ -488,7 +470,6 @@ def test_bulk_delete_template_account_subaccounts(api_client, user,
             multiplier=1
         )
     ]
-
     api_client.force_login(user)
     response = api_client.patch(
         "/v1/accounts/%s/bulk-delete-subaccounts/" % account.pk,
@@ -518,19 +499,18 @@ def test_bulk_delete_template_account_subaccounts(api_client, user,
 def test_bulk_update_template_account_subaccounts_template_updated_once(
         api_client, user, create_template, create_template_account,
         create_template_subaccount):
-    with signals.disable():
-        template = create_template()
-        account = create_template_account(parent=template)
-        subaccounts = [
-            create_template_subaccount(
-                parent=account,
-                created_at=datetime.datetime(2020, 1, 1)
-            ),
-            create_template_subaccount(
-                parent=account,
-                created_at=datetime.datetime(2020, 1, 2)
-            )
-        ]
+    template = create_template()
+    account = create_template_account(parent=template)
+    subaccounts = [
+        create_template_subaccount(
+            parent=account,
+            created_at=datetime.datetime(2020, 1, 1)
+        ),
+        create_template_subaccount(
+            parent=account,
+            created_at=datetime.datetime(2020, 1, 2)
+        )
+    ]
     api_client.force_login(user)
     with mock.patch(
             'greenbudget.app.template.models.Template.save') as save:
@@ -556,9 +536,8 @@ def test_bulk_update_template_account_subaccounts_template_updated_once(
 @pytest.mark.freeze_time('2020-01-01')
 def test_bulk_create_budget_account_subaccounts(api_client, user, create_budget,
         create_budget_account, models):
-    with signals.disable():
-        budget = create_budget()
-        account = create_budget_account(parent=budget)
+    budget = create_budget()
+    account = create_budget_account(parent=budget)
 
     api_client.force_login(user)
     response = api_client.patch(
@@ -625,11 +604,10 @@ def test_bulk_create_budget_account_subaccounts(api_client, user, create_budget,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_bulk_create_template_account_subaccounts(api_client, user,
-        create_template, create_template_account, models, freezer):
-    with signals.disable():
-        template = create_template()
-        account = create_template_account(parent=template)
+def test_bulk_create_template_account_subaccounts(api_client, user, freezer,
+        create_template, create_template_account, models):
+    template = create_template()
+    account = create_template_account(parent=template)
 
     freezer.move_to("2021-01-01")
     api_client.force_login(user)

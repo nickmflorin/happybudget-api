@@ -1,6 +1,5 @@
 import pytest
 
-from greenbudget.app import signals
 from greenbudget.app.markup.models import Markup
 
 
@@ -8,15 +7,14 @@ from greenbudget.app.markup.models import Markup
 def test_get_template_subaccount_subaccount_markups(api_client, user, models,
         create_template_subaccount, create_template_account, create_template,
         create_markup):
-    with signals.disable():
-        template = create_template()
-        account = create_template_account(parent=template)
-        subaccount = create_template_subaccount(parent=account)
-        child_subaccount = create_template_subaccount(parent=subaccount)
-        markup = create_markup(
-            parent=subaccount,
-            subaccounts=[child_subaccount]
-        )
+    template = create_template()
+    account = create_template_account(parent=template)
+    subaccount = create_template_subaccount(parent=account)
+    child_subaccount = create_template_subaccount(parent=subaccount)
+    markup = create_markup(
+        parent=subaccount,
+        subaccounts=[child_subaccount]
+    )
 
     api_client.force_login(user)
     response = api_client.get("/v1/subaccounts/%s/markups/" % subaccount.pk)
@@ -78,7 +76,7 @@ def test_create_template_subaccount_percent_markup(api_client, user,
 
     api_client.force_login(user)
     response = api_client.post(
-        "/v1/subaccounts/%s/markups/" % account.pk,
+        "/v1/subaccounts/%s/markups/" % subaccount.pk,
         data={
             'identifier': 'Markup Identifier',
             'rate': 0.5,
@@ -240,14 +238,13 @@ def test_create_template_subaccount_flat_markup(api_client, user,
 def test_create_template_subaccount_percent_markup_invalid_child(
         api_client, user, create_template_subaccount, create_template_account,
         create_template, models):
-    with signals.disable():
-        template = create_template()
-        another_template = create_template()
-        account = create_template_account(parent=template)
-        another_account = create_template_account(parent=another_template)
-        subaccount = create_template_subaccount(parent=account)
-        another_subaccount = create_template_subaccount(parent=another_account)
-        child_sub_account = create_template_subaccount(parent=another_subaccount)
+    template = create_template()
+    another_template = create_template()
+    account = create_template_account(parent=template)
+    another_account = create_template_account(parent=another_template)
+    subaccount = create_template_subaccount(parent=account)
+    another_subaccount = create_template_subaccount(parent=another_account)
+    child_sub_account = create_template_subaccount(parent=another_subaccount)
 
     api_client.force_login(user)
     response = api_client.post(
@@ -280,10 +277,9 @@ def test_create_template_subaccount_percent_markup_invalid_child(
 def test_create_template_subaccount_percent_markup_no_children(api_client, data,
         create_template_subaccount, user, create_template_account,
         create_template):
-    with signals.disable():
-        template = create_template()
-        account = create_template_account(parent=template)
-        subaccount = create_template_subaccount(parent=account)
+    template = create_template()
+    account = create_template_account(parent=template)
+    subaccount = create_template_subaccount(parent=account)
 
     api_client.force_login(user)
     response = api_client.post(
@@ -299,14 +295,13 @@ def test_create_template_subaccount_percent_markup_no_children(api_client, data,
     }
 
 
-def test_create_template_subaccount_flat_markup_children(api_client,
+def test_create_template_subaccount_flat_markup_children(api_client, models,
         user, create_template_subaccount, create_template_account,
-        create_template, models):
-    with signals.disable():
-        template = create_template()
-        account = create_template_account(parent=template)
-        subaccount = create_template_subaccount(parent=account)
-        child_subaccount = create_template_subaccount(parent=subaccount)
+        create_template):
+    template = create_template()
+    account = create_template_account(parent=template)
+    subaccount = create_template_subaccount(parent=account)
+    child_subaccount = create_template_subaccount(parent=subaccount)
 
     api_client.force_login(user)
     response = api_client.post(

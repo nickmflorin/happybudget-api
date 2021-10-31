@@ -1,5 +1,4 @@
 import functools
-from polymorphic.models import PolymorphicModel
 
 from django.contrib.contenttypes.fields import (
     GenericForeignKey, GenericRelation)
@@ -8,15 +7,24 @@ from django.db import models
 
 from greenbudget.app import signals
 from greenbudget.app.actual.models import Actual
-from greenbudget.app.comment.models import Comment
+from greenbudget.app.budgeting.models import BudgetingPolymorphicModel
 from greenbudget.app.fringe.utils import contribution_from_fringes
 from greenbudget.app.group.models import Group
-from greenbudget.app.history.models import Event
 from greenbudget.app.markup.models import Markup
 from greenbudget.app.markup.utils import contribution_from_markups
 from greenbudget.app.tagging.models import Tag
 
-from .managers import SubAccountManager
+from .cache import (
+    subaccount_markups_cache,
+    subaccount_groups_cache,
+    subaccount_detail_cache,
+    subaccount_subaccounts_cache
+)
+from .managers import (
+    SubAccountManager,
+    BudgetSubAccountManager,
+    TemplateSubAccountManager
+)
 
 
 class SubAccountUnit(Tag):
@@ -54,7 +62,7 @@ ESTIMATED_FIELDS = (
 CALCULATED_FIELDS = ESTIMATED_FIELDS + ('actual', )
 
 
-class SubAccount(PolymorphicModel):
+class SubAccount(BudgetingPolymorphicModel):
     type = "subaccount"
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -70,7 +78,6 @@ class SubAccount(PolymorphicModel):
         on_delete=models.CASCADE,
         editable=False
     )
-
     identifier = models.CharField(null=True, max_length=128)
     description = models.CharField(null=True, max_length=128)
     quantity = models.IntegerField(null=True)
@@ -92,7 +99,10 @@ class SubAccount(PolymorphicModel):
         on_delete=models.SET_NULL,
         null=True
     )
-    fringes = models.ManyToManyField(to='fringe.Fringe')
+    fringes = models.ManyToManyField(
+        to='fringe.Fringe',
+        related_name='subaccounts'
+    )
     content_type = models.ForeignKey(
         to=ContentType,
         on_delete=models.CASCADE,
@@ -122,6 +132,13 @@ class SubAccount(PolymorphicModel):
     DERIVING_FIELDS = ("quantity", "rate", "multiplier", "unit")
     FIELDS_TO_DUPLICATE = ('identifier', 'description') + DERIVING_FIELDS \
         + CALCULATED_FIELDS
+
+    CACHES = [
+        subaccount_markups_cache,
+        subaccount_groups_cache,
+        subaccount_detail_cache,
+        subaccount_subaccounts_cache
+    ]
 
     class Meta:
         get_latest_by = "updated_at"
@@ -169,6 +186,10 @@ class SubAccount(PolymorphicModel):
         return 0.0
 
     @property
+    def raw_value_changed(self):
+        return self.fields_have_changed('multiplier', 'quantity', 'rate')
+
+    @property
     def nominal_value(self):
         if self.children.count() == 0:
             return self.raw_value
@@ -181,15 +202,18 @@ class SubAccount(PolymorphicModel):
 
     def accumulate_value(self, children=None):
         children = children or self.children.all()
+        previous_value = self.accumulated_value
         self.accumulated_value = functools.reduce(
             lambda current, sub: current + sub.nominal_value,
-            self.children.all(),
+            children,
             0
         )
+        return previous_value != self.accumulated_value
 
     def accumulate_markup_contribution(self, children=None, to_be_deleted=None):
         children = children or self.children.all()
         markups = self.children_markups.filter(unit=Markup.UNITS.flat)
+        previous_value = self.accumulated_markup_contribution
         self.accumulated_markup_contribution = functools.reduce(
             lambda current, sub: current + sub.markup_contribution
             + sub.accumulated_markup_contribution,
@@ -200,31 +224,158 @@ class SubAccount(PolymorphicModel):
             markups.exclude(pk__in=to_be_deleted or []),
             0
         )
+        return previous_value != self.accumulated_markup_contribution
 
     def accumulate_fringe_contribution(self, children=None):
         children = children or self.children.all()
+        previous_value = self.accumulated_fringe_contribution
         self.accumulated_fringe_contribution = functools.reduce(
             lambda current, sub: current + sub.fringe_contribution
             + sub.accumulated_fringe_contribution,
             children,
             0
         )
+        return previous_value != self.accumulate_fringe_contribution
 
     def establish_fringe_contribution(self, to_be_deleted=None):
+        previous_value = self.fringe_contribution
         self.fringe_contribution = contribution_from_fringes(
             value=self.realized_value,
             fringes=self.fringes.exclude(pk__in=to_be_deleted or [])
         )
+        return previous_value != self.fringe_contribution
 
     def establish_markup_contribution(self, to_be_deleted=None):
-        # Markups are applied after the Fringes are applied to the value.
+        previous_value = self.markup_contribution
         self.markup_contribution = contribution_from_markups(
             value=self.realized_value + self.fringe_contribution,
             markups=self.markups.exclude(pk__in=to_be_deleted or [])
         )
+        return previous_value != self.markup_contribution
 
-    def actualize(self, children=None, markups_to_be_deleted=None):
-        children = children or self.children.all()
+    def calculate(self, **kwargs):
+        return self.estimate(**kwargs)
+
+    @signals.disable()
+    def clear_deriving_fields(self, commit=True):
+        for field in self.DERIVING_FIELDS:
+            setattr(self, field, None)
+        # M2M fields must be updated immediately, regardless of whether or not
+        # we are committing.
+        self.fringes.set([])
+        if commit:
+            self.save(update_fields=self.DERIVING_FIELDS)
+
+    def estimate(self, **kwargs):
+        children, kwargs = self.children_from_kwargs(**kwargs)
+        markups_to_be_deleted = kwargs.get('markups_to_be_deleted', [])
+
+        alterations = [
+            self.accumulate_value(children=children),
+            self.accumulate_fringe_contribution(children=children),
+            self.accumulate_markup_contribution(
+                children=children,
+                to_be_deleted=markups_to_be_deleted
+            ),
+            # Because Fringes are a M2M field on the instance, the instance
+            # needs to be saved before it can be used.
+            self.establish_fringe_contribution(
+                to_be_deleted=kwargs.pop('fringes_to_be_deleted', [])
+            ),
+            # Markups are applied after the Fringes are applied to the value.
+            # Because Markups are a M2M field on the instance, the instance
+            # needs to be saved before it can be used.
+            self.establish_markup_contribution(
+                to_be_deleted=markups_to_be_deleted
+            )
+        ]
+        if any(alterations):
+            unsaved_recursive_children = [self]
+            if kwargs.get('commit', False):
+                unsaved_recursive_children = None
+                self.save(update_fields=self.reestimated_fields)
+
+            # There are cases with CASCADE deletes where a non-nullable field
+            # will be temporarily null.
+            if kwargs.get('trickle', True) and self.parent is not None:
+                self.parent.estimate(
+                    unsaved_children=unsaved_recursive_children,
+                    **kwargs
+                )
+        return any(alterations)
+
+
+@signals.model(user_field='updated_by')
+class BudgetSubAccount(SubAccount):
+    pdf_type = 'pdf-subaccount'
+    attachments = models.ManyToManyField(
+        to='io.Attachment',
+        related_name='subaccounts'
+    )
+    contact = models.ForeignKey(
+        to='contact.Contact',
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name='assigned_subaccounts'
+    )
+    objects = BudgetSubAccountManager()
+    DERIVING_FIELDS = SubAccount.DERIVING_FIELDS + ("contact", )
+
+    class Meta(SubAccount.Meta):
+        verbose_name = "Budget Sub Account"
+        verbose_name_plural = "Budget Sub Accounts"
+
+    def __str__(self):
+        return "Budget Sub Account: %s" % self.identifier
+
+    @signals.disable()
+    def clear_deriving_fields(self, commit=True):
+        super().clear_deriving_fields(commit=False)
+        for field in self.DERIVING_FIELDS:
+            setattr(self, field, None)
+        self.attachments.set([])
+        if commit:
+            self.save(update_fields=self.DERIVING_FIELDS)
+
+    def calculate(self, **kwargs):
+        children, kwargs = self.children_from_kwargs(**kwargs)
+        trickle = kwargs.pop('trickle', True)
+        commit = kwargs.pop('commit', False)
+
+        alterations = [
+            super().calculate(
+                children=children,
+                trickle=False,
+                commit=False,
+                **kwargs
+            ),
+            self.actualize(
+                children=children,
+                trickle=False,
+                commit=False,
+                **kwargs
+            )
+        ]
+        if any(alterations):
+            unsaved_recursive_children = [self]
+            if commit:
+                unsaved_recursive_children = None
+                self.save(
+                    update_fields=tuple(self.reestimated_fields) + ('actual', ))
+
+            if trickle and self.parent is not None:
+                self.parent.calculate(
+                    commit=commit,
+                    unsaved_children=unsaved_recursive_children,
+                    **kwargs
+                )
+        return any(alterations)
+
+    def actualize(self, **kwargs):
+        children, kwargs = self.children_from_kwargs(**kwargs)
+        markups_to_be_deleted = kwargs.get('markups_to_be_deleted', []) or []
+
+        previous_value = self.actual
         self.actual = functools.reduce(
             lambda current, child: current + (child.actual or 0),
             children,
@@ -238,64 +389,24 @@ class SubAccount(PolymorphicModel):
             self.actuals.all(),
             0
         )
-
-    def estimate(self, markups_to_be_deleted=None, fringes_to_be_deleted=None):
-        children = self.children.all()
-        self.accumulate_value()
-        self.accumulate_fringe_contribution(children=children)
-        self.accumulate_markup_contribution(
-            children=children,
-            to_be_deleted=markups_to_be_deleted
-        )
-        self.establish_fringe_contribution(to_be_deleted=fringes_to_be_deleted)
-        self.establish_markup_contribution(to_be_deleted=markups_to_be_deleted)
-
-
-@signals.model(
-    flags=['suppress_budget_update'],
-    user_field='updated_by',
-    track_fields=['actual'],
-    dispatch_fields=[
-        'object_id', 'content_type', 'rate', 'quantity', 'multiplier', 'group'],
-    track_model_history=('identifier', 'description') + SubAccount.DERIVING_FIELDS  # noqa
-)
-class BudgetSubAccount(SubAccount):
-    pdf_type = 'pdf-subaccount'
-    attachments = models.ManyToManyField(
-        to='io.Attachment',
-        related_name='subaccounts'
-    )
-    contact = models.ForeignKey(
-        to='contact.Contact',
-        null=True,
-        on_delete=models.SET_NULL,
-        related_name='assigned_subaccounts'
-    )
-    comments = GenericRelation(Comment)
-    events = GenericRelation(Event)
-
-    objects = SubAccountManager()
-
-    TRACK_CREATE_HISTORY = True
-    DERIVING_FIELDS = SubAccount.DERIVING_FIELDS + ("contact", )
-
-    class Meta(SubAccount.Meta):
-        verbose_name = "Budget Sub Account"
-        verbose_name_plural = "Budget Sub Accounts"
-
-    def __str__(self):
-        return "Budget Sub Account: %s" % self.identifier
+        if previous_value != self.actual:
+            unsaved_recursive_children = [self]
+            if kwargs.get('commit', False):
+                unsaved_recursive_children = None
+                self.save(update_fields=['actual'])
+            # There are cases with CASCADE deletes where a non-nullable field
+            # will be temporarily null.
+            if kwargs.get('trickle', True) and self.parent is not None:
+                self.parent.actualize(
+                    unsaved_children=unsaved_recursive_children,
+                    **kwargs
+                )
+        return previous_value != self.actual
 
 
-@signals.model(
-    flags=['suppress_budget_update'],
-    user_field='updated_by',
-    track_fields=['actual'],
-    dispatch_fields=[
-        'object_id', 'content_type', 'rate', 'quantity', 'multiplier', 'group'],
-)
+@signals.model(user_field='updated_by')
 class TemplateSubAccount(SubAccount):
-    objects = SubAccountManager()
+    objects = TemplateSubAccountManager()
 
     FIELDS_TO_DERIVE = SubAccount.FIELDS_TO_DUPLICATE
 

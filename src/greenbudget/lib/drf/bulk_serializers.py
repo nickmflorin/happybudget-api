@@ -69,25 +69,25 @@ def create_bulk_delete_serializer(child_cls, base_cls=None, filter_qs=None):
     return BulkDeleteSerializer
 
 
-def create_bulk_change_serializer(child_cls, serializer_cls, filter_qs=None):
+def create_bulk_change_serializer(serializer_cls, filter_qs=None):
     # We have to extend the default model's serializer class such that we make
     # the ID a required write only field.
     class BulkChangeSerializer(serializer_cls):
         id = serializers.PrimaryKeyRelatedField(
             required=True,
-            queryset=child_cls.objects.filter(filter_qs or models.Q())
+            queryset=serializer_cls.Meta.model.objects.filter(
+                filter_qs or models.Q())
         )
 
     return BulkChangeSerializer
 
 
-def create_bulk_update_serializer(child_cls, serializer_cls, base_cls=None,
+def create_bulk_update_serializer(serializer_cls, base_cls=None,
         filter_qs=None, child_context=None):
     # The BulkChangeSerializer is independent of the base_cls model (if
     # provided) - it is solely pertinent to the child_cls model that we are
     # applying bulk changes to.
     bulk_change_serializer_cls = create_bulk_change_serializer(
-        child_cls=child_cls,
         serializer_cls=serializer_cls,
         filter_qs=filter_qs,
     )
@@ -121,7 +121,7 @@ def create_bulk_update_serializer(child_cls, serializer_cls, base_cls=None,
     return BulkUpdateSerializer
 
 
-def create_bulk_create_serializer(child_cls, serializer_cls, base_cls=None,
+def create_bulk_create_serializer(serializer_cls, base_cls=None,
         child_context=None):
     base_serializer = create_bulk_serializer(
         model_cls=base_cls,

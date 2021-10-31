@@ -34,3 +34,9 @@ CORS_ORIGIN_REGEX_WHITELIST = (
     r'^(https?://)?localhost:?[\d]*?$',
     r'^(https?://)?127.0.0.1:?[\d]*?$'
 )
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'
+    }
+}

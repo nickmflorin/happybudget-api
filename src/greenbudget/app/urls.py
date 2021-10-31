@@ -6,7 +6,6 @@ urlpatterns = [
     path('actuals/', include('greenbudget.app.actual.urls')),
     path('auth/', include('greenbudget.app.authentication.urls')),
     path('budgets/', include('greenbudget.app.budget.urls')),
-    path('comments/', include('greenbudget.app.comment.urls')),
     path('contacts/', include('greenbudget.app.contact.urls')),
     path('fringes/', include('greenbudget.app.fringe.urls')),
     path('groups/', include('greenbudget.app.group.urls')),

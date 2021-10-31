@@ -1,10 +1,8 @@
-from django.contrib.contenttypes.fields import (
-    GenericRelation, GenericForeignKey)
+from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
 from greenbudget.app import signals
-from greenbudget.app.comment.models import Comment
 from greenbudget.app.tagging.models import Tag
 
 from .managers import ActualManager
@@ -35,12 +33,7 @@ class ActualType(Tag):
         )
 
 
-@signals.model(
-    flags=['suppress_budget_update'],
-    user_field='updated_by',
-    track_fields=['value'],
-    dispatch_fields=['value', 'object_id', 'content_type']
-)
+@signals.model(user_field='updated_by')
 class Actual(models.Model):
     type = "actual"
     created_at = models.DateTimeField(auto_now_add=True)
@@ -92,8 +85,6 @@ class Actual(models.Model):
     )
     object_id = models.PositiveIntegerField(db_index=True, null=True)
     owner = GenericForeignKey('content_type', 'object_id')
-
-    comments = GenericRelation(Comment)
     objects = ActualManager()
 
     FIELDS_TO_DUPLICATE = (

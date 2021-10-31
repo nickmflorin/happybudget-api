@@ -1,7 +1,7 @@
 from django.db import models
 
 from greenbudget.lib.django_utils.models import PrePKBulkCreateQuerySet
-from greenbudget.app.budget.query import BudgetAncestorQuerier
+from greenbudget.app.budgeting.query import BudgetAncestorQuerier
 
 
 class GroupQuerier(BudgetAncestorQuerier):

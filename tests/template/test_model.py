@@ -1,73 +1,69 @@
-from greenbudget.app import signals
-
-
 def test_duplicate_template(user, create_template, create_template_account,
         create_template_subaccount, create_fringe, create_group, create_markup):
-    with signals.post_save.disable():
-        original = create_template(created_by=user)
-        fringes = [
-            create_fringe(
-                budget=original,
-                created_by=user,
-                updated_by=user
-            ),
-            create_fringe(
-                budget=original,
-                created_by=user,
-                updated_by=user
-            ),
-        ]
-        template_markups = [
-            create_markup(parent=original, identifier="Template Markup A"),
-            create_markup(parent=original, identifier="Template Markup B")
-        ]
-        account_group = create_group(parent=original)
-        accounts = [
-            create_template_account(
-                parent=original,
-                created_by=user,
-                updated_by=user,
-                markups=template_markups,
-                group=account_group,
-            ),
-            create_template_account(
-                parent=original,
-                created_by=user,
-                updated_by=user,
-                group=account_group,
-            )
-        ]
-        account_markups = [
-            create_markup(parent=accounts[0], identifier="Account Markup B"),
-            create_markup(parent=accounts[0], identifier="Account Markup B")
-        ]
-        subaccount_group = create_group(parent=accounts[0])
-        subaccounts = [
-            create_template_subaccount(
-                parent=accounts[0],
-                created_by=user,
-                updated_by=user,
-                markups=account_markups,
-                group=subaccount_group
-            ),
-            create_template_subaccount(
-                parent=accounts[1],
-                created_by=user,
-                updated_by=user
-            )
-        ]
-        child_subaccounts = [
-            create_template_subaccount(
-                parent=subaccounts[0],
-                created_by=user,
-                updated_by=user
-            ),
-            create_template_subaccount(
-                parent=subaccounts[1],
-                created_by=user,
-                updated_by=user
-            )
-        ]
+    original = create_template(created_by=user)
+    fringes = [
+        create_fringe(
+            budget=original,
+            created_by=user,
+            updated_by=user
+        ),
+        create_fringe(
+            budget=original,
+            created_by=user,
+            updated_by=user
+        ),
+    ]
+    template_markups = [
+        create_markup(parent=original, identifier="Template Markup A"),
+        create_markup(parent=original, identifier="Template Markup B")
+    ]
+    account_group = create_group(parent=original)
+    accounts = [
+        create_template_account(
+            parent=original,
+            created_by=user,
+            updated_by=user,
+            markups=template_markups,
+            group=account_group,
+        ),
+        create_template_account(
+            parent=original,
+            created_by=user,
+            updated_by=user,
+            group=account_group,
+        )
+    ]
+    account_markups = [
+        create_markup(parent=accounts[0], identifier="Account Markup B"),
+        create_markup(parent=accounts[0], identifier="Account Markup B")
+    ]
+    subaccount_group = create_group(parent=accounts[0])
+    subaccounts = [
+        create_template_subaccount(
+            parent=accounts[0],
+            created_by=user,
+            updated_by=user,
+            markups=account_markups,
+            group=subaccount_group
+        ),
+        create_template_subaccount(
+            parent=accounts[1],
+            created_by=user,
+            updated_by=user
+        )
+    ]
+    child_subaccounts = [
+        create_template_subaccount(
+            parent=subaccounts[0],
+            created_by=user,
+            updated_by=user
+        ),
+        create_template_subaccount(
+            parent=subaccounts[1],
+            created_by=user,
+            updated_by=user
+        )
+    ]
 
     template = original.duplicate(user)
 
@@ -179,67 +175,60 @@ def test_duplicate_template(user, create_template, create_template_account,
 
 def test_derive_budget(user, create_template, create_template_account,
         create_template_subaccount, create_fringe, admin_user, create_group):
-    with signals.disable([
-        signals.post_save,
-        signals.post_create_by_user,
-        signals.post_create,
-        signals.fields_changed,
-        signals.field_changed
-    ]):
-        template = create_template(created_by=admin_user, name="Test Name")
-        fringes = [
-            create_fringe(
-                budget=template,
-                created_by=admin_user,
-                updated_by=admin_user
-            ),
-            create_fringe(
-                budget=template,
-                created_by=admin_user,
-                updated_by=admin_user
-            ),
-        ]
-        account_group = create_group(parent=template)
-        accounts = [
-            create_template_account(
-                parent=template,
-                created_by=admin_user,
-                updated_by=admin_user,
-                group=account_group,
-            ),
-            create_template_account(
-                parent=template,
-                created_by=admin_user,
-                updated_by=admin_user,
-                group=account_group,
-            )
-        ]
-        subaccount_group = create_group(parent=accounts[0])
-        subaccounts = [
-            create_template_subaccount(
-                parent=accounts[0],
-                created_by=admin_user,
-                updated_by=admin_user,
-                group=subaccount_group
-            ),
-            create_template_subaccount(
-                parent=accounts[1],
-                created_by=admin_user,
-                updated_by=admin_user
-            )
-        ]
-        child_subaccounts = [
-            create_template_subaccount(
-                parent=subaccounts[0],
-                created_by=admin_user,
-                updated_by=admin_user
-            ),
-            create_template_subaccount(
-                parent=subaccounts[1],
-                created_by=admin_user,
-                updated_by=admin_user
-            )
-        ]
+    template = create_template(created_by=admin_user, name="Test Name")
+    fringes = [
+        create_fringe(
+            budget=template,
+            created_by=admin_user,
+            updated_by=admin_user
+        ),
+        create_fringe(
+            budget=template,
+            created_by=admin_user,
+            updated_by=admin_user
+        ),
+    ]
+    account_group = create_group(parent=template)
+    accounts = [
+        create_template_account(
+            parent=template,
+            created_by=admin_user,
+            updated_by=admin_user,
+            group=account_group,
+        ),
+        create_template_account(
+            parent=template,
+            created_by=admin_user,
+            updated_by=admin_user,
+            group=account_group,
+        )
+    ]
+    subaccount_group = create_group(parent=accounts[0])
+    subaccounts = [
+        create_template_subaccount(
+            parent=accounts[0],
+            created_by=admin_user,
+            updated_by=admin_user,
+            group=subaccount_group
+        ),
+        create_template_subaccount(
+            parent=accounts[1],
+            created_by=admin_user,
+            updated_by=admin_user
+        )
+    ]
+    child_subaccounts = [
+        create_template_subaccount(
+            parent=subaccounts[0],
+            created_by=admin_user,
+            updated_by=admin_user
+        ),
+        create_template_subaccount(
+            parent=subaccounts[1],
+            created_by=admin_user,
+            updated_by=admin_user
+        )
+    ]
 
     budget = template.derive(user)
     budget.refresh_from_db()

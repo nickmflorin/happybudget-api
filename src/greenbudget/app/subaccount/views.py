@@ -16,6 +16,12 @@ from greenbudget.app.io.serializers import (
 from greenbudget.app.markup.models import Markup
 from greenbudget.app.markup.serializers import MarkupSerializer
 
+from .cache import (
+    subaccount_subaccounts_cache,
+    subaccount_markups_cache,
+    subaccount_groups_cache,
+    subaccount_detail_cache
+)
 from .mixins import SubAccountNestedMixin
 from .models import (
     SubAccount,
@@ -49,6 +55,7 @@ class SubAccountUnitViewSet(
 
 
 @filter_by_ids
+@subaccount_markups_cache(get_key_from_view=lambda view: view.subaccount.pk)
 class SubAccountMarkupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -90,6 +97,7 @@ class SubAccountMarkupViewSet(
 
 
 @filter_by_ids
+@subaccount_groups_cache(get_key_from_view=lambda view: view.subaccount.pk)
 class SubAccountGroupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -142,6 +150,11 @@ class SubAccountActualsViewSet(
 
     (1) GET /subaccounts/<pk>/actuals/
     (2) POST /subaccounts/<pk>/actuals/
+
+    Note:
+    ----
+    This view is currently not cached because it is not in use.  If we do start
+    using it by the FE, we should cache it.
     """
     subaccount_lookup_field = ("pk", "subaccount_pk")
 
@@ -202,7 +215,7 @@ class SubAccountAttachmentViewSet(
 class GenericSubAccountViewSet(viewsets.GenericViewSet):
     lookup_field = 'pk'
     ordering_fields = ['updated_at', 'created_at']
-    search_fields = ['description']
+    search_fields = ['identifier', 'description']
 
 
 @register_bulk_operations(
@@ -239,6 +252,7 @@ class GenericSubAccountViewSet(viewsets.GenericViewSet):
         )
     ]
 )
+@subaccount_detail_cache(get_key_from_view=lambda view: view.instance.pk)
 class SubAccountViewSet(
     mixins.UpdateModelMixin,
     mixins.RetrieveModelMixin,
@@ -257,9 +271,12 @@ class SubAccountViewSet(
     throttle_classes = []
 
     @cached_property
+    def instance(self):
+        return self.get_object()
+
+    @property
     def instance_cls(self):
-        instance = self.get_object()
-        return type(instance)
+        return type(self.instance)
 
     @property
     def child_instance_cls(self):
@@ -286,6 +303,7 @@ class SubAccountViewSet(
 
 
 @filter_by_ids
+@subaccount_subaccounts_cache(get_key_from_view=lambda view: view.subaccount.pk)
 class SubAccountRecursiveViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,

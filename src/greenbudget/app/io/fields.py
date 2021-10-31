@@ -40,7 +40,7 @@ class Base64ImageField(serializers.ImageField):
                 # This can happen if there is an error retrieving the image from
                 # local storage.  This happens a lot when switching between S3
                 # and local storage in local development.
-                logger.exception("Could not find image file locally.")
+                logger.error("Could not find image file locally.")
                 return super().to_representation(instance)
         return super().to_representation(instance)
 

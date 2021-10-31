@@ -103,7 +103,7 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
             + (
                 'created_by', 'updated_by', 'created_at', 'updated_at',
                 'quantity', 'rate', 'multiplier', 'unit', 'object_id',
-                'parent_type', 'children', 'fringes', 'contact', 'group',
+                'parent_type', 'children', 'fringes', 'group',
                 'nominal_value', 'actual', 'fringe_contribution',
                 'markup_contribution', 'accumulated_markup_contribution',
                 'accumulated_fringe_contribution'
@@ -125,10 +125,16 @@ class BudgetSubAccountSerializer(SubAccountSerializer):
         required=False,
         many=True
     )
+    contact = UserFilteredQuerysetPKField(
+        required=False,
+        allow_null=True,
+        queryset=Contact.objects.all(),
+        user_field='user'
+    )
 
     class Meta(SubAccountSerializer.Meta):
         model = BudgetSubAccount
-        fields = SubAccountSerializer.Meta.fields + ('attachments', )
+        fields = SubAccountSerializer.Meta.fields + ('attachments', 'contact', )
         response = {
             'attachments': (
                 SimpleAttachmentSerializer,

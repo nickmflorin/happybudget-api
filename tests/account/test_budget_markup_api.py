@@ -1,21 +1,18 @@
 import pytest
 
-from greenbudget.app import signals
 from greenbudget.app.markup.models import Markup
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_budget_account_markups(api_client, user, models,
-        create_budget_account, create_budget, create_markup,
-        create_budget_subaccount):
-    with signals.disable():
-        budget = create_budget()
-        account = create_budget_account(parent=budget)
-        markup = create_markup(parent=account)
-        subaccounts = [
-            create_budget_subaccount(parent=account, markups=[markup]),
-            create_budget_subaccount(parent=account, markups=[markup])
-        ]
+def test_get_budget_account_markups(api_client, user, models, create_budget,
+        create_budget_account, create_markup, create_budget_subaccount):
+    budget = create_budget()
+    account = create_budget_account(parent=budget)
+    markup = create_markup(parent=account)
+    subaccounts = [
+        create_budget_subaccount(parent=account, markups=[markup]),
+        create_budget_subaccount(parent=account, markups=[markup])
+    ]
 
     api_client.force_login(user)
     response = api_client.get("/v1/accounts/%s/markups/" % account.pk)
@@ -42,9 +39,8 @@ def test_get_budget_account_markups(api_client, user, models,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_budget_account_flat_markup(api_client, user,
-        create_budget_subaccounts, create_budget_account, create_budget,
-        models):
+def test_create_budget_account_flat_markup(api_client, user, create_budget,
+        create_budget_subaccounts, create_budget_account, models):
     budget = create_budget()
     account = create_budget_account(parent=budget)
     subaccounts = create_budget_subaccounts(
@@ -213,15 +209,14 @@ def test_create_budget_account_percent_markup(api_client, user,
     assert response.json()["budget"]["nominal_value"] == 20.0
 
 
-def test_create_budget_account_percent_markup_invalid_child(
+def test_create_budget_account_percent_markup_invalid_child(create_budget,
         api_client, user, create_budget_subaccount, create_budget_account,
-        create_budget, models):
-    with signals.disable():
-        budget = create_budget()
-        another_budget = create_budget()
-        account = create_budget_account(parent=budget)
-        another_account = create_budget_account(parent=another_budget)
-        subaccount = create_budget_subaccount(parent=another_account)
+        models):
+    budget = create_budget()
+    another_budget = create_budget()
+    account = create_budget_account(parent=budget)
+    another_account = create_budget_account(parent=another_budget)
+    subaccount = create_budget_subaccount(parent=another_account)
 
     api_client.force_login(user)
     response = api_client.post("/v1/accounts/%s/markups/" % account.pk, data={
@@ -250,9 +245,8 @@ def test_create_budget_account_percent_markup_invalid_child(
 ])
 def test_create_budget_account_percent_markup_no_children(
         api_client, user, create_budget_account, create_budget, data):
-    with signals.disable():
-        budget = create_budget()
-        account = create_budget_account(parent=budget)
+    budget = create_budget()
+    account = create_budget_account(parent=budget)
 
     api_client.force_login(user)
     response = api_client.post(
@@ -268,13 +262,11 @@ def test_create_budget_account_percent_markup_no_children(
     }
 
 
-def test_create_budget_account_flat_markup_children(api_client,
-        user, create_budget_subaccount, create_budget_account, create_budget,
-        models):
-    with signals.disable():
-        budget = create_budget()
-        account = create_budget_account(parent=budget)
-        subaccount = create_budget_subaccount(parent=account)
+def test_create_budget_account_flat_markup_children(api_client, create_budget,
+        user, create_budget_subaccount, create_budget_account, models):
+    budget = create_budget()
+    account = create_budget_account(parent=budget)
+    subaccount = create_budget_subaccount(parent=account)
 
     api_client.force_login(user)
     response = api_client.post("/v1/accounts/%s/markups/" % account.pk, data={

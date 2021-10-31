@@ -12,8 +12,6 @@ m2m_changed = Signal(name='m2m_changed')
 post_delete = Signal(name='post_delete')
 pre_delete = Signal(name='pre_delete')
 pre_save = Signal(name='pre_save')
-model_history_changed = Signal(name='model_history_changed')
-model_history_created = Signal(name='model_history_created')
 
 
 def any_fields_changed_signal(fields, **kwargs):
@@ -24,6 +22,8 @@ def any_fields_changed_signal(fields, **kwargs):
         for f in fields:
             instance.raise_if_field_not_tracked(f)
         changed_fields = [change.field for change in kw['changes']]
+        import ipdb
+        ipdb.set_trace()
         if any([f in changed_fields for f in fields]):
             if isinstance(instance, kwargs['sender']):
                 temp_signal.send(

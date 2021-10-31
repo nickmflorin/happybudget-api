@@ -28,7 +28,6 @@ def create_bulk_delete_serializer(user):
 def create_bulk_create_serializer():
     generic_serializer_cls = create_generic_bulk_create_serializer(
         serializer_cls=ContactSerializer,
-        child_cls=Contact
     )
 
     class BulkCreateSerializer(generic_serializer_cls):
@@ -44,7 +43,6 @@ def create_bulk_create_serializer():
 
 def create_bulk_update_serializer(user):
     generic_serializer_cls = create_generic_bulk_update_serializer(
-        child_cls=Contact,
         serializer_cls=ContactSerializer,
         filter_qs=models.Q(user=user)
     )

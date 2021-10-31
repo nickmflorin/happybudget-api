@@ -1,17 +1,14 @@
 import pytest
 
-from greenbudget.app import signals
-
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_get_template_accounts(api_client, user, create_template_account,
         create_template):
-    with signals.disable():
-        template = create_template()
-        accounts = [
-            create_template_account(parent=template),
-            create_template_account(parent=template)
-        ]
+    template = create_template()
+    accounts = [
+        create_template_account(parent=template),
+        create_template_account(parent=template)
+    ]
     api_client.force_login(user)
     response = api_client.get("/v1/templates/%s/accounts/" % template.pk)
     assert response.status_code == 200
@@ -85,12 +82,11 @@ def test_create_template_account(api_client, user, create_template, models):
 
 def test_bulk_update_template_accounts(api_client, user, create_template,
         create_template_account):
-    with signals.disable():
-        template = create_template()
-        accounts = [
-            create_template_account(parent=template),
-            create_template_account(parent=template)
-        ]
+    template = create_template()
+    accounts = [
+        create_template_account(parent=template),
+        create_template_account(parent=template)
+    ]
     api_client.force_login(user)
     response = api_client.patch(
         "/v1/templates/%s/bulk-update-accounts/" % template.pk,
@@ -123,13 +119,12 @@ def test_bulk_update_template_accounts(api_client, user, create_template,
 
 def test_bulk_update_template_accounts_outside_template(api_client, user,
         create_template, create_template_account):
-    with signals.disable():
-        template = create_template()
-        another_template = create_template()
-        accounts = [
-            create_template_account(parent=template),
-            create_template_account(parent=another_template)
-        ]
+    template = create_template()
+    another_template = create_template()
+    accounts = [
+        create_template_account(parent=template),
+        create_template_account(parent=another_template)
+    ]
     api_client.force_login(user)
     response = api_client.patch(
         "/v1/templates/%s/bulk-update-accounts/" % template.pk,
@@ -196,12 +191,11 @@ def test_bulk_create_template_accounts(api_client, user, create_template,
 
 def test_bulk_delete_template_accounts(api_client, user, create_template,
         create_template_account, create_template_subaccount, models):
-    with signals.disable():
-        template = create_template()
-        accounts = [
-            create_template_account(parent=template),
-            create_template_account(parent=template)
-        ]
+    template = create_template()
+    accounts = [
+        create_template_account(parent=template),
+        create_template_account(parent=template)
+    ]
     # We need to create SubAccount(s) so that the accounts themselves have
     # calculated values, and thus the Budget itself has calculated values, so
     # we can test whether or not the deletion recalculates the metrics on the

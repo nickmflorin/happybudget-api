@@ -1,6 +1,5 @@
 import pytest
 
-from greenbudget.app import signals
 from greenbudget.app.markup.models import Markup
 
 
@@ -198,12 +197,11 @@ def test_create_template_percent_markup(api_client, user, create_template,
     assert response.json()["budget"]["nominal_value"] == 20.0
 
 
-def test_create_template_percent_markup_invalid_child(api_client, user,
-        create_template_account, create_template, models):
-    with signals.disable():
-        template = create_template()
-        another_template = create_template()
-        account = create_template_account(parent=another_template)
+def test_create_template_percent_markup_invalid_child(api_client, user, models,
+        create_template_account, create_template):
+    template = create_template()
+    another_template = create_template()
+    account = create_template_account(parent=another_template)
 
     api_client.force_login(user)
     response = api_client.post("/v1/templates/%s/markups/" % template.pk, data={
@@ -232,8 +230,7 @@ def test_create_template_percent_markup_invalid_child(api_client, user,
 ])
 def test_create_template_percent_markup_no_children(api_client, user, data,
         create_template):
-    with signals.disable():
-        template = create_template()
+    template = create_template()
 
     api_client.force_login(user)
     response = api_client.post(
@@ -251,9 +248,8 @@ def test_create_template_percent_markup_no_children(api_client, user, data,
 
 def test_create_template_template_subaccount_flat_markup_children(api_client,
         user, create_template_account, create_template, models):
-    with signals.disable():
-        template = create_template()
-        account = create_template_account(parent=template)
+    template = create_template()
+    account = create_template_account(parent=template)
 
     api_client.force_login(user)
     response = api_client.post("/v1/templates/%s/markups/" % account.pk, data={

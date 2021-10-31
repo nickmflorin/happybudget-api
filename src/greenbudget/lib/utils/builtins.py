@@ -1,5 +1,30 @@
 import importlib
 import inspect
+import six
+
+
+def set_or_list(obj):
+    if isinstance(obj, set):
+        return list(obj)
+    elif not hasattr(obj, '__iter__'):
+        return [obj]
+    return list(obj)
+
+
+def humanize_list(value, callback=six.text_type, conjunction='and',
+        oxford_comma=True):
+    """
+    Turns an interable list into a human readable string.
+    """
+    num = len(value)
+    if num == 0:
+        return ""
+    elif num == 1:
+        return callback(value[0])
+    s = u", ".join(map(callback, value[:num - 1]))
+    if len(value) >= 3 and oxford_comma is True:
+        s += ","
+    return "%s %s %s" % (s, conjunction, callback(value[num - 1]))
 
 
 def conditionally_separate_strings(strings, separator=" "):

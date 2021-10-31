@@ -1,6 +1,3 @@
-from greenbudget.app import signals
-
-
 def test_bulk_create_budgets(models, user):
     instances = [
         models.Budget(name='Budget 1', created_by=user),
@@ -23,77 +20,76 @@ def test_bulk_create_budgets(models, user):
 def test_duplicate_budget(user, create_budget, create_fringe, create_markup,
         create_group, create_budget_account, create_budget_subaccount,
         create_actual):
-    with signals.post_save.disable():
-        original = create_budget(created_by=user)
-        fringes = [
-            create_fringe(
-                budget=original,
-                created_by=user,
-                updated_by=user
-            ),
-            create_fringe(
-                budget=original,
-                created_by=user,
-                updated_by=user
-            ),
-        ]
-        budget_markups = [
-            create_markup(parent=original),
-            create_markup(parent=original)
-        ]
-        account_group = create_group(parent=original)
-        accounts = [
-            create_budget_account(
-                parent=original,
-                markups=budget_markups,
-                created_by=user,
-                updated_by=user,
-                group=account_group,
-            ),
-            create_budget_account(
-                parent=original,
-                created_by=user,
-                updated_by=user,
-                group=account_group,
-            )
-        ]
-        account_markups = [
-            create_markup(parent=accounts[0]),
-            create_markup(parent=accounts[0])
-        ]
-        subaccount_group = create_group(parent=accounts[0])
-        subaccounts = [
-            create_budget_subaccount(
-                parent=accounts[0],
-                markups=account_markups,
-                created_by=user,
-                updated_by=user,
-                group=subaccount_group
-            ),
-            create_budget_subaccount(
-                parent=accounts[1],
-                created_by=user,
-                updated_by=user
-            )
-        ]
-        child_subaccounts = [
-            create_budget_subaccount(
-                parent=subaccounts[0],
-                created_by=user,
-                updated_by=user
-            ),
-            create_budget_subaccount(
-                parent=subaccounts[1],
-                created_by=user,
-                updated_by=user
-            )
-        ]
-        actuals = [
-            create_actual(owner=budget_markups[0], budget=original),
-            create_actual(owner=account_markups[1], budget=original),
-            create_actual(owner=subaccounts[0], budget=original),
-            create_actual(owner=child_subaccounts[1], budget=original)
-        ]
+    original = create_budget(created_by=user)
+    fringes = [
+        create_fringe(
+            budget=original,
+            created_by=user,
+            updated_by=user
+        ),
+        create_fringe(
+            budget=original,
+            created_by=user,
+            updated_by=user
+        ),
+    ]
+    budget_markups = [
+        create_markup(parent=original),
+        create_markup(parent=original)
+    ]
+    account_group = create_group(parent=original)
+    accounts = [
+        create_budget_account(
+            parent=original,
+            markups=budget_markups,
+            created_by=user,
+            updated_by=user,
+            group=account_group,
+        ),
+        create_budget_account(
+            parent=original,
+            created_by=user,
+            updated_by=user,
+            group=account_group,
+        )
+    ]
+    account_markups = [
+        create_markup(parent=accounts[0]),
+        create_markup(parent=accounts[0])
+    ]
+    subaccount_group = create_group(parent=accounts[0])
+    subaccounts = [
+        create_budget_subaccount(
+            parent=accounts[0],
+            markups=account_markups,
+            created_by=user,
+            updated_by=user,
+            group=subaccount_group
+        ),
+        create_budget_subaccount(
+            parent=accounts[1],
+            created_by=user,
+            updated_by=user
+        )
+    ]
+    child_subaccounts = [
+        create_budget_subaccount(
+            parent=subaccounts[0],
+            created_by=user,
+            updated_by=user
+        ),
+        create_budget_subaccount(
+            parent=subaccounts[1],
+            created_by=user,
+            updated_by=user
+        )
+    ]
+    actuals = [
+        create_actual(owner=budget_markups[0], budget=original),
+        create_actual(owner=account_markups[1], budget=original),
+        create_actual(owner=subaccounts[0], budget=original),
+        create_actual(owner=child_subaccounts[1], budget=original)
+    ]
 
     budget = original.duplicate(user)
 

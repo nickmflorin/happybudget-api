@@ -1,27 +1,24 @@
 import datetime
 import pytest
 
-from greenbudget.app import signals
-
 
 @pytest.mark.freeze_time('2020-01-03')
 def test_get_budget_account_subaccounts(api_client, user, create_budget_account,
         create_budget, create_budget_subaccount):
-    with signals.disable():
-        budget = create_budget()
-        account = create_budget_account(parent=budget)
-        another_account = create_budget_account(parent=budget)
-        subaccounts = [
-            create_budget_subaccount(
-                parent=account,
-                created_at=datetime.datetime(2020, 1, 1)
-            ),
-            create_budget_subaccount(
-                parent=account,
-                created_at=datetime.datetime(2020, 1, 2)
-            ),
-            create_budget_subaccount(parent=another_account)
-        ]
+    budget = create_budget()
+    account = create_budget_account(parent=budget)
+    another_account = create_budget_account(parent=budget)
+    subaccounts = [
+        create_budget_subaccount(
+            parent=account,
+            created_at=datetime.datetime(2020, 1, 1)
+        ),
+        create_budget_subaccount(
+            parent=account,
+            created_at=datetime.datetime(2020, 1, 2)
+        ),
+        create_budget_subaccount(parent=another_account)
+    ]
     api_client.force_login(user)
     response = api_client.get("/v1/accounts/%s/subaccounts/" % account.pk)
     assert response.status_code == 200
@@ -85,9 +82,8 @@ def test_get_budget_account_subaccounts(api_client, user, create_budget_account,
 @pytest.mark.freeze_time('2020-01-01')
 def test_create_budget_subaccount(api_client, user, create_budget_account,
         create_budget, models):
-    with signals.disable():
-        budget = create_budget()
-        account = create_budget_account(parent=budget)
+    budget = create_budget()
+    account = create_budget_account(parent=budget)
     api_client.force_login(user)
     response = api_client.post(
          "/v1/accounts/%s/subaccounts/" % account.pk, data={
