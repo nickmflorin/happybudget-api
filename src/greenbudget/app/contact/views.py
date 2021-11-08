@@ -1,13 +1,17 @@
+from django.db import models
 from rest_framework import viewsets, mixins, decorators, response, status
 
-from .bulk_serializers import (
-    create_bulk_delete_serializer,
+from greenbudget.lib.drf.bulk_serializers import (
+    create_bulk_create_serializer,
     create_bulk_update_serializer,
-    create_bulk_create_serializer
+    create_bulk_delete_serializer
 )
+from .cache import user_contacts_cache
+from .models import Contact
 from .serializers import ContactSerializer
 
 
+@user_contacts_cache(get_key_from_view=lambda view: view.request.user.pk)
 class ContactViewSet(
     mixins.UpdateModelMixin,
     mixins.RetrieveModelMixin,
@@ -46,7 +50,10 @@ class ContactViewSet(
 
     @decorators.action(detail=False, url_path="bulk-delete", methods=["PATCH"])
     def bulk_delete(self, request, *args, **kwargs):
-        serializer_cls = create_bulk_delete_serializer(user=request.user)
+        serializer_cls = create_bulk_delete_serializer(
+            filter_qs=models.Q(user=request.user),
+            child_cls=Contact
+        )
         serializer = serializer_cls(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -54,7 +61,10 @@ class ContactViewSet(
 
     @decorators.action(detail=False, url_path="bulk-update", methods=["PATCH"])
     def bulk_update(self, request, *args, **kwargs):
-        serializer_cls = create_bulk_update_serializer(user=request.user)
+        serializer_cls = create_bulk_update_serializer(
+            serializer_cls=ContactSerializer,
+            filter_qs=models.Q(user=request.user)
+        )
         serializer = serializer_cls(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -62,7 +72,9 @@ class ContactViewSet(
 
     @decorators.action(detail=False, url_path="bulk-create", methods=["PATCH"])
     def bulk_create(self, request, *args, **kwargs):
-        serializer_cls = create_bulk_create_serializer()
+        serializer_cls = create_bulk_create_serializer(
+            serializer_cls=ContactSerializer,
+        )
         serializer = serializer_cls(data=request.data)
         serializer.is_valid(raise_exception=True)
         children = serializer.save(user=request.user)

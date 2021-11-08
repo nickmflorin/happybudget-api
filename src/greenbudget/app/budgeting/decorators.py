@@ -7,12 +7,12 @@ from typing import Any
 from django.db import models
 from rest_framework import decorators, response, status
 
-from greenbudget.app.budget.serializers import BudgetSerializer
-from .serializers import (
+from greenbudget.lib.drf.bulk_serializers import (
     create_bulk_create_serializer,
     create_bulk_update_serializer,
     create_bulk_delete_serializer
 )
+from greenbudget.app.budget.serializers import BudgetSerializer
 
 
 @dataclass
@@ -221,8 +221,8 @@ class bulk_update_action(bulk_action):
 
     def get_serializer_class(self):
         return create_bulk_update_serializer(
-            base_cls=self.base_cls,
-            child_serializer_cls=self.child_serializer_cls,
+            model_cls=self.base_cls,
+            serializer_cls=self.child_serializer_cls,
             filter_qs=self.filter_qs,
             child_context=self.child_context
         )
@@ -242,8 +242,8 @@ class bulk_create_action(bulk_action):
 
     def get_serializer_class(self):
         return create_bulk_create_serializer(
-            base_cls=self.base_cls,
-            child_serializer_cls=self.child_serializer_cls,
+            model_cls=self.base_cls,
+            serializer_cls=self.child_serializer_cls,
             child_context=self.child_context
         )
 
@@ -262,7 +262,7 @@ class bulk_delete_action(bulk_action):
 
     def get_serializer_class(self):
         return create_bulk_delete_serializer(
-            base_cls=self.base_cls,
+            model_cls=self.base_cls,
             child_cls=self.child_cls
         )
 

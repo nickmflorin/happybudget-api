@@ -1,9 +1,12 @@
 from model_utils import Choices
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 
 from greenbudget.lib.utils import conditionally_separate_strings
 from greenbudget.app.io.utils import upload_user_image_to
+
+from .managers import ContactManager
 
 
 def upload_to(instance, filename):
@@ -39,6 +42,8 @@ class Contact(models.Model):
     rate = models.IntegerField(null=True)
     image = models.ImageField(upload_to=upload_to, null=True)
 
+    objects = ContactManager()
+
     class Meta:
         get_latest_by = "updated_at"
         ordering = ('created_at', )
@@ -55,3 +60,12 @@ class Contact(models.Model):
     @property
     def full_name(self):
         return conditionally_separate_strings([self.first_name, self.last_name])
+
+    @property
+    def intermittent_user(self):
+        try:
+            return self.user
+        except ObjectDoesNotExist:
+            # If the user instance is deleted, this CASCADE delete might lead
+            # to the Contact not having an associated user.
+            pass
