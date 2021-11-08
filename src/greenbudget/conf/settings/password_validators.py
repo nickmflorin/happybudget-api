@@ -7,7 +7,7 @@ from django.utils.translation import gettext as _
 UPPERCASE = 'A-Z'
 LOWERCASE = 'a-z'
 NUMBER = '0-9'
-SPECIAL_CHARACTER = '!@#$%&_='
+SPECIAL_CHARACTER = 'W|_/g'
 
 
 class MinCharacterCountRegexValidator:
