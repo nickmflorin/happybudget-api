@@ -110,7 +110,8 @@ class endpoint_cache:
 
 class detail_cache(endpoint_cache):
     def invalidate(self, instance):
-        instances = instance if hasattr(instance, '__iter__') else [instance]
+        instances = instance if isinstance(instance, (list, tuple)) \
+            else [instance]
         for obj in instances:
             logger.debug(
                 "Invalidating Cache %s for Instance %s."
