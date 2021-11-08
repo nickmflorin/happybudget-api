@@ -168,7 +168,7 @@ class TemplateSubAccountDetailSerializer(TemplateSubAccountSerializer):
 
 class SubAccountPdfSerializer(SubAccountSimpleSerializer):
     type = serializers.CharField(read_only=True, source='pdf_type')
-    quantity = serializers.IntegerField(read_only=True)
+    quantity = serializers.FloatField(read_only=True)
     rate = serializers.FloatField(read_only=True)
     unit = TagField(
         model_cls=SubAccountUnit,
