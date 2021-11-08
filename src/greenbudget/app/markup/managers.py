@@ -51,7 +51,14 @@ class MarkupManager(MarkupQuerier, models.Manager):
             for obj in instances if obj.intermittent_parent is not None
             and obj.unit == self.model.UNITS.flat
         ])
-        [instance.invalidate_caches() for instance in instances]
+        parents = [
+            obj.intermittent_parent
+            # If the Markup is of type PERCENT, the contribution is not
+            # applicable to the parent estimated values directly.
+            for obj in instances if obj.intermittent_parent is not None
+        ]
+        [instance.invalidate_markups_cache() for instance in parents]
+
         self.bulk_actualize_all(
             instances=parents_to_reactualize,
             markups_to_be_deleted=[obj.pk for obj in instances],
@@ -65,6 +72,7 @@ class MarkupManager(MarkupQuerier, models.Manager):
 
     @signals.disable()
     def bulk_delete(self, instances, strict=True):
+        budgets = set([inst.budget for inst in instances])
         self.pre_delete(instances)
         for obj in instances:
             # We have to be concerned with race conditions here.
@@ -73,7 +81,10 @@ class MarkupManager(MarkupQuerier, models.Manager):
             except self.model.DoesNotExist as e:
                 if strict:
                     raise e
-        obj.budget.mark_updated()
+        # We want to update the Budget's `updated_at` property regardless of
+        # whether or not the Budget was recalculated.
+        for budget in budgets:
+            budget.mark_updated()
 
     def get_parents_to_reestimate(self, obj):
         parents_to_reestimate = set([])

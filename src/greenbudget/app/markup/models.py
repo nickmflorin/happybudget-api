@@ -9,11 +9,8 @@ from django.contrib.contenttypes.fields import (
 from django.contrib.contenttypes.models import ContentType
 
 from greenbudget.app import signals
-from greenbudget.app.account.cache import account_markups_cache
 from greenbudget.app.actual.models import Actual
-from greenbudget.app.budget.cache import budget_markups_cache
 from greenbudget.app.budgeting.utils import get_child_instance_cls
-from greenbudget.app.subaccount.cache import subaccount_markups_cache
 
 from .managers import MarkupManager
 
@@ -62,17 +59,14 @@ class Markup(models.Model):
     FIELDS_TO_DUPLICATE = ('identifier', 'description', 'unit', 'rate')
     FIELDS_TO_DERIVE = FIELDS_TO_DUPLICATE
 
-    caches = {
-        ('subaccount', ): subaccount_markups_cache,
-        ('account', ): account_markups_cache,
-        ('budget', 'template'): budget_markups_cache
-    }
-
     class Meta:
         get_latest_by = "updated_at"
         ordering = ('created_at', )
         verbose_name = "Markup"
         verbose_name_plural = "Markups"
+
+    def __str__(self):
+        return "Markup: %s" % self.identifier
 
     @property
     def actual(self):
@@ -104,22 +98,7 @@ class Markup(models.Model):
         try:
             return self.parent
         except ObjectDoesNotExist:
-            # The Account instance can be deleted in the process of deleting
-            # it's parent, at which point the parent will be None or raise a
-            # DoesNotExist Exception, until that Account instance is deleted.
             pass
-
-    def invalidate_caches(self):
-        parent = self.intermittent_parent
-        if parent is None:
-            logger.warn(
-                "Cannot invalidate Markup caches because parent is not "
-                "defined anymore."
-            )
-        else:
-            for k, v in self.caches.items():
-                if parent.type in k:
-                    v.invalidate(parent)
 
     def get_children_operator(self):
         if self.parent_instance_cls.type in ('account', 'subaccount'):
@@ -156,6 +135,3 @@ class Markup(models.Model):
         # not have any SubAccount(s) or Account(s), then the Group will be
         # empty.
         return self.children.count() == 0
-
-    def __str__(self):
-        return "Markup: %s" % self.identifier

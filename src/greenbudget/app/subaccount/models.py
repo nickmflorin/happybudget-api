@@ -3,7 +3,7 @@ import functools
 from django.contrib.contenttypes.fields import (
     GenericForeignKey, GenericRelation)
 from django.contrib.contenttypes.models import ContentType
-from django.db import models
+from django.db import models, IntegrityError
 
 from greenbudget.app import signals
 from greenbudget.app.actual.models import Actual
@@ -200,6 +200,12 @@ class SubAccount(BudgetingPolymorphicModel):
         return self.nominal_value + self.accumulated_fringe_contribution \
             + self.accumulated_markup_contribution
 
+    def validate_before_save(self):
+        if self.group is not None and self.group.parent != self.parent:
+            raise IntegrityError(
+                "Can only add groups with the same parent as the instance."
+            )
+
     def accumulate_value(self, children=None):
         children = children or self.children.all()
         previous_value = self.accumulated_value
@@ -327,6 +333,15 @@ class BudgetSubAccount(SubAccount):
 
     def __str__(self):
         return "Budget Sub Account: %s" % self.identifier
+
+    def validate_before_save(self):
+        super().validate_before_save()
+        if self.contact is not None \
+                and self.contact.user != self.created_by:
+            raise IntegrityError(
+                "Cannot assign a contact created by one user to a sub account "
+                "created by another user."
+            )
 
     @signals.disable()
     def clear_deriving_fields(self, commit=True):

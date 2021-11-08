@@ -11,7 +11,10 @@ class CacheControlMixin:
             if self._get_cache(cache).entity == entity:
                 return cache
         if strict:
-            raise Exception("Could not find cache for entity %s." % entity)
+            raise Exception(
+                "Could not find cache for entity %s on model %s."
+                % (entity, self.__class__.__name__)
+            )
 
     def _get_cache(self, cache):
         if hasattr(cache, '__iter__'):
@@ -37,8 +40,14 @@ class CacheControlMixin:
     def invalidate_markups_cache(self, trickle=False):
         cache = self.get_cache("markup")
         self._invalidate_cache(cache)
-        if trickle:
+        if trickle and hasattr(self, 'parent'):
             self.parent.invalidate_markups_cache(trickle=trickle)
+
+    def invalidate_groups_cache(self, trickle=False):
+        cache = self.get_cache("group")
+        self._invalidate_cache(cache)
+        if trickle and hasattr(self, 'parent'):
+            self.parent.invalidate_groups_cache(trickle=trickle)
 
     def invalidate_detail_cache(self, trickle=False):
         # Note: The Budget level will not have a parent cache so this is not

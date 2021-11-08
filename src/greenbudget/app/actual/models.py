@@ -1,6 +1,6 @@
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
-from django.db import models
+from django.db import models, IntegrityError
 
 from greenbudget.app import signals
 from greenbudget.app.tagging.models import Tag
@@ -100,3 +100,19 @@ class Actual(models.Model):
 
     def __str__(self):
         return "Actual: %s" % self.value
+
+    def validate_before_save(self):
+        try:
+            budget = self.budget
+        except Actual.budget.RelatedObjectDoesNotExist:
+            pass
+        else:
+            if self.owner is not None and self.owner.budget != budget:
+                raise IntegrityError(
+                    "Can only add actuals with the same parent as the instance.")
+            elif self.contact is not None \
+                    and self.contact.user != self.created_by:
+                raise IntegrityError(
+                    "Cannot assign a contact created by one user to an actual "
+                    "created by another user."
+                )

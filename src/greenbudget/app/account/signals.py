@@ -20,3 +20,9 @@ def account_deleted(instance, **kwargs):
     if instance.intermittent_parent is not None:
         instance.intermittent_parent.invalidate_caches(entities=["children"])
         instance.intermittent_parent.calculate(commit=True)
+
+
+@dispatch.receiver(signals.pre_save, sender=BudgetAccount)
+@dispatch.receiver(signals.pre_save, sender=TemplateAccount)
+def account_to_save(instance, **kwargs):
+    instance.validate_before_save()

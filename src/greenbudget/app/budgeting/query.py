@@ -123,6 +123,11 @@ class BaseBudgetQuerier:
                     # We have to be concerned with race conditions here.
                     pass
 
+    def validate_instances_before_save(self, instances):
+        for instance in instances:
+            if hasattr(instance, 'validate_before_save'):
+                instance.validate_before_save()
+
     def _validate_instances(self, instances, types, func):
         invalid_types = [
             type(i) for i in instances if not isinstance(i, tuple(types))]

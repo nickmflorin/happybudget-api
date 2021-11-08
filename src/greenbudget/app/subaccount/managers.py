@@ -30,6 +30,8 @@ class SubAccountQuerierMixin:
 
     @signals.disable()
     def bulk_add(self, instances):
+        self.validate_instances_before_save(instances)
+
         # It is important to perform the bulk create first, because we need
         # the primary keys for the instances to be hashable.
         created = self.bulk_create(instances, return_created_objects=True)
@@ -50,6 +52,8 @@ class SubAccountQuerierMixin:
 
     @signals.disable()
     def bulk_save(self, instances, update_fields):
+        self.validate_instances_before_save(instances)
+
         calculated, accounts, budgets = self.bulk_calculate(
             instances, commit=False)
         instances = calculated.union(instances)

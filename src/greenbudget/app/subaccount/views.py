@@ -343,13 +343,10 @@ class SubAccountRecursiveViewSet(
 
     def get_queryset(self):
         content_type = ContentType.objects.get_for_model(type(self.subaccount))
-        queryset = type(self.subaccount).objects.filter(
+        return type(self.subaccount).objects.filter(
             object_id=self.subaccount.pk,
             content_type=content_type,
         )
-        queryset = queryset.select_related('contact', 'group')
-        queryset = queryset.prefetch_related('attachments')
-        return queryset
 
     def perform_create(self, serializer):
         serializer.save(

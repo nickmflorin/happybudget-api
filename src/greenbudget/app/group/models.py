@@ -1,5 +1,6 @@
 from greenbudget.app import signals
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -64,6 +65,13 @@ class Group(models.Model):
             name=self.name,
             parent=self.parent.pk
         )
+
+    @property
+    def intermittent_parent(self):
+        try:
+            return self.parent
+        except ObjectDoesNotExist:
+            pass
 
     @classmethod
     def child_instance_cls_for_parent(cls, parent):

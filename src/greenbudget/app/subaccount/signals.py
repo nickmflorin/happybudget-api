@@ -1,5 +1,4 @@
 from django import dispatch
-from django.db import IntegrityError
 
 from greenbudget.lib.django_utils.models import generic_fk_instance_change
 from greenbudget.app import signals
@@ -91,10 +90,6 @@ def subaccount_deleted(instance, **kwargs):
 
 
 @dispatch.receiver(signals.pre_save, sender=BudgetSubAccount)
-def validate_subaccount_contact(instance, **kwargs):
-    if instance.contact is not None \
-            and instance.contact.user != instance.created_by:
-        raise IntegrityError(
-            "Cannot assign a contact created by one user to a sub account "
-            "created by another user."
-        )
+@dispatch.receiver(signals.pre_save, sender=TemplateSubAccount)
+def subaccount_to_save(instance, **kwargs):
+    instance.validate_before_save()

@@ -12,6 +12,8 @@ class ActualQuerier(BudgetQuerier):
     @signals.disable()
     def bulk_delete(self, instances):
         owners = [obj.owner for obj in instances]
+        budgets = set([obj.budget for obj in instances])
+
         for obj in instances:
             obj.delete()
 
@@ -19,12 +21,14 @@ class ActualQuerier(BudgetQuerier):
 
         # We want to update the Budget's `updated_at` property regardless of
         # whether or not the Budget was reactualized.
-        for budget in set([obj.budget for obj in instances]):
+        for budget in budgets:
             budget_actuals_cache.invalidate(budget)
             budget.mark_updated()
 
     @signals.disable()
     def bulk_add(self, instances):
+        self.validate_instances_before_save(instances)
+
         # It is important to perform the bulk create first, because we need
         # the primary keys for the instances to be hashable.
         created = self.bulk_create(instances, predetermine_pks=True)
@@ -43,6 +47,8 @@ class ActualQuerier(BudgetQuerier):
 
     @signals.disable()
     def bulk_save(self, instances, update_fields):
+        self.validate_instances_before_save(instances)
+
         # Bulk updating can only be done with "concrete fields".  The "owner"
         # field is a GFK.
         if 'owner' in update_fields:

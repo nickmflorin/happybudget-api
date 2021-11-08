@@ -17,7 +17,7 @@ account_markups_cache = detail_cache(
 
 account_groups_cache = detail_cache(
     id='account-groups',
-    entity='groups',
+    entity='group',
     prefix='account-groups',
     method='list'
 )
