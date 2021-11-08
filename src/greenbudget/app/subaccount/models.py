@@ -80,7 +80,7 @@ class SubAccount(BudgetingPolymorphicModel):
     )
     identifier = models.CharField(null=True, max_length=128)
     description = models.CharField(null=True, max_length=128)
-    quantity = models.IntegerField(null=True)
+    quantity = models.FloatField(null=True)
     rate = models.FloatField(null=True)
     multiplier = models.IntegerField(null=True)
     actual = models.FloatField(default=0.0)

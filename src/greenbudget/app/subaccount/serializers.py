@@ -54,10 +54,7 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
     updated_by = serializers.PrimaryKeyRelatedField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
-    quantity = serializers.IntegerField(
-        required=False,
-        allow_null=True
-    )
+    quantity = serializers.FloatField(required=False, allow_null=True)
     rate = serializers.FloatField(required=False, allow_null=True)
     multiplier = serializers.FloatField(required=False, allow_null=True)
     nominal_value = serializers.FloatField(read_only=True)
