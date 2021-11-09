@@ -22,8 +22,6 @@ def any_fields_changed_signal(fields, **kwargs):
         for f in fields:
             instance.raise_if_field_not_tracked(f)
         changed_fields = [change.field for change in kw['changes']]
-        import ipdb
-        ipdb.set_trace()
         if any([f in changed_fields for f in fields]):
             if isinstance(instance, kwargs['sender']):
                 temp_signal.send(
