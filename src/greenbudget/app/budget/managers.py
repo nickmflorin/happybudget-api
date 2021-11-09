@@ -1,14 +1,8 @@
-from polymorphic.managers import PolymorphicManager
-
-from greenbudget.lib.django_utils.models import BulkCreatePolymorphicQuerySet
 from greenbudget.app import signals
-from greenbudget.app.budgeting.query import (
-    BaseBudgetQuerier as _BaseBudgetQuerier,
-    BudgetQuerier as _BudgetQuerier,
-)
+from greenbudget.app.budgeting.managers import BudgetingPolymorphicManager
 
 
-class BaseBudgetQuerierMixin:
+class BaseBudgetManager(BudgetingPolymorphicManager):
     @signals.disable()
     def bulk_calculate(self, *args, **kwargs):
         return self.bulk_estimate(*args, **kwargs)
@@ -31,22 +25,7 @@ class BaseBudgetQuerierMixin:
         return instances_to_save
 
 
-class BaseBudgetQuerier(BaseBudgetQuerierMixin, _BaseBudgetQuerier):
-    pass
-
-
-class BaseBudgetQuery(BaseBudgetQuerier, BulkCreatePolymorphicQuerySet):
-    pass
-
-
-class BaseBudgetManager(BaseBudgetQuerier, PolymorphicManager):
-    queryset_class = BaseBudgetQuery
-
-    def get_queryset(self):
-        return self.queryset_class(self.model)
-
-
-class BudgetQuerier(BaseBudgetQuerierMixin, _BudgetQuerier):
+class BudgetManager(BaseBudgetManager):
     @signals.disable()
     def bulk_calculate(self, instances, **kwargs):
         commit = kwargs.pop('commit', True)
@@ -81,14 +60,3 @@ class BudgetQuerier(BaseBudgetQuerierMixin, _BudgetQuerier):
         if commit and instances_to_save:
             self.bulk_update_post_actualization(instances_to_save)
         return instances_to_save
-
-
-class BudgetQuery(BudgetQuerier, BulkCreatePolymorphicQuerySet):
-    pass
-
-
-class BudgetManager(BudgetQuerier, PolymorphicManager):
-    queryset_class = BaseBudgetQuery
-
-    def get_queryset(self):
-        return self.queryset_class(self.model)

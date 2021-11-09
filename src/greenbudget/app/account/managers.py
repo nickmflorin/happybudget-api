@@ -1,14 +1,10 @@
-from polymorphic.managers import PolymorphicManager
-
-from greenbudget.lib.django_utils.models import BulkCreatePolymorphicQuerySet
 from greenbudget.lib.utils import set_or_list
 
 from greenbudget.app import signals
-from greenbudget.app.budgeting.query import (
-    BaseBudgetQuerier, BudgetQuerier, TemplateQuerier)
+from greenbudget.app.budgeting.managers import BudgetingPolymorphicManager
 
 
-class AccountQuerierMixin:
+class AccountManager(BudgetingPolymorphicManager):
     @signals.disable()
     def bulk_delete(self, instances):
         budgets = set([obj.parent for obj in instances])
@@ -19,7 +15,7 @@ class AccountQuerierMixin:
             obj.delete()
 
         self.bulk_delete_empty_groups(groups)
-        self.base_cls.objects.bulk_calculate(budgets)
+        self.model.budget_cls().objects.bulk_calculate(budgets)
 
         # We want to update the Budget's `updated_at` property regardless of
         # whether or not the Budget was recalculated.
@@ -47,7 +43,7 @@ class AccountQuerierMixin:
             instances,
             tuple(self.model.CALCULATED_FIELDS) + tuple(update_fields)
         )
-        self.base_cls.objects.bulk_update_post_calculation(budgets)
+        self.model.budget_cls().objects.bulk_update_post_calculation(budgets)
 
         self.bulk_delete_empty_groups(groups)
 
@@ -101,7 +97,7 @@ class AccountQuerierMixin:
                 instances_to_save.add(obj)
             if (altered or obj.was_just_added()) and obj.parent is not None:
                 if obj.parent is not None:
-                    assert isinstance(obj.parent, self.base_cls)
+                    assert isinstance(obj.parent, self.model.budget_cls())
                     if obj.parent.pk in budgets_to_reestimate:
                         budgets_to_reestimate[obj.parent.pk]['unsaved'].add(obj)
                     else:
@@ -123,43 +119,17 @@ class AccountQuerierMixin:
 
         if commit:
             self.bulk_update_post_estimation(instances_to_save)
-            self.base_cls.objects.bulk_update_post_estimation(budgets_to_save)
+            self.model.budget_cls().objects.bulk_update_post_estimation(
+                budgets_to_save)
 
         return instances_to_save, budgets_to_save
 
 
-class AccountQuerier(AccountQuerierMixin, BaseBudgetQuerier):
+class TemplateAccountManager(AccountManager):
     pass
 
 
-class AccountQuery(AccountQuerier, BulkCreatePolymorphicQuerySet):
-    pass
-
-
-class AccountManager(AccountQuerier, PolymorphicManager):
-    queryset_class = AccountQuery
-
-    def get_queryset(self):
-        return self.queryset_class(self.model)
-
-
-class TemplateAccountQuerier(AccountQuerierMixin, TemplateQuerier):
-    pass
-
-
-class TemplateAccountQuery(
-        TemplateAccountQuerier, BulkCreatePolymorphicQuerySet):
-    pass
-
-
-class TemplateAccountManager(TemplateAccountQuerier, PolymorphicManager):
-    queryset_class = TemplateAccountQuery
-
-    def get_queryset(self):
-        return self.queryset_class(self.model)
-
-
-class BudgetAccountQuerier(AccountQuerierMixin, BudgetQuerier):
+class BudgetAccountManager(AccountManager):
     @signals.disable()
     def bulk_calculate(self, instances, **kwargs):
         commit = kwargs.pop('commit', True)
@@ -178,7 +148,8 @@ class BudgetAccountQuerier(AccountQuerierMixin, BudgetQuerier):
 
         if commit:
             self.bulk_update_post_calculation(instances_to_save)
-            self.budget_cls.objects.bulk_update_post_calculation(budgets_to_save)
+            self.model.budget_cls().objects.bulk_update_post_calculation(
+                budgets_to_save)
         return instances_to_save, budgets_to_save
 
     @signals.disable()
@@ -200,7 +171,7 @@ class BudgetAccountQuerier(AccountQuerierMixin, BudgetQuerier):
                 instances_to_save.add(obj)
             if (altered or obj.was_just_added()) and obj.parent is not None:
                 if obj.parent is not None:
-                    assert isinstance(obj.parent, self.budget_cls)
+                    assert isinstance(obj.parent, self.model.budget_cls())
                     if obj.parent.pk in budgets_to_reactualize:
                         budgets_to_reactualize[obj.parent.pk] = {
                             'instance': obj.parent,
@@ -226,17 +197,7 @@ class BudgetAccountQuerier(AccountQuerierMixin, BudgetQuerier):
 
         if commit:
             self.bulk_update_post_actualization(instances_to_save)
-            self.budget_cls.objects.bulk_update_post_actualization(budgets)
+            self.model.budget_cls().objects.bulk_update_post_actualization(
+                budgets)
 
         return instances_to_save, budgets
-
-
-class BudgetAccountQuery(BudgetAccountQuerier, BulkCreatePolymorphicQuerySet):
-    pass
-
-
-class BudgetAccountManager(BudgetAccountQuerier, PolymorphicManager):
-    queryset_class = BudgetAccountQuery
-
-    def get_queryset(self):
-        return self.queryset_class(self.model)

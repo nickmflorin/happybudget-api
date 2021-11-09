@@ -1,11 +1,8 @@
-from polymorphic.managers import PolymorphicManager
-
-from greenbudget.lib.django_utils.models import BulkCreatePolymorphicQuerySet
-from greenbudget.app.budget.managers import BaseBudgetQuerierMixin
-from greenbudget.app.budgeting.query import TemplateQuerier as _TemplateQuerier
+from greenbudget.app.budget.managers import BaseBudgetManager
+from greenbudget.app.budgeting.query import BudgetingPolymorphicQuerySet
 
 
-class TemplateQuerier(BaseBudgetQuerierMixin, _TemplateQuerier):
+class TemplateQuerier:
     def user(self, user):
         # pylint: disable=no-member
         return self.filter(community=False, created_by=user)
@@ -15,12 +12,9 @@ class TemplateQuerier(BaseBudgetQuerierMixin, _TemplateQuerier):
         return self.filter(community=True)
 
 
-class TemplateQuery(TemplateQuerier, BulkCreatePolymorphicQuerySet):
+class TemplateQuery(TemplateQuerier, BudgetingPolymorphicQuerySet):
     pass
 
 
-class TemplateManager(TemplateQuerier, PolymorphicManager):
+class TemplateManager(TemplateQuerier, BaseBudgetManager):
     queryset_class = TemplateQuery
-
-    def get_queryset(self):
-        return self.queryset_class(self.model)

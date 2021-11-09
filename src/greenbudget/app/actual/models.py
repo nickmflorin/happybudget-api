@@ -3,6 +3,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models, IntegrityError
 
 from greenbudget.app import signals
+from greenbudget.app.budgeting.models import BudgetingModel
 from greenbudget.app.tagging.models import Tag
 
 from .managers import ActualManager
@@ -34,7 +35,7 @@ class ActualType(Tag):
 
 
 @signals.model(user_field='updated_by')
-class Actual(models.Model):
+class Actual(BudgetingModel):
     type = "actual"
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(
@@ -91,6 +92,12 @@ class Actual(models.Model):
         'purchase_order', 'name', 'date', 'payment_id', 'value',
         'actual_type', 'notes'
     )
+
+    associated = [
+        ('budget', 'budget'),
+        ('account', 'budgetaccount'),
+        ('subaccount', 'budgetsubaccount')
+    ]
 
     class Meta:
         get_latest_by = "updated_at"

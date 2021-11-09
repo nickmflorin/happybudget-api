@@ -1,17 +1,72 @@
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Case, Q, When, Value as V, BooleanField
 
-from polymorphic.managers import PolymorphicManager
-
 from greenbudget.lib.utils import concat, set_or_list
-from greenbudget.lib.django_utils.models import BulkCreatePolymorphicQuerySet
 
 from greenbudget.app import signals
-from greenbudget.app.budgeting.query import (
-    BaseBudgetQuerier, BudgetQuerier, TemplateQuerier)
+from greenbudget.app.budgeting.managers import BudgetingPolymorphicManager
+from greenbudget.app.budgeting.query import BudgetingPolymorphicQuerySet
 
 
-class SubAccountQuerierMixin:
+class SubAccountQuerier:
+    def filter_by_budget(self, budget):
+        """
+        Since the :obj:`subaccount.models.SubAccount` is tied to the a
+        :obj:`budget.models.Budget` instance only via an eventual parent
+        :obj:`account.models.Account` instance, and the relationship between
+        :obj:`subaccount.models.SubAccount` and :obj:`account.models.Account`
+        is generic, we have to provide a custom method for filtering the
+        :obj:`subaccount.models.SubAccount`(s) by a budget.
+
+        It is important to note that this method is slow, so it should only
+        be used sparingly.
+        """
+        return self.annotate(
+            _ongoing=Case(
+                When(self._get_case_query(budget), then=V(True)),
+                default=V(False),
+                output_field=BooleanField()
+            )
+        ).filter(_ongoing=True)
+
+    def _get_subaccount_levels(self, budget):
+        subaccount_levels = []
+        subaccounts = concat([
+            [q[0] for q in account.children.only('pk').values_list('pk')]
+            for account in budget.account_cls().objects.filter(parent=budget)
+        ])
+        while len(subaccounts) != 0:
+            subaccount_levels.append(subaccounts)
+            subaccounts = concat([
+                [q[0] for q in account.children.only('pk').values_list('pk')]
+                for account in self.model.objects
+                .prefetch_related('children').filter(id__in=subaccounts)
+            ])
+        return subaccount_levels
+
+    def _get_case_query(self, budget):
+        account_ct = ContentType.objects.get_for_model(budget.account_cls())
+        subaccount_ct = ContentType.objects.get_for_model(
+            budget.subaccount_cls())
+        accounts = [
+            q[0] for q in budget.account_cls().objects.filter(parent=budget)
+            .only('pk').values_list('pk')
+        ]
+        query = Q(content_type_id=account_ct) & Q(object_id__in=accounts)
+        subaccount_levels = self._get_subaccount_levels(budget)
+        for level in subaccount_levels:
+            query = query | (
+                Q(content_type_id=subaccount_ct) & Q(object_id__in=level))
+        return query
+
+
+class SubAccountQuery(SubAccountQuerier, BudgetingPolymorphicQuerySet):
+    pass
+
+
+class SubAccountManager(SubAccountQuerier, BudgetingPolymorphicManager):
+    queryset_class = SubAccountQuery
+
     @signals.disable()
     def bulk_delete(self, instances):
         groups = [obj.group for obj in instances if obj.group is not None]
@@ -72,8 +127,8 @@ class SubAccountQuerierMixin:
             instances,
             tuple(self.model.CALCULATED_FIELDS) + tuple(update_fields)
         )
-        self.account_cls.objects.bulk_update_post_calculation(accounts)
-        self.base_cls.objects.bulk_update_post_calculation(budgets)
+        self.model.account_cls().objects.bulk_update_post_calculation(accounts)
+        self.model.budget_cls().objects.bulk_update_post_calculation(budgets)
 
         self.bulk_delete_empty_groups(groups)
 
@@ -112,8 +167,8 @@ class SubAccountQuerierMixin:
             if (altered or obj.raw_value_changed or obj.was_just_added()) \
                     and obj.parent is not None:
                 assert isinstance(
-                    obj.parent, (self.account_cls, self.model))
-                if isinstance(obj.parent, self.account_cls):
+                    obj.parent, (self.model.account_cls(), self.model))
+                if isinstance(obj.parent, self.model.account_cls()):
                     if obj.parent.pk in accounts_to_reestimate:
                         accounts_to_reestimate[obj.parent.pk]['unsaved'].add(obj)  # noqa
                     else:
@@ -180,94 +235,20 @@ class SubAccountQuerierMixin:
 
         if commit:
             self.bulk_update_post_estimation(instances_to_save)
-            self.account_cls.objects.bulk_update_post_estimation(accounts)
-            self.base_cls.objects.bulk_update_post_estimation(budgets)
+            self.model.account_cls().objects.bulk_update_post_estimation(
+                accounts)
+            self.model.budget_cls().objects.bulk_update_post_estimation(budgets)
             return instances_to_save, accounts, budgets
 
         return instances_to_save, accounts, budgets
 
-    def filter_by_budget(self, budget):
-        """
-        Since the :obj:`subaccount.models.SubAccount` is tied to the a
-        :obj:`budget.models.Budget` instance only via an eventual parent
-        :obj:`account.models.Account` instance, and the relationship between
-        :obj:`subaccount.models.SubAccount` and :obj:`account.models.Account`
-        is generic, we have to provide a custom method for filtering the
-        :obj:`subaccount.models.SubAccount`(s) by a budget.
 
-        It is important to note that this method is slow, so it should only
-        be used sparingly.
-        """
-        return self.annotate(
-            _ongoing=Case(
-                When(self._get_case_query(budget), then=V(True)),
-                default=V(False),
-                output_field=BooleanField()
-            )
-        ).filter(_ongoing=True)
-
-    def _get_subaccount_levels(self, budget):
-        subaccount_levels = []
-        subaccounts = concat([
-            [q[0] for q in account.children.only('pk').values_list('pk')]
-            for account in self.account_cls.objects.filter(parent=budget)
-        ])
-        while len(subaccounts) != 0:
-            subaccount_levels.append(subaccounts)
-            subaccounts = concat([
-                [q[0] for q in account.children.only('pk').values_list('pk')]
-                for account in self.model.objects
-                .prefetch_related('children').filter(id__in=subaccounts)
-            ])
-        return subaccount_levels
-
-    def _get_case_query(self, budget):
-        account_ct = ContentType.objects.get_for_model(self.account_cls)
-        subaccount_ct = ContentType.objects.get_for_model(self.subaccount_cls)
-        accounts = [
-            q[0] for q in self.account_cls.objects.filter(parent=budget)
-            .only('pk').values_list('pk')
-        ]
-        query = Q(content_type_id=account_ct) & Q(object_id__in=accounts)
-        subaccount_levels = self._get_subaccount_levels(budget)
-        for level in subaccount_levels:
-            query = query | (
-                Q(content_type_id=subaccount_ct) & Q(object_id__in=level))
-        return query
-
-
-class SubAccountQuerier(SubAccountQuerierMixin, BaseBudgetQuerier):
+class TemplateSubAccountManager(SubAccountManager):
     pass
 
 
-class SubAccountQuery(SubAccountQuerier, BulkCreatePolymorphicQuerySet):
-    pass
+class BudgetSubAccountManager(SubAccountManager):
 
-
-class SubAccountManager(SubAccountQuerier, PolymorphicManager):
-    queryset_class = SubAccountQuery
-
-    def get_queryset(self):
-        return self.queryset_class(self.model)
-
-
-class TemplateSubAccountQuerier(SubAccountQuerierMixin, TemplateQuerier):
-    pass
-
-
-class TemplateSubAccountQuery(
-        TemplateSubAccountQuerier, BulkCreatePolymorphicQuerySet):
-    pass
-
-
-class TemplateSubAccountManager(TemplateSubAccountQuerier, PolymorphicManager):
-    queryset_class = TemplateSubAccountQuery
-
-    def get_queryset(self):
-        return self.queryset_class(self.model)
-
-
-class BudgetSubAccountQuerier(SubAccountQuerierMixin, BudgetQuerier):
     @signals.disable()
     def bulk_calculate(self, instances, **kwargs):
         commit = kwargs.pop('commit', True)
@@ -288,8 +269,10 @@ class BudgetSubAccountQuerier(SubAccountQuerierMixin, BudgetQuerier):
 
         if commit:
             self.bulk_update_post_calculation(subaccounts)
-            self.account_cls.objects.bulk_update_post_calculation(accounts)
-            self.budget_cls.objects.bulk_update_post_calculation(budgets)
+            self.model.account_cls().objects.bulk_update_post_calculation(
+                accounts)
+            self.model.budget_cls().objects.bulk_update_post_calculation(
+                budgets)
         return subaccounts, accounts, budgets
 
     @signals.disable()
@@ -313,8 +296,9 @@ class BudgetSubAccountQuerier(SubAccountQuerierMixin, BudgetQuerier):
                 instances_to_save.add(obj)
             if (altered or obj.was_just_added()) and obj.parent is not None:
                 if obj.parent is not None:
-                    assert isinstance(obj.parent, (self.account_cls, self.model))
-                    if isinstance(obj.parent, self.account_cls):
+                    assert isinstance(obj.parent, (
+                        self.model.account_cls(), self.model))
+                    if isinstance(obj.parent, self.model.account_cls()):
                         if obj.parent.pk in accounts_to_reactualize:
                             accounts_to_reactualize[
                                             obj.parent.pk]['unsaved'].add(obj)
@@ -384,19 +368,9 @@ class BudgetSubAccountQuerier(SubAccountQuerierMixin, BudgetQuerier):
 
         if commit:
             self.bulk_update_post_actualization(instances_to_save)
-            self.account_cls.objects.bulk_update_post_actualization(accounts)
-            self.budget_cls.objects.bulk_update_post_actualization(budgets)
+            self.model.account_cls().objects.bulk_update_post_actualization(
+                accounts)
+            self.model.budget_cls().objects.bulk_update_post_actualization(
+                budgets)
 
         return instances_to_save, accounts, budgets
-
-
-class BudgetSubAccountQuery(
-        BudgetSubAccountQuerier, BulkCreatePolymorphicQuerySet):
-    pass
-
-
-class BudgetSubAccountManager(BudgetSubAccountQuerier, PolymorphicManager):
-    queryset_class = BudgetSubAccountQuery
-
-    def get_queryset(self):
-        return self.queryset_class(self.model)

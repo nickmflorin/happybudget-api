@@ -9,7 +9,7 @@ from .managers import TemplateManager
 
 @signals.model()
 class Template(BaseBudget):
-    type = "template"
+    domain = "template"
 
     community = models.BooleanField(default=False)
     hidden = models.BooleanField(default=False)
@@ -19,6 +19,12 @@ class Template(BaseBudget):
     FIELDS_TO_DERIVE = ('image', 'name')
     CALCULATED_FIELDS = Budget.CALCULATED_FIELDS
     ESTIMATED_FIELDS = Budget.ESTIMATED_FIELDS
+
+    associated = [
+        ('template', 'template'),
+        ('account', 'templateaccount'),
+        ('subaccount', 'templatesubaccount')
+    ]
 
     class Meta(BaseBudget.Meta):
         verbose_name = "Template"
@@ -36,11 +42,6 @@ class Template(BaseBudget):
 
     def __str__(self):
         return "Template: %s" % self.name
-
-    @property
-    def child_instance_cls(self):
-        from greenbudget.app.account.models import TemplateAccount
-        return TemplateAccount
 
     def derive(self, user, **kwargs):
         deriver = BudgetDeriver(self, user)

@@ -3,6 +3,11 @@ from django.apps import apps
 
 
 def import_model_at_path(path):
+    if isinstance(path, tuple):
+        return apps.get_model(
+            app_label=path[0],
+            model_name=path[1],
+        )
     return apps.get_model(
         app_label=path.split('.')[0],
         model_name=path.split('.')[1]

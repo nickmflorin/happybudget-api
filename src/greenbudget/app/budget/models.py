@@ -8,7 +8,7 @@ from django.db import models
 from django.utils import timezone
 
 from greenbudget.app import signals
-from greenbudget.app.budgeting.models import BudgetingPolymorphicModel
+from greenbudget.app.budgeting.models import BudgetingTreePolymorphicModel
 from greenbudget.app.group.models import Group
 from greenbudget.app.markup.models import Markup
 from greenbudget.app.io.utils import upload_user_image_to
@@ -44,7 +44,8 @@ ESTIMATED_FIELDS = (
 CALCULATED_FIELDS = ESTIMATED_FIELDS + ('actual', )
 
 
-class BaseBudget(BudgetingPolymorphicModel):
+class BaseBudget(BudgetingTreePolymorphicModel):
+    type = "budget"
     name = models.CharField(max_length=256)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -90,6 +91,10 @@ class BaseBudget(BudgetingPolymorphicModel):
 
     def __str__(self):
         return "Budget: %s" % self.name
+
+    @property
+    def child_instance_cls(self):
+        return self.account_cls()
 
     def duplicate(self, user):
         duplicator = BudgetDuplicator(self, user)
@@ -175,8 +180,8 @@ class BaseBudget(BudgetingPolymorphicModel):
 
 @signals.model()
 class Budget(BaseBudget):
-    type = "budget"
     pdf_type = "pdf-budget"
+    domain = "budget"
 
     project_number = models.IntegerField(default=0)
     PRODUCTION_TYPES = Choices(
@@ -206,14 +211,15 @@ class Budget(BaseBudget):
         'build_days', 'prelight_days', 'studio_shoot_days', 'location_days'
     )
 
+    associated = [
+        ('budget', 'budget'),
+        ('account', 'budgetaccount'),
+        ('subaccount', 'budgetsubaccount')
+    ]
+
     class Meta(BaseBudget.Meta):
         verbose_name = "Budget"
         verbose_name_plural = "Budgets"
-
-    @property
-    def child_instance_cls(self):
-        from greenbudget.app.account.models import BudgetAccount
-        return BudgetAccount
 
     def actualize(self, **kwargs):
         children, kwargs = self.children_from_kwargs(**kwargs)

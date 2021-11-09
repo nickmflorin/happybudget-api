@@ -20,10 +20,11 @@ class BaseBudgetSerializer(ModelSerializer):
         allow_null=False
     )
     type = serializers.CharField(read_only=True)
+    domain = serializers.CharField(read_only=True)
 
     class Meta:
         model = BaseBudget
-        fields = ('id', 'name', 'type')
+        fields = ('id', 'name', 'type', 'domain')
 
 
 class BudgetPdfSerializer(BaseBudgetSerializer):

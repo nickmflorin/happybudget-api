@@ -302,6 +302,7 @@ def create_bulk_create_serializer(serializer_cls, **kwargs):
             # Instantiate the model instances for each set of data in the
             # overall data set.
             data = validated_data.pop('data')
+
             for model_data in data:
                 # At this point, the change already represents the validated
                 # data for that specific serializer.  So we do not need to

@@ -18,6 +18,7 @@ def test_get_budgets(api_client, user, create_budget):
             "updated_at": "2020-01-01 00:00:00",
             "created_by": user.pk,
             "type": "budget",
+            "domain": "budget",
             "image": None,
         },
         {
@@ -27,6 +28,7 @@ def test_get_budgets(api_client, user, create_budget):
             "updated_at": "2020-01-01 00:00:00",
             "created_by": user.pk,
             "type": "budget",
+            "domain": "budget",
             "image": None,
         }
     ]
@@ -60,6 +62,7 @@ def test_get_budget(api_client, user, create_budget, models):
         "actual": 0.0,
         "created_by": user.pk,
         "type": "budget",
+        "domain": "budget",
         "image": None,
     }
 
@@ -96,6 +99,7 @@ def test_update_budget(api_client, user, create_budget, models):
         "actual": 0.0,
         "created_by": user.pk,
         "type": "budget",
+        "domain": "budget",
         "image": None,
     }
 
@@ -134,6 +138,7 @@ def test_create_budget(api_client, user, models):
         "actual": 0.0,
         "created_by": user.pk,
         "type": "budget",
+        "domain": "budget",
         "image": None,
     }
 
@@ -174,6 +179,7 @@ def test_derive_budget(api_client, user, create_template, staff_user, models):
         "actual": 0.0,
         "created_by": user.pk,
         "type": "budget",
+        "domain": "budget",
         "image": None,
     }
 
@@ -210,6 +216,7 @@ def test_duplicate_budget(api_client, user, create_budget, models):
         "actual": 0.0,
         "created_by": user.pk,
         "type": "budget",
+        "domain": "budget",
         "image": None,
     }
 
@@ -280,6 +287,7 @@ def test_get_budget_pdf(api_client, user, create_budget, create_markup,
         "groups": [],
         "nominal_value": 0.0,
         "type": "pdf-budget",
+        "domain": "budget",
         "accumulated_markup_contribution": 0.0,
         "accumulated_fringe_contribution": 0.0,
         "actual": 0.0,

@@ -7,7 +7,7 @@ from django.db import models, IntegrityError
 
 from greenbudget.app import signals
 from greenbudget.app.actual.models import Actual
-from greenbudget.app.budgeting.models import BudgetingPolymorphicModel
+from greenbudget.app.budgeting.models import BudgetingTreePolymorphicModel
 from greenbudget.app.fringe.utils import contribution_from_fringes
 from greenbudget.app.group.models import Group
 from greenbudget.app.markup.models import Markup
@@ -62,7 +62,7 @@ ESTIMATED_FIELDS = (
 CALCULATED_FIELDS = ESTIMATED_FIELDS + ('actual', )
 
 
-class SubAccount(BudgetingPolymorphicModel):
+class SubAccount(BudgetingTreePolymorphicModel):
     type = "subaccount"
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -164,17 +164,17 @@ class SubAccount(BudgetingPolymorphicModel):
 
     @property
     def budget(self):
-        from greenbudget.app.budget.models import BaseBudget
         parent = self.parent
-        while not isinstance(parent, BaseBudget):
+        while hasattr(parent, 'parent'):
             parent = parent.parent
         return parent
 
     @property
     def account(self):
-        from greenbudget.app.account.models import Account
         parent = self.parent
-        while not isinstance(parent, Account):
+        while True:
+            if not hasattr(parent, 'parent'):
+                break
             parent = parent.parent
         return parent
 
@@ -313,7 +313,6 @@ class SubAccount(BudgetingPolymorphicModel):
 
 @signals.model(user_field='updated_by')
 class BudgetSubAccount(SubAccount):
-    pdf_type = 'pdf-subaccount'
     attachments = models.ManyToManyField(
         to='io.Attachment',
         related_name='subaccounts'
@@ -325,7 +324,15 @@ class BudgetSubAccount(SubAccount):
         related_name='assigned_subaccounts'
     )
     objects = BudgetSubAccountManager()
+
     DERIVING_FIELDS = SubAccount.DERIVING_FIELDS + ("contact", )
+    associated = [
+        ('budget', 'budget'),
+        ('account', 'budgetaccount'),
+        ('subaccount', 'budgetsubaccount')
+    ]
+    pdf_type = 'pdf-subaccount'
+    domain = "budget"
 
     class Meta(SubAccount.Meta):
         verbose_name = "Budget Sub Account"
@@ -422,8 +429,14 @@ class BudgetSubAccount(SubAccount):
 @signals.model(user_field='updated_by')
 class TemplateSubAccount(SubAccount):
     objects = TemplateSubAccountManager()
+    domain = "template"
 
     FIELDS_TO_DERIVE = SubAccount.FIELDS_TO_DUPLICATE
+    associated = [
+        ('template', 'template'),
+        ('account', 'templateaccount'),
+        ('subaccount', 'templatesubaccount')
+    ]
 
     class Meta(SubAccount.Meta):
         verbose_name = "Template Sub Account"

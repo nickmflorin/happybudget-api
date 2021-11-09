@@ -3,6 +3,7 @@ from django.db import models
 from polymorphic.models import PolymorphicModel
 
 from greenbudget.lib.utils import set_or_list
+from .utils import import_model_at_path
 
 
 class CacheControlMixin:
@@ -76,7 +77,36 @@ class CacheControlMixin:
             self.parent.invalidate_caches()
 
 
-class BudgetingModelMixin(CacheControlMixin):
+class BudgetingModelMixin:
+    associated = [
+        ('budget', 'basebudget'),
+        ('account', 'account'),
+        ('subaccount', 'subaccount')
+    ]
+    domain = None
+
+    @classmethod
+    def get_associated_model_cls(cls, type):
+        for string_path in cls.associated:
+            model_cls = import_model_at_path(string_path)
+            if model_cls.type == type:
+                return model_cls
+        raise Exception("Unknown model type %s." % type)
+
+    @classmethod
+    def budget_cls(cls):
+        return cls.get_associated_model_cls('budget')
+
+    @classmethod
+    def subaccount_cls(cls):
+        return cls.get_associated_model_cls('subaccount')
+
+    @classmethod
+    def account_cls(cls):
+        return cls.get_associated_model_cls('account')
+
+
+class BudgetingTreeModelMixin(BudgetingModelMixin, CacheControlMixin):
     @property
     def intermittent_parent(self):
         try:
@@ -120,5 +150,15 @@ class BudgetingModel(models.Model, BudgetingModelMixin):
 
 
 class BudgetingPolymorphicModel(PolymorphicModel, BudgetingModelMixin):
+    class Meta:
+        abstract = True
+
+
+class BudgetingTreeModel(models.Model, BudgetingTreeModelMixin):
+    class Meta:
+        abstract = True
+
+
+class BudgetingTreePolymorphicModel(PolymorphicModel, BudgetingTreeModelMixin):
     class Meta:
         abstract = True

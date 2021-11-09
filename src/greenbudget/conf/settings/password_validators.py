@@ -7,34 +7,55 @@ from django.utils.translation import gettext as _
 UPPERCASE = 'A-Z'
 LOWERCASE = 'a-z'
 NUMBER = '0-9'
-SPECIAL_CHARACTER = 'W|_/g'
 
 
-class MinCharacterCountRegexValidator:
+class Validator:
     def __init__(self,
-        characters=None,
-        min_count=1,
         error_message='The provided password is invalid.',
         code='invalid_password'
     ):
         self.code = code
+        self.error_message = error_message
+
+    def fail(self, **kwargs):
+        raise ValidationError(
+            _(self.error_message),
+            code=self.code,
+            **kwargs
+        )
+
+
+class MinLengthValidator(Validator):
+    def __init__(self, min_count=8, **kwargs):
+        super().__init__(**kwargs)
+        self.min_count = min_count
+
+    def validate(self, password, user=None):
+        if len(password) < self.min_count:
+            self.fail(params={'min_count': self.min_count})
+
+
+class MinCharacterCountRegexValidator(MinLengthValidator):
+    def __init__(self, characters=None, **kwargs):
+        super().__init__(**kwargs)
         self.characters = characters or "|".join([
             UPPERCASE,
             LOWERCASE,
-            NUMBER,
-            SPECIAL_CHARACTER
+            NUMBER
         ])
-        self.min_count = min_count
-        self.error_message = error_message
 
     def validate(self, password, user=None):
         chars = re.findall('[%s]' % self.characters, password)
         if len(chars) < self.min_count:
-            raise ValidationError(
-                _(self.error_message),
-                code=self.code,
-                params={'min_count': self.min_count},
-            )
+            self.fail(params={'min_count': self.min_count})
+
+
+class SpecialCharRegexValidator(Validator):
+    def validate(self, password, user=None):
+        pattern = re.compile('[@_!#$%^&*()<>?/\|}{~:]')  # noqa
+        searched = pattern.search(password)
+        if not searched:
+            self.fail()
 
 
 PASSWORD_VALIDATORS = [
@@ -57,9 +78,7 @@ PASSWORD_VALIDATORS = [
         characters=NUMBER,
         error_message='Password must contain at least 1 number.'
     ),
-    MinCharacterCountRegexValidator(
-        min_count=1,
-        characters=SPECIAL_CHARACTER,
+    SpecialCharRegexValidator(
         error_message='Password must contain at least 1 special character.'
     )
 ]

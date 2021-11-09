@@ -1,14 +1,11 @@
-from django.db import models
-
-from greenbudget.lib.django_utils.models import (
-    PrePKBulkCreateQuerySet, generic_fk_instance_change)
+from greenbudget.lib.django_utils.models import generic_fk_instance_change
 
 from greenbudget.app import signals
 from greenbudget.app.budget.cache import budget_actuals_cache
-from greenbudget.app.budgeting.query import BudgetQuerier
+from greenbudget.app.budgeting.managers import BudgetingManager
 
 
-class ActualQuerier(BudgetQuerier):
+class ActualManager(BudgetingManager):
     @signals.disable()
     def bulk_delete(self, instances):
         owners = [obj.owner for obj in instances]
@@ -98,14 +95,3 @@ class ActualQuerier(BudgetQuerier):
 
         self.bulk_actualize_all(owners_to_reactualize)
         budget_actuals_cache.invalidate(obj.budget)
-
-
-class ActualQuery(ActualQuerier, PrePKBulkCreateQuerySet):
-    pass
-
-
-class ActualManager(ActualQuerier, models.Manager):
-    queryset_class = ActualQuery
-
-    def get_queryset(self):
-        return self.queryset_class(self.model)

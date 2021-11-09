@@ -4,7 +4,7 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models, IntegrityError
 
 from greenbudget.app import signals
-from greenbudget.app.budgeting.models import BudgetingPolymorphicModel
+from greenbudget.app.budgeting.models import BudgetingTreePolymorphicModel
 from greenbudget.app.group.models import Group
 from greenbudget.app.markup.models import Markup
 from greenbudget.app.markup.utils import contribution_from_markups
@@ -32,7 +32,7 @@ ESTIMATED_FIELDS = (
 CALCULATED_FIELDS = ESTIMATED_FIELDS + ('actual', )
 
 
-class Account(BudgetingPolymorphicModel):
+class Account(BudgetingTreePolymorphicModel):
     type = "account"
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -107,6 +107,10 @@ class Account(BudgetingPolymorphicModel):
     @property
     def siblings(self):
         return self.parent.children.exclude(pk=self.pk).all()
+
+    @property
+    def child_instance_cls(self):
+        return self.subaccount_cls()
 
     @property
     def budget(self):
@@ -212,21 +216,23 @@ class Account(BudgetingPolymorphicModel):
 
 @signals.model(user_field='updated_by')
 class BudgetAccount(Account):
-    pdf_type = "pdf-account"
     access = models.ManyToManyField(
         to='user.User',
         related_name='accessible_accounts'
     )
     objects = BudgetAccountManager()
 
+    pdf_type = "pdf-account"
+    domain = "budget"
+    associated = [
+        ('budget', 'budget'),
+        ('account', 'budgetaccount'),
+        ('subaccount', 'budgetsubaccount')
+    ]
+
     class Meta(Account.Meta):
         verbose_name = "Account"
         verbose_name_plural = "Accounts"
-
-    @property
-    def child_instance_cls(self):
-        from greenbudget.app.subaccount.models import BudgetSubAccount
-        return BudgetSubAccount
 
     def actualize(self, **kwargs):
         children, kwargs = self.children_from_kwargs(**kwargs)
@@ -299,12 +305,13 @@ class TemplateAccount(Account):
     objects = TemplateAccountManager()
 
     FIELDS_TO_DERIVE = ('identifier', 'description') + Account.CALCULATED_FIELDS
+    domain = "template"
+    associated = [
+        ('template', 'template'),
+        ('account', 'templateaccount'),
+        ('subaccount', 'templatesubaccount')
+    ]
 
     class Meta(Account.Meta):
         verbose_name = "Account"
         verbose_name_plural = "Accounts"
-
-    @property
-    def child_instance_cls(self):
-        from greenbudget.app.subaccount.models import TemplateSubAccount
-        return TemplateSubAccount

@@ -31,6 +31,7 @@ def test_get_budget_account(api_client, user, create_budget_account,
         "siblings": [],
         "ancestors": [{
             "type": "budget",
+            "domain": "budget",
             "id": budget.pk,
             "name": budget.name
         }]
@@ -62,7 +63,8 @@ def test_get_template_account(api_client, user, create_template_account,
         "updated_by": user.pk,
         "siblings": [],
         "ancestors": [{
-            "type": "template",
+            "type": "budget",
+            "domain": "template",
             "id": template.pk,
             "name": template.name
         }],
@@ -102,6 +104,7 @@ def test_update_budget_account(api_client, user, create_budget,
         "siblings": [],
         "ancestors": [{
             "type": "budget",
+            "domain": "budget",
             "id": budget.pk,
             "name": budget.name
         }]
@@ -142,7 +145,8 @@ def test_update_template_account(api_client, user, create_template,
         "updated_by": user.pk,
         "siblings": [],
         "ancestors": [{
-            "type": "template",
+            "type": "budget",
+            "domain": "template",
             "id": template.pk,
             "name": template.name
         }]

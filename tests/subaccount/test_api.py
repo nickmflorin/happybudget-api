@@ -127,9 +127,10 @@ def test_get_subaccount(api_client, user, create_subaccount, create_account,
         "attachments": [],
         "ancestors": [
             {
-                "type": context,
+                "type": "budget",
                 "id": budget.pk,
-                "name": budget.name
+                "name": budget.name,
+                "domain": context,
             },
             {
                 "id": account.id,
@@ -178,9 +179,10 @@ def test_get_template_subaccount(api_client, user, create_subaccount, context,
         "unit": None,
         "ancestors": [
             {
-                "type": context,
+                "type": "budget",
                 "id": budget.pk,
-                "name": budget.name
+                "name": budget.name,
+                "domain": context,
             },
             {
                 "id": account.id,
@@ -219,7 +221,7 @@ def test_update_subaccount(api_client, user, create_subaccount, create_account,
         "description": "New Description",
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
-        "quantity": 10,
+        "quantity": 10.0,
         "rate": 1.5,
         "multiplier": subaccount.multiplier,
         "type": "subaccount",
@@ -241,9 +243,10 @@ def test_update_subaccount(api_client, user, create_subaccount, create_account,
         "attachments": [],
         "ancestors": [
             {
-                "type": context,
+                "type": "budget",
                 "id": budget.pk,
                 "name": budget.name,
+                "domain": context,
             },
             {
                 "id": account.id,
@@ -306,9 +309,10 @@ def test_update_template_subaccount(api_client, user, create_subaccount,
         "unit": None,
         "ancestors": [
             {
-                "type": context,
+                "type": "budget",
                 "id": budget.pk,
                 "name": budget.name,
+                "domain": context,
             },
             {
                 "id": account.id,

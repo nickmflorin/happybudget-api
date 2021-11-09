@@ -10,6 +10,7 @@ from django.contrib.contenttypes.models import ContentType
 
 from greenbudget.app import signals
 from greenbudget.app.actual.models import Actual
+from greenbudget.app.budgeting.models import BudgetingModel
 from greenbudget.app.budgeting.utils import get_child_instance_cls
 
 from .managers import MarkupManager
@@ -19,7 +20,7 @@ logger = logging.getLogger('greenbudget')
 
 
 @signals.model(user_field='updated_by')
-class Markup(models.Model):
+class Markup(BudgetingModel):
     type = "markup"
     identifier = models.CharField(null=True, max_length=128)
     description = models.CharField(null=True, max_length=128)
@@ -123,9 +124,8 @@ class Markup(models.Model):
 
     @property
     def budget(self):
-        from greenbudget.app.budget.models import BaseBudget
         parent = self.parent
-        while not isinstance(parent, BaseBudget):
+        while not isinstance(parent, self.budget_cls()):
             parent = parent.parent
         return parent
 

@@ -1,27 +1,22 @@
-from django.db import models
-
-from greenbudget.lib.django_utils.models import (
-    PrePKBulkCreateQuerySet, generic_fk_instance_change)
+from greenbudget.lib.django_utils.models import generic_fk_instance_change
 from greenbudget.lib.utils import concat
 
 from greenbudget.app import signals
+from greenbudget.app.budgeting.managers import BudgetingManager
 from greenbudget.app.budgeting.query import (
-    BudgetAncestorQuerier, BaseBudgetQuerier)
+    BudgetingQuerySet, BudgetAncestorQuerier)
 
 
-class MarkupQuerier(BudgetAncestorQuerier, BaseBudgetQuerier):
+class MarkupQuerier(BudgetAncestorQuerier):
     pass
 
 
-class MarkupQuery(MarkupQuerier, PrePKBulkCreateQuerySet):
+class MarkupQuery(MarkupQuerier, BudgetingQuerySet):
     pass
 
 
-class MarkupManager(MarkupQuerier, models.Manager):
+class MarkupManager(MarkupQuerier, BudgetingManager):
     queryset_class = MarkupQuery
-
-    def get_queryset(self):
-        return self.queryset_class(self.model)
 
     @signals.disable()
     def pre_delete(self, instances):
@@ -32,11 +27,7 @@ class MarkupManager(MarkupQuerier, models.Manager):
         # Actualization does not apply to the Template domain.
         parents_to_reactualize = set([
             obj for obj in parents
-            if isinstance(obj, (
-                self.budget_cls,
-                self.budget_account_cls,
-                self.budget_subaccount_cls
-            ))
+            if obj.domain == 'budget'
         ])
         # Note: We cannot access instance.children.all() because that will
         # perform a DB query at which point the query will result in 0
