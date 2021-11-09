@@ -21,7 +21,6 @@ from .cache import (
     budget_fringes_cache,
     budget_actuals_cache
 )
-from .duplication import BudgetDuplicator
 from .managers import BudgetManager, BaseBudgetManager
 
 
@@ -95,10 +94,6 @@ class BaseBudget(BudgetingTreePolymorphicModel):
     @property
     def child_instance_cls(self):
         return self.account_cls()
-
-    def duplicate(self, user):
-        duplicator = BudgetDuplicator(self, user)
-        return duplicator.duplicate()
 
     @property
     def nominal_value(self):

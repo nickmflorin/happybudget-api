@@ -1,5 +1,6 @@
 def test_duplicate_template(user, create_template, create_template_account,
-        create_template_subaccount, create_fringe, create_group, create_markup):
+        create_template_subaccount, create_fringe, create_group, create_markup,
+        models):
     original = create_template(created_by=user)
     fringes = [
         create_fringe(
@@ -65,7 +66,8 @@ def test_duplicate_template(user, create_template, create_template_account,
         )
     ]
 
-    template = original.duplicate(user)
+    template = models.Template.objects.duplicate(original, user)
+    assert isinstance(template, models.Template)
 
     assert template.name == original.name
     assert template.children.count() == 2
@@ -100,6 +102,7 @@ def test_duplicate_template(user, create_template, create_template_account,
     assert template.children.count() == 2
 
     first_account = template.children.first()
+    assert isinstance(first_account, models.TemplateAccount)
     assert first_account.group == budget_account_group
     assert first_account.identifier == accounts[0].identifier
     assert first_account.description == accounts[0].description
@@ -115,6 +118,8 @@ def test_duplicate_template(user, create_template, create_template_account,
     assert budget_subaccount_group.color == subaccount_group.color
 
     first_account_subaccount = first_account.children.first()
+    assert isinstance(first_account_subaccount, models.TemplateSubAccount)
+
     assert first_account_subaccount.group == budget_subaccount_group
     assert first_account_subaccount.markups.count() == 2
     assert first_account_subaccount.created_by == user
@@ -130,6 +135,7 @@ def test_duplicate_template(user, create_template, create_template_account,
 
     assert first_account_subaccount.children.count() == 1
     first_account_subaccount_subaccount = first_account_subaccount.children.first()  # noqa
+    assert isinstance(first_account_subaccount_subaccount, models.TemplateSubAccount)  # noqa
     assert first_account_subaccount_subaccount.created_by == user
     assert first_account_subaccount_subaccount.updated_by == user
     assert first_account_subaccount_subaccount.identifier == child_subaccounts[0].identifier  # noqa
@@ -141,6 +147,7 @@ def test_duplicate_template(user, create_template, create_template_account,
     assert first_account_subaccount_subaccount.budget == template
 
     second_account = template.children.all()[1]
+    assert isinstance(second_account, models.TemplateAccount)
     assert second_account.group == budget_account_group
     assert second_account.identifier == accounts[1].identifier
     assert second_account.description == accounts[1].description
@@ -149,6 +156,7 @@ def test_duplicate_template(user, create_template, create_template_account,
 
     assert second_account.children.count() == 1
     second_account_subaccount = second_account.children.first()
+    assert isinstance(second_account_subaccount, models.TemplateSubAccount)  # noqa
     assert second_account_subaccount.created_by == user
     assert second_account_subaccount.updated_by == user
     assert second_account_subaccount.identifier == subaccounts[1].identifier
@@ -162,6 +170,8 @@ def test_duplicate_template(user, create_template, create_template_account,
 
     assert second_account_subaccount.children.count() == 1
     second_account_subaccount_subaccount = second_account_subaccount.children.first()  # noqa
+    assert isinstance(second_account_subaccount_subaccount,
+                      models.TemplateSubAccount)
     assert second_account_subaccount_subaccount.created_by == user
     assert second_account_subaccount_subaccount.updated_by == user
     assert second_account_subaccount_subaccount.identifier == child_subaccounts[1].identifier  # noqa
@@ -173,7 +183,7 @@ def test_duplicate_template(user, create_template, create_template_account,
     assert second_account_subaccount_subaccount.budget == template
 
 
-def test_derive_budget(user, create_template, create_template_account,
+def test_derive_budget(user, create_template, create_template_account, models,
         create_template_subaccount, create_fringe, admin_user, create_group):
     template = create_template(created_by=admin_user, name="Test Name")
     fringes = [
@@ -230,7 +240,7 @@ def test_derive_budget(user, create_template, create_template_account,
         )
     ]
 
-    budget = template.derive(user)
+    budget = models.Template.objects.derive(template, user)
     budget.refresh_from_db()
 
     assert budget.name == "Test Name"
@@ -310,7 +320,6 @@ def test_derive_budget(user, create_template, create_template_account,
     assert second_account.description == accounts[1].description
     assert second_account.created_by == user
     assert second_account.updated_by == user
-
     assert second_account.children.count() == 1
     second_account_subaccount = second_account.children.first()
     assert second_account_subaccount.created_by == user

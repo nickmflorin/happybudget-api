@@ -91,7 +91,7 @@ def test_duplicate_budget(user, create_budget, create_fringe, create_markup,
         create_actual(owner=child_subaccounts[1], budget=original)
     ]
 
-    budget = original.duplicate(user)
+    budget = type(original).objects.duplicate(original, user)
 
     assert budget.name == original.name
     assert budget.children.count() == 2

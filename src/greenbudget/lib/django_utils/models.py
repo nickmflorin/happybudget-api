@@ -97,11 +97,10 @@ def reset_id_sequence(model_cls):
 
 
 class PrePKBulkCreateQuerySet(models.QuerySet):
-    def bulk_create(self, instances, batch_size=None, ignore_conflicts=False,
-            predetermine_pks=False):
+    def bulk_create(self, instances, **kwargs):
+        predetermine_pks = kwargs.pop('predetermine_pks', False)
         if predetermine_pks is False:
-            return super().bulk_create(instances,
-                batch_size=batch_size, ignore_conflicts=ignore_conflicts)
+            return super().bulk_create(instances, **kwargs)
         try:
             max_id = int(self.model.objects.latest('pk').pk)
         except self.model.DoesNotExist:
@@ -109,11 +108,7 @@ class PrePKBulkCreateQuerySet(models.QuerySet):
 
         for i, instance in enumerate(instances):
             setattr(instance, 'pk', max_id + i + 1)
-        return super().bulk_create(
-            instances,
-            batch_size=batch_size,
-            ignore_conflicts=ignore_conflicts
-        )
+        return super().bulk_create(instances, **kwargs)
 
 
 class BulkCreatePolymorphicQuerySet(PolymorphicQuerySet):

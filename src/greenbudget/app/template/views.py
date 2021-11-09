@@ -295,8 +295,8 @@ class TemplateViewSet(
 
     @decorators.action(detail=True, methods=["POST"])
     def duplicate(self, request, *args, **kwargs):
-        instance = self.get_object()
-        duplicated = instance.duplicate(request.user)
+        duplicated = type(self.instance).objects.duplicate(
+            self.instance, request.user)
         return response.Response(
             self.serializer_class(duplicated).data,
             status=status.HTTP_201_CREATED

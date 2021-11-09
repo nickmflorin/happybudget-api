@@ -4,6 +4,7 @@ from django.contrib.contenttypes.fields import (
     GenericForeignKey, GenericRelation)
 from django.contrib.contenttypes.models import ContentType
 from django.db import models, IntegrityError
+from django.utils.functional import cached_property
 
 from greenbudget.app import signals
 from greenbudget.app.actual.models import Actual
@@ -177,6 +178,15 @@ class SubAccount(BudgetingTreePolymorphicModel):
                 break
             parent = parent.parent
         return parent
+
+    @cached_property
+    def nested_level(self):
+        level = 0
+        parent = self.parent
+        while hasattr(parent, 'parent'):
+            parent = parent.parent
+            level = level + 1
+        return level - 1
 
     @property
     def raw_value(self):

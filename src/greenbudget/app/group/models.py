@@ -59,11 +59,10 @@ class Group(models.Model):
         verbose_name_plural = "Groups"
 
     def __str__(self):
-        return "<{cls} id={id} name={name}, parent={parent}>".format(
+        return "<{cls} id={id} name={name}>".format(
             cls=self.__class__.__name__,
             id=self.pk,
-            name=self.name,
-            parent=self.parent.pk
+            name=self.name
         )
 
     @property

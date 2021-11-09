@@ -74,7 +74,7 @@ class BudgetSimpleSerializer(BaseBudgetSerializer):
         if 'created_by' in validated_data:
             del validated_data['created_by']
         request = self.context['request']
-        return template.derive(request.user, **validated_data)
+        return Template.objects.derive(template, request.user, **validated_data)
 
     def validate_template(self, template):
         request = self.context['request']

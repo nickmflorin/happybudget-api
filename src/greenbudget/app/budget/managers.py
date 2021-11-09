@@ -1,6 +1,8 @@
 from greenbudget.app import signals
 from greenbudget.app.budgeting.managers import BudgetingPolymorphicManager
 
+from .duplication import duplicate
+
 
 class BaseBudgetManager(BudgetingPolymorphicManager):
     @signals.disable()
@@ -23,6 +25,9 @@ class BaseBudgetManager(BudgetingPolymorphicManager):
         if commit:
             self.bulk_update_post_estimation(instances_to_save)
         return instances_to_save
+
+    def duplicate(self, budget, user, **overrides):
+        return duplicate(budget, user, **overrides)
 
 
 class BudgetManager(BaseBudgetManager):

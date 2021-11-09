@@ -13,6 +13,8 @@ from .models import Markup
 logger = logging.getLogger('signals')
 
 
+# NOTE: IF we start bulk updating Markup(s), then we need to apply this logic
+# in the managers as well.
 @dispatch.receiver(signals.post_save, sender=Markup)
 def markup_saved(instance, **kwargs):
     # We must reestimate the associated models before we remove the children

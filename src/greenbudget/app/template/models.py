@@ -2,7 +2,6 @@ from django.db import models, IntegrityError
 
 from greenbudget.app import signals
 from greenbudget.app.budget.models import BaseBudget, Budget
-from greenbudget.app.budget.duplication import BudgetDeriver
 
 from .managers import TemplateManager
 
@@ -42,10 +41,6 @@ class Template(BaseBudget):
 
     def __str__(self):
         return "Template: %s" % self.name
-
-    def derive(self, user, **kwargs):
-        deriver = BudgetDeriver(self, user)
-        return deriver.derive(**kwargs)
 
     def save(self, *args, **kwargs):
         if self.community is True and not self.created_by.is_staff:
