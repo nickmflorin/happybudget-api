@@ -13,7 +13,9 @@ DISALLOWED_FIELDS = [
     models.fields.AutoField,
     models.ManyToManyField,
     models.ForeignKey,
-    models.OneToOneField
+    models.OneToOneField,
+    models.ImageField,
+    models.FileField
 ]
 
 
