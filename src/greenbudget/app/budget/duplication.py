@@ -303,7 +303,8 @@ def duplicate(
     )
 
     subs_by_level = {}
-    for sub in source_sa_ct.model_class().objects.filter_by_budget(budget):
+    for sub in source_sa_ct.model_class().objects.filter_by_budget(budget) \
+            .select_related('content_type'):
         subs_by_level.setdefault(
             sub.nested_level,
             PolymorphicObjectSet(
@@ -357,7 +358,9 @@ def duplicate(
     # SubAccount instances.
     groups = ConcreteObjectSet(model_cls=Group, user=user)
     with groups.transaction():
-        for group in Group.objects.filter_by_budget(budget):
+        for group in Group.objects.filter_by_budget(budget) \
+                .select_related('content_type') \
+                .prefetch_related('accounts', 'subaccounts'):
             model_cls = group.content_type.model_class()
             assert issubclass(model_cls, (BaseBudget, Account, SubAccount))
             if issubclass(model_cls, BaseBudget):
@@ -411,24 +414,26 @@ def duplicate(
     markups = ConcreteObjectSet(model_cls=Markup, user=user)
     with markups.transaction():
         for markup in Markup.objects.filter_by_budget(budget):
+            assert markup.content_type_id in (
+                source_budget_ct.pk,
+                source_a_ct.pk,
+                source_sa_ct.pk
+            )
             if markup.content_type_id == source_budget_ct.pk:
                 markups.add(markup,
                     content_type_id=dest_budget_ct.pk,
                     object_id=duplicated_budget.pk
                 )
+            elif markup.content_type_id == source_a_ct.pk:
+                markups.add(markup,
+                    content_type_id=dest_a_ct.pk,
+                    object_id=accounts[markup.object_id].new_pk
+                )
             else:
-                model_cls = markup.content_type.model_class()
-                assert issubclass(model_cls, (Account, SubAccount))
-                if issubclass(model_cls, Account):
-                    markups.add(markup,
-                        content_type_id=dest_a_ct.pk,
-                        object_id=accounts[markup.object_id].new_pk
-                    )
-                else:
-                    markups.add(markup,
-                        content_type_id=dest_sa_ct.pk,
-                        object_id=subaccounts[markup.object_id].new_pk
-                    )
+                markups.add(markup,
+                    content_type_id=dest_sa_ct.pk,
+                    object_id=subaccounts[markup.object_id].new_pk
+                )
 
     # Apply the M2M Markup relationships between a given Markup and the
     # associated Account/SubAccount(s).
@@ -457,7 +462,8 @@ def duplicate(
         actuals = ConcreteObjectSet(model_cls=Actual, user=user)
         with actuals.transaction():
             for actual in Actual.objects.filter(budget=budget):
-                assert actual.content_type in (None, source_sa_ct, markup_ct)
+                assert actual.content_type_id in (
+                    None, source_sa_ct.pk, markup_ct.pk)
                 if actual.content_type_id is None:
                     actuals.add(actual, budget=duplicated_budget)
                 elif actual.content_type_id == markup_ct.pk:

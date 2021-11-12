@@ -343,10 +343,13 @@ class SubAccountRecursiveViewSet(
 
     def get_queryset(self):
         content_type = ContentType.objects.get_for_model(type(self.subaccount))
-        return type(self.subaccount).objects.filter(
+        qs = type(self.subaccount).objects.filter(
             object_id=self.subaccount.pk,
             content_type=content_type,
         )
+        if self.instance_cls is not TemplateSubAccount:
+            qs = qs.prefetch_related('attachments')
+        return qs
 
     def perform_create(self, serializer):
         serializer.save(
