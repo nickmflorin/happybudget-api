@@ -1,4 +1,4 @@
-from django.db import models, IntegrityError
+from django.db import models
 
 from greenbudget.app import signals
 from greenbudget.app.budget.models import BaseBudget, Budget
@@ -14,8 +14,6 @@ class Template(BaseBudget):
     hidden = models.BooleanField(default=False)
     objects = TemplateManager()
 
-    FIELDS_TO_DUPLICATE = BaseBudget.FIELDS_TO_DUPLICATE
-    FIELDS_TO_DERIVE = ('image', 'name')
     CALCULATED_FIELDS = Budget.CALCULATED_FIELDS
     ESTIMATED_FIELDS = Budget.ESTIMATED_FIELDS
 
@@ -41,9 +39,3 @@ class Template(BaseBudget):
 
     def __str__(self):
         return "Template: %s" % self.name
-
-    def save(self, *args, **kwargs):
-        if self.community is True and not self.created_by.is_staff:
-            raise IntegrityError(
-                "Community templates can only be created by staff users.")
-        return super().save(*args, **kwargs)
