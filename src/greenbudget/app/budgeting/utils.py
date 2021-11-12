@@ -33,36 +33,6 @@ def get_from_instance_mapping(mapping, obj):
     raise ValueError("Unexpected instance %s." % obj_name)
 
 
-def get_instance_cls(obj, obj_type, as_content_type=False):
-    mapping = {
-        (
-            'budget.Budget',
-            'account.BudgetAccount',
-            'subaccount.BudgetSubAccount',
-        ): {
-            'budget': 'budget.Budget',
-            'account': 'account.BudgetAccount',
-            'subaccount': 'subaccount.BudgetSubAccount'
-        },
-        (
-            'template.Template',
-            'account.TemplateAccount',
-            'subaccount.TemplateSubAccount',
-        ): {
-            'budget': 'template.Template',
-            'account': 'account.TemplateAccount',
-            'subaccount': 'subaccount.TemplateSubAccount',  # noqa
-        },
-    }
-    subset = get_from_instance_mapping(mapping, obj)
-    if obj_type not in subset:
-        raise ValueError("Invalid object type %s." % obj_type)
-    related_obj = import_model_at_path(subset[obj_type])
-    if as_content_type:
-        return ContentType.objects.get_for_model(related_obj)
-    return related_obj
-
-
 def get_child_instance_cls(obj, as_content_type=False):
     mapping = {
         'budget.Budget': 'account.BudgetAccount',
