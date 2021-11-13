@@ -72,7 +72,7 @@ class Pagination(pagination.PageNumberPagination):
 
     def get_response_data(self, data, **kwargs):
         return [
-            ('count', len(data)),
+            ('count', self.page.paginator.count),
             ('data', data),
         ]
 
