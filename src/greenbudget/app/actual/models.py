@@ -88,11 +88,6 @@ class Actual(BudgetingModel):
     owner = GenericForeignKey('content_type', 'object_id')
     objects = ActualManager()
 
-    FIELDS_TO_DUPLICATE = (
-        'purchase_order', 'name', 'date', 'payment_id', 'value',
-        'actual_type', 'notes'
-    )
-
     associated = [
         ('budget', 'budget'),
         ('account', 'budgetaccount'),

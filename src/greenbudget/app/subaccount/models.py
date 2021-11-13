@@ -131,8 +131,6 @@ class SubAccount(BudgetingTreePolymorphicModel):
     non_polymorphic = models.Manager()
 
     DERIVING_FIELDS = ("quantity", "rate", "multiplier", "unit")
-    FIELDS_TO_DUPLICATE = ('identifier', 'description') + DERIVING_FIELDS \
-        + CALCULATED_FIELDS
 
     CACHES = [
         subaccount_markups_cache,
@@ -438,15 +436,13 @@ class BudgetSubAccount(SubAccount):
 
 @signals.model(user_field='updated_by')
 class TemplateSubAccount(SubAccount):
-    objects = TemplateSubAccountManager()
     domain = "template"
-
-    FIELDS_TO_DERIVE = SubAccount.FIELDS_TO_DUPLICATE
     associated = [
         ('template', 'template'),
         ('account', 'templateaccount'),
         ('subaccount', 'templatesubaccount')
     ]
+    objects = TemplateSubAccountManager()
 
     class Meta(SubAccount.Meta):
         verbose_name = "Template Sub Account"

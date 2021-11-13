@@ -47,9 +47,6 @@ class Group(models.Model):
     object_id = models.PositiveIntegerField(db_index=True)
     parent = GenericForeignKey('content_type', 'object_id')
 
-    FIELDS_TO_DUPLICATE = ("name", "color")
-    FIELDS_TO_DERIVE = ("name", "color")
-
     objects = GroupManager()
 
     class Meta:

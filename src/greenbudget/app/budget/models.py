@@ -67,9 +67,6 @@ class BaseBudget(BudgetingTreePolymorphicModel):
     groups = GenericRelation(Group)
     children_markups = GenericRelation(Markup)
 
-    FIELDS_TO_DERIVE = ()
-    FIELDS_TO_DUPLICATE = ('image', 'name') + CALCULATED_FIELDS
-
     objects = BaseBudgetManager()
     non_polymorphic = models.Manager()
 
@@ -200,11 +197,6 @@ class Budget(BaseBudget):
 
     objects = BudgetManager()
     non_polymorphic = models.Manager()
-
-    FIELDS_TO_DUPLICATE = BaseBudget.FIELDS_TO_DUPLICATE + (
-        'project_number', 'production_type', 'shoot_date', 'delivery_date',
-        'build_days', 'prelight_days', 'studio_shoot_days', 'location_days'
-    )
 
     associated = [
         ('budget', 'budget'),

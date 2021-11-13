@@ -47,7 +47,6 @@ class Account(BudgetingTreePolymorphicModel):
 
     ESTIMATED_FIELDS = ESTIMATED_FIELDS
     CALCULATED_FIELDS = CALCULATED_FIELDS
-    FIELDS_TO_DUPLICATE = ('identifier', 'description') + CALCULATED_FIELDS
 
     actual = models.FloatField(default=0.0)
     accumulated_value = models.FloatField(default=0.0)
