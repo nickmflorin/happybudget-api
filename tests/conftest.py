@@ -9,9 +9,11 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 
 from rest_framework.test import APIClient
 
+from greenbudget.app.budget.models import Budget
 from greenbudget.app.fringe.models import Fringe
 from greenbudget.app.group.models import Group
 from greenbudget.app.tagging.models import Color
+from greenbudget.app.template.models import Template
 from greenbudget.app.user.models import User
 
 from .fixtures import *  # noqa
@@ -157,3 +159,44 @@ def colors(db):
         color_obj.save()
         colors.append(color_obj)
     yield colors
+
+
+CONTEXT_BUDGETS = {
+    'budget': Budget,
+    'template': Template
+}
+
+
+@pytest.fixture(params=["budget", "template"])
+def budget_f(request, create_context_budget, create_account,
+        create_subaccount, create_subaccounts):
+    markers = request.node.own_markers
+    marker_names = [m.name for m in markers]
+    if 'budget' not in marker_names and 'template' not in marker_names:
+        marker_names = marker_names + ['budget', 'template']
+
+    class BudgetFactories:
+        def __init__(self, context):
+            self.context = context
+            self.budget_cls = CONTEXT_BUDGETS[self.context]
+
+        def create_budget(self, *args, **kwargs):
+            kwargs.setdefault('context', self.context)
+            return create_context_budget(*args, **kwargs)
+
+        def create_account(self, *args, **kwargs):
+            kwargs.setdefault('context', self.context)
+            return create_account(*args, **kwargs)
+
+        def create_subaccount(self, *args, **kwargs):
+            kwargs.setdefault('context', self.context)
+            return create_subaccount(*args, **kwargs)
+
+        def create_subaccounts(self, *args, **kwargs):
+            kwargs.setdefault('context', self.context)
+            return create_subaccounts(*args, **kwargs)
+
+    if request.param in marker_names:
+        yield BudgetFactories(request.param)
+    else:
+        pytest.skip("Test is not applicable for `%s` context." % request.param)

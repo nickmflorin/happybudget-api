@@ -2,16 +2,15 @@ import pytest
 
 
 @pytest.mark.freeze_time('2020-01-01')
-@pytest.mark.parametrize('context', ['budget', 'template'])
 def test_get_budget_account_subaccount_groups(api_client, user, create_group,
-        create_subaccount, create_account, create_context_budget, context):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
+        budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
     group = create_group(parent=account)
-    subaccount = create_subaccount(
+    subaccount = budget_f.create_subaccount(
         parent=account,
         group=group,
-        context=context
+
     )
     api_client.force_login(user)
     response = api_client.get("/v1/accounts/%s/groups/" % account.pk)
@@ -31,12 +30,10 @@ def test_get_budget_account_subaccount_groups(api_client, user, create_group,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_create_account_subaccount_group(api_client, user, create_subaccount,
-        create_context_budget, create_account, models, context):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
-    subaccount = create_subaccount(parent=account, context=context)
+def test_create_account_subaccount_group(api_client, user, models, budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    subaccount = budget_f.create_subaccount(parent=account)
 
     api_client.force_login(user)
     response = api_client.post("/v1/accounts/%s/groups/" % account.pk, data={
@@ -65,16 +62,15 @@ def test_create_account_subaccount_group(api_client, user, create_subaccount,
     }
 
 
-@pytest.mark.parametrize('context', ['budget', 'template'])
 def test_create_account_subaccount_group_invalid_child(api_client, user,
-        create_subaccount, create_account, create_context_budget, context):
-    budget = create_context_budget(context=context)
+        budget_f):
+    budget = budget_f.create_budget()
     # We are trying to create the grouping under `account` but
     # including children that belong to `another_account`, which should
     # trigger a 400 response.
-    account = create_account(parent=budget, context=context)
-    another_account = create_account(parent=budget, context=context)
-    subaccount = create_subaccount(parent=another_account, context=context)
+    account = budget_f.create_account(parent=budget)
+    another_account = budget_f.create_account(parent=budget)
+    subaccount = budget_f.create_subaccount(parent=another_account)
 
     api_client.force_login(user)
     response = api_client.post("/v1/accounts/%s/groups/" % account.pk, data={

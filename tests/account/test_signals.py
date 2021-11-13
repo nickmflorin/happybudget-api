@@ -3,15 +3,12 @@ from datetime import timezone
 import pytest
 
 
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_delete_account_reestimates(create_context_budget, create_account,
-        create_subaccount, context):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
-    parent_subaccount = create_subaccount(parent=account, context=context)
-    subaccount = create_subaccount(
+def test_delete_account_reestimates(budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    parent_subaccount = budget_f.create_subaccount(parent=account)
+    subaccount = budget_f.create_subaccount(
         parent=parent_subaccount,
-        context=context,
         rate=1,
         multiplier=5,
         quantity=10,
@@ -25,12 +22,12 @@ def test_delete_account_reestimates(create_context_budget, create_account,
     assert budget.nominal_value == 0.0
 
 
-def test_delete_account_reactualizes(create_budget, create_budget_account,
-        create_budget_subaccount, create_actual):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    parent_subaccount = create_budget_subaccount(parent=account)
-    subaccount = create_budget_subaccount(
+@pytest.mark.budget
+def test_delete_account_reactualizes(budget_f, create_actual):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    parent_subaccount = budget_f.create_subaccount(parent=account)
+    subaccount = budget_f.create_subaccount(
         parent=parent_subaccount,
         rate=1,
         multiplier=5,
@@ -49,12 +46,10 @@ def test_delete_account_reactualizes(create_budget, create_budget_account,
 
 
 @pytest.mark.freeze_time
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_saving_subaccount_saves_budget(create_context_budget, create_account,
-        freezer, context):
+def test_saving_subaccount_saves_budget(freezer, budget_f):
     freezer.move_to('2017-05-20')
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
     freezer.move_to('2019-05-20')
     account.save()
     budget.refresh_from_db()
