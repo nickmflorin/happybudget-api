@@ -2,15 +2,15 @@ import pytest
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_budget_fringes(api_client, user, create_budget, create_fringe,
-        models):
-    budget = create_budget()
+def test_get_fringes(api_client, user, create_fringe, models, budget_f):
+    budget = budget_f.create_budget()
     fringes = [
         create_fringe(budget=budget),
         create_fringe(budget=budget)
     ]
     api_client.force_login(user)
-    response = api_client.get("/v1/budgets/%s/fringes/" % budget.pk)
+    response = api_client.get(
+        "/v1/%ss/%s/fringes/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'] == [
@@ -52,15 +52,17 @@ def test_get_budget_fringes(api_client, user, create_budget, create_fringe,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_budget_fringe(api_client, user, create_budget, models):
-    budget = create_budget()
+def test_create_fringe(api_client, user, budget_f, models):
+    budget = budget_f.create_budget()
     api_client.force_login(user)
-    response = api_client.post("/v1/budgets/%s/fringes/" % budget.pk, data={
-        'name': 'Test Fringe',
-        'rate': 5.5,
-        'cutoff': 100,
-        'unit': 1,
-    })
+    response = api_client.post(
+        "/v1/%ss/%s/fringes/" % (budget_f.context, budget.pk),
+        data={
+            'name': 'Test Fringe',
+            'rate': 5.5,
+            'cutoff': 100,
+            'unit': 1,
+        })
     assert response.status_code == 201
     fringe = models.Fringe.objects.first()
     assert fringe is not None
@@ -88,23 +90,22 @@ def test_create_budget_fringe(api_client, user, create_budget, models):
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_bulk_create_budget_fringes(api_client, user, create_budget, models,
-        create_budget_account, create_budget_subaccount):
-    budget = create_budget()
+def test_bulk_create_fringes(api_client, user, models, budget_f):
+    budget = budget_f.create_budget()
     accounts = [
-        create_budget_account(parent=budget),
-        create_budget_account(parent=budget)
+        budget_f.create_account(parent=budget),
+        budget_f.create_account(parent=budget)
     ]
     # Do not disable the signals, because disabling the signals will prevent
     # the metrics on the SubAccount(s) (and thus the Account(s) and Budget) from
     # being calculated.
-    create_budget_subaccount(
+    budget_f.create_subaccount(
         parent=accounts[0],
         quantity=1,
         rate=100,
         multiplier=1
     )
-    create_budget_subaccount(
+    budget_f.create_subaccount(
         parent=accounts[1],
         quantity=1,
         rate=100,
@@ -113,7 +114,7 @@ def test_bulk_create_budget_fringes(api_client, user, create_budget, models,
 
     api_client.force_login(user)
     response = api_client.patch(
-        "/v1/budgets/%s/bulk-create-fringes/" % budget.pk,
+        "/v1/%ss/%s/bulk-create-fringes/" % (budget_f.context, budget.pk),
         format='json',
         data={'data': [
             {'name': 'fringe-a', 'rate': 1.2},
@@ -153,12 +154,11 @@ def test_bulk_create_budget_fringes(api_client, user, create_budget, models,
     assert budget.actual == 0.0
 
 
-def test_bulk_update_budget_fringes(api_client, user, create_budget,
-        create_fringe, create_budget_account, create_budget_subaccount):
-    budget = create_budget()
+def test_bulk_update_fringes(api_client, user, create_fringe, budget_f):
+    budget = budget_f.create_budget()
     accounts = [
-        create_budget_account(parent=budget),
-        create_budget_account(parent=budget)
+        budget_f.create_account(parent=budget),
+        budget_f.create_account(parent=budget)
     ]
     fringes = [
         create_fringe(budget=budget, rate=0.5),
@@ -168,14 +168,14 @@ def test_bulk_update_budget_fringes(api_client, user, create_budget,
     # the metrics on the SubAccount(s) (and thus the Account(s) and Budget) from
     # being calculated.
     subaccounts = [
-        create_budget_subaccount(
+        budget_f.create_subaccount(
             parent=accounts[0],
             quantity=1,
             rate=100,
             multiplier=1,
             fringes=fringes
         ),
-        create_budget_subaccount(
+        budget_f.create_subaccount(
             parent=accounts[1],
             quantity=2,
             rate=50,
@@ -209,7 +209,7 @@ def test_bulk_update_budget_fringes(api_client, user, create_budget,
 
     api_client.force_login(user)
     response = api_client.patch(
-        "/v1/budgets/%s/bulk-update-fringes/" % budget.pk,
+        "/v1/%ss/%s/bulk-update-fringes/" % (budget_f.context, budget.pk),
         format='json',
         data={'data': [
             {'id': fringes[0].pk, 'rate': 0.7},
@@ -259,12 +259,11 @@ def test_bulk_update_budget_fringes(api_client, user, create_budget,
     assert budget.actual == 0.0
 
 
-def test_bulk_delete_fringes(api_client, user, create_budget, create_fringe,
-        models, create_budget_account, create_budget_subaccount):
-    budget = create_budget()
+def test_bulk_delete_fringes(api_client, user, create_fringe, models, budget_f):
+    budget = budget_f.create_budget()
     accounts = [
-        create_budget_account(parent=budget),
-        create_budget_account(parent=budget)
+        budget_f.create_account(parent=budget),
+        budget_f.create_account(parent=budget)
     ]
     fringes = [
         create_fringe(budget=budget, rate=0.5),
@@ -274,14 +273,14 @@ def test_bulk_delete_fringes(api_client, user, create_budget, create_fringe,
     # the metrics on the SubAccount(s) (and thus the Account(s) and Budget) from
     # being calculated.
     subaccounts = [
-        create_budget_subaccount(
+        budget_f.create_subaccount(
             parent=accounts[0],
             quantity=1,
             rate=100,
             multiplier=1,
             fringes=fringes
         ),
-        create_budget_subaccount(
+        budget_f.create_subaccount(
             parent=accounts[1],
             quantity=2,
             rate=50,
@@ -315,9 +314,9 @@ def test_bulk_delete_fringes(api_client, user, create_budget, create_fringe,
 
     api_client.force_login(user)
     response = api_client.patch(
-        "/v1/budgets/%s/bulk-delete-fringes/" % budget.pk, data={
-            'ids': [f.pk for f in fringes]
-        })
+        "/v1/%ss/%s/bulk-delete-fringes/" % (budget_f.context, budget.pk),
+        data={'ids': [f.pk for f in fringes]}
+    )
     assert response.status_code == 200
 
     # Make sure the Fringe(s) were deleted in the database.

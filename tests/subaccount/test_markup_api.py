@@ -4,17 +4,16 @@ from greenbudget.app.markup.models import Markup
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_budget_subaccount_markups(api_client, user, models, create_markup,
-        create_budget_subaccount, create_budget_account, create_budget):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    subaccount = create_budget_subaccount(parent=account)
-    child_subaccount = create_budget_subaccount(parent=subaccount)
+def test_get_subaccount_markups(api_client, user, models, create_markup,
+        budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    subaccount = budget_f.create_subaccount(parent=account)
+    child_subaccount = budget_f.create_subaccount(parent=subaccount)
     markup = create_markup(
         parent=subaccount,
         subaccounts=[child_subaccount]
     )
-
     api_client.force_login(user)
     response = api_client.get("/v1/subaccounts/%s/markups/" % subaccount.pk)
     assert response.status_code == 200
@@ -39,13 +38,11 @@ def test_get_budget_subaccount_markups(api_client, user, models, create_markup,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_budget_subaccount_percent_markup(api_client, user, models,
-        create_budget_subaccounts, create_budget_account, create_budget,
-        create_budget_subaccount):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    subaccount = create_budget_subaccount(parent=account)
-    subaccounts = create_budget_subaccounts(
+def test_create_subaccount_percent_markup(api_client, user, models, budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    subaccount = budget_f.create_subaccount(parent=account)
+    subaccounts = budget_f.create_subaccounts(
         parent=subaccount,
         quantity=1,
         rate=10,
@@ -139,13 +136,11 @@ def test_create_budget_subaccount_percent_markup(api_client, user, models,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_budget_subaccount_flat_markup(api_client, user,
-        create_budget_subaccounts, create_budget_account, create_budget,
-        models, create_budget_subaccount):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    subaccount = create_budget_subaccount(parent=account)
-    subaccounts = create_budget_subaccounts(
+def test_create_subaccount_flat_markup(api_client, user, models, budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    subaccount = budget_f.create_subaccount(parent=account)
+    subaccounts = budget_f.create_subaccounts(
         parent=subaccount,
         quantity=1,
         rate=10,
@@ -234,15 +229,15 @@ def test_create_budget_subaccount_flat_markup(api_client, user,
     assert response.json()["budget"]["nominal_value"] == 20.0
 
 
-def test_create_budget_subaccount_percent_markup_invalid_child(api_client, user,
-        create_budget_subaccount, create_budget_account, create_budget, models):
-    budget = create_budget()
-    another_budget = create_budget()
-    account = create_budget_account(parent=budget)
-    another_account = create_budget_account(parent=another_budget)
-    subaccount = create_budget_subaccount(parent=account)
-    another_subaccount = create_budget_subaccount(parent=another_account)
-    child_sub_account = create_budget_subaccount(parent=another_subaccount)
+def test_create_subaccount_percent_markup_invalid_child(api_client, user,
+        models, budget_f):
+    budget = budget_f.create_budget()
+    another_budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    another_account = budget_f.create_account(parent=another_budget)
+    subaccount = budget_f.create_subaccount(parent=account)
+    another_subaccount = budget_f.create_subaccount(parent=another_account)
+    child_sub_account = budget_f.create_subaccount(parent=another_subaccount)
 
     api_client.force_login(user)
     response = api_client.post(
@@ -256,10 +251,11 @@ def test_create_budget_subaccount_percent_markup_invalid_child(api_client, user,
     assert response.json() == {
         'errors': [{
             'message': (
-                'The child budget sub account with ID %s either does not exist '
-                'or does not belong to the same parent (budget sub account '
+                'The child %s sub account with ID %s either does not exist '
+                'or does not belong to the same parent (%s sub account '
                 'with ID %s) as the markup.' % (
-                    child_sub_account.id, subaccount.id)
+                    budget_f.context, child_sub_account.id, budget_f.context,
+                    subaccount.id)
             ),
             'code': 'does_not_exist',
             'error_type': 'field',
@@ -272,11 +268,11 @@ def test_create_budget_subaccount_percent_markup_invalid_child(api_client, user,
     {'children': [], 'rate': 20, 'unit': Markup.UNITS.percent},
     {'rate': 20, 'unit': Markup.UNITS.percent}
 ])
-def test_create_budget_subaccount_percent_markup_no_children(api_client, data,
-        create_budget_subaccount, user, create_budget_account, create_budget):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    subaccount = create_budget_subaccount(parent=account)
+def test_create_subaccount_percent_markup_no_children(api_client, data, user,
+        budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    subaccount = budget_f.create_subaccount(parent=account)
 
     api_client.force_login(user)
     response = api_client.post(
@@ -292,12 +288,12 @@ def test_create_budget_subaccount_percent_markup_no_children(api_client, data,
     }
 
 
-def test_create_budget_subaccount_flat_markup_children(api_client, user, models,
-       create_budget_subaccount, create_budget_account, create_budget):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    subaccount = create_budget_subaccount(parent=account)
-    child_subaccount = create_budget_subaccount(parent=subaccount)
+def test_create_subaccount_flat_markup_children(api_client, user, models,
+       budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    subaccount = budget_f.create_subaccount(parent=account)
+    child_subaccount = budget_f.create_subaccount(parent=subaccount)
 
     api_client.force_login(user)
     response = api_client.post(
@@ -318,11 +314,11 @@ def test_create_budget_subaccount_flat_markup_children(api_client, user, models,
     }
 
 
-def test_bulk_delete_account_markups(api_client, user, create_budget, models,
-        create_budget_account, create_markup, create_budget_subaccount):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    parent_subaccount = create_budget_subaccount(
+def test_bulk_delete_account_markups(api_client, user, models, create_markup,
+        budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    parent_subaccount = budget_f.create_subaccount(
         parent=account,
         rate=10,
         quantity=10,
@@ -347,7 +343,7 @@ def test_bulk_delete_account_markups(api_client, user, create_budget, models,
     ]
     # Markups can only be assigned to an Account/SubAccount if they are percent
     # based.
-    subaccount = create_budget_subaccount(
+    subaccount = budget_f.create_subaccount(
         parent=parent_subaccount,
         markups=[markups[2]],
         rate=10,
