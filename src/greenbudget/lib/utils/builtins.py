@@ -37,29 +37,11 @@ def conditionally_separate_strings(strings, separator=" "):
     return separator.join(parts)
 
 
-def get_function_keyword_defaults(func):
-    arg_spec = inspect.getfullargspec(func)
-    positional_count = len(arg_spec.args)
-    defaults = {}
-    if arg_spec.defaults is not None:
-        positional_count = positional_count - len(arg_spec.defaults)
-
-        defaults = dict(zip(
-            arg_spec.args[positional_count:],
-            arg_spec.defaults
-        ))
-    return defaults
-
-
 def import_at_module_path(module_path):
     module_name = ".".join(module_path.split(".")[:-1])
     class_name = module_path.split(".")[-1]
     module = importlib.import_module(module_name)
     return getattr(module, class_name)
-
-
-def is_non_string_iterable(value):
-    return hasattr(value, '__iter__') and not isinstance(value, str)
 
 
 def concat(arrays):
