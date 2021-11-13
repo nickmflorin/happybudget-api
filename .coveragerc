@@ -11,6 +11,8 @@ omit =
     */manage.py
     */management/*
     src/greenbudget/conf/gunicorn_config.py
+    src/greenbudget/lib/logging/*
+    src/greenbudget/lib/utils/decorators.py
     *django_utils/cli.py
     */logging/*
     */conf/*
