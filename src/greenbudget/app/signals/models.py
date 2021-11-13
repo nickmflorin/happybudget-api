@@ -433,7 +433,7 @@ class model:
                         "The user cannot be inferred from the model save.")
             return user
         else:
-            if not user.is_authenticated:
+            if not user.is_authenticated or not user.is_verified:
                 # Really, we should be authenticating the user in tests.  But
                 # since we don't always do that, this is a PATCH for now.
                 if settings.ENVIRONMENT != Environments.TEST:
