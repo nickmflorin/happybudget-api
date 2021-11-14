@@ -78,8 +78,8 @@ there is also that option if you do not feel like managing it yourself.
 
 Finally, we need to create and edit a `.env` file in the project root to include configuration values and
 sensitive information. Ask another team member for help with this.  In order to run the application locally,
-the `.env` file must specify the `DJANGO_SECRET_KEY`.  The other ENV variables pertain to AWS configuration that
-should not be needed when running locally.
+the `.env` file must specify the `DJANGO_SECRET_KEY`.  The other ENV variables pertain to AWS configuration or
+RSA fingerprints for JWT - these should not be needed when running locally.
 
 ## Running Locally
 
@@ -378,42 +378,50 @@ AWS_S3_REGION_NAME=<AWS_S3_REGION_NAME>
 AWS_SECRET_ACCESS_KEY=<AWS_SECRET_ACCESS_KEY >
 AWS_ACCESS_KEY_ID=<AWS_ACCESS_KEY_ID>
 
-JWT_SIGNING_KEY=<JWT_SIGNING_KEY>
-JWT_VERIFYING_KEY=<JWT_VERIFYING_KEY>
+JWT_RSA_FINGERPRINT=<JWT_RSA_FINGERPRINT>
 ```
 
 Note that `DJANGO_SETTINGS_MODULE` will be set based on the environment of the EC2 instance.
 
 ###### JWT RSA Signing Fingerprint
 
-This step is very important.  To dramatically improve the security of the application, we do not sign the
+This step is very important.  To dramatically improve the security of the application, we do not use
+the `DJANGO_SECRET_KEY` to sign JWT tokens used throughout the application.  Instead, we use an
+RSA fingerprint, because it is significantly more secure and is easier to swap out if it ever
+becomes compromised.
+
+In local and test environments, the RSA fingerprint defaults to a value that does not need to be
+stored sensitively.  However, in production and development environments, we need to generate the
+RSA public/private key pairs on the server so they can be securely stored and referenced by the
+application.
+
+To start, generate a private/public RSA key pair as follows:
 
 ```bash
-$ ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
+$ ssh-keygen -m PEM -t rsa -b 4096 -C "your_email@example.com"
 ```
 
-Enter file in which to save the key (/home/ec2-user/.ssh/id_rsa): /home/ec2-user/.ssh/id_rsa_django
-
-We need to copy both the private and public fingerprints into the `.env` file.  First, read the
-private key file:
+You will then be prompted to enter the file for which the key should be saved.  Store the
+file in `/home/ec2-user/.ssh`:
 
 ```bash
-$ tail -f 1000 ~/.ssh/id_rsa_django
+$ Enter file in which to save the key (/home/ec2-user/.ssh/id_rsa): /home/ec2-user/.ssh/id_rsa_django
 ```
 
-Copy everything between `-----BEGIN RSA PRIVATE KEY-----` and `-----END RSA PRIVATE KEY-----` and
-copy into the `.env` file under `JWT_SIGNING_KEY`, using `""` at the beginning and the end of the
-key to allow the `.env` file to recognize it as a multi-line variable.
+**Important**: Do not ever, under any circumstances, remove this file from the EC2 instance, commit
+to source control or share with another person, inside or outside of the company.
 
-Similiarly, for the public key, read the public key file:
+Now that we have the private/public RSA key pairs generated, we simply need to reference it's location
+in the `.env` file:
 
 ```bash
-$ tail -f 1000 ~/.ssh/id_rsa_django.pub
+$ nano .env
+$ JWT_RSA_FINGERPRINT=/home/ec2-user/.ssh/id_rsa_django
 ```
 
-Copy everything after `ssh-rsa` and before the email address at the end of the key (the last two characters
-of the key should be `==`).  Copy the value into the `.env` file under `JWT_VERIFYING_KEY`, again, using `""`
-to denote the multi-line variable in the `.env` file.
+The application will now automatically read both the file and it's `.pub` counterpart and use the
+file contents to sign the JWT tokens in the application.
+
 
 #### Step 4: Configuring Apache
 
