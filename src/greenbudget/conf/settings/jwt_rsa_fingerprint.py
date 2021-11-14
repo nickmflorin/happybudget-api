@@ -1,44 +1,52 @@
+import os
+from pathlib import Path
+
 from greenbudget.conf import Environments, config, ConfigInvalidError
 
 
-JWT_RSA_FINGERPRINT = config(
-    name='JWT_RSA_FINGERPRINT',
+BASE_DIR = Path(os.path.abspath(__file__)).parents[2]
+
+JWT_RSA_FINGERPRINT_FILENAME = config(
+    name='JWT_RSA_FINGERPRINT_FILENAME',
     required=[Environments.PROD, Environments.DEV]
 )
+
 # In local or test environments, we allow the RSA private/public key pairs to
 # be defaulted below.
-if JWT_RSA_FINGERPRINT:
+if JWT_RSA_FINGERPRINT_FILENAME:
+    JWT_RSA_FINGERPRINT_PATH = BASE_DIR / JWT_RSA_FINGERPRINT_FILENAME
+
     try:
         # Use double underscores to prevent Django from storing the value in
         # settings for security reasons.
-        __JWT_VERIFYING_KEY = open("%s.pub" % JWT_RSA_FINGERPRINT).read()
+        __JWT_VERIFYING_KEY = open("%s.pub" % JWT_RSA_FINGERPRINT_PATH).read()
     except FileNotFoundError:
         raise ConfigInvalidError(
-            config_name='JWT_RSA_FINGERPRINT',
+            config_name='JWT_RSA_FINGERPRINT_FILENAME',
             message=(
                 "The provided RSA public key %s.pub does not exist."
-                % JWT_RSA_FINGERPRINT
+                % JWT_RSA_FINGERPRINT_PATH
             )
         )
     else:
         if not __JWT_VERIFYING_KEY.startswith('ssh-rsa'):
             raise ConfigInvalidError(
-                config_name='JWT_RSA_FINGERPRINT',
+                config_name='JWT_RSA_FINGERPRINT_FILENAME',
                 message=(
                     "The provided RSA fingerprint at %s.pub is not a "
-                    "valid public RSA key." % JWT_RSA_FINGERPRINT
+                    "valid public RSA key." % JWT_RSA_FINGERPRINT_PATH
                 )
             )
     try:
         # Use double underscores to prevent Django from storing the value in
         # settings for security reasons.
-        __JWT_SIGNING_KEY = open(JWT_RSA_FINGERPRINT).read()
+        __JWT_SIGNING_KEY = open(str(JWT_RSA_FINGERPRINT_PATH)).read()
     except FileNotFoundError:
         raise ConfigInvalidError(
-            config_name='JWT_RSA_FINGERPRINT',
+            config_name='JWT_RSA_FINGERPRINT_FILENAME',
             message=(
                 "The provided RSA private key %s does not exist."
-                % JWT_RSA_FINGERPRINT
+                % JWT_RSA_FINGERPRINT_PATH
             )
         )
     else:
@@ -47,10 +55,10 @@ if JWT_RSA_FINGERPRINT:
         # a live bug when the key is used to encrypt a JWT token.
         if not __JWT_SIGNING_KEY.startswith('-----BEGIN RSA PRIVATE KEY-----'):
             raise ConfigInvalidError(
-                config_name='JWT_RSA_FINGERPRINT',
+                config_name='JWT_RSA_FINGERPRINT_FILENAME',
                 message=(
                     "The provided RSA fingerprint at %s is not a "
-                    "valid private RSA key." % JWT_RSA_FINGERPRINT
+                    "valid private RSA key." % JWT_RSA_FINGERPRINT_PATH
                 )
             )
 else:
