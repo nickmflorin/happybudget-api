@@ -401,22 +401,29 @@ To start, generate a private/public RSA key pair as follows:
 $ ssh-keygen -m PEM -t rsa -b 4096 -C "your_email@example.com"
 ```
 
-You will then be prompted to enter the file for which the key should be saved.  Store the
-file in `/home/ec2-user/.ssh`:
+You will then be prompted to enter the file for which the key should be saved.  Since we
+will be reading the file contents in the application itself, the private/public key pairs need
+to be stored inside of the `docker` environment.  Our `docker` setup expects the file to be named
+`jwt_signing_key`, and in order for it to be copied to the `docker` environment, it needs to be stored
+in the project root:
+
 
 ```bash
-$ Enter file in which to save the key (/home/ec2-user/.ssh/id_rsa): /home/ec2-user/.ssh/id_rsa_django
+$ Enter file in which to save the key (/home/ec2-user/.ssh/id_rsa): /www/greenbudget-api/jwt_signing_key
 ```
+
+Do not enter a passphrase.
 
 **Important**: Do not ever, under any circumstances, remove this file from the EC2 instance, commit
 to source control or share with another person, inside or outside of the company.
 
 Now that we have the private/public RSA key pairs generated, we simply need to reference it's location
-in the `.env` file:
+in the `.env` file.  The RSA private/public key pairs are in the root of the `docker` environment, so
+this is simply:
 
 ```bash
 $ nano .env
-$ JWT_RSA_FINGERPRINT=/home/ec2-user/.ssh/id_rsa_django
+$ JWT_RSA_FINGERPRINT=jwt_signing_key
 ```
 
 The application will now automatically read both the file and it's `.pub` counterpart and use the
