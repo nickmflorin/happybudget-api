@@ -12,6 +12,7 @@ from greenbudget.conf import Environments, config, LazySetting
 
 from .admin import *  # noqa
 from .aws import *  # noqa
+from .jwt_rsa_fingerprint import __JWT_SIGNING_KEY, __JWT_VERIFYING_KEY
 from .logging import *  # noqa
 from .password_validators import *  # noqa
 
@@ -108,32 +109,18 @@ SLIDING_TOKEN_LIFETIME = datetime.timedelta(minutes=5)
 JWT_COOKIE_SECURE = True
 JWT_TOKEN_COOKIE_NAME = 'greenbudgetjwt'
 JWT_COOKIE_DOMAIN = ".greenbudget.io"
+
+
 SIMPLE_JWT = {
-    'AUTH_TOKEN_CLASSES': (
-        'greenbudget.app.authentication.tokens.SlidingToken',),
+    'AUTH_TOKEN_CLASSES': ('greenbudget.app.authentication.tokens.AuthToken',),
     'SLIDING_TOKEN_LIFETIME': SLIDING_TOKEN_LIFETIME,
     'ACCESS_TOKEN_LIFETIME': ACCESS_TOKEN_LIFETIME,
     'SLIDING_TOKEN_REFRESH_LIFETIME': SLIDING_TOKEN_REFRESH_LIFETIME,
-    # We can use the SECRET_KEY temporarily, but it is not as secure as using
-    # an RSA fingerprint in an ENV file.
     # 'SIGNING_KEY': SECRET_KEY,
-    'SIGNING_KEY': config('SIMPLE_JWT_SIGNING_KEY', b'\n'.join([
-        b'-----BEGIN RSA PRIVATE KEY-----',
-        b'MIIBOwIBAAJBAJttTMyo2bRC5nJZ6tR8DqJiWa4NntaNfWCntw1nif0zFDFW0DcJ',
-        b'PI1buHCf8XymwnkT35oW48v8JzPWQVYaM6cCAwEAAQJAHO0hnvFJ2x+cTenoJ3WT',
-        b'L6uILzl/t0SL8gIkskzzxHiDkL9PNS8Ax0US+onurVj+wVRV7W278D98BvS7WTSa',
-        b'OQIhANuk0Twne3G67nk5zVXFo9DsxTO4frJiFLBjXZ9rR+WjAiEAtSdbymlMI+SA',
-        b'TK0TRSa92KtpJ2JTYlbA5uf2dCm/Mi0CIQC4AEzgbdr2HblliMzBi/5+KbvSZj6N',
-        b'Rak7UyK9SGxErQIgI8HJFIMETHFmAbyH+TZUctgiwWtfGiIVoX5X30X+P2ECIQDG',
-        b'+d6FMgY+Tne95/2/gV76/1MNJhjQaSpDUEJdRmpUpQ==',
-        b'-----END RSA PRIVATE KEY-----',
-    ]), cast=bytes),
-    'VERIFYING_KEY': config('SIMPLE_JWT_VERIFYING_KEY', b'\n'.join([
-        b'-----BEGIN PUBLIC KEY-----',
-        b'MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAJttTMyo2bRC5nJZ6tR8DqJiWa4NntaN',
-        b'fWCntw1nif0zFDFW0DcJPI1buHCf8XymwnkT35oW48v8JzPWQVYaM6cCAwEAAQ==',
-        b'-----END PUBLIC KEY-----',
-    ]), cast=bytes),
+    # We can use the SECRET_KEY temporarily when developing locally, but it
+    # is not nearly as secure as using an RSA fingerprint in the ENV file.
+    'SIGNING_KEY': __JWT_SIGNING_KEY,
+    'VERIFYING_KEY': __JWT_VERIFYING_KEY,
     'ALGORITHM': 'RS256',
     'ROTATE_REFRESH_TOKENS': True,
     'USER_ID_FIELD': 'pk',

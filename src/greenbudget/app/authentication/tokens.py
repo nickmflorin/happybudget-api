@@ -3,7 +3,7 @@ from django.conf import settings
 from rest_framework_simplejwt.settings import api_settings
 from rest_framework_simplejwt.tokens import (
     Token as BaseToken,
-    SlidingToken as BaseSlidingToken,
+    SlidingToken,
     AccessToken as BaseAccessToken,
     BlacklistMixin
 )
@@ -18,9 +18,11 @@ class Token(BaseToken):
     This is required for tests and other situations where the settings
     configuration for these tokens might change, because the
     rest_framework_simplejwt package does not do an adequate job adjusting
-    the token lifetimes when the settings change (because the lifetimes
-    are defined as static attributes, not defined dynamically in the __init__
-    method).
+    the token lifetimes after there is a change to Django's settings.
+
+    This is because the token lifetmies are defined as static class attributes,
+    not defined dynamically in the __init__ method, so overriding the settings
+    will not cause the tokens to use a different lifetime.
     """
 
     def __init__(self, token=None, verify=True, lifetime=None):
@@ -28,8 +30,12 @@ class Token(BaseToken):
         super().__init__(token=token, verify=verify)
 
 
-class SlidingToken(BlacklistMixin, Token):
-    token_type = BaseSlidingToken.token_type
+class AuthToken(BlacklistMixin, Token):
+    """
+    Token used for verifying user authentication and identity in the
+    application and maintaining their logged in state.
+    """
+    token_type = SlidingToken.token_type
 
     def __init__(self, *args, **kwargs):
         kwargs['lifetime'] = settings.SLIDING_TOKEN_LIFETIME
@@ -44,6 +50,10 @@ class SlidingToken(BlacklistMixin, Token):
 
 
 class AccessToken(Token):
+    """
+    Token used for other user sensitive actions such as password reset and
+    email verification.
+    """
     token_type = BaseAccessToken.token_type
 
     def __init__(self, *args, **kwargs):

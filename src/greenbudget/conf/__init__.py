@@ -111,7 +111,10 @@ class Config:
             # container to be found correctly.
             load_dotenv(dotenv_path=".env")
 
-    def __call__(self, name, default='', cast=str, required=False, validate=None):  # noqa
+    def __call__(self, name, default='', cast=str, cast_kwargs=None, **kwargs):
+        required = kwargs.pop('required', False)
+        validate = kwargs.pop('validate', None)
+
         # Whether or not the configuration is required can be a function of
         # the environment we are in, specified as either a dict or an iterable.
         if isinstance(required, dict):
@@ -132,14 +135,11 @@ class Config:
             if value is None:
                 self._values[name] = self._defaults[name] = default
             else:
-                try:
-                    v = cast(value)
-                except ValueError:
-                    raise ConfigInvalidError(name)
-                else:
-                    if validate is not None:
-                        self.validate(name, v, validate)
-                    self._values[name] = v
+                v = self._cast_value(
+                    name, value, cast=cast, cast_kwargs=cast_kwargs)
+                if validate is not None:
+                    self.validate(name, v, validate)
+                self._values[name] = v
 
             if required and not self._values[name]:
                 raise ConfigRequiredError(name)
@@ -164,6 +164,17 @@ class Config:
 
         elif validated is not True:
             raise ConfigInvalidError(name)
+
+    def _cast_value(self, name, value, cast=str, cast_kwargs=None):
+        cast_kwargs = cast_kwargs or {}
+        if cast is None:
+            return value
+        elif not hasattr(cast, '__call__'):
+            raise ConfigInvalidError(name, message="Cast must be a callable.")
+        try:
+            return cast(value, **cast_kwargs)
+        except ValueError:
+            raise ConfigInvalidError(name, message="Could not cast value.")
 
     @staticmethod
     def csvlist(value):

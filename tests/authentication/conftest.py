@@ -1,7 +1,7 @@
 from http.cookies import SimpleCookie
 import pytest
 
-from greenbudget.app.authentication.tokens import SlidingToken
+from greenbudget.app.authentication.tokens import AuthToken
 
 
 @pytest.fixture
@@ -32,7 +32,7 @@ def unverified_user(user):
 
 @pytest.fixture
 def jwt_authenticated_client(api_client, settings, user):
-    token = SlidingToken.for_user(user)
+    token = AuthToken.for_user(user)
     api_client.cookies = SimpleCookie({
         settings.JWT_TOKEN_COOKIE_NAME: str(token),
     })

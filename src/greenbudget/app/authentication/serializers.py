@@ -10,11 +10,11 @@ from .exceptions import (
     EmailDoesNotExist)
 from .mail import send_email_verification_email, send_password_recovery_email
 from .permissions import check_user_permissions
-from .tokens import SlidingToken, AccessToken
+from .tokens import AuthToken, AccessToken
 from .utils import validate_password, get_user_from_token
 
 
-class AuthTokenSerializer(serializers.Serializer):
+class BaseTokenValidationSerializer(serializers.Serializer):
     token = serializers.CharField(
         required=False, allow_null=True, allow_blank=True)
 
@@ -22,7 +22,7 @@ class AuthTokenSerializer(serializers.Serializer):
         self.token_user_permission_classes = kwargs.pop(
             'token_user_permission_classes', None)
 
-        default_token_cls = getattr(self, 'token_cls', SlidingToken)
+        default_token_cls = getattr(self, 'token_cls', AuthToken)
         self.token_cls = kwargs.pop('token_cls', default_token_cls)
 
         default_force_logout = getattr(self, 'force_logout', None)
@@ -61,7 +61,11 @@ class AuthTokenSerializer(serializers.Serializer):
         return validated_data["user"]
 
 
-class EmailTokenSerializer(AuthTokenSerializer):
+class AuthTokenSerializer(BaseTokenValidationSerializer):
+    token_cls = AuthToken
+
+
+class EmailTokenSerializer(BaseTokenValidationSerializer):
     token_cls = AccessToken
 
     def validate(self, attrs):
@@ -126,7 +130,7 @@ class VerifyEmailSerializer(serializers.Serializer):
         return validated_data['user']
 
 
-class ResetPasswordSerializer(AuthTokenSerializer):
+class ResetPasswordSerializer(BaseTokenValidationSerializer):
     password = serializers.CharField(
         required=True,
         allow_blank=False,

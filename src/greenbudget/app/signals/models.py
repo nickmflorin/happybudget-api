@@ -156,13 +156,6 @@ class model:
         # the action when the request is not available.
         self._user_field = user_field
 
-    def log_field_not_being_tracked(self, field_obj, model):
-        model = model if isinstance(model, type) else model.__class__
-        logger.warning(
-            "Not tracking field {field} for model {model} because it is not "
-            "supported.".format(field=field_obj.name, model=model)
-        )
-
     def get_field_instance(self, cls, field_name):
         try:
             return cls._meta.get_field(field_name)
@@ -203,7 +196,7 @@ class model:
                         unsupported_fields.append(field_obj.name)
 
             if unsupported_fields:
-                logger.info(
+                logger.debug(
                     "Field(s) {fields} for model {model} cannot be tracked as "
                     "they are not supported.".format(
                         model=cls.__name__,
@@ -212,8 +205,6 @@ class model:
                 )
             return tracked_fields
         else:
-            # If we want to dispatch signals when a field is changed, we need
-            # to also track that field.
             for field in self._track_fields:
                 if field not in self._exclude_fields:
                     self.validate_field(cls, field)
@@ -234,6 +225,7 @@ class model:
         cls.__tracked_fields = self.tracked_fields(cls)
 
         def raise_if_field_not_tracked(instance, field):
+            self.validate_field(cls, field)
             if field not in instance.__tracked_fields:
                 raise FieldNotTrackedError(field, instance)
 

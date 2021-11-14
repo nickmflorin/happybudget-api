@@ -5,7 +5,7 @@ from unittest import mock
 import pytest
 
 from greenbudget.app.authentication.tokens import (
-    SlidingToken, AccessToken)
+    AuthToken, AccessToken)
 from greenbudget.app.authentication.exceptions import (
     TokenInvalidError, TokenExpiredError)
 from greenbudget.app.authentication.utils import (
@@ -14,14 +14,14 @@ from greenbudget.app.authentication.utils import (
 from greenbudget.app.user.models import User
 
 
-class TestGetUserFromSlidingTokens:
+class TestGetUserFromAuthTokens:
     def test_none_returns_anonymous_user(self):
         user, token_obj = get_user_from_token(None)
         assert isinstance(user, AnonymousUser)
         assert token_obj is None
 
     def test_valid_access_token_returns_user(self, user):
-        token = SlidingToken.for_user(user)
+        token = AuthToken.for_user(user)
         with mock.patch.object(
                 User.objects, 'get', return_value=user) as mock_fn:
             returned_user, _ = get_user_from_token(str(token))
@@ -30,7 +30,7 @@ class TestGetUserFromSlidingTokens:
 
     @pytest.mark.freeze_time('2021-01-01')
     def test_expired_access_token_auto_refreshes(self, user):
-        token = SlidingToken.for_user(user)
+        token = AuthToken.for_user(user)
         token.set_exp(from_time=datetime(2010, 1, 1))
         with mock.patch.object(
                 User.objects, 'get', return_value=user) as mock_fn:
@@ -40,7 +40,7 @@ class TestGetUserFromSlidingTokens:
 
     @pytest.mark.freeze_time('2021-01-01')
     def test_expired_access_token_missing_refresh_token_raises(self, user):
-        token = SlidingToken.for_user(user)
+        token = AuthToken.for_user(user)
         token.set_exp(claim='refresh_exp', from_time=datetime(2010, 1, 1))
         with mock.patch.object(
                 User.objects, 'get', return_value=user) as mock_fn:
@@ -79,7 +79,7 @@ def test_verify_token_bad_token_raises_invalid_error():
 
 
 def test_auth_token_invalid_token_raises_invalid_error(user):
-    token = SlidingToken.for_user(user)
+    token = AuthToken.for_user(user)
     token.payload.pop('jti')  # Remove jti claim to trigger verify failure
     with pytest.raises(TokenInvalidError):
         verify_token(str(token))
