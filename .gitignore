@@ -95,7 +95,6 @@ pgadmin-data/
 
 # Static Files
 statcdn/
-deploy.sh
 dump.rdb
 .project
 greenbudget/dump.rdb

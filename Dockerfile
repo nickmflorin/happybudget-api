@@ -13,6 +13,9 @@ COPY .env /app/
 COPY jwt_signing_key /app/
 COPY jwt_signing_key.pub /app/
 
+RUN chmod 777 /app/jwt_signing_key.pub
+RUN chmod 777 /app/jwt_signing_key
+
 RUN pip --default-timeout=1000 install -U pip setuptools wheel poetry
 RUN poetry export -f requirements.txt --output requirements.txt
 RUN pip --default-timeout=1000 --no-cache-dir install -r requirements.txt
