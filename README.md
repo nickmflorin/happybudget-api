@@ -357,6 +357,8 @@ $ git clone git@github.com:Saturation-IO/greenbudget-api.git
 $ cd ./greenbudget-api
 ```
 
+##### ENV File
+
 We need to create a `.env` file to hold the sensitive keys required to run the API.  You should talk to a team member to get
 these key values before proceeding.  The `.env` file should look as follows:
 
@@ -375,9 +377,43 @@ AWS_STORAGE_BUCKET_URL=<AWS_STORAGE_BUCKET_URL>
 AWS_S3_REGION_NAME=<AWS_S3_REGION_NAME>
 AWS_SECRET_ACCESS_KEY=<AWS_SECRET_ACCESS_KEY >
 AWS_ACCESS_KEY_ID=<AWS_ACCESS_KEY_ID>
+
+JWT_SIGNING_KEY=<JWT_SIGNING_KEY>
+JWT_VERIFYING_KEY=<JWT_VERIFYING_KEY>
 ```
 
 Note that `DJANGO_SETTINGS_MODULE` will be set based on the environment of the EC2 instance.
+
+###### JWT RSA Signing Fingerprint
+
+This step is very important.  To dramatically improve the security of the application, we do not sign the
+
+```bash
+$ ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
+```
+
+Enter file in which to save the key (/home/ec2-user/.ssh/id_rsa): /home/ec2-user/.ssh/id_rsa_django
+
+We need to copy both the private and public fingerprints into the `.env` file.  First, read the
+private key file:
+
+```bash
+$ tail -f 1000 ~/.ssh/id_rsa_django
+```
+
+Copy everything between `-----BEGIN RSA PRIVATE KEY-----` and `-----END RSA PRIVATE KEY-----` and
+copy into the `.env` file under `JWT_SIGNING_KEY`, using `""` at the beginning and the end of the
+key to allow the `.env` file to recognize it as a multi-line variable.
+
+Similiarly, for the public key, read the public key file:
+
+```bash
+$ tail -f 1000 ~/.ssh/id_rsa_django.pub
+```
+
+Copy everything after `ssh-rsa` and before the email address at the end of the key (the last two characters
+of the key should be `==`).  Copy the value into the `.env` file under `JWT_VERIFYING_KEY`, again, using `""`
+to denote the multi-line variable in the `.env` file.
 
 #### Step 4: Configuring Apache
 
