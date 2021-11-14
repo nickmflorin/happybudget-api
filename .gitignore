@@ -111,3 +111,5 @@ docker-compose.override.yml
 local_override.py
 .env
 media/
+jwt_signing_key
+jwt_signing_key.pub
