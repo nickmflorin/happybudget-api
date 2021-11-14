@@ -81,6 +81,16 @@ sensitive information. Ask another team member for help with this.  In order to 
 the `.env` file must specify the `DJANGO_SECRET_KEY`.  The other ENV variables pertain to AWS configuration or
 RSA fingerprints for JWT - these should not be needed when running locally.
 
+## Application Environments
+
+| Environment | Settings Module                  | URL                     | File Storage               | Database                   |
+| :---:       |     :---:                        |          :---:          | :---:                      | :---:                      | 
+| `local`     | `greenbudget.conf.settings.local`| `127.0.0.1:8000`        | Local File Storage         | Local PostgreSQL Server    |
+| `test`      | `greenbudget.conf.settings.test` |  N/A                    | Temporary File Storage     | Transactional SQLite3 File |
+| `develop`   | `greenbudget.conf.settings.dev`  | `devapi.greenbudget.io` | AWS S3                     | PostgreSQL on AWS RDS      |
+| `prod`      | `greenbudget.conf.settings.prod` | `api.greenbudget.io`    | AWS S3                     | PostgreSQL on AWS RDS      |
+
+
 ## Running Locally
 
 To run the application locally, simply activate the virtual environment, start postgres app, and start the Django web server:
@@ -259,8 +269,10 @@ how to setup the API on an EC2 instance assuming it has already been creeated.
 
 Currently, we run EC2 instances for two separate environments:
 
-(1) `develop`: URL = `devapi.greenbudget.io`, `DJANGO_SETTINGS_MODULE` = `greenbudget.conf.settings.dev`
-(2) `prod`: URL = `api.greenbudget.io`, `DJANGO_SETTINGS_MODULE` = `greenbudget.conf.settings.prod`
+| Environment | Settings Module                  | URL                     |
+| :---:       |     :---:                        |          :---:          |
+| `develop`   | `greenbudget.conf.settings.dev`  | `devapi.greenbudget.io` |
+| `prod`      | `greenbudget.conf.settings.prod` | `api.greenbudget.io`    |
 
 #### Step 1: Installing Git
 
@@ -404,12 +416,12 @@ $ ssh-keygen -m PEM -t rsa -b 4096 -C "your_email@example.com"
 You will then be prompted to enter the file for which the key should be saved.  Since we
 will be reading the file contents in the application itself, the private/public key pairs need
 to be stored inside of the `docker` environment.  Our `docker` setup expects the file to be named
-`jwt_signing_key`, and in order for it to be copied to the `docker` environment, it needs to be stored
-in the project root:
+`jwt_signing_key`, and in order for it to be copied to the `docker` environment, and found by Django,
+it needs to be stored in the `BASE_DIR`:
 
 
 ```bash
-$ Enter file in which to save the key (/home/ec2-user/.ssh/id_rsa): /www/greenbudget-api/jwt_signing_key
+$ Enter file in which to save the key (/home/ec2-user/.ssh/id_rsa): /www/greenbudget-api/src/greenbudget/jwt_signing_key
 ```
 
 Do not enter a passphrase.
@@ -417,13 +429,13 @@ Do not enter a passphrase.
 **Important**: Do not ever, under any circumstances, remove this file from the EC2 instance, commit
 to source control or share with another person, inside or outside of the company.
 
-Now that we have the private/public RSA key pairs generated, we simply need to reference it's location
-in the `.env` file.  The RSA private/public key pairs are in the root of the `docker` environment, so
-this is simply:
+Now that we have the private/public RSA key pairs generated, we simply need to reference it's filename
+in the `.env` file, since Django will by default try to find it in `src/greenbudget/<filename>`. 
+The RSA private/public key pairs are in the root of the `docker` environment, so this is simply:
 
 ```bash
 $ nano .env
-$ JWT_RSA_FINGERPRINT=jwt_signing_key
+$ JWT_RSA_FINGERPRINT_FILENAME=jwt_signing_key
 ```
 
 The application will now automatically read both the file and it's `.pub` counterpart and use the
