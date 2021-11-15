@@ -3,7 +3,7 @@ from django.db import models
 from polymorphic.models import PolymorphicModel
 
 from greenbudget.lib.utils import set_or_list
-from .utils import import_model_at_path
+from greenbudget.lib.django_utils.models import import_model_at_path
 
 
 class CacheControlMixin:

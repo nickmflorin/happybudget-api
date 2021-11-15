@@ -69,7 +69,7 @@ class ObjectRelationship:
         return self.instance.pk
 
 
-class ObjectSet(collections.Mapping):
+class ObjectSet(collections.abc.Mapping):
     bulk_create_kwargs = {}
 
     def __init__(self, model_cls, user):

@@ -5,8 +5,6 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
-from greenbudget.app.budgeting.utils import get_child_instance_cls
-
 from .managers import GroupManager
 
 
@@ -69,13 +67,9 @@ class Group(models.Model):
         except ObjectDoesNotExist:
             pass
 
-    @classmethod
-    def child_instance_cls_for_parent(cls, parent):
-        return get_child_instance_cls(parent)
-
     @property
     def child_instance_cls(self):
-        return self.child_instance_cls_for_parent(self.parent)
+        return self.parent.child_instance_cls
 
     @property
     def children(self):

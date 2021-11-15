@@ -288,17 +288,6 @@ version = "3.1.1"
 
 [[package]]
 category = "main"
-description = "Django-filter is a reusable Django application for allowing users to filter querysets dynamically."
-name = "django-filter"
-optional = false
-python-versions = ">=3.5"
-version = "2.4.0"
-
-[package.dependencies]
-Django = ">=2.2"
-
-[[package]]
-category = "main"
 description = "A jazzy skin for the Django Admin-Interface."
 name = "django-grappelli"
 optional = false
@@ -361,20 +350,6 @@ redis = ">=3.0.0"
 
 [[package]]
 category = "main"
-description = "Polymorphic serializers for Django REST Framework."
-name = "django-rest-polymorphic"
-optional = false
-python-versions = "*"
-version = "0.1.9"
-
-[package.dependencies]
-django = "*"
-django-polymorphic = "*"
-djangorestframework = "*"
-six = "*"
-
-[[package]]
-category = "main"
 description = "Support for many storage backends in Django"
 name = "django-storages"
 optional = false
@@ -413,38 +388,26 @@ description = "Web APIs for Django, made easy."
 name = "djangorestframework"
 optional = false
 python-versions = ">=3.5"
-version = "3.11.1"
+version = "3.12.4"
 
 [package.dependencies]
-django = ">=1.11"
-
-[[package]]
-category = "main"
-description = "Better filtering for Django REST Framework"
-name = "djangorestframework-filters"
-optional = false
-python-versions = ">=3.4"
-version = "1.0.0.dev0"
-
-[package.dependencies]
-django-filter = ">=2.0"
-djangorestframework = "*"
+django = ">=2.2"
 
 [[package]]
 category = "main"
 description = "A minimal JSON Web Token authentication plugin for Django REST Framework"
 name = "djangorestframework-simplejwt"
 optional = false
-python-versions = ">=3.5,<4"
-version = "4.3.0"
+python-versions = ">=3.7"
+version = "5.0.0"
 
 [package.dependencies]
 django = "*"
 djangorestframework = "*"
-pyjwt = "*"
+pyjwt = ">=2,<3"
 
 [package.extras]
-dev = ["bumpversion (>=0.5.3,<1)", "pytest-watch", "wheel", "twine", "ipython", "cryptography", "pytest-cov", "pytest-django", "pytest-xdist", "pytest", "tox", "flake8", "pep8", "isort", "Sphinx (>=1.6.5,<2)", "sphinx-rtd-theme (>=0.1.9)", "python-jose (3.0.0)"]
+dev = ["pytest-watch", "wheel", "twine", "ipython", "cryptography", "pytest-cov", "pytest-django", "pytest-xdist", "pytest", "tox", "flake8", "pep8", "isort", "Sphinx (>=1.6.5,<2)", "sphinx-rtd-theme (>=0.1.9)", "python-jose (3.0.0)"]
 doc = ["Sphinx (>=1.6.5,<2)", "sphinx-rtd-theme (>=0.1.9)"]
 lint = ["flake8", "pep8", "isort"]
 python-jose = ["python-jose (3.0.0)"]
@@ -884,13 +847,14 @@ category = "main"
 description = "JSON Web Token implementation in Python"
 name = "pyjwt"
 optional = false
-python-versions = "*"
-version = "1.7.1"
+python-versions = ">=3.6"
+version = "2.3.0"
 
 [package.extras]
-crypto = ["cryptography (>=1.4)"]
-flake8 = ["flake8", "flake8-import-order", "pep8-naming"]
-test = ["pytest (>=4.0.1,<5.0.0)", "pytest-cov (>=2.6.0,<3.0.0)", "pytest-runner (>=4.2,<5.0.0)"]
+crypto = ["cryptography (>=3.3.1)"]
+dev = ["sphinx", "sphinx-rtd-theme", "zope.interface", "cryptography (>=3.3.1)", "pytest (>=6.0.0,<7.0.0)", "coverage (5.0.4)", "mypy", "pre-commit"]
+docs = ["sphinx", "sphinx-rtd-theme", "zope.interface"]
+tests = ["pytest (>=6.0.0,<7.0.0)", "coverage (5.0.4)"]
 
 [[package]]
 category = "dev"
@@ -1347,7 +1311,7 @@ debug = []
 docs = []
 
 [metadata]
-content-hash = "729d78a4d8bb049e073396d70ee6cd2b6a356c1b8cdb5c7b4d5d1c5ee14d6cce"
+content-hash = "8e6951a83b6279cb819f397ac54c2a70bab5a500a6dad645b0e9574d90359de6"
 lock-version = "1.0"
 python-versions = "^3.8"
 
@@ -1532,10 +1496,6 @@ django-extensions = [
     {file = "django-extensions-3.1.1.tar.gz", hash = "sha256:674ad4c3b1587a884881824f40212d51829e662e52f85b012cd83d83fe1271d9"},
     {file = "django_extensions-3.1.1-py3-none-any.whl", hash = "sha256:9507f8761ee760748938fd8af766d0608fb2738cf368adfa1b2451f61c15ae35"},
 ]
-django-filter = [
-    {file = "django-filter-2.4.0.tar.gz", hash = "sha256:84e9d5bb93f237e451db814ed422a3a625751cbc9968b484ecc74964a8696b06"},
-    {file = "django_filter-2.4.0-py3-none-any.whl", hash = "sha256:e00d32cebdb3d54273c48f4f878f898dced8d5dfaad009438fe61ebdf535ace1"},
-]
 django-grappelli = [
     {file = "django-grappelli-2.15.1.tar.gz", hash = "sha256:bc38e7c2585c20b6c8c6a4d984beb4c0fe62ae13421d1fe6614d04dda2096014"},
     {file = "django_grappelli-2.15.1-py2.py3-none-any.whl", hash = "sha256:b9aa386d63a95c37f3741aac98bd545c70ff51cf9104a1419dd6568d2e2cf2ea"},
@@ -1560,10 +1520,6 @@ django-redis = [
     {file = "django-redis-5.0.0.tar.gz", hash = "sha256:048f665bbe27f8ff2edebae6aa9c534ab137f1e8fa7234147ef470df3f3aa9b8"},
     {file = "django_redis-5.0.0-py3-none-any.whl", hash = "sha256:97739ca9de3f964c51412d1d7d8aecdfd86737bb197fce6e1ff12620c63c97ee"},
 ]
-django-rest-polymorphic = [
-    {file = "django-rest-polymorphic-0.1.9.tar.gz", hash = "sha256:43d7f8c5b43a225fe792ac40e98d196d4c8d6872a796b61246085819b1b5f1c6"},
-    {file = "django_rest_polymorphic-0.1.9-py2.py3-none-any.whl", hash = "sha256:ae9dd7a104bd6d2faac3bb7cdc31d3c3c768a4bb25f75451e866d9fab66fb6eb"},
-]
 django-storages = [
     {file = "django-storages-1.11.1.tar.gz", hash = "sha256:c823dbf56c9e35b0999a13d7e05062b837bae36c518a40255d522fbe3750fbb4"},
     {file = "django_storages-1.11.1-py3-none-any.whl", hash = "sha256:f28765826d507a0309cfaa849bd084894bc71d81bf0d09479168d44785396f80"},
@@ -1573,16 +1529,12 @@ django-timezone-field = [
     {file = "django_timezone_field-4.1.1-py3-none-any.whl", hash = "sha256:068dc2c9b11c2230e126f511a515609d46f8cc49278b293e7536be07997fe892"},
 ]
 djangorestframework = [
-    {file = "djangorestframework-3.11.1-py3-none-any.whl", hash = "sha256:8b1ac62c581dbc5799b03e535854b92fc4053ecfe74bad3f9c05782063d4196b"},
-    {file = "djangorestframework-3.11.1.tar.gz", hash = "sha256:6dd02d5a4bd2516fb93f80360673bf540c3b6641fec8766b1da2870a5aa00b32"},
-]
-djangorestframework-filters = [
-    {file = "djangorestframework-filters-1.0.0.dev0.tar.gz", hash = "sha256:d53692f9f0dfcdc1df4e890787f7212c3602476b85faffdefec02e2bc386c5b6"},
-    {file = "djangorestframework_filters-1.0.0.dev0-py3-none-any.whl", hash = "sha256:dfb58706f5f00ce72a01968d99fcc3e500bdeaaa275568fd60ae868bf2b90aad"},
+    {file = "djangorestframework-3.12.4-py3-none-any.whl", hash = "sha256:6d1d59f623a5ad0509fe0d6bfe93cbdfe17b8116ebc8eda86d45f6e16e819aaf"},
+    {file = "djangorestframework-3.12.4.tar.gz", hash = "sha256:f747949a8ddac876e879190df194b925c177cdeb725a099db1460872f7c0a7f2"},
 ]
 djangorestframework-simplejwt = [
-    {file = "djangorestframework_simplejwt-4.3.0-py3-none-any.whl", hash = "sha256:4cb1a51bf9b098b983e1326a1cfc65fb0b3c5a2aa0fa43effdbf05dd6da5e8cb"},
-    {file = "djangorestframework_simplejwt-4.3.0.tar.gz", hash = "sha256:d025211806622c53020aa4f66029f1f7305e38de6439116b4a842661fc02cf36"},
+    {file = "djangorestframework_simplejwt-5.0.0-py3-none-any.whl", hash = "sha256:ddcbeef51155d1e71410dde44b581c7e04cfb74776f5337661ac3ef4c0c367e6"},
+    {file = "djangorestframework_simplejwt-5.0.0.tar.gz", hash = "sha256:30b10e7732395c44d21980f773214d2b9bdeadf2a6c6809cd1a7c9abe272873c"},
 ]
 drf-nested-routers = [
     {file = "drf-nested-routers-0.93.3.tar.gz", hash = "sha256:5bbb394ce382d8392cb7eb1e24eb8ad169bf095b22b8275b8f0f1e6697000434"},
@@ -1839,8 +1791,8 @@ pygments = [
     {file = "Pygments-2.8.0.tar.gz", hash = "sha256:37a13ba168a02ac54cc5891a42b1caec333e59b66addb7fa633ea8a6d73445c0"},
 ]
 pyjwt = [
-    {file = "PyJWT-1.7.1-py2.py3-none-any.whl", hash = "sha256:5c6eca3c2940464d106b99ba83b00c6add741c9becaec087fb7ccdefea71350e"},
-    {file = "PyJWT-1.7.1.tar.gz", hash = "sha256:8d59a976fb773f3e6a39c85636357c4f0e242707394cadadd9814f5cbaa20e96"},
+    {file = "PyJWT-2.3.0-py3-none-any.whl", hash = "sha256:e0c4bb8d9f0af0c7f5b1ec4c5036309617d03d56932877f2f7a0beeb5318322f"},
+    {file = "PyJWT-2.3.0.tar.gz", hash = "sha256:b888b4d56f06f6dcd777210c334e69c737be74755d3e5e9ee3fe67dc18a0ee41"},
 ]
 pylint = [
     {file = "pylint-2.6.0-py3-none-any.whl", hash = "sha256:bfe68f020f8a0fece830a22dd4d5dddb4ecc6137db04face4c3420a46a52239f"},

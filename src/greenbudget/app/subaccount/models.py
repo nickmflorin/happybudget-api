@@ -150,6 +150,10 @@ class SubAccount(BudgetingTreePolymorphicModel):
         return type(self.parent)
 
     @property
+    def child_instance_cls(self):
+        return type(self)
+
+    @property
     def siblings(self):
         return self.parent.children.exclude(pk=self.pk).all()
 

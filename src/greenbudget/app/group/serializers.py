@@ -25,8 +25,7 @@ class GroupSerializer(ModelSerializer):
         obj_name='Group',
         many=True,
         required=True,
-        child_instance_cls=lambda parent: Group.child_instance_cls_for_parent(
-            parent)
+        child_instance_cls=lambda parent: parent.child_instance_cls,
     )
 
     class Meta:

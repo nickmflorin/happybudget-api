@@ -1,12 +1,25 @@
 from polymorphic.models import PolymorphicModel
 from polymorphic.query import PolymorphicQuerySet
 
+from django.apps import apps
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import (
     models, connections, connection, transaction, IntegrityError)
 from django.utils.functional import partition
+
+
+def import_model_at_path(path):
+    if isinstance(path, tuple):
+        return apps.get_model(
+            app_label=path[0],
+            model_name=path[1],
+        )
+    return apps.get_model(
+        app_label=path.split('.')[0],
+        model_name=path.split('.')[1]
+    )
 
 
 def generic_fk_instance_change(instance, obj_id_change=None,

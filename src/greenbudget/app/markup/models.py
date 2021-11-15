@@ -11,7 +11,6 @@ from django.contrib.contenttypes.models import ContentType
 from greenbudget.app import signals
 from greenbudget.app.actual.models import Actual
 from greenbudget.app.budgeting.models import BudgetingModel
-from greenbudget.app.budgeting.utils import get_child_instance_cls
 
 from .managers import MarkupManager
 
@@ -74,13 +73,9 @@ class Markup(BudgetingModel):
             0
         )
 
-    @classmethod
-    def child_instance_cls_for_parent(cls, parent):
-        return get_child_instance_cls(parent)
-
     @property
     def child_instance_cls(self):
-        return self.child_instance_cls_for_parent(self.parent)
+        return self.parent.child_instance_cls
 
     @property
     def parent_instance_cls(self):

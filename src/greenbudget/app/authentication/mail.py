@@ -71,7 +71,7 @@ def parse_errors_from_request(e):
         error_messages = []
         for error in body["errors"]:
             if not isinstance(error, dict) or error.get("message") is None:
-                logger.warn(
+                logger.warning(
                     "Could not parse error message from SendGrid error: \n%s"
                     % error
                 )

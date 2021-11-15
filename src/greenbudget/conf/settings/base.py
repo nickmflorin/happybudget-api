@@ -331,7 +331,6 @@ REST_FRAMEWORK = {
     'NON_FIELD_ERRORS_KEY': '__all__',
     'EXCEPTION_HANDLER': 'greenbudget.app.views.exception_handler',
     'DEFAULT_FILTER_BACKENDS': [
-        'rest_framework_filters.backends.RestFrameworkFilterBackend',
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
     ],

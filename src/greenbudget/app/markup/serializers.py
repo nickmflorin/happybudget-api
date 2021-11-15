@@ -16,8 +16,7 @@ class MarkupRemoveChildrenSerializer(ModelSerializer):
         many=True,
         obj_name='Markup',
         required=True,
-        child_instance_cls=lambda parent: Markup.child_instance_cls_for_parent(
-            parent),
+        child_instance_cls=lambda parent: parent.child_instance_cls,
         additional_instance_query=lambda parent, instance: models.Q(
             markups=instance
         ),
@@ -49,8 +48,7 @@ class MarkupAddChildrenSerializer(ModelSerializer):
         obj_name='Markup',
         many=True,
         required=True,
-        child_instance_cls=lambda parent: Markup.child_instance_cls_for_parent(
-            parent),
+        child_instance_cls=lambda parent: parent.child_instance_cls,
         exclude_instance_query=lambda parent, instance: models.Q(
             pk__in=[
                 obj[0]
@@ -131,8 +129,7 @@ class MarkupSerializer(BudgetParentContextSerializer):
         obj_name='Markup',
         many=True,
         required=False,
-        child_instance_cls=lambda parent: Markup.child_instance_cls_for_parent(
-            parent)
+        child_instance_cls=lambda parent: parent.child_instance_cls,
     )
 
     class Meta:

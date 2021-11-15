@@ -20,7 +20,7 @@ FieldChange = collections.namedtuple(
     'FieldChange', ['field', 'value', 'previous_value', 'field_instance'])
 
 
-class FieldChanges(collections.Sequence):
+class FieldChanges(collections.abc.Sequence):
     def __init__(self, changes):
         self.changes = changes
         assert len([change.field for change in changes]) \
@@ -416,12 +416,12 @@ class model:
             if user is None:
                 if 'greenbudget.app.signals.middleware.ModelSignalMiddleware' \
                         not in settings.MIDDLEWARE:
-                    logger.warn(
+                    logger.warning(
                         "The user cannot be inferred for the model save "
                         "because the appropriate middleware is not installed."
                     )
                 else:
-                    logger.warn(
+                    logger.warning(
                         "The user cannot be inferred from the model save.")
             return user
         else:

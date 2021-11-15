@@ -29,7 +29,7 @@ def suppress_with_setting(attr, value=False, suppressed_return_value=None):
             current_value = getattr(settings, attr)
             if current_value != value:
                 return func(*args, **kwargs)
-            logger.warn("Skipping call to %s because %s = %s." % (
+            logger.warning("Skipping call to %s because %s = %s." % (
                 func.__name__,
                 attr,
                 current_value
