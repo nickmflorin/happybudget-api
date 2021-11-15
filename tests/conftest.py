@@ -180,6 +180,14 @@ def budget_f(request, create_context_budget, create_account,
             self.context = context
             self.budget_cls = CONTEXT_BUDGETS[self.context]
 
+        @property
+        def account_cls(self):
+            return self.budget_cls.account_cls()
+
+        @property
+        def subaccount_cls(self):
+            return self.budget_cls.subaccount_cls()
+
         def create_budget(self, *args, **kwargs):
             kwargs.setdefault('context', self.context)
             return create_context_budget(*args, **kwargs)

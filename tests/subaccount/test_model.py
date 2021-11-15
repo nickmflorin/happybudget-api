@@ -1,37 +1,36 @@
 from django.contrib.contenttypes.models import ContentType
 
 
-def test_bulk_create_subaccounts(models, create_budget, create_budget_account,
-        user):
-    budget = create_budget()
+def test_bulk_create_subaccounts(user, budget_f, models):
+    budget = budget_f.create_budget()
     accounts = [
-        create_budget_account(parent=budget),
-        create_budget_account(parent=budget)
+        budget_f.create_account(parent=budget),
+        budget_f.create_account(parent=budget)
     ]
     subaccounts = [
-        models.BudgetSubAccount(
-            content_type=ContentType.objects.get_for_model(models.BudgetAccount),
+        budget_f.subaccount_cls(
+            content_type=ContentType.objects.get_for_model(budget_f.account_cls),
             object_id=accounts[0].pk,
             identifier="Sub Account 1",
             created_by=user,
             updated_by=user
         ),
-        models.BudgetSubAccount(
-            content_type=ContentType.objects.get_for_model(models.BudgetAccount),
+        budget_f.subaccount_cls(
+            content_type=ContentType.objects.get_for_model(budget_f.account_cls),
             object_id=accounts[0].pk,
             identifier="Sub Account 2",
             created_by=user,
             updated_by=user
         ),
-        models.BudgetSubAccount(
-            content_type=ContentType.objects.get_for_model(models.BudgetAccount),
+        budget_f.subaccount_cls(
+            content_type=ContentType.objects.get_for_model(budget_f.account_cls),
             object_id=accounts[1].pk,
             identifier="Sub Account 3",
             created_by=user,
             updated_by=user
         )
     ]
-    created_subaccounts = models.BudgetSubAccount.objects.bulk_create(
+    created_subaccounts = budget_f.subaccount_cls.objects.bulk_create(
         subaccounts,
         return_created_objects=True
     )
@@ -45,9 +44,9 @@ def test_bulk_create_subaccounts(models, create_budget, create_budget_account,
     assert created_subaccounts[2].parent == accounts[1]
 
     assert models.SubAccount.objects.count() == 3
-    assert models.BudgetSubAccount.objects.count() == 3
+    assert budget_f.subaccount_cls.objects.count() == 3
 
-    subaccounts = models.BudgetSubAccount.objects.all()
+    subaccounts = budget_f.subaccount_cls.objects.all()
     assert [b.identifier for b in subaccounts] == [
         "Sub Account 1", "Sub Account 2", "Sub Account 3"]
     assert all([b.budget == budget] for b in accounts)

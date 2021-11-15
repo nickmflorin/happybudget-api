@@ -6,10 +6,10 @@ def test_get_fringe_colors(api_client, user, colors):
 
 
 def test_update_fringe_color(api_client, user, create_color, models,
-        create_fringe, create_budget):
+        create_fringe, budget_f):
     color = create_color(code='#AFAFAF', content_types=[models.Fringe])
     another_color = create_color(code='#000000', content_types=[models.Fringe])
-    budget = create_budget()
+    budget = budget_f.create_budget()
     fringe = create_fringe(budget=budget, color=color)
 
     api_client.force_login(user)
@@ -23,9 +23,9 @@ def test_update_fringe_color(api_client, user, create_color, models,
 
 
 def test_update_fringe_color_invalid_code(api_client, user, create_color,
-        models, create_fringe, create_budget):
+        models, create_fringe, budget_f):
     color = create_color(code='#AFAFAF', content_types=[models.Fringe])
-    budget = create_budget()
+    budget = budget_f.create_budget()
     fringe = create_fringe(budget=budget, color=color)
 
     api_client.force_login(user)

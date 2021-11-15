@@ -2,9 +2,9 @@ import pytest
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_update_fringe(api_client, user, create_budget, create_fringe, models):
+def test_update_fringe(api_client, user, budget_f, create_fringe, models):
     api_client.force_login(user)
-    budget = create_budget()
+    budget = budget_f.create_budget()
     fringe = create_fringe(budget=budget)
     response = api_client.patch("/v1/fringes/%s/" % fringe.pk, data={
         'name': 'Test Fringe',
@@ -38,9 +38,9 @@ def test_update_fringe(api_client, user, create_budget, create_fringe, models):
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_fringe(api_client, user, create_budget, create_fringe, models):
+def test_get_fringe(api_client, user, budget_f, create_fringe, models):
     api_client.force_login(user)
-    budget = create_budget()
+    budget = budget_f.create_budget()
     fringe = create_fringe(budget=budget)
     response = api_client.get("/v1/fringes/%s/" % fringe.pk)
     assert response.status_code == 200
@@ -63,10 +63,9 @@ def test_get_fringe(api_client, user, create_budget, create_fringe, models):
     }
 
 
-@pytest.mark.freeze_time('2020-01-01')
-def test_delete_fringe(api_client, user, create_budget, create_fringe, models):
+def test_delete_fringe(api_client, user, budget_f, create_fringe, models):
     api_client.force_login(user)
-    budget = create_budget()
+    budget = budget_f.create_budget()
     fringe = create_fringe(budget=budget)
     response = api_client.delete("/v1/fringes/%s/" % fringe.pk)
     assert response.status_code == 204
