@@ -121,7 +121,23 @@ class PrePKBulkCreateQuerySet(models.QuerySet):
 
         for i, instance in enumerate(instances):
             setattr(instance, 'pk', max_id + i + 1)
-        return super().bulk_create(instances, **kwargs)
+
+        result = super().bulk_create(instances, **kwargs)
+
+        # NOTE: Since we are manually setting the the IDs, PostGres does
+        # not detect that the ID sequence needs to be automatically updated.
+        # Therefore, we need to do this ourselves.  This will not work for
+        # our SQLite test database though.
+        db_name = 'default'
+        if instances[0]._state.db is not None:
+            db_name = instances[0]._state.db
+
+        # This might also not work for MySQL but we don't use that ever.
+        db_backend = settings.DATABASES[db_name]['ENGINE'].split('.')[-1]
+        if db_backend != 'sqlite3':
+            reset_id_sequence(self.polymorphic_base)
+
+        return result
 
 
 class BulkCreatePolymorphicQuerySet(PolymorphicQuerySet):
