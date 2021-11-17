@@ -12,4 +12,4 @@ class BudgetNestedMixin(NestedObjectViewMixin):
     view_name = "budget"
 
     def get_budget_queryset(self, request):
-        return request.user.budgets.instance_of(Budget)
+        return Budget.objects.all()

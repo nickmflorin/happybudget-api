@@ -404,6 +404,14 @@ class ContactFactory(CustomModelFactory):
     class Meta:
         model = Contact
 
+    @factory.post_generation
+    def attachments(self, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for attachment in extracted:
+                self.attachments.add(attachment)
+
 
 class HeaderTemplateFactory(CustomModelFactory):
     """

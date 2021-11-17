@@ -4,6 +4,7 @@ from django.db import IntegrityError
 from greenbudget.app import signals
 
 from greenbudget.app.actual.models import Actual
+from greenbudget.app.contact.models import Contact
 from greenbudget.app.subaccount.models import BudgetSubAccount
 
 from .models import Attachment
@@ -22,12 +23,20 @@ def attachment_deleted(instance, **kwargs):
     signal=signals.m2m_changed,
     sender=Actual.attachments.through
 )
+@dispatch.receiver(
+    signal=signals.m2m_changed,
+    sender=Contact.attachments.through
+)
 def attachments_to_changed(instance, reverse, action, **kwargs):
     def validate(attachment, obj):
-        if obj.created_by != attachment.created_by:
+        if isinstance(obj, Contact):
+            user = obj.user
+        else:
+            user = obj.created_by
+        if user != attachment.created_by:
             raise IntegrityError(
                 "Attachment %s was not created by the same user that the "
-                "SubAccount %s was." % (attachment.pk, obj.pk)
+                "%s %s was." % (attachment.pk, obj.__class__.__name__, obj.pk)
             )
     if action in ('pre_add', 'pre_remove'):
         objs = kwargs['model'].objects.filter(pk__in=kwargs['pk_set'])

@@ -1,8 +1,7 @@
 from greenbudget.app.budgeting.mixins import NestedObjectViewMixin
 
 from .models import Actual
-from .permissions import ActualObjPermission\
-
+from .permissions import ActualObjPermission
 
 
 class ActualNestedMixin(NestedObjectViewMixin):

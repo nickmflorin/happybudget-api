@@ -6,9 +6,45 @@ from greenbudget.lib.drf.bulk_serializers import (
     create_bulk_update_serializer,
     create_bulk_delete_serializer
 )
+from greenbudget.app.io.serializers import (
+    AttachmentSerializer, UploadAttachmentSerializer)
 from .cache import user_contacts_cache
+from .mixins import ContactNestedMixin
 from .models import Contact
 from .serializers import ContactSerializer
+
+
+class ContactAttachmentViewSet(
+    mixins.ListModelMixin,
+    mixins.DestroyModelMixin,
+    mixins.CreateModelMixin,
+    ContactNestedMixin,
+    viewsets.GenericViewSet
+):
+    """
+    ViewSet to handle requests to the following endpoints:
+
+    (1) GET /contacts/<pk>/attachments/
+    (2) DELETE /contacts/<pk>/attachments/pk/
+    (3) POST /contacts/<pk>/attachments/
+    """
+    contact_lookup_field = ("pk", "contact_pk")
+    serializer_class = AttachmentSerializer
+    lookup_field = "pk"
+
+    def get_queryset(self):
+        return self.contact.attachments.all()
+
+    def create(self, request, *args, **kwargs):
+        serializer = UploadAttachmentSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        attachment = serializer.save(created_by=request.user)
+        self.contact.attachments.add(attachment)
+        root_serializer_class = self.get_serializer_class()
+        return response.Response(
+            root_serializer_class(instance=attachment).data,
+            status=status.HTTP_200_OK
+        )
 
 
 @user_contacts_cache(get_key_from_view=lambda view: view.request.user.pk)

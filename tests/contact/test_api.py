@@ -22,6 +22,7 @@ def test_get_contact(api_client, user, create_contact, models):
         "company": contact.company,
         "position": contact.position,
         "image": None,
+        "attachments": [],
         "contact_type": {
             "id": contact.contact_type,
             "name": models.Contact.TYPES[contact.contact_type]
@@ -52,6 +53,7 @@ def test_get_contacts(api_client, user, create_contact, models):
             "full_name": contacts[0].full_name,
             "position": contacts[0].position,
             "image": None,
+            "attachments": [],
             "contact_type": {
                 "id": contacts[0].contact_type,
                 "name": models.Contact.TYPES[contacts[0].contact_type]
@@ -72,6 +74,7 @@ def test_get_contacts(api_client, user, create_contact, models):
             "full_name": contacts[1].full_name,
             "position": contacts[1].position,
             "image": None,
+            "attachments": [],
             "contact_type": {
                 "id": contacts[1].contact_type,
                 "name": models.Contact.TYPES[contacts[1].contact_type]
@@ -121,6 +124,7 @@ def test_create_contact(api_client, user, models):
         "company": "Boeing",
         "position": None,
         "image": None,
+        "attachments": [],
         "contact_type": {
             "id": 1,
             "name": models.Contact.TYPES[1]
@@ -161,6 +165,7 @@ def test_create_blank_contact(api_client, user, models):
         "contact_type": None,
         "position": None,
         "image": None,
+        "attachments": [],
     }
 
 
@@ -197,6 +202,7 @@ def test_update_contact(api_client, user, create_contact, models):
         "full_name": contact.full_name,
         "position": contact.position,
         "image": None,
+        "attachments": [],
         "contact_type": {
             "id": contact.contact_type,
             "name": models.Contact.TYPES[contact.contact_type]
@@ -262,6 +268,7 @@ def test_bulk_create_contacts(api_client, user, models):
             "full_name": contacts[0].full_name,
             "position": contacts[0].position,
             "image": None,
+            "attachments": [],
             "contact_type": {
                 "id": 1,
                 "name": models.Contact.TYPES[1]
@@ -282,6 +289,7 @@ def test_bulk_create_contacts(api_client, user, models):
             "full_name": contacts[1].full_name,
             "position": contacts[1].position,
             "image": None,
+            "attachments": [],
             "contact_type": None
         }
     ]

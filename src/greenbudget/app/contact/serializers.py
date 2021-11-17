@@ -3,6 +3,8 @@ from rest_framework import serializers
 from greenbudget.lib.drf.fields import ModelChoiceField
 from greenbudget.lib.drf.serializers import ModelSerializer
 from greenbudget.app.io.fields import Base64ImageField
+from greenbudget.app.io.serializers import SimpleAttachmentSerializer
+from greenbudget.app.io.models import Attachment
 
 from .models import Contact
 
@@ -27,10 +29,21 @@ class ContactSerializer(ModelSerializer):
     email = serializers.EmailField(allow_null=True, required=False)
     rate = serializers.IntegerField(allow_null=True, required=False)
     image = Base64ImageField(required=False, allow_null=True)
+    attachments = serializers.PrimaryKeyRelatedField(
+        queryset=Attachment.objects.all(),
+        required=False,
+        many=True
+    )
 
     class Meta:
         model = Contact
         fields = (
             'id', 'first_name', 'last_name', 'created_at', 'updated_at', 'type',
             'city', 'rate', 'phone_number', 'email', 'full_name', 'company',
-            'position', 'image', 'contact_type')
+            'position', 'image', 'contact_type', 'attachments')
+        response = {
+            'attachments': (
+                SimpleAttachmentSerializer,
+                {'many': True}
+            )
+        }

@@ -41,6 +41,10 @@ class Contact(models.Model):
     email = models.EmailField(null=True)
     rate = models.IntegerField(null=True)
     image = models.ImageField(upload_to=upload_to, null=True)
+    attachments = models.ManyToManyField(
+        to='io.Attachment',
+        related_name='contacts'
+    )
 
     objects = ContactManager()
 
