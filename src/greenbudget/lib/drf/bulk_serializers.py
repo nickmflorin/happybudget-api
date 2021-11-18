@@ -245,7 +245,11 @@ def create_bulk_update_serializer(serializer_cls, **kwargs):
                     % (ModelClass.__name__, 'bulk_save')
                 )
 
-            ModelClass.objects.bulk_save(children, update_fields)
+            # It is possible that the bulk update only applies to M2M fields,
+            # in which case there will be no `update_fields` and we do not need
+            # to apply the bulk save.
+            if update_fields:
+                ModelClass.objects.bulk_save(children, update_fields)
 
             # Note that many-to-many fields are set after updating instance.
             # Setting m2m fields triggers signals which could potentially change
