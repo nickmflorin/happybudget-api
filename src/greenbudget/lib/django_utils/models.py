@@ -135,7 +135,7 @@ class PrePKBulkCreateQuerySet(models.QuerySet):
         # This might also not work for MySQL but we don't use that ever.
         db_backend = settings.DATABASES[db_name]['ENGINE'].split('.')[-1]
         if db_backend != 'sqlite3':
-            reset_id_sequence(self.polymorphic_base)
+            reset_id_sequence(self.model)
 
         return result
 
