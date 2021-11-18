@@ -379,3 +379,43 @@ def test_markups_cache_invalidated_on_change(api_client, user, context,
     assert response.status_code == 200
     assert response.json()['count'] == 1
     assert response.json()['data'][0]['description'] == 'Test Description'
+
+
+@override_settings(CACHE_ENABLED=True, APP_URL="https://api.greenbudget.com")
+def test_subaccounts_cache_invalidated_on_upload_attachment(api_client, user,
+        create_budget_account, create_budget_subaccount, create_budget,
+        test_uploaded_file):
+    budget = create_budget()
+    account = create_budget_account(parent=budget)
+    subaccounts = [
+        create_budget_subaccount(parent=account),
+        create_budget_subaccount(parent=account)
+    ]
+
+    uploaded_file = test_uploaded_file('test.jpeg')
+
+    api_client.force_login(user)
+
+    # Make the first request to the sub accounts endpoint to cache the results.
+    response = api_client.get("/v1/accounts/%s/subaccounts/" % account.pk)
+    assert response.status_code == 200
+    assert response.json()['count'] == 2
+
+    # Upload the attachment
+    response = api_client.post(
+        "/v1/subaccounts/%s/attachments/" % subaccounts[0].pk,
+        data={'file': uploaded_file}
+    )
+    assert response.status_code == 200
+
+    # Make another request to the sub accounts endpoint to ensure that the
+    # results are not cached.
+    response = api_client.get("/v1/accounts/%s/subaccounts/" % account.pk)
+    assert response.status_code == 200
+    assert response.json()['count'] == 2
+    assert response.json()['data'][0]['attachments'] == [{
+        'id': 1,
+        'name': 'test.jpeg',
+        'extension': 'jpeg',
+        'url': 'https://api.greenbudget.com/media/users/1/attachments/test.jpeg'
+    }]

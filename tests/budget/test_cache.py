@@ -371,3 +371,44 @@ def test_actuals_cache_invalidated_on_change(api_client, user, context,
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'][0]['value'] == 150.0
+
+
+@override_settings(CACHE_ENABLED=True, APP_URL="https://api.greenbudget.com")
+def test_actuals_cache_invalidated_on_upload_attachment(api_client, user,
+        create_budget_account, create_budget, test_uploaded_file, create_actual,
+        create_budget_subaccount):
+    budget = create_budget()
+    account = create_budget_account(parent=budget)
+    subaccount = create_budget_subaccount(parent=account)
+    actuals = [
+        create_actual(budget=budget, value=100, owner=subaccount),
+        create_actual(budget=budget, value=120, owner=subaccount)
+    ]
+
+    uploaded_file = test_uploaded_file('test.jpeg')
+
+    api_client.force_login(user)
+
+    # Make the first request to the actuals endpoint to cache the results.
+    response = api_client.get("/v1/budgets/%s/actuals/" % budget.pk)
+    assert response.status_code == 200
+    assert response.json()['count'] == 2
+
+    # Upload the attachment
+    response = api_client.post(
+        "/v1/actuals/%s/attachments/" % actuals[0].pk,
+        data={'file': uploaded_file}
+    )
+    assert response.status_code == 200
+
+    # Make another request to the actuals endpoint to ensure that the
+    # results are not cached.
+    response = api_client.get("/v1/budgets/%s/actuals/" % budget.pk)
+    assert response.status_code == 200
+    assert response.json()['count'] == 2
+    assert response.json()['data'][0]['attachments'] == [{
+        'id': 1,
+        'name': 'test.jpeg',
+        'extension': 'jpeg',
+        'url': 'https://api.greenbudget.com/media/users/1/attachments/test.jpeg'
+    }]

@@ -4,6 +4,8 @@ from django.db import IntegrityError
 from greenbudget.app import signals
 
 from greenbudget.app.actual.models import Actual
+from greenbudget.app.budget.cache import budget_actuals_cache
+from greenbudget.app.contact.cache import user_contacts_cache
 from greenbudget.app.contact.models import Contact
 from greenbudget.app.subaccount.models import BudgetSubAccount
 
@@ -27,7 +29,7 @@ def attachment_deleted(instance, **kwargs):
     signal=signals.m2m_changed,
     sender=Contact.attachments.through
 )
-def attachments_to_changed(instance, reverse, action, **kwargs):
+def attachments_to_changed(instance, reverse, action, model, pk_set, **kwargs):
     def validate(attachment, obj):
         if isinstance(obj, Contact):
             user = obj.user
@@ -38,18 +40,41 @@ def attachments_to_changed(instance, reverse, action, **kwargs):
                 "Attachment %s was not created by the same user that the "
                 "%s %s was." % (attachment.pk, obj.__class__.__name__, obj.pk)
             )
+
     if action in ('pre_add', 'pre_remove'):
-        objs = kwargs['model'].objects.filter(pk__in=kwargs['pk_set'])
+        objs = model.objects.filter(pk__in=pk_set)
         if reverse:
             [validate(instance, obj) for obj in objs]
         else:
             [validate(obj, instance) for obj in objs]
-    elif action == 'post_remove':
-        if reverse and instance.subaccounts.count() == 0 \
-                and instance.actuals.count() == 0:
-            instance.delete()
-        elif not reverse:
-            objs = kwargs['model'].objects.filter(pk__in=kwargs['pk_set'])
-            for obj in objs:
-                if obj.subaccounts.count() == 0 and obj.actuals.count() == 0:
-                    obj.delete()
+
+    elif action in ('post_add', 'post_remove'):
+        if not reverse:
+            attachments = model.objects.filter(pk__in=pk_set)
+            related = [instance]
+        else:
+            related = model.objects.filter(pk__in=pk_set)
+            attachments = [instance]
+
+        if action == 'post_remove':
+            for attachment in attachments:
+                if attachment.is_empty():
+                    attachment.delete()
+
+        contacts = [obj for obj in related if isinstance(obj, Contact)]
+        users = set([contact.user for contact in contacts])
+        for user in users:
+            user_contacts_cache.invalidate(user)
+
+        actuals = [obj for obj in related if isinstance(obj, Actual)]
+        budgets = set([actual.budget for actual in actuals])
+        for budget in budgets:
+            budget_actuals_cache.invalidate(budget)
+
+        subaccounts = [
+            obj for obj in related if isinstance(obj, BudgetSubAccount)]
+        for sub in subaccounts:
+            sub.invalidate_caches(entities=["detail"])
+        parents = set([sub.parent for sub in subaccounts])
+        for parent in parents:
+            parent.invalidate_caches(entities=["children"])

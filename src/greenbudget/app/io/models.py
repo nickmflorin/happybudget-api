@@ -27,3 +27,13 @@ class Attachment(models.Model):
         ordering = ('-created_at', )
         verbose_name = "Attachment"
         verbose_name_plural = "Attachments"
+
+    def is_empty(self):
+        m2m_related_fields = [
+            related.get_accessor_name()
+            for related in self._meta.related_objects
+        ]
+        return all([
+            getattr(self, m2m_related_field).count() == 0
+            for m2m_related_field in m2m_related_fields
+        ])
