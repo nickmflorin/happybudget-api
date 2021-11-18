@@ -302,8 +302,6 @@ class BudgetAccount(Account):
 @signals.model(user_field='updated_by')
 class TemplateAccount(Account):
     objects = TemplateAccountManager()
-
-    FIELDS_TO_DERIVE = ('identifier', 'description') + Account.CALCULATED_FIELDS
     domain = "template"
     associated = [
         ('template', 'template'),
