@@ -1,3 +1,5 @@
+import contextlib
+
 from greenbudget.lib.django_utils.models import generic_fk_instance_change
 
 from greenbudget.app import signals
@@ -6,21 +8,34 @@ from greenbudget.app.budgeting.managers import BudgetingManager
 
 
 class ActualManager(BudgetingManager):
+    def finish_bulk_context(self, instances):
+        with self.bulk_context(instances):
+            return
+
+    @contextlib.contextmanager
+    def bulk_context(self, instances):
+        budgets = set([
+            obj.intermittent_budget for obj in instances
+            if obj.intermittent_budget is not None
+        ])
+        try:
+            yield self
+        finally:
+            # We want to update the Budget's `updated_at` property regardless of
+            # whether or not the Budget was reactualized, reestimated or
+            # recalculated.
+            for budget in budgets:
+                budget_actuals_cache.invalidate(budget)
+                budget.mark_updated()
+
     @signals.disable()
     def bulk_delete(self, instances):
         owners = [obj.owner for obj in instances]
-        budgets = set([obj.budget for obj in instances])
-
-        for obj in instances:
-            obj.delete()
+        with self.bulk_context(instances):
+            for obj in instances:
+                obj.delete()
 
         self.bulk_actualize_all(set(owners))
-
-        # We want to update the Budget's `updated_at` property regardless of
-        # whether or not the Budget was reactualized.
-        for budget in budgets:
-            budget_actuals_cache.invalidate(budget)
-            budget.mark_updated()
 
     @signals.disable()
     def bulk_add(self, instances):
@@ -34,12 +49,7 @@ class ActualManager(BudgetingManager):
             [obj.owner for obj in created if obj.owner is not None])
         self.bulk_actualize_all(owners_to_reactualize)
 
-        # We want to update the Budget's `updated_at` property regardless of
-        # whether or not the Budget was reactualized.
-        for budget in set([inst.budget for inst in created]):
-            budget_actuals_cache.invalidate(budget)
-            budget.mark_updated()
-
+        self.finish_bulk_context(created)
         return created
 
     @signals.disable()
@@ -52,19 +62,14 @@ class ActualManager(BudgetingManager):
             update_fields = [f for f in update_fields if f != 'owner']
             update_fields = tuple(update_fields) + ('content_type', 'object_id')
 
-        self.bulk_update(instances, update_fields)
+        with self.bulk_context(instances):
+            self.bulk_update(instances, update_fields)
 
-        owners_to_reactualize = set([])
-        for obj in instances:
-            owners_to_reactualize.update(self.get_owners_to_reactualize(obj))
+            owners_to_reactualize = set([])
+            for obj in instances:
+                owners_to_reactualize.update(self.get_owners_to_reactualize(obj))
 
-        self.bulk_actualize_all(owners_to_reactualize)
-
-        # We want to update the Budget's `updated_at` property regardless of
-        # whether or not the Budget was reactualized.
-        for budget in set([inst.budget for inst in instances]):
-            budget_actuals_cache.invalidate(budget)
-            budget.mark_updated()
+            self.bulk_actualize_all(owners_to_reactualize)
 
     def get_owners_to_reactualize(self, obj):
         owners_to_reactualize = set([])
@@ -82,9 +87,8 @@ class ActualManager(BudgetingManager):
                     x for x in [new_owner, old_owner]
                     if x is not None
                 ])
-            elif obj.field_has_changed('value'):
-                if obj.owner is not None:
-                    owners_to_reactualize.add(obj.owner)
+            elif obj.field_has_changed('value') and obj.owner is not None:
+                owners_to_reactualize.add(obj.owner)
         return owners_to_reactualize
 
     @signals.disable()

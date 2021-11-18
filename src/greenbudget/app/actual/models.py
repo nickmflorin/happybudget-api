@@ -1,3 +1,4 @@
+from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models, IntegrityError
@@ -102,6 +103,13 @@ class Actual(BudgetingModel):
 
     def __str__(self):
         return "Actual: %s" % self.value
+
+    @property
+    def intermittent_budget(self):
+        try:
+            return self.budget
+        except ObjectDoesNotExist:
+            pass
 
     def validate_before_save(self):
         try:
