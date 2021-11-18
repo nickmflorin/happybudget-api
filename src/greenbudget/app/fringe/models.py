@@ -1,5 +1,6 @@
 from model_utils import Choices
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 
 from greenbudget.app import signals
@@ -68,12 +69,12 @@ class Fringe(BudgetingModel):
             return ""
         return self.UNITS[self.unit]
 
-    def save(self, *args, **kwargs):
-        # In the case that the Fringe is added with a flat value, the cutoff
-        # is irrelevant.
-        if self.unit == self.UNITS.flat:
-            self.cutoff = None
-        super().save(*args, **kwargs)
+    @property
+    def intermittent_budget(self):
+        try:
+            return self.budget
+        except ObjectDoesNotExist:
+            pass
 
 
 class BudgetFringe(Fringe):

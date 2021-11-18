@@ -9,6 +9,14 @@ from greenbudget.app.subaccount.models import (
 from .models import Fringe
 
 
+@dispatch.receiver(signals.pre_save, sender=Fringe)
+def fringe_to_be_saved(instance, **kwargs):
+    # In the case that the Fringe is added with a flat value, the cutoff
+    # is irrelevant.
+    if instance.unit == instance.UNITS.flat:
+        instance.cutoff = None
+
+
 @dispatch.receiver(signals.post_save, sender=Fringe)
 def fringe_saved(instance, **kwargs):
     budget_fringes_cache.invalidate(instance.budget)

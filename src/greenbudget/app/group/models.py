@@ -5,7 +5,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
-from .managers import GroupManager
+from .managers import GroupManager, BudgetGroupManager, TemplateGroupManager
 
 
 @signals.model()
@@ -82,3 +82,21 @@ class Group(models.Model):
         while not isinstance(parent, BaseBudget):
             parent = parent.parent
         return parent
+
+
+class BudgetGroup(Group):
+    objects = BudgetGroupManager()
+
+    class Meta:
+        proxy = True
+        verbose_name = "Group"
+        verbose_name_plural = "Groups"
+
+
+class TemplateGroup(Group):
+    objects = TemplateGroupManager()
+
+    class Meta:
+        proxy = True
+        verbose_name = "Group"
+        verbose_name_plural = "Groups"

@@ -22,8 +22,7 @@ class ActualManager(BudgetingManager):
             yield self
         finally:
             # We want to update the Budget's `updated_at` property regardless of
-            # whether or not the Budget was reactualized, reestimated or
-            # recalculated.
+            # whether or not the Budget was reactualized.
             for budget in budgets:
                 budget_actuals_cache.invalidate(budget)
                 budget.mark_updated()
