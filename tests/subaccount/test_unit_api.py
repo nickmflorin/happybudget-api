@@ -1,4 +1,8 @@
+from django.test import override_settings
 import pytest
+import mock
+
+from greenbudget.app.subaccount.views import SubAccountUnitViewSet
 
 
 @pytest.mark.freeze_time('2020-01-01')
@@ -31,3 +35,57 @@ def test_unit_properly_serializes(api_client, user, create_subaccount_unit):
             'color': units[1].color.code
         }
     ]
+
+
+@override_settings(CACHE_ENABLED=True)
+def test_units_cached(api_client, user, create_subaccount_unit):
+    create_subaccount_unit()
+    create_subaccount_unit()
+
+    api_client.force_login(user)
+    response = api_client.get("/v1/subaccounts/units/")
+    assert response.status_code == 200
+    assert response.json()['count'] == 2
+
+    with mock.patch.object(SubAccountUnitViewSet, 'get_queryset') as m:
+        api_client.force_login(user)
+        response = api_client.get("/v1/subaccounts/units/")
+
+    assert not m.called
+
+
+@override_settings(CACHE_ENABLED=True)
+def test_cache_invalidated_on_save(api_client, user, create_subaccount_unit):
+    create_subaccount_unit()
+    create_subaccount_unit()
+
+    api_client.force_login(user)
+    response = api_client.get("/v1/subaccounts/units/")
+    assert response.status_code == 200
+    assert response.json()['count'] == 2
+
+    create_subaccount_unit()
+
+    api_client.force_login(user)
+    response = api_client.get("/v1/subaccounts/units/")
+    assert response.status_code == 200
+    assert response.json()['count'] == 3
+
+
+@override_settings(CACHE_ENABLED=True)
+def test_cache_invalidated_on_delete(api_client, user, create_subaccount_unit):
+    units = [
+        create_subaccount_unit(),
+        create_subaccount_unit()
+    ]
+    api_client.force_login(user)
+    response = api_client.get("/v1/subaccounts/units/")
+    assert response.status_code == 200
+    assert response.json()['count'] == 2
+
+    units[0].delete()
+
+    api_client.force_login(user)
+    response = api_client.get("/v1/subaccounts/units/")
+    assert response.status_code == 200
+    assert response.json()['count'] == 1

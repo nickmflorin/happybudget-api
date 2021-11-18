@@ -4,7 +4,9 @@ from greenbudget.lib.django_utils.models import generic_fk_instance_change
 from greenbudget.app import signals
 from greenbudget.app.account.models import Account
 
-from .models import SubAccount, BudgetSubAccount, TemplateSubAccount
+from .cache import subaccount_units_cache
+from .models import (
+    SubAccount, BudgetSubAccount, TemplateSubAccount, SubAccountUnit)
 
 
 @dispatch.receiver(
@@ -93,3 +95,13 @@ def subaccount_deleted(instance, **kwargs):
 @dispatch.receiver(signals.pre_save, sender=TemplateSubAccount)
 def subaccount_to_save(instance, **kwargs):
     instance.validate_before_save()
+
+
+@dispatch.receiver(signals.post_delete, sender=SubAccountUnit)
+def subaccount_unit_deleted(instance, **kwargs):
+    subaccount_units_cache.invalidate()
+
+
+@dispatch.receiver(signals.post_save, sender=SubAccountUnit)
+def subaccount_unit_saved(instance, **kwargs):
+    subaccount_units_cache.invalidate()

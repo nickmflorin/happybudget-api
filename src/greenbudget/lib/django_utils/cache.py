@@ -42,44 +42,57 @@ def request_can_be_cached(request):
 
 
 class endpoint_cache:
-    def __init__(self, id, entity, method, prefix=None):
+    def __init__(self, id, entity, method):
         self.id = id
         self.entity = entity
         self._method = method
-        self._prefix = prefix
-
-    def __call__(self, get_key_from_view):
-        def decorator(cls):
-            original_method = getattr(cls, self._method)
-            setattr(cls, self._method, self.decorated_func(
-                func=original_method,
-                get_key_from_view=get_key_from_view
-            ))
-            return cls
-        return decorator
 
     def __str__(self):
         return self.id
 
+    @raise_if_not_enabled
+    def transform_key(self, key):
+        return key
+
+    def invalidate(self, key, log=True):
+        if not settings.CACHE_ENABLED:
+            return
+        cache_key = self.transform_key(key)
+        if log:
+            logger.debug("Invalidating Cache %s." % self)
+        cache.delete(cache_key)
+
+    def request_can_be_cached(self, request):
+        # In certain environments, we do not want the cache to be enabled.
+        if not settings.CACHE_ENABLED:
+            return False
+        # Right now, we cannot cache any responses where the GET request
+        # included query parameters.  This is because this would require
+        # invalidating those cached responses when certain conditions are
+        # met, and we cannot invalidate those caches if we do not know what
+        # the key is ahead of time.  We should investigate ways to improve
+        # this in the future, because this  will prevent us from cacheing
+        # search results, ordering results and filtering results.
+        if not request_can_be_cached(request):
+            return False
+        return True
+
+    def decorate(self, cls, **kwargs):
+        original_method = getattr(cls, self._method)
+        setattr(cls, self._method, self.decorated_func(
+            func=original_method,
+            **kwargs
+        ))
+        return cls
+
     def decorated_func(self, func, get_key_from_view):
         @functools.wraps(func)
         def decorated(instance, request, *args, **kwargs):
-            # In certain environments, we do not want the cache to be enabled.
-            if not settings.CACHE_ENABLED:
-                return func(instance, request, *args, **kwargs)
-
-            # Right now, we cannot cache any responses where the GET request
-            # included query parameters.  This is because this would require
-            # invalidating those cached responses when certain conditions are
-            # met, and we cannot invalidate those caches if we do not know what
-            # the key is ahead of time.  We should investigate ways to improve
-            # this in the future, because this  will prevent us from cacheing
-            # search results, ordering results and filtering results.
-            if not request_can_be_cached(request):
+            if not self.request_can_be_cached(request):
                 return func(instance, request, *args, **kwargs)
 
             cache_key = get_key_from_view(instance)
-            cache_key = self.prefix_key(cache_key)
+            cache_key = self.transform_key(cache_key)
 
             data = cache.get(cache_key)
             if data:
@@ -91,24 +104,40 @@ class endpoint_cache:
             return r
         return decorated
 
-    def invalidate(self, key, log=True):
-        if not settings.CACHE_ENABLED:
-            return
-        cache_key = self.prefix_key(key)
-        if log:
-            logger.debug("Invalidating Cache %s." % self)
-        cache.delete(cache_key)
+
+class invariant_cache(endpoint_cache):
+    def __init__(self, *args, **kwargs):
+        self._key = kwargs.pop('key')
+        super().__init__(*args, **kwargs)
+
+    def __call__(self, cls):
+        return self.decorate(cls)
+
+    def decorate(self, cls):
+        return super().decorate(cls, get_key_from_view=lambda view: self._key)
+
+    def invalidate(self):
+        super().invalidate(self._key)
+
+
+class detail_cache(endpoint_cache):
+    def __init__(self, *args, **kwargs):
+        self._prefix = kwargs.pop('prefix', None)
+        super().__init__(*args, **kwargs)
+
+    def __call__(self, get_key_from_view):
+        def decorator(cls):
+            return self.decorate(cls, get_key_from_view=get_key_from_view)
+        return decorator
 
     @raise_if_not_enabled
-    def prefix_key(self, key):
+    def transform_key(self, key):
         if self._prefix is not None:
             if not self._prefix.endswith('-'):
                 return f'{self._prefix}-{key}'
             return f'{self._prefix}{key}'
         return key
 
-
-class detail_cache(endpoint_cache):
     def invalidate(self, instance):
         instances = instance if isinstance(instance, (list, tuple)) \
             else [instance]

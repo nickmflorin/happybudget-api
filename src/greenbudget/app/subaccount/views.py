@@ -20,7 +20,8 @@ from .cache import (
     subaccount_subaccounts_cache,
     subaccount_markups_cache,
     subaccount_groups_cache,
-    subaccount_detail_cache
+    subaccount_detail_cache,
+    subaccount_units_cache
 )
 from .mixins import SubAccountNestedMixin
 from .models import (
@@ -39,6 +40,7 @@ from .serializers import (
 )
 
 
+@subaccount_units_cache
 class SubAccountUnitViewSet(
     mixins.ListModelMixin,
     viewsets.GenericViewSet

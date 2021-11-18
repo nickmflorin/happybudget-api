@@ -1,4 +1,4 @@
-from greenbudget.lib.django_utils.cache import detail_cache
+from greenbudget.lib.django_utils.cache import detail_cache, invariant_cache
 
 
 subaccount_subaccounts_cache = detail_cache(
@@ -19,6 +19,13 @@ subaccount_groups_cache = detail_cache(
     id='subaccount-groups',
     entity='group',
     prefix='subaccount-groups',
+    method='list'
+)
+
+subaccount_units_cache = invariant_cache(
+    id='subaccount-unit',
+    entity='units',
+    key='subaccount-units',
     method='list'
 )
 
