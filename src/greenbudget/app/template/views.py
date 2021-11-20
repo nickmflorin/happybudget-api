@@ -13,7 +13,7 @@ from greenbudget.app.budget.cache import (
     budget_groups_cache,
     budget_accounts_cache,
     budget_markups_cache,
-    budget_detail_cache,
+    budget_instance_cache,
     budget_fringes_cache
 )
 from greenbudget.app.budgeting.decorators import (
@@ -33,7 +33,7 @@ from .serializers import TemplateSerializer, TemplateSimpleSerializer
 
 
 @filter_by_ids
-@budget_markups_cache(get_key_from_view=lambda view: view.template.pk)
+@budget_markups_cache(get_instance_from_view=lambda view: view.template.pk)
 class TemplateMarkupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -73,7 +73,7 @@ class TemplateMarkupViewSet(
 
 
 @filter_by_ids
-@budget_groups_cache(get_key_from_view=lambda view: view.template.pk)
+@budget_groups_cache(get_instance_from_view=lambda view: view.template.pk)
 class TemplateGroupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -114,7 +114,7 @@ class TemplateGroupViewSet(
 
 
 @filter_by_ids
-@budget_fringes_cache(get_key_from_view=lambda view: view.template.pk)
+@budget_fringes_cache(get_instance_from_view=lambda view: view.template.pk)
 class TemplateFringeViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -151,7 +151,7 @@ class TemplateFringeViewSet(
 
 
 @filter_by_ids
-@budget_accounts_cache(get_key_from_view=lambda view: view.template.pk)
+@budget_accounts_cache(get_instance_from_view=lambda view: view.template.pk)
 class TemplateAccountViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -255,7 +255,7 @@ class GenericTemplateViewSet(viewsets.GenericViewSet):
         )
     ]
 )
-@budget_detail_cache(get_key_from_view=lambda view: view.instance.pk)
+@budget_instance_cache(get_instance_from_view=lambda view: view.instance.pk)
 class TemplateViewSet(
     mixins.CreateModelMixin,
     mixins.UpdateModelMixin,

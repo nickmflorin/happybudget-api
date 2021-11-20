@@ -1,9 +1,8 @@
-from greenbudget.lib.django_utils.cache import detail_cache
+from greenbudget.lib.django_utils.cache import instance_cache
 
 
-user_contacts_cache = detail_cache(
+user_contacts_cache = instance_cache(
     id='user-contacts',
     entity='contact',
-    prefix='user-contacts',
     method='list'
 )

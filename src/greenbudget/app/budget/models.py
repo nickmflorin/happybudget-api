@@ -15,7 +15,7 @@ from greenbudget.app.io.utils import upload_user_image_to
 
 from .cache import (
     budget_markups_cache,
-    budget_detail_cache,
+    budget_instance_cache,
     budget_accounts_cache,
     budget_groups_cache,
     budget_fringes_cache,
@@ -71,7 +71,7 @@ class BaseBudget(BudgetingTreePolymorphicModel):
     non_polymorphic = models.Manager()
 
     CACHES = [
-        budget_detail_cache,
+        budget_instance_cache,
         budget_markups_cache,
         budget_groups_cache,
         budget_fringes_cache,

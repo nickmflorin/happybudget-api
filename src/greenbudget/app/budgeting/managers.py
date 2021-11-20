@@ -20,7 +20,7 @@ class BudgetingManagerMixin:
                 # Not all of the models that use these managers will have the
                 # CacheControlMixin.
                 if hasattr(instance, 'CACHES'):
-                    instance.invalidate_detail_cache()
+                    instance.invalidate_instance_cache()
                 if hasattr(instance, 'parent'):
                     instance.parent.invalidate_children_cache()
         return super().bulk_update(instances, fields)

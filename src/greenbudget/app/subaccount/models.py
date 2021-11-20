@@ -18,7 +18,7 @@ from greenbudget.app.tagging.models import Tag
 from .cache import (
     subaccount_markups_cache,
     subaccount_groups_cache,
-    subaccount_detail_cache,
+    subaccount_instance_cache,
     subaccount_subaccounts_cache
 )
 from .managers import (
@@ -135,7 +135,7 @@ class SubAccount(BudgetingTreePolymorphicModel):
     CACHES = [
         subaccount_markups_cache,
         subaccount_groups_cache,
-        subaccount_detail_cache,
+        subaccount_instance_cache,
         subaccount_subaccounts_cache
     ]
 

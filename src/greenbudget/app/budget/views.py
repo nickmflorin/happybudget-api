@@ -29,9 +29,10 @@ from .cache import (
     budget_accounts_cache,
     budget_groups_cache,
     budget_markups_cache,
-    budget_detail_cache,
+    budget_instance_cache,
     budget_actuals_cache,
-    budget_fringes_cache
+    budget_fringes_cache,
+    budget_actuals_owner_tree_cache
 )
 from .models import Budget
 from .mixins import BudgetNestedMixin
@@ -43,7 +44,7 @@ from .serializers import (
 
 
 @filter_by_ids
-@budget_markups_cache(get_key_from_view=lambda view: view.budget.pk)
+@budget_markups_cache(get_instance_from_view=lambda view: view.budget.pk)
 class BudgetMarkupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -83,7 +84,7 @@ class BudgetMarkupViewSet(
 
 
 @filter_by_ids
-@budget_groups_cache(get_key_from_view=lambda view: view.budget.pk)
+@budget_groups_cache(get_instance_from_view=lambda view: view.budget.pk)
 class BudgetGroupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -124,7 +125,7 @@ class BudgetGroupViewSet(
 
 
 @filter_by_ids
-@budget_actuals_cache(get_key_from_view=lambda view: view.budget.pk)
+@budget_actuals_cache(get_instance_from_view=lambda view: view.budget.pk)
 class BudgetActualsViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
@@ -159,7 +160,7 @@ class BudgetActualsViewSet(
 
 
 @filter_by_ids
-@budget_fringes_cache(get_key_from_view=lambda view: view.budget.pk)
+@budget_fringes_cache(get_instance_from_view=lambda view: view.budget.pk)
 class BudgetFringeViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -196,10 +197,12 @@ class BudgetFringeViewSet(
 
 
 @filter_by_ids
+@budget_actuals_owner_tree_cache(
+    get_instance_from_view=lambda view: view.budget.pk)
 class BudgetSubAccountViewSet(
     mixins.ListModelMixin,
     BudgetNestedMixin,
-    GenericAccountViewSet
+    viewsets.GenericViewSet
 ):
     """
     ViewSet to handle requests to the following endpoints:
@@ -378,7 +381,7 @@ class BudgetSubAccountViewSet(
 
 
 @filter_by_ids
-@budget_accounts_cache(get_key_from_view=lambda view: view.budget.pk)
+@budget_accounts_cache(get_instance_from_view=lambda view: view.budget.pk)
 class BudgetAccountViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -496,7 +499,7 @@ class GenericBudgetViewSet(viewsets.GenericViewSet):
         )
     ]
 )
-@budget_detail_cache(get_key_from_view=lambda view: view.instance.pk)
+@budget_instance_cache(get_instance_from_view=lambda view: view.instance.pk)
 class BudgetViewSet(
     mixins.CreateModelMixin,
     mixins.UpdateModelMixin,

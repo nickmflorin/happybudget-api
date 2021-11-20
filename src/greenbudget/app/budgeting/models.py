@@ -50,13 +50,13 @@ class CacheControlMixin:
         if trickle and hasattr(self, 'parent'):
             self.parent.invalidate_groups_cache(trickle=trickle)
 
-    def invalidate_detail_cache(self, trickle=False):
+    def invalidate_instance_cache(self, trickle=False):
         # Note: The Budget level will not have a parent cache so this is not
         # applicable.
-        detail_cache = self.get_cache("detail")
-        self._invalidate_cache(detail_cache)
+        instance_cache = self.get_cache("detail")
+        self._invalidate_cache(instance_cache)
         if trickle and hasattr(self, 'parent'):
-            self.parent.invalidate_detail_cache(trickle=trickle)
+            self.parent.invalidate_instance_cache(trickle=trickle)
 
     def invalidate_children_cache(self, trickle=False):
         # Note: The Budget level will not have a parent cache so this is not

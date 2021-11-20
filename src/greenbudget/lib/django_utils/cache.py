@@ -1,4 +1,5 @@
 import functools
+import inspect
 import logging
 
 from django.conf import settings
@@ -19,63 +20,22 @@ def raise_if_not_enabled(func):
     return decorator
 
 
-def request_can_be_cached(request):
-    """
-    Returns whether or not the request is allowed to be cached based on the
-    query parameters on the request.
-
-    Right now, we cannot cache any responses where the GET request included
-    query parameters.  This is because this would require invalidating those
-    cached responses when certain conditions are met, and we cannot invalidate
-    those caches if we do not know what the key is ahead of time.
-
-    We should investigate ways to improve this in the future, because this
-    will prevent us from cacheing search results, ordering results and filtering
-    results.
-    """
-    if request.query_params:
-        if len(request.query_params) == 1 \
-                and request.query_params.get('search') == "":
-            return True
-        return False
-    return True
-
-
 class endpoint_cache:
-    def __init__(self, id, entity, method):
-        self.id = id
-        self.entity = entity
+    def __init__(self, method):
         self._method = method
 
-    def __str__(self):
-        return self.id
+    def __call__(self, cls):
+        return self.decorate(cls)
 
-    @raise_if_not_enabled
-    def transform_key(self, key):
-        return key
-
-    def invalidate(self, key, log=True):
+    def invalidate(self, key):
         if not settings.CACHE_ENABLED:
             return
-        cache_key = self.transform_key(key)
-        if log:
-            logger.debug("Invalidating Cache %s." % self)
-        cache.delete(cache_key)
+        logger.debug("Invalidating Cache %s." % self)
+        cache.delete(key)
 
     def request_can_be_cached(self, request):
         # In certain environments, we do not want the cache to be enabled.
-        if not settings.CACHE_ENABLED:
-            return False
-        # Right now, we cannot cache any responses where the GET request
-        # included query parameters.  This is because this would require
-        # invalidating those cached responses when certain conditions are
-        # met, and we cannot invalidate those caches if we do not know what
-        # the key is ahead of time.  We should investigate ways to improve
-        # this in the future, because this  will prevent us from cacheing
-        # search results, ordering results and filtering results.
-        if not request_can_be_cached(request):
-            return False
-        return True
+        return settings.CACHE_ENABLED
 
     def decorate(self, cls, **kwargs):
         original_method = getattr(cls, self._method)
@@ -85,14 +45,18 @@ class endpoint_cache:
         ))
         return cls
 
-    def decorated_func(self, func, get_key_from_view):
+    def decorated_func(self, func, post_cache_args=None):
         @functools.wraps(func)
         def decorated(instance, request, *args, **kwargs):
             if not self.request_can_be_cached(request):
                 return func(instance, request, *args, **kwargs)
 
-            cache_key = get_key_from_view(instance)
-            cache_key = self.transform_key(cache_key)
+            arg_mapping = {
+                'view': instance,
+                'request': request
+            }
+
+            cache_key = request.path + request.query_params.urlencode()
 
             data = cache.get(cache_key)
             if data:
@@ -101,49 +65,69 @@ class endpoint_cache:
 
             r = func(instance, request, *args, **kwargs)
             cache.set(cache_key, r.data, settings.CACHE_EXPIRY)
+
+            post_cache_arguments = {'cache_key': cache_key}
+            if post_cache_args is not None:
+                for pcarg in post_cache_args:
+                    if hasattr(pcarg[1], '__call__'):
+                        arguments = [
+                            arg_mapping[ag]
+                            for ag in inspect.getfullargspec(pcarg[1]).args
+                            if ag in arg_mapping
+                        ]
+                        post_cache_arguments[pcarg[0]] = pcarg[1](*tuple(arguments))  # noqa
+                    else:
+                        post_cache_arguments[pcarg[0]] = pcarg[1]
+
+            self.post_cache(**post_cache_arguments)
             return r
         return decorated
 
 
 class invariant_cache(endpoint_cache):
     def __init__(self, *args, **kwargs):
-        self._key = kwargs.pop('key')
+        self._cached = set([])
         super().__init__(*args, **kwargs)
 
-    def __call__(self, cls):
-        return self.decorate(cls)
+    def __str__(self):
+        return "%s: %s" % (self.__class__.__name__, self._key)
 
-    def decorate(self, cls):
-        return super().decorate(cls, get_key_from_view=lambda view: self._key)
+    def post_cache(self, cache_key):
+        self._cached.add(cache_key)
 
     def invalidate(self):
-        super().invalidate(self._key)
+        for key in self._cached:
+            super().invalidate(key)
 
 
-class detail_cache(endpoint_cache):
-    def __init__(self, *args, **kwargs):
-        self._prefix = kwargs.pop('prefix', None)
-        super().__init__(*args, **kwargs)
+class instance_cache(endpoint_cache):
+    def __init__(self, id, entity, method, dependencies=None, **kwargs):
+        self.id = id
+        self.entity = entity
+        self._cached = {}
+        self._dependencies = dependencies or []
+        super().__init__(method, **kwargs)
 
-    def __call__(self, get_key_from_view):
+    def __call__(self, get_instance_from_view):
         def decorator(cls):
-            return self.decorate(cls, get_key_from_view=get_key_from_view)
+            return self.decorate(
+                cls, post_cache_args=[('pk', get_instance_from_view)])
         return decorator
 
-    @raise_if_not_enabled
-    def transform_key(self, key):
-        if self._prefix is not None:
-            if not self._prefix.endswith('-'):
-                return f'{self._prefix}-{key}'
-            return f'{self._prefix}{key}'
-        return key
+    def __str__(self):
+        return "%s: %s" % (self.__class__.__name__, self.id)
+
+    def post_cache(self, pk, cache_key):
+        self._cached.setdefault(pk, set([]))
+        self._cached[pk].add(cache_key)
 
     def invalidate(self, instance):
-        instances = instance if isinstance(instance, (list, tuple)) \
+        instances = instance if isinstance(instance, (list, tuple, set)) \
             else [instance]
         for obj in instances:
-            logger.debug(
-                "Invalidating Cache %s for Instance %s."
-                % (self, obj.pk)
-            )
-            return super().invalidate(obj.pk, log=False)
+            if obj.id in self._cached:
+                for full_cache_key in self._cached[obj.id]:
+                    super().invalidate(full_cache_key)
+                del self._cached[obj.id]
+        for dependency in self._dependencies:
+            dependency.invalidate(instance)

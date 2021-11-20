@@ -20,7 +20,7 @@ from .cache import (
     subaccount_subaccounts_cache,
     subaccount_markups_cache,
     subaccount_groups_cache,
-    subaccount_detail_cache,
+    subaccount_instance_cache,
     subaccount_units_cache
 )
 from .mixins import SubAccountNestedMixin
@@ -57,7 +57,7 @@ class SubAccountUnitViewSet(
 
 
 @filter_by_ids
-@subaccount_markups_cache(get_key_from_view=lambda view: view.subaccount.pk)
+@subaccount_markups_cache(get_instance_from_view=lambda view: view.subaccount.pk)
 class SubAccountMarkupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -99,7 +99,7 @@ class SubAccountMarkupViewSet(
 
 
 @filter_by_ids
-@subaccount_groups_cache(get_key_from_view=lambda view: view.subaccount.pk)
+@subaccount_groups_cache(get_instance_from_view=lambda view: view.subaccount.pk)
 class SubAccountGroupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -254,7 +254,7 @@ class GenericSubAccountViewSet(viewsets.GenericViewSet):
         )
     ]
 )
-@subaccount_detail_cache(get_key_from_view=lambda view: view.instance.pk)
+@subaccount_instance_cache(get_instance_from_view=lambda view: view.instance.pk)
 class SubAccountViewSet(
     mixins.UpdateModelMixin,
     mixins.RetrieveModelMixin,
@@ -305,7 +305,8 @@ class SubAccountViewSet(
 
 
 @filter_by_ids
-@subaccount_subaccounts_cache(get_key_from_view=lambda view: view.subaccount.pk)
+@subaccount_subaccounts_cache(
+    get_instance_from_view=lambda view: view.subaccount.pk)
 class SubAccountRecursiveViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,

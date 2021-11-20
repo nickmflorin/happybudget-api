@@ -11,7 +11,7 @@ from greenbudget.app.markup.utils import contribution_from_markups
 from greenbudget.app.subaccount.models import SubAccount
 
 from .cache import (
-    account_detail_cache,
+    account_instance_cache,
     account_markups_cache,
     account_groups_cache,
     account_subaccounts_cache
@@ -84,7 +84,7 @@ class Account(BudgetingTreePolymorphicModel):
     non_polymorphic = models.Manager()
 
     CACHES = [
-        account_detail_cache,
+        account_instance_cache,
         account_subaccounts_cache,
         account_markups_cache,
         account_groups_cache

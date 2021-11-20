@@ -1,37 +1,32 @@
-from greenbudget.lib.django_utils.cache import detail_cache, invariant_cache
+from greenbudget.lib.django_utils.cache import instance_cache, invariant_cache
+from greenbudget.app.budget.cache import budget_actuals_owner_tree_cache
 
 
-subaccount_subaccounts_cache = detail_cache(
+subaccount_subaccounts_cache = instance_cache(
     id='subaccount-subaccounts',
     entity='children',
-    prefix='subaccount-subaccounts',
-    method='list'
+    method='list',
+    dependencies=[budget_actuals_owner_tree_cache]
 )
 
-subaccount_markups_cache = detail_cache(
+subaccount_markups_cache = instance_cache(
     id='subaccount-markups',
     entity='markup',
-    prefix='subaccount-markups',
-    method='list'
+    method='list',
+    dependencies=[budget_actuals_owner_tree_cache]
 )
 
-subaccount_groups_cache = detail_cache(
+subaccount_groups_cache = instance_cache(
     id='subaccount-groups',
     entity='group',
-    prefix='subaccount-groups',
     method='list'
 )
 
-subaccount_units_cache = invariant_cache(
-    id='subaccount-unit',
-    entity='units',
-    key='subaccount-units',
-    method='list'
-)
+subaccount_units_cache = invariant_cache(method='list')
 
-subaccount_detail_cache = detail_cache(
+subaccount_instance_cache = instance_cache(
     id='subaccount-detail',
     entity='detail',
-    prefix='subaccount-detail',
-    method='retrieve'
+    method='retrieve',
+    dependencies=[budget_actuals_owner_tree_cache]
 )

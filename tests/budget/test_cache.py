@@ -1,5 +1,8 @@
 import pytest
 from django.test import override_settings
+import mock
+
+from greenbudget.app.budget.views import BudgetSubAccountViewSet
 
 
 @override_settings(CACHE_ENABLED=True)
@@ -412,3 +415,116 @@ def test_actuals_cache_invalidated_on_upload_attachment(api_client, user,
         'extension': 'jpeg',
         'url': 'https://api.greenbudget.com/media/users/1/attachments/test.jpeg'
     }]
+
+
+@override_settings(CACHE_ENABLED=True)
+def test_owner_tree_search_cached(api_client, user, create_budget,
+        create_markup, create_budget_account, create_budget_subaccounts):
+    budget = create_budget()
+    create_markup(parent=budget)
+    account = create_budget_account(parent=budget)
+    create_budget_subaccounts(parent=account, count=4)
+
+    def mock_filter_tree_querysets(*args, **kwargs):
+        return [], []
+
+    api_client.force_login(user)
+    response = api_client.get(
+        "/v1/budgets/%s/subaccounts/owner-tree/" % budget.pk)
+    assert response.status_code == 200
+    assert response.json()['count'] == 5
+
+    with mock.patch.object(
+            BudgetSubAccountViewSet, 'filter_tree_querysets') as m:
+        response = api_client.get(
+            "/v1/budgets/%s/subaccounts/owner-tree/" % budget.pk)
+    assert response.status_code == 200
+    assert response.json()['count'] == 5
+    assert not m.called
+
+    # Make sure that adding query parameters does not use previously established
+    # cached response.
+    with mock.patch.object(
+        BudgetSubAccountViewSet,
+        'filter_tree_querysets',
+        # Since the endpoint will not use the cache, it will actually execute
+        # the .filter_tree_queryset() method - so we need to return a realistic
+        # value.
+        wraps=mock_filter_tree_querysets
+    ) as m:
+        response = api_client.get(
+            "/v1/budgets/%s/subaccounts/owner-tree/?search=jack" % budget.pk)
+    assert response.status_code == 200
+    assert m.called
+
+
+@override_settings(CACHE_ENABLED=True)
+def test_owner_tree_search_invalidated_on_markup_saved(api_client, user,
+        create_budget, create_markup, create_budget_account,
+        create_budget_subaccounts):
+    budget = create_budget()
+    create_markup(parent=budget)
+    account = create_budget_account(parent=budget)
+    create_budget_subaccounts(parent=account, count=4)
+
+    api_client.force_login(user)
+    response = api_client.get(
+        "/v1/budgets/%s/subaccounts/owner-tree/" % budget.pk)
+    assert response.status_code == 200
+    assert response.json()['count'] == 5
+
+    create_markup(parent=budget)
+
+    api_client.force_login(user)
+    response = api_client.get(
+        "/v1/budgets/%s/subaccounts/owner-tree/" % budget.pk)
+    assert response.status_code == 200
+    assert response.json()['count'] == 6
+
+
+@override_settings(CACHE_ENABLED=True)
+def test_owner_tree_search_invalidated_on_markup_deleted(api_client, user,
+        create_budget, create_markup, create_budget_account,
+        create_budget_subaccounts):
+    budget = create_budget()
+    markup = create_markup(parent=budget)
+    account = create_budget_account(parent=budget)
+    create_budget_subaccounts(parent=account, count=4)
+
+    api_client.force_login(user)
+    response = api_client.get(
+        "/v1/budgets/%s/subaccounts/owner-tree/" % budget.pk)
+    assert response.status_code == 200
+    assert response.json()['count'] == 5
+
+    markup.delete()
+
+    api_client.force_login(user)
+    response = api_client.get(
+        "/v1/budgets/%s/subaccounts/owner-tree/" % budget.pk)
+    assert response.status_code == 200
+    assert response.json()['count'] == 4
+
+
+@override_settings(CACHE_ENABLED=True)
+def test_owner_tree_search_invalidated_on_subaccount_saved(api_client, user,
+        create_budget, create_markup, create_budget_account,
+        create_budget_subaccounts):
+    budget = create_budget()
+    create_markup(parent=budget)
+    account = create_budget_account(parent=budget)
+    create_budget_subaccounts(parent=account, count=4)
+
+    api_client.force_login(user)
+    response = api_client.get(
+        "/v1/budgets/%s/subaccounts/owner-tree/" % budget.pk)
+    assert response.status_code == 200
+    assert response.json()['count'] == 5
+
+    create_budget_subaccounts(parent=account, count=1)
+
+    api_client.force_login(user)
+    response = api_client.get(
+        "/v1/budgets/%s/subaccounts/owner-tree/" % budget.pk)
+    assert response.status_code == 200
+    assert response.json()['count'] == 6

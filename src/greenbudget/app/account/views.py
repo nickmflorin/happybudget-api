@@ -28,7 +28,7 @@ from .cache import (
     account_subaccounts_cache,
     account_groups_cache,
     account_markups_cache,
-    account_detail_cache
+    account_instance_cache
 )
 from .models import BudgetAccount, TemplateAccount
 from .permissions import AccountObjPermission
@@ -39,7 +39,7 @@ from .serializers import (
 
 
 @filter_by_ids
-@account_markups_cache(get_key_from_view=lambda view: view.account.pk)
+@account_markups_cache(get_instance_from_view=lambda view: view.account.pk)
 class AccountMarkupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -81,7 +81,7 @@ class AccountMarkupViewSet(
 
 
 @filter_by_ids
-@account_groups_cache(get_key_from_view=lambda view: view.account.pk)
+@account_groups_cache(get_instance_from_view=lambda view: view.account.pk)
 class AccountGroupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -123,7 +123,7 @@ class AccountGroupViewSet(
 
 
 @filter_by_ids
-@account_subaccounts_cache(get_key_from_view=lambda view: view.account.pk)
+@account_subaccounts_cache(get_instance_from_view=lambda view: view.account.pk)
 class AccountSubAccountViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -235,7 +235,7 @@ class GenericAccountViewSet(viewsets.GenericViewSet):
         )
     ]
 )
-@account_detail_cache(get_key_from_view=lambda view: view.instance.pk)
+@account_instance_cache(get_instance_from_view=lambda view: view.instance.pk)
 class AccountViewSet(
     mixins.UpdateModelMixin,
     mixins.RetrieveModelMixin,

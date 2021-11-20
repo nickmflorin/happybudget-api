@@ -47,7 +47,7 @@ class ContactAttachmentViewSet(
         )
 
 
-@user_contacts_cache(get_key_from_view=lambda view: view.request.user.pk)
+@user_contacts_cache(get_instance_from_view=lambda view: view.request.user.pk)
 class ContactViewSet(
     mixins.UpdateModelMixin,
     mixins.RetrieveModelMixin,
