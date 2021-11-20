@@ -4,6 +4,7 @@ from django.db.models import Case, Q, When, Value as V, BooleanField
 from greenbudget.lib.utils import concat, set_or_list
 
 from greenbudget.app import signals
+from greenbudget.app.budget.cache import budget_actuals_owner_tree_cache
 from greenbudget.app.budgeting.managers import BudgetingPolymorphicManager
 from greenbudget.app.budgeting.query import BudgetingPolymorphicQuerySet
 
@@ -67,21 +68,29 @@ class SubAccountQuery(SubAccountQuerier, BudgetingPolymorphicQuerySet):
 class SubAccountManager(SubAccountQuerier, BudgetingPolymorphicManager):
     queryset_class = SubAccountQuery
 
+    def mark_budgets_updated(self, instances=None, budgets=None):
+        budgets = budgets or set([inst.budget for inst in instances])
+        for budget in budgets:
+            budget.mark_updated()
+
+    def cleanup(self, instances, markup_budgets_updated=True):
+        super().cleanup(instances)
+        budgets = set([inst.budget for inst in instances])
+        if markup_budgets_updated:
+            self.mark_budgets_updated(instances=instances)
+        budget_actuals_owner_tree_cache.invalidate(budgets)
+
     @signals.disable()
     def bulk_delete(self, instances):
         groups = [obj.group for obj in instances if obj.group is not None]
 
         for obj in instances:
-            obj.invalidate_caches(trickle=True)
             obj.delete()
+
+        self.cleanup(instances)
 
         self.bulk_calculate_all([obj.parent for obj in instances])
         self.bulk_delete_empty_groups(groups)
-
-        # We want to update the Budget's `updated_at` property regardless of
-        # whether or not the Budget was recalculated.
-        for budget in set([inst.budget for inst in instances]):
-            budget.mark_updated()
 
     @signals.disable()
     def bulk_add(self, instances):
@@ -92,17 +101,6 @@ class SubAccountManager(SubAccountQuerier, BudgetingPolymorphicManager):
         created = self.bulk_create(instances, return_created_objects=True)
 
         self.bulk_calculate(created)
-
-        # Note: This will more than likely lead to invalidating caches multiple
-        # times due to the children invalidating parent caches.  We need to
-        # investigate batch catch invalidation with Django/AWS.
-        for obj in created:
-            obj.invalidate_caches(trickle=True)
-
-        # We want to update the Budget's `updated_at` property regardless of
-        # whether or not the Budget was recalculated.
-        for budget in set([inst.budget for inst in instances]):
-            budget.mark_updated()
         return created
 
     @signals.disable()
@@ -114,13 +112,8 @@ class SubAccountManager(SubAccountQuerier, BudgetingPolymorphicManager):
         instances = calculated.union(instances)
         groups = [obj.group for obj in instances if obj.group is not None]
 
-        # Note: This will more than likely lead to invalidating caches multiple
-        # times due to the children invalidating parent caches.  We need to
-        # investigate batch catch invalidation with Django/AWS.
-        for obj in set_or_list(instances) + set_or_list(budgets) \
-                + set_or_list(accounts):
-            obj.invalidate_caches(trickle=True)
-            if obj.children.count() != 0 and isinstance(obj, self.model):
+        for obj in set_or_list(instances):
+            if obj.children.count() != 0:
                 obj.clear_deriving_fields(commit=False)
 
         self.bulk_update(
@@ -131,11 +124,6 @@ class SubAccountManager(SubAccountQuerier, BudgetingPolymorphicManager):
         self.model.budget_cls().objects.bulk_update_post_calculation(budgets)
 
         self.bulk_delete_empty_groups(groups)
-
-        # We want to update the Budget's `updated_at` property regardless of
-        # whether or not the Budget was recalculated.
-        for budget in set([inst.budget for inst in instances]):
-            budget.mark_updated()
 
     @signals.disable()
     def bulk_calculate(self, *args, **kwargs):

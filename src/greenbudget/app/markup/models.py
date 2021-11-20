@@ -122,6 +122,15 @@ class Markup(BudgetingModel):
         return parent
 
     @property
+    def intermittent_budget(self):
+        parent = self.intermittent_parent
+        while not isinstance(parent, self.budget_cls()):
+            if parent is None:
+                break
+            parent = parent.intermittent_parent
+        return parent
+
+    @property
     def is_empty(self):
         # If there are Group(s) that are marked up but the Markup itself does
         # not have any SubAccount(s) or Account(s), then the Group will be

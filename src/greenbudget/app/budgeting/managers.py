@@ -14,42 +14,44 @@ logger = logging.getLogger('greenbudget')
 
 
 class BudgetingManagerMixin:
-    def bulk_update(self, instances, fields, invalidate_caches=True):
-        if invalidate_caches:
-            for instance in instances:
-                # Not all of the models that use these managers will have the
-                # CacheControlMixin.
-                if hasattr(instance, 'CACHES'):
-                    instance.invalidate_instance_cache()
+    def bulk_update(self, instances, fields):
+        results = super().bulk_update(instances, fields)
+        self.cleanup(instances)
+        return results
+
+    def bulk_create(self, instances, **kwargs):
+        results = super().bulk_create(instances, **kwargs)
+        self.cleanup(instances)
+        return results
+
+    def cleanup(self, instances, **kwargs):
+        for instance in instances:
+            # Not all of the models that use these managers will have the
+            # CacheControlMixin.
+            if hasattr(instance, 'CACHES'):
+                instance.invalidate_caches(["detail"])
                 if hasattr(instance, 'parent'):
-                    instance.parent.invalidate_children_cache()
-        return super().bulk_update(instances, fields)
+                    instance.parent.invalidate_caches(["detail", "children"])
 
-    def bulk_update_post_calculation(self, instances, invalidate_caches=True):
+    def bulk_update_post_calculation(self, instances):
         if instances:
             return self.bulk_update(
                 instances=instances,
-                fields=self.model.CALCULATED_FIELDS,
-                invalidate_caches=invalidate_caches
+                fields=self.model.CALCULATED_FIELDS
             )
         return None
 
-    def bulk_update_post_estimation(self, instances, invalidate_caches=True):
+    def bulk_update_post_estimation(self, instances):
         if instances:
             return self.bulk_update(
                 instances=instances,
-                fields=self.model.ESTIMATED_FIELDS,
-                invalidate_caches=invalidate_caches
+                fields=self.model.ESTIMATED_FIELDS
             )
         return None
 
-    def bulk_update_post_actualization(self, instances, invalidate_caches=True):
+    def bulk_update_post_actualization(self, instances):
         if instances:
-            return self.bulk_update(
-                instances=instances,
-                fields=['actual'],
-                invalidate_caches=invalidate_caches
-            )
+            return self.bulk_update(instances=instances, fields=['actual'])
         return None
 
     @signals.disable()
@@ -164,16 +166,13 @@ class BudgetingManagerMixin:
 
         if commit:
             self.model.subaccount_cls().objects.bulk_update_post_estimation(
-                instances=subaccounts,
-                invalidate_caches=kwargs.get('invalidate_caches', True)
+                instances=subaccounts
             )
             self.model.account_cls().objects.bulk_update_post_estimation(
-                instances=accounts,
-                invalidate_caches=kwargs.get('invalidate_caches', True)
+                instances=accounts
             )
             self.model.budget_cls().objects.bulk_update_post_estimation(
-                instances=budgets,
-                invalidate_caches=kwargs.get('invalidate_caches', True)
+                instances=budgets
             )
         return subaccounts, accounts, budgets
 
@@ -273,16 +272,13 @@ class BudgetingManagerMixin:
         budgets.update(b)
         if commit:
             BudgetSubAccount.objects.bulk_update_post_actualization(
-                instances=subaccounts,
-                invalidate_caches=kwargs.get('invalidate_caches', True)
+                instances=subaccounts
             )
             BudgetAccount.objects.bulk_update_post_actualization(
-                instances=accounts,
-                invalidate_caches=kwargs.get('invalidate_caches', True)
+                instances=accounts
             )
             Budget.objects.bulk_update_post_actualization(
-                instances=budgets,
-                invalidate_caches=kwargs.get('invalidate_caches', True)
+                instances=budgets
             )
 
         return subaccounts, accounts, budgets
@@ -373,16 +369,13 @@ class BudgetingManagerMixin:
 
         if commit:
             self.model.subaccount_cls().objects.bulk_update_post_calculation(
-                instances=subaccounts,
-                invalidate_caches=kwargs.get('invalidate_caches', True)
+                instances=subaccounts
             )
             self.model.account_cls().objects.bulk_update_post_calculation(
-                instances=accounts,
-                invalidate_caches=kwargs.get('invalidate_caches', True)
+                instances=accounts
             )
             self.model.budget_cls().objects.bulk_update_post_calculation(
-                instances=budgets,
-                invalidate_caches=kwargs.get('invalidate_caches', True)
+                instances=budgets
             )
 
         return subaccounts, accounts, budgets

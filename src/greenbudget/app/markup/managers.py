@@ -2,6 +2,7 @@ from greenbudget.lib.django_utils.models import generic_fk_instance_change
 from greenbudget.lib.utils import concat
 
 from greenbudget.app import signals
+from greenbudget.app.budget.cache import budget_actuals_owner_tree_cache
 from greenbudget.app.budgeting.managers import BudgetingManager
 from greenbudget.app.budgeting.query import (
     BudgetingQuerySet, BudgetAncestorQuerier)
@@ -52,18 +53,24 @@ class MarkupManager(MarkupQuerier, BudgetingManager):
 
         self.bulk_actualize_all(
             instances=parents_to_reactualize,
-            markups_to_be_deleted=[obj.pk for obj in instances],
-            invalidate_caches=False
+            markups_to_be_deleted=[obj.pk for obj in instances]
         )
         self.bulk_estimate_all(
             instances=objects_to_reestimate,
-            markups_to_be_deleted=[obj.pk for obj in instances],
-            invalidate_caches=False
+            markups_to_be_deleted=[obj.pk for obj in instances]
         )
+
+    def cleanup(self, instances, **kwargs):
+        super().cleanup(instances)
+        budgets = set([inst.intermittent_budget for inst in instances])
+        # We want to update the Budget's `updated_at` property regardless of
+        # whether or not the Budget was recalculated.
+        for budget in [b for b in budgets if b is not None]:
+            budget.mark_updated()
+            budget_actuals_owner_tree_cache.invalidate(budget)
 
     @signals.disable()
     def bulk_delete(self, instances, strict=True):
-        budgets = set([inst.budget for inst in instances])
         self.pre_delete(instances)
         for obj in instances:
             # We have to be concerned with race conditions here.
@@ -72,10 +79,7 @@ class MarkupManager(MarkupQuerier, BudgetingManager):
             except self.model.DoesNotExist as e:
                 if strict:
                     raise e
-        # We want to update the Budget's `updated_at` property regardless of
-        # whether or not the Budget was recalculated.
-        for budget in budgets:
-            budget.mark_updated()
+        self.cleanup(instances)
 
     def get_parents_to_reestimate(self, obj):
         parents_to_reestimate = set([])
@@ -111,17 +115,14 @@ class MarkupManager(MarkupQuerier, BudgetingManager):
     def reestimate_parent(self, obj):
         parents_to_reestimate = self.get_parents_to_reestimate(obj)
         self.bulk_estimate_all(parents_to_reestimate)
-        obj.budget.mark_updated()
 
     @signals.disable()
     def reestimate_children(self, obj):
         children_to_reestimate = self.get_children_to_reestimate(obj)
         self.bulk_estimate_all(children_to_reestimate)
-        obj.budget.mark_updated()
 
     @signals.disable()
     def reestimate_associated(self, obj):
         to_reestimate = self.get_parents_to_reestimate(obj)
         to_reestimate.update(self.get_children_to_reestimate(obj))
         self.bulk_estimate_all(to_reestimate)
-        obj.budget.mark_updated()

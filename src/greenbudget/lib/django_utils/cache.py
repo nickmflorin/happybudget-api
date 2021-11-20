@@ -56,7 +56,13 @@ class endpoint_cache:
                 'request': request
             }
 
-            cache_key = request.path + request.query_params.urlencode()
+            if request.user.id is None:
+                raise Exception(
+                    "Cacheing can only be used on authenticated views.")
+
+            cache_key = f"{request.user.id}-{request.method}-{request.path}"
+            if request.query_params:
+                cache_key += request.query_params.urlencode()
 
             data = cache.get(cache_key)
             if data:
@@ -101,11 +107,9 @@ class invariant_cache(endpoint_cache):
 
 
 class instance_cache(endpoint_cache):
-    def __init__(self, id, entity, method, dependencies=None, **kwargs):
-        self.id = id
+    def __init__(self, entity, method, **kwargs):
         self.entity = entity
         self._cached = {}
-        self._dependencies = dependencies or []
         super().__init__(method, **kwargs)
 
     def __call__(self, get_instance_from_view):
@@ -115,7 +119,7 @@ class instance_cache(endpoint_cache):
         return decorator
 
     def __str__(self):
-        return "%s: %s" % (self.__class__.__name__, self.id)
+        return "%s: %s" % (self.__class__.__name__, self.entity)
 
     def post_cache(self, pk, cache_key):
         self._cached.setdefault(pk, set([]))
@@ -129,5 +133,3 @@ class instance_cache(endpoint_cache):
                 for full_cache_key in self._cached[obj.id]:
                     super().invalidate(full_cache_key)
                 del self._cached[obj.id]
-        for dependency in self._dependencies:
-            dependency.invalidate(instance)

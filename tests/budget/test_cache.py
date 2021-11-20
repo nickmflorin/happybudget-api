@@ -6,18 +6,18 @@ from greenbudget.app.budget.views import BudgetSubAccountViewSet
 
 
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_detail_cache_invalidated_on_delete(api_client, user, context,
-        create_context_budget):
-    budget = create_context_budget(context=context)
+def test_detail_cache_invalidated_on_delete(api_client, user, budget_f):
+    budget = budget_f.create_budget()
 
     api_client.force_login(user)
-    response = api_client.get("/v1/%ss/%s/" % (context, budget.pk))
+    response = api_client.get("/v1/%ss/%s/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['id'] == budget.pk
 
-    budget.delete()
-    response = api_client.get("/v1/%ss/%s/" % (context, budget.pk))
+    response = api_client.delete("/v1/%ss/%s/" % (budget_f.context, budget.pk))
+    assert response.status_code == 204
+
+    response = api_client.get("/v1/%ss/%s/" % (budget_f.context, budget.pk))
     # Note: This is kind of a dumb test, because this will return a 404
     # regardless of whether or not the instance was removed from the cache
     # because the Http404 is raised before the .retrieve() method executes.
@@ -25,336 +25,355 @@ def test_detail_cache_invalidated_on_delete(api_client, user, context,
 
 
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_detail_cache_invalidated_on_save(api_client, user, context,
-        create_context_budget):
-    budget = create_context_budget(context=context)
+def test_detail_cache_invalidated_on_save(api_client, user, budget_f):
+    budget = budget_f.create_budget()
 
     api_client.force_login(user)
-    response = api_client.get("/v1/%ss/%s/" % (context, budget.pk))
+    response = api_client.get("/v1/%ss/%s/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['id'] == budget.pk
 
-    budget.name = 'New Name'
-    budget.save()
+    response = api_client.patch(
+        "/v1/%ss/%s/" % (budget_f.context, budget.pk),
+        data={"name": "New Name"}
+    )
+    assert response.status_code == 200
 
-    response = api_client.get("/v1/%ss/%s/" % (context, budget.pk))
+    response = api_client.get("/v1/%ss/%s/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['name'] == 'New Name'
 
 
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_accounts_cache_on_search(api_client, user, context, create_account,
-        create_context_budget):
-    budget = create_context_budget(context=context)
+def test_accounts_cache_on_search(api_client, user, budget_f):
+    budget = budget_f.create_budget()
     # These accounts should not be cached in the response because we will
     # be including a search query parameter.
-    create_account(parent=budget, context=context, identifier='Jack'),
-    create_account(parent=budget, context=context, identifier='Jill')
+    budget_f.create_account(parent=budget, identifier='Jack')
+    budget_f.create_account(parent=budget, identifier='Jill')
 
     api_client.force_login(user)
-    response = api_client.get("/v1/%ss/%s/accounts/" % (context, budget.pk))
+    response = api_client.get(
+        "/v1/%ss/%s/accounts/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
 
     response = api_client.get(
         "/v1/%ss/%s/accounts/?search=jill"
-        % (context, budget.pk)
+        % (budget_f.context, budget.pk)
     )
     assert response.status_code == 200
     assert response.json()['count'] == 1
 
 
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_accounts_cache_invalidated_on_delete(api_client, user, context,
-        create_account, create_context_budget):
-    budget = create_context_budget(context=context)
+def test_accounts_cache_invalidated_on_delete(api_client, user, budget_f):
+    budget = budget_f.create_budget()
     accounts = [
-        create_account(parent=budget, context=context),
-        create_account(parent=budget, context=context)
+        budget_f.create_account(parent=budget),
+        budget_f.create_account(parent=budget)
     ]
     api_client.force_login(user)
-    response = api_client.get("/v1/%ss/%s/accounts/" % (context, budget.pk))
+    response = api_client.get(
+        "/v1/%ss/%s/accounts/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 2
 
     accounts[0].delete()
-    response = api_client.get("/v1/%ss/%s/accounts/" % (context, budget.pk))
+    response = api_client.get(
+        "/v1/%ss/%s/accounts/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 1
 
 
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_accounts_cache_invalidated_on_create(api_client, user, context,
-        create_account, create_context_budget):
-    budget = create_context_budget(context=context)
-    create_account(parent=budget, context=context)
-    create_account(parent=budget, context=context)
+def test_accounts_cache_invalidated_on_create(api_client, user, budget_f):
+    budget = budget_f.create_budget()
+    budget_f.create_account(parent=budget)
+    budget_f.create_account(parent=budget)
 
     api_client.force_login(user)
-    response = api_client.get("/v1/%ss/%s/accounts/" % (context, budget.pk))
+    response = api_client.get(
+        "/v1/%ss/%s/accounts/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 2
 
-    create_account(parent=budget, context=context)
-    response = api_client.get("/v1/%ss/%s/accounts/" % (context, budget.pk))
+    budget_f.create_account(parent=budget)
+    response = api_client.get(
+        "/v1/%ss/%s/accounts/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 3
 
 
 @pytest.mark.freeze_time('2020-01-01')
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_accounts_cache_invalidated_on_change(api_client, user, context,
-        create_account, create_context_budget):
-    budget = create_context_budget(context=context)
+def test_accounts_cache_invalidated_on_change(api_client, user, budget_f):
+    budget = budget_f.create_budget()
     accounts = [
-        create_account(parent=budget, context=context),
-        create_account(parent=budget, context=context)
+        budget_f.create_account(parent=budget),
+        budget_f.create_account(parent=budget)
     ]
 
     api_client.force_login(user)
-    response = api_client.get("/v1/%ss/%s/accounts/" % (context, budget.pk))
+    response = api_client.get(
+        "/v1/%ss/%s/accounts/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 2
 
     accounts[0].description = 'Test Description'
     accounts[0].save()
 
-    response = api_client.get("/v1/%ss/%s/accounts/" % (context, budget.pk))
+    response = api_client.get(
+        "/v1/%ss/%s/accounts/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'][0]['description'] == 'Test Description'
 
 
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_groups_cache_invalidated_on_delete(api_client, user, context,
-        create_context_budget, create_group):
-    budget = create_context_budget(context=context)
+def test_groups_cache_invalidated_on_delete(api_client, user, budget_f,
+        create_group):
+    budget = budget_f.create_budget()
     group = create_group(parent=budget)
 
     api_client.force_login(user)
-    response = api_client.get("/v1/%ss/%s/groups/" % (context, budget.pk))
+    response = api_client.get(
+        "/v1/%ss/%s/groups/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 1
 
     group.delete()
-    response = api_client.get("/v1/%ss/%s/groups/" % (context, budget.pk))
+
+    response = api_client.get(
+        "/v1/%ss/%s/groups/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 0
 
 
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_groups_cache_invalidated_on_create(api_client, user, context,
-        create_context_budget, create_group):
-    budget = create_context_budget(context=context)
+def test_groups_cache_invalidated_on_create(api_client, user, budget_f,
+        create_group):
+    budget = budget_f.create_budget()
     create_group(parent=budget)
 
     api_client.force_login(user)
-    response = api_client.get("/v1/%ss/%s/groups/" % (context, budget.pk))
+    response = api_client.get(
+        "/v1/%ss/%s/groups/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 1
 
     create_group(parent=budget)
-    response = api_client.get("/v1/%ss/%s/groups/" % (context, budget.pk))
+
+    response = api_client.get(
+        "/v1/%ss/%s/groups/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 2
 
 
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_groups_cache_invalidated_on_change(api_client, user, context,
-        create_context_budget, create_group):
-    budget = create_context_budget(context=context)
+def test_groups_cache_invalidated_on_change(api_client, user, budget_f,
+        create_group):
+    budget = budget_f.create_budget()
     group = create_group(parent=budget)
 
     api_client.force_login(user)
-    response = api_client.get("/v1/%ss/%s/groups/" % (context, budget.pk))
+    response = api_client.get(
+        "/v1/%ss/%s/groups/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
 
     group.name = 'Test Name'
     group.save()
 
-    response = api_client.get("/v1/%ss/%s/groups/" % (context, budget.pk))
+    response = api_client.get(
+        "/v1/%ss/%s/groups/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 1
     assert response.json()['data'][0]['name'] == 'Test Name'
 
 
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_markups_cache_invalidated_on_delete(api_client, user, context,
-        create_account, create_context_budget, create_markup):
-    budget = create_context_budget(context=context)
+def test_markups_cache_invalidated_on_delete(api_client, user, budget_f,
+        create_markup):
+    budget = budget_f.create_budget()
     accounts = [
-        create_account(parent=budget, context=context),
-        create_account(parent=budget, context=context)
+        budget_f.create_account(parent=budget),
+        budget_f.create_account(parent=budget)
     ]
     markup = create_markup(parent=budget, accounts=accounts)
 
     api_client.force_login(user)
-    response = api_client.get("/v1/%ss/%s/markups/" % (context, budget.pk))
+    response = api_client.get(
+        "/v1/%ss/%s/markups/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 1
 
     markup.delete()
-    response = api_client.get("/v1/%ss/%s/markups/" % (context, budget.pk))
+    response = api_client.get(
+        "/v1/%ss/%s/markups/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 0
 
 
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_markups_cache_invalidated_on_create(api_client, user, context,
-        create_account, create_context_budget, create_markup):
-    budget = create_context_budget(context=context)
+def test_markups_cache_invalidated_on_create(api_client, user, budget_f,
+        create_markup):
+    budget = budget_f.create_budget()
     accounts = [
-        create_account(parent=budget, context=context),
-        create_account(parent=budget, context=context)
+        budget_f.create_account(parent=budget),
+        budget_f.create_account(parent=budget)
     ]
     create_markup(parent=budget, accounts=accounts)
 
     api_client.force_login(user)
-    response = api_client.get("/v1/%ss/%s/markups/" % (context, budget.pk))
+    response = api_client.get(
+        "/v1/%ss/%s/markups/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 1
 
     create_markup(parent=budget, accounts=accounts)
-    response = api_client.get("/v1/%ss/%s/markups/" % (context, budget.pk))
+
+    response = api_client.get(
+        "/v1/%ss/%s/markups/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 2
 
 
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_markups_cache_invalidated_on_change(api_client, user, context,
-        create_account, create_context_budget, create_markup):
-    budget = create_context_budget(context=context)
+def test_markups_cache_invalidated_on_change(api_client, user, budget_f,
+        create_markup):
+    budget = budget_f.create_budget()
     accounts = [
-        create_account(parent=budget, context=context),
-        create_account(parent=budget, context=context)
+        budget_f.create_account(parent=budget),
+        budget_f.create_account(parent=budget)
     ]
     markup = create_markup(parent=budget, accounts=accounts)
 
     api_client.force_login(user)
-    response = api_client.get("/v1/%ss/%s/markups/" % (context, budget.pk))
+    response = api_client.get(
+        "/v1/%ss/%s/markups/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
 
     markup.description = 'Test Description'
     markup.save()
 
-    response = api_client.get("/v1/%ss/%s/markups/" % (context, budget.pk))
+    response = api_client.get(
+        "/v1/%ss/%s/markups/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 1
     assert response.json()['data'][0]['description'] == 'Test Description'
 
 
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_fringes_cache_invalidated_on_delete(api_client, user, context,
-        create_context_budget, create_fringe):
-    budget = create_context_budget(context=context)
+def test_fringes_cache_invalidated_on_delete(api_client, user, budget_f,
+        create_fringe):
+    budget = budget_f.create_budget()
     fringe = create_fringe(budget=budget)
 
     api_client.force_login(user)
-    response = api_client.get("/v1/%ss/%s/fringes/" % (context, budget.pk))
+    response = api_client.get(
+        "/v1/%ss/%s/fringes/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 1
 
     fringe.delete()
-    response = api_client.get("/v1/%ss/%s/fringes/" % (context, budget.pk))
+
+    response = api_client.get(
+        "/v1/%ss/%s/fringes/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 0
 
 
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_fringes_cache_invalidated_on_create(api_client, user, context,
-        create_context_budget, create_fringe):
-    budget = create_context_budget(context=context)
+def test_fringes_cache_invalidated_on_create(api_client, user, budget_f,
+        create_fringe):
+    budget = budget_f.create_budget()
     create_fringe(budget=budget)
 
     api_client.force_login(user)
-    response = api_client.get("/v1/%ss/%s/fringes/" % (context, budget.pk))
+    response = api_client.get(
+        "/v1/%ss/%s/fringes/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 1
 
     create_fringe(budget=budget)
-    response = api_client.get("/v1/%ss/%s/fringes/" % (context, budget.pk))
+
+    response = api_client.get(
+        "/v1/%ss/%s/fringes/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 2
 
 
 @pytest.mark.freeze_time('2020-01-01')
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_fringes_cache_invalidated_on_change(api_client, user, context,
-        create_context_budget, create_fringe):
-    budget = create_context_budget(context=context)
+def test_fringes_cache_invalidated_on_change(api_client, user, budget_f,
+        create_fringe):
+    budget = budget_f.create_budget()
     fringes = [create_fringe(budget=budget), create_fringe(budget=budget)]
 
     api_client.force_login(user)
-    response = api_client.get("/v1/%ss/%s/fringes/" % (context, budget.pk))
+    response = api_client.get(
+        "/v1/%ss/%s/fringes/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
 
     fringes[0].name = 'Test Name'
     fringes[0].save()
 
-    response = api_client.get("/v1/%ss/%s/fringes/" % (context, budget.pk))
+    response = api_client.get(
+        "/v1/%ss/%s/fringes/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'][0]['name'] == 'Test Name'
 
 
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.parametrize('context', ['budget'])
-def test_actuals_cache_invalidated_on_delete(api_client, user, context,
-        create_context_budget, create_actual):
-    budget = create_context_budget(context=context)
+@pytest.mark.budget
+def test_actuals_cache_invalidated_on_delete(api_client, user, budget_f,
+        create_actual):
+    budget = budget_f.create_budget()
     actual = create_actual(budget=budget)
 
     api_client.force_login(user)
-    response = api_client.get("/v1/%ss/%s/actuals/" % (context, budget.pk))
+    response = api_client.get(
+        "/v1/%ss/%s/actuals/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 1
 
     actual.delete()
-    response = api_client.get("/v1/%ss/%s/actuals/" % (context, budget.pk))
+
+    response = api_client.get(
+        "/v1/%ss/%s/actuals/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 0
 
 
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.parametrize('context', ['budget'])
-def test_actuals_cache_invalidated_on_create(api_client, user, context,
-        create_context_budget, create_actual):
-    budget = create_context_budget(context=context)
+@pytest.mark.budget
+def test_actuals_cache_invalidated_on_create(api_client, user, budget_f,
+        create_actual):
+    budget = budget_f.create_budget()
     create_actual(budget=budget)
 
     api_client.force_login(user)
-    response = api_client.get("/v1/%ss/%s/actuals/" % (context, budget.pk))
+    response = api_client.get(
+        "/v1/%ss/%s/actuals/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 1
 
     create_actual(budget=budget)
-    response = api_client.get("/v1/%ss/%s/actuals/" % (context, budget.pk))
+
+    response = api_client.get(
+        "/v1/%ss/%s/actuals/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 2
 
 
 @pytest.mark.freeze_time('2020-01-01')
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.parametrize('context', ['budget'])
-def test_actuals_cache_invalidated_on_change(api_client, user, context,
-        create_context_budget, create_actual, create_account,
-        create_subaccount):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
-    subaccount = create_subaccount(parent=account, context=context)
+@pytest.mark.budget
+def test_actuals_cache_invalidated_on_change(api_client, user, budget_f,
+        create_actual):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    subaccount = budget_f.create_subaccount(parent=account)
     actuals = [
         create_actual(budget=budget, value=100, owner=subaccount),
         create_actual(budget=budget, value=120, owner=subaccount)
@@ -362,7 +381,8 @@ def test_actuals_cache_invalidated_on_change(api_client, user, context,
     assert budget.actual == 220.0
 
     api_client.force_login(user)
-    response = api_client.get("/v1/%ss/%s/actuals/" % (context, budget.pk))
+    response = api_client.get(
+        "/v1/%ss/%s/actuals/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
 
     actuals[0].value = 150.0
@@ -370,7 +390,8 @@ def test_actuals_cache_invalidated_on_change(api_client, user, context,
     budget.refresh_from_db()
     assert budget.actual == 270.0
 
-    response = api_client.get("/v1/%ss/%s/actuals/" % (context, budget.pk))
+    response = api_client.get(
+        "/v1/%ss/%s/actuals/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'][0]['value'] == 150.0

@@ -52,9 +52,6 @@ def invalidate_caches_on_markup_changes(instance, action, reverse, **kwargs):
 @dispatch.receiver(signals.post_save, sender=BudgetSubAccount)
 @dispatch.receiver(signals.post_save, sender=TemplateSubAccount)
 def subaccount_saved(instance, **kwargs):
-    instance.invalidate_caches(["detail"])
-    instance.parent.invalidate_caches(["children"])
-
     CALCULATING_FIELDS = ('rate', 'quantity', 'multiplier')
     old_parent, new_parent = generic_fk_instance_change(instance)
 
@@ -75,14 +72,16 @@ def subaccount_saved(instance, **kwargs):
         # SubAccount.
         if isinstance(new_parent, SubAccount):
             new_parent.clear_deriving_fields(commit=False)
+
         instances_to_recalculate.extend([old_parent, new_parent])
         instances_to_reestimate = []
 
-    if isinstance(instance, BudgetSubAccount):
-        BudgetSubAccount.objects.bulk_calculate_all(instances_to_recalculate)
+    instance.invalidate_caches(["detail"])
+    instance.parent.invalidate_caches(["detail", "children"])
+    if instance.domain == 'budget':
         budget_actuals_owner_tree_cache.invalidate(instance.budget)
-    else:
-        TemplateSubAccount.objects.bulk_calculate_all(instances_to_recalculate)
+
+    type(instance).objects.bulk_calculate_all([instances_to_recalculate])
 
 
 @dispatch.receiver(signals.pre_delete, sender=BudgetSubAccount)
@@ -94,6 +93,7 @@ def subaccount_to_delete(instance, **kwargs):
 @dispatch.receiver(signals.post_delete, sender=TemplateSubAccount)
 def subaccount_deleted(instance, **kwargs):
     instance.invalidate_caches(["detail"])
+
     if instance.intermittent_parent is not None:
         instance.intermittent_parent.invalidate_caches(["children"])
         instance.intermittent_parent.calculate(commit=True, trickle=True)

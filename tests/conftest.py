@@ -4,6 +4,7 @@ from PIL import Image
 import pytest
 import requests
 
+from django.core.cache import cache
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import SimpleUploadedFile
 
@@ -17,6 +18,13 @@ from greenbudget.app.template.models import Template
 from greenbudget.app.user.models import User
 
 from .fixtures import *  # noqa
+
+
+@pytest.fixture(autouse=True, scope='function')
+def test_suite_setup_and_cleanup():
+    # Perform necessary setup code here.
+    yield
+    cache.clear()
 
 
 @pytest.fixture(autouse=True)

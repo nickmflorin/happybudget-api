@@ -3,11 +3,9 @@ from django.test import override_settings
 
 
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_detail_cache_invalidated_on_delete(api_client, user, context,
-        create_account, create_context_budget):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
+def test_detail_cache_invalidated_on_delete(api_client, user, budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
 
     api_client.force_login(user)
     response = api_client.get("/v1/accounts/%s/" % account.pk)
@@ -23,19 +21,20 @@ def test_detail_cache_invalidated_on_delete(api_client, user, context,
 
 
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_detail_cache_invalidated_on_save(api_client, user, context,
-        create_account, create_context_budget):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
+def test_detail_cache_invalidated_on_save(api_client, user, budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
 
     api_client.force_login(user)
     response = api_client.get("/v1/accounts/%s/" % account.pk)
     assert response.status_code == 200
     assert response.json()['id'] == account.pk
 
-    account.identifier = '1000'
-    account.save()
+    response = api_client.patch(
+        "/v1/accounts/%s/" % account.pk,
+        data={'identifier': '1000'}
+    )
+    assert response.status_code == 200
 
     response = api_client.get("/v1/accounts/%s/" % account.pk)
     assert response.status_code == 200
@@ -43,14 +42,56 @@ def test_detail_cache_invalidated_on_save(api_client, user, context,
 
 
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.parametrize('context', ['budget', 'template'])
+def test_detail_cache_invalidated_on_bulk_save(api_client, user, budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+
+    api_client.force_login(user)
+    response = api_client.get("/v1/accounts/%s/" % account.pk)
+    assert response.status_code == 200
+    assert response.json()['id'] == account.pk
+
+    response = api_client.patch(
+        "/v1/%ss/%s/bulk-update-accounts/" % (budget_f.context, budget.pk),
+        format='json',
+        data={'data': [{'id': account.pk, 'identifier': '1000'}]}
+    )
+    assert response.status_code == 200
+
+    response = api_client.get("/v1/accounts/%s/" % account.pk)
+    assert response.status_code == 200
+    assert response.json()['identifier'] == '1000'
+
+
+@override_settings(CACHE_ENABLED=True)
+def test_detail_cache_invalidated_on_bulk_delete(api_client, user, budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+
+    api_client.force_login(user)
+    response = api_client.get("/v1/accounts/%s/" % account.pk)
+    assert response.status_code == 200
+    assert response.json()['id'] == account.pk
+
+    response = api_client.patch(
+        "/v1/%ss/%s/bulk-delete-accounts/" % (budget_f.context, budget.pk),
+        format='json',
+        data={'ids': [account.pk]}
+    )
+    assert response.status_code == 200
+
+    response = api_client.get("/v1/accounts/%s/" % account.pk)
+    assert response.status_code == 404
+
+
+@override_settings(CACHE_ENABLED=True)
 def test_detail_cache_invalidated_on_subaccount_delete(api_client, user,
-        context, create_subaccount, create_account, create_context_budget):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
+        budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
     subaccounts = [
-        create_subaccount(parent=account, context=context),
-        create_subaccount(parent=account, context=context)
+        budget_f.create_subaccount(parent=account),
+        budget_f.create_subaccount(parent=account)
     ]
 
     api_client.force_login(user)
@@ -65,14 +106,13 @@ def test_detail_cache_invalidated_on_subaccount_delete(api_client, user,
 
 
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.parametrize('context', ['budget', 'template'])
 def test_detail_cache_invalidated_on_subaccount_create(api_client, user,
-        context, create_subaccount, create_account, create_context_budget):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
+        budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
     subaccounts = [
-        create_subaccount(parent=account, context=context),
-        create_subaccount(parent=account, context=context)
+        budget_f.create_subaccount(parent=account),
+        budget_f.create_subaccount(parent=account)
     ]
 
     api_client.force_login(user)
@@ -80,7 +120,7 @@ def test_detail_cache_invalidated_on_subaccount_create(api_client, user,
     assert response.status_code == 200
     assert response.json()['children'] == [s.pk for s in subaccounts]
 
-    new_subaccount = create_subaccount(parent=account, context=context)
+    new_subaccount = budget_f.create_subaccount(parent=account)
     response = api_client.get("/v1/accounts/%s/" % account.pk)
     assert response.status_code == 200
     assert response.json()['children'] == [
@@ -88,16 +128,14 @@ def test_detail_cache_invalidated_on_subaccount_create(api_client, user,
 
 
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_subaccounts_cache_on_search(api_client, user, context,
-        create_subaccount, create_account, create_context_budget):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
+def test_subaccounts_cache_on_search(api_client, user, budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
 
     # These subaccounts should not be cached in the response because we will
     # be including a search query parameter.
-    create_subaccount(parent=account, context=context, identifier='Jack')
-    create_subaccount(parent=account, context=context, identifier='Jill')
+    budget_f.create_subaccount(parent=account, identifier='Jack')
+    budget_f.create_subaccount(parent=account, identifier='Jill')
 
     api_client.force_login(user)
     response = api_client.get("/v1/accounts/%s/subaccounts/" % account.pk)
@@ -110,15 +148,14 @@ def test_subaccounts_cache_on_search(api_client, user, context,
 
 
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_caches_invalidated_on_fringe_delete(api_client, user, context,
-        create_subaccount, create_account, create_context_budget, create_fringe):
-    budget = create_context_budget(context=context)
+def test_caches_invalidated_on_fringe_delete(api_client, user, budget_f,
+        create_fringe):
+    budget = budget_f.create_budget()
     fringes = [create_fringe(budget=budget), create_fringe(budget=budget)]
-    account = create_account(parent=budget, context=context)
+    account = budget_f.create_account(parent=budget)
     subaccounts = [
-        create_subaccount(parent=account, context=context, fringes=fringes),
-        create_subaccount(parent=account, context=context, fringes=fringes)
+        budget_f.create_subaccount(parent=account, fringes=fringes),
+        budget_f.create_subaccount(parent=account, fringes=fringes)
     ]
 
     api_client.force_login(user)
@@ -145,15 +182,14 @@ def test_caches_invalidated_on_fringe_delete(api_client, user, context,
 
 
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_caches_invalidated_on_fringe_create(api_client, user, context,
-        create_subaccount, create_account, create_context_budget, create_fringe):
-    budget = create_context_budget(context=context)
+def test_caches_invalidated_on_fringe_create(api_client, user, budget_f,
+        create_fringe):
+    budget = budget_f.create_budget()
     fringes = [create_fringe(budget=budget), create_fringe(budget=budget)]
-    account = create_account(parent=budget, context=context)
+    account = budget_f.create_account(parent=budget)
     subaccounts = [
-        create_subaccount(parent=account, context=context, fringes=fringes),
-        create_subaccount(parent=account, context=context, fringes=fringes)
+        budget_f.create_subaccount(parent=account, fringes=fringes),
+        budget_f.create_subaccount(parent=account, fringes=fringes)
     ]
 
     api_client.force_login(user)
@@ -183,14 +219,12 @@ def test_caches_invalidated_on_fringe_create(api_client, user, context,
 
 
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_subaccounts_cache_invalidated_on_delete(api_client, user, context,
-        create_subaccount, create_account, create_context_budget):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
+def test_subaccounts_cache_invalidated_on_delete(api_client, user, budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
     subaccounts = [
-        create_subaccount(parent=account, context=context),
-        create_subaccount(parent=account, context=context)
+        budget_f.create_subaccount(parent=account),
+        budget_f.create_subaccount(parent=account)
     ]
 
     api_client.force_login(user)
@@ -198,28 +232,86 @@ def test_subaccounts_cache_invalidated_on_delete(api_client, user, context,
     assert response.status_code == 200
     assert response.json()['count'] == 2
 
-    subaccounts[0].delete()
+    response = api_client.delete("/v1/subaccounts/%s/" % subaccounts[0].pk)
+    assert response.status_code == 204
+
     response = api_client.get("/v1/accounts/%s/subaccounts/" % account.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 1
 
 
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_subaccounts_cache_invalidated_on_create(api_client, user, context,
-        create_subaccount, create_account, create_context_budget):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
-
-    create_subaccount(parent=account, context=context),
-    create_subaccount(parent=account, context=context)
+def test_subaccounts_cache_invalidated_on_bulk_delete(api_client, user,
+        budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    subaccounts = [
+        budget_f.create_subaccount(parent=account),
+        budget_f.create_subaccount(parent=account)
+    ]
 
     api_client.force_login(user)
     response = api_client.get("/v1/accounts/%s/subaccounts/" % account.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
 
-    create_subaccount(parent=account, context=context)
+    response = api_client.patch(
+        "/v1/accounts/%s/bulk-delete-subaccounts/" % account.pk,
+        format='json',
+        data={'ids': [subaccounts[0].pk]}
+    )
+    assert response.status_code == 200
+
+    response = api_client.get("/v1/accounts/%s/subaccounts/" % account.pk)
+    assert response.status_code == 200
+    assert response.json()['count'] == 1
+
+
+@override_settings(CACHE_ENABLED=True)
+def test_subaccounts_cache_invalidated_on_create(api_client, user, budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+
+    budget_f.create_subaccount(parent=account)
+    budget_f.create_subaccount(parent=account)
+
+    api_client.force_login(user)
+    response = api_client.get("/v1/accounts/%s/subaccounts/" % account.pk)
+    assert response.status_code == 200
+    assert response.json()['count'] == 2
+
+    response = api_client.post(
+        "/v1/accounts/%s/subaccounts/" % account.pk,
+        data={"identifier": "1000"}
+    )
+    assert response.status_code == 201
+
+    response = api_client.get("/v1/accounts/%s/subaccounts/" % account.pk)
+    assert response.status_code == 200
+    assert response.json()['count'] == 3
+
+
+@override_settings(CACHE_ENABLED=True)
+def test_subaccounts_cache_invalidated_on_bulk_create(api_client, user,
+        budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+
+    budget_f.create_subaccount(parent=account)
+    budget_f.create_subaccount(parent=account)
+
+    api_client.force_login(user)
+    response = api_client.get("/v1/accounts/%s/subaccounts/" % account.pk)
+    assert response.status_code == 200
+    assert response.json()['count'] == 2
+
+    response = api_client.patch(
+        "/v1/accounts/%s/bulk-create-subaccounts/" % account.pk,
+        format='json',
+        data={"data": [{"identifier": "1000"}]}
+    )
+    assert response.status_code == 201
+
     response = api_client.get("/v1/accounts/%s/subaccounts/" % account.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 3
@@ -227,14 +319,12 @@ def test_subaccounts_cache_invalidated_on_create(api_client, user, context,
 
 @pytest.mark.freeze_time('2020-01-01')
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_subaccounts_cache_invalidated_on_change(api_client, user, context,
-        create_subaccount, create_account, create_context_budget):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
+def test_subaccounts_cache_invalidated_on_change(api_client, user, budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
     subaccounts = [
-        create_subaccount(parent=account, context=context),
-        create_subaccount(parent=account, context=context)
+        budget_f.create_subaccount(parent=account),
+        budget_f.create_subaccount(parent=account)
     ]
 
     api_client.force_login(user)
@@ -242,21 +332,52 @@ def test_subaccounts_cache_invalidated_on_change(api_client, user, context,
     assert response.status_code == 200
     assert response.json()['count'] == 2
 
-    subaccounts[0].description = 'Test Description'
-    subaccounts[0].save()
+    response = api_client.patch(
+        "/v1/subaccounts/%s/" % subaccounts[0].pk,
+        data={"description": "Test"}
+    )
+    assert response.status_code == 200
 
     response = api_client.get("/v1/accounts/%s/subaccounts/" % account.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
-    assert response.json()['data'][0]['description'] == 'Test Description'
+    assert response.json()['data'][0]['description'] == 'Test'
+
+
+@pytest.mark.freeze_time('2020-01-01')
+@override_settings(CACHE_ENABLED=True)
+def test_subaccounts_cache_invalidated_on_bulk_change(api_client, user,
+        budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    subaccounts = [
+        budget_f.create_subaccount(parent=account),
+        budget_f.create_subaccount(parent=account)
+    ]
+
+    api_client.force_login(user)
+    response = api_client.get("/v1/accounts/%s/subaccounts/" % account.pk)
+    assert response.status_code == 200
+    assert response.json()['count'] == 2
+
+    response = api_client.patch(
+        "/v1/accounts/%s/bulk-update-subaccounts/" % account.pk,
+        format='json',
+        data={'data': [{'id': subaccounts[0].pk, 'description': 'Test'}]}
+    )
+    assert response.status_code == 200
+
+    response = api_client.get("/v1/accounts/%s/subaccounts/" % account.pk)
+    assert response.status_code == 200
+    assert response.json()['count'] == 2
+    assert response.json()['data'][0]['description'] == 'Test'
 
 
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_groups_cache_invalidated_on_delete(api_client, user, context,
-        create_account, create_context_budget, create_group):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
+def test_groups_cache_invalidated_on_delete(api_client, user, budget_f,
+        create_group):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
     group = create_group(parent=account)
 
     api_client.force_login(user)
@@ -271,11 +392,10 @@ def test_groups_cache_invalidated_on_delete(api_client, user, context,
 
 
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_groups_cache_invalidated_on_create(api_client, user, context,
-        create_account, create_context_budget, create_group):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
+def test_groups_cache_invalidated_on_create(api_client, user, budget_f,
+        create_group):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
     create_group(parent=account)
 
     api_client.force_login(user)
@@ -290,11 +410,10 @@ def test_groups_cache_invalidated_on_create(api_client, user, context,
 
 
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_groups_cache_invalidated_on_change(api_client, user, context,
-        create_subaccount, create_account, create_context_budget, create_group):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
+def test_groups_cache_invalidated_on_change(api_client, user, budget_f,
+        create_group):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
     group = create_group(parent=account)
 
     api_client.force_login(user)
@@ -311,14 +430,13 @@ def test_groups_cache_invalidated_on_change(api_client, user, context,
 
 
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_markups_cache_invalidated_on_delete(api_client, user, context,
-        create_subaccount, create_account, create_context_budget, create_markup):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
+def test_markups_cache_invalidated_on_delete(api_client, user, budget_f,
+        create_markup):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
     subaccounts = [
-        create_subaccount(parent=account, context=context),
-        create_subaccount(parent=account, context=context)
+        budget_f.create_subaccount(parent=account),
+        budget_f.create_subaccount(parent=account)
     ]
     markup = create_markup(parent=account, subaccounts=subaccounts)
 
@@ -334,14 +452,13 @@ def test_markups_cache_invalidated_on_delete(api_client, user, context,
 
 
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_markups_cache_invalidated_on_create(api_client, user, context,
-        create_subaccount, create_account, create_context_budget, create_markup):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
+def test_markups_cache_invalidated_on_create(api_client, user, budget_f,
+        create_markup):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
     subaccounts = [
-        create_subaccount(parent=account, context=context),
-        create_subaccount(parent=account, context=context)
+        budget_f.create_subaccount(parent=account),
+        budget_f.create_subaccount(parent=account)
     ]
     create_markup(parent=account, subaccounts=subaccounts)
 
@@ -357,14 +474,13 @@ def test_markups_cache_invalidated_on_create(api_client, user, context,
 
 
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_markups_cache_invalidated_on_change(api_client, user, context,
-        create_subaccount, create_account, create_context_budget, create_markup):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
+def test_markups_cache_invalidated_on_change(api_client, user, budget_f,
+        create_markup):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
     subaccounts = [
-        create_subaccount(parent=account, context=context),
-        create_subaccount(parent=account, context=context)
+        budget_f.create_subaccount(parent=account),
+        budget_f.create_subaccount(parent=account)
     ]
     markup = create_markup(parent=account, subaccounts=subaccounts)
 

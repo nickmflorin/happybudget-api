@@ -99,5 +99,10 @@ def markups_changed(instance, reverse, action, model, pk_set, **kwargs):
 
 
 @dispatch.receiver(signals.pre_delete, sender=Markup)
-def markup_to_be_deleted(instance, **kwargs):
+def markup_to_delete(instance, **kwargs):
     Markup.objects.pre_delete([instance])
+
+
+@dispatch.receiver(signals.post_delete, sender=Markup)
+def markup_deleted(instance, **kwargs):
+    Markup.objects.cleanup([instance])
