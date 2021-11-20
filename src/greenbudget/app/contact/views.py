@@ -6,8 +6,11 @@ from greenbudget.lib.drf.bulk_serializers import (
     create_bulk_update_serializer,
     create_bulk_delete_serializer
 )
+
+from greenbudget.app.views import GenericViewSet
 from greenbudget.app.io.serializers import (
     AttachmentSerializer, UploadAttachmentSerializer)
+
 from .cache import user_contacts_cache
 from .mixins import ContactNestedMixin
 from .models import Contact
@@ -54,7 +57,7 @@ class ContactViewSet(
     mixins.CreateModelMixin,
     mixins.DestroyModelMixin,
     mixins.ListModelMixin,
-    viewsets.GenericViewSet
+    GenericViewSet
 ):
     """
     ViewSet to handle requests to the following endpoints:
@@ -72,11 +75,6 @@ class ContactViewSet(
     serializer_class = ContactSerializer
     ordering_fields = ['updated_at', 'first_name', 'last_name', 'created_at']
     search_fields = ['first_name', 'last_name']
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context.update(user=self.request.user)
-        return context
 
     def get_queryset(self):
         return self.request.user.created_contacts.all()
