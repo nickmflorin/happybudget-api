@@ -4,11 +4,11 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models, IntegrityError
 
 from greenbudget.app import signals
-from greenbudget.app.budgeting.models import BudgetingTreePolymorphicModel
 from greenbudget.app.group.models import Group
 from greenbudget.app.markup.models import Markup
 from greenbudget.app.markup.utils import contribution_from_markups
 from greenbudget.app.subaccount.models import SubAccount
+from greenbudget.app.tabling.models import BudgetingTreeRowPolymorphicModel
 
 from .cache import (
     account_instance_cache,
@@ -32,11 +32,9 @@ ESTIMATED_FIELDS = (
 CALCULATED_FIELDS = ESTIMATED_FIELDS + ('actual', )
 
 
-class Account(BudgetingTreePolymorphicModel):
+class Account(BudgetingTreeRowPolymorphicModel):
     type = "account"
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
     identifier = models.CharField(null=True, max_length=128)
     description = models.CharField(null=True, max_length=128)
     parent = models.ForeignKey(
@@ -54,18 +52,6 @@ class Account(BudgetingTreePolymorphicModel):
     markup_contribution = models.FloatField(default=0.0)
     accumulated_markup_contribution = models.FloatField(default=0.0)
 
-    updated_by = models.ForeignKey(
-        to='user.User',
-        related_name='updated_accounts',
-        on_delete=models.CASCADE,
-        editable=False,
-    )
-    created_by = models.ForeignKey(
-        to='user.User',
-        related_name='created_accounts',
-        on_delete=models.CASCADE,
-        editable=False,
-    )
     markups = models.ManyToManyField(
         to='markup.Markup',
         related_name='accounts'

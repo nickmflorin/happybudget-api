@@ -162,6 +162,7 @@ INSTALLED_APPS = [
     'greenbudget.app.markup',
     'greenbudget.app.pdf',
     'greenbudget.app.subaccount',
+    'greenbudget.app.tabling',
     'greenbudget.app.tagging',
     'greenbudget.app.template',
     'greenbudget.app.user',

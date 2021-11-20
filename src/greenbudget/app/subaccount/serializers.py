@@ -91,7 +91,7 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
         required=False,
         allow_null=True,
         queryset=Contact.objects.all(),
-        user_field='user'
+        user_field='created_by'
     )
 
     class Meta:
@@ -126,7 +126,7 @@ class BudgetSubAccountSerializer(SubAccountSerializer):
         required=False,
         allow_null=True,
         queryset=Contact.objects.all(),
-        user_field='user'
+        user_field='created_by'
     )
 
     class Meta(SubAccountSerializer.Meta):
@@ -179,7 +179,7 @@ class SubAccountPdfSerializer(SubAccountSimpleSerializer):
         required=False,
         allow_null=True,
         queryset=Contact.objects.all(),
-        user_field='user'
+        user_field='created_by'
     )
     children = serializers.SerializerMethodField()
     groups = GroupSerializer(many=True, read_only=True)

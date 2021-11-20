@@ -5,29 +5,23 @@ from django.db import models
 
 from greenbudget.lib.utils import conditionally_separate_strings
 from greenbudget.app.io.utils import upload_user_image_to
+from greenbudget.app.tabling.models import RowModel
 
 from .managers import ContactManager
 
 
 def upload_to(instance, filename):
     return upload_user_image_to(
-        user=instance.user,
+        user=instance.created_by,
         filename=filename,
         directory="contacts"
     )
 
 
-class Contact(models.Model):
+class Contact(RowModel):
     type = "contact"
     first_name = models.CharField(max_length=30, null=True)
     last_name = models.CharField(max_length=30, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    user = models.ForeignKey(
-        to='user.User',
-        on_delete=models.CASCADE,
-        related_name="contacts"
-    )
     TYPES = Choices(
         (0, "contractor", "Contractor"),
         (1, "employee", "Employee"),
@@ -68,8 +62,9 @@ class Contact(models.Model):
     @property
     def intermittent_user(self):
         try:
-            return self.user
-        except ObjectDoesNotExist:
+            user = self.created_by.refresh_from_db()
+        except (ObjectDoesNotExist, AttributeError):
             # If the user instance is deleted, this CASCADE delete might lead
             # to the Contact not having an associated user.
-            pass
+            return None
+        return user

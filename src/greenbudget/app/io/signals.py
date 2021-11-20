@@ -31,11 +31,7 @@ def attachment_deleted(instance, **kwargs):
 )
 def attachments_to_changed(instance, reverse, action, model, pk_set, **kwargs):
     def validate(attachment, obj):
-        if isinstance(obj, Contact):
-            user = obj.user
-        else:
-            user = obj.created_by
-        if user != attachment.created_by:
+        if obj.created_by != attachment.created_by:
             raise IntegrityError(
                 "Attachment %s was not created by the same user that the "
                 "%s %s was." % (attachment.pk, obj.__class__.__name__, obj.pk)
@@ -62,7 +58,7 @@ def attachments_to_changed(instance, reverse, action, model, pk_set, **kwargs):
                     attachment.delete()
 
         contacts = [obj for obj in related if isinstance(obj, Contact)]
-        users = set([contact.user for contact in contacts])
+        users = set([contact.created_by for contact in contacts])
         for user in users:
             user_contacts_cache.invalidate(user)
 

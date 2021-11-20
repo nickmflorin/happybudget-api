@@ -79,15 +79,21 @@ class ContactViewSet(
         return context
 
     def get_queryset(self):
-        return self.request.user.contacts.all()
+        return self.request.user.created_contacts.all()
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        return serializer.save(
+            created_by=self.request.user,
+            updated_by=self.request.user
+        )
+
+    def perform_update(self, serializer):
+        return serializer.save(updated_by=self.request.user)
 
     @decorators.action(detail=False, url_path="bulk-delete", methods=["PATCH"])
     def bulk_delete(self, request, *args, **kwargs):
         serializer_cls = create_bulk_delete_serializer(
-            filter_qs=models.Q(user=request.user),
+            filter_qs=models.Q(created_by=request.user),
             child_cls=Contact
         )
         serializer = serializer_cls(data=request.data)
@@ -99,11 +105,11 @@ class ContactViewSet(
     def bulk_update(self, request, *args, **kwargs):
         serializer_cls = create_bulk_update_serializer(
             serializer_cls=ContactSerializer,
-            filter_qs=models.Q(user=request.user)
+            filter_qs=models.Q(created_by=request.user)
         )
         serializer = serializer_cls(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        self.perform_update(serializer)
         return response.Response(status=status.HTTP_200_OK)
 
     @decorators.action(detail=False, url_path="bulk-create", methods=["PATCH"])
@@ -113,7 +119,8 @@ class ContactViewSet(
         )
         serializer = serializer_cls(data=request.data)
         serializer.is_valid(raise_exception=True)
-        children = serializer.save(user=request.user)
+        children = self.perform_create(serializer)
+
         return response.Response({
             'data': self.serializer_class(children, many=True).data
         }, status=status.HTTP_201_CREATED)

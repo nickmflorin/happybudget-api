@@ -151,11 +151,6 @@ class BudgetingModel(models.Model, BudgetingModelMixin):
         abstract = True
 
 
-class BudgetingPolymorphicModel(PolymorphicModel, BudgetingModelMixin):
-    class Meta:
-        abstract = True
-
-
 class BudgetingTreeModel(models.Model, BudgetingTreeModelMixin):
     class Meta:
         abstract = True

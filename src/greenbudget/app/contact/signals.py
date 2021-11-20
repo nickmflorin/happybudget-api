@@ -8,10 +8,9 @@ from .models import Contact
 
 @dispatch.receiver(signals.post_save, sender=Contact)
 def contact_saved(instance, **kwargs):
-    user_contacts_cache.invalidate(instance.user)
+    user_contacts_cache.invalidate(instance.created_by)
 
 
-@dispatch.receiver(signals.post_delete, sender=Contact)
-def contact_deleted(instance, **kwargs):
-    if instance.intermittent_user is not None:
-        user_contacts_cache.invalidate(instance.intermittent_user)
+@dispatch.receiver(signals.pre_delete, sender=Contact)
+def contact_to_delete(instance, **kwargs):
+    user_contacts_cache.invalidate(instance.created_by)

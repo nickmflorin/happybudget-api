@@ -4,8 +4,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models, IntegrityError
 
 from greenbudget.app import signals
-from greenbudget.app.budgeting.models import BudgetingModel
 from greenbudget.app.tagging.models import Tag
+from greenbudget.app.tabling.models import BudgetingRowModel
 
 from .managers import ActualManager
 
@@ -36,22 +36,8 @@ class ActualType(Tag):
 
 
 @signals.model(user_field='updated_by')
-class Actual(BudgetingModel):
+class Actual(BudgetingRowModel):
     type = "actual"
-    created_at = models.DateTimeField(auto_now_add=True)
-    created_by = models.ForeignKey(
-        to='user.User',
-        related_name='created_actuals',
-        on_delete=models.CASCADE,
-        editable=False
-    )
-    updated_at = models.DateTimeField(auto_now=True)
-    updated_by = models.ForeignKey(
-        to='user.User',
-        related_name='updated_actuals',
-        on_delete=models.CASCADE,
-        editable=False
-    )
     name = models.CharField(null=True, max_length=128)
     notes = models.CharField(null=True, max_length=256)
     contact = models.ForeignKey(

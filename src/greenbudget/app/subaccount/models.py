@@ -8,11 +8,11 @@ from django.utils.functional import cached_property
 
 from greenbudget.app import signals
 from greenbudget.app.actual.models import Actual
-from greenbudget.app.budgeting.models import BudgetingTreePolymorphicModel
 from greenbudget.app.fringe.utils import contribution_from_fringes
 from greenbudget.app.group.models import Group
 from greenbudget.app.markup.models import Markup
 from greenbudget.app.markup.utils import contribution_from_markups
+from greenbudget.app.tabling.models import BudgetingTreeRowPolymorphicModel
 from greenbudget.app.tagging.models import Tag
 
 from .cache import (
@@ -63,22 +63,8 @@ ESTIMATED_FIELDS = (
 CALCULATED_FIELDS = ESTIMATED_FIELDS + ('actual', )
 
 
-class SubAccount(BudgetingTreePolymorphicModel):
+class SubAccount(BudgetingTreeRowPolymorphicModel):
     type = "subaccount"
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    updated_by = models.ForeignKey(
-        to='user.User',
-        related_name='updated_subaccounts',
-        on_delete=models.CASCADE,
-        editable=False
-    )
-    created_by = models.ForeignKey(
-        to='user.User',
-        related_name='created_subaccounts',
-        on_delete=models.CASCADE,
-        editable=False
-    )
     identifier = models.CharField(null=True, max_length=128)
     description = models.CharField(null=True, max_length=128)
     quantity = models.FloatField(null=True)
@@ -356,7 +342,7 @@ class BudgetSubAccount(SubAccount):
     def validate_before_save(self):
         super().validate_before_save()
         if self.contact is not None \
-                and self.contact.user != self.created_by:
+                and self.contact.created_by != self.created_by:
             raise IntegrityError(
                 "Cannot assign a contact created by one user to a sub account "
                 "created by another user."

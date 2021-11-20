@@ -61,7 +61,7 @@ def test_update_subaccount_contact(api_client, user, create_subaccount,
         create_account, create_context_budget, create_contact, context):
     budget = create_context_budget(context=context)
     account = create_account(parent=budget, context=context)
-    contact = create_contact(user=user)
+    contact = create_contact(created_by=user)
     subaccount = create_subaccount(parent=account, context=context)
     api_client.force_login(user)
     response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk, data={
@@ -79,7 +79,7 @@ def test_update_subaccount_contact_wrong_user(api_client, user, admin_user,
         create_contact):
     budget = create_context_budget(context=context)
     account = create_account(parent=budget, context=context)
-    contact = create_contact(user=admin_user)
+    contact = create_contact(created_by=admin_user)
     subaccount = create_subaccount(parent=account, context=context)
     api_client.force_login(user)
     response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk, data={

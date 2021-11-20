@@ -471,7 +471,8 @@ def create_contact(user, db):
     >>>     assert contact.first_name == 'Jack'
     """
     def inner(*args, **kwargs):
-        kwargs.setdefault('user', user)
+        kwargs.setdefault('created_by', user)
+        kwargs.setdefault('updated_by', user)
         return ContactFactory(*args, **kwargs)
     return inner
 
