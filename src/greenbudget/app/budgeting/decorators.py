@@ -296,6 +296,15 @@ class bulk_registration:
     def __call__(self, cls):
         for action in self._actions:
             self._register_action(action, cls)
+
+        # Expose a property on the class instance that will return whether or
+        # not we are using a bulk action method.
+        def in_bulk_context(instance):
+            return instance.action in getattr(
+                instance, '__registered_bulk_actions', [])
+
+        setattr(cls, 'in_bulk_context',
+            property(lambda instance: in_bulk_context(instance)))
         return cls
 
     def _register_action(self, action, cls):
@@ -304,6 +313,10 @@ class bulk_registration:
             url_path = action.url_path.format(action_name=self.action_name)
 
         method_name = url_path.replace('-', '_')
+
+        # Keep track of what bulk context actions are registered for the view.
+        setattr(cls, '__registered_bulk_actions',
+            getattr(cls, '__registered_bulk_actions', []) + [method_name])
 
         @self.decorate(
             action=action,

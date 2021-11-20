@@ -26,6 +26,7 @@ def test_get_fringes(api_client, user, create_fringe, models, budget_f):
             "rate": fringes[0].rate,
             "cutoff": fringes[0].cutoff,
             "color": None,
+            "order": "n",
             "unit": {
                 "id": fringes[0].unit,
                 "name": models.Fringe.UNITS[fringes[0].unit]
@@ -43,6 +44,7 @@ def test_get_fringes(api_client, user, create_fringe, models, budget_f):
             "rate": fringes[1].rate,
             "cutoff": fringes[1].cutoff,
             "color": None,
+            "order": "t",
             "unit": {
                 "id": fringes[1].unit,
                 "name": models.Fringe.UNITS[fringes[1].unit]
@@ -78,6 +80,7 @@ def test_create_fringe(api_client, user, budget_f, models):
         "rate": 5.5,
         "cutoff": None,
         "color": None,
+        "order": "n",
         "unit": {
             "id": 1,
             "name": models.Fringe.UNITS[1]

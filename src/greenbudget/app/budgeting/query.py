@@ -1,19 +1,6 @@
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Case, Q, When, Value as V, BooleanField
 
-from greenbudget.lib.django_utils.models import (
-    PrePKBulkCreateQuerySet,
-    BulkCreatePolymorphicQuerySet
-)
-
-
-class BudgetingQuerySet(PrePKBulkCreateQuerySet):
-    pass
-
-
-class BudgetingPolymorphicQuerySet(BulkCreatePolymorphicQuerySet):
-    pass
-
 
 class BudgetAncestorQuerier:
     def filter_by_budget(self, budget):

@@ -103,6 +103,8 @@ class TableChildrenPrimaryKeyRelatedField(serializers.PrimaryKeyRelatedField):
             )
         q = models.Q(parent=self.parent_instance)
         if isinstance(parent_field, GenericForeignKey):
+            # Note: We are assuming the GFK fields here for the parent are
+            # content_type and object_id.
             q = models.Q(
                 content_type=ContentType.objects.get_for_model(
                     type(self.parent_instance)),

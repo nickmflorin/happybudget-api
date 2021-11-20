@@ -4,15 +4,12 @@ from greenbudget.lib.utils.urls import add_query_params_to_url
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_budget_accounts(api_client, user, create_budget_account,
-        create_budget):
-    budget = create_budget()
-    accounts = [
-        create_budget_account(parent=budget),
-        create_budget_account(parent=budget)
-    ]
+def test_get_accounts(api_client, user, budget_f):
+    budget = budget_f.create_budget()
+    accounts = budget_f.create_accounts(parent=budget, count=2)
     api_client.force_login(user)
-    response = api_client.get("/v1/budgets/%s/accounts/" % budget.pk)
+    response = api_client.get(
+        "/v1/%ss/%s/accounts/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'] == [
@@ -22,7 +19,6 @@ def test_get_budget_accounts(api_client, user, create_budget_account,
             "description": accounts[0].description,
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
-            "access": [],
             "type": "account",
             "nominal_value": 0.0,
             "accumulated_fringe_contribution": 0.0,
@@ -30,6 +26,7 @@ def test_get_budget_accounts(api_client, user, create_budget_account,
             "accumulated_markup_contribution": 0.0,
             "actual": 0.0,
             "children": [],
+            "order": "n",
             "created_by": user.pk,
             "updated_by": user.pk
         },
@@ -39,7 +36,6 @@ def test_get_budget_accounts(api_client, user, create_budget_account,
             "description": accounts[1].description,
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
-            "access": [],
             "type": "account",
             "nominal_value": 0.0,
             "accumulated_fringe_contribution": 0.0,
@@ -47,6 +43,7 @@ def test_get_budget_accounts(api_client, user, create_budget_account,
             "accumulated_markup_contribution": 0.0,
             "actual": 0.0,
             "children": [],
+            "order": "t",
             "created_by": user.pk,
             "updated_by": user.pk
         }
@@ -54,16 +51,14 @@ def test_get_budget_accounts(api_client, user, create_budget_account,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_budget_accounts_filtered_by_id(api_client, user, create_budget,
-        create_budget_account):
-    budget = create_budget()
-    accounts = [
-        create_budget_account(parent=budget),
-        create_budget_account(parent=budget)
-    ]
+def test_get_accounts_filtered_by_id(api_client, user, budget_f):
+    budget = budget_f.create_budget()
+    accounts = budget_f.create_accounts(parent=budget, count=2)
     api_client.force_login(user)
     url = add_query_params_to_url(
-        "/v1/budgets/%s/accounts/" % budget.pk, ids=[accounts[0].pk, 400])
+        "/v1/%ss/%s/accounts/" % (budget_f.context, budget.pk),
+        ids=[accounts[0].pk, 400]
+    )
 
     response = api_client.get(url)
     assert response.status_code == 200
@@ -75,7 +70,6 @@ def test_get_budget_accounts_filtered_by_id(api_client, user, create_budget,
             "description": accounts[0].description,
             "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
-            "access": [],
             "type": "account",
             "nominal_value": 0.0,
             "accumulated_fringe_contribution": 0.0,
@@ -84,30 +78,30 @@ def test_get_budget_accounts_filtered_by_id(api_client, user, create_budget,
             "actual": 0.0,
             "children": [],
             "created_by": user.pk,
-            "updated_by": user.pk
+            "updated_by": user.pk,
+            "order": "n"
         }
     ]
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_budget_account(api_client, user, create_budget, models):
-    budget = create_budget()
+def test_create_account(api_client, user, budget_f, models):
+    budget = budget_f.create_budget()
     api_client.force_login(user)
-    response = api_client.post("/v1/budgets/%s/accounts/" % budget.pk, data={
-        'identifier': 'new_account'
-    })
+    response = api_client.post(
+        "/v1/%ss/%s/accounts/" % (budget_f.context, budget.pk),
+        data={'identifier': 'new_account'}
+    )
     assert response.status_code == 201
 
-    account = models.BudgetAccount.objects.first()
+    account = models.Account.objects.first()
     assert account is not None
-
     assert response.json() == {
         "id": account.pk,
         "identifier": 'new_account',
         "description": None,
         "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
-        "access": [],
         "type": "account",
         "nominal_value": 0.0,
         "accumulated_fringe_contribution": 0.0,
@@ -117,20 +111,24 @@ def test_create_budget_account(api_client, user, create_budget, models):
         "children": [],
         "created_by": user.pk,
         "updated_by": user.pk,
+        "siblings": [],
+        "order": "n",
+        "ancestors": [{
+            "type": "budget",
+            "domain": budget_f.context,
+            "id": budget.pk,
+            "name": budget.name
+        }]
     }
 
 
-def test_bulk_update_budget_accounts(api_client, user, create_budget,
-        create_budget_account, create_group):
-    budget = create_budget()
+def test_bulk_update_accounts(api_client, user, budget_f, create_group):
+    budget = budget_f.create_budget()
     group = create_group(parent=budget)
-    accounts = [
-        create_budget_account(parent=budget),
-        create_budget_account(parent=budget)
-    ]
+    accounts = budget_f.create_accounts(parent=budget, count=2)
     api_client.force_login(user)
     response = api_client.patch(
-        "/v1/budgets/%s/bulk-update-accounts/" % budget.pk,
+        "/v1/%ss/%s/bulk-update-accounts/" % (budget_f.context, budget.pk),
         format='json',
         data={
             'data': [
@@ -163,17 +161,16 @@ def test_bulk_update_budget_accounts(api_client, user, create_budget,
     assert response.json()['data']['actual'] == 0.0
 
 
-def test_bulk_update_budget_accounts_outside_budget(api_client, user,
-        create_budget, create_budget_account):
-    budget = create_budget()
-    another_budget = create_budget()
+def test_bulk_update_accounts_outside_budget(api_client, user, budget_f):
+    budget = budget_f.create_budget()
+    another_budget = budget_f.create_budget()
     accounts = [
-        create_budget_account(parent=budget),
-        create_budget_account(parent=another_budget)
+        budget_f.create_account(parent=budget),
+        budget_f.create_account(parent=another_budget)
     ]
     api_client.force_login(user)
     response = api_client.patch(
-        "/v1/budgets/%s/bulk-update-accounts/" % budget.pk,
+        "/v1/%ss/%s/bulk-update-accounts/" % (budget_f.context, budget.pk),
         format='json',
         data={
             'data': [
@@ -190,11 +187,11 @@ def test_bulk_update_budget_accounts_outside_budget(api_client, user,
     assert response.status_code == 400
 
 
-def test_bulk_create_budget_accounts(api_client, user, create_budget, models):
-    budget = create_budget()
+def test_bulk_create_accounts(api_client, user, budget_f, models):
+    budget = budget_f.create_budget()
     api_client.force_login(user)
     response = api_client.patch(
-        "/v1/budgets/%s/bulk-create-accounts/" % budget.pk,
+        "/v1/%ss/%s/bulk-create-accounts/" % (budget_f.context, budget.pk),
         format='json',
         data={
             'data': [
@@ -234,24 +231,20 @@ def test_bulk_create_budget_accounts(api_client, user, create_budget, models):
     assert response.json()['data']['actual'] == 0.0
 
 
-def test_bulk_delete_budget_accounts(api_client, user, create_budget,
-        create_budget_account, create_budget_subaccount, models):
-    budget = create_budget()
-    accounts = [
-        create_budget_account(parent=budget),
-        create_budget_account(parent=budget)
-    ]
+def test_bulk_delete_accounts(api_client, user, budget_f, models):
+    budget = budget_f.create_budget()
+    accounts = budget_f.create_accounts(parent=budget, count=2)
     # We need to create SubAccount(s) so that the accounts themselves have
     # calculated values, and thus the Budget itself has calculated values, so
     # we can test whether or not the deletion recalculates the metrics on the
     # Budget.
-    create_budget_subaccount(
+    budget_f.create_subaccount(
         parent=accounts[0],
         quantity=1,
         rate=100,
         multiplier=1
     )
-    create_budget_subaccount(
+    budget_f.create_subaccount(
         parent=accounts[1],
         quantity=1,
         rate=100,
@@ -259,11 +252,11 @@ def test_bulk_delete_budget_accounts(api_client, user, create_budget,
     )
     api_client.force_login(user)
     response = api_client.patch(
-        "/v1/budgets/%s/bulk-delete-accounts/" % budget.pk, data={
-            'ids': [a.pk for a in accounts]
-        })
+        "/v1/%ss/%s/bulk-delete-accounts/" % (budget_f.context, budget.pk),
+        data={'ids': [a.pk for a in accounts]}
+    )
     assert response.status_code == 200
-    assert models.BudgetAccount.objects.count() == 0
+    assert models.Account.objects.count() == 0
 
     # The data in the response refers to base the entity we are updating, A.K.A.
     # the Budget.

@@ -12,6 +12,7 @@ from greenbudget.app.group.serializers import GroupSerializer
 from greenbudget.app.io.models import Attachment
 from greenbudget.app.io.serializers import SimpleAttachmentSerializer
 from greenbudget.app.markup.serializers import MarkupSerializer
+from greenbudget.app.tabling.serializers import row_order_serializer
 from greenbudget.app.tagging.fields import TagField
 from greenbudget.app.tagging.serializers import TagSerializer, ColorSerializer
 from greenbudget.app.user.fields import UserFilteredQuerysetPKField
@@ -63,6 +64,7 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
     markup_contribution = serializers.FloatField(read_only=True)
     accumulated_markup_contribution = serializers.FloatField(read_only=True)
     actual = serializers.FloatField(read_only=True)
+    order = serializers.CharField(read_only=True)
     group = TableChildrenPrimaryKeyRelatedField(
         obj_name='Group',
         required=False,
@@ -103,7 +105,7 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
                 'parent_type', 'children', 'fringes', 'group',
                 'nominal_value', 'actual', 'fringe_contribution',
                 'markup_contribution', 'accumulated_markup_contribution',
-                'accumulated_fringe_contribution'
+                'accumulated_fringe_contribution', 'order'
             )
 
     def validate(self, attrs):
@@ -140,6 +142,7 @@ class BudgetSubAccountSerializer(SubAccountSerializer):
         }
 
 
+@row_order_serializer(table_filter=lambda d: {'parent_id': d['parent'].id})
 class BudgetSubAccountDetailSerializer(BudgetSubAccountSerializer):
     ancestors = SimpleEntityPolymorphicSerializer(many=True, read_only=True)
     siblings = SimpleEntityPolymorphicSerializer(many=True, read_only=True)
@@ -156,6 +159,7 @@ class TemplateSubAccountSerializer(SubAccountSerializer):
         fields = SubAccountSerializer.Meta.fields
 
 
+@row_order_serializer(table_filter=lambda d: {'parent_id': d['parent'].id})
 class TemplateSubAccountDetailSerializer(TemplateSubAccountSerializer):
     ancestors = SimpleEntityPolymorphicSerializer(many=True, read_only=True)
     siblings = SimpleEntityPolymorphicSerializer(many=True, read_only=True)
@@ -181,6 +185,7 @@ class SubAccountPdfSerializer(SubAccountSimpleSerializer):
         queryset=Contact.objects.all(),
         user_field='created_by'
     )
+    order = serializers.CharField(read_only=True)
     children = serializers.SerializerMethodField()
     groups = GroupSerializer(many=True, read_only=True)
     children_markups = MarkupSerializer(many=True, read_only=True)
@@ -197,7 +202,7 @@ class SubAccountPdfSerializer(SubAccountSimpleSerializer):
             + (
                 'quantity', 'rate', 'multiplier', 'unit', 'children', 'contact',
                 'group', 'groups', 'children_markups', 'nominal_value', 'actual',
-                'fringe_contribution', 'markup_contribution',
+                'fringe_contribution', 'markup_contribution', 'order',
                 'accumulated_markup_contribution',
                 'accumulated_fringe_contribution'
             )

@@ -1,22 +1,10 @@
-from django.db import models
-
-from greenbudget.lib.django_utils.models import PrePKBulkCreateQuerySet
-
 from greenbudget.app import signals
+from greenbudget.app.tabling.managers import RowManager
 
 from .cache import user_contacts_cache
 
 
-class ContactQuerySet(PrePKBulkCreateQuerySet):
-    pass
-
-
-class ContactManager(models.Manager):
-    queryset_class = ContactQuerySet
-
-    def get_queryset(self):
-        return self.queryset_class(self.model)
-
+class ContactManager(RowManager):
     @signals.disable()
     def bulk_delete(self, instances):
         users = set([obj.created_by for obj in instances])

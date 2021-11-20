@@ -2,10 +2,10 @@ from greenbudget.lib.django_utils.models import generic_fk_instance_change
 
 from greenbudget.app import signals
 from greenbudget.app.budget.cache import budget_actuals_cache
-from greenbudget.app.budgeting.managers import BudgetingManager
+from greenbudget.app.budgeting.managers import BudgetingRowManager
 
 
-class ActualManager(BudgetingManager):
+class ActualManager(BudgetingRowManager):
     def cleanup(self, instances, **kwargs):
         super().cleanup(instances)
         budgets = set([
@@ -30,8 +30,6 @@ class ActualManager(BudgetingManager):
 
     @signals.disable()
     def bulk_add(self, instances):
-        self.validate_instances_before_save(instances)
-
         # It is important to perform the bulk create first, because we need
         # the primary keys for the instances to be hashable.
         created = self.bulk_create(instances, predetermine_pks=True)
@@ -43,8 +41,6 @@ class ActualManager(BudgetingManager):
 
     @signals.disable()
     def bulk_save(self, instances, update_fields):
-        self.validate_instances_before_save(instances)
-
         # Bulk updating can only be done with "concrete fields".  The "owner"
         # field is a GFK.
         if 'owner' in update_fields:

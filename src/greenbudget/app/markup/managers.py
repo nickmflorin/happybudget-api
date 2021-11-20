@@ -4,20 +4,16 @@ from greenbudget.lib.utils import concat
 from greenbudget.app import signals
 from greenbudget.app.budget.cache import budget_actuals_owner_tree_cache
 from greenbudget.app.budgeting.managers import BudgetingManager
-from greenbudget.app.budgeting.query import (
-    BudgetingQuerySet, BudgetAncestorQuerier)
+from greenbudget.app.budgeting.query import BudgetAncestorQuerier
+from greenbudget.app.tabling.query import RowQuerySet
 
 
-class MarkupQuerier(BudgetAncestorQuerier):
+class MarkupQuerySet(BudgetAncestorQuerier, RowQuerySet):
     pass
 
 
-class MarkupQuery(MarkupQuerier, BudgetingQuerySet):
-    pass
-
-
-class MarkupManager(MarkupQuerier, BudgetingManager):
-    queryset_class = MarkupQuery
+class MarkupManager(BudgetAncestorQuerier, BudgetingManager):
+    queryset_class = MarkupQuerySet
 
     @signals.disable()
     def pre_delete(self, instances):

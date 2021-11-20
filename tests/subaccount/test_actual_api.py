@@ -31,6 +31,7 @@ def test_create_actual(api_client, user, budget_df, models):
         "created_by": user.pk,
         "updated_by": user.pk,
         "attachments": [],
+        "order": "n",
         "owner": {
             "id": subaccount.pk,
             "type": "subaccount",
@@ -72,6 +73,7 @@ def test_get_subaccount_actuals(api_client, user, create_actual, budget_df):
             "updated_by": user.pk,
             "actual_type": None,
             "attachments": [],
+            "order": "n",
             "owner": {
                 "id": subaccount.pk,
                 "type": "subaccount",
@@ -95,6 +97,7 @@ def test_get_subaccount_actuals(api_client, user, create_actual, budget_df):
             "updated_by": user.pk,
             "actual_type": None,
             "attachments": [],
+            "order": "t",
             "owner": {
                 "id": subaccount.pk,
                 "type": "subaccount",

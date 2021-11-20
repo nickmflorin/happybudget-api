@@ -4,11 +4,11 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models, IntegrityError
 
 from greenbudget.app import signals
+from greenbudget.app.budgeting.models import BudgetingTreePolymorphicRowModel
 from greenbudget.app.group.models import Group
 from greenbudget.app.markup.models import Markup
 from greenbudget.app.markup.utils import contribution_from_markups
 from greenbudget.app.subaccount.models import SubAccount
-from greenbudget.app.tabling.models import BudgetingTreeRowPolymorphicModel
 
 from .cache import (
     account_instance_cache,
@@ -32,9 +32,7 @@ ESTIMATED_FIELDS = (
 CALCULATED_FIELDS = ESTIMATED_FIELDS + ('actual', )
 
 
-class Account(BudgetingTreeRowPolymorphicModel):
-    type = "account"
-
+class Account(BudgetingTreePolymorphicRowModel):
     identifier = models.CharField(null=True, max_length=128)
     description = models.CharField(null=True, max_length=128)
     parent = models.ForeignKey(
@@ -75,12 +73,15 @@ class Account(BudgetingTreeRowPolymorphicModel):
         account_markups_cache,
         account_groups_cache
     ]
+    type = "account"
+    table_pivot = ('parent_id', )
 
     class Meta:
-        get_latest_by = "updated_at"
-        ordering = ('created_at', )
+        get_latest_by = "order"
+        ordering = ('order', )
         verbose_name = "Account"
         verbose_name_plural = "Accounts"
+        unique_together = (('parent', 'order'))
 
     def __str__(self):
         return "Account: %s" % self.identifier
@@ -115,6 +116,7 @@ class Account(BudgetingTreeRowPolymorphicModel):
             raise IntegrityError(
                 "Can only add groups with the same parent as the instance."
             )
+        super().validate_before_save()
 
     def accumulate_value(self, children=None):
         children = children or self.children.all()
@@ -201,10 +203,6 @@ class Account(BudgetingTreeRowPolymorphicModel):
 
 @signals.model(user_field='updated_by')
 class BudgetAccount(Account):
-    access = models.ManyToManyField(
-        to='user.User',
-        related_name='accessible_accounts'
-    )
     objects = BudgetAccountManager()
 
     pdf_type = "pdf-account"

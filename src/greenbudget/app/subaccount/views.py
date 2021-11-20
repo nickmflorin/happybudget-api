@@ -4,8 +4,7 @@ from django.utils.functional import cached_property
 
 from rest_framework import viewsets, mixins, response, status
 
-from greenbudget.app.views import filter_by_ids
-
+from greenbudget.app.views import filter_by_ids, GenericViewSet
 from greenbudget.app.actual.views import GenericActualViewSet
 from greenbudget.app.budgeting.decorators import (
     register_bulk_operations, BulkAction, BulkDeleteAction)
@@ -214,10 +213,27 @@ class SubAccountAttachmentViewSet(
         )
 
 
-class GenericSubAccountViewSet(viewsets.GenericViewSet):
+class GenericSubAccountViewSet(GenericViewSet):
     lookup_field = 'pk'
-    ordering_fields = ['updated_at', 'created_at']
+    ordering_fields = []
     search_fields = ['identifier', 'description']
+    serializer_classes = (
+        ({'is_simple': True}, SubAccountSimpleSerializer),
+        ({'instance_cls.domain': 'template'}, [
+            (
+                {'action__in': ('create', 'partial_update', 'retrieve')},
+                TemplateSubAccountDetailSerializer
+            ),
+            TemplateSubAccountSerializer
+        ]),
+        ({'instance_cls.domain': 'budget'}, [
+            (
+                {'action__in': ('create', 'partial_update', 'retrieve')},
+                BudgetSubAccountDetailSerializer
+            ),
+            BudgetSubAccountSerializer
+        ]),
+    )
 
 
 @register_bulk_operations(
@@ -292,13 +308,13 @@ class SubAccountViewSet(
             return BudgetSubAccountDetailSerializer
         return TemplateSubAccountDetailSerializer
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update(parent=self.instance.parent)
+        return context
+
     def get_queryset(self):
         return SubAccount.objects.all()
-
-    def get_serializer_class(self):
-        if self.instance_cls is TemplateSubAccount:
-            return TemplateSubAccountDetailSerializer
-        return BudgetSubAccountDetailSerializer
 
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
@@ -325,23 +341,6 @@ class SubAccountRecursiveViewSet(
     def instance_cls(self):
         return type(self.subaccount)
 
-    @property
-    def is_simple(self):
-        return 'simple' in self.request.query_params
-
-    def get_serializer_class(self):
-        if self.is_simple:
-            return SubAccountSimpleSerializer
-        if self.instance_cls is TemplateSubAccount:
-            return TemplateSubAccountSerializer
-        return BudgetSubAccountSerializer
-
-    @property
-    def detail_serializer_cls(self):
-        if self.instance_cls is BudgetSubAccount:
-            return BudgetSubAccountDetailSerializer
-        return TemplateSubAccountDetailSerializer
-
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context.update(
@@ -366,14 +365,4 @@ class SubAccountRecursiveViewSet(
             created_by=self.request.user,
             object_id=self.subaccount.pk,
             content_type=ContentType.objects.get_for_model(type(self.subaccount)),  # noqa
-        )
-
-    def create(self, request, *args, **kwargs):
-        # Overridden so that we use the detail serializer as the response.
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        instance = self.perform_create(serializer)
-        return response.Response(
-            self.detail_serializer_cls(instance).data,
-            status=status.HTTP_201_CREATED
         )

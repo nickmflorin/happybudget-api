@@ -13,21 +13,24 @@ def test_bulk_create_subaccounts(user, budget_f, models):
             object_id=accounts[0].pk,
             identifier="Sub Account 1",
             created_by=user,
-            updated_by=user
+            updated_by=user,
+            order="a"
         ),
         budget_f.subaccount_cls(
             content_type=ContentType.objects.get_for_model(budget_f.account_cls),
             object_id=accounts[0].pk,
             identifier="Sub Account 2",
             created_by=user,
-            updated_by=user
+            updated_by=user,
+            order="b"
         ),
         budget_f.subaccount_cls(
             content_type=ContentType.objects.get_for_model(budget_f.account_cls),
             object_id=accounts[1].pk,
             identifier="Sub Account 3",
             created_by=user,
-            updated_by=user
+            updated_by=user,
+            order="c"
         )
     ]
     created_subaccounts = budget_f.subaccount_cls.objects.bulk_create(

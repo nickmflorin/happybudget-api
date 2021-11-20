@@ -4,11 +4,15 @@ from django.db import models
 from polymorphic.models import PolymorphicManager
 
 from greenbudget.lib.utils import set_or_list
-from greenbudget.app import signals
-from .query import (
-    BudgetingPolymorphicQuerySet,
-    BudgetingQuerySet
+from greenbudget.lib.django_utils.models import (
+    PrePKBulkCreateQuerySet,
+    BulkCreatePolymorphicQuerySet
 )
+
+from greenbudget.app import signals
+from greenbudget.app.tabling.managers import RowManagerMixin
+from greenbudget.app.tabling.query import RowPolymorphicQuerySet, RowQuerySet
+
 
 logger = logging.getLogger('greenbudget')
 
@@ -22,12 +26,19 @@ class BudgetingManagerMixin:
         for budget in budgets:
             budget.mark_updated()
 
-    def bulk_update(self, instances, fields, mark_budgets=True):
-        results = super().bulk_update(instances, fields)
+    def validate_before_save(self, instances):
+        for instance in instances:
+            if hasattr(instance, 'validate_before_save'):
+                instance.validate_before_save()
+
+    def bulk_update(self, instances, fields, mark_budgets=True, **kwargs):
+        self.validate_before_save(instances)
+        results = super().bulk_update(instances, fields, **kwargs)
         self.cleanup(instances, mark_budgets=mark_budgets)
         return results
 
     def bulk_create(self, instances, mark_budgets=True, **kwargs):
+        self.validate_before_save(instances)
         results = super().bulk_create(instances, **kwargs)
         self.cleanup(instances, mark_budgets=mark_budgets)
         return results
@@ -88,11 +99,6 @@ class BudgetingManagerMixin:
                 except Group.DoesNotExist:
                     # We have to be concerned with race conditions here.
                     pass
-
-    def validate_instances_before_save(self, instances):
-        for instance in instances:
-            if hasattr(instance, 'validate_before_save'):
-                instance.validate_before_save()
 
     @signals.disable()
     def bulk_estimate_all(self, instances, **kwargs):
@@ -395,15 +401,28 @@ class BudgetingManagerMixin:
         return subaccounts, accounts, budgets
 
 
+class BudgetingRowManagerMixin(RowManagerMixin, BudgetingManagerMixin):
+    pass
+
+
 class BudgetingManager(BudgetingManagerMixin, models.Manager):
-    queryset_class = BudgetingQuerySet
+    queryset_class = PrePKBulkCreateQuerySet
 
     def get_queryset(self):
         return self.queryset_class(self.model)
+
+
+class BudgetingRowManager(BudgetingRowManagerMixin, models.Manager):
+    queryset_class = RowQuerySet
 
 
 class BudgetingPolymorphicManager(BudgetingManagerMixin, PolymorphicManager):
-    queryset_class = BudgetingPolymorphicQuerySet
+    queryset_class = BulkCreatePolymorphicQuerySet
 
     def get_queryset(self):
         return self.queryset_class(self.model)
+
+
+class BudgetingPolymorphicRowManager(
+        BudgetingRowManagerMixin, PolymorphicManager):
+    queryset_class = RowPolymorphicQuerySet

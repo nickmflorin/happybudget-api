@@ -10,8 +10,7 @@ def test_get_account(api_client, user, budget_f):
     account = budget_f.create_account(parent=budget)
     response = api_client.get("/v1/accounts/%s/" % account.pk)
     assert response.status_code == 200
-
-    data = {
+    assert response.json() == {
         "id": account.pk,
         "identifier": "%s" % account.identifier,
         "description": account.description,
@@ -27,6 +26,7 @@ def test_get_account(api_client, user, budget_f):
         "created_by": user.pk,
         "updated_by": user.pk,
         "siblings": [],
+        "order": "n",
         "ancestors": [{
             "type": "budget",
             "domain": budget_f.context,
@@ -34,10 +34,6 @@ def test_get_account(api_client, user, budget_f):
             "name": budget.name
         }]
     }
-    if budget_f.context != "template":
-        data["access"] = []
-
-    assert response.json() == data
 
 
 @pytest.mark.freeze_time('2020-01-01')
@@ -68,7 +64,7 @@ def test_update_account(api_client, user, budget_f):
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_bulk_update_account_subaccounts(api_client, user, freezer, budget_f):
+def test_bulk_update_54subaccounts(api_client, user, freezer, budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccounts = [
@@ -139,7 +135,7 @@ def test_bulk_update_account_subaccounts(api_client, user, freezer, budget_f):
     assert budget.actual == 0.0
 
 
-def test_bulk_update_account_subaccounts_fringes(api_client, user, create_fringe,
+def test_bulk_update_subaccount_fringes(api_client, user, create_fringe,
         budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
@@ -211,7 +207,7 @@ def test_bulk_update_account_subaccounts_fringes(api_client, user, create_fringe
     assert budget.accumulated_fringe_contribution == 70.0
 
 
-def test_bulk_delete_account_subaccounts(api_client, user, models, budget_f):
+def test_bulk_delete_subaccounts(api_client, user, models, budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccounts = [
@@ -257,8 +253,8 @@ def test_bulk_delete_account_subaccounts(api_client, user, models, budget_f):
     assert budget.nominal_value == 0.0
 
 
-def test_bulk_update_account_subaccounts_budget_updated_once(api_client, user,
-        budget_f, monkeypatch):
+def test_bulk_update_subaccounts_budget_updated_once(api_client, user, budget_f,
+        monkeypatch):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccounts = [
@@ -296,7 +292,7 @@ def test_bulk_update_account_subaccounts_budget_updated_once(api_client, user,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_bulk_create_account_subaccounts(api_client, user, models, budget_f):
+def test_bulk_create_subaccounts(api_client, user, models, budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
 

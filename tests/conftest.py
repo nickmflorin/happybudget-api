@@ -169,7 +169,7 @@ CONTEXT_BUDGETS = {
 
 @pytest.fixture
 def budget_factories(create_context_budget, create_account, create_subaccount,
-        create_subaccounts):
+        create_subaccounts, create_accounts):
 
     class BudgetFactories:
         def __init__(self, context):
@@ -199,6 +199,10 @@ def budget_factories(create_context_budget, create_account, create_subaccount,
         def create_subaccounts(self, *args, **kwargs):
             kwargs.setdefault('context', self.context)
             return create_subaccounts(*args, **kwargs)
+
+        def create_accounts(self, *args, **kwargs):
+            kwargs.setdefault('context', self.context)
+            return create_accounts(*args, **kwargs)
 
     def inner(param):
         return BudgetFactories(param)

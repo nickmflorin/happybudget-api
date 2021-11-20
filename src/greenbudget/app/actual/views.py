@@ -7,7 +7,8 @@ from greenbudget.app.io.serializers import (
 from .mixins import ActualNestedMixin
 from .models import Actual, ActualType
 from .permissions import ActualObjPermission
-from .serializers import ActualSerializer, ActualTypeSerializer
+from .serializers import (
+    ActualSerializer, ActualTypeSerializer, ActualDetailSerializer)
 
 
 class ActualTypeViewSet(
@@ -60,9 +61,13 @@ class ActualAttachmentViewSet(
 
 class GenericActualViewSet(GenericViewSet):
     lookup_field = 'pk'
-    serializer_class = ActualSerializer
-    ordering_fields = ['updated_at', 'created_at']
+    ordering_fields = []
     search_fields = ['description']
+    serializer_classes = (
+        (lambda view: view.action in ('partial_update', 'create', 'retrieve'),
+            ActualDetailSerializer),
+        ActualSerializer
+    )
 
 
 class ActualsViewSet(

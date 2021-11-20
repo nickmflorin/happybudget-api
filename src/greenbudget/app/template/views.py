@@ -165,7 +165,7 @@ class TemplateAccountViewSet(
     (2) POST /templates/<pk>/accounts/
     """
     template_lookup_field = ("pk", "template_pk")
-    serializer_class = TemplateAccountSerializer
+    instance_cls = Template
 
     def get_serializer_context(self):
         context = super().get_serializer_context()

@@ -8,6 +8,7 @@ from greenbudget.app.io.models import Attachment
 from greenbudget.app.io.serializers import SimpleAttachmentSerializer
 from greenbudget.app.markup.models import Markup
 from greenbudget.app.markup.serializers import MarkupSimpleSerializer
+from greenbudget.app.tabling.serializers import row_order_serializer
 from greenbudget.app.tagging.fields import TagField
 from greenbudget.app.tagging.serializers import TagSerializer, ColorSerializer
 from greenbudget.app.subaccount.models import BudgetSubAccount
@@ -118,6 +119,7 @@ class ActualSerializer(ModelSerializer):
         many=True
     )
     value = serializers.FloatField(required=False, allow_null=True)
+    order = serializers.CharField(read_only=True)
     actual_type = TagField(
         serializer_class=ActualTypeSerializer,
         queryset=ActualType.objects.all(),
@@ -142,10 +144,15 @@ class ActualSerializer(ModelSerializer):
             'id', 'name', 'created_by', 'updated_by', 'created_at',
             'updated_at', 'purchase_order', 'date', 'payment_id', 'value',
             'actual_type', 'contact', 'owner', 'type', 'attachments',
-            'notes')
+            'notes', 'order')
         response = {
             'attachments': (
                 SimpleAttachmentSerializer,
                 {'many': True}
             )
         }
+
+
+@row_order_serializer(table_filter=lambda d: {'budget_id': d['budget'].id})
+class ActualDetailSerializer(ActualSerializer):
+    pass

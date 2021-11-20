@@ -18,8 +18,7 @@ from greenbudget.app.subaccount.models import (
     BudgetSubAccount, TemplateSubAccount)
 from greenbudget.app.subaccount.serializers import (
     BudgetSubAccountSerializer,
-    TemplateSubAccountSerializer,
-    SubAccountSimpleSerializer
+    TemplateSubAccountSerializer
 )
 from greenbudget.app.subaccount.views import GenericSubAccountViewSet
 
@@ -29,11 +28,14 @@ from .cache import (
     account_markups_cache,
     account_instance_cache
 )
-from .models import BudgetAccount, TemplateAccount
+from .models import BudgetAccount
 from .permissions import AccountObjPermission
 from .serializers import (
     BudgetAccountDetailSerializer,
-    TemplateAccountDetailSerializer
+    TemplateAccountDetailSerializer,
+    AccountSimpleSerializer,
+    BudgetAccountSerializer,
+    TemplateAccountSerializer
 )
 
 
@@ -137,10 +139,6 @@ class AccountSubAccountViewSet(
     """
     account_lookup_field = ("pk", "account_pk")
 
-    @property
-    def is_simple(self):
-        return 'simple' in self.request.query_params
-
     @cached_property
     def instance_cls(self):
         return type(self.account)
@@ -150,13 +148,6 @@ class AccountSubAccountViewSet(
         if self.instance_cls is BudgetAccount:
             return BudgetSubAccount
         return TemplateSubAccount
-
-    def get_serializer_class(self):
-        if self.is_simple:
-            return SubAccountSimpleSerializer
-        if self.child_instance_cls is TemplateSubAccount:
-            return TemplateSubAccountSerializer
-        return BudgetSubAccountSerializer
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -188,8 +179,25 @@ class AccountSubAccountViewSet(
 
 class GenericAccountViewSet(GenericViewSet):
     lookup_field = 'pk'
-    ordering_fields = ['updated_at', 'created_at']
+    ordering_fields = []
     search_fields = ['identifier', 'description']
+    serializer_classes = (
+        ({'is_simple': True}, AccountSimpleSerializer),
+        ({'instance_cls.domain': 'template'}, [
+            (
+                {'action__in': ('create', 'partial_update', 'retrieve')},
+                TemplateAccountDetailSerializer
+            ),
+            TemplateAccountSerializer
+        ]),
+        ({'instance_cls.domain': 'budget'}, [
+            (
+                {'action__in': ('create', 'partial_update', 'retrieve')},
+                BudgetAccountDetailSerializer
+            ),
+            BudgetAccountSerializer
+        ]),
+    )
 
 
 @register_bulk_operations(
@@ -252,6 +260,11 @@ class AccountViewSet(
     def instance_cls(self):
         return type(self.instance)
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update(parent=self.instance.budget)
+        return context
+
     @property
     def child_instance_cls(self):
         if self.instance_cls is BudgetAccount:
@@ -266,11 +279,6 @@ class AccountViewSet(
 
     def get_queryset(self):
         return Account.objects.all()
-
-    def get_serializer_class(self):
-        if self.instance_cls is TemplateAccount:
-            return TemplateAccountDetailSerializer
-        return BudgetAccountDetailSerializer
 
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)

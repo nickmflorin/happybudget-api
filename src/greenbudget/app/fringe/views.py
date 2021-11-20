@@ -1,14 +1,27 @@
-from rest_framework import mixins, viewsets
+from rest_framework import mixins
+
+from greenbudget.app.views import GenericViewSet
 
 from .models import Fringe
-from .serializers import FringeSerializer
+from .serializers import FringeSerializer, FringeDetailSerializer
+
+
+class GenericFringeViewSet(GenericViewSet):
+    lookup_field = 'pk'
+    ordering_fields = []
+    search_fields = ['name']
+    serializer_class = FringeSerializer
+    serializer_classes = (
+        (lambda view: view.action in ('partial_update', 'create', 'retrieve'),
+            FringeDetailSerializer),
+    )
 
 
 class FringesViewSet(
     mixins.UpdateModelMixin,
     mixins.RetrieveModelMixin,
     mixins.DestroyModelMixin,
-    viewsets.GenericViewSet
+    GenericFringeViewSet
 ):
     """
     ViewSet to handle requests to the following endpoints:
@@ -17,8 +30,6 @@ class FringesViewSet(
     (2) PATCH /fringes/<pk>/
     (3) DELETE /fringes/<pk>/
     """
-    lookup_field = 'pk'
-    serializer_class = FringeSerializer
     budget_lookup_field = ("pk", "budget_pk")
 
     def get_queryset(self):

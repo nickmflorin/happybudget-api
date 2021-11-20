@@ -10,11 +10,8 @@ from .models import Fringe
 
 
 @dispatch.receiver(signals.pre_save, sender=Fringe)
-def fringe_to_be_saved(instance, **kwargs):
-    # In the case that the Fringe is added with a flat value, the cutoff
-    # is irrelevant.
-    if instance.unit == instance.UNITS.flat:
-        instance.cutoff = None
+def fringe_to_save(instance, **kwargs):
+    instance.validate_before_save()
 
 
 @dispatch.receiver(signals.post_save, sender=Fringe)

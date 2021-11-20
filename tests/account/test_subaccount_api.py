@@ -2,34 +2,34 @@ import datetime
 import pytest
 
 
-@pytest.mark.freeze_time('2020-01-01')
-def test_get_template_account_subaccounts(api_client, user, create_template,
-        create_template_account, create_template_subaccount):
-    template = create_template()
-    account = create_template_account(parent=template)
-    another_account = create_template_account(parent=template)
+@pytest.mark.freeze_time('2020-01-03')
+def test_get_account_subaccounts(api_client, user, budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    another_account = budget_f.create_account(parent=budget)
     subaccounts = [
-        create_template_subaccount(
+        budget_f.create_subaccount(
             parent=account,
             created_at=datetime.datetime(2020, 1, 1)
         ),
-        create_template_subaccount(
+        budget_f.create_subaccount(
             parent=account,
             created_at=datetime.datetime(2020, 1, 2)
         ),
-        create_template_subaccount(parent=another_account)
+        budget_f.create_subaccount(parent=another_account)
     ]
     api_client.force_login(user)
     response = api_client.get("/v1/accounts/%s/subaccounts/" % account.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
-    assert response.json()['data'] == [
+
+    response_data = [
         {
             "id": subaccounts[0].pk,
             "identifier": "%s" % subaccounts[0].identifier,
             "description": subaccounts[0].description,
             "created_at": "2020-01-01 00:00:00",
-            "updated_at": "2020-01-01 00:00:00",
+            "updated_at": "2020-01-03 00:00:00",
             "quantity": subaccounts[0].quantity,
             "rate": subaccounts[0].rate,
             "multiplier": subaccounts[0].multiplier,
@@ -46,14 +46,15 @@ def test_get_template_account_subaccounts(api_client, user, create_template,
             "fringes": [],
             "created_by": user.pk,
             "updated_by": user.pk,
-            "unit": None
+            "unit": None,
+            "order": "n",
         },
         {
             "id": subaccounts[1].pk,
             "identifier": "%s" % subaccounts[1].identifier,
             "description": subaccounts[1].description,
             "created_at": "2020-01-02 00:00:00",
-            "updated_at": "2020-01-01 00:00:00",
+            "updated_at": "2020-01-03 00:00:00",
             "quantity": subaccounts[1].quantity,
             "rate": subaccounts[1].rate,
             "multiplier": subaccounts[1].multiplier,
@@ -70,9 +71,75 @@ def test_get_template_account_subaccounts(api_client, user, create_template,
             "fringes": [],
             "created_by": user.pk,
             "updated_by": user.pk,
-            "unit": None
-        },
+            "unit": None,
+            "order": "t",
+        }
     ]
+    if budget_f.context == 'budget':
+        for r in response_data:
+            r.update(contact=None, attachments=[])
+
+    assert response.json()['data'] == response_data
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_create_budget_subaccount(api_client, user, budget_f, models):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    api_client.force_login(user)
+    response = api_client.post(
+         "/v1/accounts/%s/subaccounts/" % account.pk, data={
+             'identifier': '100',
+             'description': 'Test'
+         })
+    assert response.status_code == 201
+    subaccount = models.SubAccount.objects.first()
+    assert subaccount is not None
+    assert subaccount.description == "Test"
+    assert subaccount.identifier == "100"
+
+    response_data = {
+        "id": subaccount.pk,
+        "identifier": '100',
+        "description": 'Test',
+        "created_at": "2020-01-01 00:00:00",
+        "updated_at": "2020-01-01 00:00:00",
+        "quantity": None,
+        "rate": None,
+        "multiplier": None,
+        "unit": None,
+        "type": "subaccount",
+        "object_id": account.pk,
+        "parent_type": "account",
+        "nominal_value": 0.0,
+        "fringe_contribution": 0.0,
+        "accumulated_fringe_contribution": 0.0,
+        "markup_contribution": 0.0,
+        "accumulated_markup_contribution": 0.0,
+        "actual": 0.0,
+        "children": [],
+        "fringes": [],
+        "created_by": user.pk,
+        "updated_by": user.pk,
+        "order": "n",
+        "siblings": [],
+        "ancestors": [
+            {
+                "type": "budget",
+                "domain": budget_f.context,
+                "id": budget.pk,
+                "name": budget.name
+            },
+            {
+                "type": "account",
+                "id": account.pk,
+                "identifier": account.identifier,
+                "description": account.description
+            }
+        ]
+    }
+    if budget_f.context == 'budget':
+        response_data.update(contact=None, attachments=[])
 
 
 @pytest.mark.freeze_time('2020-01-01')
@@ -117,48 +184,3 @@ def test_get_another_users_community_template_account_subaccounts(api_client,
     response = api_client.get("/v1/accounts/%s/subaccounts/" % account.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
-
-
-@pytest.mark.freeze_time('2020-01-01')
-def test_create_template_subaccount(api_client, user, create_template_account,
-        create_template, models):
-    template = create_template()
-    account = create_template_account(parent=template)
-    api_client.force_login(user)
-    response = api_client.post(
-        "/v1/accounts/%s/subaccounts/" % account.pk,
-        data={
-            'identifier': '100',
-            'description': 'Test'
-        }
-    )
-    assert response.status_code == 201
-    subaccount = models.TemplateSubAccount.objects.first()
-    assert subaccount.description == "Test"
-    assert subaccount.identifier == "100"
-
-    assert subaccount is not None
-    assert response.json() == {
-        "id": subaccount.pk,
-        "identifier": '100',
-        "description": 'Test',
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
-        "quantity": None,
-        "rate": None,
-        "multiplier": None,
-        "unit": None,
-        "type": "subaccount",
-        "object_id": account.pk,
-        "parent_type": "account",
-        "nominal_value": 0.0,
-        "fringe_contribution": 0.0,
-        "accumulated_fringe_contribution": 0.0,
-        "markup_contribution": 0.0,
-        "accumulated_markup_contribution": 0.0,
-        "actual": 0.0,
-        "children": [],
-        "fringes": [],
-        "created_by": user.pk,
-        "updated_by": user.pk,
-    }

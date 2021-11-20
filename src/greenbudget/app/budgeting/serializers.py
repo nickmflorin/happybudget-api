@@ -57,7 +57,8 @@ class BudgetParentContextSerializer(ModelSerializer):
                     return {
                         "data": data,
                         "budget": EntityPolymorphicSerializer(
-                            instance=parent).data
+                            instance=parent
+                        ).data
                     }
                 else:
                     budget = instance.parent.budget
@@ -65,8 +66,10 @@ class BudgetParentContextSerializer(ModelSerializer):
                     return {
                         "data": data,
                         "budget": EntityPolymorphicSerializer(
-                            instance=budget).data,
+                            instance=budget
+                        ).data,
                         "parent": EntityPolymorphicSerializer(
-                            instance=parent).data,
+                            instance=parent
+                        ).data,
                     }
         return data

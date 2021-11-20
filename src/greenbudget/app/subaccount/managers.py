@@ -5,11 +5,18 @@ from greenbudget.lib.utils import concat, set_or_list
 
 from greenbudget.app import signals
 from greenbudget.app.budget.cache import budget_actuals_owner_tree_cache
-from greenbudget.app.budgeting.managers import BudgetingPolymorphicManager
-from greenbudget.app.budgeting.query import BudgetingPolymorphicQuerySet
+from greenbudget.app.budgeting.managers import BudgetingPolymorphicRowManager
+from greenbudget.app.tabling.query import RowQuerier, RowPolymorphicQuerySet
 
 
-class SubAccountQuerier:
+class SubAccountQuerier(RowQuerier):
+
+    def filter_by_parent(self, parent):
+        return self.filter(
+            content_type_id=ContentType.objects.get_for_model(type(parent)).id,
+            object_id=parent.pk
+        )
+
     def filter_by_budget(self, budget):
         """
         Since the :obj:`subaccount.models.SubAccount` is tied to the a
@@ -61,12 +68,12 @@ class SubAccountQuerier:
         return query
 
 
-class SubAccountQuery(SubAccountQuerier, BudgetingPolymorphicQuerySet):
+class SubAccountQuerySet(SubAccountQuerier, RowPolymorphicQuerySet):
     pass
 
 
-class SubAccountManager(SubAccountQuerier, BudgetingPolymorphicManager):
-    queryset_class = SubAccountQuery
+class SubAccountManager(SubAccountQuerier, BudgetingPolymorphicRowManager):
+    queryset_class = SubAccountQuerySet
 
     def cleanup(self, instances, mark_budgets=True):
         super().cleanup(instances)
@@ -89,8 +96,6 @@ class SubAccountManager(SubAccountQuerier, BudgetingPolymorphicManager):
 
     @signals.disable()
     def bulk_add(self, instances):
-        self.validate_instances_before_save(instances)
-
         # It is important to perform the bulk create first, because we need
         # the primary keys for the instances to be hashable.
         created = self.bulk_create(instances, return_created_objects=True)
@@ -100,8 +105,6 @@ class SubAccountManager(SubAccountQuerier, BudgetingPolymorphicManager):
 
     @signals.disable()
     def bulk_save(self, instances, update_fields):
-        self.validate_instances_before_save(instances)
-
         calculated, accounts, budgets = self.bulk_calculate(
             instances, commit=False)
         instances = calculated.union(instances)

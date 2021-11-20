@@ -14,7 +14,7 @@ from greenbudget.app.io.serializers import (
 from .cache import user_contacts_cache
 from .mixins import ContactNestedMixin
 from .models import Contact
-from .serializers import ContactSerializer
+from .serializers import ContactSerializer, ContactDetailSerializer
 
 
 class ContactAttachmentViewSet(
@@ -72,9 +72,13 @@ class ContactViewSet(
     (8) PATCH /contacts/bulk-create/
     """
     lookup_field = 'pk'
-    serializer_class = ContactSerializer
-    ordering_fields = ['updated_at', 'first_name', 'last_name', 'created_at']
+    ordering_fields = []
     search_fields = ['first_name', 'last_name']
+    serializer_class = ContactSerializer
+    serializer_classes = (
+        (lambda view: view.action in ('partial_update', 'create', 'retrieve'),
+            ContactDetailSerializer),
+    )
 
     def get_queryset(self):
         return self.request.user.created_contacts.all()
@@ -102,7 +106,7 @@ class ContactViewSet(
     @decorators.action(detail=False, url_path="bulk-update", methods=["PATCH"])
     def bulk_update(self, request, *args, **kwargs):
         serializer_cls = create_bulk_update_serializer(
-            serializer_cls=ContactSerializer,
+            serializer_cls=self.serializer_class,
             filter_qs=models.Q(created_by=request.user)
         )
         serializer = serializer_cls(data=request.data)
@@ -113,7 +117,7 @@ class ContactViewSet(
     @decorators.action(detail=False, url_path="bulk-create", methods=["PATCH"])
     def bulk_create(self, request, *args, **kwargs):
         serializer_cls = create_bulk_create_serializer(
-            serializer_cls=ContactSerializer,
+            serializer_cls=self.serializer_class,
         )
         serializer = serializer_cls(data=request.data)
         serializer.is_valid(raise_exception=True)

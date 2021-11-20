@@ -7,8 +7,7 @@ from rest_framework import viewsets, mixins, response, status, decorators
 from greenbudget.app.views import filter_by_ids, GenericViewSet
 
 from greenbudget.app.account.models import BudgetAccount
-from greenbudget.app.account.serializers import (
-    BudgetAccountSerializer, AccountSimpleSerializer)
+from greenbudget.app.account.serializers import BudgetAccountSerializer
 from greenbudget.app.account.views import GenericAccountViewSet
 from greenbudget.app.actual.models import Actual
 from greenbudget.app.actual.serializers import (
@@ -18,6 +17,7 @@ from greenbudget.app.budgeting.decorators import (
     register_bulk_operations, BulkAction, BulkDeleteAction)
 from greenbudget.app.fringe.models import Fringe
 from greenbudget.app.fringe.serializers import FringeSerializer
+from greenbudget.app.fringe.views import GenericFringeViewSet
 from greenbudget.app.group.models import Group
 from greenbudget.app.group.serializers import GroupSerializer
 from greenbudget.app.markup.models import Markup
@@ -165,7 +165,7 @@ class BudgetFringeViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
     BudgetNestedMixin,
-    viewsets.GenericViewSet
+    GenericFringeViewSet
 ):
     """
     ViewSet to handle requests to the following endpoints:
@@ -173,8 +173,6 @@ class BudgetFringeViewSet(
     (1) GET /budgets/<pk>/fringes/
     (2) POST /budgets/<pk>/fringes/
     """
-    lookup_field = 'pk'
-    serializer_class = FringeSerializer
     budget_lookup_field = ("pk", "budget_pk")
 
     def get_serializer_context(self):
@@ -396,16 +394,7 @@ class BudgetAccountViewSet(
     (2) POST /budgets/<pk>/accounts/
     """
     budget_lookup_field = ("pk", "budget_pk")
-    serializer_class = BudgetAccountSerializer
-
-    @property
-    def is_simple(self):
-        return 'simple' in self.request.query_params
-
-    def get_serializer_class(self):
-        if self.is_simple:
-            return AccountSimpleSerializer
-        return self.serializer_class
+    instance_cls = Budget
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -433,11 +422,10 @@ class GenericBudgetViewSet(GenericViewSet):
     lookup_field = 'pk'
     ordering_fields = ['updated_at', 'name', 'created_at']
     search_fields = ['name']
-
-    def get_serializer_class(self):
-        if self.action == 'list':
-            return BudgetSimpleSerializer
-        return BudgetSerializer
+    serializer_classes = (
+        ({'action': 'list'}, BudgetSimpleSerializer),
+        BudgetSerializer
+    )
 
     @property
     def serializer_class(self):

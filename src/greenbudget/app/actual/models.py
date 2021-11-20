@@ -4,8 +4,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models, IntegrityError
 
 from greenbudget.app import signals
+from greenbudget.app.budgeting.models import BudgetingRowModel
 from greenbudget.app.tagging.models import Tag
-from greenbudget.app.tabling.models import BudgetingRowModel
 
 from .managers import ActualManager
 
@@ -37,7 +37,6 @@ class ActualType(Tag):
 
 @signals.model(user_field='updated_by')
 class Actual(BudgetingRowModel):
-    type = "actual"
     name = models.CharField(null=True, max_length=128)
     notes = models.CharField(null=True, max_length=256)
     contact = models.ForeignKey(
@@ -75,6 +74,8 @@ class Actual(BudgetingRowModel):
     owner = GenericForeignKey('content_type', 'object_id')
     objects = ActualManager()
 
+    type = "actual"
+    table_pivot = ('budget_id', )
     associated = [
         ('budget', 'budget'),
         ('account', 'budgetaccount'),
@@ -82,10 +83,11 @@ class Actual(BudgetingRowModel):
     ]
 
     class Meta:
-        get_latest_by = "updated_at"
-        ordering = ('created_at', )
+        get_latest_by = "order"
+        ordering = ('order', )
         verbose_name = "Actual"
         verbose_name_plural = "Actual"
+        unique_together = (('budget', 'order'))
 
     def __str__(self):
         return "Actual: %s" % self.value
@@ -112,3 +114,4 @@ class Actual(BudgetingRowModel):
                     "Cannot assign a contact created by one user to an actual "
                     "created by another user."
                 )
+        super().validate_before_save()

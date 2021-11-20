@@ -19,7 +19,6 @@ def upload_to(instance, filename):
 
 
 class Contact(RowModel):
-    type = "contact"
     first_name = models.CharField(max_length=30, null=True)
     last_name = models.CharField(max_length=30, null=True)
     TYPES = Choices(
@@ -42,11 +41,15 @@ class Contact(RowModel):
 
     objects = ContactManager()
 
+    type = "contact"
+    table_pivot = ('created_by_id', )
+
     class Meta:
-        get_latest_by = "updated_at"
-        ordering = ('created_at', )
+        get_latest_by = "order"
+        ordering = ('order', )
         verbose_name = "Contact"
         verbose_name_plural = "Contacts"
+        unique_together = (('created_by', 'order'))
 
     def __str__(self):
         return "<{cls} id={id}, email={email}>".format(

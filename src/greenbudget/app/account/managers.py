@@ -1,8 +1,8 @@
 from greenbudget.app import signals
-from greenbudget.app.budgeting.managers import BudgetingPolymorphicManager
+from greenbudget.app.budgeting.managers import BudgetingPolymorphicRowManager
 
 
-class AccountManager(BudgetingPolymorphicManager):
+class AccountManager(BudgetingPolymorphicRowManager):
 
     def cleanup(self, instances, mark_budgets=True):
         super().cleanup(instances)
@@ -25,8 +25,6 @@ class AccountManager(BudgetingPolymorphicManager):
 
     @signals.disable()
     def bulk_save(self, instances, update_fields):
-        self.validate_instances_before_save(instances)
-
         calculated, budgets = self.bulk_calculate(instances, commit=False)
         instances = calculated.union(instances)
 
@@ -49,8 +47,6 @@ class AccountManager(BudgetingPolymorphicManager):
 
     @signals.disable()
     def bulk_add(self, instances):
-        self.validate_instances_before_save(instances)
-
         # It is important to perform the bulk create first, because we need
         # the primary keys for the instances to be hashable.
         created = self.bulk_create(instances, return_created_objects=True)

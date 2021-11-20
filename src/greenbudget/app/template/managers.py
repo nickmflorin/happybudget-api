@@ -1,9 +1,9 @@
 from greenbudget.app.budget.managers import BaseBudgetManager
 from greenbudget.app.budget.duplication import duplicate
-from greenbudget.app.budgeting.query import BudgetingPolymorphicQuerySet
+from greenbudget.app.tabling.query import RowQuerier, RowPolymorphicQuerySet
 
 
-class TemplateQuerier:
+class TemplateQuerier(RowQuerier):
     def user(self, user):
         # pylint: disable=no-member
         return self.filter(community=False, created_by=user)
@@ -13,7 +13,7 @@ class TemplateQuerier:
         return self.filter(community=True)
 
 
-class TemplateQuery(TemplateQuerier, BudgetingPolymorphicQuerySet):
+class TemplateQuery(TemplateQuerier, RowPolymorphicQuerySet):
     pass
 
 

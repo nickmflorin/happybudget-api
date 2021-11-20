@@ -1,9 +1,12 @@
+from polymorphic.models import PolymorphicModel
+
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
-from polymorphic.models import PolymorphicModel
 
 from greenbudget.lib.utils import set_or_list
 from greenbudget.lib.django_utils.models import import_model_at_path
+
+from greenbudget.app.tabling.models import RowModel, RowPolymorphicModel
 
 
 class CacheControlMixin:
@@ -151,11 +154,22 @@ class BudgetingModel(models.Model, BudgetingModelMixin):
         abstract = True
 
 
-class BudgetingTreeModel(models.Model, BudgetingTreeModelMixin):
+class BudgetingRowModel(RowModel, BudgetingModelMixin):
+    class Meta:
+        abstract = True
+
+
+class BudgetingTreeModel(RowModel, BudgetingTreeModelMixin):
     class Meta:
         abstract = True
 
 
 class BudgetingTreePolymorphicModel(PolymorphicModel, BudgetingTreeModelMixin):
+    class Meta:
+        abstract = True
+
+
+class BudgetingTreePolymorphicRowModel(
+        RowPolymorphicModel, BudgetingTreeModelMixin):
     class Meta:
         abstract = True

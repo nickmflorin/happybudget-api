@@ -8,11 +8,11 @@ from django.utils.functional import cached_property
 
 from greenbudget.app import signals
 from greenbudget.app.actual.models import Actual
+from greenbudget.app.budgeting.models import BudgetingTreePolymorphicRowModel
 from greenbudget.app.fringe.utils import contribution_from_fringes
 from greenbudget.app.group.models import Group
 from greenbudget.app.markup.models import Markup
 from greenbudget.app.markup.utils import contribution_from_markups
-from greenbudget.app.tabling.models import BudgetingTreeRowPolymorphicModel
 from greenbudget.app.tagging.models import Tag
 
 from .cache import (
@@ -63,8 +63,7 @@ ESTIMATED_FIELDS = (
 CALCULATED_FIELDS = ESTIMATED_FIELDS + ('actual', )
 
 
-class SubAccount(BudgetingTreeRowPolymorphicModel):
-    type = "subaccount"
+class SubAccount(BudgetingTreePolymorphicRowModel):
     identifier = models.CharField(null=True, max_length=128)
     description = models.CharField(null=True, max_length=128)
     quantity = models.FloatField(null=True)
@@ -116,8 +115,9 @@ class SubAccount(BudgetingTreeRowPolymorphicModel):
     objects = SubAccountManager()
     non_polymorphic = models.Manager()
 
+    type = "subaccount"
+    table_pivot = ('content_type_id', 'object_id')
     DERIVING_FIELDS = ("quantity", "rate", "multiplier", "unit")
-
     CACHES = [
         subaccount_markups_cache,
         subaccount_groups_cache,
@@ -126,10 +126,11 @@ class SubAccount(BudgetingTreeRowPolymorphicModel):
     ]
 
     class Meta:
-        get_latest_by = "updated_at"
-        ordering = ('created_at', )
+        get_latest_by = "order"
+        ordering = ('order', )
         verbose_name = "Sub Account"
         verbose_name_plural = "Sub Accounts"
+        unique_together = (('content_type', 'object_id', 'order'))
 
     @property
     def parent_instance_cls(self):
@@ -203,6 +204,7 @@ class SubAccount(BudgetingTreeRowPolymorphicModel):
             raise IntegrityError(
                 "Can only add groups with the same parent as the instance."
             )
+        super().validate_before_save()
 
     def accumulate_value(self, children=None):
         children = children or self.children.all()

@@ -23,6 +23,7 @@ def test_get_contact(api_client, user, create_contact, models):
         "position": contact.position,
         "image": None,
         "attachments": [],
+        "order": "n",
         "contact_type": {
             "id": contact.contact_type,
             "name": models.Contact.TYPES[contact.contact_type]
@@ -31,8 +32,8 @@ def test_get_contact(api_client, user, create_contact, models):
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_contacts(api_client, user, create_contact, models):
-    contacts = [create_contact(), create_contact()]
+def test_get_contacts(api_client, user, create_contacts, models):
+    contacts = create_contacts(count=2)
     api_client.force_login(user)
     response = api_client.get("/v1/contacts/")
     assert response.status_code == 200
@@ -54,6 +55,7 @@ def test_get_contacts(api_client, user, create_contact, models):
             "position": contacts[0].position,
             "image": None,
             "attachments": [],
+            "order": "n",
             "contact_type": {
                 "id": contacts[0].contact_type,
                 "name": models.Contact.TYPES[contacts[0].contact_type]
@@ -75,6 +77,7 @@ def test_get_contacts(api_client, user, create_contact, models):
             "position": contacts[1].position,
             "image": None,
             "attachments": [],
+            "order": "t",
             "contact_type": {
                 "id": contacts[1].contact_type,
                 "name": models.Contact.TYPES[contacts[1].contact_type]
@@ -125,6 +128,7 @@ def test_create_contact(api_client, user, models):
         "position": None,
         "image": None,
         "attachments": [],
+        "order": "n",
         "contact_type": {
             "id": 1,
             "name": models.Contact.TYPES[1]
@@ -166,6 +170,7 @@ def test_create_blank_contact(api_client, user, models):
         "position": None,
         "image": None,
         "attachments": [],
+        "order": "n",
     }
 
 
@@ -203,6 +208,7 @@ def test_update_contact(api_client, user, create_contact, models):
         "position": contact.position,
         "image": None,
         "attachments": [],
+        "order": "n",
         "contact_type": {
             "id": contact.contact_type,
             "name": models.Contact.TYPES[contact.contact_type]
@@ -218,8 +224,8 @@ def test_delete_contact(api_client, user, create_contact, models):
     assert models.Contact.objects.first() is None
 
 
-def test_bulk_delete_contacts(api_client, user, create_contact, models):
-    contacts = [create_contact(), create_contact()]
+def test_bulk_delete_contacts(api_client, user, create_contacts, models):
+    contacts = create_contacts(count=2)
     api_client.force_login(user)
     response = api_client.patch("/v1/contacts/bulk-delete/", data={
         'ids': [c.pk for c in contacts]
@@ -269,6 +275,7 @@ def test_bulk_create_contacts(api_client, user, models):
             "position": contacts[0].position,
             "image": None,
             "attachments": [],
+            "order": "n",
             "contact_type": {
                 "id": 1,
                 "name": models.Contact.TYPES[1]
@@ -290,14 +297,15 @@ def test_bulk_create_contacts(api_client, user, models):
             "position": contacts[1].position,
             "image": None,
             "attachments": [],
+            "order": "t",
             "contact_type": None
         }
     ]
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_bulk_update_contacts(api_client, user, create_contact, models):
-    contacts = [create_contact(), create_contact()]
+def test_bulk_update_contacts(api_client, user, create_contacts):
+    contacts = create_contacts(count=2)
     api_client.force_login(user)
     response = api_client.patch(
         "/v1/contacts/bulk-update/",

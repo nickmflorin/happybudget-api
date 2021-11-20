@@ -4,11 +4,11 @@ from greenbudget.lib.utils import concat
 
 from greenbudget.app import signals
 from greenbudget.app.budget.cache import budget_fringes_cache
-from greenbudget.app.budgeting.managers import BudgetingManager
-from greenbudget.app.budgeting.query import BudgetingQuerySet
+from greenbudget.app.budgeting.managers import BudgetingRowManager
+from greenbudget.app.tabling.query import RowQuerier, RowQuerySet
 
 
-class FringeQuerier:
+class FringeQuerier(RowQuerier):
 
     def for_budgets(self):
         # pylint: disable=no-member
@@ -22,12 +22,12 @@ class FringeQuerier:
         return self.filter(budget__polymorphic_ctype_id=ctype_id)
 
 
-class FringeQuery(FringeQuerier, BudgetingQuerySet):
+class FringeQuerySet(FringeQuerier, RowQuerySet):
     pass
 
 
-class FringeManager(FringeQuerier, BudgetingManager):
-    queryset_class = FringeQuery
+class FringeManager(FringeQuerier, BudgetingRowManager):
+    queryset_class = FringeQuerySet
 
     def cleanup(self, instances, **kwargs):
         super().cleanup(instances)

@@ -9,7 +9,7 @@ from greenbudget.app.group.models import Group
 from greenbudget.app.group.serializers import GroupSerializer
 from greenbudget.app.markup.serializers import MarkupSerializer
 from greenbudget.app.subaccount.serializers import SubAccountPdfSerializer
-from greenbudget.app.user.models import User
+from greenbudget.app.tabling.serializers import row_order_serializer
 
 from .models import Account, BudgetAccount, TemplateAccount
 
@@ -46,7 +46,7 @@ class AccountSerializer(AccountSimpleSerializer):
     markup_contribution = serializers.FloatField(read_only=True)
     accumulated_markup_contribution = serializers.FloatField(read_only=True)
     actual = serializers.FloatField(read_only=True)
-
+    order = serializers.CharField(read_only=True)
     children = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     group = TableChildrenPrimaryKeyRelatedField(
         obj_name='Group',
@@ -59,27 +59,18 @@ class AccountSerializer(AccountSimpleSerializer):
     class Meta(AccountSimpleSerializer.Meta):
         fields = AccountSimpleSerializer.Meta.fields + (
             'created_by', 'updated_by', 'created_at', 'updated_at',
-            'children', 'nominal_value', 'group'
-        ) + (
-            'markup_contribution',
-            'accumulated_markup_contribution',
-            'accumulated_fringe_contribution',
+            'children', 'nominal_value', 'group', 'order', 'markup_contribution',
+            'accumulated_markup_contribution', 'accumulated_fringe_contribution',
             'actual'
         )
 
 
 class BudgetAccountSerializer(AccountSerializer):
-    access = serializers.PrimaryKeyRelatedField(
-        many=True,
-        queryset=User.objects.active(),
-        required=False
-    )
-
-    class Meta:
+    class Meta(AccountSerializer.Meta):
         model = BudgetAccount
-        fields = AccountSerializer.Meta.fields + ('access',)
 
 
+@row_order_serializer(table_filter=lambda d: {'parent_id': d['parent'].id})
 class BudgetAccountDetailSerializer(BudgetAccountSerializer):
     ancestors = SimpleEntityPolymorphicSerializer(many=True, read_only=True)
     siblings = SimpleEntityPolymorphicSerializer(many=True, read_only=True)
@@ -90,11 +81,11 @@ class BudgetAccountDetailSerializer(BudgetAccountSerializer):
 
 
 class TemplateAccountSerializer(AccountSerializer):
-    class Meta:
+    class Meta(AccountSerializer.Meta):
         model = TemplateAccount
-        fields = AccountSerializer.Meta.fields
 
 
+@row_order_serializer(table_filter=lambda d: {'parent_id': d['parent'].id})
 class TemplateAccountDetailSerializer(TemplateAccountSerializer):
     ancestors = SimpleEntityPolymorphicSerializer(many=True, read_only=True)
     siblings = SimpleEntityPolymorphicSerializer(many=True, read_only=True)
@@ -114,15 +105,14 @@ class AccountPdfSerializer(AccountSimpleSerializer):
     children_markups = MarkupSerializer(many=True, read_only=True)
     children = SubAccountPdfSerializer(many=True, read_only=True)
     groups = GroupSerializer(many=True, read_only=True)
+    order = serializers.CharField(read_only=True)
 
     class Meta:
         model = BudgetAccount
         fields = AccountSimpleSerializer.Meta.fields \
-            + ('children', 'groups', 'nominal_value', 'children_markups') \
-            + (
-                'markup_contribution',
+            + ('children', 'groups', 'nominal_value', 'children_markups',
+                'order', 'markup_contribution', 'actual',
                 'accumulated_markup_contribution',
                 'accumulated_fringe_contribution',
-                'actual'
             )
         read_only_fields = fields
