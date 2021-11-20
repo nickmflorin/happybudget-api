@@ -3,12 +3,11 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from rest_framework import viewsets, mixins, response, status, decorators
 
-from greenbudget.app.views import filter_by_ids
+from greenbudget.app.views import filter_by_ids, GenericViewSet
 
 from greenbudget.app.account.models import TemplateAccount
 from greenbudget.app.account.serializers import TemplateAccountSerializer
 from greenbudget.app.account.views import GenericAccountViewSet
-from greenbudget.app.authentication.permissions import DEFAULT_PERMISSIONS
 from greenbudget.app.budget.cache import (
     budget_groups_cache,
     budget_accounts_cache,
@@ -190,19 +189,11 @@ class TemplateAccountViewSet(
         )
 
 
-class GenericTemplateViewSet(viewsets.GenericViewSet):
+class GenericTemplateViewSet(GenericViewSet):
     lookup_field = 'pk'
     serializer_class = TemplateSerializer
     ordering_fields = ['updated_at', 'name', 'created_at']
     search_fields = ['name']
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context.update(
-            request=self.request,
-            user=self.request.user,
-        )
-        return context
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -278,7 +269,7 @@ class TemplateViewSet(
     (9) PATCH /templates/<pk>/bulk-update-fringes/
     (10) PATCH /templates/<pk>/bulk-create-fringes/
     """
-    permission_classes = DEFAULT_PERMISSIONS + (TemplateObjPermission, )
+    extra_permission_classes = (TemplateObjPermission, )
 
     @cached_property
     def instance(self):
@@ -314,7 +305,7 @@ class TemplateCommunityViewSet(
     (1) GET /templates/community/
     (2) POST /templates/community/
     """
-    permission_classes = DEFAULT_PERMISSIONS + (IsAdminOrReadOnly, )
+    extra_permission_classes = (IsAdminOrReadOnly, )
 
     def get_serializer_context(self):
         context = super().get_serializer_context()

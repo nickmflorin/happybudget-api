@@ -1,6 +1,6 @@
 from rest_framework import viewsets, mixins, response, status
 
-from greenbudget.app.authentication.permissions import DEFAULT_PERMISSIONS
+from greenbudget.app.views import GenericViewSet
 from greenbudget.app.io.serializers import (
     UploadAttachmentSerializer, AttachmentSerializer)
 
@@ -58,16 +58,11 @@ class ActualAttachmentViewSet(
         )
 
 
-class GenericActualViewSet(viewsets.GenericViewSet):
+class GenericActualViewSet(GenericViewSet):
     lookup_field = 'pk'
     serializer_class = ActualSerializer
     ordering_fields = ['updated_at', 'created_at']
     search_fields = ['description']
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context.update(request=self.request)
-        return context
 
 
 class ActualsViewSet(
@@ -83,7 +78,7 @@ class ActualsViewSet(
     (2) PATCH /actuals/<pk>/
     (3) DELETE /actuals/<pk>/
     """
-    permission_classes = DEFAULT_PERMISSIONS + (ActualObjPermission, )
+    extra_permission_classes = (ActualObjPermission, )
 
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)

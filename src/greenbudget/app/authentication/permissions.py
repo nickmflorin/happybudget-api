@@ -1,11 +1,15 @@
 from rest_framework import permissions
 
+from django.conf import settings
+
+from greenbudget.lib.utils import import_at_module_path
 from .exceptions import (
     NotAuthenticatedError, AccountDisabledError, EmailNotVerified,
     EmailVerified, PermissionDenied)
 
 
 class UserPermission(permissions.BasePermission):
+
     def has_permission(self, request, view):
         user = getattr(request, 'user', None)
         return self.user_has_permission(user)
@@ -25,11 +29,8 @@ class IsAuthenticated(UserPermission):
 
 class IsVerified(UserPermission):
     def user_has_permission(self, user, force_logout=True):
-        if user is None or not user.is_authenticated:
-            raise Exception(
-                "The `IsVerified` permission should always come after the "
-                "`IsAuthenticated` permission."
-            )
+        assert not (user is None or not user.is_authenticated), \
+            "This permission should always be preceeded by `IsAuthenticated`."
         if not user.is_verified:
             raise EmailNotVerified(
                 user_id=getattr(user, 'pk'),
@@ -38,7 +39,9 @@ class IsVerified(UserPermission):
         return True
 
 
-DEFAULT_PERMISSIONS = (IsAuthenticated, IsVerified)
+def get_default_permissions():
+    permission_paths = settings.REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES']
+    return [import_at_module_path(p) for p in permission_paths]
 
 
 def check_user_permissions(user, permissions=None, force_logout=True):
@@ -48,11 +51,12 @@ def check_user_permissions(user, permissions=None, force_logout=True):
     :obj:`exceptions.PermissionDenied` outside of the scope of DRF's
     permissioning on views.
     """
-    permissions = permissions or [IsAuthenticated(), IsVerified()]
+    permissions = permissions or get_default_permissions()
     permissions = [p() if isinstance(p, type) else p for p in permissions]
     for permission in permissions:
-        if not hasattr(permission, 'user_has_permission'):
-            raise Exception("Permission must extend `UserPermission`.")
+        assert hasattr(permission, 'user_has_permission'), \
+            "Permission must extend `UserPermission`."
+
         if not permission.user_has_permission(user, force_logout=force_logout):
             # The individual UserPermission(s) instances should raise a
             # PermissionDenied exception, but we do here just in case for
@@ -67,11 +71,8 @@ class IsNotVerified(UserPermission):
     def user_has_permission(self, user, force_logout=False):
         # Force logout param is required for checking permissions manually via
         # the views.
-        if user is None or not user.is_authenticated:
-            raise Exception(
-                "The `IsNotVerified` permission should always come after the "
-                "`IsAuthenticated` permission."
-            )
+        assert not (user is None or not user.is_authenticated), \
+            "This permission should always be preceeded by `IsAuthenticated`."
         if user.is_verified:
             raise EmailVerified(user_id=getattr(user, 'pk'))
         return True

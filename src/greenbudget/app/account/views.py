@@ -4,11 +4,10 @@ from django.utils.functional import cached_property
 
 from rest_framework import viewsets, mixins
 
-from greenbudget.app.views import filter_by_ids
+from greenbudget.app.views import filter_by_ids, GenericViewSet
 
 from greenbudget.app.account.models import Account
 from greenbudget.app.account.mixins import AccountNestedMixin
-from greenbudget.app.authentication.permissions import DEFAULT_PERMISSIONS
 from greenbudget.app.budgeting.decorators import (
     register_bulk_operations, BulkAction, BulkDeleteAction)
 from greenbudget.app.group.models import Group
@@ -187,18 +186,10 @@ class AccountSubAccountViewSet(
         )
 
 
-class GenericAccountViewSet(viewsets.GenericViewSet):
+class GenericAccountViewSet(GenericViewSet):
     lookup_field = 'pk'
     ordering_fields = ['updated_at', 'created_at']
     search_fields = ['identifier', 'description']
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context.update(
-            request=self.request,
-            user=self.request.user,
-        )
-        return context
 
 
 @register_bulk_operations(
@@ -251,7 +242,7 @@ class AccountViewSet(
     (4) PATCH /accounts/<pk>/bulk-update-subaccounts/
     (5) PATCH /accounts/<pk>/bulk-create-subaccounts/
     """
-    permission_classes = DEFAULT_PERMISSIONS + (AccountObjPermission, )
+    extra_permission_classes = (AccountObjPermission, )
 
     @cached_property
     def instance(self):

@@ -4,7 +4,7 @@ from django.db import models
 
 from rest_framework import viewsets, mixins, response, status, decorators
 
-from greenbudget.app.views import filter_by_ids
+from greenbudget.app.views import filter_by_ids, GenericViewSet
 
 from greenbudget.app.account.models import BudgetAccount
 from greenbudget.app.account.serializers import (
@@ -429,7 +429,7 @@ class BudgetAccountViewSet(
         )
 
 
-class GenericBudgetViewSet(viewsets.GenericViewSet):
+class GenericBudgetViewSet(GenericViewSet):
     lookup_field = 'pk'
     ordering_fields = ['updated_at', 'name', 'created_at']
     search_fields = ['name']
@@ -527,14 +527,6 @@ class BudgetViewSet(
     @cached_property
     def instance(self):
         return self.get_object()
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context.update(
-            request=self.request,
-            user=self.request.user,
-        )
-        return context
 
     def get_queryset(self):
         return Budget.objects.filter(created_by=self.request.user).all()
