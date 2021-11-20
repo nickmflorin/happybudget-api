@@ -96,7 +96,7 @@ class invariant_cache(endpoint_cache):
         super().__init__(*args, **kwargs)
 
     def __str__(self):
-        return "%s: %s" % (self.__class__.__name__, self._key)
+        return self.__class__.__name__
 
     def post_cache(self, cache_key):
         self._cached.add(cache_key)

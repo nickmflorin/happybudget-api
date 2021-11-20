@@ -110,12 +110,14 @@ class BudgetingTreeModelMixin(BudgetingModelMixin, CacheControlMixin):
     @property
     def intermittent_parent(self):
         try:
-            return self.parent
-        except ObjectDoesNotExist:
+            self.parent.refresh_from_db()
+        except (ObjectDoesNotExist, AttributeError):
             # The parent instance can be deleted in the process of deleting
             # it's parent, at which point the parent will be None or raise a
             # DoesNotExist Exception, until that child instance is deleted.
-            pass
+            return None
+        else:
+            return self.parent
 
     @property
     def reestimated_fields(self):

@@ -53,6 +53,7 @@ def invalidate_caches_on_markup_changes(instance, action, reverse, **kwargs):
 @dispatch.receiver(signals.post_save, sender=TemplateSubAccount)
 def subaccount_saved(instance, **kwargs):
     CALCULATING_FIELDS = ('rate', 'quantity', 'multiplier')
+
     old_parent, new_parent = generic_fk_instance_change(instance)
 
     instances_to_reestimate = []
@@ -81,7 +82,13 @@ def subaccount_saved(instance, **kwargs):
     if instance.domain == 'budget':
         budget_actuals_owner_tree_cache.invalidate(instance.budget)
 
-    type(instance).objects.bulk_calculate_all([instances_to_recalculate])
+    SubAccount.objects.bulk_estimate_all(instances_to_reestimate)
+    # Note: Using `type(instance).objects` does not seem to work here, might
+    # have to do with Django's Meta Classes.
+    if isinstance(instance, BudgetSubAccount):
+        BudgetSubAccount.objects.bulk_calculate_all(instances_to_recalculate)
+    else:
+        TemplateSubAccount.objects.bulk_calculate_all(instances_to_recalculate)
 
 
 @dispatch.receiver(signals.pre_delete, sender=BudgetSubAccount)

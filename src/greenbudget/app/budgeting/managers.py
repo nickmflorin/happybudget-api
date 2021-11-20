@@ -14,14 +14,22 @@ logger = logging.getLogger('greenbudget')
 
 
 class BudgetingManagerMixin:
-    def bulk_update(self, instances, fields):
+    def mark_budgets(self, instances=None, budgets=None):
+        assert budgets is not None or instances is not None, \
+            "Must either provide the budgets or instances."
+        if budgets is None:
+            budgets = set([inst.budget for inst in instances])
+        for budget in budgets:
+            budget.mark_updated()
+
+    def bulk_update(self, instances, fields, mark_budgets=True):
         results = super().bulk_update(instances, fields)
-        self.cleanup(instances)
+        self.cleanup(instances, mark_budgets=mark_budgets)
         return results
 
-    def bulk_create(self, instances, **kwargs):
+    def bulk_create(self, instances, mark_budgets=True, **kwargs):
         results = super().bulk_create(instances, **kwargs)
-        self.cleanup(instances)
+        self.cleanup(instances, mark_budgets=mark_budgets)
         return results
 
     def cleanup(self, instances, **kwargs):
@@ -33,25 +41,31 @@ class BudgetingManagerMixin:
                 if hasattr(instance, 'parent'):
                     instance.parent.invalidate_caches(["detail", "children"])
 
-    def bulk_update_post_calculation(self, instances):
+    def bulk_update_post_calculation(self, instances, **kwargs):
         if instances:
             return self.bulk_update(
                 instances=instances,
-                fields=self.model.CALCULATED_FIELDS
+                fields=self.model.CALCULATED_FIELDS,
+                **kwargs
             )
         return None
 
-    def bulk_update_post_estimation(self, instances):
+    def bulk_update_post_estimation(self, instances, **kwargs):
         if instances:
             return self.bulk_update(
                 instances=instances,
-                fields=self.model.ESTIMATED_FIELDS
+                fields=self.model.ESTIMATED_FIELDS,
+                **kwargs
             )
         return None
 
-    def bulk_update_post_actualization(self, instances):
+    def bulk_update_post_actualization(self, instances, **kwargs):
         if instances:
-            return self.bulk_update(instances=instances, fields=['actual'])
+            return self.bulk_update(
+                instances=instances,
+                fields=['actual'],
+                **kwargs
+            )
         return None
 
     @signals.disable()

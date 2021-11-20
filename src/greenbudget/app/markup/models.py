@@ -89,9 +89,10 @@ class Markup(BudgetingModel):
     @property
     def intermittent_parent(self):
         try:
-            return self.parent
-        except ObjectDoesNotExist:
-            pass
+            self.parent.refresh_from_db()
+        except (ObjectDoesNotExist, AttributeError):
+            return None
+        return self.parent
 
     def get_children_operator(self):
         if self.parent_instance_cls.type in ('account', 'subaccount'):

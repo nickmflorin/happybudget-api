@@ -63,9 +63,10 @@ class Group(models.Model):
     @property
     def intermittent_parent(self):
         try:
-            return self.parent
-        except ObjectDoesNotExist:
-            pass
+            self.parent.refresh_from_db()
+        except (ObjectDoesNotExist, AttributeError):
+            return None
+        return self.parent
 
     @property
     def child_instance_cls(self):

@@ -68,16 +68,11 @@ class SubAccountQuery(SubAccountQuerier, BudgetingPolymorphicQuerySet):
 class SubAccountManager(SubAccountQuerier, BudgetingPolymorphicManager):
     queryset_class = SubAccountQuery
 
-    def mark_budgets_updated(self, instances=None, budgets=None):
-        budgets = budgets or set([inst.budget for inst in instances])
-        for budget in budgets:
-            budget.mark_updated()
-
-    def cleanup(self, instances, markup_budgets_updated=True):
+    def cleanup(self, instances, mark_budgets=True):
         super().cleanup(instances)
         budgets = set([inst.budget for inst in instances])
-        if markup_budgets_updated:
-            self.mark_budgets_updated(instances=instances)
+        if mark_budgets:
+            self.mark_budgets(budgets=budgets)
         budget_actuals_owner_tree_cache.invalidate(budgets)
 
     @signals.disable()
@@ -118,12 +113,19 @@ class SubAccountManager(SubAccountQuerier, BudgetingPolymorphicManager):
 
         self.bulk_update(
             instances,
-            tuple(self.model.CALCULATED_FIELDS) + tuple(update_fields)
+            tuple(self.model.CALCULATED_FIELDS) + tuple(update_fields),
+            mark_budgets=False
         )
-        self.model.account_cls().objects.bulk_update_post_calculation(accounts)
-        self.model.budget_cls().objects.bulk_update_post_calculation(budgets)
+        self.model.account_cls().objects.bulk_update_post_calculation(
+            accounts,
+            mark_budgets=False
+        )
+        self.model.budget_cls().objects.bulk_update_post_calculation(
+            budgets
+        )
 
         self.bulk_delete_empty_groups(groups)
+        self.mark_budgets(instances=instances)
 
     @signals.disable()
     def bulk_calculate(self, *args, **kwargs):

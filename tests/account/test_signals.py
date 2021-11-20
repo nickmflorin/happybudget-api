@@ -23,7 +23,7 @@ def test_delete_account_reestimates(budget_f):
 
 
 @pytest.mark.budget
-def test_delete_account_reactualizes(budget_f, create_actual):
+def test_delete_account_reactualizes(budget_f, create_actual, models):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     parent_subaccount = budget_f.create_subaccount(parent=account)

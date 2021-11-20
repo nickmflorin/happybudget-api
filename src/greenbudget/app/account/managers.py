@@ -3,11 +3,12 @@ from greenbudget.app.budgeting.managers import BudgetingPolymorphicManager
 
 
 class AccountManager(BudgetingPolymorphicManager):
-    def cleanup(self, instances, **kwargs):
+
+    def cleanup(self, instances, mark_budgets=True):
         super().cleanup(instances)
         budgets = set([inst.budget for inst in instances])
-        for budget in budgets:
-            budget.mark_updated()
+        if mark_budgets:
+            self.mark_budgets(budgets=budgets)
 
     @signals.disable()
     def bulk_delete(self, instances):
@@ -35,11 +36,16 @@ class AccountManager(BudgetingPolymorphicManager):
 
         self.bulk_update(
             instances,
-            tuple(self.model.CALCULATED_FIELDS) + tuple(update_fields)
+            tuple(self.model.CALCULATED_FIELDS) + tuple(update_fields),
+            mark_budgets=False
         )
-        self.model.budget_cls().objects.bulk_update_post_calculation(budgets)
+        self.model.budget_cls().objects.bulk_update_post_calculation(
+            instances=budgets,
+            mark_budgets=False
+        )
 
         self.bulk_delete_empty_groups(groups)
+        self.mark_budgets(instances=instances)
 
     @signals.disable()
     def bulk_add(self, instances):
