@@ -5,17 +5,12 @@ import pytest
 
 
 @pytest.mark.freeze_time('2020-01-01')
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_unit_properly_serializes(api_client, user, create_subaccount,
-        create_account, create_context_budget, create_subaccount_unit, context):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
+def test_unit_properly_serializes(api_client, user, budget_f,
+        create_subaccount_unit):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
     unit = create_subaccount_unit()
-    subaccount = create_subaccount(
-        parent=account,
-        unit=unit,
-        context=context
-    )
+    subaccount = budget_f.create_subaccount(parent=account, unit=unit)
     api_client.force_login(user)
     response = api_client.get("/v1/subaccounts/%s/" % subaccount.pk)
     assert response.status_code == 200
@@ -31,12 +26,11 @@ def test_unit_properly_serializes(api_client, user, create_subaccount,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_update_subaccount_unit(api_client, user, create_subaccount, context,
-        create_account, create_context_budget, create_subaccount_unit):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
-    subaccount = create_subaccount(parent=account, context=context)
+def test_update_subaccount_unit(api_client, user, budget_f,
+        create_subaccount_unit):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    subaccount = budget_f.create_subaccount(parent=account)
     unit = create_subaccount_unit()
     api_client.force_login(user)
     response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk, data={
@@ -56,13 +50,11 @@ def test_update_subaccount_unit(api_client, user, create_subaccount, context,
     assert subaccount.unit == unit
 
 
-@pytest.mark.parametrize('context', ['budget'])
-def test_update_subaccount_contact(api_client, user, create_subaccount,
-        create_account, create_context_budget, create_contact, context):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
+def test_update_subaccount_contact(api_client, user, budget_df, create_contact):
+    budget = budget_df.create_budget()
+    account = budget_df.create_account(parent=budget)
     contact = create_contact(created_by=user)
-    subaccount = create_subaccount(parent=account, context=context)
+    subaccount = budget_df.create_subaccount(parent=account)
     api_client.force_login(user)
     response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk, data={
         "contact": contact.pk
@@ -73,14 +65,12 @@ def test_update_subaccount_contact(api_client, user, create_subaccount,
     assert subaccount.contact == contact
 
 
-@pytest.mark.parametrize('context', ['budget'])
 def test_update_subaccount_contact_wrong_user(api_client, user, admin_user,
-        create_subaccount, create_account, create_context_budget, context,
-        create_contact):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
+        budget_df, create_contact):
+    budget = budget_df.create_budget()
+    account = budget_df.create_account(parent=budget)
     contact = create_contact(created_by=admin_user)
-    subaccount = create_subaccount(parent=account, context=context)
+    subaccount = budget_df.create_subaccount(parent=account)
     api_client.force_login(user)
     response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk, data={
         "contact": contact.pk
@@ -89,12 +79,10 @@ def test_update_subaccount_contact_wrong_user(api_client, user, admin_user,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-@pytest.mark.parametrize('context', ['budget'])
-def test_get_subaccount(api_client, user, create_subaccount, create_account,
-        create_context_budget, context):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
-    subaccount = create_subaccount(parent=account, context=context)
+def test_get_budget_subaccount(api_client, user, budget_df):
+    budget = budget_df.create_budget()
+    account = budget_df.create_account(parent=budget)
+    subaccount = budget_df.create_subaccount(parent=account)
 
     api_client.force_login(user)
     response = api_client.get("/v1/subaccounts/%s/" % subaccount.pk)
@@ -130,7 +118,7 @@ def test_get_subaccount(api_client, user, create_subaccount, create_account,
                 "type": "budget",
                 "id": budget.pk,
                 "name": budget.name,
-                "domain": context,
+                "domain": "budget",
             },
             {
                 "id": account.id,
@@ -143,12 +131,10 @@ def test_get_subaccount(api_client, user, create_subaccount, create_account,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-@pytest.mark.parametrize('context', ['template'])
-def test_get_template_subaccount(api_client, user, create_subaccount, context,
-        create_account, create_context_budget):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
-    subaccount = create_subaccount(parent=account, context=context)
+def test_get_template_subaccount(api_client, user, template_df):
+    budget = template_df.create_budget()
+    account = template_df.create_account(parent=budget)
+    subaccount = template_df.create_subaccount(parent=account)
 
     api_client.force_login(user)
     response = api_client.get("/v1/subaccounts/%s/" % subaccount.pk)
@@ -182,7 +168,7 @@ def test_get_template_subaccount(api_client, user, create_subaccount, context,
                 "type": "budget",
                 "id": budget.pk,
                 "name": budget.name,
-                "domain": context,
+                "domain": "template",
             },
             {
                 "id": account.id,
@@ -195,16 +181,13 @@ def test_get_template_subaccount(api_client, user, create_subaccount, context,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-@pytest.mark.parametrize('context', ['budget'])
-def test_update_subaccount(api_client, user, create_subaccount, create_account,
-        create_context_budget, context):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
-    subaccount = create_subaccount(
+def test_update_budget_subaccount(api_client, user, budget_df):
+    budget = budget_df.create_budget()
+    account = budget_df.create_account(parent=budget)
+    subaccount = budget_df.create_subaccount(
         parent=account,
         description="Original Description",
-        identifier="Original identifier",
-        context=context
+        identifier="Original identifier"
     )
     api_client.force_login(user)
     response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk, data={
@@ -246,7 +229,7 @@ def test_update_subaccount(api_client, user, create_subaccount, create_account,
                 "type": "budget",
                 "id": budget.pk,
                 "name": budget.name,
-                "domain": context,
+                "domain": "budget",
             },
             {
                 "id": account.id,
@@ -263,16 +246,13 @@ def test_update_subaccount(api_client, user, create_subaccount, create_account,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-@pytest.mark.parametrize('context', ['template'])
-def test_update_template_subaccount(api_client, user, create_subaccount,
-        create_account, create_context_budget, context):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
-    subaccount = create_subaccount(
+def test_update_template_subaccount(api_client, user, template_df):
+    budget = template_df.create_budget()
+    account = template_df.create_account(parent=budget)
+    subaccount = template_df.create_subaccount(
         parent=account,
         description="Original Description",
-        identifier="Original identifier",
-        context=context
+        identifier="Original identifier"
     )
     api_client.force_login(user)
     response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk, data={
@@ -312,7 +292,7 @@ def test_update_template_subaccount(api_client, user, create_subaccount,
                 "type": "budget",
                 "id": budget.pk,
                 "name": budget.name,
-                "domain": context,
+                "domain": "template",
             },
             {
                 "id": account.id,
@@ -329,12 +309,91 @@ def test_update_template_subaccount(api_client, user, create_subaccount,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_update_subaccount_fringes(api_client, user, create_context_budget,
-        create_account, create_fringe, create_subaccount, context):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
-    subaccount = create_subaccount(parent=account, context=context)
+def test_create_subaccount(api_client, user, budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    subaccount = budget_f.create_subaccount(
+        parent=account,
+        description="Original Description",
+        identifier="Original identifier"
+    )
+    api_client.force_login(user)
+    response = api_client.post(
+        "/v1/subaccounts/%s/subaccounts/" % subaccount.pk,
+        data={
+            "description": "New Description",
+            "identifier": "New identifier",
+            "quantity": 10,
+            "rate": 1.5
+        })
+    assert response.status_code == 201
+    subaccount.refresh_from_db()
+    assert subaccount.children.count() == 1
+    child = subaccount.children.first()
+
+    data = {
+        "id": child.pk,
+        "identifier": "New identifier",
+        "description": "New Description",
+        "created_at": "2020-01-01 00:00:00",
+        "updated_at": "2020-01-01 00:00:00",
+        "quantity": 10.0,
+        "rate": 1.5,
+        "multiplier": child.multiplier,
+        "type": "subaccount",
+        "object_id": subaccount.pk,
+        "parent_type": "subaccount",
+        "nominal_value": 15.0,
+        "fringe_contribution": 0.0,
+        "accumulated_fringe_contribution": 0.0,
+        "markup_contribution": 0.0,
+        "accumulated_markup_contribution": 0.0,
+        "actual": 0.0,
+        "children": [],
+        "fringes": [],
+        "siblings": [],
+        "created_by": user.pk,
+        "updated_by": user.pk,
+        "unit": None,
+        "ancestors": [
+            {
+                "type": "budget",
+                "id": budget.pk,
+                "name": budget.name,
+                "domain": budget_f.context,
+            },
+            {
+                "id": account.id,
+                "type": "account",
+                "identifier": account.identifier,
+                "description": account.description
+            },
+            {
+                "id": subaccount.id,
+                "type": "subaccount",
+                "identifier": subaccount.identifier,
+                "description": subaccount.description
+            }
+        ]
+    }
+    if budget_f.context == 'budget':
+        data.update(
+            attachments=[],
+            contact=None
+        )
+    assert response.json() == data
+
+    assert child.description == "New Description"
+    assert child.identifier == "New identifier"
+    assert child.quantity == 10.0
+    assert child.rate == 1.5
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_update_subaccount_fringes(api_client, user, budget_f, create_fringe):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    subaccount = budget_f.create_subaccount(parent=account)
     fringes = [create_fringe(budget=budget), create_fringe(budget=budget)]
     api_client.force_login(user)
     response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk, data={
@@ -347,20 +406,17 @@ def test_update_subaccount_fringes(api_client, user, create_context_budget,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-@pytest.mark.parametrize('context', ['budget'])
-def test_get_subaccount_subaccounts(api_client, user, create_context_budget,
-        create_subaccount, create_account, context):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
-    parent = create_subaccount(parent=account, context=context)
-    another_parent = create_subaccount(parent=account, context=context)
+def test_get_subaccount_subaccounts(api_client, user, budget_df):
+    budget = budget_df.create_budget()
+    account = budget_df.create_account(parent=budget)
+    parent = budget_df.create_subaccount(parent=account)
+    another_parent = budget_df.create_subaccount(parent=account)
     subaccounts = [
-        create_subaccount(parent=parent, identifier='A', context=context),
-        create_subaccount(parent=parent, identifier='B', context=context),
-        create_subaccount(
+        budget_df.create_subaccount(parent=parent, identifier='A'),
+        budget_df.create_subaccount(parent=parent, identifier='B'),
+        budget_df.create_subaccount(
             parent=another_parent,
-            identifier='C',
-            context=context
+            identifier='C'
         )
     ]
     api_client.force_login(user)
@@ -424,20 +480,17 @@ def test_get_subaccount_subaccounts(api_client, user, create_context_budget,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-@pytest.mark.parametrize('context', ['template'])
-def test_get_template_subaccount_subaccounts(api_client, user, create_account,
-        create_context_budget, create_subaccount, context):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
-    parent = create_subaccount(parent=account, context=context)
-    another_parent = create_subaccount(parent=account, context=context)
+def test_get_template_subaccount_subaccounts(api_client, user, template_df):
+    budget = template_df.create_budget()
+    account = template_df.create_account(parent=budget)
+    parent = template_df.create_subaccount(parent=account)
+    another_parent = template_df.create_subaccount(parent=account)
     subaccounts = [
-        create_subaccount(parent=parent, identifier='A', context=context),
-        create_subaccount(parent=parent, identifier='B', context=context),
-        create_subaccount(
+        template_df.create_subaccount(parent=parent, identifier='A'),
+        template_df.create_subaccount(parent=parent, identifier='B'),
+        template_df.create_subaccount(
             parent=another_parent,
-            identifier='C',
-            context=context
+            identifier='C'
         )
     ]
     api_client.force_login(user)
@@ -496,17 +549,12 @@ def test_get_template_subaccount_subaccounts(api_client, user, create_account,
     ]
 
 
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_remove_subaccount_from_group(api_client, user, create_context_budget,
-        create_subaccount, create_account, models, create_group, context):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
+def test_remove_subaccount_from_group(api_client, user, budget_f, models,
+        create_group):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
     group = create_group(parent=account)
-    subaccount = create_subaccount(
-        parent=account,
-        group=group,
-        context=context
-    )
+    subaccount = budget_f.create_subaccount(parent=account, group=group)
     api_client.force_login(user)
     response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk,
         format='json',
@@ -522,22 +570,18 @@ def test_remove_subaccount_from_group(api_client, user, create_context_budget,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-@pytest.mark.parametrize('context', ['budget'])
-def test_bulk_update_subaccount_subaccounts(api_client, user, freezer, context,
-        create_context_budget, create_account, create_subaccount):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
-    subaccount = create_subaccount(parent=account, context=context)
+def test_bulk_update_subaccount_subaccounts(api_client, user, freezer, budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    subaccount = budget_f.create_subaccount(parent=account)
     subaccounts = [
-        create_subaccount(
+        budget_f.create_subaccount(
             parent=subaccount,
-            created_at=datetime.datetime(2020, 1, 1),
-            context=context,
+            created_at=datetime.datetime(2020, 1, 1)
         ),
-        create_subaccount(
+        budget_f.create_subaccount(
             parent=subaccount,
-            created_at=datetime.datetime(2020, 1, 2),
-            context=context,
+            created_at=datetime.datetime(2020, 1, 2)
         )
     ]
     api_client.force_login(user)
@@ -603,29 +647,25 @@ def test_bulk_update_subaccount_subaccounts(api_client, user, freezer, context,
     assert budget.actual == 0.0
 
 
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_bulk_update_subaccount_subaccounts_fringes(api_client, user, context,
-        create_context_budget, create_account, create_subaccount,
+def test_bulk_update_subaccount_subaccounts_fringes(api_client, user, budget_f,
         create_fringe):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
-    subaccount = create_subaccount(parent=account, context=context)
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    subaccount = budget_f.create_subaccount(parent=account)
     subaccounts = [
-        create_subaccount(
+        budget_f.create_subaccount(
             parent=subaccount,
             created_at=datetime.datetime(2020, 1, 1),
             quantity=1,
             rate=100,
-            multiplier=1,
-            context=context
+            multiplier=1
         ),
-        create_subaccount(
+        budget_f.create_subaccount(
             parent=subaccount,
             created_at=datetime.datetime(2020, 1, 2),
             quantity=1,
             rate=100,
-            multiplier=1,
-            context=context
+            multiplier=1
         )
     ]
     fringes = [
@@ -692,26 +732,22 @@ def test_bulk_update_subaccount_subaccounts_fringes(api_client, user, context,
     assert budget.accumulated_fringe_contribution == 70.0
 
 
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_bulk_delete_subaccount_subaccounts(api_client, user, create_account,
-        create_context_budget, create_subaccount, models, context):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
-    subaccount = create_subaccount(parent=account, context=context)
+def test_bulk_delete_subaccount_subaccounts(api_client, user, budget_f, models):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    subaccount = budget_f.create_subaccount(parent=account)
     subaccounts = [
-        create_subaccount(
+        budget_f.create_subaccount(
             parent=subaccount,
             quantity=1,
             rate=100,
-            multiplier=1,
-            context=context
+            multiplier=1
         ),
-        create_subaccount(
+        budget_f.create_subaccount(
             parent=subaccount,
             quantity=1,
             rate=100,
-            multiplier=1,
-            context=context
+            multiplier=1
         )
     ]
 
@@ -749,15 +785,14 @@ def test_bulk_delete_subaccount_subaccounts(api_client, user, create_account,
     assert budget.nominal_value == 0.0
 
 
-@pytest.mark.parametrize('context', ['budget', 'template'])
 def test_bulk_update_subaccount_subaccounts_budget_updated_once(api_client,
-        user, create_context_budget, create_account, context, create_subaccount):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
-    subaccount = create_subaccount(parent=account, context=context)
+        user, budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    subaccount = budget_f.create_subaccount(parent=account)
     subaccounts = [
-        create_subaccount(parent=subaccount, context=context),
-        create_subaccount(parent=subaccount, context=context)
+        budget_f.create_subaccount(parent=subaccount),
+        budget_f.create_subaccount(parent=subaccount)
     ]
     api_client.force_login(user)
     with mock.patch(
@@ -782,12 +817,10 @@ def test_bulk_update_subaccount_subaccounts_budget_updated_once(api_client,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_bulk_create_subaccount_subaccounts(api_client, user, create_account,
-        create_context_budget, create_subaccount, models, context):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
-    subaccount = create_subaccount(parent=account, context=context)
+def test_bulk_create_subaccount_subaccounts(api_client, user, budget_f, models):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    subaccount = budget_f.create_subaccount(parent=account)
 
     api_client.force_login(user)
     response = api_client.patch(

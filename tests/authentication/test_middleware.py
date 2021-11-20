@@ -25,8 +25,7 @@ def middleware_patch():
     return mock_patch
 
 
-@pytest.mark.parametrize(
-    "setting_name", ['JWT_TOKEN_COOKIE_NAME'])
+@pytest.mark.parametrize("setting_name", ['JWT_TOKEN_COOKIE_NAME'])
 def test_process_request_assert_settings(middleware_patch, settings, rf,
         setting_name):
     delattr(settings, setting_name)

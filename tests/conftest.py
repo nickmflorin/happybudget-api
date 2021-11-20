@@ -167,13 +167,9 @@ CONTEXT_BUDGETS = {
 }
 
 
-@pytest.fixture(params=["budget", "template"])
-def budget_f(request, create_context_budget, create_account,
-        create_subaccount, create_subaccounts):
-    markers = request.node.own_markers
-    marker_names = [m.name for m in markers]
-    if 'budget' not in marker_names and 'template' not in marker_names:
-        marker_names = marker_names + ['budget', 'template']
+@pytest.fixture
+def budget_factories(create_context_budget, create_account, create_subaccount,
+        create_subaccounts):
 
     class BudgetFactories:
         def __init__(self, context):
@@ -204,7 +200,29 @@ def budget_f(request, create_context_budget, create_account,
             kwargs.setdefault('context', self.context)
             return create_subaccounts(*args, **kwargs)
 
+    def inner(param):
+        return BudgetFactories(param)
+    return inner
+
+
+@pytest.fixture
+def budget_df(budget_factories):
+    yield budget_factories("budget")
+
+
+@pytest.fixture
+def template_df(budget_factories):
+    yield budget_factories("template")
+
+
+@pytest.fixture(params=["budget", "template"])
+def budget_f(request, budget_factories):
+    markers = request.node.own_markers
+    marker_names = [m.name for m in markers]
+    if 'budget' not in marker_names and 'template' not in marker_names:
+        marker_names = marker_names + ['budget', 'template']
+
     if request.param in marker_names:
-        yield BudgetFactories(request.param)
+        yield budget_factories(request.param)
     else:
         pytest.skip("Test is not applicable for `%s` context." % request.param)

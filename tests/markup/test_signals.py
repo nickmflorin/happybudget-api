@@ -2,14 +2,11 @@ from django.db import IntegrityError
 import pytest
 
 
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_markup_changed_to_flat(create_account, create_context_budget,
-        create_markup, create_subaccounts, models, context):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
-    create_subaccounts(
+def test_markup_changed_to_flat(budget_f, create_markup, models):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    budget_f.create_subaccounts(
         parent=account,
-        context=context,
         quantity=10,
         multiplier=4,
         rate=10,
@@ -58,12 +55,10 @@ def test_markup_changed_to_flat(create_account, create_context_budget,
     assert budget.accumulated_markup_contribution == 400.5
 
 
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_account_markups_change(create_account, create_context_budget,
-        create_markup, create_subaccounts, context):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
-    create_subaccounts(parent=account, quantity=10, rate=10, context=context)
+def test_account_markups_change(budget_f, create_markup):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    budget_f.create_subaccounts(parent=account, quantity=10, rate=10)
     markups = [
         create_markup(
             parent=budget,
@@ -95,13 +90,10 @@ def test_account_markups_change(create_account, create_context_budget,
     assert budget.accumulated_markup_contribution == 60.0
 
 
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_subaccount_markups_change(create_account, create_context_budget,
-        create_markup, create_subaccounts, context):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
-    subaccounts = create_subaccounts(
-        context=context,
+def test_subaccount_markups_change(budget_f, create_markup):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    subaccounts = budget_f.create_subaccounts(
         count=2,
         parent=account,
         quantity=10,
@@ -157,12 +149,10 @@ def test_subaccount_markups_change(create_account, create_context_budget,
     assert budget.accumulated_markup_contribution == 100.0
 
 
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_account_markup_changes_rate(create_account, create_context_budget,
-        create_markup, create_subaccounts, context):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
-    create_subaccounts(parent=account, quantity=10, rate=10, context=context)
+def test_account_markup_changes_rate(budget_f, create_markup):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    budget_f.create_subaccounts(parent=account, quantity=10, rate=10)
     markups = [
         create_markup(
             parent=budget,
@@ -197,12 +187,10 @@ def test_account_markup_changes_rate(create_account, create_context_budget,
     assert budget.accumulated_markup_contribution == 130.0
 
 
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_account_markup_changes_unit(create_account, create_context_budget,
-        create_markup, create_subaccounts, models, context):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
-    create_subaccounts(parent=account, quantity=10, rate=10, context=context)
+def test_account_markup_changes_unit(budget_f, create_markup, models):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    budget_f.create_subaccounts(parent=account, quantity=10, rate=10)
     markups = [
         create_markup(
             parent=budget,
@@ -239,14 +227,11 @@ def test_account_markup_changes_unit(create_account, create_context_budget,
     assert budget.accumulated_markup_contribution == 60.5
 
 
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_account_markup_deleted(create_account, create_context_budget,
-        create_markup, create_subaccounts, context):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
-    create_subaccounts(
+def test_account_markup_deleted(budget_f, create_markup):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    budget_f.create_subaccounts(
         parent=account,
-        context=context,
         quantity=10,
         multiplier=4,
         rate=10,
@@ -276,13 +261,10 @@ def test_account_markup_deleted(create_account, create_context_budget,
     assert account.markup_contribution == 400.0
 
 
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_subaccount_markup_deleted(create_account, create_context_budget,
-        create_markup, create_subaccount, context):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
-    subaccount = create_subaccount(
-        context=context,
+def test_subaccount_markup_deleted(budget_f, create_markup):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    subaccount = budget_f.create_subaccount(
         parent=account,
         quantity=10,
         multiplier=4,
@@ -321,22 +303,18 @@ def test_subaccount_markup_deleted(create_account, create_context_budget,
     assert account.accumulated_markup_contribution == 200.0
 
 
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_account_markup_children_constraint(create_account, context,
-        create_context_budget, create_markup):
-    budget = create_context_budget(context=context)
-    another_budget = create_context_budget(context=context)
-    account = create_account(parent=another_budget, context=context)
+def test_account_markup_children_constraint(budget_f, create_markup):
+    budget = budget_f.create_budget()
+    another_budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=another_budget)
     with pytest.raises(IntegrityError):
         create_markup(parent=budget, accounts=[account])
 
 
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_subaccount_markup_children_constraint(create_account,
-        create_context_budget, create_subaccount, create_markup, context):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
-    another_account = create_account(parent=budget, context=context)
-    subaccount = create_subaccount(parent=another_account, context=context)
+def test_subaccount_markup_children_constraint(budget_f, create_markup):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    another_account = budget_f.create_account(parent=budget)
+    subaccount = budget_f.create_subaccount(parent=another_account)
     with pytest.raises(IntegrityError):
         create_markup(parent=account, subaccounts=[subaccount])

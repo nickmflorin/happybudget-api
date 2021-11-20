@@ -3,11 +3,9 @@ import pytest
 from django.db import IntegrityError
 
 
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_subaccount_fringes_change(create_account, create_context_budget,
-        create_fringe, create_subaccount, models, context):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
+def test_subaccount_fringes_change(budget_f, create_fringe, models):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
     fringes = [
         create_fringe(
             budget=budget,
@@ -21,12 +19,11 @@ def test_subaccount_fringes_change(create_account, create_context_budget,
             unit=models.Fringe.UNITS.flat
         ),
     ]
-    subaccount = create_subaccount(
+    subaccount = budget_f.create_subaccount(
         parent=account,
         fringes=fringes,
         quantity=1,
-        rate=100,
-        context=context
+        rate=100
     )
     assert account.nominal_value + account.accumulated_fringe_contribution == 225.0  # noqa
     assert subaccount.nominal_value + subaccount.fringe_contribution == 225.0
@@ -36,11 +33,9 @@ def test_subaccount_fringes_change(create_account, create_context_budget,
     assert subaccount.nominal_value + subaccount.fringe_contribution == 200.0
 
 
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_subaccount_fringe_changed(create_account, create_context_budget,
-        create_fringe, create_subaccount, models, context):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
+def test_subaccount_fringe_changed(budget_f, create_fringe, models):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
     fringes = [
         create_fringe(
             budget=budget,
@@ -54,12 +49,11 @@ def test_subaccount_fringe_changed(create_account, create_context_budget,
             unit=models.Fringe.UNITS.flat
         ),
     ]
-    subaccount = create_subaccount(
+    subaccount = budget_f.create_subaccount(
         parent=account,
         fringes=fringes,
         quantity=1,
-        rate=100,
-        context=context
+        rate=100
     )
     assert account.nominal_value + account.accumulated_fringe_contribution == 225.0  # noqa
     assert subaccount.nominal_value + subaccount.fringe_contribution == 225.0
@@ -74,11 +68,9 @@ def test_subaccount_fringe_changed(create_account, create_context_budget,
     assert subaccount.nominal_value + subaccount.fringe_contribution == 325.0
 
 
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_subaccount_fringe_deleted(create_account, create_context_budget,
-        create_fringe, create_subaccount, models, context):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
+def test_subaccount_fringe_deleted(budget_f, create_fringe, models):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
     fringes = [
         create_fringe(
             budget=budget,
@@ -92,12 +84,11 @@ def test_subaccount_fringe_deleted(create_account, create_context_budget,
             unit=models.Fringe.UNITS.flat
         ),
     ]
-    subaccount = create_subaccount(
+    subaccount = budget_f.create_subaccount(
         parent=account,
         fringes=fringes,
         quantity=1,
-        rate=100,
-        context=context
+        rate=100
     )
     assert account.nominal_value + account.accumulated_fringe_contribution == 225.0  # noqa
     assert subaccount.nominal_value + subaccount.fringe_contribution == 225.0
@@ -111,13 +102,11 @@ def test_subaccount_fringe_deleted(create_account, create_context_budget,
     assert subaccount.nominal_value + subaccount.fringe_contribution == 125.0
 
 
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_fringes_parent_constraint(create_subaccount, create_context_budget,
-        create_account, create_fringe, context):
-    budget = create_context_budget(context=context)
-    another_budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
-    subaccount = create_subaccount(parent=account, context=context)
+def test_fringes_parent_constraint(budget_f, create_fringe):
+    budget = budget_f.create_budget()
+    another_budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    subaccount = budget_f.create_subaccount(parent=account)
     fringes = [
         create_fringe(budget=another_budget),
         create_fringe(budget=budget)

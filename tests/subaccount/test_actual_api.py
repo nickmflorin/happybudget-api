@@ -2,11 +2,10 @@ import pytest
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_actual(api_client, user, create_budget_account, create_budget,
-        create_budget_subaccount, models):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    subaccount = create_budget_subaccount(parent=account)
+def test_create_actual(api_client, user, budget_df, models):
+    budget = budget_df.create_budget()
+    account = budget_df.create_account(parent=budget)
+    subaccount = budget_df.create_subaccount(parent=account)
     api_client.force_login(user)
     # We do not have to provide the object_id and parent_type since we are
     # already creating it off of the endpoint for a specific subaccount.
@@ -44,11 +43,10 @@ def test_create_actual(api_client, user, create_budget_account, create_budget,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_subaccount_actuals(api_client, user, create_budget_subaccount,
-        create_actual, create_budget, create_budget_account):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    subaccount = create_budget_subaccount(parent=account)
+def test_get_subaccount_actuals(api_client, user, create_actual, budget_df):
+    budget = budget_df.create_budget()
+    account = budget_df.create_account(parent=budget)
+    subaccount = budget_df.create_subaccount(parent=account)
     actuals = [
         create_actual(owner=subaccount, budget=budget),
         create_actual(owner=subaccount, budget=budget)

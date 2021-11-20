@@ -13,7 +13,9 @@ def test_detail_cache_invalidated_on_delete(api_client, user, budget_f):
     assert response.status_code == 200
     assert response.json()['id'] == subaccount.pk
 
-    subaccount.delete()
+    response = api_client.delete("/v1/subaccounts/%s/" % subaccount.pk)
+    assert response.status_code == 204
+
     response = api_client.get("/v1/subaccounts/%s/" % subaccount.pk)
     # Note: This is kind of a dumb test, because this will return a 404
     # regardless of whether or not the instance was removed from the cache
@@ -32,8 +34,10 @@ def test_detail_cache_invalidated_on_save(api_client, user, budget_f):
     assert response.status_code == 200
     assert response.json()['id'] == subaccount.pk
 
-    subaccount.identifier = '1000'
-    subaccount.save()
+    response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk, data={
+        'identifier': '1000'
+    })
+    assert response.status_code == 200
 
     response = api_client.get("/v1/subaccounts/%s/" % subaccount.pk)
     assert response.status_code == 200
@@ -41,8 +45,7 @@ def test_detail_cache_invalidated_on_save(api_client, user, budget_f):
 
 
 @override_settings(CACHE_ENABLED=True)
-def test_detail_cache_invalidated_on_subaccount_delete(api_client, user,
-        budget_f):
+def test_detail_cache_invalidated_on_child_delete(api_client, user, budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccount = budget_f.create_subaccount(parent=account)
@@ -57,19 +60,19 @@ def test_detail_cache_invalidated_on_subaccount_delete(api_client, user,
     assert response.status_code == 200
     assert response.json()['children'] == [s.pk for s in subaccounts]
 
-    subaccounts[0].delete()
+    response = api_client.delete("/v1/subaccounts/%s/" % subaccounts[0].pk)
+    assert response.status_code == 204
+
     response = api_client.get("/v1/subaccounts/%s/" % subaccount.pk)
     assert response.status_code == 200
     assert response.json()['children'] == [subaccounts[1].pk]
 
 
 @override_settings(CACHE_ENABLED=True)
-def test_detail_cache_invalidated_on_subaccount_create(api_client, user,
-        budget_f):
+def test_detail_cache_invalidated_on_child_create(api_client, user, budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccount = budget_f.create_subaccount(parent=account)
-
     subaccounts = [
         budget_f.create_subaccount(parent=subaccount),
         budget_f.create_subaccount(parent=subaccount)
@@ -80,11 +83,16 @@ def test_detail_cache_invalidated_on_subaccount_create(api_client, user,
     assert response.status_code == 200
     assert response.json()['children'] == [s.pk for s in subaccounts]
 
-    new_subaccount = budget_f.create_subaccount(parent=subaccount)
+    cresponse = api_client.post(
+        "/v1/subaccounts/%s/subaccounts/" % subaccount.pk,
+        data={'identifier': '1000'}
+    )
+    assert cresponse.status_code == 201
+
     response = api_client.get("/v1/subaccounts/%s/" % subaccount.pk)
     assert response.status_code == 200
     assert response.json()['children'] == [
-        s.pk for s in subaccounts] + [new_subaccount.pk]
+        s.pk for s in subaccounts] + [cresponse.json()['id']]
 
 
 @override_settings(CACHE_ENABLED=True)

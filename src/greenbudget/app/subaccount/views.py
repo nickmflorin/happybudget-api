@@ -336,6 +336,12 @@ class SubAccountRecursiveViewSet(
             return TemplateSubAccountSerializer
         return BudgetSubAccountSerializer
 
+    @property
+    def detail_serializer_cls(self):
+        if self.instance_cls is BudgetSubAccount:
+            return BudgetSubAccountDetailSerializer
+        return TemplateSubAccountDetailSerializer
+
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context.update(
@@ -355,10 +361,19 @@ class SubAccountRecursiveViewSet(
         return qs
 
     def perform_create(self, serializer):
-        serializer.save(
+        return serializer.save(
             updated_by=self.request.user,
             created_by=self.request.user,
             object_id=self.subaccount.pk,
             content_type=ContentType.objects.get_for_model(type(self.subaccount)),  # noqa
-            budget=self.subaccount.budget
+        )
+
+    def create(self, request, *args, **kwargs):
+        # Overridden so that we use the detail serializer as the response.
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        instance = self.perform_create(serializer)
+        return response.Response(
+            self.detail_serializer_cls(instance).data,
+            status=status.HTTP_201_CREATED
         )

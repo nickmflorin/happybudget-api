@@ -2,11 +2,9 @@ import pytest
 
 
 @pytest.mark.freeze_time('2020-01-01')
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_get_account_markup(api_client, user, create_account, context,
-        create_context_budget, create_markup, models):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
+def test_get_account_markup(api_client, user, budget_f, create_markup, models):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
     markup = create_markup(parent=budget, accounts=[account])
 
     api_client.force_login(user)
@@ -33,12 +31,11 @@ def test_get_account_markup(api_client, user, create_account, context,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_get_subaccount_markup(api_client, user, create_account, context,
-        create_context_budget, create_markup, models, create_subaccount):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
-    subaccount = create_subaccount(parent=account, context=context)
+def test_get_subaccount_markup(api_client, user, budget_f, create_markup,
+        models):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    subaccount = budget_f.create_subaccount(parent=account)
     markup = create_markup(parent=account, subaccounts=[subaccount])
 
     api_client.force_login(user)
@@ -65,41 +62,38 @@ def test_get_subaccount_markup(api_client, user, create_account, context,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_update_markup_children(api_client, user, create_context_budget,
-        create_markup, create_account, models, create_subaccounts, context):
-    budget = create_context_budget(context=context)
+def test_update_markup_children(api_client, user, budget_f, create_markup,
+        models):
+    budget = budget_f.create_budget()
     markups = [
         create_markup(parent=budget, flat=True, rate=20),
         create_markup(parent=budget, flat=True, rate=30),
         create_markup(parent=budget, percent=True, rate=0.5)
     ]
     accounts = [
-        create_account(parent=budget, markups=[markups[2]], context=context),
-        create_account(parent=budget, markups=[markups[2]], context=context),
-        create_account(parent=budget, markups=[markups[2]], context=context)
+        budget_f.create_account(parent=budget, markups=[markups[2]]),
+        budget_f.create_account(parent=budget, markups=[markups[2]]),
+        budget_f.create_account(parent=budget, markups=[markups[2]])
     ]
     subaccount_sets = [
-        create_subaccounts(
+        budget_f.create_subaccounts(
             parent=accounts[0],
             quantity=1,
             rate=10,
             count=2,
-            context=context
         ),
-        create_subaccounts(
+        budget_f.create_subaccounts(
             parent=accounts[1],
             quantity=1,
             rate=10,
             count=2,
-            context=context
         ),
-        create_subaccounts(
+        budget_f.create_subaccounts(
             parent=accounts[2],
             quantity=1,
             rate=10,
             count=2,
-            context=context
+
         ),
     ]
     # Make sure all data is properly calculated before API request to avoid
@@ -188,30 +182,27 @@ def test_update_markup_children(api_client, user, create_context_budget,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_update_account_markup_children(api_client, user, create_context_budget,
-        create_markup, create_account, models, create_subaccount, context):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
+def test_update_account_markup_children(api_client, user, budget_f, models,
+        create_markup):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
     markups = [
         create_markup(parent=account, flat=True, rate=20),
         create_markup(parent=account, percent=True, rate=0.5),
         create_markup(parent=account, percent=True, rate=0.5)
     ]
     subaccounts = [
-        create_subaccount(
+        budget_f.create_subaccount(
             parent=account,
             quantity=1,
             rate=10,
             markups=[markups[1]],
-            context=context
         ),
-        create_subaccount(
+        budget_f.create_subaccount(
             parent=account,
             quantity=1,
             rate=10,
             markups=[markups[2]],
-            context=context
         )
     ]
 
@@ -285,31 +276,28 @@ def test_update_account_markup_children(api_client, user, create_context_budget,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_update_subaccount_markup_children(api_client, user, context, models,
-        create_context_budget, create_markup, create_account, create_subaccount):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
-    subaccount = create_subaccount(parent=account, context=context)
+def test_update_subaccount_markup_children(api_client, user, budget_f, models,
+        create_markup):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    subaccount = budget_f.create_subaccount(parent=account)
     markups = [
         create_markup(parent=subaccount, flat=True, rate=20),
         create_markup(parent=subaccount, percent=True, rate=0.5),
         create_markup(parent=subaccount, percent=True, rate=0.5)
     ]
     children_subaccounts = [
-        create_subaccount(
+        budget_f.create_subaccount(
             parent=subaccount,
             quantity=1,
             rate=10,
             markups=[markups[1]],
-            context=context
         ),
-        create_subaccount(
+        budget_f.create_subaccount(
             parent=subaccount,
             quantity=1,
             rate=10,
             markups=[markups[2]],
-            context=context
         )
     ]
 
@@ -392,31 +380,28 @@ def test_update_subaccount_markup_children(api_client, user, context, models,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_update_account_flat_markup_rate(api_client, user, create_context_budget,
-        models, create_account, create_markup, create_subaccounts, context):
-    budget = create_context_budget(context=context)
+def test_update_account_flat_markup_rate(api_client, user, budget_f, models,
+        create_markup):
+    budget = budget_f.create_budget()
     markups = [
         create_markup(parent=budget, flat=True, rate=20),
         create_markup(parent=budget, flat=True, rate=30)
     ]
     accounts = [
-        create_account(parent=budget, context=context),
-        create_account(parent=budget, context=context)
+        budget_f.create_account(parent=budget),
+        budget_f.create_account(parent=budget)
     ]
-    create_subaccounts(
+    budget_f.create_subaccounts(
         parent=accounts[0],
         quantity=1,
         rate=10,
         count=2,
-        context=context
     )
-    create_subaccounts(
+    budget_f.create_subaccounts(
         parent=accounts[1],
         quantity=1,
         rate=10,
         count=2,
-        context=context
     )
 
     # Make sure all data is properly calculated before API request to avoid
@@ -476,28 +461,24 @@ def test_update_account_flat_markup_rate(api_client, user, create_context_budget
 
 
 @pytest.mark.freeze_time('2020-01-01')
-@pytest.mark.parametrize('context', ['budget', 'template'])
 def test_change_account_flat_markup_to_percent(api_client, user, models,
-        create_context_budget, create_account, create_markup, context,
-        create_subaccounts):
-    budget = create_context_budget(context=context)
+        budget_f, create_markup):
+    budget = budget_f.create_budget()
     markups = [
         create_markup(parent=budget, flat=True, rate=20),
         create_markup(parent=budget, flat=True, rate=30)
     ]
     accounts = [
-        create_account(parent=budget, context=context),
-        create_account(parent=budget, context=context)
+        budget_f.create_account(parent=budget),
+        budget_f.create_account(parent=budget)
     ]
-    create_subaccounts(
-        context=context,
+    budget_f.create_subaccounts(
         parent=accounts[0],
         quantity=1,
         rate=10,
         count=2
     )
-    create_subaccounts(
-        context=context,
+    budget_f.create_subaccounts(
         parent=accounts[1],
         quantity=1,
         rate=10,
@@ -564,33 +545,25 @@ def test_change_account_flat_markup_to_percent(api_client, user, models,
     assert response.json()["budget"]["nominal_value"] == 40.0
 
 
-@pytest.mark.parametrize('context,data', [
-    ('budget', {}),
-    ('budget', {'children': []}),
-    ('template', {}),
-    ('template', {'children': []}),
-])
+@pytest.mark.parametrize('data', [{}, {'children': []}])
 def test_change_account_flat_markup_to_percent_no_children(api_client, user,
-        models, create_context_budget, create_account, create_markup, context,
-        create_subaccounts, data):
-    budget = create_context_budget(context=context)
+        models, budget_f, create_markup, data):
+    budget = budget_f.create_budget()
     markups = [
         create_markup(parent=budget, flat=True, rate=20),
         create_markup(parent=budget, flat=True, rate=30)
     ]
     accounts = [
-        create_account(parent=budget, context=context),
-        create_account(parent=budget, context=context)
+        budget_f.create_account(parent=budget),
+        budget_f.create_account(parent=budget)
     ]
-    create_subaccounts(
-        context=context,
+    budget_f.create_subaccounts(
         parent=accounts[0],
         quantity=1,
         rate=10,
         count=2
     )
-    create_subaccounts(
-        context=context,
+    budget_f.create_subaccounts(
         parent=accounts[1],
         quantity=1,
         rate=10,
@@ -616,32 +589,30 @@ def test_change_account_flat_markup_to_percent_no_children(api_client, user,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_update_account_percent_markup_rate(api_client, user, context, models,
-        create_context_budget, create_account, create_markup,
-        create_subaccounts):
-    budget = create_context_budget(context=context)
+def test_update_account_percent_markup_rate(api_client, user, budget_f, models,
+        create_markup):
+    budget = budget_f.create_budget()
     markups = [
         create_markup(parent=budget, percent=True, rate=0.5),
         create_markup(parent=budget, flat=True, rate=30)
     ]
     accounts = [
-        create_account(parent=budget, markups=[markups[0]], context=context),
-        create_account(parent=budget, markups=[markups[0]], context=context)
+        budget_f.create_account(parent=budget, markups=[markups[0]]),
+        budget_f.create_account(parent=budget, markups=[markups[0]])
     ]
-    create_subaccounts(
+    budget_f.create_subaccounts(
         parent=accounts[0],
         quantity=1,
         rate=10,
         count=2,
-        context=context
+
     )
-    create_subaccounts(
+    budget_f.create_subaccounts(
         parent=accounts[1],
         quantity=1,
         rate=10,
         count=2,
-        context=context
+
     )
     # Make sure all data is properly calculated before API request to avoid
     # confusion in source of potential errors.
@@ -702,32 +673,28 @@ def test_update_account_percent_markup_rate(api_client, user, context, models,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-@pytest.mark.parametrize('context', ['budget', 'template'])
 def test_change_account_percent_markup_to_flat(api_client, user, models,
-        create_context_budget, create_account, create_markup, create_subaccounts,
-        context):
-    budget = create_context_budget(context=context)
+        budget_f, create_markup):
+    budget = budget_f.create_budget()
     markups = [
         create_markup(parent=budget, percent=True, rate=0.5),
         create_markup(parent=budget, flat=True, rate=30)
     ]
     accounts = [
-        create_account(parent=budget, markups=[markups[0]], context=context),
-        create_account(parent=budget, markups=[markups[0]], context=context)
+        budget_f.create_account(parent=budget, markups=[markups[0]]),
+        budget_f.create_account(parent=budget, markups=[markups[0]])
     ]
-    create_subaccounts(
+    budget_f.create_subaccounts(
         parent=accounts[0],
         quantity=1,
         rate=10,
-        count=2,
-        context=context
+        count=2
     )
-    create_subaccounts(
+    budget_f.create_subaccounts(
         parent=accounts[1],
         quantity=1,
         rate=10,
-        count=2,
-        context=context
+        count=2
     )
     # Make sure all data is properly calculated before API request to avoid
     # confusion in source of potential errors.
@@ -791,33 +758,29 @@ def test_change_account_percent_markup_to_flat(api_client, user, models,
     assert response.json()["budget"]["nominal_value"] == 40.0
 
 
-@pytest.mark.parametrize('context', ['budget', 'template'])
 def test_change_account_percent_markup_to_flat_children(api_client, user, models,
-        create_context_budget, create_account, create_markup, create_subaccounts,
-        context):
-    budget = create_context_budget(context=context)
+        budget_f, create_markup):
+    budget = budget_f.create_budget()
     markups = [
         create_markup(parent=budget, percent=True, rate=0.5),
         create_markup(parent=budget, flat=True, rate=30)
     ]
     accounts = [
-        create_account(parent=budget, markups=[markups[0]], context=context),
-        create_account(parent=budget, markups=[markups[0]], context=context)
+        budget_f.create_account(parent=budget, markups=[markups[0]]),
+        budget_f.create_account(parent=budget, markups=[markups[0]])
     ]
-    another_account = create_account(parent=budget, context=context)
-    create_subaccounts(
+    another_account = budget_f.create_account(parent=budget)
+    budget_f.create_subaccounts(
         parent=accounts[0],
         quantity=1,
         rate=10,
         count=2,
-        context=context
     )
-    create_subaccounts(
+    budget_f.create_subaccounts(
         parent=accounts[1],
         quantity=1,
         rate=10,
         count=2,
-        context=context
     )
     api_client.force_login(user)
     response = api_client.patch("/v1/markups/%s/" % markups[0].pk, data={
@@ -836,17 +799,16 @@ def test_change_account_percent_markup_to_flat_children(api_client, user, models
 
 
 @pytest.mark.freeze_time('2020-01-01')
-@pytest.mark.parametrize('context', ['budget', 'template'])
 def test_remove_account_flat_markup_children(api_client, user, create_markup,
-        create_account, create_context_budget, create_subaccounts, context):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
-    create_subaccounts(
+        budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    budget_f.create_subaccounts(
         parent=account,
         quantity=1,
         rate=10,
         count=2,
-        context=context
+
     )
     markup = create_markup(parent=budget, flat=True, rate=20)
     api_client.force_login(user)
@@ -862,16 +824,13 @@ def test_remove_account_flat_markup_children(api_client, user, create_markup,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-@pytest.mark.parametrize('context', ['budget', 'template'])
 def test_remove_percent_markup_children(api_client, user, create_markup,
-        create_account, create_context_budget, create_subaccounts, models,
-        context):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
-    create_subaccounts(
+        budget_f, models):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    budget_f.create_subaccounts(
         parent=account,
         quantity=1,
-        context=context,
         rate=10,
         count=2
     )
@@ -942,17 +901,15 @@ def test_remove_subaccount_percent_markup_children():
 
 
 @pytest.mark.freeze_time('2020-01-01')
-@pytest.mark.parametrize('context', ['budget', 'template'])
 def test_add_account_flat_markup_children(api_client, user, create_markup,
-        create_account, create_context_budget, create_subaccounts, context):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
-    create_subaccounts(
+        budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    budget_f.create_subaccounts(
         parent=account,
         quantity=1,
         rate=10,
         count=2,
-        context=context
     )
     markup = create_markup(parent=budget, flat=True, rate=20)
     api_client.force_login(user)
@@ -972,17 +929,15 @@ def test_add_account_flat_markup_children(api_client, user, create_markup,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-@pytest.mark.parametrize('context', ['budget', 'template'])
 def test_add_percent_markup_children(api_client, user, create_markup, models,
-        create_account, create_context_budget, create_subaccounts, context):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
-    create_subaccounts(
+        budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    budget_f.create_subaccounts(
         parent=account,
         quantity=1,
         rate=10,
         count=2,
-        context=context
     )
     markup = create_markup(parent=budget, percent=True, rate=0.50)
 
@@ -1037,19 +992,16 @@ def test_add_percent_markup_children(api_client, user, create_markup, models,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-@pytest.mark.parametrize('context', ['budget', 'template'])
 def test_add_account_percent_markup_children(api_client, user, create_markup,
-        models, create_account, create_context_budget, create_subaccounts,
-        context):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
+        models, budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
     markup = create_markup(parent=account, percent=True, rate=0.50)
-    subaccounts = create_subaccounts(
+    subaccounts = budget_f.create_subaccounts(
         parent=account,
         quantity=1,
         rate=10,
         count=2,
-        context=context
     )
 
     subaccounts[0].refresh_from_db()
@@ -1123,20 +1075,17 @@ def test_add_account_percent_markup_children(api_client, user, create_markup,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-@pytest.mark.parametrize('context', ['budget', 'template'])
 def test_add_subaccount_percent_markup_children(api_client, user, create_markup,
-        models, create_account, create_context_budget, create_subaccount,
-        create_subaccounts, context):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
-    subaccount = create_subaccount(parent=account, context=context)
+        models, budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    subaccount = budget_f.create_subaccount(parent=account)
     markup = create_markup(parent=subaccount, percent=True, rate=0.50)
-    children_subaccounts = create_subaccounts(
+    children_subaccounts = budget_f.create_subaccounts(
         parent=subaccount,
         quantity=1,
         rate=10,
         count=2,
-        context=context
     )
     # Make sure all data is properly calculated before API request to avoid
     # confusion in source of potential errors.
@@ -1217,12 +1166,11 @@ def test_add_subaccount_percent_markup_children(api_client, user, create_markup,
     assert response.json()["budget"]["nominal_value"] == 20.0
 
 
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_update_budget_markup_child_not_same_parent(api_client, user, context,
-        create_account, create_context_budget, create_markup):
-    budget = create_context_budget(context=context)
-    another_budget = create_context_budget(context=context)
-    account = create_account(parent=another_budget, context=context)
+def test_update_budget_markup_child_not_same_parent(api_client, user, budget_f,
+        create_markup):
+    budget = budget_f.create_budget()
+    another_budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=another_budget)
     markup = create_markup(parent=budget, percent=True)
 
     api_client.force_login(user)
@@ -1233,14 +1181,12 @@ def test_update_budget_markup_child_not_same_parent(api_client, user, context,
     assert response.status_code == 400
 
 
-@pytest.mark.parametrize('context', ['budget', 'template'])
-def test_update_account_markup_child_not_same_parent(api_client, user,
-        create_account, create_context_budget, create_markup, context,
-        create_subaccount):
-    budget = create_context_budget(context=context)
-    account = create_account(parent=budget, context=context)
-    another_account = create_account(parent=budget, context=context)
-    subaccount = create_subaccount(parent=another_account, context=context)
+def test_update_account_markup_child_not_same_parent(api_client, user, budget_f,
+        create_markup):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    another_account = budget_f.create_account(parent=budget)
+    subaccount = budget_f.create_subaccount(parent=another_account)
     markup = create_markup(parent=account, percent=True)
 
     api_client.force_login(user)
@@ -1251,18 +1197,17 @@ def test_update_account_markup_child_not_same_parent(api_client, user,
     assert response.status_code == 400
 
 
-def test_delete_budget_flat_markup(api_client, user, create_budget, models,
-        create_markup, create_budget_account, create_budget_subaccounts,
-        create_actual):
-    budget = create_budget()
+def test_delete_budget_flat_markup(api_client, user, models, budget_df,
+        create_actual, create_markup):
+    budget = budget_df.create_budget()
     markups = [
         create_markup(parent=budget, flat=True, rate=100),
         create_markup(parent=budget, percent=True, rate=0.1)
     ]
     create_actual(owner=markups[0], value=100, budget=budget)
     create_actual(owner=markups[1], value=100, budget=budget)
-    account = create_budget_account(parent=budget, markups=[markups[1]])
-    create_budget_subaccounts(
+    account = budget_df.create_account(parent=budget, markups=[markups[1]])
+    budget_df.create_subaccounts(
         count=2,
         rate=10,
         multiplier=1,
@@ -1296,15 +1241,15 @@ def test_delete_budget_flat_markup(api_client, user, create_budget, models,
     assert budget.accumulated_markup_contribution == 2.0
 
 
-def test_delete_template_flat_markup(api_client, user, create_template, models,
-        create_markup, create_template_account, create_template_subaccounts):
-    budget = create_template()
+def test_delete_template_flat_markup(api_client, user, models, template_df,
+        create_markup):
+    budget = template_df.create_budget()
     markups = [
         create_markup(parent=budget, flat=True, rate=100),
         create_markup(parent=budget, percent=True, rate=0.1)
     ]
-    account = create_template_account(parent=budget, markups=[markups[1]])
-    create_template_subaccounts(
+    account = template_df.create_account(parent=budget, markups=[markups[1]])
+    template_df.create_subaccounts(
         count=2,
         rate=10,
         multiplier=1,
@@ -1334,18 +1279,17 @@ def test_delete_template_flat_markup(api_client, user, create_template, models,
     assert budget.accumulated_markup_contribution == 2.0
 
 
-def test_delete_budget_percent_markup(api_client, user, create_budget, models,
-        create_markup, create_budget_account, create_budget_subaccounts,
-        create_actual):
-    budget = create_budget()
+def test_delete_budget_percent_markup(api_client, user, budget_df, models,
+        create_markup, create_actual):
+    budget = budget_df.create_budget()
     markups = [
         create_markup(parent=budget, flat=True, rate=100),
         create_markup(parent=budget, percent=True, rate=0.1)
     ]
     create_actual(owner=markups[0], value=100, budget=budget)
     create_actual(owner=markups[1], value=100, budget=budget)
-    account = create_budget_account(parent=budget, markups=[markups[1]])
-    create_budget_subaccounts(
+    account = budget_df.create_account(parent=budget, markups=[markups[1]])
+    budget_df.create_subaccounts(
         count=2,
         rate=10,
         multiplier=1,
@@ -1379,16 +1323,15 @@ def test_delete_budget_percent_markup(api_client, user, create_budget, models,
     assert budget.accumulated_markup_contribution == 100.0
 
 
-def test_delete_template_percent_markup(api_client, user, create_template,
-        models, create_markup, create_budget_account,
-        create_template_subaccounts):
-    budget = create_template()
+def test_delete_template_percent_markup(api_client, user, models, create_markup,
+        template_df):
+    budget = template_df.create_budget()
     markups = [
         create_markup(parent=budget, flat=True, rate=100),
         create_markup(parent=budget, percent=True, rate=0.1)
     ]
-    account = create_budget_account(parent=budget, markups=[markups[1]])
-    create_template_subaccounts(
+    account = template_df.create_account(parent=budget, markups=[markups[1]])
+    template_df.create_subaccounts(
         count=2,
         rate=10,
         multiplier=1,
@@ -1418,11 +1361,10 @@ def test_delete_template_percent_markup(api_client, user, create_template,
     assert budget.accumulated_markup_contribution == 100.0
 
 
-def test_delete_budget_account_flat_markup(api_client, user, create_budget,
-        models, create_markup, create_budget_account, create_budget_subaccount,
-        create_actual):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
+def test_delete_budget_account_flat_markup(api_client, user, budget_df,
+        models, create_markup, create_actual):
+    budget = budget_df.create_budget()
+    account = budget_df.create_account(parent=budget)
     markups = [
         create_markup(parent=account, flat=True, rate=100),
         create_markup(parent=account, percent=True, rate=0.1)
@@ -1430,14 +1372,14 @@ def test_delete_budget_account_flat_markup(api_client, user, create_budget,
     create_actual(owner=markups[0], value=100, budget=budget)
     create_actual(owner=markups[1], value=100, budget=budget)
     subaccounts = [
-        create_budget_subaccount(
+        budget_df.create_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,
             parent=account,
             markups=[markups[1]]
         ),
-        create_budget_subaccount(
+        budget_df.create_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,
@@ -1494,24 +1436,23 @@ def test_delete_budget_account_flat_markup(api_client, user, create_budget,
     assert budget.accumulated_markup_contribution == 2.0
 
 
-def test_delete_template_account_flat_markup(api_client, user, create_template,
-        models, create_markup, create_template_account,
-        create_template_subaccount):
-    budget = create_template()
-    account = create_template_account(parent=budget)
+def test_delete_template_account_flat_markup(api_client, user, template_df,
+        models, create_markup):
+    budget = template_df.create_budget()
+    account = template_df.create_account(parent=budget)
     markups = [
         create_markup(parent=account, flat=True, rate=100),
         create_markup(parent=account, percent=True, rate=0.1)
     ]
     subaccounts = [
-        create_template_subaccount(
+        template_df.create_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,
             parent=account,
             markups=[markups[1]]
         ),
-        create_template_subaccount(
+        template_df.create_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,
@@ -1560,11 +1501,10 @@ def test_delete_template_account_flat_markup(api_client, user, create_template,
     assert budget.accumulated_markup_contribution == 2.0
 
 
-def test_delete_budget_account_percent_markup(api_client, user, create_budget,
-        models, create_markup, create_budget_account, create_budget_subaccount,
-        create_actual):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
+def test_delete_budget_account_percent_markup(api_client, user, budget_df,
+        models, create_markup, create_actual):
+    budget = budget_df.create_budget()
+    account = budget_df.create_account(parent=budget)
     markups = [
         create_markup(parent=account, flat=True, rate=100),
         create_markup(parent=account, percent=True, rate=0.1)
@@ -1572,14 +1512,14 @@ def test_delete_budget_account_percent_markup(api_client, user, create_budget,
     create_actual(owner=markups[0], value=100, budget=budget)
     create_actual(owner=markups[1], value=100, budget=budget)
     subaccounts = [
-        create_budget_subaccount(
+        budget_df.create_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,
             parent=account,
             markups=[markups[1]]
         ),
-        create_budget_subaccount(
+        budget_df.create_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,
@@ -1637,23 +1577,22 @@ def test_delete_budget_account_percent_markup(api_client, user, create_budget,
 
 
 def test_delete_template_account_percent_markup(api_client, user, create_markup,
-        create_template, models, create_template_account,
-        create_template_subaccount):
-    budget = create_template()
-    account = create_template_account(parent=budget)
+        template_df, models):
+    budget = template_df.create_budget()
+    account = template_df.create_account(parent=budget)
     markups = [
         create_markup(parent=account, flat=True, rate=100),
         create_markup(parent=account, percent=True, rate=0.1)
     ]
     subaccounts = [
-        create_template_subaccount(
+        template_df.create_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,
             parent=account,
             markups=[markups[1]]
         ),
-        create_template_subaccount(
+        template_df.create_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,
@@ -1702,12 +1641,11 @@ def test_delete_template_account_percent_markup(api_client, user, create_markup,
     assert budget.accumulated_markup_contribution == 100.0
 
 
-def test_delete_budget_subaccount_flat_markup(api_client, user, create_budget,
-        models, create_markup, create_budget_account, create_budget_subaccount,
-        create_actual):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    subaccount = create_budget_subaccount(parent=account)
+def test_delete_budget_subaccount_flat_markup(api_client, user, budget_df,
+        models, create_markup, create_actual):
+    budget = budget_df.create_budget()
+    account = budget_df.create_account(parent=budget)
+    subaccount = budget_df.create_subaccount(parent=account)
     markups = [
         create_markup(parent=subaccount, flat=True, rate=100),
         create_markup(parent=subaccount, percent=True, rate=0.1)
@@ -1715,14 +1653,14 @@ def test_delete_budget_subaccount_flat_markup(api_client, user, create_budget,
     create_actual(owner=markups[0], value=100, budget=budget)
     create_actual(owner=markups[1], value=100, budget=budget)
     subaccounts = [
-        create_budget_subaccount(
+        budget_df.create_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,
             parent=subaccount,
             markups=[markups[1]]
         ),
-        create_budget_subaccount(
+        budget_df.create_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,
@@ -1791,12 +1729,11 @@ def test_delete_budget_subaccount_flat_markup(api_client, user, create_budget,
     assert budget.accumulated_markup_contribution == 2.0
 
 
-def test_delete_budget_subaccount_percent_markup(api_client, user, create_budget,
-        models, create_markup, create_budget_account, create_budget_subaccount,
-        create_actual):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    subaccount = create_budget_subaccount(parent=account)
+def test_delete_budget_subaccount_percent_markup(api_client, user, budget_df,
+        models, create_markup, create_actual):
+    budget = budget_df.create_budget()
+    account = budget_df.create_account(parent=budget)
+    subaccount = budget_df.create_subaccount(parent=account)
     markups = [
         create_markup(parent=subaccount, flat=True, rate=100),
         create_markup(parent=subaccount, percent=True, rate=0.1)
@@ -1804,14 +1741,14 @@ def test_delete_budget_subaccount_percent_markup(api_client, user, create_budget
     create_actual(owner=markups[0], value=100, budget=budget)
     create_actual(owner=markups[1], value=100, budget=budget)
     subaccounts = [
-        create_budget_subaccount(
+        budget_df.create_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,
             parent=subaccount,
             markups=[markups[1]]
         ),
-        create_budget_subaccount(
+        budget_df.create_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,
@@ -1881,24 +1818,23 @@ def test_delete_budget_subaccount_percent_markup(api_client, user, create_budget
 
 
 def test_delete_template_subaccount_flat_markup(api_client, user, models,
-        create_template, create_markup, create_template_account,
-        create_template_subaccount):
-    budget = create_template()
-    account = create_template_account(parent=budget)
-    subaccount = create_template_subaccount(parent=account)
+        template_df, create_markup):
+    budget = template_df.create_budget()
+    account = template_df.create_account(parent=budget)
+    subaccount = template_df.create_subaccount(parent=account)
     markups = [
         create_markup(parent=subaccount, flat=True, rate=100),
         create_markup(parent=subaccount, percent=True, rate=0.1)
     ]
     subaccounts = [
-        create_template_subaccount(
+        template_df.create_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,
             parent=subaccount,
             markups=[markups[1]]
         ),
-        create_template_subaccount(
+        template_df.create_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,
@@ -1958,24 +1894,23 @@ def test_delete_template_subaccount_flat_markup(api_client, user, models,
 
 
 def test_delete_template_subaccount_percent_markup(api_client, user, models,
-        create_template, create_markup, create_template_account,
-        create_template_subaccount):
-    budget = create_template()
-    account = create_template_account(parent=budget)
-    subaccount = create_template_subaccount(parent=account)
+        template_df, create_markup):
+    budget = template_df.create_budget()
+    account = template_df.create_account(parent=budget)
+    subaccount = template_df.create_subaccount(parent=account)
     markups = [
         create_markup(parent=subaccount, flat=True, rate=100),
         create_markup(parent=subaccount, percent=True, rate=0.1)
     ]
     subaccounts = [
-        create_template_subaccount(
+        template_df.create_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,
             parent=subaccount,
             markups=[markups[1]]
         ),
-        create_template_subaccount(
+        template_df.create_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,

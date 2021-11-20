@@ -22,12 +22,11 @@ def test_delete_account_reestimates(budget_f):
     assert budget.nominal_value == 0.0
 
 
-@pytest.mark.budget
-def test_delete_account_reactualizes(budget_f, create_actual, models):
-    budget = budget_f.create_budget()
-    account = budget_f.create_account(parent=budget)
-    parent_subaccount = budget_f.create_subaccount(parent=account)
-    subaccount = budget_f.create_subaccount(
+def test_delete_account_reactualizes(budget_df, create_actual):
+    budget = budget_df.create_budget()
+    account = budget_df.create_account(parent=budget)
+    parent_subaccount = budget_df.create_subaccount(parent=account)
+    subaccount = budget_df.create_subaccount(
         parent=parent_subaccount,
         rate=1,
         multiplier=5,

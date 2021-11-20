@@ -325,55 +325,52 @@ def test_fringes_cache_invalidated_on_change(api_client, user, budget_f,
 
 
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.budget
-def test_actuals_cache_invalidated_on_delete(api_client, user, budget_f,
+def test_actuals_cache_invalidated_on_delete(api_client, user, budget_df,
         create_actual):
-    budget = budget_f.create_budget()
+    budget = budget_df.create_budget()
     actual = create_actual(budget=budget)
 
     api_client.force_login(user)
     response = api_client.get(
-        "/v1/%ss/%s/actuals/" % (budget_f.context, budget.pk))
+        "/v1/%ss/%s/actuals/" % (budget_df.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 1
 
     actual.delete()
 
     response = api_client.get(
-        "/v1/%ss/%s/actuals/" % (budget_f.context, budget.pk))
+        "/v1/%ss/%s/actuals/" % (budget_df.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 0
 
 
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.budget
-def test_actuals_cache_invalidated_on_create(api_client, user, budget_f,
+def test_actuals_cache_invalidated_on_create(api_client, user, budget_df,
         create_actual):
-    budget = budget_f.create_budget()
+    budget = budget_df.create_budget()
     create_actual(budget=budget)
 
     api_client.force_login(user)
     response = api_client.get(
-        "/v1/%ss/%s/actuals/" % (budget_f.context, budget.pk))
+        "/v1/%ss/%s/actuals/" % (budget_df.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 1
 
     create_actual(budget=budget)
 
     response = api_client.get(
-        "/v1/%ss/%s/actuals/" % (budget_f.context, budget.pk))
+        "/v1/%ss/%s/actuals/" % (budget_df.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 2
 
 
 @pytest.mark.freeze_time('2020-01-01')
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.budget
-def test_actuals_cache_invalidated_on_change(api_client, user, budget_f,
+def test_actuals_cache_invalidated_on_change(api_client, user, budget_df,
         create_actual):
-    budget = budget_f.create_budget()
-    account = budget_f.create_account(parent=budget)
-    subaccount = budget_f.create_subaccount(parent=account)
+    budget = budget_df.create_budget()
+    account = budget_df.create_account(parent=budget)
+    subaccount = budget_df.create_subaccount(parent=account)
     actuals = [
         create_actual(budget=budget, value=100, owner=subaccount),
         create_actual(budget=budget, value=120, owner=subaccount)
@@ -382,7 +379,7 @@ def test_actuals_cache_invalidated_on_change(api_client, user, budget_f,
 
     api_client.force_login(user)
     response = api_client.get(
-        "/v1/%ss/%s/actuals/" % (budget_f.context, budget.pk))
+        "/v1/%ss/%s/actuals/" % (budget_df.context, budget.pk))
     assert response.status_code == 200
 
     actuals[0].value = 150.0
@@ -391,7 +388,7 @@ def test_actuals_cache_invalidated_on_change(api_client, user, budget_f,
     assert budget.actual == 270.0
 
     response = api_client.get(
-        "/v1/%ss/%s/actuals/" % (budget_f.context, budget.pk))
+        "/v1/%ss/%s/actuals/" % (budget_df.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'][0]['value'] == 150.0
