@@ -305,7 +305,7 @@ class TemplateCommunityViewSet(
     (1) GET /templates/community/
     (2) POST /templates/community/
     """
-    extra_permission_classes = (IsAdminOrReadOnly, )
+    permission_classes = (IsAdminOrReadOnly, )
 
     def get_serializer_context(self):
         context = super().get_serializer_context()

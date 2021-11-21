@@ -62,10 +62,9 @@ class GenericViewSet(viewsets.GenericViewSet):
         """
         extra_permissions = getattr(self, 'extra_permission_classes', [])
         extra_permissions = ensure_iterable(extra_permissions)
-        permissions = self.permission_classes[:] + [
+        permissions = list(self.permission_classes)[:] + [
             p for p in extra_permissions if p not in self.permission_classes]
-        permissions = [
-            p() if isinstance(p, type) else p for p in self.permission_classes]
+        permissions = [p() if isinstance(p, type) else p for p in permissions]
         return permissions
 
 
