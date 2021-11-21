@@ -58,9 +58,10 @@ class Fringe(BudgetingRowModel):
     @property
     def intermittent_budget(self):
         try:
-            return self.budget
-        except ObjectDoesNotExist:
-            pass
+            self.budget.refresh_from_db()
+        except (ObjectDoesNotExist, AttributeError):
+            return None
+        return self.budget
 
 
 class BudgetFringe(Fringe):
