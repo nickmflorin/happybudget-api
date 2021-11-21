@@ -4,13 +4,13 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 
 from greenbudget.app import signals
-from greenbudget.app.budgeting.models import BudgetingModel
+from greenbudget.app.tabling.models import BudgetingRowModel
 
 from .managers import FringeManager, BudgetFringeManager, TemplateFringeManager
 
 
 @signals.model(user_field='updated_by')
-class Fringe(BudgetingModel):
+class Fringe(BudgetingRowModel):
     type = "fringe"
     name = models.CharField(max_length=128, null=True)
     description = models.CharField(null=True, max_length=128)
@@ -25,20 +25,6 @@ class Fringe(BudgetingModel):
         to='budget.BaseBudget',
         on_delete=models.CASCADE,
         related_name='fringes'
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-    created_by = models.ForeignKey(
-        to='user.User',
-        related_name='created_fringes',
-        on_delete=models.CASCADE,
-        editable=False
-    )
-    updated_at = models.DateTimeField(auto_now=True)
-    updated_by = models.ForeignKey(
-        to='user.User',
-        related_name='updated_fringes',
-        on_delete=models.CASCADE,
-        editable=False
     )
     color = models.ForeignKey(
         to='tagging.Color',
