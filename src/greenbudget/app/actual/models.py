@@ -109,7 +109,7 @@ class Actual(BudgetingRowModel):
                 raise IntegrityError(
                     "Can only add actuals with the same parent as the instance.")
             elif self.contact is not None \
-                    and self.contact.user != self.created_by:
+                    and self.contact.created_by != self.created_by:
                 raise IntegrityError(
                     "Cannot assign a contact created by one user to an actual "
                     "created by another user."
