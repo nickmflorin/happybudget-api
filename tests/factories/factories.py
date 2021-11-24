@@ -21,7 +21,6 @@ from greenbudget.app.template.models import Template
 from greenbudget.app.user.models import User
 
 from .base import CustomModelFactory
-from .fields import FutureDateTimeField
 from .lazy import Lazy
 
 
@@ -136,14 +135,6 @@ class BudgetFactory(BaseBudgetFactory):
     """
     A DjangoModelFactory to create instances of :obj:`Budget`.
     """
-    production_type = 1
-    shoot_date = FutureDateTimeField()
-    delivery_date = FutureDateTimeField()
-    build_days = factory.Faker('random_number')
-    prelight_days = factory.Faker('random_number')
-    studio_shoot_days = factory.Faker('random_number')
-    location_days = factory.Faker('random_number')
-
     class Meta:
         model = Budget
 

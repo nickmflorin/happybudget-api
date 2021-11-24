@@ -18,8 +18,6 @@ def test_unit_properly_serializes(api_client, user, create_subaccount_unit):
     assert response.json()['data'] == [
         {
             'id': units[0].pk,
-            "created_at": "2020-01-01 00:00:00",
-            "updated_at": "2020-01-01 00:00:00",
             'title': units[0].title,
             'plural_title': units[0].plural_title,
             'order': units[0].order,
@@ -27,8 +25,6 @@ def test_unit_properly_serializes(api_client, user, create_subaccount_unit):
         },
         {
             'id': units[1].pk,
-            "created_at": "2020-01-01 00:00:00",
-            "updated_at": "2020-01-01 00:00:00",
             'title': units[1].title,
             'plural_title': units[1].plural_title,
             'order': units[1].order,

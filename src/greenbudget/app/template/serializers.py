@@ -9,8 +9,6 @@ from .models import Template
 
 
 class TemplateSimpleSerializer(BaseBudgetSerializer):
-    created_by = serializers.PrimaryKeyRelatedField(read_only=True)
-    created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
     image = Base64ImageField(required=False, allow_null=True)
     hidden = serializers.BooleanField(read_only=True)
@@ -18,7 +16,7 @@ class TemplateSimpleSerializer(BaseBudgetSerializer):
     class Meta:
         model = Template
         fields = BaseBudgetSerializer.Meta.fields + (
-            'created_by', 'updated_at', 'created_at', 'image', 'hidden')
+            'updated_at', 'image', 'hidden')
 
     def to_representation(self, instance):
         data = super().to_representation(instance)

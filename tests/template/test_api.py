@@ -17,21 +17,17 @@ def test_get_templates(api_client, user, create_template, staff_user):
         {
             "id": templates[0].pk,
             "name": templates[0].name,
-            "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
             "type": "budget",
             "domain": "template",
-            "created_by": user.pk,
             "image": None
         },
         {
             "id": templates[1].pk,
             "name": templates[1].name,
-            "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
             "type": "budget",
             "domain": "template",
-            "created_by": user.pk,
             "image": None,
         }
     ]
@@ -53,21 +49,17 @@ def test_get_staff_user_templates(api_client, create_template, staff_user):
         {
             "id": templates[0].pk,
             "name": templates[0].name,
-            "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
             "type": "budget",
             "domain": "template",
-            "created_by": staff_user.pk,
             "image": None,
         },
         {
             "id": templates[1].pk,
             "name": templates[1].name,
-            "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
             "type": "budget",
             "domain": "template",
-            "created_by": staff_user.pk,
             "image": None,
         }
     ]
@@ -88,22 +80,18 @@ def test_get_community_templates(api_client, user, create_template, staff_user):
         {
             "id": templates[0].pk,
             "name": templates[0].name,
-            "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
             "type": "budget",
             "domain": "template",
-            "created_by": staff_user.pk,
             "image": None,
             "hidden": False,
         },
         {
             "id": templates[1].pk,
             "name": templates[1].name,
-            "created_at": "2020-01-01 00:00:00",
             "updated_at": "2020-01-01 00:00:00",
             "type": "budget",
             "domain": "template",
-            "created_by": staff_user.pk,
             "image": None,
             "hidden": False,
         }
@@ -119,7 +107,6 @@ def test_get_template(api_client, user, create_template):
     assert response.json() == {
         "id": template.pk,
         "name": template.name,
-        "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
         "nominal_value": 0.0,
         "accumulated_fringe_contribution": 0.0,
@@ -127,7 +114,6 @@ def test_get_template(api_client, user, create_template):
         "actual": 0.0,
         "type": "budget",
         "domain": "template",
-        "created_by": user.pk,
         "image": None,
     }
 
@@ -153,7 +139,6 @@ def test_get_community_template(api_client, staff_user, create_template,
     assert response.json() == {
         "id": template.pk,
         "name": template.name,
-        "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
         "nominal_value": 0.0,
         "accumulated_fringe_contribution": 0.0,
@@ -161,7 +146,6 @@ def test_get_community_template(api_client, staff_user, create_template,
         "actual": 0.0,
         "type": "budget",
         "domain": "template",
-        "created_by": another_staff_user.pk,
         "image": None,
         "hidden": False,
     }
@@ -202,7 +186,6 @@ def test_create_template(api_client, user, models):
     assert response.json() == {
         "id": template.pk,
         "name": "Test Name",
-        "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
         "nominal_value": 0.0,
         "accumulated_fringe_contribution": 0.0,
@@ -210,7 +193,6 @@ def test_create_template(api_client, user, models):
         "actual": 0.0,
         "type": "budget",
         "domain": "template",
-        "created_by": user.pk,
         "image": None,
     }
 
@@ -230,7 +212,6 @@ def test_create_community_template(api_client, staff_user, models):
     assert response.json() == {
         "id": template.pk,
         "name": "Test Name",
-        "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
         "nominal_value": 0.0,
         "accumulated_fringe_contribution": 0.0,
@@ -238,7 +219,6 @@ def test_create_community_template(api_client, staff_user, models):
         "actual": 0.0,
         "type": "budget",
         "domain": "template",
-        "created_by": staff_user.pk,
         "image": None,
         "hidden": False,
     }
@@ -297,7 +277,6 @@ def test_update_template(api_client, user, create_template):
     assert response.json() == {
         "id": template.pk,
         "name": "New Name",
-        "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
         "nominal_value": 0.0,
         "accumulated_fringe_contribution": 0.0,
@@ -305,7 +284,6 @@ def test_update_template(api_client, user, create_template):
         "actual": 0.0,
         "type": "budget",
         "domain": "template",
-        "created_by": user.pk,
         "image": None,
     }
 
@@ -323,7 +301,6 @@ def test_update_community_template(api_client, staff_user, create_template):
     assert response.json() == {
         "id": template.pk,
         "name": "New Name",
-        "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
         "nominal_value": 0.0,
         "accumulated_fringe_contribution": 0.0,
@@ -331,7 +308,6 @@ def test_update_community_template(api_client, staff_user, create_template):
         "actual": 0.0,
         "type": "budget",
         "domain": "template",
-        "created_by": staff_user.pk,
         "image": None,
         "hidden": False,
     }
@@ -383,7 +359,6 @@ def test_update_another_users_community_template(api_client, staff_user,
     assert response.json() == {
         "id": template.pk,
         "name": "New Name",
-        "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
         "nominal_value": 0.0,
         "accumulated_fringe_contribution": 0.0,
@@ -391,7 +366,6 @@ def test_update_another_users_community_template(api_client, staff_user,
         "actual": 0.0,
         "type": "budget",
         "domain": "template",
-        "created_by": user.pk,
         "image": None,
         "hidden": False,
     }
@@ -443,7 +417,6 @@ def test_duplicate_template(api_client, user, create_template, models):
     assert response.json() == {
         "id": template.pk,
         "name": original.name,
-        "created_at": "2020-01-01 00:00:00",
         "updated_at": "2020-01-01 00:00:00",
         "nominal_value": 0.0,
         "accumulated_fringe_contribution": 0.0,
@@ -451,7 +424,6 @@ def test_duplicate_template(api_client, user, create_template, models):
         "actual": 0.0,
         "type": "budget",
         "domain": "template",
-        "created_by": user.pk,
         "image": None,
     }
 

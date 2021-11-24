@@ -1,8 +1,8 @@
 from rest_framework import serializers
 
 from greenbudget.lib.drf.fields import ModelChoiceField
-from greenbudget.lib.drf.serializers import (
-    ModelSerializer)
+from greenbudget.lib.drf.serializers import ModelSerializer
+
 from greenbudget.app.tabling.serializers import row_order_serializer
 from greenbudget.app.tagging.serializers import ColorField
 
@@ -12,6 +12,7 @@ from .models import Fringe
 class FringeSerializer(ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     type = serializers.CharField(read_only=True)
+    order = serializers.CharField(read_only=True)
     name = serializers.CharField(
         required=False,
         allow_blank=False,
@@ -24,11 +25,6 @@ class FringeSerializer(ModelSerializer):
         allow_null=True,
         trim_whitespace=False
     )
-    created_by = serializers.PrimaryKeyRelatedField(read_only=True)
-    updated_by = serializers.PrimaryKeyRelatedField(read_only=True)
-    created_at = serializers.DateTimeField(read_only=True)
-    updated_at = serializers.DateTimeField(read_only=True)
-    order = serializers.CharField(read_only=True)
     rate = serializers.FloatField(required=False, allow_null=True)
     cutoff = serializers.FloatField(required=False, allow_null=True)
     unit = ModelChoiceField(
@@ -45,8 +41,7 @@ class FringeSerializer(ModelSerializer):
     class Meta:
         model = Fringe
         fields = (
-            'id', 'name', 'description', 'created_by', 'created_at',
-            'updated_by', 'updated_at', 'rate', 'cutoff', 'unit',
+            'id', 'name', 'description', 'rate', 'cutoff', 'unit',
             'color', 'type', 'order')
 
 

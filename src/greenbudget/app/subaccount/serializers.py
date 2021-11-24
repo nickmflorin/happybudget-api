@@ -51,10 +51,7 @@ class SubAccountSimpleSerializer(ModelSerializer):
 
 
 class SubAccountSerializer(SubAccountSimpleSerializer):
-    created_by = serializers.PrimaryKeyRelatedField(read_only=True)
-    updated_by = serializers.PrimaryKeyRelatedField(read_only=True)
-    created_at = serializers.DateTimeField(read_only=True)
-    updated_at = serializers.DateTimeField(read_only=True)
+    order = serializers.CharField(read_only=True)
     quantity = serializers.FloatField(required=False, allow_null=True)
     rate = serializers.FloatField(required=False, allow_null=True)
     multiplier = serializers.FloatField(required=False, allow_null=True)
@@ -64,7 +61,6 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
     markup_contribution = serializers.FloatField(read_only=True)
     accumulated_markup_contribution = serializers.FloatField(read_only=True)
     actual = serializers.FloatField(read_only=True)
-    order = serializers.CharField(read_only=True)
     group = TableChildrenPrimaryKeyRelatedField(
         obj_name='Group',
         required=False,
@@ -98,15 +94,13 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
 
     class Meta:
         model = SubAccount
-        fields = SubAccountSimpleSerializer.Meta.fields \
-            + (
-                'created_by', 'updated_by', 'created_at', 'updated_at',
+        fields = SubAccountSimpleSerializer.Meta.fields + (
                 'quantity', 'rate', 'multiplier', 'unit', 'object_id',
-                'parent_type', 'children', 'fringes', 'group',
+                'parent_type', 'children', 'fringes', 'group', 'order',
                 'nominal_value', 'actual', 'fringe_contribution',
                 'markup_contribution', 'accumulated_markup_contribution',
-                'accumulated_fringe_contribution', 'order'
-            )
+                'accumulated_fringe_contribution',
+        )
 
     def validate(self, attrs):
         if self.instance is not None and self.instance.children.count() != 0:

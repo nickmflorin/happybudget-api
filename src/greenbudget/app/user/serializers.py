@@ -114,8 +114,6 @@ class UserSerializer(ModelSerializer):
     is_superuser = serializers.BooleanField(default=False, read_only=True)
     last_login = serializers.DateTimeField(read_only=True)
     date_joined = serializers.DateTimeField(read_only=True)
-    created_at = serializers.DateTimeField(read_only=True)
-    updated_at = serializers.DateTimeField(read_only=True)
     timezone = serializers.CharField()
     profile_image = Base64ImageField(required=False, allow_null=True)
     is_first_time = serializers.BooleanField(read_only=True)
@@ -126,5 +124,5 @@ class UserSerializer(ModelSerializer):
             'is_active', 'is_admin', 'is_superuser', 'is_staff', 'full_name',
             'profile_image')
         fields = nested_fields + (
-            'created_at', 'updated_at', 'last_login', 'date_joined', 'timezone',
-            'is_first_time', 'company', 'position', 'address', 'phone_number')
+            'last_login', 'date_joined', 'timezone', 'is_first_time', 'company',
+            'position', 'address', 'phone_number')

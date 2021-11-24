@@ -22,10 +22,6 @@ def test_get_account_markup(api_client, user, budget_f, create_markup, models):
             "id": markup.unit,
             "name": models.Markup.UNITS[markup.unit]
         },
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
-        "created_by": user.pk,
-        "updated_by": user.pk,
         "children": [account.pk]
     }
 
@@ -53,10 +49,6 @@ def test_get_subaccount_markup(api_client, user, budget_f, create_markup,
             "id": markup.unit,
             "name": models.Markup.UNITS[markup.unit]
         },
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
-        "created_by": user.pk,
-        "updated_by": user.pk,
         "children": [subaccount.pk]
     }
 
@@ -170,10 +162,6 @@ def test_update_markup_children(api_client, user, budget_f, create_markup,
             "id": markups[0].unit,
             "name": models.Markup.UNITS[markups[0].unit]
         },
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
-        "created_by": user.pk,
-        "updated_by": user.pk,
         "children": [a.pk for a in accounts],
     }
 
@@ -264,10 +252,6 @@ def test_update_account_markup_children(api_client, user, budget_f, models,
             "id": markups[1].unit,
             "name": models.Markup.UNITS[markups[1].unit]
         },
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
-        "created_by": user.pk,
-        "updated_by": user.pk,
         "children": [a.pk for a in subaccounts],
     }
 
@@ -365,10 +349,6 @@ def test_update_subaccount_markup_children(api_client, user, budget_f, models,
             "id": markups[1].unit,
             "name": models.Markup.UNITS[markups[1].unit]
         },
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
-        "created_by": user.pk,
-        "updated_by": user.pk,
         "children": [a.pk for a in children_subaccounts],
     }
 
@@ -449,11 +429,7 @@ def test_update_account_flat_markup_rate(api_client, user, budget_f, models,
         "unit": {
             "id": markups[0].unit,
             "name": models.Markup.UNITS[markups[0].unit]
-        },
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
-        "created_by": user.pk,
-        "updated_by": user.pk,
+        }
     }
 
     assert response.json()["budget"]["accumulated_markup_contribution"] == 70.0
@@ -530,15 +506,11 @@ def test_change_account_flat_markup_to_percent(api_client, user, models,
         "description": markups[0].description,
         "rate": markups[0].rate,
         "actual": 0.0,
+        "children": [accounts[1].pk],
         "unit": {
             "id": markups[0].unit,
             "name": models.Markup.UNITS[markups[0].unit]
-        },
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
-        "created_by": user.pk,
-        "updated_by": user.pk,
-        "children": [accounts[1].pk]
+        }
     }
 
     assert response.json()["budget"]["accumulated_markup_contribution"] == 40.0
@@ -661,10 +633,6 @@ def test_update_account_percent_markup_rate(api_client, user, budget_f, models,
             "id": markups[0].unit,
             "name": models.Markup.UNITS[markups[0].unit]
         },
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
-        "created_by": user.pk,
-        "updated_by": user.pk,
         "children": [a.pk for a in accounts],
     }
 
@@ -748,10 +716,6 @@ def test_change_account_percent_markup_to_flat(api_client, user, models,
             "id": markups[0].unit,
             "name": models.Markup.UNITS[markups[0].unit]
         },
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
-        "created_by": user.pk,
-        "updated_by": user.pk
     }
 
     assert response.json()["budget"]["accumulated_markup_contribution"] == 50.0
@@ -879,10 +843,6 @@ def test_remove_percent_markup_children(api_client, user, create_markup,
             "id": markup.unit,
             "name": models.Markup.UNITS[markup.unit]
         },
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
-        "created_by": user.pk,
-        "updated_by": user.pk,
         "children": [],
     }
 
@@ -980,10 +940,6 @@ def test_add_percent_markup_children(api_client, user, create_markup, models,
             "id": markup.unit,
             "name": models.Markup.UNITS[markup.unit]
         },
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
-        "created_by": user.pk,
-        "updated_by": user.pk,
         "children": [account.pk],
     }
 
@@ -1060,10 +1016,6 @@ def test_add_account_percent_markup_children(api_client, user, create_markup,
             "id": markup.unit,
             "name": models.Markup.UNITS[markup.unit]
         },
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
-        "created_by": user.pk,
-        "updated_by": user.pk,
         "children": [subaccounts[0].pk]
     }
 
@@ -1152,10 +1104,6 @@ def test_add_subaccount_percent_markup_children(api_client, user, create_markup,
             "id": markup.unit,
             "name": models.Markup.UNITS[markup.unit]
         },
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
-        "created_by": user.pk,
-        "updated_by": user.pk,
         "children": [children_subaccounts[0].pk]
     }
 

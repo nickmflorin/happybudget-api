@@ -20,11 +20,7 @@ def test_get_budget_account_subaccount_groups(api_client, user, create_group,
         "id": group.pk,
         "name": group.name,
         "type": "group",
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
         "color": group.color,
-        "updated_by": user.pk,
-        "created_by": user.pk,
         "children": [subaccount.pk]
     }]
 
@@ -53,11 +49,7 @@ def test_create_account_subaccount_group(api_client, user, models, budget_f):
         "id": 1,
         "name": "Group Name",
         "type": "group",
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
-        "updated_by": user.pk,
         "color": '#a1887f',
-        "created_by": user.pk,
         "children": [subaccount.pk]
     }
 

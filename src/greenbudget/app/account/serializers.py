@@ -36,11 +36,6 @@ class AccountSimpleSerializer(ModelSerializer):
 
 
 class AccountSerializer(AccountSimpleSerializer):
-    created_by = serializers.PrimaryKeyRelatedField(read_only=True)
-    updated_by = serializers.PrimaryKeyRelatedField(read_only=True)
-    created_at = serializers.DateTimeField(read_only=True)
-    updated_at = serializers.DateTimeField(read_only=True)
-
     nominal_value = serializers.FloatField(read_only=True)
     accumulated_fringe_contribution = serializers.FloatField(read_only=True)
     markup_contribution = serializers.FloatField(read_only=True)
@@ -55,13 +50,14 @@ class AccountSerializer(AccountSimpleSerializer):
         child_instance_cls=Group,
         write_only=True,
     )
+    order = serializers.CharField(read_only=True)
 
     class Meta(AccountSimpleSerializer.Meta):
         fields = AccountSimpleSerializer.Meta.fields + (
-            'created_by', 'updated_by', 'created_at', 'updated_at',
-            'children', 'nominal_value', 'group', 'order', 'markup_contribution',
-            'accumulated_markup_contribution', 'accumulated_fringe_contribution',
-            'actual'
+            'children', 'nominal_value', 'group', 'actual', 'order',
+            'markup_contribution',
+            'accumulated_markup_contribution',
+            'accumulated_fringe_contribution',
         )
 
 

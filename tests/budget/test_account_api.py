@@ -17,8 +17,6 @@ def test_get_accounts(api_client, user, budget_f):
             "id": accounts[0].pk,
             "identifier": "%s" % accounts[0].identifier,
             "description": accounts[0].description,
-            "created_at": "2020-01-01 00:00:00",
-            "updated_at": "2020-01-01 00:00:00",
             "type": "account",
             "nominal_value": 0.0,
             "accumulated_fringe_contribution": 0.0,
@@ -26,16 +24,12 @@ def test_get_accounts(api_client, user, budget_f):
             "accumulated_markup_contribution": 0.0,
             "actual": 0.0,
             "children": [],
-            "order": "n",
-            "created_by": user.pk,
-            "updated_by": user.pk
+            "order": "n"
         },
         {
             "id": accounts[1].pk,
             "identifier": "%s" % accounts[1].identifier,
             "description": accounts[1].description,
-            "created_at": "2020-01-01 00:00:00",
-            "updated_at": "2020-01-01 00:00:00",
             "type": "account",
             "nominal_value": 0.0,
             "accumulated_fringe_contribution": 0.0,
@@ -43,9 +37,7 @@ def test_get_accounts(api_client, user, budget_f):
             "accumulated_markup_contribution": 0.0,
             "actual": 0.0,
             "children": [],
-            "order": "t",
-            "created_by": user.pk,
-            "updated_by": user.pk
+            "order": "t"
         }
     ]
 
@@ -68,8 +60,6 @@ def test_get_accounts_filtered_by_id(api_client, user, budget_f):
             "id": accounts[0].pk,
             "identifier": "%s" % accounts[0].identifier,
             "description": accounts[0].description,
-            "created_at": "2020-01-01 00:00:00",
-            "updated_at": "2020-01-01 00:00:00",
             "type": "account",
             "nominal_value": 0.0,
             "accumulated_fringe_contribution": 0.0,
@@ -77,8 +67,6 @@ def test_get_accounts_filtered_by_id(api_client, user, budget_f):
             "accumulated_markup_contribution": 0.0,
             "actual": 0.0,
             "children": [],
-            "created_by": user.pk,
-            "updated_by": user.pk,
             "order": "n"
         }
     ]
@@ -100,8 +88,6 @@ def test_create_account(api_client, user, budget_f, models):
         "id": account.pk,
         "identifier": 'new_account',
         "description": None,
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
         "type": "account",
         "nominal_value": 0.0,
         "accumulated_fringe_contribution": 0.0,
@@ -109,8 +95,6 @@ def test_create_account(api_client, user, budget_f, models):
         "accumulated_markup_contribution": 0.0,
         "actual": 0.0,
         "children": [],
-        "created_by": user.pk,
-        "updated_by": user.pk,
         "siblings": [],
         "order": "n",
         "ancestors": [{

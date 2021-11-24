@@ -12,8 +12,6 @@ def test_get_header_template(api_client, user, create_header_template):
     assert response.json() == {
         "id": template.pk,
         "name": template.name,
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
         "left_image": None,
         "right_image": None,
         "right_info": None,
@@ -33,8 +31,6 @@ def test_get_header_templates(api_client, user, create_header_template):
         {
             "id": template.pk,
             "name": template.name,
-            "created_at": "2020-01-01 00:00:00",
-            "updated_at": "2020-01-01 00:00:00",
         }
     ]
 
@@ -87,8 +83,6 @@ def test_create_header_template(api_client, user, models):
     assert response.json() == {
         "id": template.pk,
         "name": template.name,
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
         "left_image": None,
         "right_image": None,
         "right_info": None,
@@ -118,8 +112,6 @@ def test_update_header_template(api_client, user, create_header_template,
     assert response.json() == {
         "id": template.pk,
         "name": template.name,
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
         "left_image": None,
         "right_image": None,
         "right_info": None,

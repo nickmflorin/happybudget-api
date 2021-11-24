@@ -40,8 +40,6 @@ def test_validate_email_token(validate_email_token, unverified_user):
         "address": unverified_user.address,
         "phone_number": unverified_user.phone_number,
         'date_joined': api_datetime_string(unverified_user.date_joined),
-        'updated_at': api_datetime_string(unverified_user.updated_at),
-        'created_at': api_datetime_string(unverified_user.created_at),
         'last_login': None,
         'timezone': str(unverified_user.timezone),
         "profile_image": None,

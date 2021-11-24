@@ -56,13 +56,10 @@ class ColorSerializer(serializers.ModelSerializer):
 
 
 class TagSerializer(serializers.ModelSerializer):
-    created_at = serializers.DateTimeField(read_only=True)
-    updated_at = serializers.DateTimeField(read_only=True)
     title = serializers.CharField(read_only=True)
     order = serializers.IntegerField(read_only=True)
     plural_title = serializers.CharField(read_only=True)
 
     class Meta:
         model = Tag
-        fields = (
-            'id', 'created_at', 'updated_at', 'title', 'order', 'plural_title')
+        fields = ('id', 'title', 'order', 'plural_title')

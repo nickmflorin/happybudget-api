@@ -9,12 +9,10 @@ class SimpleHeaderTemplateSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     name = serializers.CharField(
         required=True, allow_null=False, allow_blank=False)
-    created_at = serializers.DateTimeField(read_only=True)
-    updated_at = serializers.DateTimeField(read_only=True)
 
     class Meta:
         model = HeaderTemplate
-        fields = ('id', 'created_at', 'updated_at', 'name')
+        fields = ('id', 'name')
 
     def validate_name(self, value):
         user = self.context['user']

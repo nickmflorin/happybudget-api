@@ -35,8 +35,6 @@ def test_login(login, user_with_password, settings):
         "address": user_with_password.address,
         "phone_number": user_with_password.phone_number,
         "full_name": user_with_password.full_name,
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
         "last_login": "2020-01-01 00:00:00",
         "date_joined": "2020-01-01 00:00:00",
         "profile_image": None,

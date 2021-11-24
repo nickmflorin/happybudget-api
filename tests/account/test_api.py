@@ -14,8 +14,6 @@ def test_get_account(api_client, user, budget_f):
         "id": account.pk,
         "identifier": "%s" % account.identifier,
         "description": account.description,
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
         "type": "account",
         "nominal_value": 0.0,
         "accumulated_fringe_contribution": 0.0,
@@ -23,8 +21,6 @@ def test_get_account(api_client, user, budget_f):
         "accumulated_markup_contribution": 0.0,
         "actual": 0.0,
         "children": [],
-        "created_by": user.pk,
-        "updated_by": user.pk,
         "siblings": [],
         "order": "n",
         "ancestors": [{

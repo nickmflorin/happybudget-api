@@ -16,10 +16,6 @@ class GroupSerializer(ModelSerializer):
         allow_blank=False,
         allow_null=False
     )
-    created_by = serializers.PrimaryKeyRelatedField(read_only=True)
-    updated_by = serializers.PrimaryKeyRelatedField(read_only=True)
-    created_at = serializers.DateTimeField(read_only=True)
-    updated_at = serializers.DateTimeField(read_only=True)
     color = ColorField(content_type_model=Group, required=False)
     children = TableChildrenPrimaryKeyRelatedField(
         obj_name='Group',
@@ -30,9 +26,7 @@ class GroupSerializer(ModelSerializer):
 
     class Meta:
         model = Group
-        fields = (
-            'id', 'name', 'created_by', 'created_at', 'updated_by',
-            'updated_at', 'color', 'children', 'type')
+        fields = ('id', 'name', 'color', 'children', 'type')
 
     def validate_children(self, children):
         if len(children) == 0:

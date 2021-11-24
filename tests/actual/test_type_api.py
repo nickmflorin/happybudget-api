@@ -14,8 +14,6 @@ def test_unit_properly_serializes(api_client, user, create_actual_type):
     assert response.json()['data'] == [
         {
             'id': types[0].pk,
-            "created_at": "2020-01-01 00:00:00",
-            "updated_at": "2020-01-01 00:00:00",
             'title': types[0].title,
             'plural_title': types[0].plural_title,
             'order': types[0].order,
@@ -23,8 +21,6 @@ def test_unit_properly_serializes(api_client, user, create_actual_type):
         },
         {
             'id': types[1].pk,
-            "created_at": "2020-01-01 00:00:00",
-            "updated_at": "2020-01-01 00:00:00",
             'title': types[1].title,
             'plural_title': types[1].plural_title,
             'order': types[1].order,

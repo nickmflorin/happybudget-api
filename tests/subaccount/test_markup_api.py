@@ -29,10 +29,6 @@ def test_get_subaccount_markups(api_client, user, models, create_markup,
             "id": markup.unit,
             "name": models.Markup.UNITS[markup.unit]
         },
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
-        "created_by": user.pk,
-        "updated_by": user.pk,
         "children": [child_subaccount.pk]
     }]
 
@@ -120,10 +116,6 @@ def test_create_subaccount_percent_markup(api_client, user, models, budget_f):
             "id": markup.unit,
             "name": models.Markup.UNITS[markup.unit]
         },
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
-        "created_by": user.pk,
-        "updated_by": user.pk,
         "children": [s.pk for s in subaccounts]
     }
 
@@ -215,10 +207,6 @@ def test_create_subaccount_flat_markup(api_client, user, models, budget_f):
             "id": markup.unit,
             "name": models.Markup.UNITS[markup.unit]
         },
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
-        "created_by": user.pk,
-        "updated_by": user.pk
     }
 
     assert response.json()["parent"]["accumulated_markup_contribution"] == 20.0

@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from greenbudget.lib.drf.fields import ModelChoiceField
 from greenbudget.lib.drf.serializers import ModelSerializer
+
 from greenbudget.app.io.fields import Base64ImageField
 from greenbudget.app.io.serializers import SimpleAttachmentSerializer
 from greenbudget.app.io.models import Attachment
@@ -13,11 +14,10 @@ from .models import Contact
 class ContactSerializer(ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     type = serializers.CharField(read_only=True)
+    order = serializers.CharField(read_only=True)
     first_name = serializers.CharField(allow_null=True, required=False)
     last_name = serializers.CharField(allow_null=True, required=False)
     full_name = serializers.CharField(read_only=True)
-    created_at = serializers.DateTimeField(read_only=True)
-    updated_at = serializers.DateTimeField(read_only=True)
     contact_type = ModelChoiceField(
         required=False,
         choices=Contact.TYPES,
@@ -40,9 +40,9 @@ class ContactSerializer(ModelSerializer):
     class Meta:
         model = Contact
         fields = (
-            'id', 'first_name', 'last_name', 'created_at', 'updated_at', 'type',
-            'city', 'rate', 'phone_number', 'email', 'full_name', 'company',
-            'position', 'image', 'contact_type', 'attachments', 'order')
+            'id', 'first_name', 'last_name', 'type', 'city', 'rate',
+            'phone_number', 'email', 'full_name', 'company', 'position',
+            'image', 'contact_type', 'attachments', 'order')
         response = {
             'attachments': (
                 SimpleAttachmentSerializer,

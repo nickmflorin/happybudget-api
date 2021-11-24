@@ -1,6 +1,5 @@
 from rest_framework import serializers, exceptions
 
-from greenbudget.lib.drf.fields import ModelChoiceField
 from greenbudget.lib.drf.serializers import ModelSerializer
 
 from greenbudget.app.account.serializers import AccountPdfSerializer
@@ -51,8 +50,6 @@ class BudgetPdfSerializer(BaseBudgetSerializer):
 
 
 class BudgetSimpleSerializer(BaseBudgetSerializer):
-    created_by = serializers.PrimaryKeyRelatedField(read_only=True)
-    created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
     image = Base64ImageField(required=False, allow_null=True)
     template = serializers.PrimaryKeyRelatedField(
@@ -65,7 +62,7 @@ class BudgetSimpleSerializer(BaseBudgetSerializer):
     class Meta:
         model = Budget
         fields = BaseBudgetSerializer.Meta.fields + (
-            'created_by', 'updated_at', 'created_at', 'template', 'image')
+            'updated_at', 'template', 'image')
 
     def create(self, validated_data):
         if 'template' not in validated_data:
@@ -87,18 +84,6 @@ class BudgetSimpleSerializer(BaseBudgetSerializer):
 
 
 class BudgetSerializer(BudgetSimpleSerializer):
-    project_number = serializers.IntegerField(read_only=True)
-    production_type = ModelChoiceField(
-        choices=Budget.PRODUCTION_TYPES,
-        required=False
-    )
-    shoot_date = serializers.DateTimeField(read_only=True)
-    delivery_date = serializers.DateTimeField(read_only=True)
-    build_days = serializers.IntegerField(read_only=True)
-    prelight_days = serializers.IntegerField(read_only=True)
-    studio_shoot_days = serializers.IntegerField(read_only=True)
-    location_days = serializers.IntegerField(read_only=True)
-
     nominal_value = serializers.FloatField(read_only=True)
     accumulated_fringe_contribution = serializers.FloatField(read_only=True)
     accumulated_markup_contribution = serializers.FloatField(read_only=True)
@@ -112,9 +97,4 @@ class BudgetSerializer(BudgetSimpleSerializer):
                 'actual',
                 'accumulated_markup_contribution',
                 'accumulated_fringe_contribution'
-            ) \
-            + (
-                'project_number', 'production_type', 'shoot_date',
-                'delivery_date', 'build_days', 'prelight_days',
-                'studio_shoot_days', 'location_days',
             )

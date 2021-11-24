@@ -114,10 +114,6 @@ class MarkupSerializer(BudgetParentContextSerializer):
         allow_null=True,
         trim_whitespace=False
     )
-    created_by = serializers.PrimaryKeyRelatedField(read_only=True)
-    updated_by = serializers.PrimaryKeyRelatedField(read_only=True)
-    created_at = serializers.DateTimeField(read_only=True)
-    updated_at = serializers.DateTimeField(read_only=True)
     rate = serializers.FloatField(required=False, allow_null=True)
     actual = serializers.FloatField(read_only=True)
     unit = ModelChoiceField(
@@ -135,9 +131,8 @@ class MarkupSerializer(BudgetParentContextSerializer):
     class Meta:
         model = Markup
         fields = (
-            'id', 'identifier', 'description', 'created_by', 'created_at',
-            'updated_by', 'updated_at', 'rate', 'unit', 'children', 'type',
-            'actual')
+            'id', 'identifier', 'description', 'rate', 'unit', 'children',
+            'type', 'actual')
 
     def validate(self, attrs):
         # If creating a new instance (via POST) the unit will always be in the

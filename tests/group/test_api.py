@@ -13,11 +13,7 @@ def test_get_account_group(api_client, user, budget_f, create_group):
         "id": group.pk,
         "type": "group",
         "name": group.name,
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
         "color": None,
-        "created_by": user.pk,
-        "updated_by": user.pk,
         "children": [account.pk]
     }
 
@@ -35,11 +31,7 @@ def test_get_subaccount_group(api_client, user, budget_f, create_group):
         "id": group.pk,
         "type": "group",
         "name": group.name,
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
         "color": None,
-        "updated_by": user.pk,
-        "created_by": user.pk,
         "children": [subaccount.pk]
     }
 
@@ -65,11 +57,7 @@ def test_update_account_group(api_client, user, create_group, budget_f):
         "id": group.pk,
         "type": "group",
         "name": "Group Name",
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
         "color": None,
-        "created_by": user.pk,
-        "updated_by": user.pk,
         "children": [account.pk]
     }
 
@@ -98,11 +86,7 @@ def test_update_subaccount_group(api_client, user, budget_f, create_group):
         "id": group.pk,
         "type": "group",
         "name": "Group Name",
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
         "color": None,
-        "updated_by": user.pk,
-        "created_by": user.pk,
         "children": [subaccount.pk]
     }
 
@@ -132,11 +116,7 @@ def test_remove_subaccount_group_children(api_client, user, budget_f,
         "id": group.pk,
         "type": "group",
         "name": group.name,
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
         "color": None,
-        "updated_by": user.pk,
-        "created_by": user.pk,
         "children": [subaccounts[0].pk]
     }
 

@@ -27,10 +27,6 @@ def test_get_account_markups(api_client, user, models, budget_f, create_markup):
             "id": markup.unit,
             "name": models.Markup.UNITS[markup.unit]
         },
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
-        "created_by": user.pk,
-        "updated_by": user.pk,
         "children": [account.pk]
     }]
 
@@ -106,11 +102,7 @@ def test_create_flat_markup(api_client, user, models, budget_f):
         "unit": {
             "id": markup.unit,
             "name": models.Markup.UNITS[markup.unit]
-        },
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
-        "created_by": user.pk,
-        "updated_by": user.pk
+        }
     }
 
     assert response.json()["budget"]["accumulated_markup_contribution"] == 20.0
@@ -190,10 +182,6 @@ def test_create_percent_markup(api_client, user, models, budget_f):
             "id": markup.unit,
             "name": models.Markup.UNITS[markup.unit]
         },
-        "created_at": "2020-01-01 00:00:00",
-        "updated_at": "2020-01-01 00:00:00",
-        "created_by": user.pk,
-        "updated_by": user.pk,
         "children": [account.pk]
     }
 

@@ -1,11 +1,9 @@
 import datetime
 import functools
 import logging
-from model_utils import Choices
 
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
-from django.utils import timezone
 
 from greenbudget.app import signals
 from greenbudget.app.budgeting.models import BudgetingTreePolymorphicModel
@@ -174,26 +172,6 @@ class BaseBudget(BudgetingTreePolymorphicModel):
 class Budget(BaseBudget):
     pdf_type = "pdf-budget"
     domain = "budget"
-
-    project_number = models.IntegerField(default=0)
-    PRODUCTION_TYPES = Choices(
-        (0, "film", "Film"),
-        (1, "episodic", "Episodic"),
-        (2, "music_video", "Music Video"),
-        (3, "commercial", "Commercial"),
-        (4, "documentary", "Documentary"),
-        (5, "custom", "Custom"),
-    )
-    production_type = models.IntegerField(
-        choices=PRODUCTION_TYPES,
-        default=PRODUCTION_TYPES.film
-    )
-    shoot_date = models.DateTimeField(default=timezone.now)
-    delivery_date = models.DateTimeField(default=timezone.now)
-    build_days = models.IntegerField(default=0)
-    prelight_days = models.IntegerField(default=0)
-    studio_shoot_days = models.IntegerField(default=0)
-    location_days = models.IntegerField(default=0)
 
     objects = BudgetManager()
     non_polymorphic = models.Manager()
