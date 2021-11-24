@@ -63,11 +63,11 @@ class GenericActualViewSet(GenericViewSet):
     lookup_field = 'pk'
     ordering_fields = []
     search_fields = ['description']
-    serializer_classes = (
-        (lambda view: view.action in ('partial_update', 'create', 'retrieve'),
+    serializer_classes = [
+        ({'action__in': ['partial_update', 'create', 'retrieve']},
             ActualDetailSerializer),
         ActualSerializer
-    )
+    ]
 
 
 class ActualsViewSet(

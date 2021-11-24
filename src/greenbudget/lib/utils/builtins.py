@@ -10,6 +10,15 @@ def set_or_list(obj):
     return list(obj)
 
 
+def get_nested_attribute(obj, attr):
+    if '.' in attr:
+        parts = attr.split('.')
+        if not hasattr(obj, parts[0]):
+            raise AttributeError('Object does not have attribute %s.' % parts[0])
+        return get_nested_attribute(getattr(obj, parts[0]), '.'.join(parts[1:]))
+    return getattr(obj, attr)
+
+
 def humanize_list(value, callback=six.text_type, conjunction='and',
         oxford_comma=True):
     """

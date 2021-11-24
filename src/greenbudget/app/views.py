@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from rest_framework.serializers import as_serializer_error
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
 
-from greenbudget.lib.utils import ensure_iterable
+from greenbudget.lib.utils import ensure_iterable, get_nested_attribute
 from greenbudget.lib.utils.urls import parse_ids_from_request
 
 
@@ -17,16 +17,14 @@ logger = logging.getLogger('greenbudget')
 
 
 def get_attribute(view, attr):
-    if '.' in attr:
-        parts = attr.split('.')
-        if not hasattr(view, parts[0]):
-            raise ValueError(
-                "View %s has invalid serializer class definition, "
-                "serializer definition attribute %s does not exist "
-                "on view." % (type(view).__name__, parts[0])
-            )
-        return get_attribute(getattr(view, parts[0]), '.'.join(parts[1:]))
-    return getattr(view, attr)
+    try:
+        return get_nested_attribute(view, attr)
+    except AttributeError:
+        raise AttributeError(
+            "View %s has invalid serializer class definition, "
+            "serializer definition attribute %s does not exist "
+            "on view." % (type(view).__name__, attr)
+        )
 
 
 def evaluate_view_attribute_map(view, mapping):

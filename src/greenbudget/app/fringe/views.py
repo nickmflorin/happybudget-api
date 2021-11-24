@@ -11,10 +11,10 @@ class GenericFringeViewSet(GenericViewSet):
     ordering_fields = []
     search_fields = ['name']
     serializer_class = FringeSerializer
-    serializer_classes = (
-        (lambda view: view.action in ('partial_update', 'create', 'retrieve'),
+    serializer_classes = [
+        ({'action__in': ['partial_update', 'create', 'retrieve']},
             FringeDetailSerializer),
-    )
+    ]
 
 
 class FringesViewSet(
