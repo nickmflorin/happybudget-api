@@ -4,7 +4,7 @@ from greenbudget.lib.django_utils.models import generic_fk_instance_change
 
 from greenbudget.app import signals
 from greenbudget.app.account.models import Account
-from greenbudget.app.budget.cache import budget_actuals_owner_tree_cache
+from greenbudget.app.budget.cache import budget_actuals_owners_cache
 
 from .cache import subaccount_units_cache
 from .models import (
@@ -46,7 +46,7 @@ def invalidate_caches_on_markup_changes(instance, action, reverse, **kwargs):
 
         budgets = set([instance.budget for instance in instances])
         budgets = [b for b in budgets if b.domain == 'budget']
-        budget_actuals_owner_tree_cache.invalidate(budgets)
+        budget_actuals_owners_cache.invalidate(budgets)
 
 
 @dispatch.receiver(signals.post_save, sender=BudgetSubAccount)
@@ -80,7 +80,7 @@ def subaccount_saved(instance, **kwargs):
     instance.invalidate_caches(["detail"])
     instance.parent.invalidate_caches(["detail", "children"])
     if instance.domain == 'budget':
-        budget_actuals_owner_tree_cache.invalidate(instance.budget)
+        budget_actuals_owners_cache.invalidate(instance.budget)
 
     SubAccount.objects.bulk_estimate_all(instances_to_reestimate)
     # Note: Using `type(instance).objects` does not seem to work here, might
@@ -93,7 +93,7 @@ def subaccount_saved(instance, **kwargs):
 
 @dispatch.receiver(signals.pre_delete, sender=BudgetSubAccount)
 def subaccount_to_delete(instance, **kwargs):
-    budget_actuals_owner_tree_cache.invalidate(instance.budget)
+    budget_actuals_owners_cache.invalidate(instance.budget)
 
 
 @dispatch.receiver(signals.post_delete, sender=BudgetSubAccount)

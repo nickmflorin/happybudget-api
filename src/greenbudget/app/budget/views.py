@@ -5,13 +5,12 @@ from django.db import models
 from rest_framework import viewsets, mixins, response, status, decorators
 
 from greenbudget.app.views import filter_by_ids, GenericViewSet
-
 from greenbudget.app.account.models import BudgetAccount
 from greenbudget.app.account.serializers import BudgetAccountSerializer
 from greenbudget.app.account.views import GenericAccountViewSet
 from greenbudget.app.actual.models import Actual
 from greenbudget.app.actual.serializers import (
-    ActualSerializer, OwnerTreeNodeSerializer)
+    ActualSerializer, ActualOwnerSerializer)
 from greenbudget.app.actual.views import GenericActualViewSet
 from greenbudget.app.budgeting.decorators import (
     register_bulk_operations, BulkAction, BulkDeleteAction)
@@ -23,7 +22,6 @@ from greenbudget.app.group.serializers import GroupSerializer
 from greenbudget.app.markup.models import Markup
 from greenbudget.app.markup.serializers import MarkupSerializer
 from greenbudget.app.subaccount.models import BudgetSubAccount
-from greenbudget.app.subaccount.serializers import SubAccountSimpleSerializer
 
 from .cache import (
     budget_accounts_cache,
@@ -32,7 +30,7 @@ from .cache import (
     budget_instance_cache,
     budget_actuals_cache,
     budget_fringes_cache,
-    budget_actuals_owner_tree_cache
+    budget_actuals_owners_cache
 )
 from .models import Budget
 from .mixins import BudgetNestedMixin
@@ -159,6 +157,45 @@ class BudgetActualsViewSet(
         )
 
 
+@budget_actuals_owners_cache(
+    get_instance_from_view=lambda view: view.budget.pk)
+class BudgetActualsOwnersViewSet(
+    mixins.ListModelMixin,
+    BudgetNestedMixin,
+    GenericViewSet
+):
+    serializer_class = ActualOwnerSerializer
+    search_fields = ['identifier', 'description']
+    budget_lookup_field = ("pk", "budget_pk")
+
+    def get_queryset(self):
+        return BudgetSubAccount.objects \
+            .exclude(models.Q(identifier=None) & models.Q(description=None)) \
+            .filter_by_budget(budget=self.budget)
+
+    def get_markup_queryset(self):
+        return Markup.objects \
+            .exclude(models.Q(identifier=None) & models.Q(description=None)) \
+            .filter_by_budget(self.budget)
+
+    def list(self, request, *args, **kwargs):
+        """
+        Overrides DRF's :obj:`mixins.ListModelMixin` so that the methodology
+        (filtering, paginating, etc.) can be applied to multiple querysets
+        at the same time.
+        """
+        sub_account_qs = self.filter_queryset(self.get_queryset())
+        markup_qs = self.filter_queryset(self.get_markup_queryset())
+        page = self.paginate_queryset(list(sub_account_qs) + list(markup_qs))
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(
+            list(sub_account_qs) + list(markup_qs), many=True)
+        return response.Response(serializer.data, status=status.HTTP_200_OK)
+
+
 @filter_by_ids
 @budget_fringes_cache(get_instance_from_view=lambda view: view.budget.pk)
 class BudgetFringeViewSet(
@@ -192,190 +229,6 @@ class BudgetFringeViewSet(
             updated_by=self.request.user,
             budget=self.budget
         )
-
-
-@filter_by_ids
-@budget_actuals_owner_tree_cache(
-    get_instance_from_view=lambda view: view.budget.pk)
-class BudgetSubAccountViewSet(
-    mixins.ListModelMixin,
-    BudgetNestedMixin,
-    viewsets.GenericViewSet
-):
-    """
-    ViewSet to handle requests to the following endpoints:
-
-    (1) GET /budgets/<pk>/subaccounts/
-
-    Note that any given :obj:`greenbudget.app.subaccount.BudgetSubAccount`
-    is not a direct child of the :obj:`greenbudget.app.budget.Budget` but
-    an indirect child, either through a
-    :obj:`greenbudget.app.account.BudgetAccount` or another
-    :obj:`greenbudget.app.subaccount.BudgetSubAccount`.
-
-    Budget -> Account -> SubAccount (1st Level) -> SubAccount (2nd Level) ...
-
-    This means that this endpoint returns ALL of the
-    :obj:`greenbudget.app.subaccount.BudgetSubAccount`(s) associated with the
-    :obj:`greenbudget.app.budget.Budget` - at any level of the tree.
-
-    This is primarily used for establishing relationships between an
-    :obj:`greenbudget.app.actual.Actual` and the
-    :obj:`greenbudget.app.subaccount.BudgetSubAccount` by the FE.  It does
-    not apply to templates.
-    """
-    budget_lookup_field = ("pk", "budget_pk")
-    serializer_class = SubAccountSimpleSerializer
-    search_fields = ['identifier', 'description']
-
-    def get_queryset(self):
-        return BudgetSubAccount.objects \
-            .exclude(models.Q(identifier=None) & models.Q(description=None)) \
-            .filter_by_budget(budget=self.budget)
-
-    def filter_tree_querysets(self, subaccount_qs, markup_qs):
-        account_ct_id = ContentType.objects.get_for_model(BudgetAccount).pk
-        budget_ct_id = ContentType.objects.get_for_model(Budget).pk
-        subaccount_ct_id = ContentType.objects.get_for_model(BudgetSubAccount).pk  # noqa
-
-        # Perform the search filter on each of the markup and sub account
-        # querysets separately.
-        searched_markup_qs = self.filter_queryset(markup_qs)
-        searched_subaccount_qs = self.filter_queryset(subaccount_qs)
-
-        def handle_nested_level(obj):
-            qs = []
-            search_path = []
-            if obj in searched_subaccount_qs:
-                # Here, the element matches the search criteria, so we add it
-                # both to the overall queryset and to the search path.
-                qs.append(obj)
-                search_path.append(obj)
-
-            # Note: These are not markups assigned to the SubAcount `obj`, but
-            # are actually the Markup(s) that have the SubAccount `obj` as the
-            # parent.
-            for markup in markup_qs.filter(
-                content_type_id=subaccount_ct_id,
-                object_id=obj.id
-            ).only('pk').all():
-                if markup in searched_markup_qs:
-                    qs.append(markup)
-                    search_path.append(markup)
-                    if markup.parent not in qs:
-                        qs.append(markup.parent)
-
-            for child in obj.children.only('pk').all():
-                sub_qs, sub_path = handle_nested_level(child)
-                if len(sub_qs) != 0:
-                    if obj not in qs:
-                        # Here, we do not add the element to the search path
-                        # because if it met the search criteria, it would have
-                        # already been added in the block before the loop:
-                        # >>> if obj in primary:  search_path.append(obj).
-                        # The element here is only added because it has children
-                        # that match the search criteria, so it is needed to
-                        # maintain the shape of the tree.
-                        qs.append(obj)
-                    qs.extend(sub_qs)
-                    search_path.extend(sub_path)
-            return qs, search_path
-
-        overall_qs = []
-        overall_search_path = []
-
-        # Since the Markup(s) at the Accounts level will not be nestled under
-        # the SubAccount(s), if any of these meet the search criteria they have
-        # to be added in separately because they will not be hit in the
-        # below recursion.
-        for child in markup_qs.filter(
-                content_type_id__in=[budget_ct_id, account_ct_id]):
-            if child in searched_markup_qs:
-                overall_qs.append(child)
-                overall_search_path.append(child)
-
-        # Start at the top level of SubAccounts - use recursion.
-        for child in subaccount_qs.filter(content_type_id=account_ct_id):
-            qs_ext, path_ext = handle_nested_level(child)
-            overall_qs.extend(qs_ext)
-            overall_search_path.extend(path_ext)
-
-        return overall_qs, overall_search_path
-
-    @decorators.action(methods=["GET"], detail=False, url_path='owner-tree')
-    def tree(self, request, *args, **kwargs):
-        """
-        Implements custom tree searching & pagination.
-
-        The problem that this method attempts to solve is how to return
-        results filtered for a search criteria when those results are in
-        a tree.
-
-        Consider the following tree:
-
-        -- foo
-        ---- bard
-        ---- barb
-        ------ bara
-        -- foob
-        ---- bara
-        -- fooc
-        ---- barc
-
-        When we are searching for "bara", we need to filter the tree such
-        that the results for "bara" are shown, but also maintain the shape
-        of the tree.  This will result in a tree like this:
-
-        -- foo
-        ---- barb
-        ------ bara
-        -- foob
-        ---- bara
-
-        However, we need to include information in the response about
-        specifically what points in the tree match the search criteria.  We
-        call this the "Search Path".  Since each node of the tree will only be
-        present in the tree at most 1 time, this "Search Path" is a unique set
-        of nodes, in this case:
-
-        ['foo.barb.bara', 'foob.bara']
-        """
-        account_ct_id = ContentType.objects.get_for_model(BudgetAccount).pk
-        budget_ct_id = ContentType.objects.get_for_model(Budget).pk
-
-        sub_account_qs = BudgetSubAccount.objects \
-            .exclude(models.Q(identifier=None) & models.Q(description=None)) \
-            .filter_by_budget(self.budget) \
-            .only('pk')
-
-        markup_qs = Markup.objects \
-            .exclude(models.Q(identifier=None) & models.Q(description=None)) \
-            .filter_by_budget(self.budget) \
-            .only('pk')
-
-        overall_qs, search_path = self.filter_tree_querysets(
-            sub_account_qs,
-            markup_qs
-        )
-
-        qs = self.paginate_queryset(overall_qs)
-        top_level = [
-            obj for obj in qs
-            if (isinstance(obj, Markup)
-                and obj.content_type_id in [budget_ct_id, account_ct_id])
-            or obj.content_type_id == account_ct_id
-        ]
-        non_top_level = [
-            obj for obj in qs
-            if obj not in top_level
-        ]
-        data = OwnerTreeNodeSerializer(
-            top_level,
-            subset=non_top_level,
-            search_path=search_path,
-            many=True
-        ).data
-        return self.get_paginated_response(data)
 
 
 @filter_by_ids

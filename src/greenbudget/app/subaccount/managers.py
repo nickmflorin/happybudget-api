@@ -4,7 +4,7 @@ from django.db.models import Case, Q, When, Value as V, BooleanField
 from greenbudget.lib.utils import concat, set_or_list
 
 from greenbudget.app import signals
-from greenbudget.app.budget.cache import budget_actuals_owner_tree_cache
+from greenbudget.app.budget.cache import budget_actuals_owners_cache
 from greenbudget.app.budgeting.managers import BudgetingPolymorphicRowManager
 from greenbudget.app.tabling.query import RowQuerier, RowPolymorphicQuerySet
 
@@ -80,7 +80,7 @@ class SubAccountManager(SubAccountQuerier, BudgetingPolymorphicRowManager):
         budgets = set([inst.budget for inst in instances])
         if mark_budgets:
             self.mark_budgets(budgets=budgets)
-        budget_actuals_owner_tree_cache.invalidate(budgets)
+        budget_actuals_owners_cache.invalidate(budgets)
 
     @signals.disable()
     def bulk_delete(self, instances):

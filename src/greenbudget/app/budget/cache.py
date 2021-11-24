@@ -16,9 +16,9 @@ budget_actuals_cache = instance_cache(
     method='list'
 )
 
-budget_actuals_owner_tree_cache = instance_cache(
-    entity='actuals-owner',
-    method='tree'
+budget_actuals_owners_cache = instance_cache(
+    entity='actuals-owners',
+    method='list'
 )
 
 budget_markups_cache = instance_cache(

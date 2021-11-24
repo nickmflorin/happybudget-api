@@ -2,7 +2,7 @@ from greenbudget.lib.django_utils.models import generic_fk_instance_change
 from greenbudget.lib.utils import concat
 
 from greenbudget.app import signals
-from greenbudget.app.budget.cache import budget_actuals_owner_tree_cache
+from greenbudget.app.budget.cache import budget_actuals_owners_cache
 from greenbudget.app.budgeting.managers import BudgetingManager
 from greenbudget.app.budgeting.query import BudgetAncestorQuerier
 from greenbudget.app.tabling.query import RowQuerySet
@@ -63,7 +63,7 @@ class MarkupManager(BudgetAncestorQuerier, BudgetingManager):
         # whether or not the Budget was recalculated.
         for budget in [b for b in budgets if b is not None]:
             budget.mark_updated()
-            budget_actuals_owner_tree_cache.invalidate(budget)
+            budget_actuals_owners_cache.invalidate(budget)
 
     @signals.disable()
     def bulk_delete(self, instances, strict=True):

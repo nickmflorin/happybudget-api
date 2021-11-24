@@ -1,7 +1,10 @@
 from rest_framework import serializers
 
 from greenbudget.lib.drf.fields import GenericRelatedField
-from greenbudget.lib.drf.serializers import ModelSerializer
+from greenbudget.lib.drf.serializers import (
+    ModelSerializer,
+    PolymorphicNonPolymorphicSerializer
+)
 
 from greenbudget.app.contact.models import Contact
 from greenbudget.app.io.models import Attachment
@@ -18,32 +21,11 @@ from greenbudget.app.user.fields import UserFilteredQuerysetPKField
 from .models import Actual, ActualType
 
 
-class OwnerTreeNodeSerializer(serializers.Serializer):
-    def __init__(self, *args, **kwargs):
-        # The subset is the set of SubAccount(s) that have been filtered by
-        # the search.  Only these SubAccount(s) will be included as children
-        # to each node of the tree.
-        self._subset = kwargs.pop('subset')
-        self._search_path = kwargs.pop('search_path')
-        super().__init__(*args, **kwargs)
-
-    def to_representation(self, instance):
-        assert isinstance(instance, (Markup, BudgetSubAccount))
-        if isinstance(instance, Markup):
-            data = MarkupSimpleSerializer(instance).data
-        else:
-            data = SubAccountSimpleSerializer(instance).data
-        data.update(in_search_path=instance in self._search_path)
-        if isinstance(instance, BudgetSubAccount):
-            data.update(children=[
-                self.__class__(
-                    instance=child,
-                    search_path=self._search_path,
-                    subset=self._subset
-                ).data
-                for child in self._subset if child.parent == instance
-            ])
-        return data
+class ActualOwnerSerializer(PolymorphicNonPolymorphicSerializer):
+    choices = {
+        Markup: "greenbudget.app.markup.serializers.MarkupSimpleSerializer",
+        BudgetSubAccount: "greenbudget.app.subaccount.serializers.SubAccountSimpleSerializer",  # noqa
+    }
 
 
 class ActualOwnerField(GenericRelatedField):

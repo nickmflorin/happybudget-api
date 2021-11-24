@@ -10,7 +10,7 @@ from .views import (
     BudgetMarkupViewSet,
     BudgetActualsViewSet,
     BudgetAccountViewSet,
-    BudgetSubAccountViewSet
+    BudgetActualsOwnersViewSet
 )
 
 app_name = "budget"
@@ -22,10 +22,10 @@ budget_fringes_router = routers.NestedSimpleRouter(router, r'', lookup='budget')
 budget_fringes_router.register(
     r'fringes', BudgetFringeViewSet, basename='budget-fringes')
 
-budget_subaccounts_router = routers.NestedSimpleRouter(
+budget_actuals_owners_router = routers.NestedSimpleRouter(
     router, r'', lookup='budget')
-budget_subaccounts_router.register(
-    r'subaccounts', BudgetSubAccountViewSet, basename='budget-subaccount')
+budget_actuals_owners_router.register(
+    r'actual-owners', BudgetActualsOwnersViewSet, basename='budget-actual-owner')
 
 budget_markup_router = routers.NestedSimpleRouter(
     router, r'', lookup='budget')
@@ -49,7 +49,7 @@ budget_accounts_router.register(
 urlpatterns = combine_routers(
     router,
     budget_fringes_router,
-    budget_subaccounts_router,
+    budget_actuals_owners_router,
     budget_groups_router,
     budget_markup_router,
     budget_actuals_router

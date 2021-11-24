@@ -5,7 +5,7 @@ from django.db import IntegrityError
 
 from greenbudget.app import signals
 from greenbudget.app.account.models import Account
-from greenbudget.app.budget.cache import budget_actuals_owner_tree_cache
+from greenbudget.app.budget.cache import budget_actuals_owners_cache
 from greenbudget.app.subaccount.models import SubAccount
 
 from .models import Markup
@@ -24,7 +24,7 @@ def markup_saved(instance, **kwargs):
     Markup.objects.reestimate_associated(instance)
 
     if instance.budget.domain == 'budget':
-        budget_actuals_owner_tree_cache.invalidate(instance.budget)
+        budget_actuals_owners_cache.invalidate(instance.budget)
 
     # Invalidate the caches that contain information about the Markup.
     for child in instance.children.all():
@@ -86,7 +86,7 @@ def markups_changed(instance, reverse, action, model, pk_set, **kwargs):
 
             budgets = set([mk.budget for mk in markups_to_delete])
             budgets = [b for b in budgets if b.domain == 'budget']
-            budget_actuals_owner_tree_cache.invalidate(budgets)
+            budget_actuals_owners_cache.invalidate(budgets)
 
     # Before Markup's are added or removed to an Account/SubAccount, we must
     # ensure that the Markup has the same parent as that Account/SubAccount.

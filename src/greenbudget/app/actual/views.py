@@ -8,7 +8,10 @@ from .mixins import ActualNestedMixin
 from .models import Actual, ActualType
 from .permissions import ActualObjPermission
 from .serializers import (
-    ActualSerializer, ActualTypeSerializer, ActualDetailSerializer)
+    ActualSerializer,
+    ActualTypeSerializer,
+    ActualDetailSerializer
+)
 
 
 class ActualTypeViewSet(
