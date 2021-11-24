@@ -1,6 +1,44 @@
+import collections
 from rest_framework import serializers
 
 from greenbudget.lib.utils import import_at_module_path
+
+
+class LazyContext(collections.abc.Mapping):
+    """
+    A mapping object that wraps a serializer's context such that a more helpful
+    error is raised when accessing an element of the context that is required
+    but does not exist.
+
+    This is useful for including serializer context in callback functions
+    where we expect the values to be in the context but if they are not we
+    need to be aware of that.
+    """
+
+    def __init__(self, serializer, field_name):
+        self._field_name = field_name
+        self._data = serializer.context
+
+    def __iter__(self):
+        return self._data.__iter__()
+
+    def __getitem__(self, attr):
+        try:
+            return self._data.__getitem__(attr)
+        except KeyError:
+            raise Exception(
+                "The field `%s` must be provided in context to the serializer "
+                "when using %s." % (attr, self._field_name)
+            )
+
+    def __setitem__(self, k, v):
+        raise Exception("Cannot set a value on LazyContext.")
+
+    def __len__(self):
+        return self._data.__len__()
+
+    def __delitem__(self, k):
+        return self._data.__delitem__(k)
 
 
 class InvalidValue(Exception):

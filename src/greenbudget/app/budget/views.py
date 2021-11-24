@@ -1,10 +1,9 @@
-from functools import cached_property
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
-from rest_framework import viewsets, mixins, response, status, decorators
+from rest_framework import response, status, decorators
 
-from greenbudget.app.views import filter_by_ids, GenericViewSet
+from greenbudget.app import views, mixins
 from greenbudget.app.account.models import BudgetAccount
 from greenbudget.app.account.serializers import BudgetAccountSerializer
 from greenbudget.app.account.views import GenericAccountViewSet
@@ -41,13 +40,13 @@ from .serializers import (
 )
 
 
-@filter_by_ids
+@views.filter_by_ids
 @budget_markups_cache(get_instance_from_view=lambda view: view.budget.pk)
 class BudgetMarkupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
     BudgetNestedMixin,
-    viewsets.GenericViewSet
+    views.GenericViewSet
 ):
     """
     Viewset to handle requests to the following endpoints:
@@ -55,9 +54,10 @@ class BudgetMarkupViewSet(
     (1) POST /budgets/<pk>/markups/
     (2) GET /budgets/<pk>/markups/
     """
-    lookup_field = 'pk'
     serializer_class = MarkupSerializer
-    budget_lookup_field = ("pk", "budget_pk")
+
+    def create_kwargs(self, serializer):
+        return {**super().create_kwargs(serializer), **{'parent': self.budget}}
 
     def get_queryset(self):
         return Markup.objects.filter(
@@ -67,27 +67,17 @@ class BudgetMarkupViewSet(
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context.update(
-            parent=self.budget,
-            budget_context=True
-        )
+        context.update(parent=self.budget)
         return context
 
-    def perform_create(self, serializer):
-        serializer.save(
-            created_by=self.request.user,
-            updated_by=self.request.user,
-            parent=self.budget
-        )
 
-
-@filter_by_ids
+@views.filter_by_ids
 @budget_groups_cache(get_instance_from_view=lambda view: view.budget.pk)
 class BudgetGroupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
     BudgetNestedMixin,
-    viewsets.GenericViewSet
+    views.GenericViewSet
 ):
     """
     Viewset to handle requests to the following endpoints:
@@ -95,34 +85,27 @@ class BudgetGroupViewSet(
     (1) POST /budgets/<pk>/groups/
     (2) GET /budgets/<pk>/groups/
     """
-    lookup_field = 'pk'
     serializer_class = GroupSerializer
-    budget_lookup_field = ("pk", "budget_pk")
+
+    def create_kwargs(self, serializer):
+        return {**super().create_kwargs(serializer), **{
+            'content_type': self.content_type,
+            'object_id': self.budget.pk
+        }}
 
     def get_queryset(self):
         return Group.objects.filter(
-            content_type=ContentType.objects.get_for_model(type(self.budget)),
+            content_type=self.content_type,
             object_id=self.budget.pk
         )
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context.update(
-            parent=self.budget,
-            budget_context=True
-        )
+        context.update(parent=self.budget)
         return context
 
-    def perform_create(self, serializer):
-        serializer.save(
-            created_by=self.request.user,
-            updated_by=self.request.user,
-            content_type=ContentType.objects.get_for_model(type(self.budget)),
-            object_id=self.budget.pk
-        )
 
-
-@filter_by_ids
+@views.filter_by_ids
 @budget_actuals_cache(get_instance_from_view=lambda view: view.budget.pk)
 class BudgetActualsViewSet(
     mixins.ListModelMixin,
@@ -136,25 +119,20 @@ class BudgetActualsViewSet(
     (1) GET /budgets/<pk>/actuals/
     (2) POST /budgets/<pk>/actuals/
     """
-    budget_lookup_field = ("pk", "budget_pk")
+
+    def create_kwargs(self, serializer):
+        return {
+            **super().create_kwargs(serializer),
+            **{'budget': self.budget}
+        }
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context.update(
-            budget=self.budget,
-            budget_context=True
-        )
+        context.update(budget=self.budget)
         return context
 
     def get_queryset(self):
         return Actual.objects.filter(budget=self.budget)
-
-    def perform_create(self, serializer):
-        serializer.save(
-            created_by=self.request.user,
-            updated_by=self.request.user,
-            budget=self.budget
-        )
 
 
 @budget_actuals_owners_cache(
@@ -162,11 +140,10 @@ class BudgetActualsViewSet(
 class BudgetActualsOwnersViewSet(
     mixins.ListModelMixin,
     BudgetNestedMixin,
-    GenericViewSet
+    views.GenericViewSet
 ):
     serializer_class = ActualOwnerSerializer
     search_fields = ['identifier', 'description']
-    budget_lookup_field = ("pk", "budget_pk")
 
     def get_queryset(self):
         return BudgetSubAccount.objects \
@@ -196,7 +173,7 @@ class BudgetActualsOwnersViewSet(
         return response.Response(serializer.data, status=status.HTTP_200_OK)
 
 
-@filter_by_ids
+@views.filter_by_ids
 @budget_fringes_cache(get_instance_from_view=lambda view: view.budget.pk)
 class BudgetFringeViewSet(
     mixins.CreateModelMixin,
@@ -210,28 +187,20 @@ class BudgetFringeViewSet(
     (1) GET /budgets/<pk>/fringes/
     (2) POST /budgets/<pk>/fringes/
     """
-    budget_lookup_field = ("pk", "budget_pk")
+
+    def create_kwargs(self, serializer):
+        return {**super().create_kwargs(serializer), **{'budget': self.budget}}
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context.update(
-            budget=self.budget,
-            budget_context=True
-        )
+        context.update(budget=self.budget)
         return context
 
     def get_queryset(self):
         return self.budget.fringes.all()
 
-    def perform_create(self, serializer):
-        serializer.save(
-            created_by=self.request.user,
-            updated_by=self.request.user,
-            budget=self.budget
-        )
 
-
-@filter_by_ids
+@views.filter_by_ids
 @budget_accounts_cache(get_instance_from_view=lambda view: view.budget.pk)
 class BudgetAccountViewSet(
     mixins.CreateModelMixin,
@@ -246,43 +215,27 @@ class BudgetAccountViewSet(
     (1) GET /budgets/<pk>/accounts/
     (2) POST /budgets/<pk>/accounts/
     """
-    budget_lookup_field = ("pk", "budget_pk")
     instance_cls = Budget
+
+    def create_kwargs(self, serializer):
+        return {**super().create_kwargs(serializer), **{'parent': self.budget}}
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context.update(
-            parent=self.budget,
-            budget_context=True
-        )
+        context.update(parent=self.budget)
         return context
 
     def get_queryset(self):
         return BudgetAccount.objects.filter(parent=self.budget).all()
 
-    def perform_update(self, serializer):
-        serializer.save(updated_by=self.request.user)
 
-    def perform_create(self, serializer):
-        serializer.save(
-            updated_by=self.request.user,
-            created_by=self.request.user,
-            parent=self.budget
-        )
-
-
-class GenericBudgetViewSet(GenericViewSet):
-    lookup_field = 'pk'
+class GenericBudgetViewSet(views.GenericViewSet):
     ordering_fields = ['updated_at', 'name', 'created_at']
     search_fields = ['name']
-    serializer_classes = (
-        ({'action': 'list'}, BudgetSimpleSerializer),
-        BudgetSerializer
-    )
-
-    @property
-    def serializer_class(self):
-        return self.get_serializer_class()
+    serializer_class = BudgetSerializer
+    serializer_classes = [
+        ({'action': 'list'}, BudgetSimpleSerializer)
+    ]
 
 
 @register_bulk_operations(
@@ -291,7 +244,6 @@ class GenericBudgetViewSet(GenericViewSet):
     # Since the Budget is the entity being updated, it will already be included
     # in the response by default.  We do not want to double include it.
     include_budget_in_response=False,
-    child_context_indicator='budget_context',
     child_context=lambda context: {"parent": context.instance},
     perform_update=lambda serializer, context: serializer.save(
         updated_by=context.request.user
@@ -365,15 +317,9 @@ class BudgetViewSet(
     (11) GET /budgets/<pk>/pdf/
     (12) POST /budgets/<pk>/duplicate/
     """
-    @cached_property
-    def instance(self):
-        return self.get_object()
 
     def get_queryset(self):
         return Budget.objects.filter(created_by=self.request.user).all()
-
-    def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
 
     @decorators.action(detail=True, methods=["GET"])
     def pdf(self, request, *args, **kwargs):

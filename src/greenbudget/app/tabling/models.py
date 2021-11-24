@@ -55,23 +55,6 @@ class RowModelMixin(models.Model):
             return qs.exclude(pk=self.pk)
         return qs
 
-    def get_order_at_integer(self, order):
-        if self.pk is None:
-            raise Exception("Row must be saved in order to change the order.")
-        table = self.get_table()
-        index = list(table).index(self)
-        if order > index:
-            return table.get_order_at_integer(order, direction='down')
-        elif order < index:
-            return table.get_order_at_integer(order, direction='up')
-        return self.order
-
-    def order_at_integer(self, order, commit=True):
-        current_order = self.order
-        self.order = self.get_order_at_integer(order)
-        if commit and self.order != current_order:
-            self.save(update_fields=["order"])
-
     def order_at_bottom(self, commit=True):
         try:
             last_in_table = self.get_table().latest()

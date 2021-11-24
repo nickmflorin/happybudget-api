@@ -1,10 +1,9 @@
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django.utils.functional import cached_property
 
-from rest_framework import viewsets, mixins, response, status
+from rest_framework import response, status
 
-from greenbudget.app.views import filter_by_ids, GenericViewSet
+from greenbudget.app import views, mixins
 from greenbudget.app.actual.views import GenericActualViewSet
 from greenbudget.app.budgeting.decorators import (
     register_bulk_operations, BulkAction, BulkDeleteAction)
@@ -23,12 +22,7 @@ from .cache import (
     subaccount_units_cache
 )
 from .mixins import SubAccountNestedMixin
-from .models import (
-    SubAccount,
-    BudgetSubAccount,
-    TemplateSubAccount,
-    SubAccountUnit
-)
+from .models import SubAccount, TemplateSubAccount, SubAccountUnit
 from .serializers import (
     TemplateSubAccountSerializer,
     BudgetSubAccountSerializer,
@@ -42,7 +36,7 @@ from .serializers import (
 @subaccount_units_cache
 class SubAccountUnitViewSet(
     mixins.ListModelMixin,
-    viewsets.GenericViewSet
+    views.GenericViewSet
 ):
     """
     Viewset to handle requests to the following endpoints:
@@ -55,13 +49,13 @@ class SubAccountUnitViewSet(
         return SubAccountUnit.objects.all()
 
 
-@filter_by_ids
+@views.filter_by_ids
 @subaccount_markups_cache(get_instance_from_view=lambda view: view.subaccount.pk)
 class SubAccountMarkupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
     SubAccountNestedMixin,
-    viewsets.GenericViewSet
+    views.GenericViewSet
 ):
     """
     Viewset to handle requests to the following endpoints:
@@ -69,41 +63,27 @@ class SubAccountMarkupViewSet(
     (1) POST /subaccounts/<pk>/groups/
     (2) GET /subaccounts/<pk>/groups/
     """
-    lookup_field = 'pk'
-    subaccount_lookup_field = ("pk", "subaccount_pk")
     serializer_class = MarkupSerializer
 
     def get_queryset(self):
         return Markup.objects.filter(
-            content_type=ContentType.objects.get_for_model(type(self.subaccount)),  # noqa
-            object_id=self.subaccount.pk,
+            content_type=self.content_type,
+            object_id=self.object_id
         )
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context.update(
-            parent=self.subaccount,
-            subaccount_context=True
-        )
+        context.update(parent=self.subaccount)
         return context
 
-    def perform_create(self, serializer):
-        serializer.save(
-            created_by=self.request.user,
-            updated_by=self.request.user,
-            object_id=self.subaccount.pk,
-            content_type=ContentType.objects.get_for_model(type(self.subaccount)),  # noqa
-            parent=self.subaccount
-        )
 
-
-@filter_by_ids
+@views.filter_by_ids
 @subaccount_groups_cache(get_instance_from_view=lambda view: view.subaccount.pk)
 class SubAccountGroupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
     SubAccountNestedMixin,
-    viewsets.GenericViewSet
+    views.GenericViewSet
 ):
     """
     Viewset to handle requests to the following endpoints:
@@ -111,35 +91,21 @@ class SubAccountGroupViewSet(
     (1) POST /subaccounts/<pk>/groups/
     (2) GET /subaccounts/<pk>/groups/
     """
-    lookup_field = 'pk'
-    subaccount_lookup_field = ("pk", "subaccount_pk")
     serializer_class = GroupSerializer
 
     def get_queryset(self):
         return Group.objects.filter(
-            content_type=ContentType.objects.get_for_model(type(self.subaccount)),  # noqa
-            object_id=self.subaccount.pk,
+            content_type=self.content_type,
+            object_id=self.object_id
         )
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context.update(
-            parent=self.subaccount,
-            subaccount_context=True
-        )
+        context.update(parent=self.subaccount)
         return context
 
-    def perform_create(self, serializer):
-        serializer.save(
-            created_by=self.request.user,
-            updated_by=self.request.user,
-            object_id=self.subaccount.pk,
-            content_type=ContentType.objects.get_for_model(
-                type(self.subaccount))
-        )
 
-
-@filter_by_ids
+@views.filter_by_ids
 class SubAccountActualsViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
@@ -157,27 +123,17 @@ class SubAccountActualsViewSet(
     This view is currently not cached because it is not in use.  If we do start
     using it by the FE, we should cache it.
     """
-    subaccount_lookup_field = ("pk", "subaccount_pk")
+
+    def create_kwargs(self, serializer):
+        return {**super().create_kwargs(serializer), **{'budget': self.budget}}
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context.update(
-            budget=self.subaccount.budget,
-            subaccount_context=True
-        )
+        context.update(budget=self.subaccount.budget)
         return context
 
     def get_queryset(self):
         return self.subaccount.actuals.all()
-
-    def perform_create(self, serializer):
-        serializer.save(
-            updated_by=self.request.user,
-            created_by=self.request.user,
-            object_id=self.subaccount.pk,
-            content_type=ContentType.objects.get_for_model(type(self.subaccount)),  # noqa
-            budget=self.subaccount.budget,
-        )
 
 
 class SubAccountAttachmentViewSet(
@@ -185,7 +141,7 @@ class SubAccountAttachmentViewSet(
     mixins.DestroyModelMixin,
     mixins.CreateModelMixin,
     SubAccountNestedMixin,
-    viewsets.GenericViewSet
+    views.GenericViewSet
 ):
     """
     ViewSet to handle requests to the following endpoints:
@@ -194,9 +150,7 @@ class SubAccountAttachmentViewSet(
     (2) DELETE /subaccounts/<pk>/attachments/pk/
     (3) POST /subaccounts/<pk>/attachments/
     """
-    subaccount_lookup_field = ("pk", "subaccount_pk")
     serializer_class = AttachmentSerializer
-    lookup_field = "pk"
 
     def get_queryset(self):
         return self.subaccount.attachments.all()
@@ -213,8 +167,7 @@ class SubAccountAttachmentViewSet(
         )
 
 
-class GenericSubAccountViewSet(GenericViewSet):
-    lookup_field = 'pk'
+class GenericSubAccountViewSet(views.GenericViewSet):
     ordering_fields = []
     search_fields = ['identifier', 'description']
     serializer_classes = (
@@ -238,7 +191,6 @@ class GenericSubAccountViewSet(GenericViewSet):
 
 @register_bulk_operations(
     base_cls=lambda context: context.view.instance_cls,
-    child_context_indicator='subaccount_context',
     get_budget=lambda instance: instance.budget,
     child_context=lambda context: {"parent": context.instance},
     actions=[
@@ -288,25 +240,20 @@ class SubAccountViewSet(
     """
     throttle_classes = []
 
-    @cached_property
-    def instance(self):
-        return self.get_object()
-
     @property
     def instance_cls(self):
         return type(self.instance)
 
     @property
     def child_instance_cls(self):
-        if self.instance_cls is BudgetSubAccount:
-            return BudgetSubAccount
-        return TemplateSubAccount
+        return self.instance_cls.child_instance_cls
 
     @property
     def child_serializer_cls(self):
-        if self.child_instance_cls is BudgetSubAccount:
-            return BudgetSubAccountDetailSerializer
-        return TemplateSubAccountDetailSerializer
+        return {
+            'budget': BudgetSubAccountDetailSerializer,
+            'template': TemplateSubAccountDetailSerializer
+        }[self.child_instance_cls.domain]
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -316,11 +263,8 @@ class SubAccountViewSet(
     def get_queryset(self):
         return SubAccount.objects.all()
 
-    def perform_update(self, serializer):
-        serializer.save(updated_by=self.request.user)
 
-
-@filter_by_ids
+@views.filter_by_ids
 @subaccount_subaccounts_cache(
     get_instance_from_view=lambda view: view.subaccount.pk)
 class SubAccountRecursiveViewSet(
@@ -335,34 +279,20 @@ class SubAccountRecursiveViewSet(
     (1) GET /subaccounts/<pk>/subaccounts
     (2) POST /subaccounts/<pk>/subaccounts
     """
-    subaccount_lookup_field = ("pk", "subaccount_pk")
-
-    @cached_property
+    @property
     def instance_cls(self):
         return type(self.subaccount)
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context.update(
-            parent=self.subaccount,
-            subaccount_context=True
-        )
+        context.update(parent=self.subaccount)
         return context
 
     def get_queryset(self):
-        content_type = ContentType.objects.get_for_model(type(self.subaccount))
         qs = type(self.subaccount).objects.filter(
-            object_id=self.subaccount.pk,
-            content_type=content_type,
+            object_id=self.object_id,
+            content_type=self.content_type,
         )
         if self.instance_cls is not TemplateSubAccount:
             qs = qs.prefetch_related('attachments')
         return qs
-
-    def perform_create(self, serializer):
-        return serializer.save(
-            updated_by=self.request.user,
-            created_by=self.request.user,
-            object_id=self.subaccount.pk,
-            content_type=ContentType.objects.get_for_model(type(self.subaccount)),  # noqa
-        )

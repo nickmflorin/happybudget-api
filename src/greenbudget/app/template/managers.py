@@ -5,11 +5,9 @@ from greenbudget.app.tabling.query import RowQuerier, RowPolymorphicQuerySet
 
 class TemplateQuerier(RowQuerier):
     def user(self, user):
-        # pylint: disable=no-member
         return self.filter(community=False, created_by=user)
 
     def community(self):
-        # pylint: disable=no-member
         return self.filter(community=True)
 
 

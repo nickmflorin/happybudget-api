@@ -10,16 +10,16 @@ from django.db import (
 from django.utils.functional import partition
 
 
-def import_model_at_path(path):
-    if isinstance(path, tuple):
+def import_model_at_path(*args):
+    if len(args) == 1:
+        path = args[0]
+        if isinstance(path, tuple):
+            return apps.get_model(app_label=path[0], model_name=path[1])
         return apps.get_model(
-            app_label=path[0],
-            model_name=path[1],
+            app_label=path.split('.')[0],
+            model_name=path.split('.')[1]
         )
-    return apps.get_model(
-        app_label=path.split('.')[0],
-        model_name=path.split('.')[1]
-    )
+    return apps.get_model(app_label=args[0], model_name=args[1],)
 
 
 def generic_fk_instance_change(instance, obj_id_change=None,

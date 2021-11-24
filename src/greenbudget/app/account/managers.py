@@ -21,7 +21,7 @@ class AccountManager(BudgetingPolymorphicRowManager):
         self.cleanup(instances)
 
         self.bulk_delete_empty_groups(groups)
-        self.model.budget_cls().objects.bulk_calculate(budgets)
+        self.model.budget_cls.objects.bulk_calculate(budgets)
 
     @signals.disable()
     def bulk_save(self, instances, update_fields):
@@ -37,7 +37,7 @@ class AccountManager(BudgetingPolymorphicRowManager):
             tuple(self.model.CALCULATED_FIELDS) + tuple(update_fields),
             mark_budgets=False
         )
-        self.model.budget_cls().objects.bulk_update_post_calculation(
+        self.model.budget_cls.objects.bulk_update_post_calculation(
             instances=budgets,
             mark_budgets=False
         )
@@ -77,7 +77,7 @@ class AccountManager(BudgetingPolymorphicRowManager):
                 instances_to_save.add(obj)
             if (altered or obj.was_just_added()) and obj.parent is not None:
                 if obj.parent is not None:
-                    assert isinstance(obj.parent, self.model.budget_cls())
+                    assert isinstance(obj.parent, self.model.budget_cls)
                     if obj.parent.pk in budgets_to_reestimate:
                         budgets_to_reestimate[obj.parent.pk]['unsaved'].add(obj)
                     else:
@@ -99,7 +99,7 @@ class AccountManager(BudgetingPolymorphicRowManager):
 
         if commit:
             self.bulk_update_post_estimation(instances_to_save)
-            self.model.budget_cls().objects.bulk_update_post_estimation(
+            self.model.budget_cls.objects.bulk_update_post_estimation(
                 budgets_to_save)
 
         return instances_to_save, budgets_to_save
@@ -128,7 +128,7 @@ class BudgetAccountManager(AccountManager):
 
         if commit:
             self.bulk_update_post_calculation(instances_to_save)
-            self.model.budget_cls().objects.bulk_update_post_calculation(
+            self.model.budget_cls.objects.bulk_update_post_calculation(
                 budgets_to_save)
         return instances_to_save, budgets_to_save
 
@@ -151,7 +151,7 @@ class BudgetAccountManager(AccountManager):
                 instances_to_save.add(obj)
             if (altered or obj.was_just_added()) and obj.parent is not None:
                 if obj.parent is not None:
-                    assert isinstance(obj.parent, self.model.budget_cls())
+                    assert isinstance(obj.parent, self.model.budget_cls)
                     if obj.parent.pk in budgets_to_reactualize:
                         budgets_to_reactualize[obj.parent.pk] = {
                             'instance': obj.parent,
@@ -177,7 +177,7 @@ class BudgetAccountManager(AccountManager):
 
         if commit:
             self.bulk_update_post_actualization(instances_to_save)
-            self.model.budget_cls().objects.bulk_update_post_actualization(
+            self.model.budget_cls.objects.bulk_update_post_actualization(
                 budgets)
 
         return instances_to_save, budgets

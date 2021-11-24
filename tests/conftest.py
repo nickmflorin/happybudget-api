@@ -178,11 +178,11 @@ def budget_factories(create_context_budget, create_account, create_subaccount,
 
         @property
         def account_cls(self):
-            return self.budget_cls.account_cls()
+            return self.budget_cls.account_cls
 
         @property
         def subaccount_cls(self):
-            return self.budget_cls.subaccount_cls()
+            return self.budget_cls.subaccount_cls
 
         def create_budget(self, *args, **kwargs):
             kwargs.setdefault('context', self.context)

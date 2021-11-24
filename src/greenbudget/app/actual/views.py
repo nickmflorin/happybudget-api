@@ -1,6 +1,6 @@
-from rest_framework import viewsets, mixins, response, status
+from rest_framework import response, status
 
-from greenbudget.app.views import GenericViewSet
+from greenbudget.app import views, mixins
 from greenbudget.app.io.serializers import (
     UploadAttachmentSerializer, AttachmentSerializer)
 
@@ -14,10 +14,7 @@ from .serializers import (
 )
 
 
-class ActualTypeViewSet(
-    mixins.ListModelMixin,
-    viewsets.GenericViewSet
-):
+class ActualTypeViewSet(mixins.ListModelMixin, views.GenericViewSet):
     """
     Viewset to handle requests to the following endpoints:
 
@@ -34,7 +31,7 @@ class ActualAttachmentViewSet(
     mixins.DestroyModelMixin,
     mixins.CreateModelMixin,
     ActualNestedMixin,
-    viewsets.GenericViewSet
+    views.GenericViewSet
 ):
     """
     ViewSet to handle requests to the following endpoints:
@@ -43,9 +40,7 @@ class ActualAttachmentViewSet(
     (2) DELETE /actuals/<pk>/attachments/pk/
     (3) POST /actuals/<pk>/attachments/
     """
-    actual_lookup_field = ("pk", "actual_pk")
     serializer_class = AttachmentSerializer
-    lookup_field = "pk"
 
     def get_queryset(self):
         return self.actual.attachments.all()
@@ -62,14 +57,13 @@ class ActualAttachmentViewSet(
         )
 
 
-class GenericActualViewSet(GenericViewSet):
-    lookup_field = 'pk'
+class GenericActualViewSet(views.GenericViewSet):
     ordering_fields = []
     search_fields = ['description']
+    serializer_class = ActualSerializer
     serializer_classes = [
         ({'action__in': ['partial_update', 'create', 'retrieve']},
             ActualDetailSerializer),
-        ActualSerializer
     ]
 
 
@@ -88,8 +82,10 @@ class ActualsViewSet(
     """
     extra_permission_classes = (ActualObjPermission, )
 
-    def perform_update(self, serializer):
-        serializer.save(updated_by=self.request.user)
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update(budget=self.instance.budget)
+        return context
 
     def get_queryset(self):
         return Actual.objects.all()

@@ -5,8 +5,8 @@ from greenbudget.lib.drf.exceptions import InvalidFieldError
 from greenbudget.lib.drf.fields import ModelChoiceField
 from greenbudget.lib.drf.serializers import ModelSerializer
 
-from greenbudget.app.budgeting.fields import TableChildrenPrimaryKeyRelatedField
 from greenbudget.app.budgeting.serializers import BudgetParentContextSerializer
+from greenbudget.app.tabling.fields import TableChildrenPrimaryKeyRelatedField
 
 from .models import Markup
 

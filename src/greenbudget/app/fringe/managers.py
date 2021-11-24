@@ -12,7 +12,7 @@ class FringeQuerier(RowQuerier):
 
     def for_budgets(self):
         # pylint: disable=no-member
-        ctype_id = ContentType.objects.get_for_model(self.model.budget_cls()).id
+        ctype_id = ContentType.objects.get_for_model(self.model.budget_cls).id
         return self.filter(budget__polymorphic_ctype_id=ctype_id)
 
     def for_templates(self):
@@ -47,7 +47,7 @@ class FringeManager(FringeQuerier, BudgetingRowManager):
         for obj in instances:
             obj.delete()
         self.cleanup(instances)
-        self.model.subaccount_cls().objects.bulk_estimate(set(subaccounts))
+        self.model.subaccount_cls.objects.bulk_estimate(set(subaccounts))
 
     @signals.disable()
     def bulk_add(self, instances):
@@ -62,7 +62,7 @@ class FringeManager(FringeQuerier, BudgetingRowManager):
         created = self.bulk_create(instances, predetermine_pks=True)
 
         subaccounts = concat([list(obj.subaccounts.all()) for obj in created])
-        self.model.subaccount_cls().objects.bulk_estimate(set(subaccounts))
+        self.model.subaccount_cls.objects.bulk_estimate(set(subaccounts))
         return created
 
     @signals.disable()
@@ -77,7 +77,7 @@ class FringeManager(FringeQuerier, BudgetingRowManager):
 
         subaccounts = concat([
             list(obj.subaccounts.all()) for obj in instances])
-        subaccounts, _, _ = self.model.subaccount_cls().objects.bulk_estimate(  # noqa
+        subaccounts, _, _ = self.model.subaccount_cls.objects.bulk_estimate(  # noqa
             instances=set(subaccounts)
         )
         return subaccounts

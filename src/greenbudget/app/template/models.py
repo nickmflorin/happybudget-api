@@ -2,6 +2,7 @@ from django.db import models
 
 from greenbudget.app import signals
 from greenbudget.app.budget.models import BaseBudget, Budget
+from greenbudget.app.budgeting.models import AssociatedModel
 
 from .managers import TemplateManager
 
@@ -17,11 +18,9 @@ class Template(BaseBudget):
     CALCULATED_FIELDS = Budget.CALCULATED_FIELDS
     ESTIMATED_FIELDS = Budget.ESTIMATED_FIELDS
 
-    associated = [
-        ('template', 'template'),
-        ('account', 'templateaccount'),
-        ('subaccount', 'templatesubaccount')
-    ]
+    budget_cls = AssociatedModel('template', 'template')
+    account_cls = AssociatedModel('account', 'templateaccount')
+    subaccount_cls = AssociatedModel('subaccount', 'templatesubaccount')
 
     class Meta(BaseBudget.Meta):
         verbose_name = "Template"

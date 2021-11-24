@@ -4,7 +4,8 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models, IntegrityError
 
 from greenbudget.app import signals
-from greenbudget.app.budgeting.models import BudgetingTreePolymorphicRowModel
+from greenbudget.app.budgeting.models import (
+    BudgetingTreePolymorphicRowModel, AssociatedModel)
 from greenbudget.app.group.models import Group
 from greenbudget.app.markup.models import Markup
 from greenbudget.app.markup.utils import contribution_from_markups
@@ -75,6 +76,7 @@ class Account(BudgetingTreePolymorphicRowModel):
     ]
     type = "account"
     table_pivot = ('parent_id', )
+    child_instance_cls = AssociatedModel('subaccount_cls')
 
     class Meta:
         get_latest_by = "order"
@@ -93,10 +95,6 @@ class Account(BudgetingTreePolymorphicRowModel):
     @property
     def siblings(self):
         return self.parent.children.exclude(pk=self.pk).all()
-
-    @property
-    def child_instance_cls(self):
-        return self.subaccount_cls()
 
     @property
     def budget(self):
@@ -207,11 +205,9 @@ class BudgetAccount(Account):
 
     pdf_type = "pdf-account"
     domain = "budget"
-    associated = [
-        ('budget', 'budget'),
-        ('account', 'budgetaccount'),
-        ('subaccount', 'budgetsubaccount')
-    ]
+    budget_cls = AssociatedModel('budget', 'budget')
+    account_cls = AssociatedModel('account', 'budgetaccount')
+    subaccount_cls = AssociatedModel('subaccount', 'budgetsubaccount')
 
     class Meta(Account.Meta):
         verbose_name = "Account"
@@ -287,11 +283,9 @@ class BudgetAccount(Account):
 class TemplateAccount(Account):
     objects = TemplateAccountManager()
     domain = "template"
-    associated = [
-        ('template', 'template'),
-        ('account', 'templateaccount'),
-        ('subaccount', 'templatesubaccount')
-    ]
+    budget_cls = AssociatedModel('template', 'template')
+    account_cls = AssociatedModel('account', 'templateaccount')
+    subaccount_cls = AssociatedModel('subaccount', 'templatesubaccount')
 
     class Meta(Account.Meta):
         verbose_name = "Account"

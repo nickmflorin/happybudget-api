@@ -1,6 +1,4 @@
-from rest_framework import mixins
-
-from greenbudget.app.views import GenericViewSet
+from greenbudget.app import views, mixins
 
 from .models import HeaderTemplate
 from .serializers import (
@@ -13,7 +11,7 @@ class HeaderTemplateViewSet(
     mixins.CreateModelMixin,
     mixins.DestroyModelMixin,
     mixins.ListModelMixin,
-    GenericViewSet
+    views.GenericViewSet
 ):
     """
     ViewSet to handle requests to the following endpoints:
@@ -24,7 +22,6 @@ class HeaderTemplateViewSet(
     (4) PATCH /pdf/header-templates/<pk>/
     (5) DELETE /pdf/header-templates/<pk>/
     """
-    lookup_field = 'pk'
     serializer_class = HeaderTemplateSerializer
 
     def get_serializer_class(self):
@@ -34,6 +31,3 @@ class HeaderTemplateViewSet(
 
     def get_queryset(self):
         return HeaderTemplate.objects.filter(created_by=self.request.user)
-
-    def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)

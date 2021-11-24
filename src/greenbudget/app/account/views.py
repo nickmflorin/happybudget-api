@@ -1,10 +1,7 @@
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django.utils.functional import cached_property
 
-from rest_framework import viewsets, mixins
-
-from greenbudget.app.views import filter_by_ids, GenericViewSet
+from greenbudget.app import views, mixins
 
 from greenbudget.app.account.models import Account
 from greenbudget.app.account.mixins import AccountNestedMixin
@@ -14,8 +11,7 @@ from greenbudget.app.group.models import Group
 from greenbudget.app.group.serializers import GroupSerializer
 from greenbudget.app.markup.models import Markup
 from greenbudget.app.markup.serializers import MarkupSerializer
-from greenbudget.app.subaccount.models import (
-    BudgetSubAccount, TemplateSubAccount)
+from greenbudget.app.subaccount.models import BudgetSubAccount
 from greenbudget.app.subaccount.serializers import (
     BudgetSubAccountSerializer,
     TemplateSubAccountSerializer
@@ -28,7 +24,6 @@ from .cache import (
     account_markups_cache,
     account_instance_cache
 )
-from .models import BudgetAccount
 from .permissions import AccountObjPermission
 from .serializers import (
     BudgetAccountDetailSerializer,
@@ -39,13 +34,13 @@ from .serializers import (
 )
 
 
-@filter_by_ids
+@views.filter_by_ids
 @account_markups_cache(get_instance_from_view=lambda view: view.account.pk)
 class AccountMarkupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
+    views.GenericViewSet,
     AccountNestedMixin,
-    viewsets.GenericViewSet
 ):
     """
     Viewset to handle requests to the following endpoints:
@@ -53,41 +48,33 @@ class AccountMarkupViewSet(
     (1) POST /accounts/<pk>/markups/
     (2) GET /accounts/<pk>/markups/
     """
-    lookup_field = 'pk'
-    account_lookup_field = ("pk", "account_pk")
     serializer_class = MarkupSerializer
+
+    def create_kwargs(self, serializer):
+        return {**super().create_kwargs(serializer), **{
+            'content_type': self.content_type,
+            'object_id': self.object_id
+        }}
 
     def get_queryset(self):
         return Markup.objects.filter(
-            content_type=ContentType.objects.get_for_model(type(self.account)),
-            object_id=self.account.pk,
+            content_type=self.content_type,
+            object_id=self.object_id
         )
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context.update(
-            parent=self.account,
-            account_context=True
-        )
+        context.update(parent=self.account)
         return context
 
-    def perform_create(self, serializer):
-        serializer.save(
-            created_by=self.request.user,
-            updated_by=self.request.user,
-            object_id=self.account.pk,
-            content_type=ContentType.objects.get_for_model(type(self.account)),
-            parent=self.account
-        )
 
-
-@filter_by_ids
+@views.filter_by_ids
 @account_groups_cache(get_instance_from_view=lambda view: view.account.pk)
 class AccountGroupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
     AccountNestedMixin,
-    viewsets.GenericViewSet
+    views.GenericViewSet,
 ):
     """
     Viewset to handle requests to the following endpoints:
@@ -95,41 +82,27 @@ class AccountGroupViewSet(
     (1) POST /accounts/<pk>/groups/
     (2) GET /accounts/<pk>/groups/
     """
-    lookup_field = 'pk'
-    account_lookup_field = ("pk", "account_pk")
     serializer_class = GroupSerializer
 
     def get_queryset(self):
         return Group.objects.filter(
-            content_type=ContentType.objects.get_for_model(type(self.account)),
-            object_id=self.account.pk,
+            content_type=self.content_type,
+            object_id=self.object_id
         )
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context.update(
-            parent=self.account,
-            account_context=True
-        )
+        context.update(parent=self.account)
         return context
 
-    def perform_create(self, serializer):
-        serializer.save(
-            created_by=self.request.user,
-            updated_by=self.request.user,
-            object_id=self.account.pk,
-            content_type=ContentType.objects.get_for_model(type(self.account)),
-            parent=self.account
-        )
 
-
-@filter_by_ids
+@views.filter_by_ids
 @account_subaccounts_cache(get_instance_from_view=lambda view: view.account.pk)
 class AccountSubAccountViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
     AccountNestedMixin,
-    GenericSubAccountViewSet
+    GenericSubAccountViewSet,
 ):
     """
     ViewSet to handle requests to the following endpoints:
@@ -137,48 +110,27 @@ class AccountSubAccountViewSet(
     (1) GET /accounts/<pk>/subaccounts
     (2) POST /accounts/<pk>/subaccounts
     """
-    account_lookup_field = ("pk", "account_pk")
-
-    @cached_property
+    @property
     def instance_cls(self):
         return type(self.account)
 
     @property
     def child_instance_cls(self):
-        if self.instance_cls is BudgetAccount:
-            return BudgetSubAccount
-        return TemplateSubAccount
+        return self.account.child_instance_cls
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context.update(
-            parent=self.account,
-            account_context=True
-        )
+        context.update(parent=self.account)
         return context
 
     def get_queryset(self):
-        content_type = ContentType.objects.get_for_model(type(self.account))
         return self.child_instance_cls.objects.filter(
-            object_id=self.account.pk,
-            content_type=content_type,
-        )
-
-    def perform_update(self, serializer):
-        serializer.save(updated_by=self.request.user)
-
-    def perform_create(self, serializer):
-        serializer.save(
-            updated_by=self.request.user,
-            created_by=self.request.user,
-            object_id=self.account.pk,
-            content_type=ContentType.objects.get_for_model(type(self.account)),
-            parent=self.account
+            object_id=self.object_id,
+            content_type=self.content_type,
         )
 
 
-class GenericAccountViewSet(GenericViewSet):
-    lookup_field = 'pk'
+class GenericAccountViewSet(views.GenericViewSet):
     ordering_fields = []
     search_fields = ['identifier', 'description']
     serializer_classes = (
@@ -202,7 +154,6 @@ class GenericAccountViewSet(GenericViewSet):
 
 @register_bulk_operations(
     base_cls=lambda context: context.view.instance_cls,
-    child_context_indicator='account_context',
     get_budget=lambda instance: instance.parent,
     child_context=lambda context: {"parent": context.instance},
     actions=[
@@ -252,14 +203,6 @@ class AccountViewSet(
     """
     extra_permission_classes = (AccountObjPermission, )
 
-    @cached_property
-    def instance(self):
-        return self.get_object()
-
-    @property
-    def instance_cls(self):
-        return type(self.instance)
-
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context.update(parent=self.instance.budget)
@@ -267,9 +210,7 @@ class AccountViewSet(
 
     @property
     def child_instance_cls(self):
-        if self.instance_cls is BudgetAccount:
-            return BudgetSubAccount
-        return TemplateSubAccount
+        return self.instance.child_instance_cls
 
     @property
     def child_serializer_cls(self):
@@ -279,6 +220,3 @@ class AccountViewSet(
 
     def get_queryset(self):
         return Account.objects.all()
-
-    def perform_update(self, serializer):
-        serializer.save(updated_by=self.request.user)

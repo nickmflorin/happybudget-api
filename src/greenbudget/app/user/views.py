@@ -1,7 +1,9 @@
 from django.utils.decorators import method_decorator
 from django.views.decorators.debug import sensitive_post_parameters
 
-from rest_framework import viewsets, mixins, response, permissions, status
+from rest_framework import response, permissions, status
+
+from greenbudget.app import views, mixins
 
 from greenbudget.app.authentication.exceptions import RateLimitedError
 from greenbudget.app.authentication.mail import send_email_verification_email
@@ -14,7 +16,7 @@ def sensitive_post_parameters_m(*args):
     return method_decorator(sensitive_post_parameters(*args))
 
 
-class UserRegistrationView(mixins.CreateModelMixin, viewsets.GenericViewSet):
+class UserRegistrationView(mixins.CreateModelMixin, views.GenericViewSet):
     authentication_classes = []
     permission_classes = (permissions.AllowAny, )
     serializer_class = UserRegistrationSerializer
@@ -41,8 +43,7 @@ class UserRegistrationView(mixins.CreateModelMixin, viewsets.GenericViewSet):
         )
 
 
-class ActiveUserViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
-    lookup_field = 'pk'
+class ActiveUserViewSet(mixins.UpdateModelMixin, views.GenericViewSet):
     serializer_class = UserSerializer
 
     def get_object(self):

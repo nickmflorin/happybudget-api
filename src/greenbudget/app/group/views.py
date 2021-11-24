@@ -1,4 +1,4 @@
-from rest_framework import viewsets, mixins
+from greenbudget.app import views, mixins
 
 from .models import Group
 from .serializers import GroupSerializer
@@ -8,7 +8,7 @@ class GroupViewSet(
     mixins.UpdateModelMixin,
     mixins.RetrieveModelMixin,
     mixins.DestroyModelMixin,
-    viewsets.GenericViewSet
+    views.GenericViewSet
 ):
     """
     Viewset to handle requests to the following endpoints:
@@ -17,7 +17,6 @@ class GroupViewSet(
     (2) GET /groups/<pk>/
     (3) DELETE /groups/<pk>/
     """
-    lookup_field = 'pk'
     serializer_class = GroupSerializer
 
     def get_serializer_context(self):
@@ -32,6 +31,3 @@ class GroupViewSet(
 
     def get_queryset(self):
         return Group.objects.filter(created_by=self.request.user)
-
-    def perform_update(self, serializer):
-        serializer.save(updated_by=self.request.user)

@@ -118,14 +118,14 @@ class Markup(BudgetingModel):
     @property
     def budget(self):
         parent = self.parent
-        while not isinstance(parent, self.budget_cls()):
+        while not isinstance(parent, self.budget_cls):
             parent = parent.parent
         return parent
 
     @property
     def intermittent_budget(self):
         parent = self.intermittent_parent
-        while not isinstance(parent, self.budget_cls()):
+        while not isinstance(parent, self.budget_cls):
             if parent is None:
                 break
             parent = parent.intermittent_parent

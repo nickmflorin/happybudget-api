@@ -42,15 +42,15 @@ class BudgetAncestorQuerier:
 
     def _get_case_query(self, budget):
         budget_ct = ContentType.objects.get_for_model(budget)
-        account_ct = ContentType.objects.get_for_model(budget.account_cls())
+        account_ct = ContentType.objects.get_for_model(budget.account_cls)
         subaccount_ct = ContentType.objects.get_for_model(
-            budget.subaccount_cls())
+            budget.subaccount_cls)
         accounts = [
-            q[0] for q in budget.account_cls().objects.filter(parent=budget)
+            q[0] for q in budget.account_cls.objects.filter(parent=budget)
             .only('pk').values_list('pk')
         ]
         subaccounts = [
-            q[0] for q in budget.subaccount_cls().objects
+            q[0] for q in budget.subaccount_cls.objects
             .filter_by_budget(budget)
             .only('pk').values_list('pk')
         ]

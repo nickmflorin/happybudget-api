@@ -105,7 +105,7 @@ class BudgetingManagerMixin:
         commit = kwargs.pop('commit', True)
         subaccounts = set([
             obj for obj in set_or_list(instances)
-            if isinstance(obj, self.model.subaccount_cls())
+            if isinstance(obj, self.model.subaccount_cls)
         ])
         # Set of ongoing Account(s) that need to be saved after they are
         # reestimated, either directly or via the children.
@@ -114,7 +114,7 @@ class BudgetingManagerMixin:
         # children are reactualized.
         accounts_filtration = set([
             obj for obj in set_or_list(instances)
-            if isinstance(obj, self.model.account_cls())
+            if isinstance(obj, self.model.account_cls)
         ])
         # Set of ongoing Budget(s) that need to be saved after they are
         # reestimated, either directly or via the children.
@@ -123,11 +123,11 @@ class BudgetingManagerMixin:
         # children are reestimated.
         budgets_filtration = set([
             obj for obj in set_or_list(instances)
-            if isinstance(obj, self.model.budget_cls())
+            if isinstance(obj, self.model.budget_cls)
         ])
         # The returned SubAccount(s) will be those only for which a save is
         # warranted after estimation.
-        subaccounts, a, b = self.model.subaccount_cls().objects.bulk_estimate(
+        subaccounts, a, b = self.model.subaccount_cls.objects.bulk_estimate(
             instances=subaccounts,
             commit=False,
             **kwargs
@@ -153,7 +153,7 @@ class BudgetingManagerMixin:
 
         # The returned Account(s) will be those only for which a save is
         # warranted after estimation.
-        a, b = self.model.account_cls().objects.bulk_estimate(
+        a, b = self.model.account_cls.objects.bulk_estimate(
             instances=accounts_filtration,
             commit=False,
             unsaved_children=unsaved_account_children,
@@ -176,7 +176,7 @@ class BudgetingManagerMixin:
 
         # The returned Budget(s) will be those only for which a save is
         # warranted after estimation.
-        b = self.model.budget_cls().objects.bulk_estimate(
+        b = self.model.budget_cls.objects.bulk_estimate(
             instances=budgets_filtration,
             commit=False,
             unsaved_children=unsaved_budget_children,
@@ -185,13 +185,13 @@ class BudgetingManagerMixin:
         budgets.update(b)
 
         if commit:
-            self.model.subaccount_cls().objects.bulk_update_post_estimation(
+            self.model.subaccount_cls.objects.bulk_update_post_estimation(
                 instances=subaccounts
             )
-            self.model.account_cls().objects.bulk_update_post_estimation(
+            self.model.account_cls.objects.bulk_update_post_estimation(
                 instances=accounts
             )
-            self.model.budget_cls().objects.bulk_update_post_estimation(
+            self.model.budget_cls.objects.bulk_update_post_estimation(
                 instances=budgets
             )
         return subaccounts, accounts, budgets
@@ -308,7 +308,7 @@ class BudgetingManagerMixin:
         commit = kwargs.pop('commit', True)
         subaccounts = set([
             obj for obj in set_or_list(instances)
-            if isinstance(obj, self.model.subaccount_cls())
+            if isinstance(obj, self.model.subaccount_cls)
         ])
         # Set of ongoing Account(s) that need to be saved after they are
         # reactualized, either directly or via the children.
@@ -320,17 +320,17 @@ class BudgetingManagerMixin:
         # children are reactualized.
         budgets_filtration = set([
             obj for obj in set_or_list(instances)
-            if isinstance(obj, self.model.budget_cls())
+            if isinstance(obj, self.model.budget_cls)
         ])
         # Set of ongoing accounts that still need to be reactualized after the
         # children are reactualized.
         accounts_filtration = set([
             obj for obj in set_or_list(instances)
-            if isinstance(obj, self.model.account_cls())
+            if isinstance(obj, self.model.account_cls)
         ])
         # The returned SubAccount(s) will be those only for which a save is
         # warranted after actualization.
-        subaccounts, a, b = self.model.subaccount_cls().objects.bulk_calculate(
+        subaccounts, a, b = self.model.subaccount_cls.objects.bulk_calculate(
             instances=subaccounts,
             commit=False,
             **kwargs
@@ -356,7 +356,7 @@ class BudgetingManagerMixin:
 
         # The returned Account(s) will be those only for which a save is
         # warranted after actualization.
-        a, b = self.model.account_cls().objects.bulk_calculate(
+        a, b = self.model.account_cls.objects.bulk_calculate(
             instances=accounts_filtration,
             unsaved_children=unsaved_account_children,
             commit=False,
@@ -379,7 +379,7 @@ class BudgetingManagerMixin:
 
         # The returned Budget(s) will be those only for which a save is
         # warranted after actualization.
-        b = self.model.budget_cls().objects.bulk_calculate(
+        b = self.model.budget_cls.objects.bulk_calculate(
             instances=budgets_filtration,
             unsaved_children=unsaved_budget_children,
             commit=False,
@@ -388,13 +388,13 @@ class BudgetingManagerMixin:
         budgets.update(b)
 
         if commit:
-            self.model.subaccount_cls().objects.bulk_update_post_calculation(
+            self.model.subaccount_cls.objects.bulk_update_post_calculation(
                 instances=subaccounts
             )
-            self.model.account_cls().objects.bulk_update_post_calculation(
+            self.model.account_cls.objects.bulk_update_post_calculation(
                 instances=accounts
             )
-            self.model.budget_cls().objects.bulk_update_post_calculation(
+            self.model.budget_cls.objects.bulk_update_post_calculation(
                 instances=budgets
             )
 

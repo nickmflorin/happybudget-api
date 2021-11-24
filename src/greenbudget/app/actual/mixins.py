@@ -10,6 +10,7 @@ class ActualNestedMixin(NestedObjectViewMixin):
     """
     actual_permission_classes = (ActualObjPermission, )
     view_name = 'actual'
+    actual_lookup_field = ("pk", "actual_pk")
 
     def get_actual_queryset(self, request):
         return Actual.objects.all()

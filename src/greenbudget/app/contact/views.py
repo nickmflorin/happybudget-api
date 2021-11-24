@@ -1,5 +1,5 @@
 from django.db import models
-from rest_framework import viewsets, mixins, decorators, response, status
+from rest_framework import decorators, response, status
 
 from greenbudget.lib.drf.bulk_serializers import (
     create_bulk_create_serializer,
@@ -7,7 +7,7 @@ from greenbudget.lib.drf.bulk_serializers import (
     create_bulk_delete_serializer
 )
 
-from greenbudget.app.views import GenericViewSet
+from greenbudget.app import views, mixins
 from greenbudget.app.io.serializers import (
     AttachmentSerializer, UploadAttachmentSerializer)
 
@@ -22,7 +22,7 @@ class ContactAttachmentViewSet(
     mixins.DestroyModelMixin,
     mixins.CreateModelMixin,
     ContactNestedMixin,
-    viewsets.GenericViewSet
+    views.GenericViewSet
 ):
     """
     ViewSet to handle requests to the following endpoints:
@@ -31,9 +31,7 @@ class ContactAttachmentViewSet(
     (2) DELETE /contacts/<pk>/attachments/pk/
     (3) POST /contacts/<pk>/attachments/
     """
-    contact_lookup_field = ("pk", "contact_pk")
     serializer_class = AttachmentSerializer
-    lookup_field = "pk"
 
     def get_queryset(self):
         return self.contact.attachments.all()
@@ -57,7 +55,7 @@ class ContactViewSet(
     mixins.CreateModelMixin,
     mixins.DestroyModelMixin,
     mixins.ListModelMixin,
-    GenericViewSet
+    views.GenericViewSet
 ):
     """
     ViewSet to handle requests to the following endpoints:
@@ -71,7 +69,6 @@ class ContactViewSet(
     (7) PATCH /contacts/bulk-update/
     (8) PATCH /contacts/bulk-create/
     """
-    lookup_field = 'pk'
     ordering_fields = []
     search_fields = ['first_name', 'last_name']
     serializer_class = ContactSerializer
@@ -82,15 +79,6 @@ class ContactViewSet(
 
     def get_queryset(self):
         return self.request.user.created_contacts.all()
-
-    def perform_create(self, serializer):
-        return serializer.save(
-            created_by=self.request.user,
-            updated_by=self.request.user
-        )
-
-    def perform_update(self, serializer):
-        return serializer.save(updated_by=self.request.user)
 
     @decorators.action(detail=False, url_path="bulk-delete", methods=["PATCH"])
     def bulk_delete(self, request, *args, **kwargs):
@@ -121,7 +109,16 @@ class ContactViewSet(
         )
         serializer = serializer_cls(data=request.data)
         serializer.is_valid(raise_exception=True)
-        children = self.perform_create(serializer)
+
+        # The serializer here is a bulk create serializer, which does not have
+        # a reference to the Contact model because it is not a ModelSerializer.
+        # This means that we have to explicitly include the create_kwargs that
+        # would have otherwise been automatically generated.
+        children = self.perform_create(
+            serializer,
+            created_by=self.request.user,
+            updated_by=self.request.user
+        )
 
         return response.Response({
             'data': self.serializer_class(children, many=True).data

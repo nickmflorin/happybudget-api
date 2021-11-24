@@ -41,7 +41,7 @@ class SubAccountQuerier(RowQuerier):
         subaccount_levels = []
         subaccounts = concat([
             [q[0] for q in account.children.only('pk').values_list('pk')]
-            for account in budget.account_cls().objects.filter(parent=budget)
+            for account in budget.account_cls.objects.filter(parent=budget)
         ])
         while len(subaccounts) != 0:
             subaccount_levels.append(subaccounts)
@@ -53,11 +53,11 @@ class SubAccountQuerier(RowQuerier):
         return subaccount_levels
 
     def _get_case_query(self, budget):
-        account_ct = ContentType.objects.get_for_model(budget.account_cls())
+        account_ct = ContentType.objects.get_for_model(budget.account_cls)
         subaccount_ct = ContentType.objects.get_for_model(
-            budget.subaccount_cls())
+            budget.subaccount_cls)
         accounts = [
-            q[0] for q in budget.account_cls().objects.filter(parent=budget)
+            q[0] for q in budget.account_cls.objects.filter(parent=budget)
             .only('pk').values_list('pk')
         ]
         query = Q(content_type_id=account_ct) & Q(object_id__in=accounts)
@@ -99,7 +99,6 @@ class SubAccountManager(SubAccountQuerier, BudgetingPolymorphicRowManager):
         # It is important to perform the bulk create first, because we need
         # the primary keys for the instances to be hashable.
         created = self.bulk_create(instances, return_created_objects=True)
-
         self.bulk_calculate(created)
         return created
 
@@ -119,11 +118,11 @@ class SubAccountManager(SubAccountQuerier, BudgetingPolymorphicRowManager):
             tuple(self.model.CALCULATED_FIELDS) + tuple(update_fields),
             mark_budgets=False
         )
-        self.model.account_cls().objects.bulk_update_post_calculation(
+        self.model.account_cls.objects.bulk_update_post_calculation(
             accounts,
             mark_budgets=False
         )
-        self.model.budget_cls().objects.bulk_update_post_calculation(
+        self.model.budget_cls.objects.bulk_update_post_calculation(
             budgets
         )
 
@@ -160,8 +159,8 @@ class SubAccountManager(SubAccountQuerier, BudgetingPolymorphicRowManager):
             if (altered or obj.raw_value_changed or obj.was_just_added()) \
                     and obj.parent is not None:
                 assert isinstance(
-                    obj.parent, (self.model.account_cls(), self.model))
-                if isinstance(obj.parent, self.model.account_cls()):
+                    obj.parent, (self.model.account_cls, self.model))
+                if isinstance(obj.parent, self.model.account_cls):
                     if obj.parent.pk in accounts_to_reestimate:
                         accounts_to_reestimate[obj.parent.pk]['unsaved'].add(obj)  # noqa
                     else:
@@ -228,9 +227,9 @@ class SubAccountManager(SubAccountQuerier, BudgetingPolymorphicRowManager):
 
         if commit:
             self.bulk_update_post_estimation(instances_to_save)
-            self.model.account_cls().objects.bulk_update_post_estimation(
+            self.model.account_cls.objects.bulk_update_post_estimation(
                 accounts)
-            self.model.budget_cls().objects.bulk_update_post_estimation(budgets)
+            self.model.budget_cls.objects.bulk_update_post_estimation(budgets)
             return instances_to_save, accounts, budgets
 
         return instances_to_save, accounts, budgets
@@ -262,9 +261,9 @@ class BudgetSubAccountManager(SubAccountManager):
 
         if commit:
             self.bulk_update_post_calculation(subaccounts)
-            self.model.account_cls().objects.bulk_update_post_calculation(
+            self.model.account_cls.objects.bulk_update_post_calculation(
                 accounts)
-            self.model.budget_cls().objects.bulk_update_post_calculation(
+            self.model.budget_cls.objects.bulk_update_post_calculation(
                 budgets)
         return subaccounts, accounts, budgets
 
@@ -290,8 +289,8 @@ class BudgetSubAccountManager(SubAccountManager):
             if (altered or obj.was_just_added()) and obj.parent is not None:
                 if obj.parent is not None:
                     assert isinstance(obj.parent, (
-                        self.model.account_cls(), self.model))
-                    if isinstance(obj.parent, self.model.account_cls()):
+                        self.model.account_cls, self.model))
+                    if isinstance(obj.parent, self.model.account_cls):
                         if obj.parent.pk in accounts_to_reactualize:
                             accounts_to_reactualize[
                                             obj.parent.pk]['unsaved'].add(obj)
@@ -361,9 +360,9 @@ class BudgetSubAccountManager(SubAccountManager):
 
         if commit:
             self.bulk_update_post_actualization(instances_to_save)
-            self.model.account_cls().objects.bulk_update_post_actualization(
+            self.model.account_cls.objects.bulk_update_post_actualization(
                 accounts)
-            self.model.budget_cls().objects.bulk_update_post_actualization(
+            self.model.budget_cls.objects.bulk_update_post_actualization(
                 budgets)
 
         return instances_to_save, accounts, budgets

@@ -1,13 +1,12 @@
-from rest_framework import mixins
+from django.utils.functional import cached_property
 
-from greenbudget.app.views import GenericViewSet
+from greenbudget.app import views, mixins
 
 from .models import Fringe
 from .serializers import FringeSerializer, FringeDetailSerializer
 
 
-class GenericFringeViewSet(GenericViewSet):
-    lookup_field = 'pk'
+class GenericFringeViewSet(views.GenericViewSet):
     ordering_fields = []
     search_fields = ['name']
     serializer_class = FringeSerializer
@@ -30,10 +29,14 @@ class FringesViewSet(
     (2) PATCH /fringes/<pk>/
     (3) DELETE /fringes/<pk>/
     """
-    budget_lookup_field = ("pk", "budget_pk")
+    @cached_property
+    def instance(self):
+        return self.get_object()
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update(budget=self.instance.budget)
+        return context
 
     def get_queryset(self):
         return Fringe.objects.all()
-
-    def perform_update(self, serializer):
-        serializer.save(updated_by=self.request.user)

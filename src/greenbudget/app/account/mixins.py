@@ -1,3 +1,6 @@
+from django.contrib.contenttypes.models import ContentType
+from django.utils.functional import cached_property
+
 from greenbudget.app.budgeting.mixins import NestedObjectViewMixin
 
 from .models import Account
@@ -10,6 +13,21 @@ class AccountNestedMixin(NestedObjectViewMixin):
     """
     account_permission_classes = (AccountObjPermission, )
     view_name = 'account'
+    account_lookup_field = ("pk", "account_pk")
 
     def get_account_queryset(self, request):
         return Account.objects.all()
+
+    @cached_property
+    def content_type(self):
+        return ContentType.objects.get_for_model(type(self.account))
+
+    @cached_property
+    def object_id(self):
+        return self.account.pk
+
+    def create_kwargs(self, serializer):
+        return {**super().create_kwargs(serializer), **{
+            'content_type': self.content_type,
+            'object_id': self.object_id
+        }}

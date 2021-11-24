@@ -2,13 +2,13 @@ from rest_framework import serializers
 
 from greenbudget.lib.drf.serializers import ModelSerializer
 
-from greenbudget.app.budgeting.fields import TableChildrenPrimaryKeyRelatedField
 from greenbudget.app.budgeting.serializers import (
     SimpleEntityPolymorphicSerializer)
 from greenbudget.app.group.models import Group
 from greenbudget.app.group.serializers import GroupSerializer
 from greenbudget.app.markup.serializers import MarkupSerializer
 from greenbudget.app.subaccount.serializers import SubAccountPdfSerializer
+from greenbudget.app.tabling.fields import TableChildrenPrimaryKeyRelatedField
 from greenbudget.app.tabling.serializers import row_order_serializer
 
 from .models import Account, BudgetAccount, TemplateAccount

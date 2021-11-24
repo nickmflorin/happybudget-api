@@ -2,7 +2,7 @@ from greenbudget.lib.django_utils.models import (
     PrePKBulkCreateQuerySet,
     BulkCreatePolymorphicQuerySet
 )
-from .utils import order_after, lexographic_midpoint
+from .utils import order_after
 
 
 class RowQuerier:
@@ -20,26 +20,6 @@ class RowQuerier:
 
     def reorder_by(self, *fields, commit=True):
         return self.reorder(commit=commit, instances=self.order_by(*fields))
-
-    def get_order_at_integer(self, order, direction):
-        assert direction in ('up', 'down'), \
-            "The direction must either be provided as `up` or `down`."
-        if self.count() == 0:
-            return lexographic_midpoint()
-        elif order == 0:
-            return lexographic_midpoint(upper=self.all()[1].order)
-        elif order > self.count():
-            return lexographic_midpoint(lower=self.all()[-1].order)
-        elif direction == 'down':
-            return lexographic_midpoint(
-                lower=self.all()[order].order,
-                upper=self.all()[order + 1].order
-            )
-        else:
-            return lexographic_midpoint(
-                lower=self.all()[order - 1].order,
-                upper=self.all()[order].order
-            )
 
 
 class RowQuerySet(RowQuerier, PrePKBulkCreateQuerySet):

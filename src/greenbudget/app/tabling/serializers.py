@@ -1,70 +1,100 @@
-from rest_framework import serializers
+from copy import deepcopy
+
+from greenbudget.lib.drf.exceptions import InvalidFieldError
+from greenbudget.lib.drf.serializers import LazyContext
+
+from .fields import TablePrimaryKeyRelatedField
+from .utils import lexographic_midpoint
 
 
 class row_order_serializer:
     """
     A decorator that configures a :obj:`serializers.ModelSerializer` class
-    such that it can accept an `order` parameter, update or create the
-    associated model in the table with the proper ordering, and include the
-    lexographic `order` parameter in the response.
+    such that it can accept a `previous` parameter, update or create the
+    associated model in the table with the proper ordering.
 
     Due to the complexities and inheritance patterns of most of our serializers
     related to tabular data, incorporating this behavior via inheritance is not
     possible or clean, so this decorator should be used instead.
     """
-    order = serializers.IntegerField(
-        write_only=True,
-        required=False,
-        allow_null=False
-    )
 
     def __init__(self, table_filter):
         self._table_filter = table_filter
 
     def __call__(self, cls):
-        model_cls = cls.Meta.model
-        cls.Meta.fields = cls.Meta.fields + ('order', )
+        klass = deepcopy(cls)
 
-        original_create = getattr(cls, 'create')
-        original_update = getattr(cls, 'update')
-        original_to_representation = getattr(cls, 'to_representation')
+        # This is necessary so we do not mutate the Meta fields of any
+        # serializers the serializer this decorator decorates inherits from.
+        class Meta(klass.Meta):
+            fields = klass.Meta.fields + ('previous', )
 
-        def create(serializer, validated_data):
-            if 'order' in validated_data:
-                # The table filter keyword arguments are guaranteed to be in
-                # the validated data because they will always be required when
-                # creating an instance.  If they are not, it is a developer
-                # error.
-                filter_data = self._table_filter(validated_data)
-                table = model_cls.objects.get_table(**filter_data)
-                validated_data['order'] = table.get_order_at_integer(
-                    validated_data.pop('order'),
-                    # When inserting a new row in a table at a specific order,
-                    # this direction causes the row to be inserted at the
-                    # correct location.
-                    direction='up'
-                )
-            return original_create(serializer, validated_data)
+        setattr(klass, 'Meta', Meta)
+        model_cls = klass.Meta.model
 
-        def to_representation(serializer, instance):
-            # Because we accept the `order` field as an integer ordering in the
-            # table, and we need to include the `order` field in the response
-            # as it's lexographic ordering, we have to set `write_only` on the
-            # ordering IntegerField and override the response representation
-            # here.
-            data = original_to_representation(serializer, instance)
-            data.update(order=instance.order)
-            return data
+        original_validate = getattr(klass, 'validate')
 
-        def update(serializer, instance, validated_data):
-            if 'order' in validated_data:
-                instance.order_at_integer(validated_data.pop('order'))
-            return original_update(serializer, instance, validated_data)
+        def validate(serializer, attrs):
+            context = LazyContext(serializer, 'row_order_serializer')
+            filter_data = self._table_filter(context)
+            table = model_cls.objects.get_table(**filter_data)
 
-        setattr(cls, 'update', update)
-        setattr(cls, 'create', create)
-        setattr(cls, 'to_representation', to_representation)
-        setattr(cls, 'order', self.order)
+            def get_bounds(previous):
+                if previous is not None:
+                    index = list(table).index(previous)
+                    try:
+                        next_instance = table[index + 1]
+                    except IndexError:
+                        next_instance = None
+                else:
+                    next_instance = table.first()
+                return [previous, next_instance]
+
+            validated = original_validate(serializer, attrs)
+            if 'previous' in validated:
+                previous = validated.pop('previous')
+                bounds = get_bounds(previous)
+
+                if serializer.instance is not None:
+                    if previous == serializer.instance:
+                        raise InvalidFieldError('previous', message=(
+                            'Previous instance cannot be the instance being '
+                            'updated.'
+                        ))
+                    # Check to make sure that the previous instance that the
+                    # updating instance is being ordered relative to is not
+                    # already the previous instance before the updating instance.
+                    # If it is, no update is required.
+                    current_index = list(table).index(serializer.instance)
+                    current_previous = None
+                    if current_index >= 1:
+                        current_previous = table[current_index - 1]
+                    if current_previous == bounds[0]:
+                        return validated
+
+                bounds = get_bounds(previous)
+                if bounds[0] is None:
+                    validated['order'] = lexographic_midpoint(
+                        upper=bounds[1].order)
+                elif bounds[1] is None:
+                    validated['order'] = lexographic_midpoint(
+                        lower=bounds[0].order)
+                else:
+                    validated['order'] = lexographic_midpoint(
+                        lower=bounds[0].order,
+                        upper=bounds[1].order
+                    )
+            return validated
+
+        setattr(klass, 'validate', validate)
+
+        previous_field = TablePrimaryKeyRelatedField(
+            required=False,
+            allow_null=True,
+            write_only=True,
+            table_filter=self._table_filter
+        )
+        setattr(klass, 'previous', previous_field)
         # This is because there is some meta programming around DRF's serializer.
-        cls._declared_fields['order'] = self.order
-        return cls
+        klass._declared_fields['previous'] = previous_field
+        return klass

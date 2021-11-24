@@ -51,7 +51,6 @@ class ContactSerializer(ModelSerializer):
         }
 
 
-@row_order_serializer(
-    table_filter=lambda d: {'created_by_id': d['created_by'].id})
+@row_order_serializer(table_filter=lambda d: {'created_by_id': d['user'].id})
 class ContactDetailSerializer(ContactSerializer):
     pass

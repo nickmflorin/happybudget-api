@@ -4,7 +4,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models, IntegrityError
 
 from greenbudget.app import signals
-from greenbudget.app.budgeting.models import BudgetingRowModel
+from greenbudget.app.budgeting.models import BudgetingRowModel, AssociatedModel
 from greenbudget.app.tagging.models import Tag
 
 from .managers import ActualManager
@@ -76,11 +76,9 @@ class Actual(BudgetingRowModel):
 
     type = "actual"
     table_pivot = ('budget_id', )
-    associated = [
-        ('budget', 'budget'),
-        ('account', 'budgetaccount'),
-        ('subaccount', 'budgetsubaccount')
-    ]
+    budget_cls = AssociatedModel('budget', 'budget')
+    account_cls = AssociatedModel('account', 'budgetaccount')
+    subaccount_cls = AssociatedModel('subaccount', 'budgetsubaccount')
 
     class Meta:
         get_latest_by = "order"

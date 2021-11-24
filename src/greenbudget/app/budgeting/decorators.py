@@ -77,14 +77,10 @@ class BulkAction(BaseBulkAction):
 
 
 class bulk_action:
-    def __init__(self, action, base_cls, child_context_indicator, get_budget,
+    def __init__(self, action, base_cls, get_budget,
             **kwargs):
         self._action = action
         self._base_cls = base_cls
-
-        # Used to let the children serializers know that we are in a specific
-        # bulk context.
-        self._child_context_indicator = child_context_indicator
 
         self._base_serializer_cls = kwargs.pop('base_serializer_cls', None)
 
@@ -162,10 +158,7 @@ class bulk_action:
     @property
     def child_context(self):
         budget = self._get_budget(self.context.instance)
-        default_context = {
-            'budget': budget,
-            self._child_context_indicator: True
-        }
+        default_context = {'budget': budget}
         if self._action.child_context is None:
             return default_context
         elif isinstance(self._action.child_context, dict):
@@ -273,13 +266,12 @@ class bulk_delete_action(bulk_action):
 
 
 class bulk_registration:
-    def __init__(self, base_cls, get_budget, child_context_indicator,
-            base_serializer_cls=None, actions=None, budget_serializer=None,
+    def __init__(self, base_cls, get_budget, base_serializer_cls=None,
+            actions=None, budget_serializer=None,
             include_budget_in_response=True, **kwargs):
         self._base_cls = base_cls
         self._base_serializer_cls = base_serializer_cls
         self._get_budget = get_budget
-        self._child_context_indicator = child_context_indicator
         self._budget_serializer = budget_serializer
         self._include_budget_in_response = include_budget_in_response
 
@@ -324,7 +316,6 @@ class bulk_registration:
             base_serializer_cls=self._base_serializer_cls,
             url_path=url_path,
             get_budget=self._get_budget,
-            child_context_indicator=self._child_context_indicator,
             budget_serializer=self._budget_serializer,
             include_budget_in_response=self._include_budget_in_response
         )

@@ -6,7 +6,8 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 
 from greenbudget.app import signals
-from greenbudget.app.budgeting.models import BudgetingTreePolymorphicModel
+from greenbudget.app.budgeting.models import (
+    BudgetingTreePolymorphicModel, AssociatedModel)
 from greenbudget.app.group.models import Group
 from greenbudget.app.markup.models import Markup
 from greenbudget.app.io.utils import upload_user_image_to
@@ -88,7 +89,7 @@ class BaseBudget(BudgetingTreePolymorphicModel):
 
     @property
     def child_instance_cls(self):
-        return self.account_cls()
+        return self.account_cls
 
     @property
     def nominal_value(self):
@@ -173,14 +174,12 @@ class Budget(BaseBudget):
     pdf_type = "pdf-budget"
     domain = "budget"
 
+    budget_cls = AssociatedModel('budget', 'budget')
+    account_cls = AssociatedModel('account', 'budgetaccount')
+    subaccount_cls = AssociatedModel('subaccount', 'budgetsubaccount')
+
     objects = BudgetManager()
     non_polymorphic = models.Manager()
-
-    associated = [
-        ('budget', 'budget'),
-        ('account', 'budgetaccount'),
-        ('subaccount', 'budgetsubaccount')
-    ]
 
     class Meta(BaseBudget.Meta):
         verbose_name = "Budget"

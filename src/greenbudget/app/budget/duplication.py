@@ -273,12 +273,12 @@ def duplicate(
 
     markup_ct = ContentType.objects.get_for_model(Markup)
 
-    source_a_cls = budget.account_cls()
+    source_a_cls = budget.account_cls
     dest_a_cls = destination_account_cls or source_a_cls
     source_a_ct = ContentType.objects.get_for_model(source_a_cls)
     dest_a_ct = ContentType.objects.get_for_model(dest_a_cls)
 
-    source_sa_cls = budget.subaccount_cls()
+    source_sa_cls = budget.subaccount_cls
     dest_sa_cls = destination_subaccount_cls or source_sa_cls
     source_sa_ct = ContentType.objects.get_for_model(source_sa_cls)
     dest_sa_ct = ContentType.objects.get_for_model(dest_sa_cls)

@@ -80,33 +80,23 @@ class CacheControlMixin:
             self.parent.invalidate_caches()
 
 
+class AssociatedModel:
+    def __init__(self, *model_lookup):
+        self._model_lookup = tuple(model_lookup)
+
+    def __get__(self, obj, objtype=None):
+        if self._model_lookup == ('self', ):
+            return objtype
+        elif len(self._model_lookup) == 1:
+            return getattr(obj, self._model_lookup[0])
+        return import_model_at_path(*self._model_lookup)
+
+
 class BudgetingModelMixin:
-    associated = [
-        ('budget', 'basebudget'),
-        ('account', 'account'),
-        ('subaccount', 'subaccount')
-    ]
+    budget_cls = AssociatedModel('budget', 'basebudget')
+    account_cls = AssociatedModel('account', 'account')
+    subaccount_cls = AssociatedModel('subaccount', 'subaccount')
     domain = None
-
-    @classmethod
-    def get_associated_model_cls(cls, type):
-        for string_path in cls.associated:
-            model_cls = import_model_at_path(string_path)
-            if model_cls.type == type:
-                return model_cls
-        raise Exception("Unknown model type %s." % type)
-
-    @classmethod
-    def budget_cls(cls):
-        return cls.get_associated_model_cls('budget')
-
-    @classmethod
-    def subaccount_cls(cls):
-        return cls.get_associated_model_cls('subaccount')
-
-    @classmethod
-    def account_cls(cls):
-        return cls.get_associated_model_cls('account')
 
 
 class BudgetingTreeModelMixin(BudgetingModelMixin, CacheControlMixin):

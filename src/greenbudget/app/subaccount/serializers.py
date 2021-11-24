@@ -1,8 +1,8 @@
+from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers, exceptions
 
 from greenbudget.lib.drf.serializers import ModelSerializer
 
-from greenbudget.app.budgeting.fields import TableChildrenPrimaryKeyRelatedField
 from greenbudget.app.budgeting.serializers import (
     SimpleEntityPolymorphicSerializer)
 from greenbudget.app.contact.models import Contact
@@ -12,6 +12,7 @@ from greenbudget.app.group.serializers import GroupSerializer
 from greenbudget.app.io.models import Attachment
 from greenbudget.app.io.serializers import SimpleAttachmentSerializer
 from greenbudget.app.markup.serializers import MarkupSerializer
+from greenbudget.app.tabling.fields import TableChildrenPrimaryKeyRelatedField
 from greenbudget.app.tabling.serializers import row_order_serializer
 from greenbudget.app.tagging.fields import TagField
 from greenbudget.app.tagging.serializers import TagSerializer, ColorSerializer
@@ -136,7 +137,11 @@ class BudgetSubAccountSerializer(SubAccountSerializer):
         }
 
 
-@row_order_serializer(table_filter=lambda d: {'parent_id': d['parent'].id})
+@row_order_serializer(table_filter=lambda context: {
+    'object_id': context['parent'].id,
+    'content_type_id': ContentType.objects.get_for_model(
+        type(context['parent'])).id
+})
 class BudgetSubAccountDetailSerializer(BudgetSubAccountSerializer):
     ancestors = SimpleEntityPolymorphicSerializer(many=True, read_only=True)
     siblings = SimpleEntityPolymorphicSerializer(many=True, read_only=True)
@@ -153,7 +158,11 @@ class TemplateSubAccountSerializer(SubAccountSerializer):
         fields = SubAccountSerializer.Meta.fields
 
 
-@row_order_serializer(table_filter=lambda d: {'parent_id': d['parent'].id})
+@row_order_serializer(table_filter=lambda context: {
+    'object_id': context['parent'].id,
+    'content_type_id': ContentType.objects.get_for_model(
+        type(context['parent'])).id
+})
 class TemplateSubAccountDetailSerializer(TemplateSubAccountSerializer):
     ancestors = SimpleEntityPolymorphicSerializer(many=True, read_only=True)
     siblings = SimpleEntityPolymorphicSerializer(many=True, read_only=True)

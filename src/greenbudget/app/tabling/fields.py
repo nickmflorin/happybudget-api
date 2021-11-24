@@ -6,6 +6,24 @@ from django.utils.translation import gettext_lazy as _
 
 from rest_framework import serializers
 
+from greenbudget.lib.drf.serializers import LazyContext
+
+
+class TablePrimaryKeyRelatedField(serializers.PrimaryKeyRelatedField):
+    def __init__(self, *args, **kwargs):
+        self._table_filter = kwargs.pop('table_filter')
+        super().__init__(*args, **kwargs)
+
+    def get_queryset(self):
+        if not isinstance(self.parent, serializers.ModelSerializer):
+            raise Exception(
+                "This related field must be used with ModelSerializer's only.")
+
+        model_cls = self.parent.Meta.model
+        context = LazyContext(self.parent, field_name=type(self).__name__)
+        filter_data = self._table_filter(context)
+        return model_cls.objects.get_table(**filter_data)
+
 
 class TableChildrenPrimaryKeyRelatedField(serializers.PrimaryKeyRelatedField):
     default_error_messages = {

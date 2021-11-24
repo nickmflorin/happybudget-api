@@ -3,6 +3,7 @@ import logging
 
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.http import Http404
+from django.utils.functional import cached_property
 
 from rest_framework import views, exceptions, viewsets, serializers
 from rest_framework.response import Response
@@ -50,9 +51,38 @@ class GenericViewSet(viewsets.GenericViewSet):
     `rest_framework.viewsets.GenericViewSet` class for specific functionality
     used in this application.
     """
+    lookup_field = 'pk'
+
     @property
     def is_simple(self):
         return 'simple' in self.request.query_params
+
+    @cached_property
+    def instance(self):
+        return self.get_object()
+
+    @property
+    def instance_cls(self):
+        return type(self.instance)
+
+    def _update_kwargs(self, serializer):
+        kwargs = {}
+        if isinstance(serializer, serializers.ModelSerializer):
+            model_cls = serializer.Meta.model
+            if hasattr(model_cls, 'updated_by'):
+                kwargs.update(updated_by=self.request.user)
+        return kwargs
+
+    def update_kwargs(self, serializer):
+        return self._update_kwargs(serializer)
+
+    def create_kwargs(self, serializer):
+        kwargs = self._update_kwargs(serializer)
+        if isinstance(serializer, serializers.ModelSerializer):
+            model_cls = serializer.Meta.model
+            if hasattr(model_cls, 'created_by'):
+                kwargs.update(created_by=self.request.user)
+        return kwargs
 
     def get_serializer_context(self):
         context = super().get_serializer_context()

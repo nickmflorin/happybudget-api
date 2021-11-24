@@ -8,7 +8,8 @@ from django.utils.functional import cached_property
 
 from greenbudget.app import signals
 from greenbudget.app.actual.models import Actual
-from greenbudget.app.budgeting.models import BudgetingTreePolymorphicRowModel
+from greenbudget.app.budgeting.models import (
+    BudgetingTreePolymorphicRowModel, AssociatedModel)
 from greenbudget.app.fringe.utils import contribution_from_fringes
 from greenbudget.app.group.models import Group
 from greenbudget.app.markup.models import Markup
@@ -117,6 +118,7 @@ class SubAccount(BudgetingTreePolymorphicRowModel):
 
     type = "subaccount"
     table_pivot = ('content_type_id', 'object_id')
+    child_instance_cls = AssociatedModel('self')
     DERIVING_FIELDS = ("quantity", "rate", "multiplier", "unit")
     CACHES = [
         subaccount_markups_cache,
@@ -135,10 +137,6 @@ class SubAccount(BudgetingTreePolymorphicRowModel):
     @property
     def parent_instance_cls(self):
         return type(self.parent)
-
-    @property
-    def child_instance_cls(self):
-        return type(self)
 
     @property
     def siblings(self):
@@ -326,11 +324,9 @@ class BudgetSubAccount(SubAccount):
     objects = BudgetSubAccountManager()
 
     DERIVING_FIELDS = SubAccount.DERIVING_FIELDS + ("contact", )
-    associated = [
-        ('budget', 'budget'),
-        ('account', 'budgetaccount'),
-        ('subaccount', 'budgetsubaccount')
-    ]
+    budget_cls = AssociatedModel('budget', 'budget')
+    account_cls = AssociatedModel('account', 'budgetaccount')
+    subaccount_cls = AssociatedModel('subaccount', 'budgetsubaccount')
     pdf_type = 'pdf-subaccount'
     domain = "budget"
 
@@ -429,11 +425,9 @@ class BudgetSubAccount(SubAccount):
 @signals.model(user_field='updated_by')
 class TemplateSubAccount(SubAccount):
     domain = "template"
-    associated = [
-        ('template', 'template'),
-        ('account', 'templateaccount'),
-        ('subaccount', 'templatesubaccount')
-    ]
+    budget_cls = AssociatedModel('template', 'template')
+    account_cls = AssociatedModel('account', 'templateaccount')
+    subaccount_cls = AssociatedModel('subaccount', 'templatesubaccount')
     objects = TemplateSubAccountManager()
 
     class Meta(SubAccount.Meta):
