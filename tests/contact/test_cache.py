@@ -1,5 +1,4 @@
 from django.test import override_settings
-import pytest
 
 
 @override_settings(CACHE_ENABLED=True)
@@ -40,7 +39,6 @@ def test_cache_invalidated_on_bulk_delete(api_client, user, create_contact):
 
 
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.freeze_time('2020-01-01')
 def test_cache_invalidated_on_update(api_client, user, create_contact):
     contacts = [create_contact(), create_contact()]
     api_client.force_login(user)
@@ -61,7 +59,6 @@ def test_cache_invalidated_on_update(api_client, user, create_contact):
 
 
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.freeze_time('2020-01-01')
 def test_cache_invalidated_on_bulk_update(api_client, user, create_contact):
     contacts = [create_contact(), create_contact()]
     api_client.force_login(user)
@@ -84,7 +81,6 @@ def test_cache_invalidated_on_bulk_update(api_client, user, create_contact):
 
 
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.freeze_time('2020-01-01')
 def test_cache_invalidated_on_create(api_client, user, create_contact):
     [create_contact(), create_contact()]
     api_client.force_login(user)
@@ -104,7 +100,6 @@ def test_cache_invalidated_on_create(api_client, user, create_contact):
 
 
 @override_settings(CACHE_ENABLED=True)
-@pytest.mark.freeze_time('2020-01-01')
 def test_cache_invalidated_on_bulk_create(api_client, user, create_contact):
     [create_contact(), create_contact()]
     api_client.force_login(user)

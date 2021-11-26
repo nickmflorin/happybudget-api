@@ -86,7 +86,6 @@ def test_get_attachments(api_client, user, create_budget_account,
     ]
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_delete_attachment(api_client, user, create_budget_account,
         create_budget_subaccount, create_budget, create_attachment):
     budget = create_budget()
@@ -162,7 +161,6 @@ def test_update_attachments(api_client, user, create_budget_account,
     ]
 
 
-@pytest.mark.freeze_time('2020-01-01')
 @override_settings(APP_URL="https://api.greenbudget.com")
 def test_upload_attachment(api_client, user, create_budget_account,
         create_budget_subaccount, create_budget, create_attachment,

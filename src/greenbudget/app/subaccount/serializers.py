@@ -159,9 +159,9 @@ class TemplateSubAccountSerializer(SubAccountSerializer):
 
 
 @row_order_serializer(table_filter=lambda context: {
-    'object_id': context['parent'].id,
+    'object_id': context.parent.id,
     'content_type_id': ContentType.objects.get_for_model(
-        type(context['parent'])).id
+        type(context.parent)).id
 })
 class TemplateSubAccountDetailSerializer(TemplateSubAccountSerializer):
     ancestors = SimpleEntityPolymorphicSerializer(many=True, read_only=True)

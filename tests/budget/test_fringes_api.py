@@ -1,7 +1,3 @@
-import pytest
-
-
-@pytest.mark.freeze_time('2020-01-01')
 def test_get_fringes(api_client, user, create_fringe, models, budget_f):
     budget = budget_f.create_budget()
     fringes = [
@@ -45,7 +41,6 @@ def test_get_fringes(api_client, user, create_fringe, models, budget_f):
     ]
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_create_fringe(api_client, user, budget_f, models):
     budget = budget_f.create_budget()
     api_client.force_login(user)
@@ -80,7 +75,6 @@ def test_create_fringe(api_client, user, budget_f, models):
     assert fringe.unit == 1
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_bulk_create_fringes(api_client, user, models, budget_f):
     budget = budget_f.create_budget()
     accounts = [

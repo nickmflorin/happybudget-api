@@ -1,10 +1,8 @@
 import datetime
 from datetime import timezone
 import mock
-import pytest
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_unit_properly_serializes(api_client, user, budget_f,
         create_subaccount_unit):
     budget = budget_f.create_budget()
@@ -23,7 +21,6 @@ def test_unit_properly_serializes(api_client, user, budget_f,
     }
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_update_subaccount_unit(api_client, user, budget_f,
         create_subaccount_unit):
     budget = budget_f.create_budget()
@@ -74,7 +71,6 @@ def test_update_subaccount_contact_wrong_user(api_client, user, admin_user,
     assert response.status_code == 400
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_get_budget_subaccount(api_client, user, budget_df):
     budget = budget_df.create_budget()
     account = budget_df.create_account(parent=budget)
@@ -123,7 +119,6 @@ def test_get_budget_subaccount(api_client, user, budget_df):
     }
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_get_template_subaccount(api_client, user, template_df):
     budget = template_df.create_budget()
     account = template_df.create_account(parent=budget)
@@ -170,7 +165,6 @@ def test_get_template_subaccount(api_client, user, template_df):
     }
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_update_budget_subaccount(api_client, user, budget_df):
     budget = budget_df.create_budget()
     account = budget_df.create_account(parent=budget)
@@ -232,7 +226,6 @@ def test_update_budget_subaccount(api_client, user, budget_df):
     assert subaccount.rate == 1.5
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_update_template_subaccount(api_client, user, template_df):
     budget = template_df.create_budget()
     account = template_df.create_account(parent=budget)
@@ -292,7 +285,6 @@ def test_update_template_subaccount(api_client, user, template_df):
     assert subaccount.rate == 1.5
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_create_subaccount(api_client, user, budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
@@ -370,7 +362,6 @@ def test_create_subaccount(api_client, user, budget_f):
     assert child.rate == 1.5
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_update_subaccount_fringes(api_client, user, budget_f, create_fringe):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
@@ -386,7 +377,6 @@ def test_update_subaccount_fringes(api_client, user, budget_f, create_fringe):
     assert subaccount.fringes.count() == 2
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_get_subaccount_subaccounts(api_client, user, budget_df):
     budget = budget_df.create_budget()
     account = budget_df.create_account(parent=budget)
@@ -454,7 +444,6 @@ def test_get_subaccount_subaccounts(api_client, user, budget_df):
     ]
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_get_template_subaccount_subaccounts(api_client, user, template_df):
     budget = template_df.create_budget()
     account = template_df.create_account(parent=budget)
@@ -538,7 +527,6 @@ def test_remove_subaccount_from_group(api_client, user, budget_f, models,
     assert models.Group.objects.first() is None
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_bulk_update_subaccount_subaccounts(api_client, user, freezer, budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
@@ -785,7 +773,6 @@ def test_bulk_update_subaccount_subaccounts_budget_updated_once(api_client,
     assert save.call_count == 1
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_bulk_create_subaccount_subaccounts(api_client, user, budget_f, models):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)

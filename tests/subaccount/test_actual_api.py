@@ -1,7 +1,3 @@
-import pytest
-
-
-@pytest.mark.freeze_time('2020-01-01')
 def test_create_actual(api_client, user, budget_df, models):
     budget = budget_df.create_budget()
     account = budget_df.create_account(parent=budget)
@@ -39,7 +35,6 @@ def test_create_actual(api_client, user, budget_df, models):
     assert actual.owner == subaccount
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_get_subaccount_actuals(api_client, user, create_actual, budget_df):
     budget = budget_df.create_budget()
     account = budget_df.create_account(parent=budget)

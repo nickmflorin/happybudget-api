@@ -45,6 +45,6 @@ class FringeSerializer(ModelSerializer):
             'color', 'type', 'order')
 
 
-@row_order_serializer(table_filter=lambda d: {'budget_id': d['budget'].id})
+@row_order_serializer(table_filter=lambda d: {'budget_id': d.budget.id})
 class FringeDetailSerializer(FringeSerializer):
     pass

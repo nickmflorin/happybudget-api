@@ -1,7 +1,6 @@
 import pytest
 
 from greenbudget.app.io.exceptions import (
-    FileNameError,
     MissingFileExtension,
     UnsupportedFileExtension
 )
@@ -21,7 +20,6 @@ from greenbudget.app.io.utils import (
     ('test file.pdf', 'testfile.pdf', 'pdf'),
     ('testfile', MissingFileExtension, None),
     ('testimage.', MissingFileExtension, None),
-    ('test.image.gif', FileNameError, None)
 ])
 def test_parse_filename(filename, expected_filename, expected_ext):
     if isinstance(expected_filename, type):
@@ -40,7 +38,6 @@ def test_parse_filename(filename, expected_filename, expected_ext):
     ('test file.jpeg', 'testfile.jpeg', 'jpeg'),
     ('testfile', MissingFileExtension, None),
     ('testimage.', MissingFileExtension, None),
-    ('test.image.gif', FileNameError, None),
     ('test.gif', UnsupportedFileExtension, None)
 ])
 def test_parse_image_filename(filename, expected_filename, expected_ext):

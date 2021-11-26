@@ -1,7 +1,3 @@
-import pytest
-
-
-@pytest.mark.freeze_time('2020-01-01')
 def test_get_budget_account_subaccount_groups(api_client, user, create_group,
         budget_f):
     budget = budget_f.create_budget()
@@ -25,7 +21,6 @@ def test_get_budget_account_subaccount_groups(api_client, user, create_group,
     }]
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_create_account_subaccount_group(api_client, user, models, budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)

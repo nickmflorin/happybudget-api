@@ -1,7 +1,3 @@
-import pytest
-
-
-@pytest.mark.freeze_time('2020-01-01')
 def test_get_header_template(api_client, user, create_header_template):
     template = create_header_template(left_info="<h1>Test</h1>")
 
@@ -20,7 +16,6 @@ def test_get_header_template(api_client, user, create_header_template):
     }
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_get_header_templates(api_client, user, create_header_template):
     template = create_header_template(left_info="<h1>Test</h1>")
     api_client.force_login(user)
@@ -63,7 +58,6 @@ def test_create_header_template_non_unique_name(api_client, user,
     assert response.status_code == 400
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_create_header_template(api_client, user, models):
     api_client.force_login(user)
     response = api_client.post(
@@ -91,7 +85,6 @@ def test_create_header_template(api_client, user, models):
     }
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_update_header_template(api_client, user, create_header_template,
         models):
     template = create_header_template(left_info="<h1>Test</h1>")

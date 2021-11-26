@@ -20,7 +20,7 @@ class TablePrimaryKeyRelatedField(serializers.PrimaryKeyRelatedField):
                 "This related field must be used with ModelSerializer's only.")
 
         model_cls = self.parent.Meta.model
-        context = LazyContext(self.parent, field_name=type(self).__name__)
+        context = LazyContext(self.parent, ref=type(self).__name__)
         filter_data = self._table_filter(context)
         return model_cls.objects.get_table(**filter_data)
 
@@ -38,49 +38,18 @@ class TableChildrenPrimaryKeyRelatedField(serializers.PrimaryKeyRelatedField):
     def __init__(self, *args, **kwargs):
         self._obj_name = kwargs.pop('obj_name')
         self._child_instance_cls = kwargs.pop('child_instance_cls')
-        self._additional_instance_query = kwargs.pop(
-            'additional_instance_query', None)
-        self._exclude_instance_query = kwargs.pop(
-            'exclude_instance_query', None)
-
         self._error_message = kwargs.pop('error_message', None)
         super().__init__(*args, **kwargs)
         if self._error_message is not None:
             self.error_messages.update(does_not_exist=self._error_message)
 
-    def _to_query(self, q, param):
-        # In a POST request, there will not be an instance on the serializer.
-        if self.request.method == "POST" or q is None:
-            return models.Q()
-        instance = self.parent.parent.instance
-        if isinstance(q, models.Q):
-            return q
-        try:
-            return q(self.parent_instance, instance)
-        except TypeError:
-            raise TypeError(
-                "`%s` must either be a callable taking the parent instance "
-                "and updating instance as it's only arguments, or a class type."
-                % param
-            )
-
     @property
     def parent_instance(self):
-        if 'parent' not in self.context:
-            raise Exception(
-                "The `parent` must be provided in context when using this "
-                "serializer field."
-            )
-        return self.context['parent']
+        return LazyContext(self.context).parent
 
     @property
     def request(self):
-        if 'request' not in self.context:
-            raise Exception(
-                "The `request` must be provided in context when using this "
-                "serializer field."
-            )
-        return self.context['request']
+        return LazyContext(self.context).request
 
     @property
     def child_instance_cls(self):
@@ -95,29 +64,14 @@ class TableChildrenPrimaryKeyRelatedField(serializers.PrimaryKeyRelatedField):
             )
 
     @property
-    def exclude_instance_query(self):
-        return self._to_query(
-            self._exclude_instance_query,
-            'exclude_instance_query'
-        )
-
-    @property
-    def additional_instance_query(self):
-        return self._to_query(
-            self._additional_instance_query,
-            'additional_instance_query'
-        )
-
-    @property
     def parent_query(self):
         child_instance_cls = self.child_instance_cls
         try:
             parent_field = child_instance_cls._meta.get_field('parent')
         except FieldDoesNotExist:
             raise Exception(
-                "The model %s must have a `parent` field in order to be "
-                "associated with a Group instance."
-                % child_instance_cls.__name__
+                "The model %s must have a `parent` field in order to use "
+                "this field." % child_instance_cls.__name__
             )
         q = models.Q(parent=self.parent_instance)
         if isinstance(parent_field, GenericForeignKey):
@@ -154,6 +108,4 @@ class TableChildrenPrimaryKeyRelatedField(serializers.PrimaryKeyRelatedField):
 
     def get_queryset(self):
         child_instance_cls = self.child_instance_cls
-        return child_instance_cls.objects \
-            .filter(self.parent_query & self.additional_instance_query) \
-            .exclude(self.exclude_instance_query)
+        return child_instance_cls.objects.filter(self.parent_query)

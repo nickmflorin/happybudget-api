@@ -1,11 +1,9 @@
 from django.test import override_settings
-import pytest
 import mock
 
 from greenbudget.app.subaccount.views import SubAccountUnitViewSet
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_unit_properly_serializes(api_client, user, create_subaccount_unit):
     units = [
         create_subaccount_unit(),

@@ -43,7 +43,7 @@ class ActualOwnerField(GenericRelatedField):
             if 'budget' not in self.context:
                 raise Exception(
                     "The budget must be provided in context when using %s in "
-                    "a POST context or a PATCH context during a bulk operaiton."
+                    "a POST context or a PATCH context during a bulk operation."
                     % self.__class__.__name__
                 )
             budget = self.context["budget"]
@@ -130,6 +130,6 @@ class ActualSerializer(ModelSerializer):
         }
 
 
-@row_order_serializer(table_filter=lambda d: {'budget_id': d['budget'].id})
+@row_order_serializer(table_filter=lambda d: {'budget_id': d.budget.id})
 class ActualDetailSerializer(ActualSerializer):
     pass

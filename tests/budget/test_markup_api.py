@@ -3,7 +3,6 @@ import pytest
 from greenbudget.app.markup.models import Markup
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_get_account_markups(api_client, user, models, budget_f, create_markup):
     budget = budget_f.create_budget()
     markup = create_markup(parent=budget)
@@ -31,7 +30,6 @@ def test_get_account_markups(api_client, user, models, budget_f, create_markup):
     }]
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_create_flat_markup(api_client, user, models, budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
@@ -109,7 +107,6 @@ def test_create_flat_markup(api_client, user, models, budget_f):
     assert response.json()["budget"]["nominal_value"] == 20.0
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_create_percent_markup(api_client, user, models, budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)

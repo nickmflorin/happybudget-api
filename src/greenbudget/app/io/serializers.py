@@ -7,6 +7,7 @@ from django.core.files.storage import get_storage_class
 from rest_framework import serializers
 
 from .exceptions import FileError
+from .fields import ImageField
 from .models import Attachment
 from .storages import using_s3_storage
 from .utils import (
@@ -88,7 +89,7 @@ class UploadAttachmentSerializer(serializers.ModelSerializer):
         fields = ('file', )
 
     def validate(self, attrs):
-        parse_filename(attrs['file'].name)
+        parse_filename(attrs['file'].name, error_field='file')
         return attrs
 
 
@@ -108,18 +109,20 @@ class TempFileSerializer(AbstractTempSerializer):
         request = self.context['request']
         filename = upload_temp_user_file_to(
             user=request.user,
-            filename=attrs['file'].name
+            filename=attrs['file'].name,
+            error_field='file'
         )
         return {'file': attrs['file'], "filename": filename}
 
 
 class TempImageSerializer(AbstractTempSerializer):
-    image = serializers.ImageField()
+    image = ImageField()
 
     def validate(self, attrs):
         request = self.context['request']
         image_name = upload_temp_user_image_to(
             user=request.user,
-            filename=attrs['image'].name
+            filename=attrs['image'].name,
+            error_field='image'
         )
         return {'file': attrs['image'], "filename": image_name}

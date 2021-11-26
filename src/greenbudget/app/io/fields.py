@@ -6,11 +6,35 @@ import uuid
 from botocore import exceptions
 
 from django.core.files.base import ContentFile
+from django.forms.fields import ImageField as _ImageField
 
 from rest_framework import serializers
 
 
 logger = logging.getLogger('greenbudget')
+
+
+class NoValidationDjangoImageField(_ImageField):
+    default_validators = []
+
+
+class ImageField(serializers.ImageField):
+    """
+    By default, DRF's :obj:`serializers.ImageField` will perform it's own
+    validation using Django's :obj:`forms.ImageField`.  The only validation it
+    performs is validating that the image extension is valid - which we want to
+    do ourselves, both because we want to restrict to a more selective set of
+    image extensions and we want to raise the validation errors in our own
+    context, so they conform to our set or error codes.
+
+    In order to do this, we need to mutate :obj:`serializers.ImageField` to
+    use an extension of Django's :obj:`forms.ImageField` that does not perform
+    the extension validation.
+    """
+
+    def __init__(self, *args, **kwargs):
+        kwargs['_DjangoImageField'] = NoValidationDjangoImageField
+        super().__init__(*args, **kwargs)
 
 
 class Base64ImageField(serializers.ImageField):

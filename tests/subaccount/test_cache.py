@@ -1,4 +1,3 @@
-import pytest
 from django.test import override_settings
 
 
@@ -268,7 +267,6 @@ def test_subaccounts_cache_invalidated_on_create(api_client, user, budget_f):
     assert response.json()['count'] == 3
 
 
-@pytest.mark.freeze_time('2020-01-01')
 @override_settings(CACHE_ENABLED=True)
 def test_subaccounts_cache_invalidated_on_change(api_client, user, budget_f):
     budget = budget_f.create_budget()

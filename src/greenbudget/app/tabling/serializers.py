@@ -35,7 +35,7 @@ class row_order_serializer:
         original_validate = getattr(klass, 'validate')
 
         def validate(serializer, attrs):
-            context = LazyContext(serializer, 'row_order_serializer')
+            context = LazyContext(serializer)
             filter_data = self._table_filter(context)
             table = model_cls.objects.get_table(**filter_data)
 

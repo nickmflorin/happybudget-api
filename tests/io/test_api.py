@@ -32,9 +32,30 @@ def test_temp_upload_file(user, api_client, test_uploaded_file):
 
 
 @override_settings(APP_URL="https://api.greenbudget.com")
-def test_temp_upload_file_invalid_name(user, api_client,
+def test_temp_upload_file_missing_extension(user, api_client,
         test_uploaded_file):
-    uploaded_file = test_uploaded_file('test.test.gif')
+    uploaded_file = test_uploaded_file('test')
+    api_client.force_login(user)
+
+    response = api_client.post(
+        "/v1/io/temp-upload-file/",
+        data={"file": uploaded_file}
+    )
+    assert response.status_code == 400
+    assert response.json() == {
+        'errors': [{
+            'message': 'The file name `test` is missing an extension.',
+            'code': 'invalid_file_name',
+            'error_type': 'field',
+            'field': 'file'
+        }]
+    }
+
+
+@override_settings(APP_URL="https://api.greenbudget.com")
+def test_temp_upload_image_missing_extension(user, api_client,
+        test_uploaded_file):
+    uploaded_file = test_uploaded_file('test')
     api_client.force_login(user)
 
     response = api_client.post(
@@ -44,9 +65,10 @@ def test_temp_upload_file_invalid_name(user, api_client,
     assert response.status_code == 400
     assert response.json() == {
         'errors': [{
-            'message': 'The file name `test.test.gif` is invalid.',
+            'message': 'The file name `test` is missing an extension.',
             'code': 'invalid_file_name',
-            'error_type': 'global'
+            'error_type': 'field',
+            'field': 'image'
         }]
     }
 
@@ -66,6 +88,7 @@ def test_temp_upload_image_invalid_extension(user, api_client,
         'errors': [{
             'message': 'The file extension `gif` is not supported.',
             'code': 'invalid_file_extension',
-            'error_type': 'global',
+            'field': 'image',
+            'error_type': 'field',
         }]
     }

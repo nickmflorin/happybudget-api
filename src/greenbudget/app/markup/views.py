@@ -1,13 +1,7 @@
-from rest_framework import decorators, response, status
-
 from greenbudget.app import views, mixins
 
 from .models import Markup
-from .serializers import (
-    MarkupSerializer,
-    MarkupAddChildrenSerializer,
-    MarkupRemoveChildrenSerializer
-)
+from .serializers import MarkupSerializer
 
 
 class MarkupViewSet(
@@ -40,59 +34,3 @@ class MarkupViewSet(
 
     def get_queryset(self):
         return Markup.objects.filter(created_by=self.request.user)
-
-    @decorators.action(methods=["PATCH"], detail=True,
-        url_path='remove-children')
-    def remove_children(self, request, *args, **kwargs):
-        instance = self.get_object()
-
-        # We have to temporarily store the original values for these properties
-        # because when removing a Markup's children, the Markup may be deleted
-        # if it does not have anymore children after the designated children are
-        # removed.
-        original_pk = instance.pk
-        original_parent = instance.parent
-
-        serializer = MarkupRemoveChildrenSerializer(
-            instance=instance,
-            data=request.data,
-            partial=True,
-            context=self.get_serializer_context()
-        )
-        serializer.is_valid(raise_exception=True)
-        instance = serializer.save()
-
-        serializer_cls = self.get_serializer_class()
-        data = serializer_cls(
-            instance=instance,
-            context=self.get_serializer_context(parent=original_parent)
-        ).data
-
-        # If the instance was deleted because it had no more children, we do
-        # not want to return an instance with a null ID in the response - so
-        # we must modify the response in this case.
-        if instance.id is None:
-            data['data']['id'] = original_pk
-
-        return response.Response(data, status=status.HTTP_200_OK)
-
-    @decorators.action(methods=["PATCH"], detail=True,
-        url_path='add-children')
-    def add_children(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = MarkupAddChildrenSerializer(
-            instance=instance,
-            data=request.data,
-            partial=True,
-            context=self.get_serializer_context()
-        )
-        serializer.is_valid(raise_exception=True)
-        instance = serializer.save()
-
-        serializer_cls = self.get_serializer_class()
-        data = serializer_cls(
-            instance=instance,
-            context=self.get_serializer_context()
-        ).data
-
-        return response.Response(data, status=status.HTTP_200_OK)

@@ -1,7 +1,3 @@
-import pytest
-
-
-@pytest.mark.freeze_time('2020-01-01')
 def test_type_properly_serializes(api_client, user, create_actual, create_budget,
         create_actual_type):
     budget = create_budget()
@@ -20,7 +16,6 @@ def test_type_properly_serializes(api_client, user, create_actual, create_budget
     }
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_update_actual_type(api_client, user, create_budget, create_actual,
         create_actual_type):
     budget = create_budget()
@@ -43,7 +38,6 @@ def test_update_actual_type(api_client, user, create_budget, create_actual,
     assert actual.actual_type == actual_type
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_update_actual(api_client, user, create_budget_account,
         create_budget, create_actual, create_budget_subaccount):
     budget = create_budget()
@@ -81,7 +75,6 @@ def test_update_actual(api_client, user, create_budget_account,
     assert actual.payment_id == "Payment ID"
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_change_actual_parent_to_subaccount(api_client, user, create_budget,
         create_budget_account, create_actual, create_budget_subaccount,
         create_markup):
@@ -151,7 +144,6 @@ def test_change_actual_parent_to_subaccount(api_client, user, create_budget,
     assert actuals[0].owner == subaccount
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_change_actual_parent_to_markup(api_client, user, create_budget,
         create_budget_account, create_actual, create_budget_subaccount,
         create_markup):

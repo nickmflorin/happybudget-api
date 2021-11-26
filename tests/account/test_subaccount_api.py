@@ -1,8 +1,6 @@
 import datetime
-import pytest
 
 
-@pytest.mark.freeze_time('2020-01-03')
 def test_get_account_subaccounts(api_client, user, budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
@@ -74,7 +72,6 @@ def test_get_account_subaccounts(api_client, user, budget_f):
     assert response.json()['data'] == response_data
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_create_budget_subaccount(api_client, user, budget_f, models):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
@@ -130,7 +127,6 @@ def test_create_budget_subaccount(api_client, user, budget_f, models):
         response_data.update(contact=None, attachments=[])
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_get_community_template_account_subaccounts(api_client, user,
         staff_user, create_template, create_template_account,
         create_template_subaccount):
@@ -151,7 +147,6 @@ def test_get_community_template_account_subaccounts(api_client, user,
     assert response.status_code == 403
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_get_another_users_community_template_account_subaccounts(api_client,
         create_user, staff_user, create_template, create_template_account,
         create_template_subaccount):

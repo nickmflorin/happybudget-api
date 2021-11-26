@@ -1,4 +1,3 @@
-from django.db import models
 from rest_framework import serializers
 
 from greenbudget.lib.drf.exceptions import InvalidFieldError
@@ -9,73 +8,6 @@ from greenbudget.app.budgeting.serializers import BudgetParentContextSerializer
 from greenbudget.app.tabling.fields import TableChildrenPrimaryKeyRelatedField
 
 from .models import Markup
-
-
-class MarkupRemoveChildrenSerializer(ModelSerializer):
-    children = TableChildrenPrimaryKeyRelatedField(
-        many=True,
-        obj_name='Markup',
-        required=True,
-        child_instance_cls=lambda parent: parent.child_instance_cls,
-        additional_instance_query=lambda parent, instance: models.Q(
-            markups=instance
-        ),
-        error_message=(
-            'The child {child_instance_name} with ID {pk_value} either does '
-            'not exist, does not belong to the same parent '
-            '({parent_instance_name} with ID {parent_pk_value}) as the '
-            '{obj_name}, or is not a registered child of {obj_name}.'
-        )
-    )
-
-    class Meta:
-        model = Markup
-        fields = ('children', )
-
-    def validate(self, attrs):
-        if self.instance.unit != Markup.UNITS.percent:
-            raise InvalidFieldError('children', message=(
-                "Markup must have unit `percent` to modify its children."))
-        return attrs
-
-    def update(self, instance, validated_data):
-        instance.remove_children(*validated_data['children'])
-        return instance
-
-
-class MarkupAddChildrenSerializer(ModelSerializer):
-    children = TableChildrenPrimaryKeyRelatedField(
-        obj_name='Markup',
-        many=True,
-        required=True,
-        child_instance_cls=lambda parent: parent.child_instance_cls,
-        exclude_instance_query=lambda parent, instance: models.Q(
-            pk__in=[
-                obj[0]
-                for obj in list(instance.children.only('pk').values_list('pk'))
-            ]
-        ),
-        error_message=(
-            'The child {child_instance_name} with ID {pk_value} either does '
-            'not exist, does not belong to the same parent '
-            '({parent_instance_name} with ID {parent_pk_value}) as the '
-            '{obj_name}, or is already a registered child of {obj_name}.'
-        )
-    )
-
-    class Meta:
-        model = Markup
-        fields = ('children',)
-
-    def validate(self, attrs):
-        if self.instance.unit != Markup.UNITS.percent:
-            raise InvalidFieldError('children', message=(
-                "Markup must have unit `percent` to modify its children."))
-        return attrs
-
-    def update(self, instance, validated_data):
-        instance.add_children(*validated_data['children'])
-        return instance
 
 
 class MarkupSimpleSerializer(ModelSerializer):
@@ -177,7 +109,6 @@ class MarkupSerializer(BudgetParentContextSerializer):
                         'A markup with unit `percent` must have at least 1 '
                         'child.'
                     ))
-
         return attrs
 
     def create(self, validated_data, **kwargs):

@@ -19,6 +19,28 @@ def get_nested_attribute(obj, attr):
     return getattr(obj, attr)
 
 
+def get_string_formatted_kwargs(value):
+    """
+    Returns the string arguments that are used to format the string.  For
+    example, in the string `Foo {bar}`, the string would be formatted as
+    .format(bar='foo').  In this case, this method will return ["bar"],
+    indicating that `bar` is the only argument needed to format the string.
+    """
+    formatted_kwargs = []
+    current_formatted_kwarg = None
+    for char in value:
+        if char == "{":
+            current_formatted_kwarg = ""
+        elif char == "}":
+            if current_formatted_kwarg is not None:
+                formatted_kwargs.append(current_formatted_kwarg)
+                current_formatted_kwarg = None
+        else:
+            if current_formatted_kwarg is not None:
+                current_formatted_kwarg = current_formatted_kwarg + char
+    return formatted_kwargs
+
+
 def humanize_list(value, callback=six.text_type, conjunction='and',
         oxford_comma=True):
     """

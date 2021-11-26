@@ -1,5 +1,5 @@
 from django.utils.translation import gettext_lazy as _
-from rest_framework import exceptions
+from greenbudget.lib.drf.exceptions import ValidationError
 
 
 class IOErrorCodes:
@@ -7,7 +7,7 @@ class IOErrorCodes:
     INVALID_FILE_EXTENSION = "invalid_file_extension"
 
 
-class FileError(exceptions.ValidationError):
+class FileError(ValidationError):
     pass
 
 
@@ -16,29 +16,11 @@ class FileNameError(FileError):
     default_code = IOErrorCodes.INVALID_FILE_NAME
     default_info_detail = "The file name `{filename}` is invalid."
 
-    def __init__(self, *args, **kwargs):
-        filename = kwargs.pop('filename', None)
-        super().__init__(*args, **kwargs)
-        if filename is not None:
-            self.detail = exceptions.ErrorDetail(
-                _(self.default_info_detail.format(filename=filename)),
-                code=kwargs.get('code', self.default_code)
-            )
-
 
 class FileExtensionError(FileError):
     default_detail = _("The file extension is invalid.")
     default_code = IOErrorCodes.INVALID_FILE_EXTENSION
     default_info_detail = "The file extension `{ext}` is invalid."
-
-    def __init__(self, *args, **kwargs):
-        ext = kwargs.pop('ext', None)
-        super().__init__(*args, **kwargs)
-        if ext is not None:
-            self.detail = exceptions.ErrorDetail(
-                _(self.default_info_detail.format(ext=ext)),
-                code=kwargs.get('code', self.default_code)
-            )
 
 
 class MissingFileExtension(FileNameError):

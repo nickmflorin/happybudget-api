@@ -1,7 +1,3 @@
-import pytest
-
-
-@pytest.mark.freeze_time('2020-01-01')
 def test_create_subaccount_actual(api_client, user, create_budget_account,
         create_budget, create_budget_subaccount, models):
     budget = create_budget()
@@ -53,7 +49,6 @@ def test_create_subaccount_actual(api_client, user, create_budget_account,
     assert actual.owner == subaccount
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_create_markup_actual(api_client, user, create_budget_account,
         create_budget, create_budget_subaccount, create_markup, models):
     budget = create_budget()
@@ -109,7 +104,6 @@ def test_create_markup_actual(api_client, user, create_budget_account,
     assert actual.owner == markup
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_bulk_create_actuals(api_client, user, create_budget, create_markup,
         create_budget_account, create_budget_subaccount, models):
     budget = create_budget()
@@ -242,7 +236,6 @@ def test_bulk_create_actuals(api_client, user, create_budget, create_markup,
     assert budget.actual == 310.0
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_bulk_update_actuals(api_client, user, create_budget, create_markup,
         create_budget_account, create_budget_subaccount, create_actual):
     budget = create_budget()
@@ -355,7 +348,6 @@ def test_bulk_update_actuals(api_client, user, create_budget, create_markup,
     assert budget.actual == 290.0
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_change_actual_owner_in_bulk_update(api_client, user, create_budget,
         create_budget_account, create_budget_subaccount, create_actual,
         create_markup):

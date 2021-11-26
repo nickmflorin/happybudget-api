@@ -66,7 +66,7 @@ class BudgetAccountSerializer(AccountSerializer):
         model = BudgetAccount
 
 
-@row_order_serializer(table_filter=lambda d: {'parent_id': d['parent'].id})
+@row_order_serializer(table_filter=lambda d: {'parent_id': d.parent.id})
 class BudgetAccountDetailSerializer(BudgetAccountSerializer):
     ancestors = SimpleEntityPolymorphicSerializer(many=True, read_only=True)
     siblings = SimpleEntityPolymorphicSerializer(many=True, read_only=True)
@@ -81,7 +81,7 @@ class TemplateAccountSerializer(AccountSerializer):
         model = TemplateAccount
 
 
-@row_order_serializer(table_filter=lambda d: {'parent_id': d['parent'].id})
+@row_order_serializer(table_filter=lambda d: {'parent_id': d.parent.id})
 class TemplateAccountDetailSerializer(TemplateAccountSerializer):
     ancestors = SimpleEntityPolymorphicSerializer(many=True, read_only=True)
     siblings = SimpleEntityPolymorphicSerializer(many=True, read_only=True)

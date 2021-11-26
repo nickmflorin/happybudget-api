@@ -1,9 +1,7 @@
 import datetime
 from datetime import timezone
-import pytest
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_get_account(api_client, user, budget_f):
     api_client.force_login(user)
     budget = budget_f.create_budget()
@@ -32,7 +30,6 @@ def test_get_account(api_client, user, budget_f):
     }
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_update_account(api_client, user, budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(
@@ -59,7 +56,6 @@ def test_update_account(api_client, user, budget_f):
     assert account.description == "Account description"
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_bulk_update_54subaccounts(api_client, user, freezer, budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
@@ -287,7 +283,6 @@ def test_bulk_update_subaccounts_budget_updated_once(api_client, user, budget_f,
     assert len(calls) == 1
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_bulk_create_subaccounts(api_client, user, models, budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)

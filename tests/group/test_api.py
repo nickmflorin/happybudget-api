@@ -1,7 +1,3 @@
-import pytest
-
-
-@pytest.mark.freeze_time('2020-01-01')
 def test_get_account_group(api_client, user, budget_f, create_group):
     budget = budget_f.create_budget()
     group = create_group(parent=budget)
@@ -18,7 +14,6 @@ def test_get_account_group(api_client, user, budget_f, create_group):
     }
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_get_subaccount_group(api_client, user, budget_f, create_group):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
@@ -36,7 +31,6 @@ def test_get_subaccount_group(api_client, user, budget_f, create_group):
     }
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_update_account_group(api_client, user, create_group, budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
@@ -62,7 +56,6 @@ def test_update_account_group(api_client, user, create_group, budget_f):
     }
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_update_subaccount_group(api_client, user, budget_f, create_group):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
@@ -91,7 +84,6 @@ def test_update_subaccount_group(api_client, user, budget_f, create_group):
     }
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_remove_subaccount_group_children(api_client, user, budget_f,
         create_group):
     budget = budget_f.create_budget()

@@ -1,4 +1,3 @@
-import pytest
 from django.test import override_settings
 import mock
 
@@ -107,7 +106,6 @@ def test_accounts_cache_invalidated_on_create(api_client, user, budget_f):
     assert response.json()['count'] == 3
 
 
-@pytest.mark.freeze_time('2020-01-01')
 @override_settings(CACHE_ENABLED=True)
 def test_accounts_cache_invalidated_on_change(api_client, user, budget_f):
     budget = budget_f.create_budget()
@@ -305,7 +303,6 @@ def test_fringes_cache_invalidated_on_create(api_client, user, budget_f,
     assert response.json()['count'] == 2
 
 
-@pytest.mark.freeze_time('2020-01-01')
 @override_settings(CACHE_ENABLED=True)
 def test_fringes_cache_invalidated_on_change(api_client, user, budget_f,
         create_fringe):
@@ -367,7 +364,6 @@ def test_actuals_cache_invalidated_on_create(api_client, user, budget_df,
     assert response.json()['count'] == 2
 
 
-@pytest.mark.freeze_time('2020-01-01')
 @override_settings(CACHE_ENABLED=True)
 def test_actuals_cache_invalidated_on_change(api_client, user, budget_df,
         create_actual):

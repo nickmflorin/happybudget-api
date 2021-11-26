@@ -1,9 +1,6 @@
-import pytest
-
 from greenbudget.lib.utils.urls import add_query_params_to_url
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_get_accounts(api_client, user, budget_f):
     budget = budget_f.create_budget()
     accounts = budget_f.create_accounts(parent=budget, count=2)
@@ -42,7 +39,6 @@ def test_get_accounts(api_client, user, budget_f):
     ]
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_get_accounts_filtered_by_id(api_client, user, budget_f):
     budget = budget_f.create_budget()
     accounts = budget_f.create_accounts(parent=budget, count=2)
@@ -72,7 +68,6 @@ def test_get_accounts_filtered_by_id(api_client, user, budget_f):
     ]
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_create_account(api_client, user, budget_f, models):
     budget = budget_f.create_budget()
     api_client.force_login(user)

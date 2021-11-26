@@ -5,8 +5,7 @@ from django.apps import apps
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
-from django.db import (
-    models, connections, connection, transaction, IntegrityError)
+from django.db import models, connections, connection, transaction
 from django.utils.functional import partition
 
 
@@ -73,30 +72,6 @@ def generic_fk_instance_change(instance, obj_id_change=None,
             pk=previous_obj_id)
 
     return old_instance, new_instance
-
-
-class InvalidModelFieldValueError(IntegrityError):
-    def __init__(self, model, field, **kwargs):
-        self._model = model.__name__ if isinstance(model, type) \
-            else model.__class__.__name__
-        self._field = field
-        if 'value' in kwargs:
-            self._value = kwargs['value']
-        else:
-            self._value = getattr(model, field) \
-                if not isinstance(model, type) else None
-
-    def __str__(self):
-        if self._value is not None:
-            return "Invalid value `{value}` for field {field} on model {model}.".format(  # noqa
-                value=self._value,
-                field=self._field,
-                model=self._model
-            )
-        return "Invalid value for field {field} on model {model}.".format(
-            field=self._field,
-            model=self._model
-        )
 
 
 def reset_id_sequence(model_cls):

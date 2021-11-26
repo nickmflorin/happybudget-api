@@ -1,7 +1,3 @@
-import pytest
-
-
-@pytest.mark.freeze_time('2020-01-01')
 def test_get_contact(api_client, user, create_contact, models):
     contact = create_contact()
     api_client.force_login(user)
@@ -29,7 +25,6 @@ def test_get_contact(api_client, user, create_contact, models):
     }
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_get_contacts(api_client, user, create_contacts, models):
     contacts = create_contacts(count=2)
     api_client.force_login(user)
@@ -80,7 +75,6 @@ def test_get_contacts(api_client, user, create_contacts, models):
     ]
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_create_contact(api_client, user, models):
     api_client.force_login(user)
     response = api_client.post("/v1/contacts/", data={
@@ -128,7 +122,6 @@ def test_create_contact(api_client, user, models):
     }
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_create_blank_contact(api_client, user, models):
     api_client.force_login(user)
     response = api_client.post("/v1/contacts/", data={})
@@ -164,7 +157,6 @@ def test_create_blank_contact(api_client, user, models):
     }
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_update_contact(api_client, user, create_contact, models):
     contact = create_contact()
     api_client.force_login(user)
@@ -222,7 +214,6 @@ def test_bulk_delete_contacts(api_client, user, create_contacts, models):
     assert models.Contact.objects.count() == 0
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_bulk_create_contacts(api_client, user, models):
     api_client.force_login(user)
     response = api_client.patch(
@@ -287,7 +278,6 @@ def test_bulk_create_contacts(api_client, user, models):
     ]
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_bulk_update_contacts(api_client, user, create_contacts):
     contacts = create_contacts(count=2)
     api_client.force_login(user)

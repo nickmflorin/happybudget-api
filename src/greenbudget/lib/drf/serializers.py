@@ -15,21 +15,32 @@ class LazyContext(collections.abc.Mapping):
     need to be aware of that.
     """
 
-    def __init__(self, serializer, field_name):
-        self._field_name = field_name
-        self._data = serializer.context
+    def __init__(self, obj, ref=None):
+        self._ref = ref
+        self._data = obj
+        if isinstance(obj, (serializers.Serializer, serializers.Field)):
+            self._data = getattr(obj, 'context')
+            self._ref = self._ref or type(obj).__name__
 
     def __iter__(self):
         return self._data.__iter__()
 
-    def __getitem__(self, attr):
-        try:
-            return self._data.__getitem__(attr)
-        except KeyError:
-            raise Exception(
-                "The field `%s` must be provided in context to the serializer "
-                "when using %s." % (attr, self._field_name)
+    def field_missing_message(self, field):
+        if self._ref is not None:
+            return (
+                "The field `%s` must be provided in context when using %s."
+                % (field, self._ref)
             )
+        return "The field `%s` must be provided in context." % field
+
+    def __getattr__(self, attr):
+        try:
+            return self.__getitem__(attr)
+        except KeyError:
+            raise Exception(self.field_missing_message(attr))
+
+    def __getitem__(self, attr):
+        return self._data.__getitem__(attr)
 
     def __setitem__(self, k, v):
         raise Exception("Cannot set a value on LazyContext.")

@@ -3,8 +3,8 @@ import pytest
 from django.test import override_settings
 
 
-@pytest.mark.freeze_time('2020-01-01')
 @override_settings(APP_URL="https://api.greenbudget.com")
+@pytest.mark.freeze_time('2020-01-01')
 def test_attachments_properly_serializes(api_client, user, create_actual,
         create_budget, create_attachment):
     budget = create_budget()
@@ -42,8 +42,8 @@ def test_attachments_properly_serializes(api_client, user, create_actual,
     ]
 
 
-@pytest.mark.freeze_time('2020-01-01')
 @override_settings(APP_URL="https://api.greenbudget.com")
+@pytest.mark.freeze_time('2020-01-01')
 def test_get_attachments(api_client, user, create_actual, create_budget,
         create_attachment):
     budget = create_budget()
@@ -84,7 +84,6 @@ def test_get_attachments(api_client, user, create_actual, create_budget,
     ]
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_delete_attachment(api_client, user, create_actual, create_budget,
         create_attachment):
     budget = create_budget()
@@ -158,7 +157,6 @@ def test_update_attachments(api_client, user, create_actual, create_budget,
     ]
 
 
-@pytest.mark.freeze_time('2020-01-01')
 @override_settings(APP_URL="https://api.greenbudget.com")
 def test_upload_attachment(api_client, user, create_actual, create_budget,
         create_attachment, test_uploaded_file, models):

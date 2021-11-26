@@ -1,7 +1,3 @@
-import pytest
-
-
-@pytest.mark.freeze_time('2020-01-01')
 def test_unit_properly_serializes(api_client, user, create_actual_type):
     types = [
         create_actual_type(),
