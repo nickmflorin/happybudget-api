@@ -48,7 +48,7 @@ class UserManager(UserQuerier, DjangoUserManager):
         return self._create_user(email, **kwargs)
 
     def create_superuser(self, email, **kwargs):
-        kwargs.update(is_staff=True, is_superuser=True)
+        kwargs.update(is_staff=True, is_superuser=True, is_verified=True)
         return self._create_user(email, **kwargs)
 
     def get_from_google_token(self, token_id):
