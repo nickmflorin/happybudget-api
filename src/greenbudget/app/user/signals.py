@@ -10,8 +10,7 @@ def user_deleted(instance, **kwargs):
     instance.profile_image.delete(False)
 
 
-@dispatch.receiver(signals.post_save, sender=User)
-def user_saved(instance, **kwargs):
+@dispatch.receiver(signals.pre_save, sender=User)
+def user_to_save(instance, **kwargs):
     if instance.is_superuser:
         instance.is_verified = True
-        instance.save()
