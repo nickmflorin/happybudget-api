@@ -32,18 +32,35 @@ allow you to manage your Python version on a project basis.
 $ brew install pyenv
 ```
 
+We then need to initialize `pyenv`, so add this to your `~/.bash_profile`:
+
+```bash
+$ eval "$(pyenv init -)"
+```
+
 Get `pyenv` setup with the Python version you will need for this application.
 
 ```bash
-$ pyenv install 3.8.2
-$ pyenv local 3.8.2
+$ pyenv install 3.9.0
+$ pyenv local 3.9.0
 ```
+
+> Note: If using MacOS 11, certain Python versions do not build (at the time of this documentation)
+> and the only versions that have patches for the fix are 3.7.8+, 3.8.4+, 3.9.0+.  Any earlier versions
+> will not build.
 
 Confirm that `pyenv` is pointing at the correct Python version:
 
 ```bash
 $ pyenv local
-$ 3.8.2
+$ 3.9.0
+```
+
+If your `pyenv` local Python version is still pointing at your system Python version, update your
+`~/.bash_profile` to initialize `pyenv` as follows:
+
+```bash
+$ eval "$(pyenv init --path)"
 ```
 
 ##### Dependencies
@@ -65,8 +82,7 @@ Now that [`poetry`](https://python-poetry.org/docs/) is setup, you need to creat
 the dependencies to that virtual environment.
 
 ```bash
-$ python -m <env_name> ./<env_name>
-$ pyenv virtualenv 3.8.2 <env_name>
+$ python -m venv ./<env_name>
 $ . ./<env_name>/bin/activate
 $ poetry install
 ```
