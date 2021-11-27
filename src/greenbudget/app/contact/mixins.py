@@ -15,3 +15,7 @@ class ContactNestedMixin(NestedObjectViewMixin):
 
     def get_contact_queryset(self, request):
         return Contact.objects.all()
+
+    @property
+    def instance(self):
+        return self.contact

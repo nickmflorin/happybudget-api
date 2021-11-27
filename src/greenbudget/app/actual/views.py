@@ -1,8 +1,5 @@
-from rest_framework import response, status
-
 from greenbudget.app import views, mixins
-from greenbudget.app.io.serializers import (
-    UploadAttachmentSerializer, AttachmentSerializer)
+from greenbudget.app.io.views import GenericAttachmentViewSet
 
 from .mixins import ActualNestedMixin
 from .models import Actual, ActualType
@@ -27,11 +24,8 @@ class ActualTypeViewSet(mixins.ListModelMixin, views.GenericViewSet):
 
 
 class ActualAttachmentViewSet(
-    mixins.ListModelMixin,
-    mixins.DestroyModelMixin,
-    mixins.CreateModelMixin,
     ActualNestedMixin,
-    views.GenericViewSet
+    GenericAttachmentViewSet
 ):
     """
     ViewSet to handle requests to the following endpoints:
@@ -40,21 +34,7 @@ class ActualAttachmentViewSet(
     (2) DELETE /actuals/<pk>/attachments/pk/
     (3) POST /actuals/<pk>/attachments/
     """
-    serializer_class = AttachmentSerializer
-
-    def get_queryset(self):
-        return self.actual.attachments.all()
-
-    def create(self, request, *args, **kwargs):
-        serializer = UploadAttachmentSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        attachment = serializer.save(created_by=request.user)
-        self.actual.attachments.add(attachment)
-        root_serializer_class = self.get_serializer_class()
-        return response.Response(
-            root_serializer_class(instance=attachment).data,
-            status=status.HTTP_200_OK
-        )
+    pass
 
 
 class GenericActualViewSet(views.GenericViewSet):

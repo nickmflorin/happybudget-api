@@ -1,16 +1,13 @@
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
-from rest_framework import response, status
-
 from greenbudget.app import views, mixins
 from greenbudget.app.actual.views import GenericActualViewSet
 from greenbudget.app.budgeting.decorators import (
     register_bulk_operations, BulkAction, BulkDeleteAction)
 from greenbudget.app.group.models import Group
 from greenbudget.app.group.serializers import GroupSerializer
-from greenbudget.app.io.serializers import (
-    UploadAttachmentSerializer, AttachmentSerializer)
+from greenbudget.app.io.views import GenericAttachmentViewSet
 from greenbudget.app.markup.models import Markup
 from greenbudget.app.markup.serializers import MarkupSerializer
 
@@ -73,7 +70,7 @@ class SubAccountMarkupViewSet(
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context.update(parent=self.subaccount)
+        context.update(parent=self.instance)
         return context
 
 
@@ -101,7 +98,7 @@ class SubAccountGroupViewSet(
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context.update(parent=self.subaccount)
+        context.update(parent=self.instance)
         return context
 
 
@@ -129,19 +126,16 @@ class SubAccountActualsViewSet(
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context.update(budget=self.subaccount.budget)
+        context.update(budget=self.instance.budget)
         return context
 
     def get_queryset(self):
-        return self.subaccount.actuals.all()
+        return self.instance.actuals.all()
 
 
 class SubAccountAttachmentViewSet(
-    mixins.ListModelMixin,
-    mixins.DestroyModelMixin,
-    mixins.CreateModelMixin,
     SubAccountNestedMixin,
-    views.GenericViewSet
+    GenericAttachmentViewSet
 ):
     """
     ViewSet to handle requests to the following endpoints:
@@ -150,21 +144,7 @@ class SubAccountAttachmentViewSet(
     (2) DELETE /subaccounts/<pk>/attachments/pk/
     (3) POST /subaccounts/<pk>/attachments/
     """
-    serializer_class = AttachmentSerializer
-
-    def get_queryset(self):
-        return self.subaccount.attachments.all()
-
-    def create(self, request, *args, **kwargs):
-        serializer = UploadAttachmentSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        attachment = serializer.save(created_by=request.user)
-        self.subaccount.attachments.add(attachment)
-        root_serializer_class = self.get_serializer_class()
-        return response.Response(
-            root_serializer_class(instance=attachment).data,
-            status=status.HTTP_200_OK
-        )
+    pass
 
 
 class GenericSubAccountViewSet(views.GenericViewSet):
@@ -241,10 +221,6 @@ class SubAccountViewSet(
     throttle_classes = []
 
     @property
-    def instance_cls(self):
-        return type(self.instance)
-
-    @property
     def child_instance_cls(self):
         return self.instance_cls.child_instance_cls
 
@@ -279,17 +255,14 @@ class SubAccountRecursiveViewSet(
     (1) GET /subaccounts/<pk>/subaccounts
     (2) POST /subaccounts/<pk>/subaccounts
     """
-    @property
-    def instance_cls(self):
-        return type(self.subaccount)
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context.update(parent=self.subaccount)
+        context.update(parent=self.instance)
         return context
 
     def get_queryset(self):
-        qs = type(self.subaccount).objects.filter(
+        qs = type(self.instance).objects.filter(
             object_id=self.object_id,
             content_type=self.content_type,
         )

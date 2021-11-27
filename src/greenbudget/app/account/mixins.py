@@ -18,6 +18,10 @@ class AccountNestedMixin(NestedObjectViewMixin):
     def get_account_queryset(self, request):
         return Account.objects.all()
 
+    @property
+    def instance(self):
+        return self.account
+
     @cached_property
     def content_type(self):
         return ContentType.objects.get_for_model(type(self.account))

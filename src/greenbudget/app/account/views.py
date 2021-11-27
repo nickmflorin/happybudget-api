@@ -39,8 +39,8 @@ from .serializers import (
 class AccountMarkupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
-    views.GenericViewSet,
     AccountNestedMixin,
+    views.GenericViewSet,
 ):
     """
     Viewset to handle requests to the following endpoints:
@@ -64,7 +64,7 @@ class AccountMarkupViewSet(
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context.update(parent=self.account)
+        context.update(parent=self.instance)
         return context
 
 
@@ -92,7 +92,7 @@ class AccountGroupViewSet(
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context.update(parent=self.account)
+        context.update(parent=self.instance)
         return context
 
 
@@ -111,16 +111,12 @@ class AccountSubAccountViewSet(
     (2) POST /accounts/<pk>/subaccounts
     """
     @property
-    def instance_cls(self):
-        return type(self.account)
-
-    @property
     def child_instance_cls(self):
-        return self.account.child_instance_cls
+        return self.instance.child_instance_cls
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context.update(parent=self.account)
+        context.update(parent=self.instance)
         return context
 
     def get_queryset(self):

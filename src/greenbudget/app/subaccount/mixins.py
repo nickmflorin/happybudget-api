@@ -22,6 +22,10 @@ class SubAccountNestedMixin(NestedObjectViewMixin):
     def content_type(self):
         return ContentType.objects.get_for_model(type(self.subaccount))
 
+    @property
+    def instance(self):
+        return self.subaccount
+
     @cached_property
     def object_id(self):
         return self.subaccount.pk

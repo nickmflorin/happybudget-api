@@ -14,3 +14,7 @@ class ActualNestedMixin(NestedObjectViewMixin):
 
     def get_actual_queryset(self, request):
         return Actual.objects.all()
+
+    @property
+    def instance(self):
+        return self.actual

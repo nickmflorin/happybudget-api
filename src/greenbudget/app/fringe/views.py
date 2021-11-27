@@ -1,5 +1,3 @@
-from django.utils.functional import cached_property
-
 from greenbudget.app import views, mixins
 
 from .models import Fringe
@@ -29,9 +27,6 @@ class FringesViewSet(
     (2) PATCH /fringes/<pk>/
     (3) DELETE /fringes/<pk>/
     """
-    @cached_property
-    def instance(self):
-        return self.get_object()
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
