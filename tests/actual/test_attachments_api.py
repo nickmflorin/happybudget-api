@@ -182,7 +182,7 @@ def test_upload_attachment(api_client, user, create_actual, create_budget,
     assert actual.attachments.count() == 3
 
     assert models.Attachment.objects.count() == 3
-    assert response.json() == {
+    assert response.json()['data'] == [{
         'id': 3,
         'name': 'test.jpeg',
         'extension': 'jpeg',
@@ -191,4 +191,56 @@ def test_upload_attachment(api_client, user, create_actual, create_budget,
             'https://api.greenbudget.com/'
             'media/users/1/attachments/test.jpeg'
         )
-    }
+    }]
+
+
+@override_settings(APP_URL="https://api.greenbudget.com")
+def test_upload_multiple_attachments(api_client, user, create_actual,
+        create_budget, create_attachment, test_uploaded_file, models):
+    budget = create_budget()
+    attachments = [
+        create_attachment(name='attachment1.jpeg'),
+        create_attachment(name='attachment2.jpeg')
+    ]
+    actual = create_actual(
+        budget=budget,
+        attachments=attachments
+    )
+    uploaded_files = [
+        test_uploaded_file('test1.jpeg'),
+        test_uploaded_file('test2.jpeg')
+    ]
+    api_client.force_login(user)
+    response = api_client.post(
+        "/v1/actuals/%s/attachments/" % actual.pk,
+        data={'files': uploaded_files}
+    )
+
+    assert response.status_code == 200
+
+    actual.refresh_from_db()
+    assert actual.attachments.count() == 4
+
+    assert models.Attachment.objects.count() == 4
+    assert response.json()['data'] == [
+        {
+            'id': 3,
+            'name': 'test1.jpeg',
+            'extension': 'jpeg',
+            'size': 823,
+            'url': (
+                'https://api.greenbudget.com/'
+                'media/users/1/attachments/test1.jpeg'
+            )
+        },
+        {
+            'id': 4,
+            'name': 'test2.jpeg',
+            'extension': 'jpeg',
+            'size': 823,
+            'url': (
+                'https://api.greenbudget.com/'
+                'media/users/1/attachments/test2.jpeg'
+            )
+        }
+    ]

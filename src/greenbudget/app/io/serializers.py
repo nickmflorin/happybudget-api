@@ -4,7 +4,7 @@ import os
 
 from django.core.files.storage import get_storage_class
 
-from rest_framework import serializers
+from rest_framework import serializers, exceptions
 
 from .exceptions import FileError
 from .fields import ImageField
@@ -82,7 +82,7 @@ class AttachmentSerializer(SimpleAttachmentSerializer):
 
 
 class UploadAttachmentSerializer(serializers.ModelSerializer):
-    file = serializers.FileField()
+    file = serializers.FileField(required=False)
 
     class Meta:
         model = Attachment
@@ -91,6 +91,36 @@ class UploadAttachmentSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         parse_filename(attrs['file'].name, error_field='file')
         return attrs
+
+
+class UploadAttachmentsSerializer(serializers.Serializer):
+    file = serializers.FileField(required=False)
+    files = serializers.ListField(
+        child=serializers.FileField(),
+        required=False
+    )
+
+    def validate(self, attrs):
+        if 'file' not in attrs and 'files' not in attrs:
+            raise exceptions.ValidationError(
+                "Either `file` or `files` parameters must be specified.")
+        files = attrs.pop('files', None)
+        if files is None:
+            files = [attrs.pop('file')]
+        serializers = [UploadAttachmentSerializer(
+            data={**{'file': f}, **attrs}
+        ) for f in files]
+        for serializer in serializers:
+            serializer.is_valid(raise_exception=True)
+        return {'serializers': serializers}
+
+    def create(self, validated_data):
+        serializers = validated_data.pop('serializers')
+        attachments = [
+            serializer.save(**validated_data)
+            for serializer in serializers
+        ]
+        return attachments
 
 
 class AbstractTempSerializer(serializers.Serializer):
