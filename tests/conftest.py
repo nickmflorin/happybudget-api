@@ -6,6 +6,7 @@ import requests
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.files.images import ImageFile
 
 from rest_framework.test import APIClient
 
@@ -73,6 +74,23 @@ def test_image():
     Image.new('RGB', (100, 100)).save(image, 'jpeg')
     image.seek(0)
     return image
+
+
+@pytest.fixture
+def test_image_file(tmp_path):
+    def inner(name, ext):
+        file_obj = BytesIO()
+        filename = tmp_path / name
+        image = Image.new('RGB', (100, 100))
+        image.save(file_obj, ext)
+        file_obj.seek(0)
+
+        # We have to actually save the File Object to the specified directory.
+        with open(str(filename), 'wb') as out:
+            out.write(file_obj.read())
+
+        return ImageFile(file_obj, name=str(filename))
+    return inner
 
 
 @pytest.fixture

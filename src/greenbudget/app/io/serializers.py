@@ -1,6 +1,5 @@
 import imghdr
 import logging
-import os
 
 from django.core.files.storage import get_storage_class
 
@@ -21,7 +20,31 @@ from .utils import (
 logger = logging.getLogger('greenbudget')
 
 
-class ImageFieldFileSerializer(serializers.Serializer):
+class ExtensionSerializerMixin:
+    def get_extension(self, filepath):
+        # Note that imghdr uses the local file system, so it will look at the
+        # file in the local file system.  This only works when we are in local
+        # development, because we are using Django's FileSystemStorage.
+        if using_s3_storage():
+            try:
+                return parse_image_filename(filepath)[1]
+            except FileError as e:
+                logger.error("Corrupted image path stored in AWS.", extra={
+                    "filepath": filepath,
+                    "exception": e
+                })
+                return None
+        try:
+            return imghdr.what(filepath)
+        except FileNotFoundError as e:
+            logger.error("Corrupted image path stored locally.", extra={
+                "filepath": filepath,
+                "exception": e
+            })
+            return None
+
+
+class ImageFileSerializer(ExtensionSerializerMixin, serializers.Serializer):
     url = serializers.URLField(read_only=True)
     size = serializers.IntegerField(read_only=True)
     width = serializers.IntegerField(read_only=True)
@@ -29,22 +52,11 @@ class ImageFieldFileSerializer(serializers.Serializer):
     extension = serializers.SerializerMethodField()
 
     def get_extension(self, instance):
-        # Note that imghdr uses the local file system, so it will look at the
-        # file in the local file system.  This only works when we are in local
-        # development, because we are using Django's FileSystemStorage.
-        if using_s3_storage():
-            try:
-                return parse_image_filename(instance.name)[1]
-            except FileError as e:
-                logger.error("Corrupted image name stored in AWS.", extra={
-                    "name": instance.name,
-                    "exception": e
-                })
-                return None
-        return imghdr.what(instance.path)
+        return super().get_extension(instance.name)
 
 
-class SimpleAttachmentSerializer(serializers.ModelSerializer):
+class SimpleAttachmentSerializer(
+        ExtensionSerializerMixin, serializers.ModelSerializer):
     id = serializers.PrimaryKeyRelatedField(read_only=True)
     name = serializers.SerializerMethodField()
     extension = serializers.SerializerMethodField()
@@ -55,22 +67,7 @@ class SimpleAttachmentSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'extension', 'url')
 
     def get_extension(self, instance):
-        # Note that imghdr uses the local file system, so it will look at the
-        # file in the local file system.  This only works when we are in local
-        # development, because we are using Django's FileSystemStorage.
-        if using_s3_storage():
-            try:
-                return parse_filename(instance.file.name)[1]
-            except FileError as e:
-                logger.error("Corrupted attachment name stored in AWS.", extra={
-                    "name": instance.name,
-                    "exception": e
-                })
-                return None
-        return imghdr.what(instance.file.path)
-
-    def get_name(self, instance):
-        return os.path.basename(instance.file.name)
+        return super().get_extension(instance.file.name)
 
 
 class AttachmentSerializer(SimpleAttachmentSerializer):
