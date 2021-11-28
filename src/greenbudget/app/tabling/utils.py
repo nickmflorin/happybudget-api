@@ -133,8 +133,6 @@ def validate_result(func):
     def decorator(lower=None, upper=None):
         result = func(lower=lower, upper=upper)
         if result == lower or result == upper:
-            import ipdb
-            ipdb.set_trace()
             raise InconsistentOrderingError(
                 lower,
                 upper,
