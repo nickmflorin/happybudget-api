@@ -34,7 +34,7 @@ class ImageFieldFileSerializer(serializers.Serializer):
         # development, because we are using Django's FileSystemStorage.
         if using_s3_storage():
             try:
-                return parse_image_filename(instance.name, strict=False)[1]
+                return parse_image_filename(instance.name)[1]
             except FileError as e:
                 logger.error("Corrupted image name stored in AWS.", extra={
                     "name": instance.name,
@@ -60,7 +60,7 @@ class SimpleAttachmentSerializer(serializers.ModelSerializer):
         # development, because we are using Django's FileSystemStorage.
         if using_s3_storage():
             try:
-                return parse_filename(instance.file.name, strict=False)[1]
+                return parse_filename(instance.file.name)[1]
             except FileError as e:
                 logger.error("Corrupted attachment name stored in AWS.", extra={
                     "name": instance.name,
