@@ -69,6 +69,8 @@ class SimpleAttachmentSerializer(
         fields = ('id', 'name', 'extension', 'url')
 
     def get_extension(self, instance):
+        # If we try to access `instance.file.path` when using S3 we get an
+        # error due to absolute paths.
         if using_s3_storage():
             return super().get_extension(instance.file.name)
         return super().get_extension(instance.file.name, instance.file.path)
