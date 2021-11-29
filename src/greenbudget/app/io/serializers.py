@@ -69,7 +69,9 @@ class SimpleAttachmentSerializer(
         fields = ('id', 'name', 'extension', 'url')
 
     def get_extension(self, instance):
-        return super().get_extension(instance.file.name)
+        if using_s3_storage():
+            return super().get_extension(instance.file.name)
+        return super().get_extension(instance.file.name, instance.file.path)
 
     def get_name(self, instance):
         return os.path.basename(instance.file.name)
