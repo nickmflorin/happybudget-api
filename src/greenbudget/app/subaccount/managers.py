@@ -78,8 +78,9 @@ class SubAccountManager(SubAccountQuerier, BudgetingPolymorphicRowManager):
     def cleanup(self, instances, mark_budgets=True):
         super().cleanup(instances)
         budgets = set([inst.budget for inst in instances])
-        if mark_budgets:
-            self.mark_budgets(budgets=budgets)
+        # CAUSING DEADLOCKS
+        # if mark_budgets:
+        #     self.mark_budgets(budgets=budgets)
         budget_actuals_owners_cache.invalidate(budgets)
 
     @signals.disable()
