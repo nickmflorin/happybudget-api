@@ -118,7 +118,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        nested_fields = ('id', 'first_name', 'last_name', 'email',
+        fields = ('id', 'first_name', 'last_name', 'email',
             'is_active', 'is_admin', 'is_superuser', 'is_staff', 'full_name',
             'profile_image', 'last_login', 'date_joined', 'timezone',
             'is_first_time', 'company', 'position', 'address', 'phone_number')
