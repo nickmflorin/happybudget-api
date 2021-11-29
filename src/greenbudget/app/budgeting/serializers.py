@@ -1,7 +1,5 @@
-from greenbudget.lib.drf.serializers import (
-    PolymorphicNonPolymorphicSerializer,
-    ModelSerializer
-)
+from rest_framework import serializers
+from greenbudget.lib.drf.serializers import PolymorphicNonPolymorphicSerializer
 
 from greenbudget.app.account.models import (
     Account, BudgetAccount, TemplateAccount)
@@ -31,7 +29,7 @@ class EntityPolymorphicSerializer(PolymorphicNonPolymorphicSerializer):
     }
 
 
-class BudgetParentContextSerializer(ModelSerializer):
+class BudgetParentContextSerializer(serializers.ModelSerializer):
     class Meta:
         abstract = True
 

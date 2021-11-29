@@ -1,14 +1,12 @@
 from rest_framework import serializers, exceptions
 
-from greenbudget.lib.drf.serializers import ModelSerializer
-
 from greenbudget.app.tabling.fields import TableChildrenPrimaryKeyRelatedField
 from greenbudget.app.tagging.serializers import ColorField
 
 from .models import Group
 
 
-class GroupSerializer(ModelSerializer):
+class GroupSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     type = serializers.CharField(read_only=True)
     name = serializers.CharField(

@@ -1,10 +1,7 @@
 from rest_framework import serializers
 
 from greenbudget.lib.drf.fields import GenericRelatedField
-from greenbudget.lib.drf.serializers import (
-    ModelSerializer,
-    PolymorphicNonPolymorphicSerializer
-)
+from greenbudget.lib.drf.serializers import PolymorphicNonPolymorphicSerializer
 
 from greenbudget.app.contact.models import Contact
 from greenbudget.app.io.models import Attachment
@@ -63,7 +60,7 @@ class ActualTypeSerializer(TagSerializer):
         fields = TagSerializer.Meta.fields + ("color", )
 
 
-class ActualSerializer(ModelSerializer):
+class ActualSerializer(serializers.ModelSerializer):
     type = serializers.CharField(read_only=True)
     order = serializers.CharField(read_only=True)
     name = serializers.CharField(
@@ -122,12 +119,14 @@ class ActualSerializer(ModelSerializer):
             'id', 'name', 'purchase_order', 'date', 'payment_id', 'value',
             'actual_type', 'contact', 'owner', 'type', 'attachments',
             'notes', 'order')
-        response = {
-            'attachments': (
-                SimpleAttachmentSerializer,
-                {'many': True}
-            )
-        }
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data.update(attachments=SimpleAttachmentSerializer(
+            instance=instance.attachments.all(),
+            many=True
+        ).data)
+        return data
 
 
 @row_order_serializer(table_filter=lambda d: {'budget_id': d.budget.id})

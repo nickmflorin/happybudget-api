@@ -1,7 +1,5 @@
 from rest_framework import serializers
 
-from greenbudget.lib.drf.serializers import ModelSerializer
-
 from greenbudget.app.budgeting.serializers import (
     SimpleEntityPolymorphicSerializer)
 from greenbudget.app.group.models import Group
@@ -14,7 +12,7 @@ from greenbudget.app.tabling.serializers import row_order_serializer
 from .models import Account, BudgetAccount, TemplateAccount
 
 
-class AccountSimpleSerializer(ModelSerializer):
+class AccountSimpleSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     identifier = serializers.CharField(
         required=False,

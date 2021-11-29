@@ -86,7 +86,7 @@ def create_bulk_patch_post_serializer(serializer_cls, **kwargs):
     )
 
     class BulkSerializer(base_serializer_cls):
-        data = serializer_cls(many=True, required=True, nested=True)
+        data = serializer_cls(many=True, required=True)
 
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)

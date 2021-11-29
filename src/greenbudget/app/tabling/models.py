@@ -68,13 +68,16 @@ class RowModelMixin(models.Model):
         if commit:
             self.save(update_fields=["order"])
 
-    def validate_before_save(self):
+    def validate_before_save(self, bulk_context=False):
         # If the ordering of the instance is not explicitly defined, default it
-        # to being the last in the table.
-        if self.order is None:
-            self.order_at_bottom(commit=False)
-        else:
-            validate_order(self.order)
+        # to being the last in the table.  However, we cannot do this when we
+        # are adding multiple models at the same time, because `order_at_bottom`
+        # method requires that all the other models be commited to the DB.
+        if bulk_context is not True:
+            if self.order is None:
+                self.order_at_bottom(commit=False)
+            else:
+                validate_order(self.order)
 
 
 class RowModel(RowModelMixin):

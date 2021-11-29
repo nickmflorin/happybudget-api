@@ -3,6 +3,7 @@ from PIL import Image
 
 import django.apps
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.contrib.contenttypes.models import ContentType
 
 import pytest
 
@@ -437,6 +438,10 @@ def create_group(user, db):
     def inner(*args, **kwargs):
         kwargs.setdefault('created_by', user)
         kwargs.setdefault('updated_by', user)
+        if 'parent' in kwargs:
+            parent = kwargs.pop('parent')
+            ct = ContentType.objects.get_for_model(type(parent))
+            kwargs.update(content_type=ct, object_id=parent.pk)
         return GroupFactory(*args, **kwargs)
     return inner
 

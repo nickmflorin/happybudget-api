@@ -1,7 +1,5 @@
 from rest_framework import serializers, exceptions
 
-from greenbudget.lib.drf.serializers import ModelSerializer
-
 from greenbudget.app.account.serializers import AccountPdfSerializer
 from greenbudget.app.group.serializers import GroupSerializer
 from greenbudget.app.io.fields import Base64ImageField
@@ -11,7 +9,7 @@ from greenbudget.app.template.models import Template
 from .models import BaseBudget, Budget
 
 
-class BaseBudgetSerializer(ModelSerializer):
+class BaseBudgetSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     name = serializers.CharField(
         required=True,

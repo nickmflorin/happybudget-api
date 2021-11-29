@@ -304,7 +304,6 @@ def test_bulk_create_subaccounts(api_client, user, models, budget_f):
             }
         ]})
     assert response.status_code == 201
-
     subaccounts = models.SubAccount.objects.all()
     assert len(subaccounts) == 2
 

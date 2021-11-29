@@ -97,7 +97,7 @@ class Actual(BudgetingRowModel):
         except ObjectDoesNotExist:
             pass
 
-    def validate_before_save(self):
+    def validate_before_save(self, bulk_context=False):
         try:
             budget = self.budget
         except Actual.budget.RelatedObjectDoesNotExist:
@@ -112,4 +112,4 @@ class Actual(BudgetingRowModel):
                     "Cannot assign a contact created by one user to an actual "
                     "created by another user."
                 )
-        super().validate_before_save()
+        super().validate_before_save(bulk_context=bulk_context)

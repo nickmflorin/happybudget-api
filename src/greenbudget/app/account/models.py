@@ -109,12 +109,12 @@ class Account(BudgetingTreePolymorphicRowModel):
         return self.nominal_value + self.accumulated_fringe_contribution \
             + self.accumulated_markup_contribution
 
-    def validate_before_save(self):
+    def validate_before_save(self, bulk_context=False):
         if self.group is not None and self.group.parent != self.parent:
             raise IntegrityError(
                 "Can only add groups with the same parent as the instance."
             )
-        super().validate_before_save()
+        super().validate_before_save(bulk_context=bulk_context)
 
     def accumulate_value(self, children=None):
         children = children or self.children.all()

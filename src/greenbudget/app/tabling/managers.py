@@ -1,4 +1,3 @@
-import itertools
 from django.db import models
 from polymorphic.models import PolymorphicManager
 
@@ -13,9 +12,17 @@ class RowManagerMixin(RowQuerier):
         return self.queryset_class(self.model)
 
     def bulk_create(self, instances, **kwargs):
-        for table_key, group in itertools.groupby(
-                instances, key=lambda obj: obj.table_key):
-            table_instances = list(group)
+        # First, we have to group all of the instances by the tables (or the
+        # set of sibling instances in the same table) that they belong to.
+        instances_grouped_by_table = {}
+        for obj in instances:
+            instances_grouped_by_table.setdefault(obj.table_key, [])
+            instances_grouped_by_table[obj.table_key].append(obj)
+
+        # For each individual set of sibling instances, we need to perform the
+        # ordering of the new instances based on the ordering already present
+        # in the set of sibling instances.
+        for table_key, table_instances in instances_grouped_by_table.items():
             # When determining what order each element should have, we not only
             # have to look in the database for the latest order but we also
             # have to include any potential order's that are unsaved on the
@@ -44,6 +51,7 @@ class RowManagerMixin(RowQuerier):
                 if instance.order is None:
                     instance.order = ordering[index]
                     index += 1
+
         return super().bulk_create(instances, **kwargs)
 
     def get_table(self, *args, **kwargs):

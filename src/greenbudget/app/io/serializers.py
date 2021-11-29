@@ -1,5 +1,6 @@
 import imghdr
 import logging
+import os
 
 from django.core.files.storage import get_storage_class
 
@@ -21,24 +22,25 @@ logger = logging.getLogger('greenbudget')
 
 
 class ExtensionSerializerMixin:
-    def get_extension(self, filepath):
+    def get_extension(self, name, path=None):
         # Note that imghdr uses the local file system, so it will look at the
         # file in the local file system.  This only works when we are in local
         # development, because we are using Django's FileSystemStorage.
         if using_s3_storage():
             try:
-                return parse_image_filename(filepath)[1]
+                return parse_image_filename(name)[1]
             except FileError as e:
                 logger.error("Corrupted image path stored in AWS.", extra={
-                    "filepath": filepath,
+                    "filename": name,
                     "exception": e
                 })
                 return None
         try:
-            return imghdr.what(filepath)
+            path = path or name
+            return imghdr.what(path)
         except FileNotFoundError as e:
             logger.error("Corrupted image path stored locally.", extra={
-                "filepath": filepath,
+                "filepath": path,
                 "exception": e
             })
             return None
@@ -67,7 +69,10 @@ class SimpleAttachmentSerializer(
         fields = ('id', 'name', 'extension', 'url')
 
     def get_extension(self, instance):
-        return super().get_extension(instance.file.name)
+        return super().get_extension(instance.file.name, instance.file.path)
+
+    def get_name(self, instance):
+        return os.path.basename(instance.file.name)
 
 
 class AttachmentSerializer(SimpleAttachmentSerializer):

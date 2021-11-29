@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
 from greenbudget.lib.drf.fields import ModelChoiceField
-from greenbudget.lib.drf.serializers import ModelSerializer
 
 from greenbudget.app.io.fields import Base64ImageField
 from greenbudget.app.io.serializers import SimpleAttachmentSerializer
@@ -11,7 +10,7 @@ from greenbudget.app.tabling.serializers import row_order_serializer
 from .models import Contact
 
 
-class ContactSerializer(ModelSerializer):
+class ContactSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     type = serializers.CharField(read_only=True)
     order = serializers.CharField(read_only=True)
@@ -43,12 +42,14 @@ class ContactSerializer(ModelSerializer):
             'id', 'first_name', 'last_name', 'type', 'city', 'rate',
             'phone_number', 'email', 'full_name', 'company', 'position',
             'image', 'contact_type', 'attachments', 'order')
-        response = {
-            'attachments': (
-                SimpleAttachmentSerializer,
-                {'many': True}
-            )
-        }
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data.update(attachments=SimpleAttachmentSerializer(
+            instance=instance.attachments.all(),
+            many=True
+        ).data)
+        return data
 
 
 @row_order_serializer(table_filter=lambda d: {'created_by_id': d.user.id})

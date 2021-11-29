@@ -1,8 +1,6 @@
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers, exceptions
 
-from greenbudget.lib.drf.serializers import ModelSerializer
-
 from greenbudget.app.budgeting.serializers import (
     SimpleEntityPolymorphicSerializer)
 from greenbudget.app.contact.models import Contact
@@ -30,7 +28,7 @@ class SubAccountUnitSerializer(TagSerializer):
         fields = TagSerializer.Meta.fields + ("color", )
 
 
-class SubAccountSimpleSerializer(ModelSerializer):
+class SubAccountSimpleSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     type = serializers.CharField(read_only=True)
     identifier = serializers.CharField(
@@ -96,11 +94,11 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
     class Meta:
         model = SubAccount
         fields = SubAccountSimpleSerializer.Meta.fields + (
-                'quantity', 'rate', 'multiplier', 'unit', 'object_id',
-                'parent_type', 'children', 'fringes', 'group', 'order',
-                'nominal_value', 'actual', 'fringe_contribution',
-                'markup_contribution', 'accumulated_markup_contribution',
-                'accumulated_fringe_contribution',
+            'quantity', 'rate', 'multiplier', 'unit', 'object_id',
+            'parent_type', 'children', 'fringes', 'group', 'order',
+            'nominal_value', 'actual', 'fringe_contribution',
+            'markup_contribution', 'accumulated_markup_contribution',
+            'accumulated_fringe_contribution',
         )
 
     def validate(self, attrs):
@@ -129,12 +127,14 @@ class BudgetSubAccountSerializer(SubAccountSerializer):
     class Meta(SubAccountSerializer.Meta):
         model = BudgetSubAccount
         fields = SubAccountSerializer.Meta.fields + ('attachments', 'contact', )
-        response = {
-            'attachments': (
-                SimpleAttachmentSerializer,
-                {'many': True}
-            )
-        }
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data.update(attachments=SimpleAttachmentSerializer(
+            instance=instance.attachments.all(),
+            many=True
+        ).data)
+        return data
 
 
 @row_order_serializer(table_filter=lambda context: {

@@ -94,11 +94,16 @@ class ObjectSet(collections.abc.Mapping):
             return self._data.__getitem__(pk)
         except KeyError:
             raise KeyError(
-                "Could not find duplicated instance for PK %s." % pk)
+                "Could not find duplicated %s instance for PK %s."
+                % (self.model_cls.__name__, pk)
+            )
 
     def __setitem__(self, k, v):
-        if k in self:
-            raise KeyError('Could not find instance for pk %s.' % k)
+        if k in self._data:
+            raise KeyError(
+                "Duplicated %s instance already exists for PK %s."
+                % (self.model_cls.__name__, k)
+            )
         self._data.__setitem__(k, v)
 
     def __len__(self):
@@ -404,10 +409,10 @@ def duplicate(
     for k, v in subaccounts.items():
         for fringe in v.original.fringes.all():
             duplicated_fringe = fringes[fringe.pk]
-            SubAccount.fringes.through(
+            fringe_through.append(SubAccount.fringes.through(
                 fringe_id=duplicated_fringe.new_pk,
                 subaccount_id=v.new_pk
-            )
+            ))
     if fringe_through:
         SubAccount.fringes.through.objects.bulk_create(fringe_through)
 

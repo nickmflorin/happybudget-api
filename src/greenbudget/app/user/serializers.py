@@ -1,7 +1,5 @@
 from rest_framework import serializers, validators
 
-from greenbudget.lib.drf.serializers import ModelSerializer
-
 from greenbudget.app.authentication.exceptions import InvalidCredentialsError
 from greenbudget.app.authentication.utils import validate_password
 from greenbudget.app.io.fields import Base64ImageField
@@ -85,7 +83,7 @@ class SimpleUserSerializer(serializers.ModelSerializer):
             'profile_image')
 
 
-class UserSerializer(ModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(
         required=True,
         allow_blank=False,
@@ -122,7 +120,5 @@ class UserSerializer(ModelSerializer):
         model = User
         nested_fields = ('id', 'first_name', 'last_name', 'email',
             'is_active', 'is_admin', 'is_superuser', 'is_staff', 'full_name',
-            'profile_image')
-        fields = nested_fields + (
-            'last_login', 'date_joined', 'timezone', 'is_first_time', 'company',
-            'position', 'address', 'phone_number')
+            'profile_image', 'last_login', 'date_joined', 'timezone',
+            'is_first_time', 'company', 'position', 'address', 'phone_number')
