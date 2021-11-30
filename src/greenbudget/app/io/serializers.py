@@ -31,7 +31,7 @@ class ExtensionSerializerMixin:
                 return parse_image_filename(name)[1]
             except FileError as e:
                 logger.error("Corrupted image path stored in AWS.", extra={
-                    "filename": name,
+                    "file_name": name,
                     "exception": e
                 })
                 return None
