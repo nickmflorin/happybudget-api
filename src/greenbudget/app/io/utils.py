@@ -52,8 +52,7 @@ def upload_user_file_to(user, filename, directory=None, error_field=None):
 
 
 def parse_filename(filename, supported=None, error_field=None):
-    boolean_mask = [x for x in [s == '.' for s in filename] if x is True]
-    if len(boolean_mask) == 0:
+    if '.' not in filename:
         raise MissingFileExtension(field=error_field, filename=filename)
     ext = filename.split('.')[-1].strip().lower()
     if ext == "":
