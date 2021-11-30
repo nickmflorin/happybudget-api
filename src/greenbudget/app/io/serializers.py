@@ -23,12 +23,13 @@ logger = logging.getLogger('greenbudget')
 
 class ExtensionSerializerMixin:
     def get_extension(self, name, path=None):
+        parser = getattr(self, 'parser', parse_filename)
         # Note that imghdr uses the local file system, so it will look at the
         # file in the local file system.  This only works when we are in local
         # development, because we are using Django's FileSystemStorage.
         if using_s3_storage():
             try:
-                return parse_image_filename(name)[1]
+                return parser(name)[1]
             except FileError as e:
                 logger.error("Corrupted image path stored in AWS.", extra={
                     "file_name": name,
@@ -52,6 +53,7 @@ class ImageFileSerializer(ExtensionSerializerMixin, serializers.Serializer):
     width = serializers.IntegerField(read_only=True)
     height = serializers.IntegerField(read_only=True)
     extension = serializers.SerializerMethodField()
+    parser = parse_image_filename
 
     def get_extension(self, instance):
         return super().get_extension(instance.name)
