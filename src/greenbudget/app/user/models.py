@@ -2,7 +2,6 @@ from timezone_field import TimeZoneField
 
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from greenbudget.app.authentication.utils import get_user_from_social_token
@@ -29,7 +28,7 @@ class User(AbstractUser):
     updated_at = models.DateTimeField(auto_now=True, editable=False)
     date_joined = models.DateTimeField(
         _('date joined'),
-        default=timezone.now,
+        auto_now_add=True,
         editable=False
     )
     position = models.CharField(max_length=128, null=True)
