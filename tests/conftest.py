@@ -4,7 +4,9 @@ from PIL import Image
 import pytest
 import requests
 
+from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
+from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.files.images import ImageFile
 
@@ -18,6 +20,15 @@ from greenbudget.app.template.models import Template
 from greenbudget.app.user.models import User
 
 from .fixtures import *  # noqa
+
+
+@pytest.fixture(autouse=True)
+def reset_cache():
+    yield
+    backend = settings.CACHES["default"]["BACKEND"]
+    if backend != "django.core.cache.backends.locmem.LocMemCache":
+        raise Exception("Incompatible cache configured for tests.")
+    cache.clear()
 
 
 @pytest.fixture(autouse=True)

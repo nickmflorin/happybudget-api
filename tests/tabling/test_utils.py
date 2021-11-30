@@ -32,7 +32,6 @@ from greenbudget.app.tabling.utils import (
 def test_lexographic_midpoint(a, b, expected):
     if isinstance(expected, str):
         result = lexographic_midpoint(a, b)
-        print("A = %s ... B = %s ... Result = %s" % (a, b, result))
         assert result == expected
     else:
         with pytest.raises(expected):
