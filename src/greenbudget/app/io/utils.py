@@ -57,7 +57,7 @@ def parse_filename(filename, supported=None, error_field=None):
     ext = filename.split('.')[-1].strip().lower()
     if ext == "":
         raise MissingFileExtension(field=error_field, filename=filename)
-    if supported and ext not in supported:
+    if supported is not None and ext not in supported:
         raise UnsupportedFileExtension(field=error_field, ext=ext)
     return f"{filename.split('.')[0].replace(' ', '').lower()}.{ext}", ext
 
