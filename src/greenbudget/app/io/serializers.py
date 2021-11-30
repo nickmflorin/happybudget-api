@@ -34,7 +34,8 @@ class ExtensionSerializerMixin(serializers.Serializer):
             if isinstance(instance, Attachment):
                 return instance.file.name
             elif isinstance(instance, ImageFile):
-                return os.path.basename(instance.name)
+                if instance.name is not None:
+                    return os.path.basename(instance.name)
             elif instance._file is not None:
                 return instance.name
 
