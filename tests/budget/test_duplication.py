@@ -49,17 +49,25 @@ def generate_data(create_fringe, create_group, create_markup):
                 markups=[original_account_markups[j] for j in m_designation]
             ))
 
+        original_subaccount_markups = {}
         original_subaccount_groups = {}
         original_child_subaccount_groups = {}
+        original_child_subaccount_markups = {}
         original_subaccounts = {}
         original_child_subaccounts = {}
 
         for account in original_accounts:
-            # Create 2 SubAccount(s) for each Account, each with it's own Group.
+            # Create 2 Markups per Account
+            original_subaccount_markups[account.pk] = [
+                create_markup(parent=account),
+                create_markup(parent=account),
+            ]
+            # Create 2 Groups per Account
             original_subaccount_groups[account.pk] = [
                 create_group(parent=account),
                 create_group(parent=account),
             ]
+            # Create 2 SubAccount(s) for each Account, each with it's own Group.
             new_subaccounts = []
             for i in range(2):
                 new_subaccounts.append(factory.create_subaccount(
@@ -67,17 +75,26 @@ def generate_data(create_fringe, create_group, create_markup):
                     created_by=user,
                     updated_by=user,
                     fringes=[original_fringes[i]],
+                    markups=[original_subaccount_markups[account.pk][i]],
                     group=original_subaccount_groups[account.pk][i]
                 ))
             original_subaccounts[account.pk] = new_subaccounts
-            # Create 2 SubAccount(s) for each SubAccount, each with it's own
-            # Group.
+
             for subaccount in new_subaccounts:
                 original_child_subaccounts[subaccount.pk] = []
+
+                # Create 2 Groups per SubAccount
                 original_child_subaccount_groups[subaccount.pk] = [
                     create_group(parent=subaccount),
                     create_group(parent=subaccount),
                 ]
+                # Create 2 Markups per SubAccount
+                original_child_subaccount_markups[subaccount.pk] = [
+                    create_markup(parent=subaccount),
+                    create_markup(parent=subaccount),
+                ]
+                # Create 2 SubAccount(s) for each SubAccount, each with it's own
+                # Group.
                 for i in range(2):
                     original_child_subaccounts[subaccount.pk].append(
                         factory.create_subaccount(
@@ -85,6 +102,7 @@ def generate_data(create_fringe, create_group, create_markup):
                             created_by=user,
                             updated_by=user,
                             fringes=[original_fringes[i]],
+                            markups=[original_child_subaccount_markups[subaccount.pk][i]],  # noqa
                             group=original_child_subaccount_groups[subaccount.pk][i]  # noqa
                         ))
 
@@ -92,6 +110,7 @@ def generate_data(create_fringe, create_group, create_markup):
             'base': template,
             'fringes': original_fringes,
             'account_groups': original_account_groups,
+            'account_markups': original_account_markups,
             'accounts': original_accounts,
             'subaccounts': original_subaccounts,
             'subaccount_groups': original_subaccount_groups,
@@ -202,6 +221,7 @@ def make_assertions():
                 assert derived.group is not None
                 assert_group(original.group, derived.group)
 
+            assert_markups(original.children_markups, derived.children_markups)
             assert_markups(original.markups, derived.markups)
 
         def assert_subaccount(original, derived, parent):
@@ -215,9 +235,11 @@ def make_assertions():
                 assert derived.group is not None
                 assert_group(original.group, derived.group)
 
+            assert_markups(original.children_markups, derived.children_markups)
             assert_markups(original.markups, derived.markups)
             assert_fringes(original.fringes, derived.fringes)
 
+        assert_markups(data['account_markups'], base.children_markups)
         assert_groups(data['account_groups'], base.groups)
         assert_fringes(data['fringes'], base.fringes)
 
