@@ -276,7 +276,7 @@ ELASTICACHE_ENDPOINT = config(
     }
 )
 
-CACHE_ENABLED = False  # Temporarily turning off due to some issues.
+CACHE_ENABLED = True
 CACHE_LOCATION = f"redis://{ELASTICACHE_ENDPOINT}/0"
 CACHE_EXPIRY = 5 * 60 * 60
 
