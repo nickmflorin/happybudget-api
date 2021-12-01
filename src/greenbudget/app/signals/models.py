@@ -420,7 +420,7 @@ class model:
                         "The user cannot be inferred for the model save "
                         "because the appropriate middleware is not installed."
                     )
-                else:
+                elif settings.ENVIRONMENT != Environments.TEST:
                     logger.warning(
                         "The user cannot be inferred from the model save.")
             return user

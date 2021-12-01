@@ -1,10 +1,15 @@
 import collections
 import contextlib
+import logging
+import json
 
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
 from greenbudget.app import signals
+
+
+logger = logging.getLogger('greenbudget')
 
 
 DISALLOWED_ATTRIBUTES = [('editable', False), ('primary_key', True)]
@@ -68,6 +73,31 @@ class ObjectRelationship:
             raise Exception("Instance has not been saved yet!")
         return self.instance.pk
 
+    @property
+    def serialized(self):
+        return {
+            'instance': "%s" % self.instance,
+            'original': "%s" % self.original,
+            'created': self.created,
+            'saved': self.saved,
+            'update_fields': self.update_fields
+        }
+
+    def __str__(self):
+        return "%s" % self.serialized
+
+
+class AssociatedObjectNotFound(KeyError):
+    def __init__(self, model_cls, pk):
+        self.model_cls = model_cls
+        self.pk = pk
+
+    def __str__(self):
+        return (
+            "Could not find associated %s instance for PK %s."
+            % (self.model_cls.__name__, self.pk)
+        )
+
 
 class ObjectSet(collections.abc.Mapping):
     bulk_create_kwargs = {}
@@ -93,10 +123,17 @@ class ObjectSet(collections.abc.Mapping):
         try:
             return self._data.__getitem__(pk)
         except KeyError:
-            raise KeyError(
-                "Could not find duplicated %s instance for PK %s."
-                % (self.model_cls.__name__, pk)
-            )
+            raise AssociatedObjectNotFound(self.model_cls, pk)
+
+    @property
+    def serialized(self):
+        data = {}
+        for k, v in self._data.items():
+            data[k] = str(v)
+        return data
+
+    def __str__(self):
+        return json.dumps(self.serialized)
 
     def __setitem__(self, k, v):
         if k in self._data:
@@ -390,9 +427,43 @@ def duplicate(
     # Account/SubAccount instances.
     for k, v in groups.items():
         for account in v.original.accounts.all():
-            accounts.modify(account.pk, group_id=v.instance.pk)
+            try:
+                accounts.modify(account.pk, group_id=v.instance.pk)
+            except AssociatedObjectNotFound:
+                # This seems to fail often, so until we get to the bottom of it
+                # we should add additional logging.
+                logger.error(
+                    "Could not update group for new account associated with "
+                    "%s (PK = %s) as it could not be found."
+                    % (accounts.model_cls.__name__, account.pk), extra={
+                        'pk': account.pk,
+                        'model_cls': accounts.model_cls.__name__,
+                        'accounts': str(accounts),
+                        'group_id': k,
+                        'group_accounts': [
+                            a.pk for a in v.original.accounts.all()]
+
+                    }
+                )
         for subaccount in v.original.subaccounts.all():
-            subaccounts.modify(subaccount.pk, group_id=v.instance.pk)
+            try:
+                # This seems to fail often, so until we get to the bottom of it
+                # we should add additional logging.
+                subaccounts.modify(subaccount.pk, group_id=v.instance.pk)
+            except AssociatedObjectNotFound:
+                logger.error(
+                    "Could not update group for new account associated with "
+                    "%s (PK = %s) as it could not be found."
+                    % (accounts.model_cls.__name__, account.pk), extra={
+                        'pk': account.pk,
+                        'model_cls': accounts.model_cls.__name__,
+                        'accounts': str(accounts),
+                        'group_id': k,
+                        'group_accounts': [
+                            a.pk for a in v.original.accounts.all()]
+
+                    }
+                )
 
     accounts.clear()
     subaccounts.clear()
