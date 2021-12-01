@@ -73,19 +73,6 @@ class ObjectRelationship:
             raise Exception("Instance has not been saved yet!")
         return self.instance.pk
 
-    @property
-    def serialized(self):
-        return {
-            'instance': "%s" % self.instance,
-            'original': "%s" % self.original,
-            'created': self.created,
-            'saved': self.saved,
-            'update_fields': self.update_fields
-        }
-
-    def __str__(self):
-        return "%s" % self.serialized
-
 
 class AssociatedObjectNotFound(KeyError):
     def __init__(self, model_cls, pk):
@@ -124,16 +111,6 @@ class ObjectSet(collections.abc.Mapping):
             return self._data.__getitem__(pk)
         except KeyError:
             raise AssociatedObjectNotFound(self.model_cls, pk)
-
-    @property
-    def serialized(self):
-        data = {}
-        for k, v in self._data.items():
-            data[k] = str(v)
-        return data
-
-    def __str__(self):
-        return json.dumps(self.serialized)
 
     def __setitem__(self, k, v):
         if k in self._data:
@@ -235,34 +212,27 @@ class ObjectSet(collections.abc.Mapping):
             (k, v) for k, v in self.items()
             if not v.created
         ]
-        # Only remove the non-created instances from the relationships because
-        # those have to be replaced with relationships that have PKs for the
-        # duplicated instance.
-        self._data = {k: v for k, v in self.items() if v.created}
         if not_created:
             instances = [ns[1].instance for ns in not_created]
-            if instances:
-                created = self.model_cls.objects.bulk_create(
-                    instances,
-                    **self.bulk_create_kwargs
-                )
-                assert len(created) == len(not_created), \
-                    "Suspicious query result: Bulk create tried to create %s " \
-                    "instances, but returned %s instances." \
-                    % (len(not_created), len(created))
+            created = self.model_cls.objects.bulk_create(
+                instances,
+                **self.bulk_create_kwargs
+            )
+            assert len(created) == len(not_created), \
+                "Suspicious query result: Bulk create tried to create %s " \
+                "instances, but returned %s instances." \
+                % (len(not_created), len(created))
 
-                # Add the newly created instances back into the data,
-                # attributing them as having been saved and created.
-                self._data.update({
-                    not_created[i][0]: ObjectRelationship(
-                        instance=created[i],
-                        created=True,
-                        saved=True,
-                        original=not_created[i][1].original,
-                        update_fields=set([])
-                    )
-                    for i in range(len(created))
-                })
+            # Add the newly created instances back into the data,
+            # attributing them as having been saved and created.
+            for i, created_instance in enumerate(created):
+                self._data[not_created[i][0]] = ObjectRelationship(
+                    instance=created_instance,
+                    created=True,
+                    saved=True,
+                    original=not_created[i][1].original,
+                    update_fields=set([])
+                )
         if not_saved:
             assert all([len(ns[1].update_fields) != 0 for ns in not_saved])
 
@@ -438,7 +408,6 @@ def duplicate(
                     % (accounts.model_cls.__name__, account.pk), extra={
                         'pk': account.pk,
                         'model_cls': accounts.model_cls.__name__,
-                        'accounts': str(accounts),
                         'group_id': k,
                         'group_accounts': [
                             a.pk for a in v.original.accounts.all()]
@@ -457,7 +426,6 @@ def duplicate(
                     % (accounts.model_cls.__name__, account.pk), extra={
                         'pk': account.pk,
                         'model_cls': accounts.model_cls.__name__,
-                        'accounts': str(accounts),
                         'group_id': k,
                         'group_accounts': [
                             a.pk for a in v.original.accounts.all()]
@@ -519,15 +487,43 @@ def duplicate(
     subaccount_through = []
     for k, v in markups.items():
         for account in v.original.accounts.all():
-            account_through.append(Account.markups.through(
-                account_id=accounts[account.pk].new_pk,
-                markup_id=v.new_pk
-            ))
+            try:
+                duplicated_account = accounts[account.pk]
+            except AssociatedObjectNotFound:
+                logger.error(
+                    "Could not assign account to new markup as its original "
+                    "could not be found.", extra={
+                        'original_account_pk': account.pk,
+                        'original_markup_pk': v.original.pk,
+                        'duplicated_markup_pk': v.new_pk,
+                        'original_model_cls': account.__class__.__name__,
+                        'duplicated_model_cls': accounts.model_cls.__name__,
+                    }
+                )
+            else:
+                account_through.append(Account.markups.through(
+                    account_id=duplicated_account.new_pk,
+                    markup_id=v.new_pk
+                ))
         for subaccount in v.original.subaccounts.all():
-            subaccount_through.append(SubAccount.markups.through(
-                subaccount_id=subaccounts[subaccount.pk].new_pk,
-                markup_id=v.new_pk
-            ))
+            try:
+                duplicated_subaccount = subaccounts[subaccount.pk]
+            except AssociatedObjectNotFound:
+                logger.error(
+                    "Could not assign subaccount to new markup as its original "
+                    "could not be found.", extra={
+                        'original_subaccount_pk': subaccount.pk,
+                        'original_markup_pk': v.original.pk,
+                        'duplicated_markup_pk': v.new_pk,
+                        'original_model_cls': subaccount.__class__.__name__,
+                        'duplicated_model_cls': subaccounts.model_cls.__name__,
+                    }
+                )
+            else:
+                subaccount_through.append(SubAccount.markups.through(
+                    subaccount_id=duplicated_subaccount.new_pk,
+                    markup_id=v.new_pk
+                ))
 
     if account_through:
         Account.markups.through.objects.bulk_create(account_through)

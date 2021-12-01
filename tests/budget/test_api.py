@@ -99,8 +99,8 @@ def test_create_budget(api_client, user, models):
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_derive_budget(api_client, user, create_template, staff_user, models):
-    template = create_template(created_by=staff_user)
+def test_derive_budget(api_client, user, template_df, staff_user, models):
+    template = template_df.create_budget(created_by=staff_user)
 
     api_client.force_login(user)
     response = api_client.post("/v1/budgets/", data={
