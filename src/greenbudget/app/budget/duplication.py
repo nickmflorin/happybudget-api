@@ -1,7 +1,6 @@
 import collections
 import contextlib
 import logging
-import json
 
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -397,11 +396,12 @@ def duplicate(
     # Account/SubAccount instances.
     for k, v in groups.items():
         for account in v.original.accounts.all():
+            # This is precautionary, as we have had some bugs related to this.
+            # But if we do not see this for awhile, then we can remove the
+            # catch/log.
             try:
                 accounts.modify(account.pk, group_id=v.instance.pk)
             except AssociatedObjectNotFound:
-                # This seems to fail often, so until we get to the bottom of it
-                # we should add additional logging.
                 logger.error(
                     "Could not update group for new account associated with "
                     "%s (PK = %s) as it could not be found."
@@ -415,9 +415,10 @@ def duplicate(
                     }
                 )
         for subaccount in v.original.subaccounts.all():
+            # This is precautionary, as we have had some bugs related to this.
+            # But if we do not see this for awhile, then we can remove the
+            # catch/log.
             try:
-                # This seems to fail often, so until we get to the bottom of it
-                # we should add additional logging.
                 subaccounts.modify(subaccount.pk, group_id=v.instance.pk)
             except AssociatedObjectNotFound:
                 logger.error(
@@ -487,6 +488,9 @@ def duplicate(
     subaccount_through = []
     for k, v in markups.items():
         for account in v.original.accounts.all():
+            # This is precautionary, as we have had some bugs related to this.
+            # But if we do not see this for awhile, then we can remove the
+            # catch/log.
             try:
                 duplicated_account = accounts[account.pk]
             except AssociatedObjectNotFound:
@@ -506,6 +510,9 @@ def duplicate(
                     markup_id=v.new_pk
                 ))
         for subaccount in v.original.subaccounts.all():
+            # This is precautionary, as we have had some bugs related to this.
+            # But if we do not see this for awhile, then we can remove the
+            # catch/log.
             try:
                 duplicated_subaccount = subaccounts[subaccount.pk]
             except AssociatedObjectNotFound:
