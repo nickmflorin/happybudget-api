@@ -457,7 +457,7 @@ def duplicate(
                     % (accounts.model_cls.__name__, account.pk), extra={
                         'pk': account.pk,
                         'model_cls': accounts.model_cls.__name__,
-                        'accounts': str(accounts),
+                        'subaccounts': str(subaccounts),
                         'group_id': k,
                         'group_accounts': [
                             a.pk for a in v.original.accounts.all()]
