@@ -16,6 +16,11 @@ class UserPermission(permissions.BasePermission):
 
 
 class IsAuthenticated(UserPermission):
+    """
+    Permission that ensures that the active user's account is both authenticated
+    and active.
+    """
+
     def user_has_permission(self, user, force_logout=True):
         if user is None or not user.is_authenticated:
             raise NotAuthenticatedError(force_logout=force_logout)
@@ -28,6 +33,10 @@ class IsAuthenticated(UserPermission):
 
 
 class IsVerified(UserPermission):
+    """
+    Permission that ensures that the active user's account is verified.
+    """
+
     def user_has_permission(self, user, force_logout=True):
         assert not (user is None or not user.is_authenticated), \
             "This permission should always be preceeded by `IsAuthenticated`."
@@ -68,6 +77,16 @@ def check_user_permissions(user, permissions=None, force_logout=True):
 
 
 class IsNotVerified(UserPermission):
+    """
+    Permission that ensures that a user does not have a verified account.  The
+    purpose is to prevent users with a verified account from performing the
+    account verification process.
+
+    This is meant to be used so a malicious attacker could not hijack a
+    verified user's account and attempt to expose security holes in the
+    verification process in order to get sensitive information about that user.
+    """
+
     def user_has_permission(self, user, force_logout=False):
         # Force logout param is required for checking permissions manually via
         # the views.
@@ -79,6 +98,17 @@ class IsNotVerified(UserPermission):
 
 
 class IsAnonymous(permissions.BasePermission):
+    """
+    Permission that ensures that a user is not already logged in.  The
+    purpose is to prevent actively logged in users from performing processes
+    that are only pertinent to users that are not logged in (i.e. forgot
+    password functionality).
+
+    This is meant to be used so a malicious attacker could not hijack an
+    actively logged in user's account and attempt to expose security holes in
+    processes (such as forgot password functionality) in order to get
+    sensitive information about that user.
+    """
     message = "User already has an active session."
 
     def has_permission(self, request, view):
@@ -92,12 +122,23 @@ class AdminPermissionMixin:
 
 
 class IsOwner(permissions.BasePermission):
+    """
+    Object level permission that ensures that the object that an actively logged
+    in user is accessing was created by that user.
+    """
+
     def has_object_permission(self, request, view, obj):
         owner_field = getattr(view, 'owner_field', 'created_by')
         return getattr(obj, owner_field) == request.user
 
 
 class IsOwnerOrReadOnly(IsOwner):
+    """
+    Object level permission that ensures that the object that an actively logged
+    in user is accessing was created by that user for write operations, but
+    allows all users to access that object for read operations.
+    """
+
     def has_object_permission(self, request, view, obj):
         if request.method in permissions.SAFE_METHODS:
             return True
