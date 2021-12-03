@@ -226,7 +226,7 @@ class SubAccount(BudgetingTreePolymorphicRowModel):
             children,
             0
         ) + functools.reduce(
-            lambda current, markup: current + markup.rate or 0.0,
+            lambda current, markup: current + (markup.rate or 0.0),
             markups,
             0
         )
