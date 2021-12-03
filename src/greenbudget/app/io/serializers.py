@@ -62,10 +62,11 @@ class SimpleAttachmentSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'extension', 'url')
 
     def get_name(self, instance):
-        return os.path.basename(instance.file.name, parser=parse_filename)
+        return os.path.basename(instance.file.name)
 
     def get_extension(self, instance):
-        return ImageFileFieldSerializer.get_extension(self, instance.file)
+        return ImageFileFieldSerializer.get_extension(
+            self, instance.file, parser=parse_filename)
 
 
 class AttachmentSerializer(SimpleAttachmentSerializer):
