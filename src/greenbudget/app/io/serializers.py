@@ -28,15 +28,16 @@ class ImageFileFieldSerializer(serializers.Serializer):
     height = serializers.IntegerField(read_only=True)
     extension = serializers.SerializerMethodField()
 
-    def get_extension(self, instance):
+    def get_extension(self, instance, parser=None):
+        parser = parser or parse_image_filename
         # Note that imghdr uses the local file system, so it will look at the
         # file in the local file system.  This only works when we are in local
         # development, because we are using Django's FileSystemStorage.
         if using_s3_storage():
             try:
-                return parse_image_filename(instance.name)[1]
+                return parser(instance.name)[1]
             except FileError as e:
-                logger.error("Corrupted image name stored in AWS.", extra={
+                logger.error("Corrupted file name stored in AWS.", extra={
                     "fname": instance.name,
                     "exception": e
                 })
@@ -44,7 +45,7 @@ class ImageFileFieldSerializer(serializers.Serializer):
         try:
             return imghdr.what(instance.path)
         except FileNotFoundError as e:
-            logger.error("Corrupted image path stored locally.", extra={
+            logger.error("Corrupted file path stored locally.", extra={
                 "filepath": instance.path,
                 "exception": e
             })
@@ -61,7 +62,7 @@ class SimpleAttachmentSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'extension', 'url')
 
     def get_name(self, instance):
-        return os.path.basename(instance.file.name)
+        return os.path.basename(instance.file.name, parser=parse_filename)
 
     def get_extension(self, instance):
         return ImageFileFieldSerializer.get_extension(self, instance.file)
