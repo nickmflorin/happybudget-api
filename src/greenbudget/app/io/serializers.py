@@ -37,7 +37,7 @@ class ImageFileFieldSerializer(serializers.Serializer):
                 return parse_image_filename(instance.name)[1]
             except FileError as e:
                 logger.error("Corrupted image name stored in AWS.", extra={
-                    "name": instance.name,
+                    "fname": instance.name,
                     "exception": e
                 })
                 return None
