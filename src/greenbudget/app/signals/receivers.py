@@ -1,14 +1,9 @@
-import logging
-
 from django import dispatch
 from django.db import models
 
 from .signals import (
     post_create, field_changed_signal, post_save, m2m_changed, post_delete,
     pre_delete, pre_save, any_fields_changed_signal)
-
-
-logger = logging.getLogger('signals')
 
 
 def any_fields_changed_receiver(fields, **kwargs):
