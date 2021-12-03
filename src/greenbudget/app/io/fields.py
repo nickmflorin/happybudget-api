@@ -45,11 +45,11 @@ class Base64ImageField(serializers.ImageField):
     """
 
     def to_representation(self, instance):
-        from .serializers import ImageFileSerializer
+        from .serializers import ImageFileFieldSerializer
 
         if instance is not None:
             try:
-                return ImageFileSerializer(instance).data
+                return ImageFileFieldSerializer(instance).data
             except ValueError:
                 # This can happen if the instance does not have a file
                 # associated with it.

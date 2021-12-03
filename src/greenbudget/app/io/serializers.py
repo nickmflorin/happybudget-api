@@ -3,7 +3,6 @@ import logging
 import os
 
 from django.core.files.storage import get_storage_class
-from django.core.files.images import ImageFile
 
 from rest_framework import serializers, exceptions
 
@@ -22,74 +21,40 @@ from .utils import (
 logger = logging.getLogger('greenbudget')
 
 
-class ExtensionSerializerMixin(serializers.Serializer):
-    extension = serializers.SerializerMethodField()
-
-    @staticmethod
-    def parse_name(name):
-        return parse_filename(name)
-
-    def get_extension(self, instance, path=None):
-        def get_name(instance):
-            if isinstance(instance, Attachment):
-                return instance.file.name
-            elif isinstance(instance, ImageFile):
-                if instance.name is not None:
-                    return os.path.basename(instance.name)
-            elif instance._file is not None:
-                return instance.name
-
-        def get_path(instance):
-            if isinstance(instance, Attachment):
-                return instance.file.path
-            elif isinstance(instance, ImageFile):
-                return instance.name
-            elif instance._file is not None:
-                return instance.name
-
-        # Note that imghdr uses the local file system, so it will look at the
-        # file in the local file system.  This only works when we are in local
-        # development, because we are using Django's FileSystemStorage.
-        if using_s3_storage():
-            name = get_name(instance)
-            if name is not None:
-                try:
-                    return self.parse_name(name)[1]
-                except FileError as e:
-                    logger.error("Corrupted image path stored in AWS.", extra={
-                        "file_name": name,
-                        "exception": e
-                    })
-            return None
-
-        path = get_path(instance)
-        if path is not None:
-            try:
-                return imghdr.what(path)
-            except FileNotFoundError as e:
-                logger.error("Corrupted image path stored locally.", extra={
-                    "filepath": path,
-                    "exception": e
-                })
-        return None
-
-
-class ImageFileSerializer(ExtensionSerializerMixin):
+class ImageFileFieldSerializer(serializers.Serializer):
     url = serializers.URLField(read_only=True)
     size = serializers.IntegerField(read_only=True)
     width = serializers.IntegerField(read_only=True)
     height = serializers.IntegerField(read_only=True)
+    extension = serializers.SerializerMethodField()
 
-    @staticmethod
-    def parse_name(name):
-        return parse_image_filename(name)
+    def get_extension(self, instance):
+        # Note that imghdr uses the local file system, so it will look at the
+        # file in the local file system.  This only works when we are in local
+        # development, because we are using Django's FileSystemStorage.
+        if using_s3_storage():
+            try:
+                return parse_image_filename(instance.name)[1]
+            except FileError as e:
+                logger.error("Corrupted image name stored in AWS.", extra={
+                    "name": instance.name,
+                    "exception": e
+                })
+                return None
+        try:
+            return imghdr.what(instance.path)
+        except FileNotFoundError as e:
+            logger.error("Corrupted image path stored locally.", extra={
+                "filepath": instance.path,
+                "exception": e
+            })
 
 
-class SimpleAttachmentSerializer(
-        ExtensionSerializerMixin, serializers.ModelSerializer):
+class SimpleAttachmentSerializer(serializers.ModelSerializer):
     id = serializers.PrimaryKeyRelatedField(read_only=True)
     name = serializers.SerializerMethodField()
     url = serializers.URLField(read_only=True, source='file.url')
+    extension = serializers.SerializerMethodField()
 
     class Meta:
         model = Attachment
@@ -97,6 +62,9 @@ class SimpleAttachmentSerializer(
 
     def get_name(self, instance):
         return os.path.basename(instance.file.name)
+
+    def get_extension(self, instance):
+        return ImageFileFieldSerializer.get_extension(self, instance.file)
 
 
 class AttachmentSerializer(SimpleAttachmentSerializer):

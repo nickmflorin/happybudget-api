@@ -128,7 +128,9 @@ class Account(BudgetingTreePolymorphicRowModel):
 
     def accumulate_markup_contribution(self, children=None, to_be_deleted=None):
         children = children or self.children.all()
-        markups = self.children_markups.filter(unit=Markup.UNITS.flat)
+        markups = self.children_markups.filter(unit=Markup.UNITS.flat).exclude(
+            pk__in=to_be_deleted or []
+        )
 
         previous_value = self.accumulate_markup_contribution
         self.accumulated_markup_contribution = functools.reduce(
@@ -137,8 +139,8 @@ class Account(BudgetingTreePolymorphicRowModel):
             children,
             0
         ) + functools.reduce(
-            lambda current, markup: current + (markup.rate or 0),
-            markups.exclude(pk__in=to_be_deleted or []),
+            lambda current, markup: current + markup.rate or 0.0,
+            markups,
             0
         )
         return self.accumulated_markup_contribution != previous_value

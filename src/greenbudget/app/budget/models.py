@@ -119,8 +119,9 @@ class BaseBudget(BudgetingTreePolymorphicModel):
 
     def accumulate_markup_contribution(self, children=None, to_be_deleted=None):
         children = children or self.children.all()
-        markups = self.children_markups.filter(
-            unit=Markup.UNITS.flat).exclude(pk__in=to_be_deleted or [])
+        markups = self.children_markups.filter(unit=Markup.UNITS.flat).exclude(
+            pk__in=to_be_deleted or [],
+        )
 
         previous_value = self.accumulated_markup_contribution
         self.accumulated_markup_contribution = functools.reduce(
@@ -129,7 +130,7 @@ class BaseBudget(BudgetingTreePolymorphicModel):
             children,
             0
         ) + functools.reduce(
-            lambda current, markup: current + markup.rate,
+            lambda current, markup: current + markup.rate or 0.0,
             markups,
             0
         )
