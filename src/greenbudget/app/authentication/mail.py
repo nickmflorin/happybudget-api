@@ -1,5 +1,7 @@
 import json
 import logging
+import requests
+import os
 
 from django.conf import settings
 
@@ -18,6 +20,41 @@ logger = logging.getLogger("greenbudget")
 
 
 api_client = sendgrid.SendGridAPIClient(settings.SENDGRID_API_KEY)
+
+
+def user_is_on_waitlist(email):
+    try:
+        response = requests.post(
+            os.path.join(
+                settings.SENDGRID_API_URL, "marketing/contacts/search/emails"),
+            headers={
+                'Authorization': f'Bearer {settings.SENDGRID_API_KEY}',
+                'Accept': 'application/json',
+                'Access-Control-Allow-Methods': (
+                    'OPTIONS, GET, POST, PUT, PATCH, DELETE, HEAD, LINK, UNLINK')  # noqa
+            },
+            data=json.dumps({'emails': [email]})
+        )
+    except requests.exceptions.RequestException as e:
+        logger.error(
+            "There was a request error checking the waitlist for user %s: \n%s"
+            % (email, e)
+        )
+        return False
+    else:
+        try:
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            # SendGrid will return a 404 if the user's provided email address
+            # is not in the searched contacts.
+            if response.status_code != 404:
+                logger.error(
+                    "There was an http error checking the waitlist for "
+                    "user %s: \n%s" % (email, e)
+                )
+            return False
+        data = response.json()
+        return email in data['result']
 
 
 class Mail(SendGridMail):
@@ -90,7 +127,7 @@ def format_errors_from_request(e):
     return None
 
 
-@suppress_with_setting("EMAIL_ENABLED")
+@ suppress_with_setting("EMAIL_ENABLED")
 def send_mail(mail):
     try:
         return api_client.client.mail.send.post(request_body=mail.get())

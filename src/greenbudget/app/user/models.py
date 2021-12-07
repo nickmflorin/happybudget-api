@@ -7,7 +7,7 @@ from django.utils.translation import gettext_lazy as _
 from greenbudget.app.authentication.utils import get_user_from_social_token
 from greenbudget.app.io.utils import upload_user_image_to
 
-from .managers import UserManager
+from .managers import UserManager, UnapprovedUserManager
 
 
 def upload_to(instance, filename):
@@ -38,6 +38,13 @@ class User(AbstractUser):
     timezone = TimeZoneField(default='America/New_York')
     profile_image = models.ImageField(upload_to=upload_to, null=True, blank=True)
     is_first_time = models.BooleanField(default=True)
+    is_approved = models.BooleanField(
+        _('approved'),
+        default=True,
+        help_text=_(
+            'Designates whether this user has been approved for access.'
+        ),
+    )
     is_verified = models.BooleanField(
         _('verified'),
         default=False,
@@ -77,3 +84,12 @@ class User(AbstractUser):
         if self.last_name is None or self.last_name == "":
             self.last_name = social_user.last_name
         self.save()
+
+
+class UnapprovedUser(User):
+    objects = UnapprovedUserManager()
+
+    class Meta:
+        proxy = True
+        verbose_name = "Unapproved User"
+        verbose_name_plural = "Unapproved Users"

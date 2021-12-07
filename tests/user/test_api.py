@@ -1,5 +1,6 @@
 import mock
 import pytest
+import responses
 
 from django.test import override_settings
 
@@ -85,6 +86,7 @@ def test_registration(api_client, models, settings, user):
         ]
     }
     user = models.User.objects.get(pk=response.json()['id'])
+    assert user.is_approved is True
     assert user.first_name == "Jack"
     assert user.last_name == "Johnson"
     assert user.email == "jjohnson@gmail.com"
@@ -93,6 +95,81 @@ def test_registration(api_client, models, settings, user):
     assert user.is_superuser is False
     assert user.is_active is True
     assert user.check_password("hoopla@H9_12") is True
+
+
+@responses.activate
+@override_settings(
+    WAITLIST_ENABLED=True,
+    SENDGRID_API_URL="https://api.fakesendgrid.com/v3/"
+)
+def test_registration_user_on_waitlist(api_client, models):
+    responses.add(
+        method=responses.POST,
+        url="https://api.fakesendgrid.com/v3/marketing/contacts/search/emails",
+        json={"result": {"jjohnson@gmail.com": {}}}
+    )
+    response = api_client.post("/v1/users/registration/", data={
+        "first_name": "Jack",
+        "last_name": "Johnson",
+        "password": "hoopla@H9_12",
+        "email": "jjohnson@gmail.com",
+    })
+    assert response.status_code == 201
+    assert response.json()['email'] == 'jjohnson@gmail.com'
+    user = models.User.objects.get(email="jjohnson@gmail.com")
+    assert user.is_approved is False
+
+
+@responses.activate
+@override_settings(
+    WAITLIST_ENABLED=True,
+    SENDGRID_API_URL="https://api.fakesendgrid.com/v3/"
+)
+def test_registration_user_not_on_waitlist(api_client):
+    responses.add(
+        method=responses.POST,
+        url="https://api.fakesendgrid.com/v3/marketing/contacts/search/emails",
+        status=404
+    )
+    response = api_client.post("/v1/users/registration/", data={
+        "first_name": "Jack",
+        "last_name": "Johnson",
+        "password": "hoopla@H9_12",
+        "email": "jjohnson@gmail.com",
+    })
+    assert response.json() == {
+        'errors': [{
+            'message': 'The email address is not on the waitlist.',
+            'code': 'account_not_on_waitlist',
+            'error_type': 'auth'
+        }]
+    }
+
+
+@responses.activate
+@override_settings(
+    WAITLIST_ENABLED=True,
+    SENDGRID_API_URL="https://api.fakesendgrid.com/v3/"
+)
+def test_registration_waitlist_empty(api_client):
+    responses.add(
+        method=responses.POST,
+        url="https://api.fakesendgrid.com/v3/marketing/contacts/search/emails",
+        json={"result": {}}
+    )
+    response = api_client.post("/v1/users/registration/", data={
+        "first_name": "Jack",
+        "last_name": "Johnson",
+        "password": "hoopla@H9_12",
+        "email": "jjohnson@gmail.com",
+    })
+    assert response.json() == {
+        'errors': [{
+            'message': 'The email address is not on the waitlist.',
+            'code': 'account_not_on_waitlist',
+            'error_type': 'auth'
+        }]
+    }
 
 
 @pytest.mark.freeze_time('2020-01-01')

@@ -75,21 +75,13 @@ def test_cookie_session_failure_unauthenticated_user(api_rf, unauthorized_user):
     assert auth_user is None, "Authentication successful."
 
 
-def test_cookie_session_failure_inactive_user(api_rf, user):
-    user.is_active = False
+@pytest.mark.parametrize("flag", ['is_active', 'is_verified', 'is_approved'])
+def test_cookie_session_failure(api_rf, user, flag):
+    setattr(user, flag, False)
     user.save()
     request = api_rf.get('/')
     request._request.cookie_user = user
     backend = CookieSessionAuthentication()
     auth_user = backend.authenticate(request)
-    assert auth_user is None, "Authentication successful."
-
-
-def test_cookie_session_failure_unverified_user(api_rf, user):
-    user.is_verified = False
-    user.save()
-    request = api_rf.get('/')
-    request._request.cookie_user = user
-    backend = CookieSessionAuthentication()
-    auth_user = backend.authenticate(request)
-    assert auth_user is None, "Authentication successful."
+    assert auth_user is None, \
+        "Authentication unexpectedly successful for %s = False." % flag

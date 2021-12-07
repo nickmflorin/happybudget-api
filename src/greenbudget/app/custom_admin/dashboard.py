@@ -50,5 +50,6 @@ class Dashboard(BaseDashboard):
             collapsible=False,
             models=(
                 'greenbudget.app.user.models.User',
+                'greenbudget.app.user.models.UnapprovedUser',
             )
         ))

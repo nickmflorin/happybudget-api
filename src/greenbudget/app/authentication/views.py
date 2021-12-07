@@ -13,7 +13,7 @@ from greenbudget.app.user.serializers import UserSerializer
 
 from .backends import CsrfExcemptCookieSessionAuthentication
 from .middleware import TokenCookieMiddleware
-from .permissions import IsAnonymous, IsAuthenticated, IsVerified
+from .permissions import IsAnonymous, IsAuthenticated, IsVerified, IsApproved
 from .serializers import (
     LoginSerializer, SocialLoginSerializer, VerifyEmailSerializer,
     AuthTokenSerializer, RecoverPasswordSerializer)
@@ -40,7 +40,7 @@ class TokenValidateView(views.APIView):
     force_logout = None
     token_cls = None
     serializer_class = AuthTokenSerializer
-    token_user_permission_classes = (IsAuthenticated, IsVerified)
+    token_user_permission_classes = (IsAuthenticated, IsVerified, IsApproved)
 
     @sensitive_post_parameters_m('token')
     def dispatch(self, request, *args, **kwargs):

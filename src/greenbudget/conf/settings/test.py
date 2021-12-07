@@ -21,6 +21,9 @@ RATELIMIT_ENABLE = False
 APP_DOMAIN = 'testserver/'
 APP_URL = 'http://%s' % APP_DOMAIN
 
+WAITLIST_ENABLED = False
+APPROVAL_ENABLED = False
+
 # Eventually we should configure these for a temporary test directory.
 STATICFILES_STORAGE = None
 DEFAULT_FILE_STORAGE = 'greenbudget.app.io.storages.LocalStorage'

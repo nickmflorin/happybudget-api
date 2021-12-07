@@ -59,6 +59,7 @@ SENDGRID_API_KEY = config(
     name='SENDGRID_API_KEY',
     required=[Environments.PROD, Environments.DEV, Environments.LOCAL],
 )
+SENDGRID_API_URL = "https://api.sendgrid.com/v3/"
 PASSWORD_RECOVERY_TEMPLATE_ID = "d-577a2dda8c2d4e3dabff2337240edf79"
 EMAIL_VERIFICATION_TEMPLATE_ID = "d-3f3c585c80514e46809b9d3a46134674"
 
@@ -128,6 +129,14 @@ SIMPLE_JWT = {
 }
 
 AUTH_USER_MODEL = 'user.User'
+
+# When True, User's will not be allowed to register unless they are on a
+# waitlist in SendGrid.
+WAITLIST_ENABLED = True
+# When True, User's will not be able to login after registration until they
+# are approved via the Admin.  Note that if `WAITLIST_ENABLED` is True, this
+# value is considered `True` regardless.
+APPROVAL_ENABLED = True
 
 INSTALLED_APPS = [
     'compressor',
@@ -335,7 +344,8 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_PERMISSION_CLASSES': [
         'greenbudget.app.authentication.permissions.IsAuthenticated',
-        'greenbudget.app.authentication.permissions.IsVerified'
+        'greenbudget.app.authentication.permissions.IsVerified',
+        'greenbudget.app.authentication.permissions.IsApproved',
     ],
     'DEFAULT_PAGINATION_CLASS': 'greenbudget.lib.drf.pagination.Pagination',
     'DEFAULT_THROTTLE_CLASSES': [

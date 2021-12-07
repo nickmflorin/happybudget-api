@@ -92,3 +92,8 @@ class UserManager(UserQuerier, DjangoUserManager):
     def get_or_create_from_social_token(self, token_id, provider):
         assert provider == "google", "Provider %s not supported." % provider
         return self.get_or_create_from_google_token(token_id)
+
+
+class UnapprovedUserManager(UserManager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_approved=False)

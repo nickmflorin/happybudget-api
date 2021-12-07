@@ -71,6 +71,23 @@ def test_validate_auth_token_inactive_user(inactive_user, settings,
     assert response.cookies[settings.JWT_TOKEN_COOKIE_NAME].value == ''
 
 
+def test_validate_auth_token_unapproved_user(unapproved_user, settings,
+        validate_auth_token, jwt_authenticated_client):
+    jwt_authenticated_client.force_login(unapproved_user)
+    response = validate_auth_token()
+    assert response.status_code == 403
+    assert response.json() == {
+        'user_id': unapproved_user.pk,
+        'force_logout': True,
+        'errors': [{
+            'message': 'The account is not approved.',
+            'code': 'account_not_approved',
+            'error_type': 'auth'
+        }]
+    }
+    assert response.cookies[settings.JWT_TOKEN_COOKIE_NAME].value == ''
+
+
 def test_validate_auth_token_unverified_user(validate_auth_token,
         unverified_user, jwt_authenticated_client, settings):
     jwt_authenticated_client.force_login(unverified_user)
@@ -81,7 +98,7 @@ def test_validate_auth_token_unverified_user(validate_auth_token,
         'force_logout': True,
         'errors': [{
             'message': 'The email address is not verified.',
-            'code': 'email_not_verified',
+            'code': 'account_not_verified',
             'error_type': 'auth'
         }]
     }

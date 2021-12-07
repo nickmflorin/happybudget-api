@@ -15,11 +15,13 @@ from greenbudget.lib.drf.exceptions import InvalidFieldError
 
 class AuthErrorCodes(object):
     ACCOUNT_DISABLED = "account_disabled"
+    ACCOUNT_NOT_APPROVED = "account_not_approved"
     ACCOUNT_NOT_AUTHENTICATED = "account_not_authenticated"
+    ACCOUNT_NOT_VERIFIED = "account_not_verified"
+    ACCOUNT_NOT_ON_WAITLIST = "account_not_on_waitlist"
+    ACCOUNT_VERIFIED = "account_verified"
     INVALID_CREDENTIALS = "invalid_credentials"
     EMAIL_DOES_NOT_EXIST = "email_does_not_exist"
-    EMAIL_NOT_VERIFIED = "email_not_verified"
-    EMAIL_VERIFIED = "email_verified"
     INVALID_SOCIAL_TOKEN = "invalid_social_token"
     INVALID_SOCIAL_PROVIDER = "invalid_social_provider"
     INVALID_TOKEN = "token_not_valid"
@@ -98,20 +100,30 @@ class NotAuthenticatedError(PermissionDenied):
     default_code = AuthErrorCodes.ACCOUNT_NOT_AUTHENTICATED
 
 
-class AccountDisabledError(PermissionDenied):
+class AccountDisabled(PermissionDenied):
     default_detail = _(
         "Your account is not active, please contact customer care.")
     default_code = AuthErrorCodes.ACCOUNT_DISABLED
 
 
-class EmailNotVerified(PermissionDenied):
+class AccountNotVerified(PermissionDenied):
     default_detail = _("The email address is not verified.")
-    default_code = AuthErrorCodes.EMAIL_NOT_VERIFIED
+    default_code = AuthErrorCodes.ACCOUNT_NOT_VERIFIED
 
 
-class EmailVerified(PermissionDenied):
+class AccountNotApproved(PermissionDenied):
+    default_detail = _("The account is not approved.")
+    default_code = AuthErrorCodes.ACCOUNT_NOT_APPROVED
+
+
+class AccountVerified(PermissionDenied):
     default_detail = _("The email address is already verified.")
-    default_code = AuthErrorCodes.EMAIL_VERIFIED
+    default_code = AuthErrorCodes.ACCOUNT_VERIFIED
+
+
+class AccountNotOnWaitlist(PermissionDenied):
+    default_detail = _("The email address is not on the waitlist.")
+    default_code = AuthErrorCodes.ACCOUNT_NOT_ON_WAITLIST
 
 
 class EmailDoesNotExist(InvalidFieldError):

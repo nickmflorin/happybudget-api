@@ -31,6 +31,13 @@ def unverified_user(user):
 
 
 @pytest.fixture
+def unapproved_user(user):
+    user.is_approved = False
+    user.save()
+    return user
+
+
+@pytest.fixture
 def jwt_authenticated_client(api_client, settings, user):
     token = AuthToken.for_user(user)
     api_client.cookies = SimpleCookie({

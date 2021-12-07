@@ -4,8 +4,8 @@ from django.conf import settings
 
 from greenbudget.lib.utils import import_at_module_path
 from .exceptions import (
-    NotAuthenticatedError, AccountDisabledError, EmailNotVerified,
-    EmailVerified, PermissionDenied)
+    NotAuthenticatedError, AccountDisabled, AccountNotVerified,
+    AccountVerified, PermissionDenied, AccountNotApproved)
 
 
 class UserPermission(permissions.BasePermission):
@@ -25,7 +25,7 @@ class IsAuthenticated(UserPermission):
         if user is None or not user.is_authenticated:
             raise NotAuthenticatedError(force_logout=force_logout)
         if not user.is_active:
-            raise AccountDisabledError(
+            raise AccountDisabled(
                 user_id=getattr(user, 'pk'),
                 force_logout=force_logout
             )
@@ -41,7 +41,24 @@ class IsVerified(UserPermission):
         assert not (user is None or not user.is_authenticated), \
             "This permission should always be preceeded by `IsAuthenticated`."
         if not user.is_verified:
-            raise EmailNotVerified(
+            raise AccountNotVerified(
+                user_id=getattr(user, 'pk'),
+                force_logout=force_logout
+            )
+        return True
+
+
+class IsApproved(UserPermission):
+    """
+    Permission that ensures that the active user's account is approved for
+    access.
+    """
+
+    def user_has_permission(self, user, force_logout=True):
+        assert not (user is None or not user.is_authenticated), \
+            "This permission should always be preceeded by `IsAuthenticated`."
+        if not user.is_approved:
+            raise AccountNotApproved(
                 user_id=getattr(user, 'pk'),
                 force_logout=force_logout
             )
@@ -93,7 +110,7 @@ class IsNotVerified(UserPermission):
         assert not (user is None or not user.is_authenticated), \
             "This permission should always be preceeded by `IsAuthenticated`."
         if user.is_verified:
-            raise EmailVerified(user_id=getattr(user, 'pk'))
+            raise AccountVerified(user_id=getattr(user, 'pk'))
         return True
 
 
