@@ -310,3 +310,34 @@ def test_bulk_update_contacts(api_client, user, create_contacts):
     assert contacts[1].phone_number == "15183696530"
     assert contacts[1].email == 'jjohnson@gmail.com'
     assert contacts[1].company == "Boeing"
+
+
+def test_search_filter(api_client, user, create_contact, models):
+    contacts = [
+        create_contact(
+            contact_type=models.Contact.TYPES.vendor,
+            first_name='Jack',
+            last_name='Smith'
+        ),
+        create_contact(
+            contact_type=models.Contact.TYPES.vendor,
+            company='Jack Box TV'
+        ),
+        create_contact(
+            contact_type=models.Contact.TYPES.employee,
+            first_name='Ginger',
+        ),
+        create_contact(
+            contact_type=models.Contact.TYPES.employee,
+            first_name='Jack'
+        ),
+        create_contact(
+            contact_type=models.Contact.TYPES.employee,
+            first_name='Jim'
+        )
+    ]
+    api_client.force_login(user)
+    response = api_client.get("/v1/contacts/?search=jack")
+    assert response.json()['count'] == 2
+    assert response.json()['data'][0]['id'] == contacts[1].pk
+    assert response.json()['data'][1]['id'] == contacts[3].pk

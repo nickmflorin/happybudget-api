@@ -1,5 +1,6 @@
 from django.db import models
-from rest_framework import decorators, response, status
+from django.db.models.functions import Concat
+from rest_framework import decorators, response, status, filters
 
 from greenbudget.lib.drf.bulk_serializers import (
     create_bulk_create_serializer,
@@ -30,6 +31,41 @@ class ContactAttachmentViewSet(
     pass
 
 
+class ContactSearchFilterBackend(filters.SearchFilter):
+    def filter_queryset(self, request, queryset, view):
+        qs = queryset.annotate(
+            name=models.Case(
+                models.When(
+                    first_name=None,
+                    last_name=None,
+                    then=models.Value(None)
+                ),
+                models.When(
+                    first_name=None,
+                    then=models.F('last_name')
+                ),
+                models.When(
+                    last_name=None,
+                    then=models.F('first_name')
+                ),
+                default=Concat(
+                    models.F('first_name'),
+                    models.Value(' '),
+                    models.F('last_name'),
+                    output_field=models.CharField()
+                )
+            ),
+            label=models.Case(
+                models.When(
+                    contact_type=Contact.TYPES.vendor,
+                    then=models.F('company'),
+                ),
+                default=models.F('name')
+            )
+        )
+        return super().filter_queryset(request, qs, view)
+
+
 @user_contacts_cache(get_instance_from_view=lambda view: view.request.user.pk)
 class ContactViewSet(
     mixins.UpdateModelMixin,
@@ -38,6 +74,8 @@ class ContactViewSet(
     mixins.DestroyModelMixin,
     mixins.ListModelMixin,
     views.GenericViewSet
+
+
 ):
     """
     ViewSet to handle requests to the following endpoints:
@@ -52,12 +90,16 @@ class ContactViewSet(
     (8) PATCH /contacts/bulk-create/
     """
     ordering_fields = []
-    search_fields = ['first_name', 'last_name']
+    search_fields = ['label']
     serializer_class = ContactSerializer
     serializer_classes = (
         (lambda view: view.action in ('partial_update', 'create', 'retrieve'),
             ContactDetailSerializer),
     )
+    filter_backends = [
+        ContactSearchFilterBackend,
+        filters.OrderingFilter
+    ]
 
     def get_queryset(self):
         return self.request.user.created_contacts.all()
