@@ -277,24 +277,24 @@ class BulkCreatePolymorphicQuerySet(PolymorphicQuerySet):
             "The instances supplied to the bulk create operation cannot have " \
             "PK values specified already."
 
-        base_instances = []
-        try:
-            max_id = int(self.polymorphic_base.objects.latest('pk').pk)
-        except self.polymorphic_base.DoesNotExist:
-            max_id = 0
-
-        # Reinstantiate the polymorphic base models with only the fields
-        # local to the base model, keeping track of the primary keys that are
-        # used for each polymorphic base model.
-        for i, instance in enumerate(instances):
-            # Each base instance must be created with an explicit PK so we can
-            # use it to map to the appropriate child instance.
-            base_instances.append(self.recreate_polymorphic_base(
-                instance=instance,
-                pk=max_id + i + 1
-            ))
-
         with transaction.atomic(using=self.db, savepoint=False):
+            base_instances = []
+            try:
+                max_id = int(self.polymorphic_base.objects.latest('pk').pk)
+            except self.polymorphic_base.DoesNotExist:
+                max_id = 0
+
+            # Reinstantiate the polymorphic base models with only the fields
+            # local to the base model, keeping track of the primary keys that are
+            # used for each polymorphic base model.
+            for i, instance in enumerate(instances):
+                # Each base instance must be created with an explicit PK so we
+                # can use it to map to the appropriate child instance.
+                base_instances.append(self.recreate_polymorphic_base(
+                    instance=instance,
+                    pk=max_id + i + 1
+                ))
+
             # The created polymorphic base models that are not associated with
             # their children yet.
             created_polymorphic_bases = self.polymorphic_base \
