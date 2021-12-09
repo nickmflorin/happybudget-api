@@ -84,10 +84,37 @@ def reset_id_sequence(model_cls):
         )
 
 
-class PrePKBulkCreateQuerySet(models.QuerySet):
+class QuerySetMixin:
+    def is_sqlite(self, instance=None):
+        """
+        Returns whether or not the current database is using an sqlite3 engine.
+        This should only happen in tests.
+
+        There are some not-so-subtle differences between sqlite3 and PostgreSQL
+        as it relates to the bulk creation of objects.  The primary difference
+        is that with sqlite3, the bulk_create method will not return the created
+        objects with their primary key values (where as PostgreSQL will).  This
+        means that for tests, we have to explicitly define the PK values before
+        they are inserted into the database, so we can effectively map the
+        polymorphic children instances to their bases.
+
+        Note that doing this in production is a very bad idea.
+        """
+        db_name = 'default'
+        if instance is not None and instance._state.db is not None:
+            db_name = instance._state.db
+
+        # This might also not work for MySQL but we don't use that ever.
+        db_backend = settings.DATABASES[db_name]['ENGINE'].split('.')[-1]
+        if db_backend == 'sqlite3':
+            return True
+        return False
+
+
+class PrePKBulkCreateQuerySet(QuerySetMixin, models.QuerySet):
     def bulk_create(self, instances, **kwargs):
         predetermine_pks = kwargs.pop('predetermine_pks', False)
-        if predetermine_pks is False:
+        if predetermine_pks is False or not self.is_sqlite():
             return super().bulk_create(instances, **kwargs)
         try:
             max_id = int(self.model.objects.latest('pk').pk)
@@ -97,25 +124,10 @@ class PrePKBulkCreateQuerySet(models.QuerySet):
         for i, instance in enumerate(instances):
             setattr(instance, 'pk', max_id + i + 1)
 
-        result = super().bulk_create(instances, **kwargs)
-
-        # NOTE: Since we are manually setting the the IDs, PostGres does
-        # not detect that the ID sequence needs to be automatically updated.
-        # Therefore, we need to do this ourselves.  This will not work for
-        # our SQLite test database though.
-        db_name = 'default'
-        if instances[0]._state.db is not None:
-            db_name = instances[0]._state.db
-
-        # This might also not work for MySQL but we don't use that ever.
-        db_backend = settings.DATABASES[db_name]['ENGINE'].split('.')[-1]
-        if db_backend != 'sqlite3':
-            reset_id_sequence(self.model)
-
-        return result
+        return super().bulk_create(instances, **kwargs)
 
 
-class BulkCreatePolymorphicQuerySet(PolymorphicQuerySet):
+class BulkCreatePolymorphicQuerySet(QuerySetMixin, PolymorphicQuerySet):
     """
     Extension of :obj:`polymorphic.query.PolymorphicQuerySet` that incorporates
     Django's bulk create behavior.
@@ -194,18 +206,14 @@ class BulkCreatePolymorphicQuerySet(PolymorphicQuerySet):
             "%s model." % self.model.__name__
         )
 
-    def recreate_polymorphic_base(self, instance, pk):
+    def recreate_polymorphic_base(self, instance, pk=None):
         """
         Reinstantiates the Polymorphic base model with only the fields local
         to the Polymorphic base model.
 
         The first step to the bulk creation is to bulk create all of the
         base models, and then bulk create the child models with each one
-        tied to the appropriately created base model.  In order to do this,
-        since bulk create operations do not return the IDs of the created
-        objects, we need to explicitly set the IDs of the base models ahead
-        of time, so they can be used to map to the children models when they
-        are bulk created.
+        tied to the appropriately created base model.
         """
         kwargs = {}
         for field in self.polymorphic_base_model_fields:
@@ -219,10 +227,12 @@ class BulkCreatePolymorphicQuerySet(PolymorphicQuerySet):
                 # Example: This will get raised if bulk creating Budget(s) and
                 # not specifying a `created_by` user for any given Budget.
                 pass
+
         kwargs.update(
             polymorphic_ctype=ContentType.objects.get_for_model(self.model),
-            pk=pk
         )
+        if pk is not None:
+            kwargs.update(pk=pk)
         return self.polymorphic_base(**kwargs)
 
     def recreate_polymorphic_child(self, instance, base):
@@ -279,21 +289,22 @@ class BulkCreatePolymorphicQuerySet(PolymorphicQuerySet):
 
         with transaction.atomic(using=self.db, savepoint=False):
             base_instances = []
-            try:
-                max_id = int(self.polymorphic_base.objects.latest('pk').pk)
-            except self.polymorphic_base.DoesNotExist:
-                max_id = 0
+
+            max_id = None
+            if self.is_sqlite():
+                try:
+                    max_id = int(self.polymorphic_base.objects.latest('pk').pk)
+                except self.polymorphic_base.DoesNotExist:
+                    max_id = 0
 
             # Reinstantiate the polymorphic base models with only the fields
             # local to the base model, keeping track of the primary keys that are
             # used for each polymorphic base model.
             for i, instance in enumerate(instances):
-                # Each base instance must be created with an explicit PK so we
-                # can use it to map to the appropriate child instance.
-                base_instances.append(self.recreate_polymorphic_base(
-                    instance=instance,
-                    pk=max_id + i + 1
-                ))
+                kwargs = {'instance': instance}
+                if max_id is not None:
+                    kwargs['pk'] = max_id + i + 1
+                base_instances.append(self.recreate_polymorphic_base(**kwargs))
 
             # The created polymorphic base models that are not associated with
             # their children yet.
@@ -314,19 +325,6 @@ class BulkCreatePolymorphicQuerySet(PolymorphicQuerySet):
                 batch_size=batch_size,
                 ignore_conflicts=ignore_conflicts
             )
-
-            # NOTE: Since we are manually setting the the IDs, PostGres does
-            # not detect that the ID sequence needs to be automatically updated.
-            # Therefore, we need to do this ourselves.  This will not work for
-            # our SQLite test database though.
-            db_name = 'default'
-            if child_instances[0]._state.db is not None:
-                db_name = child_instances[0]._state.db
-
-            # This might also not work for MySQL but we don't use that ever.
-            db_backend = settings.DATABASES[db_name]['ENGINE'].split('.')[-1]
-            if db_backend != 'sqlite3':
-                reset_id_sequence(self.polymorphic_base)
 
             # Note that while the created children are fully represented with
             # all fields (both base and child) in the database, the children
