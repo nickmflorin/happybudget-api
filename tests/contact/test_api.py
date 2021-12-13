@@ -338,6 +338,7 @@ def test_search_filter(api_client, user, create_contact, models):
     ]
     api_client.force_login(user)
     response = api_client.get("/v1/contacts/?search=jack")
-    assert response.json()['count'] == 2
-    assert response.json()['data'][0]['id'] == contacts[1].pk
-    assert response.json()['data'][1]['id'] == contacts[3].pk
+    assert response.json()['count'] == 3
+    assert response.json()['data'][0]['id'] == contacts[0].pk
+    assert response.json()['data'][1]['id'] == contacts[1].pk
+    assert response.json()['data'][2]['id'] == contacts[3].pk

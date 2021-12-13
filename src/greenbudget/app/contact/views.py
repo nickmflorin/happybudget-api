@@ -60,7 +60,7 @@ class ContactSearchFilterBackend(filters.SearchFilter):
                     contact_type=Contact.TYPES.vendor,
                     then=models.F('company'),
                 ),
-                default=models.F('name')
+                default=None
             )
         )
         return super().filter_queryset(request, qs, view)
@@ -74,8 +74,6 @@ class ContactViewSet(
     mixins.DestroyModelMixin,
     mixins.ListModelMixin,
     views.GenericViewSet
-
-
 ):
     """
     ViewSet to handle requests to the following endpoints:
@@ -90,7 +88,7 @@ class ContactViewSet(
     (8) PATCH /contacts/bulk-create/
     """
     ordering_fields = []
-    search_fields = ['label']
+    search_fields = ['label', 'name']
     serializer_class = ContactSerializer
     serializer_classes = (
         (lambda view: view.action in ('partial_update', 'create', 'retrieve'),
