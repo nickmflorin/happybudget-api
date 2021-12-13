@@ -5,7 +5,8 @@ from django.contrib.auth.backends import ModelBackend
 
 from rest_framework import authentication
 
-from .exceptions import InvalidCredentialsError, EmailDoesNotExist
+from .exceptions import (
+    InvalidCredentialsError, EmailDoesNotExist, PermissionDenied)
 from .permissions import check_user_permissions
 
 
@@ -36,15 +37,34 @@ class ModelAuthentication(ModelBackend):
     to fully login.
     """
 
-    def authenticate(self, request, email=None, password=None):
+    def authenticate(self, request, username=None, email=None, password=None):
+        # When logging in from the Django Admin, it will pass the value in as
+        # the username.
+        email = email or username
+        is_admin = '/admin/' in request.path
         if email is not None and password is not None:
             try:
                 user = get_user_model().objects.get(email=email)
             except get_user_model().DoesNotExist:
-                raise EmailDoesNotExist('email')
+                # If we are coming from the Admin, we do not want to raise a
+                # DRF exception as it will not render in the response, it will
+                # just be a 500 error.
+                if not is_admin:
+                    raise EmailDoesNotExist('email')
+                return None
             if not user.check_password(password):
-                raise InvalidCredentialsError("password")
-            check_user_permissions(user, force_logout=False)
+                # If we are coming from the Admin, we do not want to raise a
+                # DRF exception as it will not render in the response, it will
+                # just be a 500 error.
+                if not is_admin:
+                    raise InvalidCredentialsError("password")
+                return None
+            try:
+                check_user_permissions(user, force_logout=False)
+            except PermissionDenied as e:
+                if not is_admin:
+                    raise e
+                return None
             return user
         return None
 
