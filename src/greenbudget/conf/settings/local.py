@@ -26,7 +26,8 @@ JWT_COOKIE_DOMAIN = '127.0.0.1'
 SESSION_COOKIE_DOMAIN = '127.0.0.1'
 
 CSRF_TRUSTED_ORIGINS = [
-    'http://*'
+    'http://*',
+    'http://127.0.0.1:3000'
 ]
 ALLOWED_HOSTS = [
     '127.0.0.1'
