@@ -19,6 +19,7 @@ FRONTEND_URL = "https://dev.greenbudget.io/"
 
 CSRF_TRUSTED_ORIGINS = [
     'https://dev.greenbudget.io',
+    'https://devapi.greenbudget.io',
 ]
 
 ALLOWED_HOSTS = [

@@ -84,6 +84,7 @@ CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_DOMAIN = ".greenbudget.io"
 CSRF_TRUSTED_ORIGINS = [
     'https://app.greenbudget.io',
+    'https://api.greenbudget.io',
 ]
 CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_ALLOW_ALL = False
