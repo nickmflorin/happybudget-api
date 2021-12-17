@@ -218,7 +218,6 @@ class SubAccountViewSet(
     (4) PATCH /subaccounts/<pk>/bulk-update-subaccounts/
     (5) PATCH /subaccounts/<pk>/bulk-create-subaccounts/
     """
-    throttle_classes = []
 
     @property
     def child_instance_cls(self):

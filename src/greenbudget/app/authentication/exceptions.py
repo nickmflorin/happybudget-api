@@ -137,11 +137,6 @@ class InvalidCredentialsError(InvalidFieldError):
     default_code = AuthErrorCodes.INVALID_CREDENTIALS
 
 
-class RateLimitedError(exceptions.Throttled):
-    default_detail = _("Request limit exceeded.")
-    default_code = "rate_limited"
-
-
 class InvalidSocialToken(exceptions.AuthenticationFailed):
     default_detail = _(
         "The provided social token is missing or invalid.")

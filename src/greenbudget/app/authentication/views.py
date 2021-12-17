@@ -8,7 +8,6 @@ from django.views.decorators.debug import sensitive_post_parameters
 
 from rest_framework import views, response, generics, status, permissions
 
-from greenbudget.app.authentication.exceptions import RateLimitedError
 from greenbudget.app.user.serializers import UserSerializer
 
 from .backends import CsrfExcemptCookieSessionAuthentication
@@ -90,12 +89,7 @@ class AbstractUnauthenticatedView(generics.GenericAPIView):
     def get_response_data(self, data):
         return {}
 
-    # @ratelimit(key='user_or_ip', rate='3/s')  -> Needs to be fixed
     def post(self, request, *args, **kwargs):
-        was_limited = getattr(request, 'limited', False)
-        if was_limited:
-            raise RateLimitedError()
-
         serializer = self.get_serializer(
             data=request.data,
             context={'request': request}

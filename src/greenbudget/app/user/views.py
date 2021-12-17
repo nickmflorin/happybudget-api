@@ -5,7 +5,6 @@ from rest_framework import response, permissions, status
 
 from greenbudget.app import views, mixins
 
-from greenbudget.app.authentication.exceptions import RateLimitedError
 from greenbudget.app.authentication.mail import send_email_verification_email
 
 from .serializers import (
@@ -25,12 +24,7 @@ class UserRegistrationView(mixins.CreateModelMixin, views.GenericViewSet):
     def dispatch(self, request, *args, **kwargs):
         return super().dispatch(request, *args, **kwargs)
 
-    # @ratelimit(key='user_or_ip', rate='3/s')  -> Needs to be fixed
     def create(self, request, *args, **kwargs):
-        was_limited = getattr(request, 'limited', False)
-        if was_limited:
-            raise RateLimitedError()
-
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
