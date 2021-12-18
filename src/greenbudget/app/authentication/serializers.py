@@ -3,12 +3,15 @@ from django.contrib.auth import (
 
 from rest_framework import serializers, exceptions
 
+from greenbudget.app.user.mail import (
+    send_email_verification_email,
+    send_password_recovery_email
+)
 from greenbudget.app.user.models import User
 
 from .exceptions import (
     TokenExpiredError, ExpiredToken, InvalidToken, TokenError,
     EmailDoesNotExist)
-from ..user.mail import send_email_verification_email, send_password_recovery_email
 from .permissions import check_user_permissions
 from .tokens import AuthToken, AccessToken
 from .utils import validate_password, get_user_from_token
