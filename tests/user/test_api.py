@@ -78,7 +78,7 @@ def test_registration(api_client, models, settings, user):
             {
                 'to': [{'email': 'jjohnson@gmail.com'}],
                 'dynamic_template_data': {
-                    'url': (
+                    'redirect_url': (
                         'https://app.greenbudget.io/verify?token=%s'
                         % str(token)
                     )

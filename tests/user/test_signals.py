@@ -23,7 +23,7 @@ def test_approve_user(unapproved_user):
             {
                 'to': [{'email': unapproved_user.email}],
                 'dynamic_template_data': {
-                    'url': 'https://app.greenbudget.io/login'
+                    'redirect_url': 'https://app.greenbudget.io/login'
                 }
             }
         ]

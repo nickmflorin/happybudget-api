@@ -152,7 +152,7 @@ def test_send_verification_email(api_client, unverified_user, settings):
             {
                 'to': [{'email': unverified_user.email}],
                 'dynamic_template_data': {
-                    'url': (
+                    'redirect_url': (
                         'https://app.greenbudget.io/verify?token=%s'
                         % str(token)
                     )

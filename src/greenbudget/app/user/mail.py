@@ -84,7 +84,7 @@ class Mail(SendGridMail):
             redirect_url = add_query_params_to_url(
                 redirect_url, **redirect_query)
 
-        self.dynamic_template_data = {'url': redirect_url}
+        self.dynamic_template_data = {'redirect_url': redirect_url}
 
     @property
     def template_obj(self):

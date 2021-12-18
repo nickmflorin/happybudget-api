@@ -209,7 +209,7 @@ def test_recover_password(user, api_client, settings):
             {
                 'to': [{'email': user.email}],
                 'dynamic_template_data': {
-                    'url': (
+                    'redirect_url': (
                         'https://app.greenbudget.io/recovery?token=%s'
                         % str(token)
                     )
