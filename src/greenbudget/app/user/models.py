@@ -4,6 +4,7 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+from greenbudget.app import signals
 from greenbudget.app.authentication.utils import get_user_from_social_token
 from greenbudget.app.io.utils import upload_user_image_to
 
@@ -18,6 +19,7 @@ def upload_to(instance, filename):
     )
 
 
+@signals.model(track_user=False)
 class User(AbstractUser):
     username = None
     first_name = models.CharField(max_length=30)

@@ -155,6 +155,7 @@ class model:
         # A field on the model that is used to determine the user performing
         # the action when the request is not available.
         self._user_field = user_field
+        self._track_user = kwargs.pop('track_user', True)
 
     def get_field_instance(self, cls, field_name):
         try:
@@ -342,6 +343,13 @@ class model:
 
             dispatch_changes = []
 
+            field_signal_kwargs = {
+                'sender': type(instance),
+                'instance': instance
+            }
+            if self._track_user:
+                field_signal_kwargs['user'] = self.get_user(instance)
+
             if not new_instance and track_changes is not False:
                 for k in instance.__tracked_fields:
                     if instance.field_has_changed(k):
@@ -354,18 +362,14 @@ class model:
                         dispatch_changes.append(change)
                         if not suppress_dispatch_fields:
                             field_changed.send(
-                                sender=type(instance),
-                                instance=instance,
                                 change=change,
-                                user=self.get_user(instance)
+                                **field_signal_kwargs
                             )
                 # Dispatch signals for the changed fields we are tracking.
                 if dispatch_changes and not suppress_dispatch_fields:
                     fields_changed.send(
-                        sender=type(instance),
-                        instance=instance,
                         changes=FieldChanges(dispatch_changes),
-                        user=self.get_user(instance)
+                        **field_signal_kwargs
                     )
             store(instance)
 
@@ -373,7 +377,7 @@ class model:
             store(instance)
 
         def _post_save(sender, instance, **kwargs):
-            if kwargs['created'] is True:
+            if kwargs['created'] is True and self._track_user:
                 post_create_by_user.send(
                     sender=type(instance),
                     instance=instance,
@@ -425,7 +429,8 @@ class model:
                         "The user cannot be inferred from the model save.")
             return user
         else:
-            if not user.is_authenticated or not user.is_verified:
+            if not user.is_authenticated or not user.is_verified \
+                    or not user.is_approved:
                 # Really, we should be authenticating the user in tests.  But
                 # since we don't always do that, this is a PATCH for now.
                 if settings.ENVIRONMENT != Environments.TEST:

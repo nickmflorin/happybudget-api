@@ -5,7 +5,7 @@ from rest_framework import response, permissions, status
 
 from greenbudget.app import views, mixins
 
-from greenbudget.app.authentication.mail import send_email_verification_email
+from greenbudget.app.user.mail import send_email_verification_email
 
 from .serializers import (
     UserSerializer, UserRegistrationSerializer, ChangePasswordSerializer)

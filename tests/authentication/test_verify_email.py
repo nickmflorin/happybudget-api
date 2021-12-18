@@ -6,6 +6,7 @@ from django.test import override_settings
 
 from greenbudget.lib.utils.dateutils import api_datetime_string
 from greenbudget.app.authentication.tokens import AccessToken
+from greenbudget.app.user.mail import get_template
 
 
 @pytest.fixture
@@ -126,7 +127,7 @@ def test_validate_email_token_invalid_token(api_client):
 @override_settings(
     EMAIL_ENABLED=True,
     FROM_EMAIL="noreply@greenbudget.io",
-    FRONTEND_EMAIL_CONFIRM_URL="https://app.greenbudget.io/verify"
+    FRONTEND_URL="https://app.greenbudget.io"
 )
 def test_send_verification_email(api_client, unverified_user, settings):
     # Use another user to generate the Access Token for mock purposes.
@@ -136,7 +137,7 @@ def test_send_verification_email(api_client, unverified_user, settings):
         return token
 
     with mock.patch.object(AccessToken, 'for_user', create_token):
-        with mock.patch('greenbudget.app.authentication.mail.send_mail') as m:
+        with mock.patch('greenbudget.app.user.mail.send_mail') as m:
             response = api_client.post("/v1/auth/verify-email/", data={
                 "user": unverified_user.pk
             })
@@ -146,12 +147,12 @@ def test_send_verification_email(api_client, unverified_user, settings):
     mail_obj = m.call_args[0][0]
     assert mail_obj.get() == {
         'from': {'email': "noreply@greenbudget.io"},
-        'template_id': settings.EMAIL_VERIFICATION_TEMPLATE_ID,
+        'template_id': get_template("email_confirmation").id,
         'personalizations': [
             {
                 'to': [{'email': unverified_user.email}],
                 'dynamic_template_data': {
-                    'redirect_url': (
+                    'url': (
                         'https://app.greenbudget.io/verify?token=%s'
                         % str(token)
                     )
@@ -162,7 +163,7 @@ def test_send_verification_email(api_client, unverified_user, settings):
 
 
 def test_send_verification_email_verified_user(api_client, user):
-    with mock.patch('greenbudget.app.authentication.mail.send_mail') as m:
+    with mock.patch('greenbudget.app.user.mail.send_mail') as m:
         response = api_client.post("/v1/auth/verify-email/", data={
             "user": user.pk
         })
@@ -171,7 +172,7 @@ def test_send_verification_email_verified_user(api_client, user):
 
 
 def test_send_verification_email_inactive_user(api_client, inactive_user):
-    with mock.patch('greenbudget.app.authentication.mail.send_mail') as m:
+    with mock.patch('greenbudget.app.user.mail.send_mail') as m:
         response = api_client.post("/v1/auth/verify-email/", data={
             "user": inactive_user.pk
         })

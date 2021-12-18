@@ -12,8 +12,8 @@ from sendgrid.helpers.mail import Mail as SendGridMail
 from greenbudget.conf import suppress_with_setting
 from greenbudget.lib.utils.urls import add_query_params_to_url
 
-from .exceptions import EmailError
-from .tokens import AccessToken
+from greenbudget.app.authentication.exceptions import EmailError
+from greenbudget.app.authentication.tokens import AccessToken
 
 
 logger = logging.getLogger("greenbudget")
@@ -57,43 +57,66 @@ def user_is_on_waitlist(email):
         return email in data['result']
 
 
+def get_template(slug):
+    try:
+        return [
+            t for t in settings.SENDGRID_TEMPLATES
+            if t.slug == slug
+        ][0]
+    except IndexError:
+        raise LookupError("Template %s is not configured in settings." % slug)
+
+
 class Mail(SendGridMail):
-    def __init__(self, user, data, **kwargs):
+    def __init__(self, user, **kwargs):
+        redirect_query = kwargs.pop('redirect_query', None)
         super().__init__(
             to_emails=user.email,
             from_email=settings.FROM_EMAIL,
             **kwargs
         )
         self.user = user
-        self.template_id = kwargs.pop(
-            'template_id', getattr(self, 'template'))
-        self.dynamic_template_data = data
+        self.template_id = self.template_obj.id
+
+        # Redirect Base URL is a LazySetting
+        redirect_url = str(self.template_obj.redirect_base_url)
+        if redirect_query is not None:
+            redirect_url = add_query_params_to_url(
+                redirect_url, **redirect_query)
+
+        self.dynamic_template_data = {'url': redirect_url}
+
+    @property
+    def template_obj(self):
+        return get_template(self.template_slug)
+
+    @property
+    def template_slug(self):
+        raise NotImplementedError()
 
 
-class EmailVerification(Mail):
-    template = settings.EMAIL_VERIFICATION_TEMPLATE_ID
+class PostActivationMail(Mail):
+    template_slug = "post_activation"
+
+
+class EmailConfirmationMail(Mail):
+    template_slug = "email_confirmation"
 
     def __init__(self, user, token, **kwargs):
         super().__init__(
             user=user,
-            data={'redirect_url': add_query_params_to_url(
-                settings.FRONTEND_EMAIL_CONFIRM_URL,
-                token=token
-            )},
+            redirect_query={"token": token},
             **kwargs
         )
 
 
-class PasswordRecovery(Mail):
-    template = settings.PASSWORD_RECOVERY_TEMPLATE_ID
+class PasswordRecoveryMail(Mail):
+    template_slug = "password_recovery"
 
     def __init__(self, user, token, **kwargs):
         super().__init__(
             user=user,
-            data={'redirect_url': add_query_params_to_url(
-                settings.FRONTEND_PASSWORD_RECOVERY_URL,
-                token=token
-            )},
+            redirect_query={"token": token},
             **kwargs
         )
 
@@ -127,7 +150,7 @@ def format_errors_from_request(e):
     return None
 
 
-@ suppress_with_setting("EMAIL_ENABLED")
+@suppress_with_setting("EMAIL_ENABLED")
 def send_mail(mail):
     try:
         return api_client.client.mail.send.post(request_body=mail.get())
@@ -146,11 +169,16 @@ def send_mail(mail):
 
 def send_email_verification_email(user, token=None):
     token = token or AccessToken.for_user(user)
-    mail = EmailVerification(user, str(token))
+    mail = EmailConfirmationMail(user, str(token))
     return send_mail(mail)
 
 
 def send_password_recovery_email(user, token=None):
     token = token or AccessToken.for_user(user)
-    mail = PasswordRecovery(user, str(token))
+    mail = PasswordRecoveryMail(user, str(token))
+    return send_mail(mail)
+
+
+def send_post_activation_email(user):
+    mail = PostActivationMail(user)
     return send_mail(mail)

@@ -4,7 +4,7 @@ from rest_framework import serializers, validators
 
 from greenbudget.app.authentication.exceptions import (
     InvalidCredentialsError, AccountNotOnWaitlist)
-from greenbudget.app.authentication.mail import user_is_on_waitlist
+from greenbudget.app.user.mail import user_is_on_waitlist
 from greenbudget.app.authentication.utils import validate_password
 from greenbudget.app.io.fields import Base64ImageField
 

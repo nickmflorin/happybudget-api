@@ -5,6 +5,7 @@ import responses
 from django.test import override_settings
 
 from greenbudget.app.authentication.tokens import AccessToken
+from greenbudget.app.user.mail import get_template
 
 
 @pytest.mark.parametrize("password", [
@@ -29,7 +30,7 @@ def test_registration_invalid_password(api_client, password):
 @override_settings(
     EMAIL_ENABLED=True,
     FROM_EMAIL="noreply@greenbudget.io",
-    FRONTEND_EMAIL_CONFIRM_URL="https://app.greenbudget.io/verify"
+    FRONTEND_URL="https://app.greenbudget.io"
 )
 def test_registration(api_client, models, settings, user):
     # Use another user to generate the Access Token for mock purposes.
@@ -39,7 +40,7 @@ def test_registration(api_client, models, settings, user):
         return token
 
     with mock.patch.object(AccessToken, 'for_user', create_token):
-        with mock.patch('greenbudget.app.authentication.mail.send_mail') as m:
+        with mock.patch('greenbudget.app.user.mail.send_mail') as m:
             response = api_client.post("/v1/users/registration/", data={
                 "first_name": "Jack",
                 "last_name": "Johnson",
@@ -72,12 +73,12 @@ def test_registration(api_client, models, settings, user):
     mail_obj = m.call_args[0][0]
     assert mail_obj.get() == {
         'from': {'email': "noreply@greenbudget.io"},
-        'template_id': settings.EMAIL_VERIFICATION_TEMPLATE_ID,
+        'template_id': get_template("email_confirmation").id,
         'personalizations': [
             {
                 'to': [{'email': 'jjohnson@gmail.com'}],
                 'dynamic_template_data': {
-                    'redirect_url': (
+                    'url': (
                         'https://app.greenbudget.io/verify?token=%s'
                         % str(token)
                     )

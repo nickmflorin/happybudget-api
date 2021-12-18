@@ -15,6 +15,7 @@ from .aws import *  # noqa
 from .jwt_rsa_fingerprint import __JWT_SIGNING_KEY, __JWT_VERIFYING_KEY
 from .logging import *  # noqa
 from .password_validators import *  # noqa
+from .email import *  # noqa
 
 DEBUG = False
 
@@ -33,11 +34,6 @@ APP_V1_URL = LazySetting(
     lambda settings: os.path.join(str(settings.APP_URL), "v1"))
 
 FRONTEND_URL = "https://app.greenbudget.io/"
-FRONTEND_EMAIL_CONFIRM_URL = LazySetting(
-    lambda settings: os.path.join(str(settings.FRONTEND_URL), "verify"))
-FRONTEND_PASSWORD_RECOVERY_URL = LazySetting(
-    lambda settings: os.path.join(str(settings.FRONTEND_URL), "recovery"))
-
 
 SECRET_KEY = config(
     name='DJANGO_SECRET_KEY',
@@ -50,18 +46,6 @@ SECRET_KEY = config(
 
 # Sentry Configuration
 SENTRY_DSN = "https://9eeab5e26f804bd582385ffc5eda991d@o591585.ingest.sentry.io/5740484"  # noqa
-
-# Email Configurations
-EMAIL_ENABLED = True
-FROM_EMAIL = "noreply@greenbudget.io"
-EMAIL_HOST = 'smtp.sendgrid.net'
-SENDGRID_API_KEY = config(
-    name='SENDGRID_API_KEY',
-    required=[Environments.PROD, Environments.DEV, Environments.LOCAL],
-)
-SENDGRID_API_URL = "https://api.sendgrid.com/v3/"
-PASSWORD_RECOVERY_TEMPLATE_ID = "d-577a2dda8c2d4e3dabff2337240edf79"
-EMAIL_VERIFICATION_TEMPLATE_ID = "d-3f3c585c80514e46809b9d3a46134674"
 
 PWD_RESET_LINK_EXPIRY_TIME_IN_HRS = 24
 GOOGLE_OAUTH_API_URL = "https://www.googleapis.com/oauth2/v3/tokeninfo/"
@@ -111,7 +95,6 @@ SLIDING_TOKEN_LIFETIME = datetime.timedelta(minutes=5)
 JWT_COOKIE_SECURE = True
 JWT_TOKEN_COOKIE_NAME = 'greenbudgetjwt'
 JWT_COOKIE_DOMAIN = ".greenbudget.io"
-
 
 SIMPLE_JWT = {
     'AUTH_TOKEN_CLASSES': ('greenbudget.app.authentication.tokens.AuthToken',),
