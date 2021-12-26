@@ -34,6 +34,7 @@ class AccountSimpleSerializer(serializers.ModelSerializer):
 
 
 class AccountSerializer(AccountSimpleSerializer):
+    domain = serializers.CharField(read_only=True)
     nominal_value = serializers.FloatField(read_only=True)
     accumulated_fringe_contribution = serializers.FloatField(read_only=True)
     markup_contribution = serializers.FloatField(read_only=True)
@@ -52,9 +53,8 @@ class AccountSerializer(AccountSimpleSerializer):
 
     class Meta(AccountSimpleSerializer.Meta):
         fields = AccountSimpleSerializer.Meta.fields + (
-            'children', 'nominal_value', 'group', 'actual', 'order',
-            'markup_contribution',
-            'accumulated_markup_contribution',
+            'children', 'nominal_value', 'group', 'actual', 'order', 'domain',
+            'markup_contribution', 'accumulated_markup_contribution',
             'accumulated_fringe_contribution',
         )
 

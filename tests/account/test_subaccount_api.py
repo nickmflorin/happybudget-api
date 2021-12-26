@@ -41,6 +41,7 @@ def test_get_account_subaccounts(api_client, user, budget_f):
             "children": [],
             "fringes": [],
             "unit": None,
+            "domain": budget_f.context,
             "order": "n",
         },
         {
@@ -62,6 +63,7 @@ def test_get_account_subaccounts(api_client, user, budget_f):
             "children": [],
             "fringes": [],
             "unit": None,
+            "domain": budget_f.context,
             "order": "t",
         }
     ]
@@ -108,6 +110,7 @@ def test_create_budget_subaccount(api_client, user, budget_f, models):
         "fringes": [],
         "order": "n",
         "siblings": [],
+        "domain": budget_f.context,
         "ancestors": [
             {
                 "type": "budget",

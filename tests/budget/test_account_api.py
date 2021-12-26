@@ -21,7 +21,8 @@ def test_get_accounts(api_client, user, budget_f):
             "accumulated_markup_contribution": 0.0,
             "actual": 0.0,
             "children": [],
-            "order": "n"
+            "order": "n",
+            "domain": budget_f.context,
         },
         {
             "id": accounts[1].pk,
@@ -34,7 +35,8 @@ def test_get_accounts(api_client, user, budget_f):
             "accumulated_markup_contribution": 0.0,
             "actual": 0.0,
             "children": [],
-            "order": "t"
+            "order": "t",
+            "domain": budget_f.context,
         }
     ]
 
@@ -63,7 +65,8 @@ def test_get_accounts_filtered_by_id(api_client, user, budget_f):
             "accumulated_markup_contribution": 0.0,
             "actual": 0.0,
             "children": [],
-            "order": "n"
+            "order": "n",
+            "domain": budget_f.context,
         }
     ]
 
@@ -92,6 +95,7 @@ def test_create_account(api_client, user, budget_f, models):
         "children": [],
         "siblings": [],
         "order": "n",
+        "domain": budget_f.context,
         "ancestors": [{
             "type": "budget",
             "domain": budget_f.context,

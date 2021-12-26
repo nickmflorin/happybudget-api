@@ -13,6 +13,7 @@ def test_get_account(api_client, user, budget_f):
         "identifier": "%s" % account.identifier,
         "description": account.description,
         "type": "account",
+        "domain": budget_f.context,
         "nominal_value": 0.0,
         "accumulated_fringe_contribution": 0.0,
         "markup_contribution": 0.0,

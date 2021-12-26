@@ -50,6 +50,7 @@ class SubAccountSimpleSerializer(serializers.ModelSerializer):
 
 
 class SubAccountSerializer(SubAccountSimpleSerializer):
+    domain = serializers.CharField(read_only=True)
     order = serializers.CharField(read_only=True)
     quantity = serializers.FloatField(required=False, allow_null=True)
     rate = serializers.FloatField(required=False, allow_null=True)
@@ -98,7 +99,7 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
             'parent_type', 'children', 'fringes', 'group', 'order',
             'nominal_value', 'actual', 'fringe_contribution',
             'markup_contribution', 'accumulated_markup_contribution',
-            'accumulated_fringe_contribution',
+            'accumulated_fringe_contribution', 'domain'
         )
 
     def validate(self, attrs):

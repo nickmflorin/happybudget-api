@@ -102,6 +102,7 @@ def test_get_budget_subaccount(api_client, user, budget_df):
         "contact": None,
         "attachments": [],
         "order": "n",
+        "domain": budget_df.context,
         "ancestors": [
             {
                 "type": "budget",
@@ -148,6 +149,7 @@ def test_get_template_subaccount(api_client, user, template_df):
         "siblings": [],
         "unit": None,
         "order": "n",
+        "domain": template_df.context,
         "ancestors": [
             {
                 "type": "budget",
@@ -205,6 +207,7 @@ def test_update_budget_subaccount(api_client, user, budget_df):
         "contact": None,
         "attachments": [],
         "order": "n",
+        "domain": budget_df.context,
         "ancestors": [
             {
                 "type": "budget",
@@ -264,6 +267,7 @@ def test_update_template_subaccount(api_client, user, template_df):
         "siblings": [],
         "unit": None,
         "order": "n",
+        "domain": template_df.context,
         "ancestors": [
             {
                 "type": "budget",
@@ -328,6 +332,7 @@ def test_create_subaccount(api_client, user, budget_f):
         "siblings": [],
         "unit": None,
         "order": "n",
+        "domain": budget_f.context,
         "ancestors": [
             {
                 "type": "budget",
@@ -416,6 +421,7 @@ def test_get_subaccount_subaccounts(api_client, user, budget_df):
             "contact": None,
             "unit": None,
             "order": "n",
+            "domain": budget_df.context,
             "attachments": [],
         },
         {
@@ -439,6 +445,7 @@ def test_get_subaccount_subaccounts(api_client, user, budget_df):
             "contact": None,
             "unit": None,
             "order": "t",
+            "domain": budget_df.context,
             "attachments": [],
         },
     ]
@@ -481,6 +488,7 @@ def test_get_template_subaccount_subaccounts(api_client, user, template_df):
             "children": [],
             "fringes": [],
             "order": "n",
+            "domain": template_df.context,
             "unit": None
         },
         {
@@ -502,6 +510,7 @@ def test_get_template_subaccount_subaccounts(api_client, user, template_df):
             "children": [],
             "fringes": [],
             "order": "t",
+            "domain": template_df.context,
             "unit": None,
         },
     ]
