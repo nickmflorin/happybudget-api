@@ -175,6 +175,7 @@ class TemplateSubAccountDetailSerializer(TemplateSubAccountSerializer):
 
 
 class SubAccountPdfSerializer(SubAccountSimpleSerializer):
+    domain = serializers.CharField(read_only=True)
     type = serializers.CharField(read_only=True, source='pdf_type')
     quantity = serializers.FloatField(read_only=True)
     rate = serializers.FloatField(read_only=True)
@@ -206,7 +207,7 @@ class SubAccountPdfSerializer(SubAccountSimpleSerializer):
             + (
                 'quantity', 'rate', 'multiplier', 'unit', 'children', 'contact',
                 'group', 'groups', 'children_markups', 'nominal_value', 'actual',
-                'fringe_contribution', 'markup_contribution', 'order',
+                'fringe_contribution', 'markup_contribution', 'order', 'domain',
                 'accumulated_markup_contribution',
                 'accumulated_fringe_contribution'
             )

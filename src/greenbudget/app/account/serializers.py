@@ -90,6 +90,7 @@ class TemplateAccountDetailSerializer(TemplateAccountSerializer):
 
 
 class AccountPdfSerializer(AccountSimpleSerializer):
+    domain = serializers.CharField(read_only=True)
     type = serializers.CharField(read_only=True, source='pdf_type')
     nominal_value = serializers.FloatField(read_only=True)
     accumulated_fringe_contribution = serializers.FloatField(read_only=True)
@@ -105,7 +106,7 @@ class AccountPdfSerializer(AccountSimpleSerializer):
         model = BudgetAccount
         fields = AccountSimpleSerializer.Meta.fields \
             + ('children', 'groups', 'nominal_value', 'children_markups',
-                'order', 'markup_contribution', 'actual',
+                'order', 'markup_contribution', 'actual', 'domain',
                 'accumulated_markup_contribution',
                 'accumulated_fringe_contribution',
             )
