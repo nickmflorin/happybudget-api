@@ -48,7 +48,7 @@ class GenericRelatedField(serializers.PrimaryKeyRelatedField):
                 model_type=data['type'],
                 model_types=", ".join(self._model_classes.keys())
             )
-        except TypeError:
+        except (TypeError, KeyError):
             self.fail('incorrect_type', data_type=type(data).__name__)
         else:
             try:
