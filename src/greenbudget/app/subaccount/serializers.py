@@ -31,6 +31,8 @@ class SubAccountUnitSerializer(TagSerializer):
 class SubAccountSimpleSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     type = serializers.CharField(read_only=True)
+    domain = serializers.CharField(read_only=True)
+    order = serializers.CharField(read_only=True)
     identifier = serializers.CharField(
         required=False,
         allow_blank=False,
@@ -46,12 +48,10 @@ class SubAccountSimpleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SubAccount
-        fields = ('id', 'identifier', 'type', 'description')
+        fields = ('id', 'identifier', 'type', 'description', 'order', 'domain')
 
 
 class SubAccountSerializer(SubAccountSimpleSerializer):
-    domain = serializers.CharField(read_only=True)
-    order = serializers.CharField(read_only=True)
     quantity = serializers.FloatField(required=False, allow_null=True)
     rate = serializers.FloatField(required=False, allow_null=True)
     multiplier = serializers.FloatField(required=False, allow_null=True)
@@ -96,10 +96,10 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
         model = SubAccount
         fields = SubAccountSimpleSerializer.Meta.fields + (
             'quantity', 'rate', 'multiplier', 'unit', 'object_id',
-            'parent_type', 'children', 'fringes', 'group', 'order',
+            'parent_type', 'children', 'fringes', 'group',
             'nominal_value', 'actual', 'fringe_contribution',
             'markup_contribution', 'accumulated_markup_contribution',
-            'accumulated_fringe_contribution', 'domain'
+            'accumulated_fringe_contribution',
         )
 
     def validate(self, attrs):
@@ -175,7 +175,6 @@ class TemplateSubAccountDetailSerializer(TemplateSubAccountSerializer):
 
 
 class SubAccountPdfSerializer(SubAccountSimpleSerializer):
-    domain = serializers.CharField(read_only=True)
     type = serializers.CharField(read_only=True, source='pdf_type')
     quantity = serializers.FloatField(read_only=True)
     rate = serializers.FloatField(read_only=True)
@@ -190,7 +189,6 @@ class SubAccountPdfSerializer(SubAccountSimpleSerializer):
         queryset=Contact.objects.all(),
         user_field='created_by'
     )
-    order = serializers.CharField(read_only=True)
     children = serializers.SerializerMethodField()
     groups = GroupSerializer(many=True, read_only=True)
     children_markups = MarkupSerializer(many=True, read_only=True)
@@ -207,7 +205,7 @@ class SubAccountPdfSerializer(SubAccountSimpleSerializer):
             + (
                 'quantity', 'rate', 'multiplier', 'unit', 'children', 'contact',
                 'group', 'groups', 'children_markups', 'nominal_value', 'actual',
-                'fringe_contribution', 'markup_contribution', 'order', 'domain',
+                'fringe_contribution', 'markup_contribution',
                 'accumulated_markup_contribution',
                 'accumulated_fringe_contribution'
             )

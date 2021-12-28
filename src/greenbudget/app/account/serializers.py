@@ -14,12 +14,14 @@ from .models import Account, BudgetAccount, TemplateAccount
 
 class AccountSimpleSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
+    order = serializers.CharField(read_only=True)
     identifier = serializers.CharField(
         required=False,
         allow_blank=False,
         allow_null=True,
         trim_whitespace=False
     )
+    domain = serializers.CharField(read_only=True)
     type = serializers.CharField(read_only=True)
     description = serializers.CharField(
         required=False,
@@ -30,17 +32,15 @@ class AccountSimpleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Account
-        fields = ('id', 'identifier', 'type', 'description')
+        fields = ('id', 'identifier', 'type', 'description', 'order', 'domain')
 
 
 class AccountSerializer(AccountSimpleSerializer):
-    domain = serializers.CharField(read_only=True)
     nominal_value = serializers.FloatField(read_only=True)
     accumulated_fringe_contribution = serializers.FloatField(read_only=True)
     markup_contribution = serializers.FloatField(read_only=True)
     accumulated_markup_contribution = serializers.FloatField(read_only=True)
     actual = serializers.FloatField(read_only=True)
-    order = serializers.CharField(read_only=True)
     children = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     group = TableChildrenPrimaryKeyRelatedField(
         obj_name='Group',
@@ -49,11 +49,10 @@ class AccountSerializer(AccountSimpleSerializer):
         child_instance_cls=Group,
         write_only=True,
     )
-    order = serializers.CharField(read_only=True)
 
     class Meta(AccountSimpleSerializer.Meta):
         fields = AccountSimpleSerializer.Meta.fields + (
-            'children', 'nominal_value', 'group', 'actual', 'order', 'domain',
+            'children', 'nominal_value', 'group', 'actual',
             'markup_contribution', 'accumulated_markup_contribution',
             'accumulated_fringe_contribution',
         )
@@ -90,7 +89,6 @@ class TemplateAccountDetailSerializer(TemplateAccountSerializer):
 
 
 class AccountPdfSerializer(AccountSimpleSerializer):
-    domain = serializers.CharField(read_only=True)
     type = serializers.CharField(read_only=True, source='pdf_type')
     nominal_value = serializers.FloatField(read_only=True)
     accumulated_fringe_contribution = serializers.FloatField(read_only=True)
@@ -100,13 +98,12 @@ class AccountPdfSerializer(AccountSimpleSerializer):
     children_markups = MarkupSerializer(many=True, read_only=True)
     children = SubAccountPdfSerializer(many=True, read_only=True)
     groups = GroupSerializer(many=True, read_only=True)
-    order = serializers.CharField(read_only=True)
 
     class Meta:
         model = BudgetAccount
         fields = AccountSimpleSerializer.Meta.fields \
             + ('children', 'groups', 'nominal_value', 'children_markups',
-                'order', 'markup_contribution', 'actual', 'domain',
+                'markup_contribution', 'actual',
                 'accumulated_markup_contribution',
                 'accumulated_fringe_contribution',
             )
