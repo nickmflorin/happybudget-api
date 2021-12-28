@@ -122,7 +122,8 @@ def test_create_budget_subaccount(api_client, user, budget_f, models):
                 "type": "account",
                 "id": account.pk,
                 "identifier": account.identifier,
-                "description": account.description
+                "description": account.description,
+                "domain": budget_f.context,
             }
         ]
     }

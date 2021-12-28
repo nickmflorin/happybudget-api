@@ -1,8 +1,7 @@
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers, exceptions
 
-from greenbudget.app.budgeting.serializers import (
-    SimpleEntityPolymorphicSerializer)
+from greenbudget.app.budgeting.serializers import EntityAncestorSerializer
 from greenbudget.app.contact.models import Contact
 from greenbudget.app.fringe.models import Fringe
 from greenbudget.app.group.models import Group
@@ -28,17 +27,15 @@ class SubAccountUnitSerializer(TagSerializer):
         fields = TagSerializer.Meta.fields + ("color", )
 
 
-class SubAccountSimpleSerializer(serializers.ModelSerializer):
+class SubAccountAsOwnerSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
-    type = serializers.CharField(read_only=True)
-    domain = serializers.CharField(read_only=True)
-    order = serializers.CharField(read_only=True)
     identifier = serializers.CharField(
         required=False,
         allow_blank=False,
         allow_null=True,
         trim_whitespace=False
     )
+    type = serializers.CharField(read_only=True)
     description = serializers.CharField(
         required=False,
         allow_blank=False,
@@ -48,7 +45,21 @@ class SubAccountSimpleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SubAccount
-        fields = ('id', 'identifier', 'type', 'description', 'order', 'domain')
+        fields = ('id', 'identifier', 'type', 'description')
+
+
+class SubAccountAncestorSerializer(SubAccountAsOwnerSerializer):
+    domain = serializers.CharField(read_only=True)
+
+    class Meta(SubAccountAsOwnerSerializer.Meta):
+        fields = SubAccountAsOwnerSerializer.Meta.fields + ('domain', )
+
+
+class SubAccountSimpleSerializer(SubAccountAncestorSerializer):
+    order = serializers.CharField(read_only=True)
+
+    class Meta(SubAccountAncestorSerializer.Meta):
+        fields = SubAccountAncestorSerializer.Meta.fields + ('order', )
 
 
 class SubAccountSerializer(SubAccountSimpleSerializer):
@@ -144,8 +155,8 @@ class BudgetSubAccountSerializer(SubAccountSerializer):
         type(context['parent'])).id
 })
 class BudgetSubAccountDetailSerializer(BudgetSubAccountSerializer):
-    ancestors = SimpleEntityPolymorphicSerializer(many=True, read_only=True)
-    siblings = SimpleEntityPolymorphicSerializer(many=True, read_only=True)
+    ancestors = EntityAncestorSerializer(many=True, read_only=True)
+    siblings = EntityAncestorSerializer(many=True, read_only=True)
 
     class Meta(BudgetSubAccountSerializer.Meta):
         model = BudgetSubAccount
@@ -165,8 +176,8 @@ class TemplateSubAccountSerializer(SubAccountSerializer):
         type(context.parent)).id
 })
 class TemplateSubAccountDetailSerializer(TemplateSubAccountSerializer):
-    ancestors = SimpleEntityPolymorphicSerializer(many=True, read_only=True)
-    siblings = SimpleEntityPolymorphicSerializer(many=True, read_only=True)
+    ancestors = EntityAncestorSerializer(many=True, read_only=True)
+    siblings = EntityAncestorSerializer(many=True, read_only=True)
 
     class Meta(TemplateSubAccountSerializer.Meta):
         model = TemplateSubAccount

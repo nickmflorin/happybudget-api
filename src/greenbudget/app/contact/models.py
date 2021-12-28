@@ -34,6 +34,7 @@ class Contact(RowModel):
     email = models.EmailField(null=True)
     rate = models.IntegerField(null=True)
     image = models.ImageField(upload_to=upload_to, null=True)
+    notes = models.CharField(null=True, max_length=256)
     attachments = models.ManyToManyField(
         to='io.Attachment',
         related_name='contacts'

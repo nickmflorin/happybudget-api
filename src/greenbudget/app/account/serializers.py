@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
-from greenbudget.app.budgeting.serializers import (
-    SimpleEntityPolymorphicSerializer)
+from greenbudget.app.budgeting.serializers import EntityAncestorSerializer
 from greenbudget.app.group.models import Group
 from greenbudget.app.group.serializers import GroupSerializer
 from greenbudget.app.markup.serializers import MarkupSerializer
@@ -12,9 +11,8 @@ from greenbudget.app.tabling.serializers import row_order_serializer
 from .models import Account, BudgetAccount, TemplateAccount
 
 
-class AccountSimpleSerializer(serializers.ModelSerializer):
+class AccountAncestorSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
-    order = serializers.CharField(read_only=True)
     identifier = serializers.CharField(
         required=False,
         allow_blank=False,
@@ -32,7 +30,14 @@ class AccountSimpleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Account
-        fields = ('id', 'identifier', 'type', 'description', 'order', 'domain')
+        fields = ('id', 'identifier', 'type', 'description', 'domain')
+
+
+class AccountSimpleSerializer(AccountAncestorSerializer):
+    order = serializers.CharField(read_only=True)
+
+    class Meta(AccountAncestorSerializer.Meta):
+        fields = AccountAncestorSerializer.Meta.fields + ('order', )
 
 
 class AccountSerializer(AccountSimpleSerializer):
@@ -65,8 +70,8 @@ class BudgetAccountSerializer(AccountSerializer):
 
 @row_order_serializer(table_filter=lambda d: {'parent_id': d.parent.id})
 class BudgetAccountDetailSerializer(BudgetAccountSerializer):
-    ancestors = SimpleEntityPolymorphicSerializer(many=True, read_only=True)
-    siblings = SimpleEntityPolymorphicSerializer(many=True, read_only=True)
+    ancestors = EntityAncestorSerializer(many=True, read_only=True)
+    siblings = EntityAncestorSerializer(many=True, read_only=True)
 
     class Meta(BudgetAccountSerializer.Meta):
         fields = BudgetAccountSerializer.Meta.fields + (
@@ -80,8 +85,8 @@ class TemplateAccountSerializer(AccountSerializer):
 
 @row_order_serializer(table_filter=lambda d: {'parent_id': d.parent.id})
 class TemplateAccountDetailSerializer(TemplateAccountSerializer):
-    ancestors = SimpleEntityPolymorphicSerializer(many=True, read_only=True)
-    siblings = SimpleEntityPolymorphicSerializer(many=True, read_only=True)
+    ancestors = EntityAncestorSerializer(many=True, read_only=True)
+    siblings = EntityAncestorSerializer(many=True, read_only=True)
 
     class Meta(TemplateAccountSerializer.Meta):
         fields = TemplateAccountSerializer.Meta.fields + (

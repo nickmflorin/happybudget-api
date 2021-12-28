@@ -114,7 +114,8 @@ def test_get_budget_subaccount(api_client, user, budget_df):
                 "id": account.id,
                 "type": "account",
                 "identifier": account.identifier,
-                "description": account.description
+                "description": account.description,
+                "domain": "budget",
             }
         ]
     }
@@ -161,7 +162,8 @@ def test_get_template_subaccount(api_client, user, template_df):
                 "id": account.id,
                 "type": "account",
                 "identifier": account.identifier,
-                "description": account.description
+                "description": account.description,
+                "domain": "template",
             }
         ]
     }
@@ -219,7 +221,8 @@ def test_update_budget_subaccount(api_client, user, budget_df):
                 "id": account.id,
                 "type": "account",
                 "identifier": account.identifier,
-                "description": account.description
+                "description": account.description,
+                "domain": "budget",
             }
         ]
     }
@@ -279,7 +282,8 @@ def test_update_template_subaccount(api_client, user, template_df):
                 "id": account.id,
                 "type": "account",
                 "identifier": account.identifier,
-                "description": account.description
+                "description": account.description,
+                "domain": "template"
             }
         ]
     }
@@ -344,13 +348,15 @@ def test_create_subaccount(api_client, user, budget_f):
                 "id": account.id,
                 "type": "account",
                 "identifier": account.identifier,
-                "description": account.description
+                "description": account.description,
+                "domain": budget_f.context
             },
             {
                 "id": subaccount.id,
                 "type": "subaccount",
                 "identifier": subaccount.identifier,
-                "description": subaccount.description
+                "description": subaccount.description,
+                "domain": budget_f.context
             }
         ]
     }

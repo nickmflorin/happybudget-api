@@ -12,7 +12,7 @@ from greenbudget.app.tabling.serializers import row_order_serializer
 from greenbudget.app.tagging.fields import TagField
 from greenbudget.app.tagging.serializers import TagSerializer, ColorSerializer
 from greenbudget.app.subaccount.models import BudgetSubAccount
-from greenbudget.app.subaccount.serializers import SubAccountSimpleSerializer
+from greenbudget.app.subaccount.serializers import SubAccountAsOwnerSerializer
 from greenbudget.app.user.fields import UserFilteredQuerysetPKField
 
 from .models import Actual, ActualType
@@ -21,7 +21,7 @@ from .models import Actual, ActualType
 class ActualOwnerSerializer(PolymorphicNonPolymorphicSerializer):
     choices = {
         Markup: "greenbudget.app.markup.serializers.MarkupSimpleSerializer",
-        BudgetSubAccount: "greenbudget.app.subaccount.serializers.SubAccountSimpleSerializer",  # noqa
+        BudgetSubAccount: "greenbudget.app.subaccount.serializers.SubAccountAsOwnerSerializer",  # noqa
     }
 
 
@@ -48,7 +48,7 @@ class ActualOwnerField(GenericRelatedField):
 
     def to_representation(self, instance):
         if isinstance(instance, BudgetSubAccount):
-            return SubAccountSimpleSerializer(instance=instance).data
+            return SubAccountAsOwnerSerializer(instance=instance).data
         return MarkupSimpleSerializer(instance=instance).data
 
 

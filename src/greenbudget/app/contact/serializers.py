@@ -30,6 +30,12 @@ class ContactSerializer(serializers.ModelSerializer):
     rate = serializers.IntegerField(allow_null=True, required=False)
     image = Base64ImageField(required=False, allow_null=True)
     order = serializers.CharField(read_only=True)
+    notes = serializers.CharField(
+        required=False,
+        allow_blank=False,
+        allow_null=True,
+        trim_whitespace=False
+    )
     attachments = serializers.PrimaryKeyRelatedField(
         queryset=Attachment.objects.all(),
         required=False,
@@ -41,7 +47,7 @@ class ContactSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'first_name', 'last_name', 'type', 'city', 'rate',
             'phone_number', 'email', 'full_name', 'company', 'position',
-            'image', 'contact_type', 'attachments', 'order')
+            'image', 'contact_type', 'attachments', 'order', 'notes')
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
