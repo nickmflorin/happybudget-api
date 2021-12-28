@@ -29,7 +29,7 @@ def test_get_budgets(api_client, user, create_budget):
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_budget(api_client, user, create_budget, models):
+def test_get_budget(api_client, user, create_budget):
     budget = create_budget()
     api_client.force_login(user)
     response = api_client.get("/v1/budgets/%s/" % budget.pk)
@@ -49,7 +49,7 @@ def test_get_budget(api_client, user, create_budget, models):
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_update_budget(api_client, user, create_budget, models):
+def test_update_budget(api_client, user, create_budget):
     budget = create_budget()
     api_client.force_login(user)
     response = api_client.patch("/v1/budgets/%s/" % budget.pk, data={
