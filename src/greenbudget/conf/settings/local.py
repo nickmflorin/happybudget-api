@@ -1,5 +1,5 @@
 """
-Settings configuration file for dev environment.
+Settings configuration file for local environment.
 """
 from greenbudget.conf import Environments
 
@@ -9,9 +9,9 @@ DEBUG = True
 EMAIL_ENABLED = True
 ENVIRONMENT = Environments.LOCAL
 
-APP_DOMAIN = '127.0.0.1:8000'
+APP_DOMAIN = 'local.greenbudget.io:8000'
 APP_URL = 'http://%s' % APP_DOMAIN
-FRONTEND_URL = "127.0.0.1:3000"
+FRONTEND_URL = "local.greenbudget.io"
 
 DEFAULT_FILE_STORAGE = 'greenbudget.app.io.storages.LocalStorage'
 
@@ -20,23 +20,28 @@ APPROVAL_ENABLED = True
 
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
-CSRF_COOKIE_DOMAIN = "127.0.0.1"
 JWT_COOKIE_SECURE = False
-JWT_COOKIE_DOMAIN = '127.0.0.1'
-SESSION_COOKIE_DOMAIN = '127.0.0.1'
+
+# When developing locally, the cookie names must differ from those used in
+# production environments because these cookies are not being set in a secure
+# context, and browsers will not let us override a cookie that was previously
+# set in a secure context with the same cookie in an insecure context.
+JWT_TOKEN_COOKIE_NAME = 'localgreenbudgetjwt'
+CSRF_COOKIE_NAME = 'localgreenbudgetcsrftoken'
+SESSION_COOKIE_NAME = 'localgreenbudgetsessionid'
 
 CSRF_TRUSTED_ORIGINS = [
-    'http://*',
-    'http://127.0.0.1:3000'
+    'http://local.greenbudget.io'
 ]
 ALLOWED_HOSTS = [
-    '127.0.0.1'
+    'local.greenbudget.io'
 ]
 # CORS Configuration
 CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_REGEX_WHITELIST = (
     r'^(https?://)?localhost:?[\d]*?$',
-    r'^(https?://)?127.0.0.1:?[\d]*?$'
+    r'^(https?://)?127.0.0.1:?[\d]*?$',
+    r'^(https?://)?local.greenbudget.io:?[\d]*?$'
 )
 
 CACHES = {

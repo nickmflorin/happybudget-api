@@ -14,7 +14,15 @@ def main():
             "available on your PYTHONPATH environment variable? Did you "
             "forget to activate a virtual environment?"
         ) from exc
-    execute_from_command_line(sys.argv)
+
+    settings_module = os.environ.get("DJANGO_SETTINGS_MODULE")
+
+    arguments = sys.argv[:]
+    if arguments == ['src/manage.py', 'runserver'] \
+            and settings_module == 'greenbudget.conf.settings.local':
+        arguments = arguments + ['local.greenbudget.io:8000']
+
+    execute_from_command_line(arguments)
 
 
 if __name__ == '__main__':
