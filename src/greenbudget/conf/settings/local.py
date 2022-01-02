@@ -31,7 +31,7 @@ CSRF_COOKIE_NAME = 'localgreenbudgetcsrftoken'
 SESSION_COOKIE_NAME = 'localgreenbudgetsessionid'
 
 CSRF_TRUSTED_ORIGINS = [
-    'http://local.greenbudget.io'
+    'http://local.greenbudget.io:3000'
 ]
 ALLOWED_HOSTS = [
     'local.greenbudget.io'
