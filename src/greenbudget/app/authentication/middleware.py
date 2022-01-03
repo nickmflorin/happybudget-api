@@ -20,10 +20,15 @@ logger = logging.getLogger('backend')
 
 
 def get_cookie_user(request):
+    # We only want to use the session user in the case that we are not in the
+    # process of validating the JWT authentication token.
+    is_validate_url = request.path == reverse('authentication:validate')
     if not hasattr(request, '_cached_cookie_user'):
         if getattr(request, 'user', None) \
                 and getattr(request, 'user').is_active \
-                and getattr(request, 'user').is_verified:
+                and getattr(request, 'user').is_approved \
+                and getattr(request, 'user').is_verified \
+                and not is_validate_url:
             request._cached_cookie_user = request.user
         else:
             raw_token = parse_token_from_request(request)
@@ -64,8 +69,9 @@ class TokenCookieMiddleware(MiddlewareMixin):
         # cookie expiration date to a date in the past.  If the parameters
         # used to set the cookie are not the same as those used to delete
         # the cookie, the Browser cannot do this.
-        response.delete_cookie(
-            settings.JWT_TOKEN_COOKIE_NAME, **self.cookie_kwargs)
+        if settings.JWT_TOKEN_COOKIE_NAME in response.cookies:
+            response.delete_cookie(
+                settings.JWT_TOKEN_COOKIE_NAME, **self.cookie_kwargs)
         return response
 
     def should_persist_cookie(self, request):
@@ -80,13 +86,12 @@ class TokenCookieMiddleware(MiddlewareMixin):
         (4) The :obj:`Request` pertains to a request to validate the JWT token.
         """
         is_missing_jwt = settings.JWT_TOKEN_COOKIE_NAME not in request.COOKIES
-        is_refresh_url = request.path == reverse('authentication:refresh')
         is_validate_url = request.path == reverse('authentication:validate')
 
         is_write_method = request.method not in ('GET', 'HEAD', 'OPTIONS')
         is_admin = '/admin/' in request.path
         return not is_admin and (
-            is_missing_jwt or is_write_method or is_refresh_url or is_validate_url)  # noqa
+            is_missing_jwt or is_write_method or is_validate_url)
 
     def persist_cookie(self, request, response):
         """
@@ -129,9 +134,8 @@ class TokenCookieMiddleware(MiddlewareMixin):
             # `force_logout` attribute that evalutes to True.
             force_logout = getattr(response, '_force_logout', None)
             if not is_active or not request.cookie_user.is_verified \
+                    or not request.cookie_user.is_approved \
                     or force_logout is True:
-                if force_logout:
-                    return self.force_logout(request, response)
-                return response
+                return self.force_logout(request, response)
 
         return self.persist_cookie(request, response)

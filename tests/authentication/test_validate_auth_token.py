@@ -61,14 +61,13 @@ def test_validate_auth_token_inactive_user(inactive_user, settings,
     assert response.status_code == 403
     assert response.json() == {
         'user_id': inactive_user.pk,
-        'force_logout': True,
         'errors': [{
             'message': 'Your account is not active, please contact customer care.',  # noqa
             'code': 'account_disabled',
             'error_type': 'auth'
         }]
     }
-    assert response.cookies[settings.JWT_TOKEN_COOKIE_NAME].value == ''
+    assert settings.JWT_TOKEN_COOKIE_NAME not in response.cookies
 
 
 def test_validate_auth_token_unapproved_user(unapproved_user, settings,
@@ -78,14 +77,13 @@ def test_validate_auth_token_unapproved_user(unapproved_user, settings,
     assert response.status_code == 403
     assert response.json() == {
         'user_id': unapproved_user.pk,
-        'force_logout': True,
         'errors': [{
             'message': 'The account is not approved.',
             'code': 'account_not_approved',
             'error_type': 'auth'
         }]
     }
-    assert response.cookies[settings.JWT_TOKEN_COOKIE_NAME].value == ''
+    assert settings.JWT_TOKEN_COOKIE_NAME not in response.cookies
 
 
 def test_validate_auth_token_unverified_user(validate_auth_token,
@@ -95,46 +93,33 @@ def test_validate_auth_token_unverified_user(validate_auth_token,
     assert response.status_code == 403
     assert response.json() == {
         'user_id': unverified_user.pk,
-        'force_logout': True,
         'errors': [{
             'message': 'The email address is not verified.',
             'code': 'account_not_verified',
             'error_type': 'auth'
         }]
     }
-    assert response.cookies[settings.JWT_TOKEN_COOKIE_NAME].value == ''
+    assert settings.JWT_TOKEN_COOKIE_NAME not in response.cookies
 
 
 def test_validate_auth_token_missing_token(api_client, user, settings):
     api_client.force_login(user)
     response = api_client.post("/v1/auth/validate/")
     assert response.status_code == 403
-    assert response.json() == {
-        'force_logout': True,
-        'user_id': user.id,
-        'errors': [{
-            'message': 'Token is invalid.',
-            'code': 'token_not_valid',
-            'error_type': 'auth'
-        }]
-    }
-    assert response.cookies[settings.JWT_TOKEN_COOKIE_NAME].value == ''
+    assert settings.JWT_TOKEN_COOKIE_NAME not in response.cookies
 
 
 def test_validate_auth_token_invalid_token(api_client, user, settings):
-    api_client.force_login(user)
     api_client.cookies = SimpleCookie({
         settings.JWT_TOKEN_COOKIE_NAME: "invalid-token"
     })
     response = api_client.post("/v1/auth/validate/")
     assert response.status_code == 403
     assert response.json() == {
-        'force_logout': True,
-        'user_id': 1,
         'errors': [{
             'message': 'Token is invalid.',
             'code': 'token_not_valid',
             'error_type': 'auth'
         }]
     }
-    assert response.cookies[settings.JWT_TOKEN_COOKIE_NAME].value == ''
+    assert settings.JWT_TOKEN_COOKIE_NAME not in response.cookies

@@ -7,7 +7,7 @@ from .serializers import EmailTokenSerializer, ResetPasswordSerializer
 from .tokens import AccessToken
 from .views import (
     LoginView, LogoutView, RecoverPasswordView, SocialLoginView,
-    VerifyEmailView, TokenRefreshView, TokenValidateView)
+    VerifyEmailView, TokenValidateView)
 
 
 app_name = "authentication"
@@ -16,9 +16,7 @@ app_name = "authentication"
 urlpatterns = [
     path('login/', csrf_exempt(LoginView.as_view()), name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),
-    path('refresh/', TokenRefreshView.as_view(), name='refresh'),
     path('validate/', TokenValidateView.as_view(
-        force_logout=True,
         authentication_classes=(CsrfExcemptCookieSessionAuthentication, ),
     ), name='validate'),
     path('validate-password-recovery-token/', TokenValidateView.as_view(

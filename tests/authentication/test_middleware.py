@@ -7,7 +7,6 @@ import pytest
 from django.contrib.auth.models import AnonymousUser
 from django.http import HttpResponse
 from django.utils.http import http_date
-from django.urls import reverse
 
 from greenbudget.app.authentication.tokens import AuthToken
 import greenbudget.app.authentication.middleware
@@ -187,22 +186,6 @@ def test_middleware_updates_cookie_for_write_methods(
         settings.JWT_TOKEN_COOKIE_NAME: AuthToken.for_user(user),
     })
     request = getattr(rf, method)('/')
-    response = HttpResponse()
-    with mock.patch.object(response, 'set_cookie') as set_cookie:
-        with middleware_patch('get_cookie_user', return_value=user):
-            middleware.process_request(request)
-            response = middleware.process_response(request, response)
-
-            assert set_cookie.called is True
-
-
-def test_middleware_updates_cookie_at_refresh_endpoint(
-        middleware_patch, user, settings, rf):
-    middleware = TokenCookieMiddleware()
-    rf.cookies = SimpleCookie({
-        settings.JWT_TOKEN_COOKIE_NAME: AuthToken.for_user(user),
-    })
-    request = rf.get(reverse('authentication:refresh'))
     response = HttpResponse()
     with mock.patch.object(response, 'set_cookie') as set_cookie:
         with middleware_patch('get_cookie_user', return_value=user):

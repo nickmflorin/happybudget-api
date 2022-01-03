@@ -1,9 +1,6 @@
-from ratelimit.decorators import ratelimit  # noqa
-
 from django.conf import settings
 from django.contrib.auth import logout
 from django.utils.decorators import method_decorator
-from django.utils.translation import gettext_lazy as _
 from django.views.decorators.debug import sensitive_post_parameters
 
 from rest_framework import views, response, generics, status, permissions
@@ -21,15 +18,6 @@ from .utils import parse_token_from_request
 
 def sensitive_post_parameters_m(*args):
     return method_decorator(sensitive_post_parameters(*args))
-
-
-class TokenRefreshView(views.APIView):
-    authentication_classes = (CsrfExcemptCookieSessionAuthentication, )
-
-    def get(self, request, *args, **kwargs):
-        return response.Response({
-            "detail": _("Successfully refreshed token."),
-        }, status=status.HTTP_200_OK)
 
 
 class TokenValidateView(views.APIView):

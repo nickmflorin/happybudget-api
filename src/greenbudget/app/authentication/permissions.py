@@ -1,6 +1,7 @@
 from rest_framework import permissions
 
 from django.conf import settings
+from django.urls import reverse
 
 from greenbudget.lib.utils import import_at_module_path
 from .exceptions import (
@@ -12,6 +13,11 @@ class UserPermission(permissions.BasePermission):
 
     def has_permission(self, request, view):
         user = getattr(request, 'user', None)
+        # We do not want to force a logout if we are validating the JWT token
+        # because the FE logic will do this manually.
+        is_validate_url = request.path == reverse('authentication:validate')
+        if is_validate_url:
+            return self.user_has_permission(user, force_logout=False)
         return self.user_has_permission(user)
 
 
