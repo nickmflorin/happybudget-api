@@ -20,10 +20,10 @@ def now():
     return int(time.mktime(datetime.datetime.now().timetuple()))
 
 
-def stripe_resource(object_type, prefix=None):
-    def decorator(func):
+def stripe_resource(object_type, prefix=None, required_kwargs=None):
+    def decorated(func):
         @functools.wraps(func)
-        def inner(*args, **kwargs):
+        def wrapper(*args, **kwargs):
             as_dict = kwargs.pop('as_dict', False)
             base_data = {
                 'object': object_type,
@@ -33,185 +33,24 @@ def stripe_resource(object_type, prefix=None):
             }
             if prefix is not None:
                 base_data['id'] = object_id(prefix=prefix)
-            base_data.update(func(*args))
+
+            factory_kwargs = {}
+            if required_kwargs is not None:
+                for k in required_kwargs:
+                    if k not in kwargs:
+                        raise Exception(
+                            'Factory %s missing keyword argument %s.'
+                            % (func.__name__, k)
+                        )
+                    factory_kwargs[k] = kwargs.pop(k)
+
+            base_data.update(func(*args, **factory_kwargs))
             base_data.update(**kwargs)
             if not as_dict:
                 return convert_to_stripe_object(base_data)
             return base_data
-        return inner
-    return decorator
-
-
-@stripe_resource(object_type="customer", prefix="cus")
-def customer_base(email):
-    return {
-        "address": None,
-        "balance": 0,
-        "currency": "usd",
-        "default_source": None,
-        "delinquent": False,
-        "description": None,
-        "discount": None,
-        "email": email,
-        "invoice_prefix": None,
-        "tax_exempt": "none",
-        "invoice_settings": {
-            "custom_fields": None,
-            "default_payment_method": None,
-            "footer": None
-        },
-        "name": "",
-        "next_invoice_sequence": None,
-        "phone": None,
-        "preferred_locales": [],
-        "shipping": None,
-        'subscriptions': {
-            'object': 'list',
-            'data': [],
-            'has_more': False,
-            'total_count': 0,
-            'url': '/v1/customers/%s/subscriptions' % id,
-        },
-    }
-
-
-@stripe_resource(object_type="product", prefix="prod")
-def product_base(internal_id):
-    slug = internal_id.split('_')[1]
-    return {
-        "active": True,
-        "attributes": [],
-        "description": "%s plan and pricing." % slug.upper(),
-        "images": [],
-        "metadata": {
-            "internal_id": internal_id
-        },
-        "name": "Greenbudget %s" % slug.upper(),
-        "package_dimensions": None,
-        "shippable": None,
-        "statement_descriptor": None,
-        "tax_code": None,
-        "type": "service",
-        "unit_label": None,
-        "updated": now(),
-        "url": None
-    }
-
-
-@stripe_resource(object_type="price", prefix="price")
-def price_base(product_id):
-    return {
-        "product": product_id,
-        "active": True,
-        "billing_scheme": "per_unit",
-        "currency": "usd",
-        "lookup_key": None,
-        "nickname": None,
-        "recurring": {
-            "aggregate_usage": None,
-            "interval": "month",
-            "interval_count": 1,
-            "trial_period_days": None,
-            "usage_type": "licensed"
-        },
-        "tax_behavior": "unspecified",
-        "tiers_mode": None,
-        "transform_quantity": None,
-        "type": "recurring",
-        "unit_amount": 2000,
-        "unit_amount_decimal": "2000"
-    }
-
-
-@stripe_resource(object_type="plan", prefix="price")
-def plan_base(price, product):
-    return {
-        "product": product.id,
-        "active": True,
-        "aggregate_usage": None,
-        "amount": price.unit_amount,
-        "amount_decimal": price.unit_amount_decimal,
-        "billing_scheme": price.billing_scheme,
-        "currency": price.currenchy,
-        "interval": "month",
-        "interval_count": 1,
-        "nickname": None,
-        "tiers_mode": None,
-        "transform_usage": None,
-        "trial_period_days": None,
-        "usage_type": "licensed"
-    }
-
-
-@stripe_resource(object_type="subscription_item", prefix="si")
-def subscription_item_base(plan, price, subscription_id):
-    return {
-        "subscription": subscription_id,
-        "billing_thresholds": None,
-        "quantity": 1,
-        "tax_rates": [],
-        "plan": plan.to_dict_recursive(),
-        "price": price.to_dict_recursive()
-    }
-
-
-@stripe_resource(object_type="list")
-def list_object(**kwargs):
-    return {
-        'data': [],
-        'has_more': False,
-        'total_count': len(kwargs.get('data', [])),
-        'url': '',
-    }
-
-
-@stripe_resource(object_type="subscription")
-def subscription_base(plan, price, customer_id):
-    subscription_id = object_id(prefix="sub")
-    return {
-        "id": subscription_id,
-        "customer": customer_id,
-        "application_fee_percent": None,
-        "automatic_tax": {
-            "enabled": False
-        },
-        "billing_cycle_anchor": now(),
-        "billing_thresholds": None,
-        "cancel_at": None,
-        "cancel_at_period_end": False,
-        "canceled_at": None,
-        "collection_method": "charge_automatically",
-        "current_period_end": now(),
-        "current_period_start": now(),
-        "days_until_due": None,
-        "default_payment_method": None,
-        "default_source": None,
-        "default_tax_rates": [],
-        "discount": None,
-        "ended_at": None,
-        "items": list_object(
-            data=[subscription_item_base(plan, price, as_dict=True)],
-            url="/v1/subscription_items?subscription=%s" % subscription_id
-        ),
-        "latest_invoice": None,
-        "next_pending_invoice_item_invoice": None,
-        "pause_collection": None,
-        "payment_settings": {
-            "payment_method_options": None,
-            "payment_method_types": None
-        },
-        "pending_invoice_item_interval": None,
-        "pending_setup_intent": None,
-        "pending_update": None,
-        "plan": plan.to_dict_recursive(),
-        "quantity": 1,
-        "schedule": None,
-        "start_date": now(),
-        "status": "active",
-        "transfer_data": None,
-        "trial_end": None,
-        "trial_start": None
-    }
+        return wrapper
+    return decorated
 
 
 @pytest.fixture
@@ -220,7 +59,8 @@ def mock_stripe_data():
         "customers": {},
         "subscriptions": {},
         "prices": {},
-        "products": {}
+        "products": {},
+        "checkout_sessions": {}
     }
 
 
@@ -230,8 +70,234 @@ def mock_stripe(mock_stripe_data):
         raise stripe.error.InvalidRequestError(
             'No such resource: %s' % id, 'id', code='resource_missing')
 
+    @stripe_resource(
+        object_type="checkout.session",
+        prefix="cs",
+        required_kwargs=["success_url", "cancel_url", "mode", "line_items"]
+    )
+    def checkout_session_base(**kwargs):
+        id = object_id(prefix="cs")
+        customer = customer_create("testemail@gmail.com")
+        price = price_retrieve(kwargs['line_items'][0]['price'])
+        return {
+            "id": id,
+            "subscription": object_id(prefix="sub"),
+            "amount_subtotal": price.unit_amount,
+            "amount_total": price.unit_amount,
+            "cancel_url": kwargs['cancel_url'],
+            "success_url": kwargs['success_url'],
+            "customer": customer.id,
+            "customer_details": {
+                "email": customer.email,
+                "phone": None,
+                "tax_exempt": "none",
+                "tax_ids": []
+            },
+            "after_expiration": None,
+            "allow_promotion_codes": None,
+            "automatic_tax": {
+                "enabled": False,
+                "status": None
+            },
+            "billing_address_collection": None,
+            "client_reference_id": None,
+            "consent": None,
+            "consent_collection": None,
+            "currency": "usd",
+            "customer_email": None,
+            "expires_at": now(),
+            "locale": None,
+            "metadata": {},
+            "mode": kwargs['mode'],
+            "payment_intent": None,
+            "payment_method_options": {},
+            "payment_method_types": ["card"],
+            "payment_status": "paid",
+            "phone_number_collection": {"enabled": False},
+            "recovered_from": None,
+            "setup_intent": None,
+            "shipping": None,
+            "shipping_address_collection": None,
+            "shipping_options": [],
+            "shipping_rate": None,
+            "status": "complete",
+            "submit_type": None,
+            "total_details": {
+                "amount_discount": 0,
+                "amount_shipping": 0,
+                "amount_tax": 0
+            },
+            # This will be the Stripe URL that we redirect to.
+            "url": "https://checkout.stripe.com/pay/%s" % id
+        }
+
+    @stripe_resource(object_type="customer", prefix="cus")
+    def customer_base(email):
+        return {
+            "address": None,
+            "balance": 0,
+            "currency": "usd",
+            "default_source": None,
+            "delinquent": False,
+            "description": None,
+            "discount": None,
+            "email": email,
+            "invoice_prefix": None,
+            "tax_exempt": "none",
+            "invoice_settings": {
+                "custom_fields": None,
+                "default_payment_method": None,
+                "footer": None
+            },
+            "name": "",
+            "next_invoice_sequence": None,
+            "phone": None,
+            "preferred_locales": [],
+            "shipping": None,
+            'subscriptions': {
+                'object': 'list',
+                'data': [],
+                'has_more': False,
+                'total_count': 0,
+                'url': '/v1/customers/%s/subscriptions' % id,
+            },
+        }
+
+    @stripe_resource(object_type="product", prefix="prod")
+    def product_base(internal_id):
+        slug = internal_id.split('_')[1]
+        return {
+            "active": True,
+            "attributes": [],
+            "description": "%s plan and pricing." % slug.upper(),
+            "images": [],
+            "metadata": {
+                "internal_id": internal_id
+            },
+            "name": "Greenbudget %s" % slug.upper(),
+            "package_dimensions": None,
+            "shippable": None,
+            "statement_descriptor": None,
+            "tax_code": None,
+            "type": "service",
+            "unit_label": None,
+            "updated": now(),
+            "url": None
+        }
+
+    @stripe_resource(object_type="price", prefix="price")
+    def price_base(product_id):
+        return {
+            "product": product_id,
+            "active": True,
+            "billing_scheme": "per_unit",
+            "currency": "usd",
+            "lookup_key": None,
+            "nickname": None,
+            "recurring": {
+                "aggregate_usage": None,
+                "interval": "month",
+                "interval_count": 1,
+                "trial_period_days": None,
+                "usage_type": "licensed"
+            },
+            "tax_behavior": "unspecified",
+            "tiers_mode": None,
+            "transform_quantity": None,
+            "type": "recurring",
+            "unit_amount": 2000,
+            "unit_amount_decimal": "2000"
+        }
+
+    @stripe_resource(object_type="plan", prefix="price")
+    def plan_base(price, product):
+        return {
+            "product": product.id,
+            "active": True,
+            "aggregate_usage": None,
+            "amount": price.unit_amount,
+            "amount_decimal": price.unit_amount_decimal,
+            "billing_scheme": price.billing_scheme,
+            "currency": price.currenchy,
+            "interval": "month",
+            "interval_count": 1,
+            "nickname": None,
+            "tiers_mode": None,
+            "transform_usage": None,
+            "trial_period_days": None,
+            "usage_type": "licensed"
+        }
+
+    @stripe_resource(object_type="subscription_item", prefix="si")
+    def subscription_item_base(plan, price, subscription_id):
+        return {
+            "subscription": subscription_id,
+            "billing_thresholds": None,
+            "quantity": 1,
+            "tax_rates": [],
+            "plan": plan.to_dict_recursive(),
+            "price": price.to_dict_recursive()
+        }
+
+    @stripe_resource(object_type="list")
+    def list_object(**kwargs):
+        return {
+            'data': [],
+            'has_more': False,
+            'total_count': len(kwargs.get('data', [])),
+            'url': '',
+        }
+
+    @stripe_resource(object_type="subscription")
+    def subscription_base(plan, price, customer_id):
+        subscription_id = object_id(prefix="sub")
+        return {
+            "id": subscription_id,
+            "customer": customer_id,
+            "application_fee_percent": None,
+            "automatic_tax": {
+                "enabled": False
+            },
+            "billing_cycle_anchor": now(),
+            "billing_thresholds": None,
+            "cancel_at": None,
+            "cancel_at_period_end": False,
+            "canceled_at": None,
+            "collection_method": "charge_automatically",
+            "current_period_end": now(),
+            "current_period_start": now(),
+            "days_until_due": None,
+            "default_payment_method": None,
+            "default_source": None,
+            "default_tax_rates": [],
+            "discount": None,
+            "ended_at": None,
+            "items": list_object(
+                data=[subscription_item_base(plan, price, as_dict=True)],
+                url="/v1/subscription_items?subscription=%s" % subscription_id
+            ),
+            "latest_invoice": None,
+            "next_pending_invoice_item_invoice": None,
+            "pause_collection": None,
+            "payment_settings": {
+                "payment_method_options": None,
+                "payment_method_types": None
+            },
+            "pending_invoice_item_interval": None,
+            "pending_setup_intent": None,
+            "pending_update": None,
+            "plan": plan.to_dict_recursive(),
+            "quantity": 1,
+            "schedule": None,
+            "start_date": now(),
+            "status": "active",
+            "transfer_data": None,
+            "trial_end": None,
+            "trial_start": None
+        }
+
     def customer_create(email, **kwargs):
-        customer = customer_base(**kwargs)
+        customer = customer_base(email, **kwargs)
         mock_stripe_data["customers"][customer.id] = customer
         return customer
 
@@ -318,6 +384,16 @@ def mock_stripe(mock_stripe_data):
         mock_stripe_data["prices"][price.id] = price
         return price
 
+    def checkout_session_create(*args, **kwargs):
+        session = checkout_session_base(*args, **kwargs)
+        mock_stripe_data["checkout_sessions"][session.id] = session
+        return session
+
+    def checkout_session_retrieve(obj_id, **kwargs):
+        if obj_id not in mock_stripe_data["checkout_sessions"]:
+            raise_resource_missing(obj_id)
+        return mock_stripe_data["checkout_sessions"][obj_id]
+
     with mock.patch.object(stripe.Customer, 'retrieve',
                 mock.Mock(wraps=customer_retrieve)), \
             mock.patch.object(stripe.Customer, 'create',
@@ -341,7 +417,11 @@ def mock_stripe(mock_stripe_data):
             mock.patch.object(stripe.Price, 'create',
                 mock.Mock(wraps=price_create)), \
             mock.patch.object(stripe.Price, 'list',
-                mock.Mock(wraps=price_list)):
+                mock.Mock(wraps=price_list)), \
+            mock.patch.object(stripe.checkout.Session, 'retrieve',
+                mock.Mock(wraps=checkout_session_retrieve)), \
+            mock.patch.object(stripe.checkout.Session, 'create',
+                mock.Mock(wraps=checkout_session_create)):
         yield stripe
 
 
@@ -356,3 +436,11 @@ def products(mock_stripe):
 @pytest.fixture
 def prices(mock_stripe, products):
     return [mock_stripe.Price.create(p.id) for p in products]
+
+
+@pytest.fixture
+def stripe_customer(user, mock_stripe):
+    stripe_customer = mock_stripe.Customer.create(email=user.email)
+    user.stripe_id = stripe_customer.id
+    user.save()
+    return stripe_customer

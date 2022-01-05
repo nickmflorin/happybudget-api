@@ -19,7 +19,7 @@ from .serializers import (
     UserPortalSessionSerializer,
     StripeSubscriptionSerializer
 )
-from .stripe_client import get_products
+from .utils import get_products
 from . import stripe
 
 

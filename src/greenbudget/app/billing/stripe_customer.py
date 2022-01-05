@@ -5,8 +5,7 @@ import time
 from django.utils.functional import cached_property
 
 from .constants import BillingStatus, StripeSubscriptionStatus
-from .stripe_client import request_until_all_received
-from .utils import get_product_internal_id
+from .utils import get_product_internal_id, request_until_all_received
 from . import stripe
 
 

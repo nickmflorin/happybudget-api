@@ -42,3 +42,33 @@ def test_get_products_product_without_price_ommitted(api_client, user,
     response = api_client.get("/v1/billing/products/")
     assert response.status_code == 200
     assert response.json()['count'] == 0
+
+
+def test_checkout_session(api_client, user, mock_stripe_data, prices):
+    api_client.force_login(user)
+    response = api_client.post(
+        "/v1/billing/checkout-session/", data={"price_id": prices[0].id})
+    session_ids = list(mock_stripe_data['checkout_sessions'].keys())
+    assert len(session_ids) == 1
+    assert response.status_code == 200
+    assert response.json() == {
+        'redirect_url': 'https://checkout.stripe.com/pay/%s' % session_ids[0]
+    }
+
+
+def test_checkout_session_user_already_stripe_customer(api_client, user, prices,
+        mock_stripe_data, stripe_customer):
+    api_client.force_login(user)
+    response = api_client.post(
+        "/v1/billing/checkout-session/", data={"price_id": prices[0].id})
+    assert response.status_code == 403
+    assert response.json() == {
+        'user_id': 1,
+        'errors': [{
+            'message': 'User is already a Stripe customer.',
+            'code': 'permission_denied',
+            'error_type': 'auth'
+        }]
+    }
+    session_ids = list(mock_stripe_data['checkout_sessions'].keys())
+    assert len(session_ids) == 0

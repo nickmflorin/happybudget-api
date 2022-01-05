@@ -144,19 +144,6 @@ def unapproved_user(user):
 
 
 @pytest.fixture
-def standard_product_user(user, mock_stripe):
-    stripe_customer = mock_stripe.Customer.create(email=user.email)
-    stripe_product = mock_stripe.Product.create(internal_id="standard")
-    mock_stripe.Subscription.create(
-        product_id=stripe_product.id,
-        customer_id=stripe_customer.id
-    )
-    user.stripe_id = stripe_customer.id
-    user.save()
-    return user
-
-
-@pytest.fixture
 def admin_user(db, user_password):
     user = User.objects.create(
         email="admin+user@gmail.com",
