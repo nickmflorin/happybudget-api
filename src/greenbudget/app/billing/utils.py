@@ -1,5 +1,8 @@
+import datetime
 import logging
+import time
 
+from .constants import StripeSubscriptionStatus, BillingStatus
 from .exceptions import StripeBadRequest, UnconfiguredProductException
 from . import stripe
 
@@ -16,6 +19,34 @@ def get_product_internal_id(product):
     if 'internal_id' not in product.metadata:
         raise UnconfiguredProductException(id)
     return product.metadata['internal_id']
+
+
+def subscription_status(subscription):
+    current_ts = time.mktime(datetime.datetime.now().timetuple())
+    if subscription is None:
+        return None
+
+    stripe_status = subscription.status
+    if stripe_status in (
+        StripeSubscriptionStatus.ACTIVE,
+        StripeSubscriptionStatus.TRIALING,
+        StripeSubscriptionStatus.PAST_DUE
+    ):
+        return BillingStatus.ACTIVE
+    elif stripe_status in (
+        StripeSubscriptionStatus.INCOMPLETE,
+        StripeSubscriptionStatus.INCOMPLETE_EXPIRED
+    ):
+        return None
+    elif stripe_status == StripeSubscriptionStatus.UNPAID:
+        return BillingStatus.EXPIRED
+    # Check expiration to distinguish between cancelled and expired
+    # subscriptions.
+    elif subscription \
+            and subscription.current_period_end < current_ts:
+        return BillingStatus.EXPIRED
+    assert stripe_status == StripeSubscriptionStatus.CANCELLED
+    return BillingStatus.CANCELLED
 
 
 def request_until_all_received(func, *args, **kwargs):

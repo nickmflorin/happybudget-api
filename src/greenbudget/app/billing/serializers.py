@@ -9,7 +9,7 @@ from greenbudget.app.user.models import User
 
 from .exceptions import (
     CheckoutError, StripeBadRequest, CheckoutSessionInactiveError)
-from .utils import get_product_internal_id
+from .utils import get_product_internal_id, subscription_status
 from . import stripe
 
 
@@ -194,7 +194,11 @@ class StripeSubscriptionSerializer(serializers.Serializer):
     current_period_start = UnixTimestampField(read_only=True)
     current_period_end = UnixTimestampField(read_only=True)
     start_date = UnixTimestampField(read_only=True)
-    status = serializers.CharField(read_only=True)
+    stripe_status = serializers.CharField(read_only=True)
+    status = serializers.SerializerMethodField()
+
+    def get_status(self, instance):
+        return subscription_status(instance)
 
 
 class StripeProductSerializer(serializers.Serializer):

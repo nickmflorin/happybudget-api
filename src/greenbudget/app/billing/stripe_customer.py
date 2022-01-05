@@ -1,11 +1,9 @@
-from datetime import datetime
 import logging
-import time
 
 from django.utils.functional import cached_property
 
-from .constants import BillingStatus, StripeSubscriptionStatus
-from .utils import get_product_internal_id, request_until_all_received
+from .utils import (
+    get_product_internal_id, request_until_all_received, subscription_status)
 from . import stripe
 
 
@@ -226,30 +224,7 @@ class StripeCustomer:
         `incomplete` status should be resolved almost immediately - but until it
         is we don't actually have a subscription.
         """
-        status = self.stripe_status
-        current_ts = time.mktime(datetime.now().timetuple())
-
-        if status in (
-            StripeSubscriptionStatus.ACTIVE,
-            StripeSubscriptionStatus.TRIALING,
-            StripeSubscriptionStatus.PAST_DUE
-        ):
-            return BillingStatus.ACTIVE
-        elif status in (
-            StripeSubscriptionStatus.INCOMPLETE,
-            StripeSubscriptionStatus.INCOMPLETE_EXPIRED
-        ):
-            return None
-        elif status == StripeSubscriptionStatus.UNPAID:
-            return BillingStatus.EXPIRED
-        # Check expiration to distinguish between cancelled and expired
-        # subscriptions.
-        elif self.subscription \
-                and self.subscription.current_period_end < current_ts:
-            return BillingStatus.EXPIRED
-        elif status == StripeSubscriptionStatus.CANCELLED:
-            return BillingStatus.CANCELLED
-        return None
+        return subscription_status(self.subscription)
 
     billing_status.token_key = 'billing_status'
 
