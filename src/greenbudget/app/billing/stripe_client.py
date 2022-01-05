@@ -65,10 +65,19 @@ def get_products():
         else:
             products_with_price = []
             for product in products:
-                price = next(p for p in prices if p.product == product.id)
-                if price is None:
-                    logger.error("")
-                else:
-                    setattr(product, 'price_id', price.id)
-                    products_with_price.append(product)
+                try:
+                    price = [p for p in prices if p.product == product.id][0]
+                except IndexError:
+                    logger.error(
+                        "Stripe Error: Could not find a price model associated "
+                        "with product %s." % product.id,
+                        extra={
+                            "product": "%s" % product.to_dict_recursive(),
+                        }
+                    )
+                    continue
+                # Set the price_id on the product so it can be accessed by the
+                # serializer.
+                setattr(product, 'price_id', price.id)
+                products_with_price.append(product)
             return products_with_price
