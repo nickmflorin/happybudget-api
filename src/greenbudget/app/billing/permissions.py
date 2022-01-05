@@ -10,7 +10,7 @@ class IsStripeCustomerPermission(permissions.BasePermission):
         # IsAuthenticated permission class, otherwise, we cannot rely on the
         # request user not being an AnonymousUser.
         if request.user.stripe_id is None:
-            raise exceptions.PermissionDenied("User does not a Stripe customer.")
+            raise exceptions.PermissionDenied("User is not a Stripe customer.")
         return True
 
 

@@ -60,7 +60,8 @@ def mock_stripe_data():
         "subscriptions": {},
         "prices": {},
         "products": {},
-        "checkout_sessions": {}
+        "checkout_sessions": {},
+        "portal_sessions": {}
     }
 
 
@@ -69,6 +70,25 @@ def mock_stripe(mock_stripe_data):
     def raise_resource_missing(id):
         raise stripe.error.InvalidRequestError(
             'No such resource: %s' % id, 'id', code='resource_missing')
+
+    @stripe_resource(
+        object_type="billing_portal.session",
+        prefix="bps",
+        required_kwargs=["return_url", "customer"]
+    )
+    def portal_session_base(**kwargs):
+        return {
+            "configuration": object_id(prefix="bps"),
+            "customer": kwargs["customer"],
+            "locale": None,
+            "on_behalf_of": None,
+            "return_url": kwargs["return_url"],
+            # This will be the Stripe URL that we redirect to.  I do not yet
+            # understand why, but the ID in the PATH param does not seem to
+            # correspond to anything we can predict for tests, so we keep it
+            # a constant for now.
+            "url": "https://billing.stripe.com/session/%s" % "1234"
+        }
 
     @stripe_resource(
         object_type="checkout.session",
@@ -394,6 +414,16 @@ def mock_stripe(mock_stripe_data):
             raise_resource_missing(obj_id)
         return mock_stripe_data["checkout_sessions"][obj_id]
 
+    def portal_session_create(*args, **kwargs):
+        session = portal_session_base(*args, **kwargs)
+        mock_stripe_data["portal_sessions"][session.id] = session
+        return session
+
+    def portal_session_retrieve(obj_id, **kwargs):
+        if obj_id not in mock_stripe_data["portal_sessions"]:
+            raise_resource_missing(obj_id)
+        return mock_stripe_data["portal_sessions"][obj_id]
+
     with mock.patch.object(stripe.Customer, 'retrieve',
                 mock.Mock(wraps=customer_retrieve)), \
             mock.patch.object(stripe.Customer, 'create',
@@ -421,7 +451,11 @@ def mock_stripe(mock_stripe_data):
             mock.patch.object(stripe.checkout.Session, 'retrieve',
                 mock.Mock(wraps=checkout_session_retrieve)), \
             mock.patch.object(stripe.checkout.Session, 'create',
-                mock.Mock(wraps=checkout_session_create)):
+                mock.Mock(wraps=checkout_session_create)), \
+            mock.patch.object(stripe.billing_portal.Session, 'retrieve',
+                mock.Mock(wraps=portal_session_retrieve)), \
+            mock.patch.object(stripe.billing_portal.Session, 'create',
+                mock.Mock(wraps=portal_session_create)):
         yield stripe
 
 

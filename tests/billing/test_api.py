@@ -72,3 +72,31 @@ def test_checkout_session_user_already_stripe_customer(api_client, user, prices,
     }
     session_ids = list(mock_stripe_data['checkout_sessions'].keys())
     assert len(session_ids) == 0
+
+
+def test_portal_session(api_client, user, mock_stripe_data, stripe_customer):
+    api_client.force_login(user)
+    response = api_client.post("/v1/billing/portal-session/")
+    session_ids = list(mock_stripe_data['portal_sessions'].keys())
+    assert len(session_ids) == 1
+    assert response.status_code == 200
+    assert response.json() == {
+        'redirect_url': 'https://billing.stripe.com/session/%s' % "1234"
+    }
+
+
+def test_portal_session_user_not_stripe_customer(api_client, user,
+        mock_stripe_data):
+    api_client.force_login(user)
+    response = api_client.post("/v1/billing/portal-session/")
+    session_ids = list(mock_stripe_data['portal_sessions'].keys())
+    assert len(session_ids) == 0
+    assert response.status_code == 403
+    assert response.json() == {
+        'user_id': 1,
+        'errors': [{
+            'message': 'User is not a Stripe customer.',
+            'code': 'permission_denied',
+            'error_type': 'auth'
+        }]
+    }
