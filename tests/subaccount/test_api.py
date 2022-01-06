@@ -75,7 +75,10 @@ def test_get_budget_subaccount(api_client, user, budget_df):
     budget = budget_df.create_budget()
     account = budget_df.create_account(parent=budget)
     subaccount = budget_df.create_subaccount(parent=account)
-
+    siblings = [
+        budget_df.create_subaccount(parent=account),
+        budget_df.create_subaccount(parent=account)
+    ]
     api_client.force_login(user)
     response = api_client.get("/v1/subaccounts/%s/" % subaccount.pk)
     assert response.status_code == 200
@@ -97,12 +100,29 @@ def test_get_budget_subaccount(api_client, user, budget_df):
         "actual": 0.0,
         "children": [],
         "fringes": [],
-        "siblings": [],
         "unit": None,
         "contact": None,
         "attachments": [],
         "order": "n",
         "domain": budget_df.context,
+        "siblings": [
+            {
+                'id': siblings[0].pk,
+                'identifier': siblings[0].identifier,
+                'type': 'subaccount',
+                'description': siblings[0].description,
+                'domain': budget_df.context,
+                'order': 't',
+            },
+            {
+                'id': siblings[1].pk,
+                'identifier': siblings[1].identifier,
+                'type': 'subaccount',
+                'description': siblings[1].description,
+                'domain': budget_df.context,
+                'order': 'w',
+            }
+        ],
         "ancestors": [
             {
                 "type": "budget",
@@ -125,7 +145,10 @@ def test_get_template_subaccount(api_client, user, template_df):
     budget = template_df.create_budget()
     account = template_df.create_account(parent=budget)
     subaccount = template_df.create_subaccount(parent=account)
-
+    siblings = [
+        template_df.create_subaccount(parent=account),
+        template_df.create_subaccount(parent=account)
+    ]
     api_client.force_login(user)
     response = api_client.get("/v1/subaccounts/%s/" % subaccount.pk)
     assert response.status_code == 200
@@ -147,10 +170,27 @@ def test_get_template_subaccount(api_client, user, template_df):
         "actual": 0.0,
         "children": [],
         "fringes": [],
-        "siblings": [],
         "unit": None,
         "order": "n",
         "domain": template_df.context,
+        "siblings": [
+            {
+                'id': siblings[0].pk,
+                'identifier': siblings[0].identifier,
+                'type': 'subaccount',
+                'description': siblings[0].description,
+                'domain': template_df.context,
+                'order': 't',
+            },
+            {
+                'id': siblings[1].pk,
+                'identifier': siblings[1].identifier,
+                'type': 'subaccount',
+                'description': siblings[1].description,
+                'domain': template_df.context,
+                'order': 'w',
+            }
+        ],
         "ancestors": [
             {
                 "type": "budget",

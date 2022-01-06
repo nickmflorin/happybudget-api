@@ -71,7 +71,7 @@ class BudgetAccountSerializer(AccountSerializer):
 @row_order_serializer(table_filter=lambda d: {'parent_id': d.parent.id})
 class BudgetAccountDetailSerializer(BudgetAccountSerializer):
     ancestors = EntityAncestorSerializer(many=True, read_only=True)
-    siblings = EntityAncestorSerializer(many=True, read_only=True)
+    siblings = AccountSimpleSerializer(many=True, read_only=True)
 
     class Meta(BudgetAccountSerializer.Meta):
         fields = BudgetAccountSerializer.Meta.fields + (
@@ -86,7 +86,7 @@ class TemplateAccountSerializer(AccountSerializer):
 @row_order_serializer(table_filter=lambda d: {'parent_id': d.parent.id})
 class TemplateAccountDetailSerializer(TemplateAccountSerializer):
     ancestors = EntityAncestorSerializer(many=True, read_only=True)
-    siblings = EntityAncestorSerializer(many=True, read_only=True)
+    siblings = AccountSimpleSerializer(many=True, read_only=True)
 
     class Meta(TemplateAccountSerializer.Meta):
         fields = TemplateAccountSerializer.Meta.fields + (

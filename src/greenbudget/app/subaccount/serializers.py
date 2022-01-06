@@ -156,7 +156,7 @@ class BudgetSubAccountSerializer(SubAccountSerializer):
 })
 class BudgetSubAccountDetailSerializer(BudgetSubAccountSerializer):
     ancestors = EntityAncestorSerializer(many=True, read_only=True)
-    siblings = EntityAncestorSerializer(many=True, read_only=True)
+    siblings = SubAccountSimpleSerializer(many=True, read_only=True)
 
     class Meta(BudgetSubAccountSerializer.Meta):
         model = BudgetSubAccount
@@ -177,7 +177,7 @@ class TemplateSubAccountSerializer(SubAccountSerializer):
 })
 class TemplateSubAccountDetailSerializer(TemplateSubAccountSerializer):
     ancestors = EntityAncestorSerializer(many=True, read_only=True)
-    siblings = EntityAncestorSerializer(many=True, read_only=True)
+    siblings = SubAccountSimpleSerializer(many=True, read_only=True)
 
     class Meta(TemplateSubAccountSerializer.Meta):
         model = TemplateSubAccount

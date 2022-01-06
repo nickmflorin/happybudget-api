@@ -6,6 +6,10 @@ def test_get_account(api_client, user, budget_f):
     api_client.force_login(user)
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
+    siblings = [
+        budget_f.create_account(parent=budget),
+        budget_f.create_account(parent=budget)
+    ]
     response = api_client.get("/v1/accounts/%s/" % account.pk)
     assert response.status_code == 200
     assert response.json() == {
@@ -20,7 +24,24 @@ def test_get_account(api_client, user, budget_f):
         "accumulated_markup_contribution": 0.0,
         "actual": 0.0,
         "children": [],
-        "siblings": [],
+        "siblings": [
+            {
+                'id': siblings[0].pk,
+                'identifier': siblings[0].identifier,
+                'type': 'account',
+                'description': siblings[0].description,
+                'domain': budget_f.context,
+                'order': 't',
+            },
+            {
+                'id': siblings[1].pk,
+                'identifier': siblings[1].identifier,
+                'type': 'account',
+                'description': siblings[1].description,
+                'domain': budget_f.context,
+                'order': 'w',
+            }
+        ],
         "order": "n",
         "ancestors": [{
             "type": "budget",
