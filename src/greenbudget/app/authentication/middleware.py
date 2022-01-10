@@ -183,45 +183,21 @@ class AuthTokenCookieMiddleware(MiddlewareMixin):
             # malicious attempt to exploit potential security holes.
             if settings.ENVIRONMENT != Environments.TEST:
                 session_user = get_session_user(request, cache_stripe_info=False)
-                if session_user != request.cookie_user:
-                    # This is an edge case where there may have been a problem
-                    # removing either the user's session or JWT token on logout.
-                    # In either case, we want to gracefully handle.
-                    if not session_user.is_authenticated \
-                            or not request.cookie_user.is_authenticated:
-                        logger.warn(
-                            'Inconsistent user authenticated states determined '
-                            'from session and JWT token.  This most likely '
-                            'means that there was a problem either removing the '
-                            'session or the JWT token during logout.', extra={
-                                'request': request,
-                                'session_user_authenticated':
-                                session_user.is_authenticated,
-                                'token_user_authenticated':
-                                request.cookie_user.is_authenticated,
-                                'cookie_user':
-                                getattr(request.cookie_user, 'pk', None),
-                                'session_user':
-                                getattr(session_user, 'pk', None)
-                            }
-                        )
-                    else:
-                        # At this point, someone is most likely trying to hijack
-                        # a user's login by either manipulating the session
-                        # cookie or the JWT cookie.
-                        logger.error(
-                            "Session Authentication & JWT Cookie Authentication "
-                            "are indicating different users!  This is a sign "
-                            "that someone may be trying to exploit a security "
-                            "hole!", extra={
-                                'token_user':
-                                getattr(request.cookie_user, 'pk', None),
-                                'session_user':
-                                getattr(session_user, 'pk', None),
-                                'request': request
-                            }
-                        )
-                return self.force_logout(request, response)
+                if session_user != request.cookie_user \
+                        and session_user.is_authenticated:
+                    logger.error(
+                        "Session Authentication & JWT Cookie Authentication "
+                        "are indicating different users!  This is a sign "
+                        "that someone may be trying to exploit a security "
+                        "hole!", extra={
+                            'token_user':
+                            getattr(request.cookie_user, 'pk', None),
+                            'session_user':
+                            getattr(session_user, 'pk', None),
+                            'request': request
+                        }
+                    )
+                    return self.force_logout(request, response)
 
         if self.should_persist_cookie(request):
             self.persist_cookie(request, response)
