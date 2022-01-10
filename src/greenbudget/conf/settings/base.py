@@ -162,6 +162,7 @@ INSTALLED_APPS = [
     'greenbudget.app.user',
 ]
 
+
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'greenbudget.app.middleware.HealthCheckMiddleware',

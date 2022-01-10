@@ -21,6 +21,7 @@ def test_login(login, user_with_password, settings):
     response = login()
     assert response.status_code == 201
     assert settings.JWT_TOKEN_COOKIE_NAME in response.cookies
+    assert response.cookies[settings.JWT_TOKEN_COOKIE_NAME] != ""
     assert response.json() == {
         "id": 1,
         "first_name": user_with_password.first_name,

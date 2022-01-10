@@ -4,7 +4,6 @@ from PIL import Image
 import pytest
 import requests
 
-from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -24,7 +23,7 @@ from .stripe_fixtures import *  # noqa
 
 
 @pytest.fixture(autouse=True)
-def reset_cache():
+def reset_cache(settings):
     yield
     backend = settings.CACHES["default"]["BACKEND"]
     if backend != "django.core.cache.backends.locmem.LocMemCache":

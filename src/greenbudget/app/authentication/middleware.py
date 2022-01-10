@@ -11,6 +11,8 @@ from django.utils.http import http_date
 
 from rest_framework_simplejwt.settings import api_settings
 
+from greenbudget.conf import Environments
+
 from .tokens import AuthToken
 from .exceptions import InvalidToken
 from .utils import parse_token_from_request, parse_token, user_can_authenticate
@@ -19,50 +21,25 @@ from .utils import parse_token_from_request, parse_token, user_can_authenticate
 logger = logging.getLogger('greenbudget')
 
 
-def handle_token_session_user_inconsistency(request, session_user, token_user):
-    logger.error(
-        "Session Authentication & JWT Cookie Authentication are indicating "
-        "different users!  This is a sign that someone may be trying to "
-        "exploit a security hole!", extra={
-            'token_user': getattr(token_user, 'pk'),
-            'session_user': getattr(session_user, 'pk'),
-            'request': request
-        }
-    )
-    request._cached_user = AnonymousUser()
-    request._cached_cookie_user = AnonymousUser()
-
-
-def get_user(request):
+def get_session_user(request, cache_stripe_info=True):
     if not hasattr(request, '_cached_user'):
         session_user = auth.get_user(request)
         if user_can_authenticate(session_user, raise_exception=False) \
-                and session_user.stripe_id is not None:
+                and session_user.stripe_id is not None \
+                and cache_stripe_info:
             raw_token = parse_token_from_request(request)
             # Store the cached cookie user for subsequent middlewares so we
             # can avoid parsing the token multiple times (since it involves
             # a DB query).
             token_user, token_obj = parse_token(raw_token)
-            # If the token user and session user differ, it is a sign that
-            # someone might be trying to hack another user's session.  If they
-            # are the same, then the token_user is guaranteed to pass the check
-            # `user_can_authenticate` because it was already performed on the
-            # session_user.
-            if token_user != session_user:
-                handle_token_session_user_inconsistency(
-                    request=request,
-                    token_user=token_user,
-                    session_user=session_user
-                )
-            else:
-                # Use the JWT token to prepopulate billing related values on the
-                # user to avoid unnecessary requests to Stripe's API.
-                token_user.cache_stripe_from_token(token_obj)
-                session_user.cache_stripe_from_token(token_obj)
-                # Store the cached cookie user for subsequent middlewares so we
-                # can avoid parsing the token multiple times (since it involves
-                # a DB query).
-                request._cached_cookie_user = token_user
+            # Use the JWT token to prepopulate billing related values on the
+            # user to avoid unnecessary requests to Stripe's API.
+            token_user.cache_stripe_from_token(token_obj)
+            session_user.cache_stripe_from_token(token_obj)
+            # Store the cached cookie user for subsequent middlewares so we
+            # can avoid parsing the token multiple times (since it involves
+            # a DB query).
+            request._cached_cookie_user = token_user
         request._cached_user = session_user
     return request._cached_user
 
@@ -78,7 +55,7 @@ class BillingTokenCookieMiddleware(AuthenticationMiddleware):
     def process_request(self, request):
         if not hasattr(request, 'session'):
             return super().process_request(request)
-        request.user = SimpleLazyObject(lambda: get_user(request))
+        request.user = SimpleLazyObject(lambda: get_session_user(request))
 
 
 def get_cookie_user(request):
@@ -128,9 +105,9 @@ class AuthTokenCookieMiddleware(MiddlewareMixin):
         return response
 
     def force_logout(self, request, response):
-        # In some cases, the request will be a WSGIRequest object - this happens
-        # during tests.
-        if hasattr(request, 'session'):
+        # In tests, using RequestFactory, there will be no session on the
+        # request.
+        if settings.ENVIRONMENT != Environments.TEST:
             auth.logout(request)
         return self.delete_cookie(response)
 
@@ -184,14 +161,66 @@ class AuthTokenCookieMiddleware(MiddlewareMixin):
             is_authenticated = request.cookie_user \
                 and request.cookie_user.is_authenticated
         except InvalidToken:
+            # If the JWT token stored in cookies is invalid or missing, remove
+            # the user's session and delete the JWT token from the response.
             return self.force_logout(request, response)
         else:
             if is_logout_url:
                 return response
 
+            # If the user dictated by the JWT token is either not authenticated,
+            # not active, not verified or not approved, remove the user's
+            # session and delete the JWT token from the response.
             if not is_authenticated or not request.cookie_user.is_active \
                     or not request.cookie_user.is_verified \
                     or not request.cookie_user.is_approved:
+                return self.force_logout(request, response)
+
+            # For security purposes, we need to make sure that the user dictated
+            # by Django's session is the same user that is dictated by the JWT
+            # token.  If they are not, we need to remove the session and delete
+            # the JWT token from the response, as this is indicative of a
+            # malicious attempt to exploit potential security holes.
+            if settings.ENVIRONMENT != Environments.TEST:
+                session_user = get_session_user(request, cache_stripe_info=False)
+                if session_user != request.cookie_user:
+                    # This is an edge case where there may have been a problem
+                    # removing either the user's session or JWT token on logout.
+                    # In either case, we want to gracefully handle.
+                    if not session_user.is_authenticated \
+                            or not request.cookie_user.is_authenticated:
+                        logger.warn(
+                            'Inconsistent user authenticated states determined '
+                            'from session and JWT token.  This most likely '
+                            'means that there was a problem either removing the '
+                            'session or the JWT token during logout.', extra={
+                                'request': request,
+                                'session_user_authenticated':
+                                session_user.is_authenticated,
+                                'token_user_authenticated':
+                                request.cookie_user.is_authenticated,
+                                'cookie_user':
+                                getattr(request.cookie_user, 'pk', None),
+                                'session_user':
+                                getattr(session_user, 'pk', None)
+                            }
+                        )
+                    else:
+                        # At this point, someone is most likely trying to hijack
+                        # a user's login by either manipulating the session
+                        # cookie or the JWT cookie.
+                        logger.error(
+                            "Session Authentication & JWT Cookie Authentication "
+                            "are indicating different users!  This is a sign "
+                            "that someone may be trying to exploit a security "
+                            "hole!", extra={
+                                'token_user':
+                                getattr(request.cookie_user, 'pk', None),
+                                'session_user':
+                                getattr(session_user, 'pk', None),
+                                'request': request
+                            }
+                        )
                 return self.force_logout(request, response)
 
         if self.should_persist_cookie(request):
