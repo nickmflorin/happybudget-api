@@ -116,7 +116,7 @@ AUTH_USER_MODEL = 'user.User'
 
 # When True, User's will not be allowed to register unless they are on a
 # waitlist in SendGrid.
-WAITLIST_ENABLED = True
+WAITLIST_ENABLED = False
 # When True, User's will not be able to login after registration until they
 # are approved via the Admin.  Note that if `WAITLIST_ENABLED` is True, this
 # value is considered `True` regardless.
