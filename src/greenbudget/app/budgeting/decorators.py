@@ -77,8 +77,7 @@ class BulkAction(BaseBulkAction):
 
 
 class bulk_action:
-    def __init__(self, action, base_cls, get_budget,
-            **kwargs):
+    def __init__(self, action, base_cls, get_budget, **kwargs):
         self._action = action
         self._base_cls = base_cls
 
@@ -95,8 +94,7 @@ class bulk_action:
         # to include the Budget/Template in the response again.  In this case,
         # we set `include_budget_in_response` to False.
         self._get_budget = get_budget
-        self._budget_serializer = kwargs.pop(
-            'budget_serializer', BudgetSerializer) or BudgetSerializer
+        self._budget_serializer = kwargs.pop('budget_serializer', None)
         self._include_budget_in_response = kwargs.pop(
             'include_budget_in_response', True)
 
@@ -132,6 +130,14 @@ class bulk_action:
         if inspect.isclass(self._base_cls):
             return self._base_cls
         return self._evaluate_callback('base_cls')
+
+    @property
+    def budget_serializer(self):
+        if self._budget_serializer is None:
+            return BudgetSerializer
+        elif inspect.isclass(self._budget_serializer):
+            return self._budget_serializer
+        return self._evaluate_callback('budget_serializer')
 
     @property
     def base_serializer_cls(self):
@@ -195,8 +201,15 @@ class bulk_action:
         if self._include_budget_in_response is True:
             budget = self._get_budget(self.context.instance)
             budget.refresh_from_db()
-            data['budget'] = self._budget_serializer(budget).data
+            data['budget'] = self.render_serializer_data(
+                self.budget_serializer,
+                instance=budget,
+            )
         return response.Response(data, status=status)
+
+    def render_serializer_data(self, serializer_cls, *args, **kwargs):
+        kwargs['context'] = self.context.view.get_serializer_context()
+        return serializer_cls(*args, **kwargs).data
 
 
 class bulk_update_action(bulk_action):
@@ -223,8 +236,15 @@ class bulk_update_action(bulk_action):
     def decorated(self, view, request):
         instance, children = super().decorated(view, request)
         return self.render_response({
-            'children': self.child_serializer_cls(children, many=True).data,
-            'data': self.base_serializer_cls(instance).data
+            'children': self.render_serializer_data(
+                self.child_serializer_cls,
+                children,
+                many=True
+            ),
+            'data': self.render_serializer_data(
+                self.base_serializer_cls,
+                instance=instance
+            ),
         }, status=status.HTTP_200_OK)
 
 
@@ -243,8 +263,15 @@ class bulk_create_action(bulk_action):
     def decorated(self, view, request):
         instance, children = super().decorated(view, request)
         return self.render_response({
-            'children': self.child_serializer_cls(children, many=True).data,
-            'data': self.base_serializer_cls(instance).data
+            'children': self.render_serializer_data(
+                self.child_serializer_cls,
+                children,
+                many=True
+            ),
+            'data': self.render_serializer_data(
+                self.base_serializer_cls,
+                instance=instance
+            ),
         }, status=status.HTTP_201_CREATED)
 
 
@@ -262,21 +289,23 @@ class bulk_delete_action(bulk_action):
     def decorated(self, view, request):
         updated_instance = super().decorated(view, request)
         return self.render_response({
-            'data': self.base_serializer_cls(updated_instance).data})
+            'data': self.render_serializer_data(
+                self.base_serializer_cls, instance=updated_instance)
+        })
 
 
 class bulk_registration:
-    def __init__(self, base_cls, get_budget, base_serializer_cls=None,
-            actions=None, budget_serializer=None,
-            include_budget_in_response=True, **kwargs):
+    def __init__(self, base_cls, get_budget, **kwargs):
         self._base_cls = base_cls
-        self._base_serializer_cls = base_serializer_cls
         self._get_budget = get_budget
-        self._budget_serializer = budget_serializer
-        self._include_budget_in_response = include_budget_in_response
+
+        self._base_serializer_cls = kwargs.pop('base_serializer_cls', None)
+        self._budget_serializer = kwargs.pop('budget_serializer', None)
+        self._include_budget_in_response = kwargs.pop(
+            'include_budget_in_response', True)
 
         self._actions = []
-        actions = actions or []
+        actions = kwargs.pop('actions', [])
         for original_action in actions:
             action = deepcopy(original_action)
             for k, v in kwargs.items():

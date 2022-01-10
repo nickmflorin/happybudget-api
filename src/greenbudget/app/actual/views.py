@@ -3,7 +3,6 @@ from greenbudget.app.io.views import GenericAttachmentViewSet
 
 from .mixins import ActualNestedMixin
 from .models import Actual, ActualType
-from .permissions import ActualObjPermission
 from .serializers import (
     ActualSerializer,
     ActualTypeSerializer,
@@ -60,7 +59,6 @@ class ActualsViewSet(
     (2) PATCH /actuals/<pk>/
     (3) DELETE /actuals/<pk>/
     """
-    extra_permission_classes = (ActualObjPermission, )
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -68,4 +66,4 @@ class ActualsViewSet(
         return context
 
     def get_queryset(self):
-        return Actual.objects.all()
+        return Actual.objects.filter(created_by=self.request.user)

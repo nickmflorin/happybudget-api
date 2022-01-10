@@ -11,7 +11,6 @@ from greenbudget.app.actual.models import Actual
 from greenbudget.app.actual.serializers import (
     ActualSerializer, ActualOwnerSerializer)
 from greenbudget.app.actual.views import GenericActualViewSet
-from greenbudget.app.billing.permissions import BudgetCountProductPermission
 from greenbudget.app.budgeting.decorators import (
     register_bulk_operations, BulkAction, BulkDeleteAction)
 from greenbudget.app.fringe.models import Fringe
@@ -34,6 +33,10 @@ from .cache import (
 )
 from .models import Budget
 from .mixins import BudgetNestedMixin
+from .permissions import (
+    BudgetSubscriptionPermission,
+    BudgetCountSubscriptionPermission
+)
 from .serializers import (
     BudgetSerializer,
     BudgetSimpleSerializer,
@@ -318,11 +321,10 @@ class BudgetViewSet(
     (11) GET /budgets/<pk>/pdf/
     (12) POST /budgets/<pk>/duplicate/
     """
-    extra_permission_classes = BudgetCountProductPermission(
-        products=["standard", "premium"],
-        max_count=1,
-        actions=["duplicate", "create"]
-    )
+    extra_permission_classes = [
+        BudgetSubscriptionPermission(products="__all__"),
+        BudgetCountSubscriptionPermission(products="__all__"),
+    ]
 
     def get_queryset(self):
         return Budget.objects.filter(created_by=self.request.user).all()
@@ -337,6 +339,9 @@ class BudgetViewSet(
         duplicated = type(self.instance).objects.duplicate(
             self.instance, request.user)
         return response.Response(
-            self.serializer_class(duplicated).data,
+            self.serializer_class(
+                duplicated,
+                context=self.get_serializer_context()
+            ).data,
             status=status.HTTP_201_CREATED
         )

@@ -5,28 +5,43 @@ We use these exceptions to distinguish these cases in our own JWT serializers
 and views
 """
 from django.utils.translation import gettext_lazy as _
-from rest_framework import exceptions
+from rest_framework import exceptions, status
 
-from rest_framework_simplejwt.exceptions import (
-    TokenError as BaseTokenError, InvalidToken as BaseInvalidToken)
+from rest_framework_simplejwt.exceptions import TokenError as BaseTokenError
 
 from greenbudget.lib.drf.exceptions import InvalidFieldError
+from greenbudget.lib.utils import ensure_iterable
 
 
-class AuthErrorCodes(object):
+class PermissionErrorCodes(object):
+    PERMISSION_ERROR = "permission_error"
+    SUBSCRIPTION_ERROR = "subscription_permission_error"
+
+
+class PermissionError(exceptions.PermissionDenied):
+    default_code = PermissionErrorCodes.PERMISSION_ERROR
+
+
+class SubscriptionPermissionError(PermissionError):
+    default_detail = _("The account does not have the correct subscription.")
+    default_code = PermissionErrorCodes.SUBSCRIPTION_ERROR
+
+    def __init__(self, *args, **kwargs):
+        self.products = kwargs.pop('products', '__all__')
+        if self.products != '__all__':
+            self.products = ensure_iterable(self.products)
+        super().__init__(*args, **kwargs)
+
+
+class NotAuthenticatedErrorCodes(object):
     ACCOUNT_DISABLED = "account_disabled"
     ACCOUNT_NOT_APPROVED = "account_not_approved"
     ACCOUNT_NOT_AUTHENTICATED = "account_not_authenticated"
     ACCOUNT_NOT_VERIFIED = "account_not_verified"
     ACCOUNT_NOT_ON_WAITLIST = "account_not_on_waitlist"
-    ACCOUNT_VERIFIED = "account_verified"
-    INVALID_CREDENTIALS = "invalid_credentials"
-    EMAIL_DOES_NOT_EXIST = "email_does_not_exist"
-    INVALID_SOCIAL_TOKEN = "invalid_social_token"
-    INVALID_SOCIAL_PROVIDER = "invalid_social_provider"
+    ACCOUNT_SUBSCRIPTION_ERROR = "account_subscription_error"
     INVALID_TOKEN = "token_not_valid"
     EXPIRED_TOKEN = "token_expired"
-    EMAIL_ERROR = "email_error"
 
 
 class TokenError(BaseTokenError):
@@ -36,43 +51,34 @@ class TokenError(BaseTokenError):
         super().__init__()
 
 
-class TokenInvalidError(TokenError):
-    """
-    An exception used by serializers when a token is invalid for reasons
-    other than expiry.
-    """
-    pass
+class NotAuthenticatedError(exceptions.NotAuthenticated):
+    default_detail = _("User is not authenticated.")
+    default_code = NotAuthenticatedErrorCodes.ACCOUNT_NOT_AUTHENTICATED
+    status_code = status.HTTP_401_UNAUTHORIZED
+
+    def __init__(self, *args, **kwargs):
+        user_id = kwargs.pop('user_id', None)
+        if user_id is not None:
+            setattr(self, 'user_id', user_id)
+        exceptions.NotAuthenticated.__init__(self, *args, **kwargs)
 
 
-class TokenCorruptedError(TokenError):
-    """
-    An exception used by serializers when a token is invalid because it is
-    associated with an invalid user ID.
-    """
-    pass
-
-
-class TokenExpiredError(TokenError):
-    """
-    An exception used by serializers when a token is expired.
-    """
-
-
-class InvalidToken(BaseInvalidToken):
+class InvalidToken(NotAuthenticatedError):
     """
     A DRF AuthenticationFailed exception used by views when a token is provided
     in the request but is invalid.
     """
     default_detail = _('Token is invalid.')
-    default_code = AuthErrorCodes.INVALID_TOKEN
+    default_code = NotAuthenticatedErrorCodes.INVALID_TOKEN
+    status_code = status.HTTP_401_UNAUTHORIZED
 
     def __init__(self, detail=None, **kwargs):
         if detail == _('Token is invalid.'):
             detail = self.default_detail
         # DRF simplejwt does a weird thing with its exceptions, which messes up
-        # our error formatting. By calling PermissionDenied.__init__
+        # our error formatting. By calling NotAuthenticated.__init__
         # directly, we skip their strange details transformation
-        PermissionDenied.__init__(self, detail=detail, **kwargs)
+        NotAuthenticatedError.__init__(self, detail=detail, **kwargs)
 
 
 class ExpiredToken(InvalidToken):
@@ -81,49 +87,35 @@ class ExpiredToken(InvalidToken):
     expired.
     """
     default_detail = _('The provided token is expired.')
-    default_code = AuthErrorCodes.EXPIRED_TOKEN
+    default_code = NotAuthenticatedErrorCodes.EXPIRED_TOKEN
 
 
-class PermissionDenied(exceptions.PermissionDenied):
-    def __init__(self, *args, **kwargs):
-        user_id = kwargs.pop('user_id', None)
-        force_logout = kwargs.pop('force_logout', None)
-        if force_logout is True:
-            setattr(self, 'force_logout', True)
-        if user_id is not None:
-            setattr(self, 'user_id', user_id)
-        exceptions.PermissionDenied.__init__(self, *args, **kwargs)
+class AccountDisabled(NotAuthenticatedError):
+    default_detail = _("The account is not active.")
+    default_code = NotAuthenticatedErrorCodes.ACCOUNT_DISABLED
 
 
-class NotAuthenticatedError(PermissionDenied):
-    default_detail = _("User is not authenticated.")
-    default_code = AuthErrorCodes.ACCOUNT_NOT_AUTHENTICATED
-
-
-class AccountDisabled(PermissionDenied):
-    default_detail = _(
-        "Your account is not active, please contact customer care.")
-    default_code = AuthErrorCodes.ACCOUNT_DISABLED
-
-
-class AccountNotVerified(PermissionDenied):
+class AccountNotVerified(NotAuthenticatedError):
     default_detail = _("The email address is not verified.")
-    default_code = AuthErrorCodes.ACCOUNT_NOT_VERIFIED
+    default_code = NotAuthenticatedErrorCodes.ACCOUNT_NOT_VERIFIED
 
 
-class AccountNotApproved(PermissionDenied):
+class AccountNotApproved(NotAuthenticatedError):
     default_detail = _("The account is not approved.")
-    default_code = AuthErrorCodes.ACCOUNT_NOT_APPROVED
+    default_code = NotAuthenticatedErrorCodes.ACCOUNT_NOT_APPROVED
 
 
-class AccountVerified(PermissionDenied):
-    default_detail = _("The email address is already verified.")
-    default_code = AuthErrorCodes.ACCOUNT_VERIFIED
-
-
-class AccountNotOnWaitlist(PermissionDenied):
+class AccountNotOnWaitlist(NotAuthenticatedError):
     default_detail = _("The email address is not on the waitlist.")
-    default_code = AuthErrorCodes.ACCOUNT_NOT_ON_WAITLIST
+    default_code = NotAuthenticatedErrorCodes.ACCOUNT_NOT_ON_WAITLIST
+
+
+class AuthErrorCodes(object):
+    INVALID_CREDENTIALS = "invalid_credentials"
+    EMAIL_DOES_NOT_EXIST = "email_does_not_exist"
+    INVALID_SOCIAL_TOKEN = "invalid_social_token"
+    INVALID_SOCIAL_PROVIDER = "invalid_social_provider"
+    EMAIL_ERROR = "email_error"
 
 
 class EmailDoesNotExist(InvalidFieldError):

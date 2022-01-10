@@ -4,7 +4,6 @@ from django.views.decorators.debug import sensitive_post_parameters
 from rest_framework import response, permissions, status
 
 from greenbudget.app import views, mixins
-
 from greenbudget.app.user.mail import send_email_verification_email
 
 from .serializers import (

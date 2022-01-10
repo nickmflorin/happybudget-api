@@ -140,7 +140,9 @@ class StripeCustomer:
     @cached_stripe_property
     def subscription(self):
         # Right now, we are only supporting one subscription per user.
-        if not (self.data and self.data.subscriptions.data):
+        if not self.data:
+            return None
+        elif not self.data.subscriptions.data:
             # By default, the Customer object only includes active subscriptions.
             # To retrieve cancelled subscriptions, we need to list the
             # subscriptions by customer.
@@ -151,7 +153,7 @@ class StripeCustomer:
             )
             if inactive_subscriptions:
                 return inactive_subscriptions.data[0]
-            return
+            return None
         return self.data.subscriptions.data[0]
 
     @property
@@ -164,21 +166,16 @@ class StripeCustomer:
         return []
 
     @property
-    def plans(self):
-        return [sub_item.plan for sub_item in self.subscription_items]
-
-    @property
     def plan(self):
-        # Right now, we are only supporting a single Plan per user - but in
-        # the future if we support multiple Plans per user, this will be the
-        # data source.
-        if self.plans:
-            return self.plans[0]
+        if self.subscription:
+            return self.subscription.plan
+        return None
 
     @property
     def plan_id(self):
         if self.plan:
             return self.plan.id
+        return None
 
     @cached_stripe_property
     def stripe_status(self):

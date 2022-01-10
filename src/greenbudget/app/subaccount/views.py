@@ -3,6 +3,7 @@ from django.db import models
 
 from greenbudget.app import views, mixins
 from greenbudget.app.actual.views import GenericActualViewSet
+from greenbudget.app.budget.serializers import BudgetSerializer
 from greenbudget.app.budgeting.decorators import (
     register_bulk_operations, BulkAction, BulkDeleteAction)
 from greenbudget.app.group.models import Group
@@ -10,6 +11,7 @@ from greenbudget.app.group.serializers import GroupSerializer
 from greenbudget.app.io.views import GenericAttachmentViewSet
 from greenbudget.app.markup.models import Markup
 from greenbudget.app.markup.serializers import MarkupSerializer
+from greenbudget.app.template.serializers import TemplateSerializer
 
 from .cache import (
     subaccount_subaccounts_cache,
@@ -20,6 +22,10 @@ from .cache import (
 )
 from .mixins import SubAccountNestedMixin
 from .models import SubAccount, TemplateSubAccount, SubAccountUnit
+from .permissions import (
+    SubAccountSubscriptionPermission,
+    SubAccountOwnershipPermission
+)
 from .serializers import (
     TemplateSubAccountSerializer,
     BudgetSubAccountSerializer,
@@ -173,6 +179,7 @@ class GenericSubAccountViewSet(views.GenericViewSet):
     base_cls=lambda context: context.view.instance_cls,
     get_budget=lambda instance: instance.budget,
     child_context=lambda context: {"parent": context.instance},
+    budget_serializer=lambda context: context.view.budget_serializer,
     actions=[
         BulkDeleteAction(
             url_path='bulk-{action_name}-markups',
@@ -218,17 +225,28 @@ class SubAccountViewSet(
     (4) PATCH /subaccounts/<pk>/bulk-update-subaccounts/
     (5) PATCH /subaccounts/<pk>/bulk-create-subaccounts/
     """
+    extra_permission_classes = [
+        SubAccountOwnershipPermission,
+        SubAccountSubscriptionPermission(products='__all__')
+    ]
 
     @property
     def child_instance_cls(self):
         return self.instance_cls.child_instance_cls
 
     @property
+    def budget_serializer(self):
+        return {
+            'budget': BudgetSerializer,
+            'template': TemplateSerializer
+        }[self.instance_cls.domain]
+
+    @property
     def child_serializer_cls(self):
         return {
             'budget': BudgetSubAccountDetailSerializer,
             'template': TemplateSubAccountDetailSerializer
-        }[self.child_instance_cls.domain]
+        }[self.instance_cls.domain]
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -236,7 +254,7 @@ class SubAccountViewSet(
         return context
 
     def get_queryset(self):
-        return SubAccount.objects.all()
+        return SubAccount.objects.filter(created_by=self.request.user)
 
 
 @views.filter_by_ids
@@ -254,6 +272,10 @@ class SubAccountRecursiveViewSet(
     (1) GET /subaccounts/<pk>/subaccounts
     (2) POST /subaccounts/<pk>/subaccounts
     """
+    extra_permission_classes = [
+        SubAccountOwnershipPermission,
+        SubAccountSubscriptionPermission(products='__all__')
+    ]
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -264,6 +286,7 @@ class SubAccountRecursiveViewSet(
         qs = type(self.instance).objects.filter(
             object_id=self.object_id,
             content_type=self.content_type,
+            created_by=self.request.user
         )
         if self.instance_cls is not TemplateSubAccount:
             qs = qs.prefetch_related('attachments')

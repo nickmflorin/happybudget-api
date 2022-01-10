@@ -7,6 +7,7 @@ from greenbudget.app.markup.serializers import MarkupSerializer
 from greenbudget.app.template.models import Template
 
 from .models import BaseBudget, Budget
+from .permissions import budget_is_first_created
 
 
 class BaseBudgetSerializer(serializers.ModelSerializer):
@@ -48,6 +49,7 @@ class BudgetPdfSerializer(BaseBudgetSerializer):
 
 
 class BudgetSimpleSerializer(BaseBudgetSerializer):
+    is_permissioned = serializers.SerializerMethodField()
     updated_at = serializers.DateTimeField(read_only=True)
     image = Base64ImageField(required=False, allow_null=True)
     template = serializers.PrimaryKeyRelatedField(
@@ -60,7 +62,12 @@ class BudgetSimpleSerializer(BaseBudgetSerializer):
     class Meta:
         model = Budget
         fields = BaseBudgetSerializer.Meta.fields + (
-            'updated_at', 'template', 'image')
+            'updated_at', 'template', 'image', 'is_permissioned')
+
+    def get_is_permissioned(self, instance):
+        if not self.context['user'].has_product('__all__'):
+            return not budget_is_first_created(self.context['user'], instance)
+        return False
 
     def create(self, validated_data):
         if 'template' not in validated_data:

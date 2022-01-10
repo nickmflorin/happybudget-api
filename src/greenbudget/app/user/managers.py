@@ -59,6 +59,7 @@ class UserManager(UserQuerier, DjangoUserManager):
         else:
             user = self.get(email=google_user.email)
             user.sync_with_social_provider(social_user=google_user)
+            user.save()
             return user
 
     def create_from_google_token(self, token_id):

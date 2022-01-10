@@ -1,13 +1,12 @@
 from greenbudget.app.authentication.permissions import (
     AdminPermissionMixin, IsOwner)
+from greenbudget.app.budget.permissions import BudgetSubscriptionPermission
 
 from .models import TemplateSubAccount
 
 
-class SubAccountObjPermission(AdminPermissionMixin, IsOwner):
+class SubAccountOwnershipPermission(AdminPermissionMixin, IsOwner):
     message = "The user must does not have permission to view this sub account."
-    # This doesn't seem to work with the .permission_denied() method in the
-    # current version of DRF - but it does in the latest version.
     code = "subaccount_permission_error"
 
     def has_object_permission(self, request, view, obj):
@@ -16,3 +15,15 @@ class SubAccountObjPermission(AdminPermissionMixin, IsOwner):
                 return self.has_admin_permission(request, view)
             return super().has_object_permission(request, view, obj)
         return super().has_object_permission(request, view, obj)
+
+
+class SubAccountSubscriptionPermission(BudgetSubscriptionPermission):
+    access_entity_name = 'subaccount'
+
+    def get_budget(self, obj):
+        return obj.budget
+
+    def has_object_permission(self, request, view, obj):
+        if not isinstance(obj, TemplateSubAccount):
+            return super().has_object_permission(request, view, obj)
+        return True

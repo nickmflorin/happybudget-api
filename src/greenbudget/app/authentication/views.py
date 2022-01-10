@@ -2,31 +2,37 @@ from django.contrib.auth import logout
 from django.utils.decorators import method_decorator
 from django.views.decorators.debug import sensitive_post_parameters
 
-from rest_framework import views, response, generics, status, permissions
+from rest_framework import response, status, permissions
 
+from greenbudget.app import views
 from greenbudget.app.user.serializers import UserSerializer
 
 from .backends import CsrfExcemptCookieSessionAuthentication
+from .exceptions import AccountNotApproved, AccountDisabled
 from .middleware import AuthTokenCookieMiddleware
-from .permissions import IsAnonymous, IsAuthenticated, IsVerified, IsApproved
+from .permissions import (
+    IsAnonymous, IsAuthenticated, IsActive, IsApproved, IsVerified)
 from .serializers import (
     LoginSerializer, SocialLoginSerializer, VerifyEmailSerializer,
-    AuthTokenSerializer, RecoverPasswordSerializer)
-from .utils import parse_token_from_request
+    AuthTokenValidationSerializer, RecoverPasswordSerializer,
+    TokenValidationSerializer, EmailTokenValidationSerializer,
+    ResetPasswordTokenValidationSerializer)
+from .tokens import AuthToken, AccessToken
+from .utils import parse_token_from_request, user_can_authenticate
 
 
 def sensitive_post_parameters_m(*args):
     return method_decorator(sensitive_post_parameters(*args))
 
 
-class TokenValidateView(views.APIView):
-    serializer_class = None
-    token_location = 'cookies'
-    authentication_classes = (CsrfExcemptCookieSessionAuthentication, )
-    force_logout = None
-    token_cls = None
-    serializer_class = AuthTokenSerializer
-    token_user_permission_classes = (IsAuthenticated, IsVerified, IsApproved)
+class TokenValidateView(views.GenericView):
+    serializer_class = TokenValidationSerializer
+    token_user_permission_classes = [
+        IsAuthenticated, IsActive, IsVerified, IsApproved]
+
+    @property
+    def token_cls(self):
+        raise NotImplementedError()
 
     @sensitive_post_parameters_m('token')
     def dispatch(self, request, *args, **kwargs):
@@ -34,17 +40,16 @@ class TokenValidateView(views.APIView):
 
     def get_serializer(self, request, *args, **kwargs):
         serializer_kwargs = {
-            'force_logout': self.force_logout,
             'token_cls': self.token_cls,
-            'token_user_permission_classes': self.token_user_permission_classes,
-            'context': {'request': request}
+            'context': {'request': request},
+            'token_user_permission_classes': self.token_user_permission_classes
         }
         # Only include arguments passed to the view into the serializer if
         # they were actually provided.
         serializer_kwargs = dict(
             (k, v) for k, v in serializer_kwargs.items() if v is not None)
         attrs = request.data
-        if self.token_location == 'cookies':
+        if getattr(self, 'token_location', None) == 'cookies':
             attrs.update(token=parse_token_from_request(request))
 
         serializer = self.serializer_class(**serializer_kwargs, data=attrs)
@@ -60,7 +65,48 @@ class TokenValidateView(views.APIView):
         )
 
 
-class LogoutView(views.APIView):
+class AuthTokenValidateView(TokenValidateView):
+    token_location = 'cookies'
+    authentication_classes = (CsrfExcemptCookieSessionAuthentication, )
+    token_cls = AuthToken
+    serializer_class = AuthTokenValidationSerializer
+    authentication_classes = (CsrfExcemptCookieSessionAuthentication, )
+
+
+class PasswordRecoveryTokenValidateView(TokenValidateView):
+    permission_classes = (IsAnonymous, )
+    token_cls = AccessToken
+    authentication_classes = []
+
+
+class EmailTokenValidateView(TokenValidateView):
+    serializer_class = EmailTokenValidationSerializer
+    token_cls = AccessToken
+    permission_classes = (IsAnonymous, )
+    authentication_classes = []
+    token_user_permission_classes = [IsAuthenticated, IsActive, IsApproved]
+
+    def validate_user(self, user):
+        return user_can_authenticate(
+            user=user,
+            permissions=[IsAuthenticated, IsActive, IsApproved]
+        )
+
+
+class PasswordResetTokenValidateView(TokenValidateView):
+    serializer_class = ResetPasswordTokenValidationSerializer
+    token_cls = AccessToken
+    permission_classes = (IsAnonymous, )
+    authentication_classes = []
+
+    def validate_user(self, user):
+        if not user.is_active:
+            raise AccountDisabled(user_id=user.id)
+        elif not user.is_approved:
+            raise AccountNotApproved(user_id=user.id)
+
+
+class LogoutView(views.GenericView):
     authentication_classes = []
     permission_classes = (permissions.AllowAny,)
 
@@ -70,7 +116,7 @@ class LogoutView(views.APIView):
         return AuthTokenCookieMiddleware.delete_cookie(resp)
 
 
-class AbstractUnauthenticatedView(generics.GenericAPIView):
+class AbstractUnauthenticatedView(views.GenericView):
     authentication_classes = []
     permission_classes = (IsAnonymous, )
 

@@ -67,6 +67,8 @@ def test_registration(api_client, models, settings, user):
                 "profile_image": None,
                 "timezone": "America/New_York",
                 "is_first_time": True,
+                "billing_status": None,
+                "product_id": None
             }
 
     assert m.called
@@ -200,6 +202,8 @@ def test_update_logged_in_user(api_client, user):
         "profile_image": None,
         "timezone": str(user.timezone),
         "is_first_time": False,
+        "billing_status": None,
+        "product_id": None
     }
 
     user.refresh_from_db()
@@ -234,6 +238,8 @@ def test_change_password(api_client, user, user_password):
         "profile_image": None,
         "timezone": str(user.timezone),
         "is_first_time": False,
+        "billing_status": None,
+        "product_id": None
     }
 
     user.refresh_from_db()

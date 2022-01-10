@@ -4,7 +4,10 @@ from django.utils.functional import cached_property
 from greenbudget.app.budgeting.mixins import NestedObjectViewMixin
 
 from .models import SubAccount
-from .permissions import SubAccountObjPermission
+from .permissions import (
+    SubAccountOwnershipPermission,
+    SubAccountSubscriptionPermission
+)
 
 
 class SubAccountNestedMixin(NestedObjectViewMixin):
@@ -12,7 +15,10 @@ class SubAccountNestedMixin(NestedObjectViewMixin):
     A mixin for views that extend off of an subaccount's detail endpoint.
     """
     view_name = 'subaccount'
-    subaccount_permission_classes = (SubAccountObjPermission, )
+    subaccount_permission_classes = [
+        SubAccountOwnershipPermission,
+        SubAccountSubscriptionPermission(products='__all__')
+    ]
     subaccount_lookup_field = ("pk", "subaccount_pk")
 
     def get_subaccount_queryset(self, request):

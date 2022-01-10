@@ -141,6 +141,25 @@ def test_get_budget_subaccount(api_client, user, budget_df):
     }
 
 
+def test_get_permissioned_budget_subaccount(api_client, user, create_budget,
+        budget_df):
+    budgets = [create_budget(), create_budget()]
+    account = budget_df.create_account(parent=budgets[1])
+    subaccount = budget_df.create_subaccount(parent=account)
+    api_client.force_login(user)
+    response = api_client.get("/v1/subaccounts/%s/" % subaccount.pk)
+    assert response.status_code == 403
+    assert response.json() == {'errors': [{
+        'message': (
+            'The user does not have the correct subscription to view this '
+            'subaccount.'
+        ),
+        'code': 'subscription_permission_error',
+        'error_type': 'permission',
+        'products': '__all__'
+    }]}
+
+
 def test_get_template_subaccount(api_client, user, template_df):
     budget = template_df.create_budget()
     account = template_df.create_account(parent=budget)

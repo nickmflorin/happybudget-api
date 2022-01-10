@@ -52,6 +52,23 @@ def test_get_account(api_client, user, budget_f):
     }
 
 
+def test_get_permissioned_account(api_client, user, budget_df):
+    budgets = [budget_df.create_budget(), budget_df.create_budget()]
+    account = budget_df.create_account(parent=budgets[1])
+    api_client.force_login(user)
+    response = api_client.get("/v1/accounts/%s/" % account.pk)
+    assert response.status_code == 403
+    assert response.json() == {'errors': [{
+        'message': (
+            'The user does not have the correct subscription to view this '
+            'account.'
+        ),
+        'code': 'subscription_permission_error',
+        'error_type': 'permission',
+        'products': '__all__'
+    }]}
+
+
 def test_update_account(api_client, user, budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(
@@ -78,7 +95,7 @@ def test_update_account(api_client, user, budget_f):
     assert account.description == "Account description"
 
 
-def test_bulk_update_54subaccounts(api_client, user, freezer, budget_f):
+def test_bulk_update_subaccounts(api_client, user, freezer, budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccounts = [

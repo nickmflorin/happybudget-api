@@ -4,14 +4,20 @@ from django.utils.functional import cached_property
 from greenbudget.app.budgeting.mixins import NestedObjectViewMixin
 
 from .models import Account
-from .permissions import AccountObjPermission
+from .permissions import (
+    AccountOwnershipPermission,
+    AccountSubscriptionPermission
+)
 
 
 class AccountNestedMixin(NestedObjectViewMixin):
     """
     A mixin for views that extend off of an account's detail endpoint.
     """
-    account_permission_classes = (AccountObjPermission, )
+    account_permission_classes = [
+        AccountOwnershipPermission,
+        AccountSubscriptionPermission(products='__all__')
+    ]
     view_name = 'account'
     account_lookup_field = ("pk", "account_pk")
 

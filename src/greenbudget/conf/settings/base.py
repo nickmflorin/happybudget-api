@@ -326,14 +326,15 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
     ],
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'greenbudget.app.authentication.backends.SessionAuthentication',
-    ),
     'DEFAULT_PERMISSION_CLASSES': [
         'greenbudget.app.authentication.permissions.IsAuthenticated',
+        'greenbudget.app.authentication.permissions.IsActive',
         'greenbudget.app.authentication.permissions.IsVerified',
         'greenbudget.app.authentication.permissions.IsApproved',
     ],
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'greenbudget.app.authentication.backends.SessionAuthentication',
+    ),
     'DEFAULT_PAGINATION_CLASS': 'greenbudget.lib.drf.pagination.Pagination',
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',

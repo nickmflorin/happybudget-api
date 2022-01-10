@@ -1,6 +1,9 @@
+import logging
+
 from django.conf import settings
 from django.contrib import auth
 from django.contrib.auth.middleware import AuthenticationMiddleware
+from django.contrib.auth.models import AnonymousUser
 from django.urls import reverse
 from django.utils.deprecation import MiddlewareMixin
 from django.utils.functional import SimpleLazyObject
@@ -10,29 +13,57 @@ from rest_framework_simplejwt.settings import api_settings
 
 from .tokens import AuthToken
 from .exceptions import InvalidToken
-from .utils import parse_token_from_request, parse_token
+from .utils import parse_token_from_request, parse_token, user_can_authenticate
 
 
-def user_can_proceed(user):
-    return user.is_authenticated and user.is_verified and user.is_approved
+logger = logging.getLogger('greenbudget')
+
+
+def handle_token_session_user_inconsistency(request, session_user, token_user):
+    logger.error(
+        "Session Authentication & JWT Cookie Authentication are indicating "
+        "different users!  This is a sign that someone may be trying to "
+        "exploit a security hole!", extra={
+            'token_user': getattr(token_user, 'pk'),
+            'session_user': getattr(session_user, 'pk'),
+            'request': request
+        }
+    )
+    request._cached_user = AnonymousUser()
+    request._cached_cookie_user = AnonymousUser()
 
 
 def get_user(request):
     if not hasattr(request, '_cached_user'):
-        user = auth.get_user(request)
-        if user_can_proceed(user) and user.stripe_id is not None:
+        session_user = auth.get_user(request)
+        if user_can_authenticate(session_user, raise_exception=False) \
+                and session_user.stripe_id is not None:
             raw_token = parse_token_from_request(request)
-            _, token_obj = parse_token(raw_token, api_context=True)
-            # Use the JWT token to prepopulate billing related values on the
-            # user to avoid unnecessary requests to Stripe's API.
-            user.cache_stripe_from_token(token_obj)
-        request._cached_user = user
-        # Both middlewares present here are concerned with the user that is
-        # parsed from the JWT token.  Since obtaining the user from the JWT
-        # token involves a DB query, we want to set the result on the request
-        # so that subsequent middlewares can access the same result without
-        # having to re-parse the JWT token and make an additional DB query.
-        request._parsed_token_user = user
+            # Store the cached cookie user for subsequent middlewares so we
+            # can avoid parsing the token multiple times (since it involves
+            # a DB query).
+            token_user, token_obj = parse_token(raw_token)
+            # If the token user and session user differ, it is a sign that
+            # someone might be trying to hack another user's session.  If they
+            # are the same, then the token_user is guaranteed to pass the check
+            # `user_can_authenticate` because it was already performed on the
+            # session_user.
+            if token_user != session_user:
+                handle_token_session_user_inconsistency(
+                    request=request,
+                    token_user=token_user,
+                    session_user=session_user
+                )
+            else:
+                # Use the JWT token to prepopulate billing related values on the
+                # user to avoid unnecessary requests to Stripe's API.
+                token_user.cache_stripe_from_token(token_obj)
+                session_user.cache_stripe_from_token(token_obj)
+                # Store the cached cookie user for subsequent middlewares so we
+                # can avoid parsing the token multiple times (since it involves
+                # a DB query).
+                request._cached_cookie_user = token_user
+        request._cached_user = session_user
     return request._cached_user
 
 
@@ -55,26 +86,20 @@ def get_cookie_user(request):
     # process of validating the JWT authentication token.
     is_validate_url = request.path == reverse('authentication:validate')
     if not hasattr(request, '_cached_cookie_user'):
-        request_user = getattr(request, 'user', None)
-        if request_user and user_can_proceed(request_user) \
+        request._cached_cookie_user = AnonymousUser()
+        session_user = getattr(request, 'user', None)
+        if session_user \
+                and user_can_authenticate(session_user, raise_exception=False) \
                 and not is_validate_url:
-            request._cached_cookie_user = request.user
+            request._cached_cookie_user = session_user
         else:
-            # If the token was already parsed from the previous middleware
-            # (AuthenticationBillingMiddleware), we do not want to reparse the
-            # token and obtain the user because it involves an extra DB query.
-            #
-            # Since we accessed a property on request.user (in the first
-            # conditional to check if the user can proceed), the lazy evaluated
-            # `get_user` method will have been called, which means the
-            # `parsed_token_user` attribute should be on the request.
-            if hasattr(request, '_parsed_token_user'):
-                request._cached_cookie_user = request._parsed_token_user
-            else:
-                raw_token = parse_token_from_request(request)
-                request._cached_cookie_user, _ = parse_token(
-                    raw_token, api_context=True)
-
+            raw_token = parse_token_from_request(request)
+            token_user, token_obj = parse_token(raw_token)
+            if user_can_authenticate(token_user, raise_exception=False):
+                # Use the JWT token to prepopulate billing related values on the
+                # user to avoid unnecessary requests to Stripe's API.
+                token_user.cache_stripe_from_token(token_obj)
+                request._cached_cookie_user = token_user
     return request._cached_cookie_user
 
 
@@ -156,20 +181,17 @@ class AuthTokenCookieMiddleware(MiddlewareMixin):
     def process_response(self, request, response):
         is_logout_url = request.path == reverse('authentication:logout')
         try:
-            is_active = request.cookie_user and request.cookie_user.is_active
+            is_authenticated = request.cookie_user \
+                and request.cookie_user.is_authenticated
         except InvalidToken:
             return self.force_logout(request, response)
         else:
             if is_logout_url:
                 return response
 
-            # The response will have a `_force_logout` attribute if the
-            # Exception that was raised to trigger the response had a
-            # `force_logout` attribute that evalutes to True.
-            force_logout = getattr(response, '_force_logout', None)
-            if not is_active or not request.cookie_user.is_verified \
-                    or not request.cookie_user.is_approved \
-                    or force_logout is True:
+            if not is_authenticated or not request.cookie_user.is_active \
+                    or not request.cookie_user.is_verified \
+                    or not request.cookie_user.is_approved:
                 return self.force_logout(request, response)
 
         if self.should_persist_cookie(request):

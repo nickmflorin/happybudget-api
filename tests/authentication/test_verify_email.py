@@ -44,7 +44,9 @@ def test_validate_email_token(validate_email_token, unverified_user):
         'last_login': None,
         'timezone': str(unverified_user.timezone),
         "profile_image": None,
-        "is_first_time": False
+        "is_first_time": False,
+        "product_id": None,
+        "billing_status": None
     }
 
 
@@ -58,41 +60,41 @@ def test_verify_email_expired_token(api_client, unverified_user):
         data={"token": str(token)}
     )
     assert response.json() == {
-        'user_id': unverified_user.id,
         'errors': [{
             'message': 'The provided token is expired.',
             'code': 'token_expired',
-            'error_type': 'auth'
+            'error_type': 'auth',
+            'user_id': unverified_user.id,
         }]
     }
 
 
+@pytest.mark.freeze_time('2020-01-01')
 def test_validate_email_token_inactive_user(inactive_user, validate_email_token):
     inactive_user.is_verified = False
     inactive_user.save()
     response = validate_email_token()
     assert response.status_code == 403
     assert response.json() == {
-        'user_id': inactive_user.pk,
         'errors': [{
-            'message': 'Your account is not active, please contact customer care.',  # noqa
+            'message': 'The account is not active.',
             'code': 'account_disabled',
-            'error_type': 'auth'
+            'error_type': 'auth',
+            'user_id': inactive_user.pk,
         }]
     }
 
 
 def test_validate_email_token_user_logged_in(validate_email_token,
-        api_client, inactive_user):
-    api_client.force_login(inactive_user)
+        api_client, user):
+    api_client.force_login(user)
     response = validate_email_token()
     assert response.status_code == 403
     assert response.json() == {
-        'user_id': inactive_user.pk,
         'errors': [{
             'message': 'User already has an active session.',
-            'code': 'permission_denied',
-            'error_type': 'auth'
+            'code': 'permission_error',
+            'error_type': 'permission',
         }]
     }
 
@@ -100,13 +102,6 @@ def test_validate_email_token_user_logged_in(validate_email_token,
 def test_validate_email_token_missing_token(api_client):
     response = api_client.post("/v1/auth/validate-email-verification-token/")
     assert response.status_code == 403
-    assert response.json() == {
-        'errors': [{
-            'message': 'Token is invalid.',
-            'code': 'token_not_valid',
-            'error_type': 'auth'
-        }]
-    }
 
 
 def test_validate_email_token_invalid_token(api_client):

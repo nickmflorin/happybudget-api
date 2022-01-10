@@ -5,18 +5,19 @@ from greenbudget.app import views, mixins
 
 from greenbudget.app.account.models import Account
 from greenbudget.app.account.mixins import AccountNestedMixin
+from greenbudget.app.budget.serializers import BudgetSerializer
 from greenbudget.app.budgeting.decorators import (
     register_bulk_operations, BulkAction, BulkDeleteAction)
 from greenbudget.app.group.models import Group
 from greenbudget.app.group.serializers import GroupSerializer
 from greenbudget.app.markup.models import Markup
 from greenbudget.app.markup.serializers import MarkupSerializer
-from greenbudget.app.subaccount.models import BudgetSubAccount
 from greenbudget.app.subaccount.serializers import (
     BudgetSubAccountSerializer,
     TemplateSubAccountSerializer
 )
 from greenbudget.app.subaccount.views import GenericSubAccountViewSet
+from greenbudget.app.template.serializers import TemplateSerializer
 
 from .cache import (
     account_subaccounts_cache,
@@ -24,7 +25,10 @@ from .cache import (
     account_markups_cache,
     account_instance_cache
 )
-from .permissions import AccountObjPermission
+from .permissions import (
+    AccountOwnershipPermission,
+    AccountSubscriptionPermission
+)
 from .serializers import (
     BudgetAccountDetailSerializer,
     TemplateAccountDetailSerializer,
@@ -151,6 +155,7 @@ class GenericAccountViewSet(views.GenericViewSet):
 @register_bulk_operations(
     base_cls=lambda context: context.view.instance_cls,
     get_budget=lambda instance: instance.parent,
+    budget_serializer=lambda context: context.view.budget_serializer,
     child_context=lambda context: {"parent": context.instance},
     actions=[
         BulkDeleteAction(
@@ -197,7 +202,10 @@ class AccountViewSet(
     (4) PATCH /accounts/<pk>/bulk-update-subaccounts/
     (5) PATCH /accounts/<pk>/bulk-create-subaccounts/
     """
-    extra_permission_classes = (AccountObjPermission, )
+    extra_permission_classes = [
+        AccountOwnershipPermission,
+        AccountSubscriptionPermission(products='__all__')
+    ]
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -205,14 +213,22 @@ class AccountViewSet(
         return context
 
     @property
+    def budget_serializer(self):
+        return {
+            'budget': BudgetSerializer,
+            'template': TemplateSerializer
+        }[self.instance_cls.domain]
+
+    @property
     def child_instance_cls(self):
         return self.instance.child_instance_cls
 
     @property
     def child_serializer_cls(self):
-        if self.child_instance_cls is BudgetSubAccount:
-            return BudgetSubAccountSerializer
-        return TemplateSubAccountSerializer
+        return {
+            'budget': BudgetSubAccountSerializer,
+            'template': TemplateSubAccountSerializer
+        }[self.instance_cls.domain]
 
     def get_queryset(self):
-        return Account.objects.all()
+        return Account.objects.filter(created_by=self.request.user)

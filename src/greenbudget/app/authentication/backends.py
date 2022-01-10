@@ -6,8 +6,8 @@ from django.contrib.auth.backends import ModelBackend
 from rest_framework import authentication
 
 from .exceptions import (
-    InvalidCredentialsError, EmailDoesNotExist, PermissionDenied)
-from .permissions import check_user_permissions
+    InvalidCredentialsError, EmailDoesNotExist, NotAuthenticatedError)
+from .utils import user_can_authenticate
 
 
 logger = logging.getLogger('greenbudget')
@@ -25,8 +25,7 @@ class SocialModelAuthentication(ModelBackend):
                 token_id=token_id,
                 provider=provider
             )
-            check_user_permissions(user, force_logout=False)
-            return user
+            return user_can_authenticate(user)
         return None
 
 
@@ -60,33 +59,36 @@ class ModelAuthentication(ModelBackend):
                     raise InvalidCredentialsError("password")
                 return None
             try:
-                check_user_permissions(user, force_logout=False)
-            except PermissionDenied as e:
+                return user_can_authenticate(user)
+            except NotAuthenticatedError as e:
                 if not is_admin:
                     raise e
                 return None
-            return user
         return None
 
 
 class SessionAuthentication(authentication.SessionAuthentication):
     """
     An extension of :obj:`rest_framework.authentication.SessionAuthentication`
-    that prevents :obj:`User`(s) with unverified email addresses from logging
-    in.
-
-    Additionally, when the user cannot be authenticated this authentication
-    protocol will raise an extension of
-    :obj:`greengudget.app.authentication.exceptions.PermissionDenied` instead
-    of simply returning None.  This is done so the raised Exception can trigger
-    the proper actions to forcefully log the user out.
+    that prevents inactive :obj:`User`(s), unapproved :obj:`User`(s) or
+    :obj:`User`(s) with unverified email addresses from authenticating.
     """
     user_ref = 'user'
     csrf_excempt = False
 
+    def authenticate_header(self, request):
+        """
+        Return a string to be used as the value of the `WWW-Authenticate`
+        header in a `401 Unauthenticated` response.  This is necessary to force
+        DRF to return a 401 status code when authentication fails, vs. a 403
+        status code.
+        """
+        return "Bearer"
+
     def authenticate(self, request):
         user = getattr(request._request, self.user_ref, None)
-        if not user or not user.is_active or not user.is_verified \
+        if not user or not user.is_authenticated or not user.is_active \
+                or not user.is_verified \
                 or not user.is_approved:
             return None
         if not self.csrf_excempt:

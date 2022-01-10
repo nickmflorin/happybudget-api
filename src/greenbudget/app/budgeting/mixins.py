@@ -27,7 +27,10 @@ class NestedObjectViewMeta(type):
         def _get_permissions(instance):
             permission_classes = getattr(
                 instance, '%s_permission_classes' % view_name, [])
-            return [permission() for permission in permission_classes]
+            return [
+                p() if isinstance(p, type) else p
+                for p in permission_classes
+            ]
         return _get_permissions
 
     def check_object_permissions(cls, view_name):

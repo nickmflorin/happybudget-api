@@ -103,5 +103,6 @@ class PolymorphicNonPolymorphicSerializer(serializers.Serializer):
         else:
             serializer_cls = self._configure_serializer_cls(config)
 
-        data = serializer_cls(instance, **options).data
-        return data
+        options.setdefault('context', {})
+        options['context'].update(**self.context)
+        return serializer_cls(instance=instance, **options).data

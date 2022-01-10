@@ -7,13 +7,13 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 
 from rest_framework_simplejwt.settings import api_settings
-from rest_framework_simplejwt.exceptions import TokenError
 
 from greenbudget.lib.utils.urls import add_query_params_to_url
 
 from .exceptions import (
-    BaseTokenError, TokenInvalidError, TokenCorruptedError, TokenExpiredError,
-    InvalidSocialToken, InvalidSocialProvider, InvalidToken, ExpiredToken)
+    BaseTokenError, InvalidSocialToken, InvalidSocialProvider, InvalidToken,
+    ExpiredToken, NotAuthenticatedError)
+from .permissions import check_user_permissions
 from .tokens import AuthToken
 
 
@@ -22,6 +22,16 @@ logger = logging.getLogger('greenbudget')
 
 SocialUser = collections.namedtuple(
     'SocialUser', ['first_name', 'last_name', 'email'])
+
+
+def user_can_authenticate(user, raise_exception=True, permissions=None):
+    try:
+        check_user_permissions(user, permissions=permissions)
+    except NotAuthenticatedError as e:
+        if raise_exception:
+            raise e
+        return None
+    return user
 
 
 def validate_password(password):
@@ -37,35 +47,7 @@ def parse_user_id_from_token(token_obj):
     return token_obj.get(api_settings.USER_ID_CLAIM)
 
 
-def parse_token(token, token_cls=None, api_context=False, force_logout=False):
-    # If the function is being run in the API context, perform the logic and
-    # convert any raised exceptions to REST Exceptions that will properly render
-    # via the API.
-    if api_context:
-        try:
-            return parse_token(token, token_cls=None)
-        except TokenCorruptedError as e:
-            logger.info("The provided token is corrupted.")
-            raise InvalidToken(
-                *e.args,
-                user_id=getattr(e, 'user_id', None),
-                force_logout=force_logout
-            ) from e
-        except TokenExpiredError as e:
-            logger.info("The provided token has expired.")
-            raise ExpiredToken(
-                *e.args,
-                user_id=getattr(e, 'user_id', None),
-                force_logout=force_logout
-            ) from e
-        except TokenError as e:
-            logger.info("The provided token is invalid.")
-            raise InvalidToken(
-                *e.args,
-                user_id=getattr(e, 'user_id', None),
-                force_logout=force_logout
-            ) from e
-
+def parse_token(token, token_cls=None):
     if token is None:
         return AnonymousUser(), None
 
@@ -74,8 +56,8 @@ def parse_token(token, token_cls=None, api_context=False, force_logout=False):
         "The token must be a valid string."
     try:
         token_obj = token_cls(token, verify=False)
-    except BaseTokenError as e:
-        raise TokenInvalidError() from e
+    except BaseTokenError:
+        raise InvalidToken()
 
     # We need to parse and verify the user ID associated with the token in order
     # to include that information in the TokenExpiredError exception which
@@ -86,7 +68,7 @@ def parse_token(token, token_cls=None, api_context=False, force_logout=False):
     except get_user_model().DoesNotExist:
         # This is an edge case where an old JWT might be stashed in the browser
         # but the user may have been deleted.
-        raise TokenCorruptedError()
+        raise InvalidToken()
 
     exp_claim = api_settings.SLIDING_TOKEN_REFRESH_EXP_CLAIM \
         if token_cls is AuthToken else "exp"
@@ -94,12 +76,16 @@ def parse_token(token, token_cls=None, api_context=False, force_logout=False):
     try:
         token_obj.check_exp(exp_claim)
     except BaseTokenError as e:
-        raise TokenExpiredError(user_id=user_id) from e
+        logger.info("The provided token has expired.")
+        raise ExpiredToken(user_id=user_id) from e
+
     token_obj.set_exp()
     try:
         token_obj.verify()
     except BaseTokenError as e:
-        raise TokenInvalidError(user_id=user_id) from e
+        logger.info("The provided token is invalid.")
+        raise InvalidToken(user_id=user_id) from e
+
     return user, token_obj
 
 

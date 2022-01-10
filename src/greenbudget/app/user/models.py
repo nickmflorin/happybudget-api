@@ -5,10 +5,13 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+from greenbudget.lib.utils import ensure_iterable
+
 from greenbudget.app import signals
 from greenbudget.app.authentication.utils import (
     get_user_from_social_token, parse_user_id_from_token)
 from greenbudget.app.billing import StripeCustomer
+from greenbudget.app.billing.constants import BillingStatus
 from greenbudget.app.io.utils import upload_user_image_to
 
 from .managers import UserManager, UnapprovedUserManager
@@ -89,13 +92,11 @@ class User(AbstractUser):
             self.first_name = social_user.first_name
         if self.last_name is None or self.last_name == "":
             self.last_name = social_user.last_name
-        self.save()
 
     def cache_stripe_from_token(self, token_obj):
         if parse_user_id_from_token(token_obj) != self.id:
             raise Exception(
                 "The provided token is not associated with this user.")
-
         if self.stripe_customer is not None:
             self.stripe_customer.cache_from_token(token_obj)
         elif self.stripe_id is not None and self.is_authenticated \
@@ -168,6 +169,14 @@ class User(AbstractUser):
         if self.stripe_customer:
             return self.stripe_customer.product_id
         return None
+
+    def has_product(self, product):
+        assert product is not None, "Product must be non-null."
+        if product == '__all__':
+            return self.billing_status == BillingStatus.ACTIVE \
+                and self.product_id is not None
+        return self.billing_status == BillingStatus.ACTIVE \
+            and self.product_id in ensure_iterable(product)
 
 
 class UnapprovedUser(User):

@@ -49,6 +49,8 @@ def test_social_login_user_exists(api_client, create_user):
         "profile_image": None,
         "timezone": "America/New_York",
         "is_first_time": False,
+        "product_id": None,
+        "billing_status": None
     }
 
 
@@ -96,6 +98,8 @@ def test_social_login_user_does_not_exist(api_client, models):
         "profile_image": None,
         "timezone": "America/New_York",
         "is_first_time": True,
+        "product_id": None,
+        "billing_status": None
     }
 
 
@@ -161,11 +165,11 @@ def test_social_login_account_disabled(api_client, create_user):
     assert response.status_code == 403
     assert 'greenbudgetjwt' not in response.cookies
     assert response.json() == {
-        'user_id': user.pk,
         'errors': [{
-            'message': 'Your account is not active, please contact customer care.',  # noqa
+            'message': 'The account is not active.',
             'code': 'account_disabled',
-            'error_type': 'auth'
+            'error_type': 'auth',
+            'user_id': user.pk,
         }]
     }
 
@@ -190,10 +194,10 @@ def test_social_login_account_not_approved(api_client, create_user):
     assert response.status_code == 403
     assert 'greenbudgetjwt' not in response.cookies
     assert response.json() == {
-        'user_id': user.pk,
         'errors': [{
             'message': 'The account is not approved.',
             'code': 'account_not_approved',
-            'error_type': 'auth'
+            'error_type': 'auth',
+            'user_id': user.pk,
         }]
     }

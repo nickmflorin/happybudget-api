@@ -9,3 +9,7 @@ class BudgetErrorCodes(object):
 class BudgetPdfError(exceptions.ParseError):
     default_detail = _("There was an error processing the budget PDF.")
     default_code = BudgetErrorCodes.PDF_ERROR
+
+
+class BudgetPermissionError():
+    pass

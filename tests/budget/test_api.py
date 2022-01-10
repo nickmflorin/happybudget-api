@@ -16,6 +16,7 @@ def test_get_budgets(api_client, user, create_budget):
             "domain": "budget",
             "image": None,
             "updated_at": "2020-01-01 00:00:00",
+            "is_permissioned": False
         },
         {
             "id": budgets[1].pk,
@@ -24,6 +25,7 @@ def test_get_budgets(api_client, user, create_budget):
             "domain": "budget",
             "image": None,
             "updated_at": "2020-01-01 00:00:00",
+            "is_permissioned": True
         }
     ]
 
@@ -45,7 +47,24 @@ def test_get_budget(api_client, user, create_budget):
         "type": "budget",
         "domain": "budget",
         "image": None,
+        "is_permissioned": False
     }
+
+
+def test_get_permissioned_budget(api_client, user, create_budget):
+    budgets = [create_budget(), create_budget()]
+    api_client.force_login(user)
+    response = api_client.get("/v1/budgets/%s/" % budgets[1].pk)
+    assert response.status_code == 403
+    assert response.json() == {'errors': [{
+        'message': (
+            'The user does not have the correct subscription to view this '
+            'budget.'
+        ),
+        'code': 'subscription_permission_error',
+        'error_type': 'permission',
+        'products': '__all__'
+    }]}
 
 
 @pytest.mark.freeze_time('2020-01-01')
@@ -69,21 +88,17 @@ def test_update_budget(api_client, user, create_budget):
         "type": "budget",
         "domain": "budget",
         "image": None,
+        "is_permissioned": False
     }
 
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_create_budget(api_client, user, models):
     api_client.force_login(user)
-    response = api_client.post("/v1/budgets/", data={
-        "name": "Test Name",
-        "production_type": 1,
-    })
+    response = api_client.post("/v1/budgets/", data={"name": "Test Name"})
     assert response.status_code == 201
-
     budget = models.Budget.objects.first()
     assert budget is not None
-
     assert response.json() == {
         "id": budget.pk,
         "name": budget.name,
@@ -95,20 +110,35 @@ def test_create_budget(api_client, user, models):
         "type": "budget",
         "domain": "budget",
         "image": None,
+        "is_permissioned": False
     }
+
+
+def test_create_additional_budget_unsubscribed(api_client, user, create_budget):
+    create_budget()
+    api_client.force_login(user)
+    response = api_client.post("/v1/budgets/", data={"name": "Test Name"})
+    assert response.status_code == 403
+    assert response.json() == {'errors': [{
+        'message': (
+            'The user does not have the correct subscription to create an '
+            'additional budget.'
+        ),
+        'code': 'subscription_permission_error',
+        'error_type': 'permission',
+        'products': '__all__'
+    }]}
 
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_derive_budget(api_client, user, template_df, staff_user, models):
     template = template_df.create_budget(created_by=staff_user)
-
     api_client.force_login(user)
     response = api_client.post("/v1/budgets/", data={
         "name": "Test Name",
         "production_type": 1,
         "template": template.pk,
     })
-
     assert response.status_code == 201
     assert models.Budget.objects.count() == 1
     budget = models.Budget.objects.all()[0]
@@ -123,19 +153,19 @@ def test_derive_budget(api_client, user, template_df, staff_user, models):
         "type": "budget",
         "domain": "budget",
         "image": None,
+        "is_permissioned": False
     }
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_duplicate_budget(api_client, user, create_budget, models):
-    original = create_budget(created_by=user)
-    api_client.force_login(user)
+def test_duplicate_budget(api_client, standard_product_user, create_budget,
+        models):
+    original = create_budget(created_by=standard_product_user)
+    api_client.force_login(standard_product_user)
     response = api_client.post("/v1/budgets/%s/duplicate/" % original.pk)
     assert response.status_code == 201
-
     assert models.Budget.objects.count() == 2
     budget = models.Budget.objects.all()[1]
-
     assert response.json() == {
         "id": budget.pk,
         "name": original.name,
@@ -147,7 +177,24 @@ def test_duplicate_budget(api_client, user, create_budget, models):
         "type": "budget",
         "domain": "budget",
         "image": None,
+        "is_permissioned": False
     }
+
+
+def test_duplicate_budget_unsubscribed(api_client, user, create_budget):
+    original = create_budget(created_by=user)
+    api_client.force_login(user)
+    response = api_client.post("/v1/budgets/%s/duplicate/" % original.pk)
+    assert response.status_code == 403
+    assert response.json() == {'errors': [{
+        'message': (
+            'The user does not have the correct subscription to create an '
+            'additional budget.'
+        ),
+        'code': 'subscription_permission_error',
+        'error_type': 'permission',
+        'products': '__all__'
+    }]}
 
 
 def test_delete_budget(api_client, user, create_budget, models,

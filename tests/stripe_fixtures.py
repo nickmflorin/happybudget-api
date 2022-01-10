@@ -61,7 +61,8 @@ def mock_stripe_data():
         "prices": {},
         "products": {},
         "checkout_sessions": {},
-        "portal_sessions": {}
+        "portal_sessions": {},
+        "plans": {}
     }
 
 
@@ -229,25 +230,6 @@ def mock_stripe(mock_stripe_data):
             "unit_amount_decimal": "2000"
         }
 
-    @stripe_resource(object_type="plan", prefix="price")
-    def plan_base(price, product):
-        return {
-            "product": product.id,
-            "active": True,
-            "aggregate_usage": None,
-            "amount": price.unit_amount,
-            "amount_decimal": price.unit_amount_decimal,
-            "billing_scheme": price.billing_scheme,
-            "currency": price.currenchy,
-            "interval": "month",
-            "interval_count": 1,
-            "nickname": None,
-            "tiers_mode": None,
-            "transform_usage": None,
-            "trial_period_days": None,
-            "usage_type": "licensed"
-        }
-
     @stripe_resource(object_type="subscription_item", prefix="si")
     def subscription_item_base(plan, price, subscription_id):
         return {
@@ -268,12 +250,33 @@ def mock_stripe(mock_stripe_data):
             'url': '',
         }
 
+    @stripe_resource(object_type="plan")
+    def plan_base(price, product):
+        return {
+            "id": price.id,
+            "active": True,
+            "aggregate_usage": None,
+            "amount": price.unit_amount,
+            "amount_decimal": price.unit_amount_decimal,
+            "billing_scheme": price.billing_scheme,
+            "created": price.created,
+            "currency": price.currency,
+            "interval": price.recurring.interval,
+            "interval_count": price.recurring.interval_count,
+            "nickname": None,
+            "product": product.id,
+            "tiers_mode": price.tiers_mode,
+            "transform_usage": None,
+            "trial_period_days": price.recurring.trial_period_days,
+            "usage_type": "licensed"
+        }
+
     @stripe_resource(object_type="subscription")
-    def subscription_base(plan, price, customer_id):
+    def subscription_base(plan, price, customer):
         subscription_id = object_id(prefix="sub")
         return {
             "id": subscription_id,
-            "customer": customer_id,
+            "customer": customer.id,
             "application_fee_percent": None,
             "automatic_tax": {
                 "enabled": False
@@ -293,7 +296,8 @@ def mock_stripe(mock_stripe_data):
             "discount": None,
             "ended_at": None,
             "items": list_object(
-                data=[subscription_item_base(plan, price, as_dict=True)],
+                data=[subscription_item_base(
+                    plan, price, subscription_id, as_dict=True)],
                 url="/v1/subscription_items?subscription=%s" % subscription_id
             ),
             "latest_invoice": None,
@@ -337,11 +341,8 @@ def mock_stripe(mock_stripe_data):
                 customer[k] = v
         return customer
 
-    def subscription_create(customer_id, product_id, **kwargs):
-        customer = customer_retrieve(customer_id)
-        product_retrieve(product_id)
-
-        subscription = subscription_base(customer_id, product_id)
+    def subscription_create(plan, price, customer, **kwargs):
+        subscription = subscription_base(plan, price, customer)
         mock_stripe_data["subscriptions"][subscription.id] = subscription
         customer.subscriptions.data.append(subscription)
         return subscription
@@ -404,6 +405,20 @@ def mock_stripe(mock_stripe_data):
         mock_stripe_data["prices"][price.id] = price
         return price
 
+    def plan_retrieve(obj_id, **kwargs):
+        if obj_id not in mock_stripe_data["plans"]:
+            raise_resource_missing(obj_id)
+        return mock_stripe_data["plans"][obj_id]
+
+    def plan_list(**kwargs):
+        plans = list(mock_stripe_data["plans"].values())
+        return list_object(data=plans)
+
+    def plan_create(price, product, **kwargs):
+        plan = plan_base(price, product, **kwargs)
+        mock_stripe_data["plans"][plan.id] = plan
+        return plan
+
     def checkout_session_create(*args, **kwargs):
         session = checkout_session_base(*args, **kwargs)
         mock_stripe_data["checkout_sessions"][session.id] = session
@@ -448,6 +463,12 @@ def mock_stripe(mock_stripe_data):
                 mock.Mock(wraps=price_create)), \
             mock.patch.object(stripe.Price, 'list',
                 mock.Mock(wraps=price_list)), \
+            mock.patch.object(stripe.Plan, 'retrieve',
+                mock.Mock(wraps=plan_retrieve)), \
+            mock.patch.object(stripe.Plan, 'create',
+                mock.Mock(wraps=plan_create)), \
+            mock.patch.object(stripe.Plan, 'list',
+                mock.Mock(wraps=plan_list)), \
             mock.patch.object(stripe.checkout.Session, 'retrieve',
                 mock.Mock(wraps=checkout_session_retrieve)), \
             mock.patch.object(stripe.checkout.Session, 'create',
@@ -478,3 +499,13 @@ def stripe_customer(user, mock_stripe):
     user.stripe_id = stripe_customer.id
     user.save()
     return stripe_customer
+
+
+@pytest.fixture
+def standard_product_user(user, products, prices, mock_stripe):
+    stripe_customer = mock_stripe.Customer.create(email=user.email)
+    plan = mock_stripe.Plan.create(prices[0], products[0])
+    mock_stripe.Subscription.create(plan, prices[0], stripe_customer)
+    user.stripe_id = stripe_customer.id
+    user.save()
+    return user

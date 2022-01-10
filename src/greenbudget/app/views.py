@@ -5,13 +5,15 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.http import Http404
 from django.utils.functional import cached_property
 
-from rest_framework import views, exceptions, viewsets, serializers
+from rest_framework import views, exceptions, viewsets, serializers, generics
 from rest_framework.response import Response
 from rest_framework.serializers import as_serializer_error
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
 
 from greenbudget.lib.utils import ensure_iterable, get_nested_attribute
 from greenbudget.lib.utils.urls import parse_ids_from_request
+
+from greenbudget.app.authentication.exceptions import SubscriptionPermissionError
 
 
 logger = logging.getLogger('greenbudget')
@@ -44,45 +46,13 @@ def evaluate_view_attribute_map(view, mapping):
     return True
 
 
-class GenericViewSet(viewsets.GenericViewSet):
+class GenericView(generics.GenericAPIView):
     """
-    An extension of `rest_framework.viewsets.GenericViewSet` that allows us
+    An extension of `rest_framework.generics.GenericAPIView` that allows us
     to non intrusively and minorly manipulate the default behavior of the
-    `rest_framework.viewsets.GenericViewSet` class for specific functionality
+    `rest_framework.generics.GenericAPIView` class for specific functionality
     used in this application.
     """
-    lookup_field = 'pk'
-
-    @property
-    def is_simple(self):
-        return 'simple' in self.request.query_params
-
-    @cached_property
-    def instance(self):
-        return self.get_object()
-
-    @property
-    def instance_cls(self):
-        return type(self.instance)
-
-    def _update_kwargs(self, serializer):
-        kwargs = {}
-        if isinstance(serializer, serializers.ModelSerializer):
-            model_cls = serializer.Meta.model
-            if hasattr(model_cls, 'updated_by'):
-                kwargs.update(updated_by=self.request.user)
-        return kwargs
-
-    def update_kwargs(self, serializer):
-        return self._update_kwargs(serializer)
-
-    def create_kwargs(self, serializer):
-        kwargs = self._update_kwargs(serializer)
-        if isinstance(serializer, serializers.ModelSerializer):
-            model_cls = serializer.Meta.model
-            if hasattr(model_cls, 'created_by'):
-                kwargs.update(created_by=self.request.user)
-        return kwargs
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -244,6 +214,47 @@ class GenericViewSet(viewsets.GenericViewSet):
         return serializer_cls
 
 
+class GenericViewSet(viewsets.ViewSetMixin, GenericView):
+    """
+    An extension of `rest_framework.viewsets.GenericViewSet` that allows us
+    to non intrusively and minorly manipulate the default behavior of the
+    `rest_framework.viewsets.GenericViewSet` class for specific functionality
+    used in this application.
+    """
+    lookup_field = 'pk'
+
+    @property
+    def is_simple(self):
+        return 'simple' in self.request.query_params
+
+    @cached_property
+    def instance(self):
+        return self.get_object()
+
+    @property
+    def instance_cls(self):
+        return type(self.instance)
+
+    def _update_kwargs(self, serializer):
+        kwargs = {}
+        if isinstance(serializer, serializers.ModelSerializer):
+            model_cls = serializer.Meta.model
+            if hasattr(model_cls, 'updated_by'):
+                kwargs.update(updated_by=self.request.user)
+        return kwargs
+
+    def update_kwargs(self, serializer):
+        return self._update_kwargs(serializer)
+
+    def create_kwargs(self, serializer):
+        kwargs = self._update_kwargs(serializer)
+        if isinstance(serializer, serializers.ModelSerializer):
+            model_cls = serializer.Meta.model
+            if hasattr(model_cls, 'created_by'):
+                kwargs.update(created_by=self.request.user)
+        return kwargs
+
+
 def filter_by_ids(cls):
     """
     A decorator for extensions of :obj:`rest_framework.views.ViewSet` that
@@ -394,28 +405,10 @@ def exception_handler(exc, context):
 
         Currently, this pertains to two parameters:
 
-        (1) force_logout: Informs the frontend that we need to forcefully log
-            the :obj:`User` out of their session.  This applies mostly to JWT
-            token validation.
-
-            The JWT middleware will automatically include the `force_logout`
-            param at the top level of the response in the case that the JWT
-            validation fails on a given request:
-
-            >>> { errors: [...], force_logout: True }
-
-            However, we want the ability to control this more granularly on an
-            Exception basis.  If an authentication related Exception has the
-            attribute `force_logout = True`, here we will inform the JWT
-            middleware that we still want to force logout the :obj:`User` by
-            setting this parameter as an attribute on the
-            :obj:`response.Response`.
-
-            >>> setattr(response, '_force_logout', force_logout)
-
-        (2) user_id: Informs the frontend what :obj:`User` triggered the
+        (1) user_id: Informs the frontend what :obj:`User` triggered the
             authentication related exception for cases when the :obj:`User`
-            is not logged in.
+            is not logged in and the exception raised was an instance of
+            `greenbudget.app.authentication.exceptions.AuthenticationError`.
 
             This applies mostly to email confirmation, where we need to inform
             the frontend  what :obj:`User` tried to login to the system without
@@ -423,17 +416,20 @@ def exception_handler(exc, context):
 
             For authentication related endpoints, we can include this information
             by setting the `user_id` parameter on the Exception being raised.
+            The `user_id` parameter is then pulled off of the raised Exception
+            and included in the response errors:
 
-            Here, we then pull that `user_id` off of the raised Exception and
-            inform the JWT middleware what it's value is so that it can include
-            it in the top level of the response:
+            >>> { errors: [{ message: ..., code: ..., user_id: 5}] }
 
-            >>> { errors: [...], force_logout: True }
+        (2) products: Informs the frontend what Stripe Products that a user may
+            need to subscribe to in the case that they are trying to access
+            behavior that requires a subscription to the included products.
 
-            We do this by setting the `user_id` param on the
-            :obj:`response.Response` object:
-
-            >>> setattr(response, '_user_id', user_id)
+            >>> { errors: [{
+            >>>     message: ...,
+            >>>     code: ...,
+            >>>     products: ["greenbudget_standard"]
+            >>> }] }
     """
     def map_detail(detail, error_type, **kwargs):
         return {**{
@@ -464,8 +460,11 @@ def exception_handler(exc, context):
         detail_data = getattr(exc, 'detail_data', {})
         return map_details(exc.detail, error_type, **{**kwargs, **detail_data})
 
+    def include_in_detail(data, **kwargs):
+        for err in data:
+            err.update(**kwargs)
+
     response_data = {}
-    force_logout = None
 
     # In case a Django ValidationError is raised outside of a serializer's
     # validation methods (as might happen if we don't know the validation error
@@ -478,7 +477,7 @@ def exception_handler(exc, context):
     # { "detail": "Not found." }.  We want to include a code for the frontend.
     if isinstance(exc, Http404):
         message = str(exc) or 'The requested resource could not be found.'
-        logger.warning("There was a user error", extra={
+        logger.warning("API encountered a 404 error", extra={
             'error_type': 'http',
             'code': 'not_found'
         })
@@ -492,31 +491,39 @@ def exception_handler(exc, context):
     elif not isinstance(exc, exceptions.APIException):
         return views.exception_handler(exc, context)
 
-    # If the user submitted a request requiring authentication and they are not
-    # authenticated, include information in the context so the FE can force log
-    # out the user.
     elif isinstance(exc, (
         AuthenticationFailed,
         exceptions.AuthenticationFailed,
         exceptions.NotAuthenticated,
         exceptions.PermissionDenied
     )):
-        error_type = getattr(exc, 'error_type', 'auth')
-        kwargs = {'details': exc.detail, 'error_type': error_type}
-        # If the Exception includes a `force_logout` or `user_id` param, store
-        # the value so we can set it on the overall Response object for the
-        # JWT middleware.
-        force_logout = getattr(exc, 'force_logout', None)
+        default_error_type = 'permission' \
+            if isinstance(exc, exceptions.PermissionDenied) else 'auth'
 
-        user_id = getattr(exc, 'user_id', None)
-        request_user = context['request'].user
+        data = map_details(
+            details=exc.detail,
+            error_type=getattr(exc, 'error_type', default_error_type)
+        )
 
-        if user_id is not None:
-            response_data['user_id'] = user_id
-        elif request_user.is_authenticated:
-            response_data['user_id'] = request_user.pk
+        # There are cases where we need to include information about the user
+        # that is attempting a request when a NotAuthenticated error surfaces.
+        # This mostly pertains to things like email confirmation, where we might
+        # need information about the user to send a verification email in the
+        # case that they cannot log in because their email is not verified.
+        if isinstance(exc, exceptions.NotAuthenticated):
+            user_id = getattr(exc, 'user_id', None)
+            # The context user's ID will be None if it is an AnonymousUser.
+            if user_id is None and context['request'].user.id is not None:
+                user_id = context['request'].user.id
+            if user_id is not None:
+                include_in_detail(data, user_id=user_id)
 
-        data = map_details(**kwargs)
+        # There are cases where we need to include information about the products
+        # that a user needs to be subscribed to in order to perform a certain
+        # action.
+        if isinstance(exc, SubscriptionPermissionError):
+            products = getattr(exc, 'products')
+            include_in_detail(data, products=products)
 
     elif isinstance(exc.detail, dict):
         default_error_type = 'field'
@@ -536,8 +543,6 @@ def exception_handler(exc, context):
         data = map_exception_details(exc, default_error_type='global')
 
     response_data['errors'] = data
-    if force_logout:
-        response_data['force_logout'] = True
 
     # Allow the exception to include extra data that will be attributed to the
     # response at the top level, not individual errors.
@@ -546,9 +551,4 @@ def exception_handler(exc, context):
 
     logger.info("API Error", extra=response_data)
 
-    response = Response(response_data, status=exc.status_code)
-
-    # Include meta information on response for JWT middleware.
-    setattr(response, '_force_logout', force_logout)
-
-    return response
+    return Response(response_data, status=exc.status_code)

@@ -40,7 +40,8 @@ def test_login(login, user_with_password, settings):
         "profile_image": None,
         "timezone": "America/New_York",
         "is_first_time": False,
-        "stripe_product": None,
+        "product_id": None,
+        "billing_status": None
     }
 
 
@@ -89,11 +90,11 @@ def test_login_account_disabled(login, settings):
     assert response.status_code == 403
     assert settings.JWT_TOKEN_COOKIE_NAME not in response.cookies
     assert response.json() == {
-        'user_id': 1,
         'errors': [{
-            'message': 'Your account is not active, please contact customer care.',  # noqa
+            'message': 'The account is not active.',
             'code': 'account_disabled',
-            'error_type': 'auth'
+            'error_type': 'auth',
+            'user_id': 1,
         }]
     }
 
@@ -103,11 +104,11 @@ def test_login_account_not_approved(login, settings):
     assert response.status_code == 403
     assert settings.JWT_TOKEN_COOKIE_NAME not in response.cookies
     assert response.json() == {
-        'user_id': 1,
         'errors': [{
             'message': 'The account is not approved.',
             'code': 'account_not_approved',
-            'error_type': 'auth'
+            'error_type': 'auth',
+            'user_id': 1,
         }]
     }
 
@@ -117,11 +118,11 @@ def test_login_account_not_verified(login, settings):
     assert response.status_code == 403
     assert settings.JWT_TOKEN_COOKIE_NAME not in response.cookies
     assert response.json() == {
-        'user_id': 1,
         'errors': [{
             'message': 'The email address is not verified.',
             'code': 'account_not_verified',
-            'error_type': 'auth'
+            'error_type': 'auth',
+            'user_id': 1,
         }]
     }
 
@@ -130,4 +131,4 @@ def test_logout(user, jwt_authenticated_client, settings):
     jwt_authenticated_client.force_login(user)
     response = jwt_authenticated_client.post("/v1/auth/logout/")
     assert response.status_code == 201
-    assert response.cookies[settings.JWT_TOKEN_COOKIE_NAME].value == ""
+    assert settings.JWT_TOKEN_COOKIE_NAME not in response.cookies

@@ -40,7 +40,9 @@ def test_validate_password_token(api_client, user):
         'last_login': None,
         'timezone': str(user.timezone),
         "profile_image": None,
-        "is_first_time": False
+        "is_first_time": False,
+        "product_id": None,
+        "billing_status": None
     }
 
 
@@ -57,11 +59,11 @@ def test_password_recovery_expired_token(api_client, user, path, extra_data):
         "token": str(token)
     }})
     assert response.json() == {
-        'user_id': user.id,
         'errors': [{
             'message': 'The provided token is expired.',
             'code': 'token_expired',
-            'error_type': 'auth'
+            'error_type': 'auth',
+            'user_id': user.id,
         }]
     }
 
@@ -78,11 +80,11 @@ def test_password_recovery_inactive_user(inactive_user, api_client, path,
     }})
     assert response.status_code == 403
     assert response.json() == {
-        'user_id': inactive_user.pk,
         'errors': [{
-            'message': 'Your account is not active, please contact customer care.',  # noqa
+            'message': 'The account is not active.',
             'code': 'account_disabled',
-            'error_type': 'auth'
+            'error_type': 'auth',
+            'user_id': inactive_user.pk,
         }]
     }
 
@@ -98,11 +100,11 @@ def test_password_recovery_unverified_user(unverified_user, api_client, path,
         "token": str(token)
     }})
     assert response.json() == {
-        'user_id': unverified_user.pk,
         'errors': [{
             'message': 'The email address is not verified.',
             'code': 'account_not_verified',
-            'error_type': 'auth'
+            'error_type': 'auth',
+            'user_id': unverified_user.pk,
         }]
     }
 
@@ -118,11 +120,11 @@ def test_password_recovery_unapproved_user(unapproved_user, api_client, path,
         "token": str(token)
     }})
     assert response.json() == {
-        'user_id': unapproved_user.pk,
         'errors': [{
             'message': 'The account is not approved.',
             'code': 'account_not_approved',
-            'error_type': 'auth'
+            'error_type': 'auth',
+            'user_id': unapproved_user.pk,
         }]
     }
 
@@ -139,11 +141,10 @@ def test_password_recovery_user_logged_in(api_client, user, path, extra_data):
     }})
     assert response.status_code == 403
     assert response.json() == {
-        'user_id': user.pk,
         'errors': [{
             'message': 'User already has an active session.',
-            'code': 'permission_denied',
-            'error_type': 'auth'
+            'code': 'permission_error',
+            'error_type': 'permission'
         }]
     }
 
@@ -152,16 +153,9 @@ def test_password_recovery_user_logged_in(api_client, user, path, extra_data):
     ("validate-password-recovery-token", {}),
     ("reset-password", {"password": VALID_PASSWORD})
 ])
-def test_password_recovery_missing_token(api_client, path, extra_data):
+def test_password_recovery_missing_token(api_client, path, extra_data, settings):
     response = api_client.post("/v1/auth/%s/" % path, data=extra_data)
     assert response.status_code == 403
-    assert response.json() == {
-        'errors': [{
-            'message': 'Token is invalid.',
-            'code': 'token_not_valid',
-            'error_type': 'auth'
-        }]
-    }
 
 
 @pytest.mark.parametrize("path,extra_data", [
@@ -247,6 +241,8 @@ def test_reset_password(user, api_client):
         'timezone': str(user.timezone),
         "profile_image": None,
         "is_first_time": False,
+        "product_id": None,
+        "billing_status": None,
     }
 
 

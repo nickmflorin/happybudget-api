@@ -63,11 +63,10 @@ def test_checkout_session_user_already_stripe_customer(api_client, user, prices,
         "/v1/billing/checkout-session/", data={"price_id": prices[0].id})
     assert response.status_code == 403
     assert response.json() == {
-        'user_id': 1,
         'errors': [{
             'message': 'User is already a Stripe customer.',
-            'code': 'permission_denied',
-            'error_type': 'auth'
+            'code': 'permission_error',
+            'error_type': 'permission'
         }]
     }
     session_ids = list(mock_stripe_data['checkout_sessions'].keys())
@@ -93,10 +92,9 @@ def test_portal_session_user_not_stripe_customer(api_client, user,
     assert len(session_ids) == 0
     assert response.status_code == 403
     assert response.json() == {
-        'user_id': 1,
         'errors': [{
             'message': 'User is not a Stripe customer.',
-            'code': 'permission_denied',
-            'error_type': 'auth'
+            'code': 'permission_error',
+            'error_type': 'permission'
         }]
     }
