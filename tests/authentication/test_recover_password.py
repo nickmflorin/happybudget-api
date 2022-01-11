@@ -113,26 +113,6 @@ def test_password_recovery_unverified_user(unverified_user, api_client, path,
     ("validate-password-recovery-token", {}),
     ("reset-password", {"password": VALID_PASSWORD})
 ])
-def test_password_recovery_unapproved_user(unapproved_user, api_client, path,
-        extra_data):
-    token = AccessToken.for_user(unapproved_user)
-    response = api_client.post("/v1/auth/%s/" % path, data={**extra_data, **{
-        "token": str(token)
-    }})
-    assert response.json() == {
-        'errors': [{
-            'message': 'The account is not approved.',
-            'code': 'account_not_approved',
-            'error_type': 'auth',
-            'user_id': unapproved_user.pk,
-        }]
-    }
-
-
-@pytest.mark.parametrize("path,extra_data", [
-    ("validate-password-recovery-token", {}),
-    ("reset-password", {"password": VALID_PASSWORD})
-])
 def test_password_recovery_user_logged_in(api_client, user, path, extra_data):
     api_client.force_login(user)
     token = AccessToken.for_user(user)

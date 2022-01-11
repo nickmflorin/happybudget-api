@@ -95,10 +95,6 @@ class Mail(SendGridMail):
         raise NotImplementedError()
 
 
-class PostActivationMail(Mail):
-    template_slug = "post_activation"
-
-
 class EmailConfirmationMail(Mail):
     template_slug = "email_confirmation"
 
@@ -176,9 +172,4 @@ def send_email_verification_email(user, token=None):
 def send_password_recovery_email(user, token=None):
     token = token or AccessToken.for_user(user)
     mail = PasswordRecoveryMail(user, str(token))
-    return send_mail(mail)
-
-
-def send_post_activation_email(user):
-    mail = PostActivationMail(user)
     return send_mail(mail)

@@ -8,10 +8,9 @@ from greenbudget.app import views
 from greenbudget.app.user.serializers import UserSerializer
 
 from .backends import CsrfExcemptCookieSessionAuthentication
-from .exceptions import AccountNotApproved, AccountDisabled
 from .middleware import AuthTokenCookieMiddleware
 from .permissions import (
-    IsAnonymous, IsAuthenticated, IsActive, IsApproved, IsVerified)
+    IsAnonymous, IsAuthenticated, IsActive, IsVerified)
 from .serializers import (
     LoginSerializer, SocialLoginSerializer, VerifyEmailSerializer,
     AuthTokenValidationSerializer, RecoverPasswordSerializer,
@@ -27,8 +26,7 @@ def sensitive_post_parameters_m(*args):
 
 class TokenValidateView(views.GenericView):
     serializer_class = TokenValidationSerializer
-    token_user_permission_classes = [
-        IsAuthenticated, IsActive, IsVerified, IsApproved]
+    token_user_permission_classes = [IsAuthenticated, IsActive, IsVerified]
 
     @property
     def token_cls(self):
@@ -84,12 +82,12 @@ class EmailTokenValidateView(TokenValidateView):
     token_cls = AccessToken
     permission_classes = (IsAnonymous, )
     authentication_classes = []
-    token_user_permission_classes = [IsAuthenticated, IsActive, IsApproved]
+    token_user_permission_classes = [IsAuthenticated, IsActive]
 
     def validate_user(self, user):
         return user_can_authenticate(
             user=user,
-            permissions=[IsAuthenticated, IsActive, IsApproved]
+            permissions=[IsAuthenticated, IsActive]
         )
 
 
@@ -100,10 +98,10 @@ class PasswordResetTokenValidateView(TokenValidateView):
     authentication_classes = []
 
     def validate_user(self, user):
-        if not user.is_active:
-            raise AccountDisabled(user_id=user.id)
-        elif not user.is_approved:
-            raise AccountNotApproved(user_id=user.id)
+        return user_can_authenticate(
+            user=user,
+            permissions=[IsAuthenticated, IsActive]
+        )
 
 
 class LogoutView(views.GenericView):

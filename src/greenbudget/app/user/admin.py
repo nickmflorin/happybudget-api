@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib import admin
 
-from .models import User, UnapprovedUser
+from .models import User
 
 
 class UserAdminForm(forms.ModelForm):
@@ -19,22 +19,3 @@ class UserAdmin(admin.ModelAdmin):
         "first_name", "last_name", "email", "created_at", "last_login",
         "is_admin", "is_staff", "is_superuser")
     form = UserAdminForm
-
-
-@admin.action(description='Mark selected users as approved.')
-def make_approved(modeladmin, request, queryset):
-    queryset.update(is_approved=True)
-
-
-class UnapprovedUserAdminForm(forms.ModelForm):
-    class Meta:
-        model = User
-        fields = ('is_approved', )
-
-
-@admin.register(UnapprovedUser)
-class UnapprovedUserAdmin(admin.ModelAdmin):
-    actions = [make_approved]
-    form = UnapprovedUserAdminForm
-    list_display = (
-        "first_name", "last_name", "email", "created_at", "is_verified")

@@ -1,5 +1,4 @@
 from django.db import migrations, models
-import greenbudget.app.user.managers
 
 
 class Migration(migrations.Migration):
@@ -21,9 +20,6 @@ class Migration(migrations.Migration):
                 'constraints': [],
             },
             bases=('user.user',),
-            managers=[
-                ('objects', greenbudget.app.user.managers.UnapprovedUserManager()),
-            ],
         ),
         migrations.AddField(
             model_name='user',

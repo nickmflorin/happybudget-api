@@ -70,8 +70,8 @@ class ModelAuthentication(ModelBackend):
 class SessionAuthentication(authentication.SessionAuthentication):
     """
     An extension of :obj:`rest_framework.authentication.SessionAuthentication`
-    that prevents inactive :obj:`User`(s), unapproved :obj:`User`(s) or
-    :obj:`User`(s) with unverified email addresses from authenticating.
+    that prevents inactive :obj:`User`(s) or :obj:`User`(s) with unverified
+    email addresses from authenticating.
     """
     user_ref = 'user'
     csrf_excempt = False
@@ -88,8 +88,7 @@ class SessionAuthentication(authentication.SessionAuthentication):
     def authenticate(self, request):
         user = getattr(request._request, self.user_ref, None)
         if not user or not user.is_authenticated or not user.is_active \
-                or not user.is_verified \
-                or not user.is_approved:
+                or not user.is_verified:
             return None
         if not self.csrf_excempt:
             self.enforce_csrf(request)

@@ -99,22 +99,6 @@ def test_validate_auth_token_inactive_user(inactive_user, settings,
     assert settings.JWT_TOKEN_COOKIE_NAME not in response.cookies
 
 
-def test_validate_auth_token_unapproved_user(unapproved_user, settings,
-        validate_auth_token, jwt_authenticated_client):
-    jwt_authenticated_client.force_login(unapproved_user)
-    response = validate_auth_token()
-    assert response.status_code == 401
-    assert response.json() == {
-        'errors': [{
-            'message': 'The account is not approved.',
-            'code': 'account_not_approved',
-            'error_type': 'auth',
-            'user_id': unapproved_user.pk,
-        }]
-    }
-    assert settings.JWT_TOKEN_COOKIE_NAME not in response.cookies
-
-
 def test_validate_auth_token_unverified_user(validate_auth_token,
         unverified_user, jwt_authenticated_client, settings):
     jwt_authenticated_client.force_login(unverified_user)

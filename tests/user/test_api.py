@@ -89,7 +89,6 @@ def test_registration(api_client, models, settings, user):
         ]
     }
     user = models.User.objects.get(pk=response.json()['id'])
-    assert user.is_approved is True
     assert user.first_name == "Jack"
     assert user.last_name == "Johnson"
     assert user.email == "jjohnson@gmail.com"
@@ -119,8 +118,6 @@ def test_registration_user_on_waitlist(api_client, models):
     })
     assert response.status_code == 201
     assert response.json()['email'] == 'jjohnson@gmail.com'
-    user = models.User.objects.get(email="jjohnson@gmail.com")
-    assert user.is_approved is False
 
 
 @responses.activate

@@ -74,15 +74,9 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         validated_data = super().validate(attrs)
-        validated_data['is_approved'] = True
-
-        if settings.WAITLIST_ENABLED is True:
-            if not user_is_on_waitlist(validated_data["email"]):
-                raise AccountNotOnWaitlist()
-            validated_data['is_approved'] = False
-        elif settings.APPROVAL_ENABLED is True:
-            validated_data['is_approved'] = False
-
+        if settings.WAITLIST_ENABLED is True \
+                and not user_is_on_waitlist(validated_data["email"]):
+            raise AccountNotOnWaitlist()
         return validated_data
 
 

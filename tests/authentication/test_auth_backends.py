@@ -75,7 +75,7 @@ def test_cookie_session_failure_unauthenticated_user(api_rf, unauthorized_user):
     assert auth_user is None, "Authentication successful."
 
 
-@pytest.mark.parametrize("flag", ['is_active', 'is_verified', 'is_approved'])
+@pytest.mark.parametrize("flag", ['is_active', 'is_verified'])
 def test_cookie_session_failure(api_rf, user, flag):
     setattr(user, flag, False)
     user.save()

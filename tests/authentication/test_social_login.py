@@ -172,32 +172,3 @@ def test_social_login_account_disabled(api_client, create_user):
             'user_id': user.pk,
         }]
     }
-
-
-@responses.activate
-@override_settings(GOOGLE_OAUTH_API_URL="https://www.test-validate-user-token/")
-def test_social_login_account_not_approved(api_client, create_user):
-    user = create_user(email="jjohnson@gmail.com", is_approved=False)
-    responses.add(
-        method=responses.GET,
-        url="https://www.test-validate-user-token/?id_token=testtoken",
-        json={
-            "family_name": "Johnson",
-            "given_name": "Jack",
-            "email": "jjohnson@gmail.com"
-        }
-    )
-    response = api_client.post("/v1/auth/social-login/", data={
-        "token_id": "testtoken",
-        'provider': 'google',
-    })
-    assert response.status_code == 403
-    assert 'greenbudgetjwt' not in response.cookies
-    assert response.json() == {
-        'errors': [{
-            'message': 'The account is not approved.',
-            'code': 'account_not_approved',
-            'error_type': 'auth',
-            'user_id': user.pk,
-        }]
-    }

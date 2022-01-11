@@ -127,17 +127,9 @@ def user(db, user_password):
         is_staff=False,
         is_superuser=False,
         is_verified=True,
-        is_approved=True,
         is_first_time=False
     )
     user.set_password(user_password)
-    user.save()
-    return user
-
-
-@pytest.fixture
-def unapproved_user(user):
-    user.is_approved = False
     user.save()
     return user
 

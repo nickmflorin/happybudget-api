@@ -100,20 +100,6 @@ def test_login_account_disabled(login, settings):
     }
 
 
-def test_login_account_not_approved(login, settings):
-    response = login(user_kwargs={'is_approved': False})
-    assert response.status_code == 403
-    assert settings.JWT_TOKEN_COOKIE_NAME not in response.cookies
-    assert response.json() == {
-        'errors': [{
-            'message': 'The account is not approved.',
-            'code': 'account_not_approved',
-            'error_type': 'auth',
-            'user_id': 1,
-        }]
-    }
-
-
 def test_login_account_not_verified(login, settings):
     response = login(user_kwargs={'is_verified': False})
     assert response.status_code == 403

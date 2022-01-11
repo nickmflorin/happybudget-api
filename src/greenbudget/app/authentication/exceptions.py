@@ -35,7 +35,6 @@ class SubscriptionPermissionError(PermissionError):
 
 class NotAuthenticatedErrorCodes(object):
     ACCOUNT_DISABLED = "account_disabled"
-    ACCOUNT_NOT_APPROVED = "account_not_approved"
     ACCOUNT_NOT_AUTHENTICATED = "account_not_authenticated"
     ACCOUNT_NOT_VERIFIED = "account_not_verified"
     ACCOUNT_NOT_ON_WAITLIST = "account_not_on_waitlist"
@@ -98,11 +97,6 @@ class AccountDisabled(NotAuthenticatedError):
 class AccountNotVerified(NotAuthenticatedError):
     default_detail = _("The email address is not verified.")
     default_code = NotAuthenticatedErrorCodes.ACCOUNT_NOT_VERIFIED
-
-
-class AccountNotApproved(NotAuthenticatedError):
-    default_detail = _("The account is not approved.")
-    default_code = NotAuthenticatedErrorCodes.ACCOUNT_NOT_APPROVED
 
 
 class AccountNotOnWaitlist(NotAuthenticatedError):

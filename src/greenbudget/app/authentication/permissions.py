@@ -7,7 +7,6 @@ from greenbudget.lib.utils import import_at_module_path
 from .exceptions import (
     NotAuthenticatedError,
     AccountDisabled,
-    AccountNotApproved,
     AccountNotVerified,
     PermissionErrorCodes
 )
@@ -60,20 +59,6 @@ class IsVerified(UserPermission):
             "This permission should always be preceeded by `IsAuthenticated`."
         if not user.is_verified:
             raise AccountNotVerified(user_id=getattr(user, 'pk'))
-        return True
-
-
-class IsApproved(UserPermission):
-    """
-    Permission that ensures that the active user's account is approved for
-    access.
-    """
-
-    def user_has_permission(self, user):
-        assert not (user is None or not user.is_authenticated), \
-            "This permission should always be preceeded by `IsAuthenticated`."
-        if not user.is_approved:
-            raise AccountNotApproved(user_id=getattr(user, 'pk'))
         return True
 
 

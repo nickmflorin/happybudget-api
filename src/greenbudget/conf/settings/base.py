@@ -117,11 +117,7 @@ AUTH_USER_MODEL = 'user.User'
 
 # When True, User's will not be allowed to register unless they are on a
 # waitlist in SendGrid.
-WAITLIST_ENABLED = False
-# When True, User's will not be able to login after registration until they
-# are approved via the Admin.  Note that if `WAITLIST_ENABLED` is True, this
-# value is considered `True` regardless.
-APPROVAL_ENABLED = True
+WAITLIST_ENABLED = True
 
 INSTALLED_APPS = [
     'compressor',
@@ -330,8 +326,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'greenbudget.app.authentication.permissions.IsAuthenticated',
         'greenbudget.app.authentication.permissions.IsActive',
-        'greenbudget.app.authentication.permissions.IsVerified',
-        'greenbudget.app.authentication.permissions.IsApproved',
+        'greenbudget.app.authentication.permissions.IsVerified'
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'greenbudget.app.authentication.backends.SessionAuthentication',

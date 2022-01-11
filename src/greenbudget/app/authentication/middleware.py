@@ -169,11 +169,10 @@ class AuthTokenCookieMiddleware(MiddlewareMixin):
                 return response
 
             # If the user dictated by the JWT token is either not authenticated,
-            # not active, not verified or not approved, remove the user's
-            # session and delete the JWT token from the response.
+            # not active or not verified, remove the user's session and delete
+            # the JWT token from the response.
             if not is_authenticated or not request.cookie_user.is_active \
-                    or not request.cookie_user.is_verified \
-                    or not request.cookie_user.is_approved:
+                    or not request.cookie_user.is_verified:
                 return self.force_logout(request, response)
 
             # For security purposes, we need to make sure that the user dictated

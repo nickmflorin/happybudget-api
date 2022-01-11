@@ -8,11 +8,9 @@ from greenbudget.app.authentication.utils import get_google_user_from_token
 class UserQuerier(object):
 
     def active(self):
-        # pylint: disable=no-member
         return self.filter(is_active=True)
 
     def inactive(self):
-        # pylint: disable=no-member
         return self.filter(is_active=False)
 
 
@@ -93,8 +91,3 @@ class UserManager(UserQuerier, DjangoUserManager):
     def get_or_create_from_social_token(self, token_id, provider):
         assert provider == "google", "Provider %s not supported." % provider
         return self.get_or_create_from_google_token(token_id)
-
-
-class UnapprovedUserManager(UserManager):
-    def get_queryset(self):
-        return super().get_queryset().filter(is_approved=False)

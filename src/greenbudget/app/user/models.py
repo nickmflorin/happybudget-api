@@ -14,7 +14,7 @@ from greenbudget.app.billing import StripeCustomer
 from greenbudget.app.billing.constants import BillingStatus
 from greenbudget.app.io.utils import upload_user_image_to
 
-from .managers import UserManager, UnapprovedUserManager
+from .managers import UserManager
 
 
 def upload_to(instance, filename):
@@ -46,13 +46,6 @@ class User(AbstractUser):
     timezone = TimeZoneField(default='America/New_York')
     profile_image = models.ImageField(upload_to=upload_to, null=True, blank=True)
     is_first_time = models.BooleanField(default=True)
-    is_approved = models.BooleanField(
-        _('approved'),
-        default=True,
-        help_text=_(
-            'Designates whether this user has been approved for access.'
-        ),
-    )
     is_verified = models.BooleanField(
         _('verified'),
         default=False,
@@ -177,12 +170,3 @@ class User(AbstractUser):
                 and self.product_id is not None
         return self.billing_status == BillingStatus.ACTIVE \
             and self.product_id in ensure_iterable(product)
-
-
-class UnapprovedUser(User):
-    objects = UnapprovedUserManager()
-
-    class Meta:
-        proxy = True
-        verbose_name = "Unapproved User"
-        verbose_name_plural = "Unapproved Users"

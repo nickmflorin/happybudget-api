@@ -35,14 +35,5 @@ SENDGRID_TEMPLATES = [
             lambda settings: os.path.join(
                 str(settings.FRONTEND_URL), "verify")
         )
-    ),
-    SendGridTemplate(
-        id="d-e23e7d7e4d014b0c856e2abcb74343d3",
-        slug="post_activation",
-        redirect_base_url=LazySetting(
-            lambda settings: os.path.join(
-                str(settings.FRONTEND_URL), "login")
-        )
-    ),
-
+    )
 ]
