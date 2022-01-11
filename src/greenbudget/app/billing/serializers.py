@@ -8,8 +8,7 @@ from rest_framework import serializers
 from greenbudget.app.user.models import User
 
 from .exceptions import (
-    CheckoutError, StripeBadRequest, CheckoutSessionInactiveError,
-    InconsistentEmailCheckoutError)
+    CheckoutError, StripeBadRequest, CheckoutSessionInactiveError)
 from .utils import get_product_internal_id, subscription_status
 from . import stripe
 
@@ -87,11 +86,6 @@ class UserSyncStripeSerializer(serializers.ModelSerializer):
                 "The checkout session could not be retrieved from the session "
                 "ID.")
 
-        # An additionally precautionary security check.  Note that this assumes
-        # Stripe is attaching the customer email to the session, which I believe
-        # requires that we are asking them for that in the checkout process.
-        if session.customer_details.email != request.user.email:
-            raise InconsistentEmailCheckoutError()
         return {'stripe_id': session.customer}
 
 

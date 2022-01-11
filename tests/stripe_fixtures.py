@@ -111,7 +111,9 @@ def mock_stripe(mock_stripe_data, user):
             "success_url": kwargs['success_url'],
             "customer": customer.id,
             "customer_details": {
-                "email": customer.email,
+                # Currently, we do not collect this information as a part of the
+                # checkout process in Stripe.
+                "email": None,
                 "phone": None,
                 "tax_exempt": "none",
                 "tax_ids": []
