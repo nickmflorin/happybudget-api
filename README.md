@@ -101,7 +101,7 @@ RSA fingerprints for JWT - these should not be needed when running locally.
 
 | Environment | Settings Module                  | URL                     | File Storage               | Database                   |
 | :---:       |     :---:                        |          :---:          | :---:                      | :---:                      | 
-| `local`     | `greenbudget.conf.settings.local`| `127.0.0.1:8000`        | Local File Storage         | Local PostgreSQL Server    |
+| `local`     | `greenbudget.conf.settings.local`| `local.greenbudget.io:8000`        | Local File Storage         | Local PostgreSQL Server    |
 | `test`      | `greenbudget.conf.settings.test` |  N/A                    | Temporary File Storage     | Transactional SQLite3 File |
 | `develop`   | `greenbudget.conf.settings.dev`  | `devapi.greenbudget.io` | AWS S3                     | PostgreSQL on AWS RDS      |
 | `prod`      | `greenbudget.conf.settings.prod` | `api.greenbudget.io`    | AWS S3                     | PostgreSQL on AWS RDS      |
@@ -117,7 +117,7 @@ $ python src/manage.py runserver
 ```
 
 Then, migrate to the domain/port serving the Frontend (assuming that the Frontend server is running, this
-is usually at `127.0.0.1:3000`.
+is usually at `local.greenbudget.io:3000`.
 
 #### Local Database
 
