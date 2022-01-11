@@ -67,7 +67,7 @@ def mock_stripe_data():
 
 
 @pytest.fixture
-def mock_stripe(mock_stripe_data):
+def mock_stripe(mock_stripe_data, user):
     def raise_resource_missing(id):
         raise stripe.error.InvalidRequestError(
             'No such resource: %s' % id, 'id', code='resource_missing')
@@ -98,7 +98,9 @@ def mock_stripe(mock_stripe_data):
     )
     def checkout_session_base(**kwargs):
         id = object_id(prefix="cs")
-        customer = customer_create("testemail@gmail.com")
+        # Note: This means that we have to use the `user` fixtures for checkout
+        # sessions.
+        customer = customer_create(user.email)
         price = price_retrieve(kwargs['line_items'][0]['price'])
         return {
             "id": id,

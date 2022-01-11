@@ -1,3 +1,6 @@
+import os
+
+
 def test_get_products(api_client, user, mock_stripe):
     products = [
         mock_stripe.Product.create(internal_id="greenbudget_standard"),
@@ -98,3 +101,52 @@ def test_portal_session_user_not_stripe_customer(api_client, user,
             'error_type': 'permission'
         }]
     }
+
+
+def test_sync_checkout_session(api_client, user, mock_stripe_data, prices):
+    # We have to create the checkout session via the API (instead of directly
+    # via mock_stripe) because the Session ID needs to be stored in the request
+    # session.
+    api_client.force_login(user)
+
+    response = api_client.post(
+        "/v1/billing/checkout-session/", data={"price_id": prices[0].id})
+    session_ids = list(mock_stripe_data['checkout_sessions'].keys())
+    assert len(session_ids) == 1
+    assert response.status_code == 200
+
+    response = api_client.patch("/v1/billing/sync-checkout-session/", data={
+        'session_id': session_ids[0]
+    })
+    # Note: The billing status and product_id will still be None, because those
+    # will be added to the User's stripe information via Stripe during the
+    # checkout process, not us - so we cannot make those assertions here.
+    assert response.status_code == 200
+    assert response.json()['id'] == user.id
+
+
+def test_sync_checkout_session_inconsistent_email(api_client, admin_user,
+        mock_stripe_data, prices):
+    # We have to create the checkout session via the API (instead of directly
+    # via mock_stripe) because the Session ID needs to be stored in the request
+    # session.
+    api_client.force_login(admin_user)
+
+    response = api_client.post(
+        "/v1/billing/checkout-session/", data={"price_id": prices[0].id})
+    session_ids = list(mock_stripe_data['checkout_sessions'].keys())
+    assert len(session_ids) == 1
+    assert response.status_code == 200
+
+    response = api_client.patch("/v1/billing/sync-checkout-session/", data={
+        'session_id': session_ids[0]
+    })
+    assert response.status_code == 400
+    assert response.json() == {'errors': [{
+        'message': (
+            'The email that was used to checkout must be consistent with the '
+            'email used for the account.'
+        ),
+        'code': 'checkout_inconsistent_email',
+        'error_type': 'billing'
+    }]}
