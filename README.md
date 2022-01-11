@@ -99,15 +99,17 @@ RSA fingerprints for JWT - these should not be needed when running locally.
 
 ## Application Environments
 
-| Environment | Settings Module                  | URL                     | File Storage               | Database                   |
-| :---:       |     :---:                        |          :---:          | :---:                      | :---:                      | 
-| `local`     | `greenbudget.conf.settings.local`| `local.greenbudget.io:8000`        | Local File Storage         | Local PostgreSQL Server    |
-| `test`      | `greenbudget.conf.settings.test` |  N/A                    | Temporary File Storage     | Transactional SQLite3 File |
-| `develop`   | `greenbudget.conf.settings.dev`  | `devapi.greenbudget.io` | AWS S3                     | PostgreSQL on AWS RDS      |
-| `prod`      | `greenbudget.conf.settings.prod` | `api.greenbudget.io`    | AWS S3                     | PostgreSQL on AWS RDS      |
+| Environment | Settings Module                  | URL                          | File Storage               | Database                   |
+| :---:       |     :---:                        |          :---:               | :---:                      | :---:                      | 
+| `local`     | `greenbudget.conf.settings.local`| `local.greenbudget.io:8000`  | Local File Storage         | Local PostgreSQL Server    |
+| `test`      | `greenbudget.conf.settings.test` |  N/A                         | Temporary File Storage     | Transactional SQLite3 File |
+| `develop`   | `greenbudget.conf.settings.dev`  | `devapi.greenbudget.io`      | AWS S3                     | PostgreSQL on AWS RDS      |
+| `prod`      | `greenbudget.conf.settings.prod` | `api.greenbudget.io`         | AWS S3                     | PostgreSQL on AWS RDS      |
 
 
-## Running Locally
+## Development
+
+### Running Locally
 
 To run the application locally, simply activate the virtual environment, start postgres app, and start the Django web server:
 
@@ -116,8 +118,31 @@ $ . ./env/bin/activate
 $ python src/manage.py runserver
 ```
 
-Then, migrate to the domain/port serving the Frontend (assuming that the Frontend server is running, this
-is usually at `local.greenbudget.io:3000`.
+#### Local Domain
+
+Our authentication protocols rely on the ability to set cookies in the response that dictate user sessions and
+user information.  Recent Google Chrome security improvements have introduced the caveat that the browser no longer
+considers `localhost` a valid domain, so setting cookies in the backend for the frontend application no longer
+works when running the application on `localhost`.  For this reason, the application is configured locally to
+**only** work on `127.0.0.1:8000`, not `localhost:8000`.  However, the frontend expects that the API will be running
+on `local.greenbudget.io:8000`, so we need to setup our `/etc/hosts` file such that we can use `local.greenbudget.io`
+as a valid domain for the local development server.  Note that this step is also included in the frontend setup,
+so this may have already been done as a part of that setup but is repeated here for completeness.
+
+Edit your `/etc/hosts` file as follows:
+
+```bash
+$ sudo nano /etc/hosts
+```
+
+Add the following configuration to the file:
+
+```bash
+127.0.0.1       local.greenbudget.io
+```
+
+Now, when we start the development server, we will be able to access the backend application at
+`local.greenbudget.io:8000`, and the frontend application at `local.greenbudget.io:3000`.
 
 #### Local Database
 
@@ -165,14 +190,6 @@ ALTER DATABASE postgres_greenbudget OWNER TO greenbudget;
 \q
 ```
 
-#### Local Domain Caveat
-
-Our authentication protocols rely on the ability to set cookies in the response that dictate user sessions and
-information.  Recent Google Chrome security improvements have introduced the caveat that the browser no longer
-considers `localhost` a valid domain, so setting cookies in the backend for the frontend application no longer
-works when running the application on `localhost`.  For this reason, the application is configured locally to
-**only** work on `127.0.0.1:8000`, not `localhost:8000`.
-
 #### Django Settings
 
 By default, the Django settings module used when running locally (toggled via the `DJANGO_SETTINGS_MODULE` environment
@@ -180,9 +197,9 @@ variable) is `greenbudget.conf.settings.local`.  If you need to override certain
 local development, `greenbudget.conf.settings.local` should not be edited but instead a `greenbudget.conf.settings.local_override`
 Python file should be created.
 
-## Testing
+### Testing
 
-See the ReadMe in `testing/ReadMe.md`.
+See the `ReadMe.md` file in the `testing` directory [here](https://github.com/Saturation-IO/greenbudget-api/blob/develop/tests/ReadMe.md).
 
 #### tox
 
@@ -221,7 +238,7 @@ tox -e lint
 Running these commands will usually be slow the first time, just because `tox` has to setup the cached
 environment - but after that, they all run very quickly and can be very useful.
 
-## Managing Dependencies
+### Managing Dependencies
 
 We use [`poetry`](https://python-poetry.org/docs/) as a package management system.
 [`poetry`](https://python-poetry.org/docs/)'s analogue to a `requirements.txt`
