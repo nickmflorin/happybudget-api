@@ -68,7 +68,6 @@ class AuthTokenValidateView(TokenValidateView):
     authentication_classes = (CsrfExcemptCookieSessionAuthentication, )
     token_cls = AuthToken
     serializer_class = AuthTokenValidationSerializer
-    authentication_classes = (CsrfExcemptCookieSessionAuthentication, )
 
 
 class PasswordRecoveryTokenValidateView(TokenValidateView):

@@ -69,6 +69,7 @@ class SyncCheckoutSessionViewSet(mixins.CreateModelMixin, views.GenericViewSet):
         )
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
+        user.flush_stripe_cache()
         return response.Response(
             UserSerializer(user).data,
             status=status.HTTP_200_OK
