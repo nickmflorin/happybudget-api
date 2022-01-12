@@ -1,3 +1,6 @@
+import pytest
+
+
 def test_get_products(api_client, user, mock_stripe):
     products = [
         mock_stripe.Product.create(internal_id="greenbudget_standard"),
@@ -42,6 +45,24 @@ def test_get_products_product_without_price_ommitted(api_client, user,
     response = api_client.get("/v1/billing/products/")
     assert response.status_code == 200
     assert response.json()['count'] == 0
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_get_user_subscription(api_client, standard_product_user):
+    api_client.force_login(standard_product_user)
+    response = api_client.get("/v1/billing/subscription/")
+    assert response.json() == {
+        'subscription': {
+            'id': standard_product_user.stripe_customer.subscription.id,
+            'cancel_at_period_end': False,
+            'canceled_at': None,
+            'cancel_at': None,
+            'current_period_start': "2020-01-01 00:00:00",
+            'current_period_end': "2020-01-01 00:00:00",
+            'start_date': "2020-01-01 00:00:00",
+            'status': 'active'
+        }
+    }
 
 
 def test_checkout_session(api_client, user, mock_stripe_data, prices):
