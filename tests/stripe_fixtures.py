@@ -67,7 +67,7 @@ def mock_stripe_data():
 
 
 @pytest.fixture
-def mock_stripe(mock_stripe_data, user):
+def mock_stripe(mock_stripe_data):
     def raise_resource_missing(id):
         raise stripe.error.InvalidRequestError(
             'No such resource: %s' % id, 'id', code='resource_missing')
@@ -94,13 +94,13 @@ def mock_stripe(mock_stripe_data, user):
     @stripe_resource(
         object_type="checkout.session",
         prefix="cs",
-        required_kwargs=["success_url", "cancel_url", "mode", "line_items"]
+        required_kwargs=[
+            "success_url", "cancel_url", "mode", "line_items",
+            "allow_promotion_codes", "customer_email", "client_reference_id"]
     )
     def checkout_session_base(**kwargs):
         id = object_id(prefix="cs")
-        # Note: This means that we have to use the `user` fixtures for checkout
-        # sessions.
-        customer = customer_create(user.email)
+        customer = customer_create(kwargs["customer_email"])
         price = price_retrieve(kwargs['line_items'][0]['price'])
         return {
             "id": id,
@@ -109,7 +109,11 @@ def mock_stripe(mock_stripe_data, user):
             "amount_total": price.unit_amount,
             "cancel_url": kwargs['cancel_url'],
             "success_url": kwargs['success_url'],
+            "client_reference_id": kwargs["client_reference_id"],
+            "customer_email": kwargs["customer_email"],
             "customer": customer.id,
+            # This will be the Stripe URL that we redirect to.
+            "url": "https://checkout.stripe.com/pay/%s" % id,
             "customer_details": {
                 # Currently, we do not collect this information as a part of the
                 # checkout process in Stripe.
@@ -125,11 +129,9 @@ def mock_stripe(mock_stripe_data, user):
                 "status": None
             },
             "billing_address_collection": None,
-            "client_reference_id": None,
             "consent": None,
             "consent_collection": None,
             "currency": "usd",
-            "customer_email": None,
             "expires_at": now(),
             "locale": None,
             "metadata": {},
@@ -151,9 +153,7 @@ def mock_stripe(mock_stripe_data, user):
                 "amount_discount": 0,
                 "amount_shipping": 0,
                 "amount_tax": 0
-            },
-            # This will be the Stripe URL that we redirect to.
-            "url": "https://checkout.stripe.com/pay/%s" % id
+            }
         }
 
     @stripe_resource(object_type="customer", prefix="cus")

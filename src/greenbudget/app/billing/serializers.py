@@ -86,6 +86,40 @@ class UserSyncStripeSerializer(serializers.ModelSerializer):
                 "The checkout session could not be retrieved from the session "
                 "ID.")
 
+        try:
+            client_reference_id = int(session.client_reference_id)
+        except ValueError:
+            logger.error(
+                "Stripe Checkout Error: Could not convert session's "
+                "`client_reference_id`, %s, to an integer primary key for "
+                "user." % session.client_reference_id, extra={
+                    'user_id': request.user.pk,
+                    'email': request.user.email,
+                }
+            )
+            raise CheckoutError("Corrupted checkout session.")
+
+        # Extra security check to make sure that the user that created the
+        # checkout session is the user that is syncing the checkout session.
+        if request.user.id != client_reference_id:
+            logger.error(
+                "Stripe Checkout Error: The checkout session was created "
+                "by a different user, %s, than the one trying to sync with it, "
+                "%s.  This is a sign someone may be trying to exploit a "
+                "security hole."
+                % (session.client_reference_id, request.user.id), extra={
+                    'user_id': request.user.pk,
+                    'email': request.user.email,
+                    'session_user_id': session.client_reference_id,
+                    'session_user_email': session.customer_email
+                }
+            )
+            raise CheckoutError(
+                "The checkout session was created by a different user than the "
+                "currently logged in user."
+            )
+        elif session.status != "complete":
+            raise CheckoutError("Checkout session has not completed processing.")
         return {'stripe_id': session.customer}
 
 
@@ -151,6 +185,9 @@ class UserCheckoutSessionSerializer(StripeSessionSerializer):
                 "billing/checkout-cancel?sessionId={CHECKOUT_SESSION_ID}"
             ),
             mode='subscription',
+            allow_promotion_codes=True,
+            client_reference_id="%s" % self.context['user'].pk,
+            customer_email=self.context['user'].email,
             line_items=[{
                 'price': validated_data['price_id'],
                 'quantity': 1
