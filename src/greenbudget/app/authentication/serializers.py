@@ -4,7 +4,7 @@ from django.contrib.auth import (
 from rest_framework import serializers, exceptions
 
 from greenbudget.app.user.mail import (
-    send_email_verification_email,
+    send_email_confirmation_email,
     send_password_recovery_email
 )
 from greenbudget.app.user.models import User
@@ -124,7 +124,7 @@ class VerifyEmailSerializer(serializers.Serializer):
     )
 
     def create(self, validated_data):
-        send_email_verification_email(validated_data["user"])
+        send_email_confirmation_email(validated_data["user"])
         return validated_data['user']
 
 
