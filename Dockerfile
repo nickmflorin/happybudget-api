@@ -11,10 +11,10 @@ WORKDIR /app
 COPY README.md poetry.lock pyproject.toml /app/
 COPY .env /app/
 
-RUN TMPDIR=/data/gb/ pip --no-cache-dir --default-timeout=1000 install -U pip setuptools wheel poetry
+RUN pip --no-cache-dir --default-timeout=1000 install -U pip setuptools wheel poetry
 RUN poetry export -f requirements.txt --output requirements.txt
-RUN TMPDIR=/data/gb/ pip --no-cache-dir --default-timeout=1000  install -r requirements.txt
-RUN TMPDIR=/data/gb/ pip install --no-cache-dir python-dateutil
+RUN pip --no-cache-dir --default-timeout=1000  install -r requirements.txt
+RUN pip install --no-cache-dir python-dateutil
 
 ADD src /app/
 
