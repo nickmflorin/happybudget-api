@@ -35,7 +35,7 @@ def user_is_on_waitlist(email):
         return False
     else:
         return email in [
-            c["email"] for c in response["contacts"]
+            c["email"] for c in response.contacts
             if c["emailBlacklisted"] is not False
         ]
 
@@ -57,7 +57,6 @@ class Mail(sib_api_v3_sdk.SendSmtpEmail):
         if redirect_query is not None:
             redirect_url = add_query_params_to_url(
                 redirect_url, **redirect_query)
-        print(redirect_url)
         super().__init__(
             to=[{"email": user.email}],
             template_id=self.template_obj.id,

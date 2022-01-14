@@ -54,14 +54,13 @@ def test_validate_auth_token_twice_fetches_from_stripe_once(settings,
         settings.JWT_TOKEN_COOKIE_NAME: str(token),
     })
     api_client.force_login(standard_product_user)
-    print("Request 1")
+
     response = api_client.post("/v1/auth/validate/")
     assert response.status_code == 201
     assert settings.JWT_TOKEN_COOKIE_NAME in response.cookies
     assert response.json()['product_id'] == 'greenbudget_standard'
     assert response.json()['billing_status'] == 'active'
 
-    print("Reqeust 2")
     response = api_client.post("/v1/auth/validate/")
     assert response.status_code == 201
     assert settings.JWT_TOKEN_COOKIE_NAME in response.cookies

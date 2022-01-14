@@ -15,8 +15,7 @@ FRONTEND_URL = "http://local.greenbudget.io:3000"
 
 DEFAULT_FILE_STORAGE = 'greenbudget.app.io.storages.LocalStorage'
 
-WAITLIST_ENABLED = False
-APPROVAL_ENABLED = True
+WAITLIST_ENABLED = True
 
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
