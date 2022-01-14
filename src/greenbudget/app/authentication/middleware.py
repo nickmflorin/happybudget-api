@@ -35,6 +35,10 @@ def get_session_user(request, cache_stripe_info=True):
             # Use the JWT token to prepopulate billing related values on the
             # user to avoid unnecessary requests to Stripe's API.
             session_user.cache_stripe_from_token(token_obj)
+            # We want to also prepopulate billing related values on the token
+            # user so that the JWT authentication token validation view does
+            # not make repetitive requests to Stripe's API.
+            token_user.cache_stripe_from_token(token_obj)
             # Store the cached cookie user for subsequent middlewares so we
             # can avoid parsing the token multiple times (since it involves
             # a DB query).
@@ -70,8 +74,12 @@ def get_cookie_user(request):
             request._cached_cookie_user = session_user
         else:
             raw_token = parse_token_from_request(request)
-            token_user, _ = parse_token(raw_token)
+            token_user, token_obj = parse_token(raw_token)
             if user_can_authenticate(token_user, raise_exception=False):
+                # We want to also prepopulate billing related values on the
+                # token user so that the JWT authentication token validation
+                # view does not make repetitive requests to Stripe's API.
+                token_user.cache_stripe_from_token(token_obj)
                 request._cached_cookie_user = token_user
     return request._cached_cookie_user
 

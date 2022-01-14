@@ -73,20 +73,12 @@ def test_registration(api_client, models, settings, user):
 
     assert m.called
     mail_obj = m.call_args[0][0]
-    assert mail_obj.get() == {
-        'from': {'email': "noreply@greenbudget.io"},
-        'template_id': get_template("email_confirmation").id,
-        'personalizations': [
-            {
-                'to': [{'email': 'jjohnson@gmail.com'}],
-                'dynamic_template_data': {
-                    'redirect_url': (
-                        'https://app.greenbudget.io/verify?token=%s'
-                        % str(token)
-                    )
-                }
-            }
-        ]
+    assert mail_obj.to == [{'email': "jjohnson@gmail.com"}]
+    assert mail_obj.template_id == get_template("email_confirmation").id
+    assert mail_obj.params == {
+        'redirect_url': (
+            'https://app.greenbudget.io/verify?token=%s' % str(token)
+        )
     }
     user = models.User.objects.get(pk=response.json()['id'])
     assert user.first_name == "Jack"
@@ -99,44 +91,40 @@ def test_registration(api_client, models, settings, user):
     assert user.check_password("hoopla@H9_12") is True
 
 
-@responses.activate
-@override_settings(
-    WAITLIST_ENABLED=True,
-    SENDGRID_API_URL="https://api.fakesendgrid.com/v3/"
-)
-def test_registration_user_on_waitlist(api_client, models):
-    responses.add(
-        method=responses.POST,
-        url="https://api.fakesendgrid.com/v3/marketing/contacts/search/emails",
-        json={"result": {"jjohnson@gmail.com": {}}}
-    )
-    response = api_client.post("/v1/users/registration/", data={
-        "first_name": "Jack",
-        "last_name": "Johnson",
-        "password": "hoopla@H9_12",
+@override_settings(WAITLIST_ENABLED=True)
+def test_registration_user_on_waitlist(api_client):
+    mock_response = mock.MagicMock()
+    mock_response.contacts = [{
         "email": "jjohnson@gmail.com",
-    })
+        "emailBlacklisted": False
+    }]
+    with mock.patch('greenbudget.app.user.mail.contacts_api.get_contacts') as m:
+        m.return_value = mock_response
+        response = api_client.post("/v1/users/registration/", data={
+            "first_name": "Jack",
+            "last_name": "Johnson",
+            "password": "hoopla@H9_12",
+            "email": "jjohnson@gmail.com",
+        })
+    assert m.called
     assert response.status_code == 201
     assert response.json()['email'] == 'jjohnson@gmail.com'
 
 
-@responses.activate
-@override_settings(
-    WAITLIST_ENABLED=True,
-    SENDGRID_API_URL="https://api.fakesendgrid.com/v3/"
-)
+@override_settings(WAITLIST_ENABLED=True)
 def test_registration_user_not_on_waitlist(api_client):
-    responses.add(
-        method=responses.POST,
-        url="https://api.fakesendgrid.com/v3/marketing/contacts/search/emails",
-        status=404
-    )
-    response = api_client.post("/v1/users/registration/", data={
-        "first_name": "Jack",
-        "last_name": "Johnson",
-        "password": "hoopla@H9_12",
-        "email": "jjohnson@gmail.com",
-    })
+    mock_response = mock.MagicMock()
+    mock_response.contacts = []
+
+    with mock.patch('greenbudget.app.user.mail.contacts_api.get_contacts') as m:
+        m.return_value = mock_response
+        response = api_client.post("/v1/users/registration/", data={
+            "first_name": "Jack",
+            "last_name": "Johnson",
+            "password": "hoopla@H9_12",
+            "email": "jjohnson@gmail.com",
+        })
+    assert m.called
     assert response.json() == {
         'errors': [{
             'message': 'The email address is not on the waitlist.',

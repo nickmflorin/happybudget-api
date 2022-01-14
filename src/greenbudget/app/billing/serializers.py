@@ -1,10 +1,10 @@
-from datetime import datetime
 import logging
 import os
 
 from django.conf import settings
 from rest_framework import serializers
 
+from greenbudget.lib.drf.fields import UnixTimestampField
 from greenbudget.app.user.models import User
 
 from .exceptions import (
@@ -190,16 +190,9 @@ class UserCheckoutSessionSerializer(StripeSessionSerializer):
             customer_email=self.context['user'].email,
             line_items=[{
                 'price': validated_data['price_id'],
-                'quantity': 1
+                'quantity': 1,
             }],
         )
-
-
-class UnixTimestampField(serializers.DateTimeField):
-    def to_representation(self, value):
-        if value is not None:
-            return super().to_representation(datetime.fromtimestamp(value))
-        return super().to_representation(value)
 
 
 class StripeSubscriptionSerializer(serializers.Serializer):

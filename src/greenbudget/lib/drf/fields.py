@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.translation import gettext_lazy as _
 
@@ -12,6 +14,20 @@ def find_field_original_serializer(field):
             break
         parent = new_parent
     return parent
+
+
+class UnixTimestampField(serializers.DateTimeField):
+    """
+    An read-only instance of :obj:`rest_framework.serializers.DateTimeField`
+    that converts a date/time field stored in UNIX format to an instance of
+    :obj:`datetime.datetime`, which eventually renders as a string in the
+    response.
+    """
+
+    def to_representation(self, value):
+        if value is not None:
+            return super().to_representation(datetime.fromtimestamp(value))
+        return super().to_representation(value)
 
 
 class GenericRelatedField(serializers.PrimaryKeyRelatedField):

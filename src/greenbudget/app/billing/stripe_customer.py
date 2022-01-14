@@ -119,7 +119,6 @@ class StripeCustomer:
     def data(self):
         try:
             return stripe.Customer.retrieve(self.stripe_id, expand=[
-                'default_source',
                 'subscriptions'
             ])
         except stripe.error.InvalidRequestError as exc:

@@ -124,7 +124,7 @@ def test_validate_email_token_invalid_token(api_client):
     FROM_EMAIL="noreply@greenbudget.io",
     FRONTEND_URL="https://app.greenbudget.io"
 )
-def test_send_verification_email(api_client, unverified_user, settings):
+def test_send_verification_email(api_client, unverified_user):
     # Use another user to generate the Access Token for mock purposes.
     token = AccessToken.for_user(unverified_user)
 
@@ -140,20 +140,12 @@ def test_send_verification_email(api_client, unverified_user, settings):
 
     assert m.called
     mail_obj = m.call_args[0][0]
-    assert mail_obj.get() == {
-        'from': {'email': "noreply@greenbudget.io"},
-        'template_id': get_template("email_confirmation").id,
-        'personalizations': [
-            {
-                'to': [{'email': unverified_user.email}],
-                'dynamic_template_data': {
-                    'redirect_url': (
-                        'https://app.greenbudget.io/verify?token=%s'
-                        % str(token)
-                    )
-                }
-            }
-        ]
+    assert mail_obj.to == [{'email': unverified_user.email}]
+    assert mail_obj.template_id == get_template("email_confirmation").id
+    assert mail_obj.params == {
+        'redirect_url': (
+            'https://app.greenbudget.io/verify?token=%s' % str(token)
+        )
     }
 
 

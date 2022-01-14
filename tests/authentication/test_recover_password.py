@@ -161,7 +161,7 @@ def test_password_recovery_invalid_token(api_client, path, extra_data):
     FROM_EMAIL="noreply@greenbudget.io",
     FRONTEND_URL="https://app.greenbudget.io"
 )
-def test_recover_password(user, api_client, settings):
+def test_recover_password(user, api_client):
     # Use another user to generate the Access Token for mock purposes.
     token = AccessToken.for_user(user)
 
@@ -176,20 +176,12 @@ def test_recover_password(user, api_client, settings):
     assert response.status_code == 201
     assert m.called
     mail_obj = m.call_args[0][0]
-    assert mail_obj.get() == {
-        'from': {'email': "noreply@greenbudget.io"},
-        'template_id': get_template("password_recovery").id,
-        'personalizations': [
-            {
-                'to': [{'email': user.email}],
-                'dynamic_template_data': {
-                    'redirect_url': (
-                        'https://app.greenbudget.io/recovery?token=%s'
-                        % str(token)
-                    )
-                }
-            }
-        ]
+    assert mail_obj.to == [{'email': user.email}]
+    assert mail_obj.template_id == get_template("password_recovery").id
+    assert mail_obj.params == {
+        'redirect_url': (
+            'https://app.greenbudget.io/recovery?token=%s' % str(token)
+        )
     }
 
 

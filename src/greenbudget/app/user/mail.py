@@ -36,7 +36,7 @@ def user_is_on_waitlist(email):
     else:
         return email in [
             c["email"] for c in response.contacts
-            if c["emailBlacklisted"] is not False
+            if c["emailBlacklisted"] is not True
         ]
 
 

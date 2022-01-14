@@ -11,12 +11,10 @@ from greenbudget.app.tabling.query import RowQuerier, RowQuerySet
 class FringeQuerier(RowQuerier):
 
     def for_budgets(self):
-        # pylint: disable=no-member
         ctype_id = ContentType.objects.get_for_model(self.model.budget_cls).id
         return self.filter(budget__polymorphic_ctype_id=ctype_id)
 
     def for_templates(self):
-        # pylint: disable=no-member
         ctype_id = ContentType.objects.get_for_model(
             self.model.template_cls()).id
         return self.filter(budget__polymorphic_ctype_id=ctype_id)
@@ -77,7 +75,7 @@ class FringeManager(FringeQuerier, BudgetingRowManager):
 
         subaccounts = concat([
             list(obj.subaccounts.all()) for obj in instances])
-        subaccounts, _, _ = self.model.subaccount_cls.objects.bulk_estimate(  # noqa
+        subaccounts, _, _ = self.model.subaccount_cls.objects.bulk_estimate(
             instances=set(subaccounts)
         )
         return subaccounts
