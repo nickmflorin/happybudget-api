@@ -83,6 +83,24 @@ DISALLOWED_FIELDS = [models.fields.AutoField, models.ManyToManyField]
 FIELDS_NOT_STORED_IN_MODEL_MEMORY = [models.ForeignKey, models.OneToOneField]
 
 
+def field_is_supported(field):
+    for attr_set in DISALLOWED_ATTRIBUTES:
+        if getattr(field, attr_set[0], None) is attr_set[1]:
+            return False
+
+    if type(field) in DISALLOWED_FIELDS:
+        return False
+
+    elif type(field) in (
+        django.db.models.fields.DateTimeField,
+        django.db.models.fields.DateField
+    ):
+        if field.auto_now_add is True or field.auto_now is True:
+            return False
+        return True
+    return True
+
+
 class model:
     """
     A common decorator for all of our applications :obj:`django.db.models.Model`
@@ -102,7 +120,6 @@ class model:
         this will not work on update behavior to a queryset.
 
     (3) Foreign Key Fields
-
         When a model has an FK field, the field is actually represented by
         a :obj:`django.db.models.query_utils.DeferredAttribute` instance.
         The value on the FK field isn't actually loaded into memory until
@@ -117,10 +134,11 @@ class model:
     """
     thread = threading.local()
 
-    def __init__(self, flags=None, user_field=None, **kwargs):
+    def __init__(self, **kwargs):
         # Flags that can be used to disable post save signals on a save-by-save
         # basis.
-        self._flags = ensure_iterable(flags) + ['track_changes']
+        self._flags = ensure_iterable(
+            kwargs.get('flags', [])) + ['track_changes']
 
         self._track_all_fields = False
 
@@ -154,7 +172,7 @@ class model:
 
         # A field on the model that is used to determine the user performing
         # the action when the request is not available.
-        self._user_field = user_field
+        self._user_field = kwargs.pop('user_field', None)
         self._track_user = kwargs.pop('track_user', True)
 
     def get_field_instance(self, cls, field_name):
@@ -163,26 +181,9 @@ class model:
         except django.core.exceptions.FieldDoesNotExist:
             raise FieldDoesNotExistError(field_name, cls)
 
-    def field_is_supported(self, field):
-        for attr_set in DISALLOWED_ATTRIBUTES:
-            if getattr(field, attr_set[0], None) is attr_set[1]:
-                return False
-
-        if type(field) in DISALLOWED_FIELDS:
-            return False
-
-        elif type(field) in (
-            django.db.models.fields.DateTimeField,
-            django.db.models.fields.DateField
-        ):
-            if field.auto_now_add is True or field.auto_now is True:
-                return False
-            return True
-        return True
-
     def validate_field(self, cls, field):
         field_instance = self.get_field_instance(cls, field)
-        if not self.field_is_supported(field_instance):
+        if not field_is_supported(field_instance):
             raise FieldCannotBeTrackedError(field, cls)
 
     def tracked_fields(self, cls):
@@ -191,7 +192,7 @@ class model:
             unsupported_fields = []
             for field_obj in cls._meta.fields:
                 if field_obj.name not in self._exclude_fields:
-                    if self.field_is_supported(field_obj):
+                    if field_is_supported(field_obj):
                         tracked_fields.append(field_obj.name)
                     else:
                         unsupported_fields.append(field_obj.name)
