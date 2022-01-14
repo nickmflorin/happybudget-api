@@ -1,6 +1,5 @@
 import mock
 import pytest
-import responses
 
 from django.test import override_settings
 
