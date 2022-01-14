@@ -57,7 +57,8 @@ $ 3.9.0
 ```
 
 If your `pyenv` local Python version is still pointing at your system Python version, update your
-`~/.bash_profile` to initialize `pyenv` as follows:
+`~/.bash_profile` (or `~/.zshrc`, or whatever default shell script your machine uses)
+to initialize `pyenv` as follows:
 
 ```bash
 $ eval "$(pyenv init --path)"
