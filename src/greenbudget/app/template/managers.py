@@ -19,12 +19,8 @@ class TemplateManager(TemplateQuerier, BaseBudgetManager):
     queryset_class = TemplateQuery
 
     def derive(self, template, user, **overrides):
-        from greenbudget.app.account.models import BudgetAccount
         from greenbudget.app.budget.models import Budget
-        from greenbudget.app.subaccount.models import BudgetSubAccount
         return duplicate(template, user,
             destination_cls=Budget,
-            destination_account_cls=BudgetAccount,
-            destination_subaccount_cls=BudgetSubAccount,
             **overrides
         )

@@ -261,14 +261,50 @@ class PolymorphicObjectSet(ObjectSet):
 
 
 @signals.disable()
-def duplicate(
-    budget,
-    user,
-    destination_cls=None,
-    destination_account_cls=None,
-    destination_subaccount_cls=None,
-    **overrides
-):
+def duplicate(budget, user, destination_cls=None, **overrides):
+    """
+    Duplicates a given :obj:`Budget` or a given :obj:`Template`, or derives a
+    new :obj:`Budget` from a given :obj:`Template`.
+
+    The concept of duplication is simply that the entire :obj:`Budget` or
+    :obj:`Template` and all of it's related relational data is duplicated
+    in an entirely new instance for the given user.
+
+    The concept of derivation is a little more complex - but in effect
+    derivation involves taking a :obj:`Template` (which is effectively a
+    template for a :obj:`Budget`) and creates a new :obj:`Budget` from the
+    information in the :obj:`Template`.
+
+    Parameters:
+    ----------
+    budget: :obj:`Budget` or :obj:`Template`
+        The :obj:`Budget` or :obj:`Template` that should be duplicated or the
+        :obj:`Template` that should be used to derive a new :obj:`Budget`.
+
+    user: :obj:`User`
+        The :obj:`User` that the duplicated :obj:`Budget` or :obj:`Template`
+        or the derived :obj:`Budget` should belong to.
+
+    destination_cls: :obj:`type`
+        Either Budget or the Template class.
+
+        Default: Type of `budget` parameter
+
+        The determination on whether or not to duplicate or derive is based on
+        the following cases:
+
+        (1) `budget` is instance of Budget, `destination_cls` is Budget or None  # noqa
+                => Duplicate provided Budget to new Budget
+        (2) `budget` is instance of Template, `destination_cls` is Template or None  # noqa
+                => Duplicate provided Template to new Template
+        (3) `budget` is instance of Template, `destination_cls` is Budget
+                => Derive new Budget from provided Template
+
+    overrides: :obj:`dict`
+        Attributes, provided as keyword arguments, that should be set on the
+        duplicated or derived :obj:`Budget` or :obj:`Template`, overriding any
+        attributes from the original :obj:`Budget` or :obj:`Template` instance.
+    """
     from greenbudget.app.account.models import Account
     from greenbudget.app.actual.models import Actual
     from greenbudget.app.budget.models import BaseBudget
@@ -285,15 +321,16 @@ def duplicate(
     markup_ct = ContentType.objects.get_for_model(Markup)
 
     source_a_cls = budget.account_cls
-    dest_a_cls = destination_account_cls or source_a_cls
+    dest_a_cls = destination_cls.account_cls
     source_a_ct = ContentType.objects.get_for_model(source_a_cls)
     dest_a_ct = ContentType.objects.get_for_model(dest_a_cls)
 
     source_sa_cls = budget.subaccount_cls
-    dest_sa_cls = destination_subaccount_cls or source_sa_cls
+    dest_sa_cls = destination_cls.subaccount_cls
     source_sa_ct = ContentType.objects.get_for_model(source_sa_cls)
     dest_sa_ct = ContentType.objects.get_for_model(dest_sa_cls)
 
+    # The Budget or Template instance duplicated without any relational data.
     duplicated_budget = instantiate_duplicate(
         instance=budget,
         user=user,
@@ -302,6 +339,7 @@ def duplicate(
     )
     duplicated_budget.save()
 
+    # Duplicate the Account instances associated with the Budget or Template.
     accounts = PolymorphicObjectSet(
         model_cls=dest_a_ct.model_class(),
         user=user
@@ -310,12 +348,15 @@ def duplicate(
         for account in source_a_ct.model_class().objects.filter(parent=budget):
             accounts.add(account, parent=duplicated_budget)
 
+    # Duplicate the SubAccount instances associated with the Budget or Template.
+    # Since a Budget or Template's SubAccount(s) are recursive, and there can
+    # be multiple layers of SubAccount(s) at each level, we need to handle each
+    # level independently.
     subaccounts = PolymorphicObjectSet(
         model_cls=dest_sa_ct.model_class(),
         user=user
     )
-
-    subs_by_level = {}
+    subs_by_level = collections.OrderedDict()
     for sub in source_sa_ct.model_class().objects.filter_by_budget(budget) \
             .select_related('content_type'):
         subs_by_level.setdefault(
@@ -331,7 +372,7 @@ def duplicate(
         subs_by_level[sub.nested_level].add(sub)
 
     # Make sure the the numeric keys of the subaccounts (indexed by level) are
-    # consecutive (i.e {0: [...], 1: [...] })
+    # consecutive (i.e {0: [...], 1: [...] }).
     for i in range(len(subs_by_level.keys())):
         assert i in subs_by_level
 
@@ -538,26 +579,35 @@ def duplicate(
         SubAccount.markups.through.objects.bulk_create(subaccount_through)
 
     # Duplicate the Actual instances associated with all of the duplicated
-    # Markup/SubAccount instances.
+    # Markup/SubAccount instances.  Note that Actual's are not applicable
+    # for Templates.
     if budget.domain == "budget":
         actuals = ConcreteObjectSet(model_cls=Actual, user=user)
         with actuals.transaction():
             for actual in Actual.objects.filter(budget=budget):
                 assert actual.content_type_id in (
                     None, source_sa_ct.pk, markup_ct.pk)
-                if actual.content_type_id is None:
-                    actuals.add(actual, budget=duplicated_budget)
-                elif actual.content_type_id == markup_ct.pk:
-                    actuals.add(actual,
-                        budget=duplicated_budget,
+                kwargs = {'budget': duplicated_budget}
+                # When creating the duplicated Actual, make sure that the
+                # actual-owner relationship is maintained (if it exists).
+                if actual.content_type_id is not None \
+                        and actual.content_type_id == markup_ct.pk:
+                    # Here, the Actual is tied to a Markup, so we need to
+                    # make sure that relationship is established by associating
+                    # the duplciated Actual to the original Markup's duplicated
+                    # form.
+                    kwargs.update(
                         content_type_id=markup_ct.pk,
                         object_id=markups[actual.object_id].new_pk
                     )
-                else:
-                    actuals.add(actual,
-                        budget=duplicated_budget,
+                elif actual.content_type_id is not None:
+                    # Here, the Actual is tied to a SubAccount, so we need to
+                    # make sure that relationship is established by associating
+                    # the duplciated Actual to the original SubAccount's
+                    # duplicated form.
+                    kwargs.update(
                         content_type_id=dest_sa_ct.pk,
                         object_id=subaccounts[actual.object_id].new_pk
                     )
-
+                actuals.add(actual, **kwargs)
     return duplicated_budget

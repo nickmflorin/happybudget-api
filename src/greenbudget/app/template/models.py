@@ -1,7 +1,7 @@
 from django.db import models
 
 from greenbudget.app import signals
-from greenbudget.app.budget.models import BaseBudget, Budget
+from greenbudget.app.budget.models import BaseBudget
 from greenbudget.app.budgeting.models import AssociatedModel
 
 from .managers import TemplateManager
@@ -14,9 +14,6 @@ class Template(BaseBudget):
     community = models.BooleanField(default=False)
     hidden = models.BooleanField(default=False)
     objects = TemplateManager()
-
-    CALCULATED_FIELDS = Budget.CALCULATED_FIELDS
-    ESTIMATED_FIELDS = Budget.ESTIMATED_FIELDS
 
     budget_cls = AssociatedModel('template', 'template')
     account_cls = AssociatedModel('account', 'templateaccount')
