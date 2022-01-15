@@ -73,5 +73,6 @@ class Command(CustomCommand):
         database_reset = self.reset_db(**options)
         self.migrate(ask=not database_reset, **options)
         self.load_fixtures(**options)
+        management.call_command("collectstatic")
         self.create_superuser(**options)
         self.success("All setup.")

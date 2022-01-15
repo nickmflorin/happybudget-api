@@ -78,9 +78,10 @@ class SubAccountManager(SubAccountQuerier, BudgetingPolymorphicRowManager):
     def cleanup(self, instances, mark_budgets=True):
         super().cleanup(instances)
         budgets = set([inst.budget for inst in instances])
-        # CAUSING DEADLOCKS
-        # if mark_budgets:
-        #     self.mark_budgets(budgets=budgets)
+        # This has occasionally caused dead locks, so we should keep an eye on
+        # it.
+        if mark_budgets:
+            self.mark_budgets(budgets=budgets)
         budget_actuals_owners_cache.invalidate(budgets)
 
     @signals.disable()
@@ -126,7 +127,6 @@ class SubAccountManager(SubAccountQuerier, BudgetingPolymorphicRowManager):
         self.model.budget_cls.objects.bulk_update_post_calculation(
             budgets
         )
-
         self.bulk_delete_empty_groups(groups)
         self.mark_budgets(instances=instances)
 
@@ -143,11 +143,15 @@ class SubAccountManager(SubAccountQuerier, BudgetingPolymorphicRowManager):
 
         accounts_to_reestimate = {}
         subaccounts_to_reestimate = {}
+
         for obj in instances:
             assert isinstance(obj, self.model)
             altered = obj.estimate(
                 commit=False,
                 trickle=False,
+                # We need to include the unsaved children in the estimation
+                # method so the method accounts for them in the estimation of
+                # the parent.
                 unsaved_children=unsaved_children.get(obj.pk),
                 **kwargs
             )
@@ -156,53 +160,56 @@ class SubAccountManager(SubAccountQuerier, BudgetingPolymorphicRowManager):
             # The raw_value of the SubAccount is not calculated in the estimate
             # method, but does affect the nominal_value and will affect the
             # estimated values of parents - so we have to check if that changed
-            # as well.x
+            # as well.
             if (altered or obj.raw_value_changed or obj.was_just_added()) \
                     and obj.parent is not None:
                 assert isinstance(
                     obj.parent, (self.model.account_cls, self.model))
+                # A SubAccount can have either a SubAccount or an Account as
+                # it's parent.
+                object_store = subaccounts_to_reestimate
                 if isinstance(obj.parent, self.model.account_cls):
-                    if obj.parent.pk in accounts_to_reestimate:
-                        accounts_to_reestimate[obj.parent.pk]['unsaved'].add(obj)  # noqa
-                    else:
-                        accounts_to_reestimate[obj.parent.pk] = {
-                            'instance': obj.parent,
-                            'unsaved': set([obj])
-                        }
-                else:
-                    if obj.parent.pk in subaccounts_to_reestimate:
-                        subaccounts_to_reestimate[obj.parent.pk]['unsaved'].add(obj)  # noqa
-                    else:
-                        subaccounts_to_reestimate[obj.parent.pk] = {
-                            'instance': obj.parent,
-                            'unsaved': set([obj])
-                        }
+                    object_store = accounts_to_reestimate
+                object_store.setdefault(obj.parent.pk, {
+                    'instance': obj.parent,
+                    'unsaved': set()
+                })
+                object_store[obj.parent.pk]['unsaved'].add(obj)
+
         budgets_to_reestimate = {}
         accounts = set([])
-        for k, v in accounts_to_reestimate.items():
+        for _, v in accounts_to_reestimate.items():
             obj = v['instance']
             altered = obj.estimate(
                 commit=False,
                 trickle=False,
+                # We need to include the unsaved children in the estimation
+                # method so the method accounts for them in the estimation of
+                # the parent.
                 unsaved_children=v['unsaved'],
                 **kwargs
             )
             if altered:
                 accounts.add(obj)
+            # If the Account was altered during the estimation or the Account
+            # was just added, the Account's parent (a Budget or Template) must
+            # also be reestimated.  Note that `obj.parent is None` is an edge
+            # case that can happen during CASCADE deletes.
             if (altered or obj.was_just_added()) and obj.parent is not None:
-                if obj.parent.pk in budgets_to_reestimate:
-                    budgets_to_reestimate[obj.parent.pk]['unsaved'].add(obj)
-                else:
-                    budgets_to_reestimate[obj.parent.pk] = {
-                        'instance': obj.parent,
-                        'unsaved': set([obj])
-                    }
+                budgets_to_reestimate.setdefault(obj.parent.pk, {
+                    'instance': obj.parent,
+                    'unsaved': set()
+                })
+                budgets_to_reestimate[obj.parent.pk]['unsaved'].add(obj)
 
         budgets = set([])
-        for k, v in budgets_to_reestimate.items():
+        for _, v in budgets_to_reestimate.items():
             obj = v['instance']
             altered = obj.estimate(
                 commit=False,
+                # We need to include the unsaved children in the estimation
+                # method so the method accounts for them in the estimation of
+                # the parent.
                 unsaved_children=v['unsaved'],
                 **kwargs
             )
@@ -216,6 +223,9 @@ class SubAccountManager(SubAccountQuerier, BudgetingPolymorphicRowManager):
                     for _, v in subaccounts_to_reestimate.items()
                 ],
                 commit=False,
+                # We need to include the unsaved children in the estimation
+                # method so the method accounts for them in the estimation of
+                # the parent.
                 unsaved_children={
                     v['instance'].pk: v['unsaved']
                     for _, v in subaccounts_to_reestimate.items()
@@ -277,65 +287,72 @@ class BudgetSubAccountManager(SubAccountManager):
 
         accounts_to_reactualize = {}
         subaccounts_to_reactualize = {}
+
         for obj in instances:
             assert isinstance(obj, self.model)
             altered = obj.actualize(
                 commit=False,
                 trickle=False,
+                # We need to include the unsaved children in the actualization
+                # method so the method accounts for them in the actualization of
+                # the parent.
                 unsaved_children=unsaved_children.get(obj.pk),
                 **kwargs
             )
             if altered:
                 instances_to_save.add(obj)
+            # If the SubAccount was altered during the actualization or the
+            # SubAccount was just added, the SubAccount's parent (a SubAccount
+            # or Account) must also be reactualized.  Note that `obj.parent is
+            # None` is an edge case that can happen during CASCADE deletes.
             if (altered or obj.was_just_added()) and obj.parent is not None:
-                if obj.parent is not None:
-                    assert isinstance(obj.parent, (
-                        self.model.account_cls, self.model))
-                    if isinstance(obj.parent, self.model.account_cls):
-                        if obj.parent.pk in accounts_to_reactualize:
-                            accounts_to_reactualize[
-                                            obj.parent.pk]['unsaved'].add(obj)
-                        else:
-                            accounts_to_reactualize[obj.parent.pk] = {
-                                'instance': obj.parent,
-                                'unsaved': set([obj])
-                            }
-                    else:
-                        if obj.parent.pk in subaccounts_to_reactualize:
-                            subaccounts_to_reactualize[
-                                            obj.parent.pk]['unsaved'].add(obj)
-                        else:
-                            subaccounts_to_reactualize[obj.parent.pk] = {
-                                'instance': obj.parent,
-                                'unsaved': set([obj])
-                            }
+                assert isinstance(obj.parent, (
+                    self.model.account_cls, self.model))
+                # A SubAccount can have either a SubAccount or an Account as
+                # it's parent.
+                object_store = subaccounts_to_reactualize
+                if isinstance(obj.parent, self.model.account_cls):
+                    object_store = accounts_to_reactualize
+                object_store.setdefault(obj.parent.pk, {
+                    'instance': obj.parent,
+                    'unsaved': set()
+                })
+                object_store[obj.parent.pk]['unsaved'].add(obj)
 
         budgets_to_reactualize = {}
         accounts = set([])
-        for k, v in accounts_to_reactualize.items():
+        for _, v in accounts_to_reactualize.items():
             obj = v['instance']
             altered = obj.actualize(
                 commit=False,
                 trickle=False,
+                # We need to include the unsaved children in the actualization
+                # method so the method accounts for them in the actualization of
+                # the parent.
                 unsaved_children=v['unsaved'],
                 **kwargs
             )
             if altered:
                 accounts.add(obj)
+            # If the Account was altered during the actualization or the Account
+            # was just added, the Account's parent (a Budget or Template) must
+            # also be reactualized.  Note that `obj.parent is None` is an edge
+            # case that can happen during CASCADE deletes.
             if (altered or obj.was_just_added()) and obj.parent is not None:
-                if obj.parent.pk in budgets_to_reactualize:
-                    budgets_to_reactualize[obj.parent.pk]['unsaved'].add(obj)
-                else:
-                    budgets_to_reactualize[obj.parent.pk] = {
-                        'instance': obj.parent,
-                        'unsaved': set([obj])
-                    }
+                budgets_to_reactualize.setdefault(obj.parent.pk, {
+                    'instance': obj.parent,
+                    'unsaved': set()
+                })
+                budgets_to_reactualize[obj.parent.pk]['unsaved'].add(obj)
 
         budgets = set([])
-        for k, v in budgets_to_reactualize.items():
+        for _, v in budgets_to_reactualize.items():
             obj = v['instance']
             altered = obj.actualize(
                 commit=False,
+                # We need to include the unsaved children in the actualization
+                # method so the method accounts for them in the actualization of
+                # the parent.
                 unsaved_children=v['unsaved'],
                 **kwargs
             )
@@ -349,6 +366,9 @@ class BudgetSubAccountManager(SubAccountManager):
                     for _, v in subaccounts_to_reactualize.items()
                 ],
                 commit=False,
+                # We need to include the unsaved children in the actualization
+                # method so the method accounts for them in the actualization of
+                # the parent.
                 unsaved_children={
                     v['instance'].pk: v['unsaved']
                     for _, v in subaccounts_to_reactualize.items()

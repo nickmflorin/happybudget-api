@@ -5,7 +5,6 @@ from django.db import models
 class ColorQuerier(object):
 
     def for_model(self, model):
-        # pylint: disable=no-member
         content_type = ContentType.objects.get_for_model(model)
         return self.filter(content_types=content_type)
 

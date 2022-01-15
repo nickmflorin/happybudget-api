@@ -102,6 +102,61 @@ class BudgetingManagerMixin:
 
     @signals.disable()
     def bulk_estimate_all(self, instances, **kwargs):
+        """
+        Performs the estimation routines on the provided instances, which
+        can consist of instances of :obj:`Account`, :obj:`BaseBudget`,
+        :obj:`Markup` and :obj:`SubAccount`.
+
+        The estimation methodology behaves like a filtration, starting
+        at the lowest point of the budget ancestry tree and working it's
+        way upwards, keeping track of every entity that needs to be
+        reestimated as a result of any values of one of it's children that
+        contribute to the estimation changing.
+
+        Consider the definition of the budget ancestry tree to be the tree
+        that is constructed from the parent/child relationships amongst the
+        entities of a :obj:`Budget` or :obj:`Template`:
+
+        - Budget/Template
+            - Account
+                - SubAccount
+                    - SubAccount
+                    - Markup
+                - SubAccount
+                - SubAccount
+                - Markup
+                - Markup
+            - Account
+                - SubAccount
+                    - SubAccount
+                    - SubAccount
+                - Markup
+            - Account
+            - Markup
+
+        The filtration starts at the lowest level of the tree, which consists
+        of :obj:`SubAccount`(s) and :obj:`Markup`(s).  Each entity in the lowest
+        level of the tree is reestimated.  If it is determined that any of the
+        values that contribute to the parent's estimation have changed, then
+        we must also reestimate the parent.  So the parent is added to the
+        ongoing set of entities that must be reestimated at each level of the
+        tree.
+
+        Level 0: [SubAccount, Markup]
+            Since the SubAccount level of the ancestry tree is recursive, the
+            parent of each :obj:`SubAccount` or :obj:`Markup` can either
+            be a :obj:`SubAccount` or a :obj:`Account`.
+
+            Parents: [Account, SubAccount]
+
+        ...
+
+        Level n: [Account, Markup]
+            Parents: [Budget]
+
+        Level n + 1: [Budget]
+            Parents: None
+        """
         commit = kwargs.pop('commit', True)
         subaccounts = set([
             obj for obj in set_or_list(instances)
@@ -110,6 +165,7 @@ class BudgetingManagerMixin:
         # Set of ongoing Account(s) that need to be saved after they are
         # reestimated, either directly or via the children.
         accounts = set([])
+
         # Set of ongoing accounts that still need to be reactualized after the
         # children are reactualized.
         accounts_filtration = set([
@@ -119,12 +175,14 @@ class BudgetingManagerMixin:
         # Set of ongoing Budget(s) that need to be saved after they are
         # reestimated, either directly or via the children.
         budgets = set([])
+
         # Set of ongoing Budget(s) that still need to be reestimated after the
         # children are reestimated.
         budgets_filtration = set([
             obj for obj in set_or_list(instances)
             if isinstance(obj, self.model.budget_cls)
         ])
+
         # The returned SubAccount(s) will be those only for which a save is
         # warranted after estimation.
         subaccounts, a, b = self.model.subaccount_cls.objects.bulk_estimate(
@@ -137,6 +195,7 @@ class BudgetingManagerMixin:
         # them again and add them to the set of Budget(s) to save at the end.
         budgets.update(b)
         budgets_filtration = budgets_filtration.difference(b)
+
         # The returned Account(s) will be estimated, and thus require a save.
         # So we need to remove them from the filtration so as to not estimate
         # them again and add them to the set of Account(s) to save at the end.
@@ -160,6 +219,7 @@ class BudgetingManagerMixin:
             **kwargs
         )
         accounts.update(a)
+
         # The returned Budget(s) will be estimated, and thus require a save.
         # So we need to remove them from the filtration so as to not estimate
         # them again and add them to the set of Budget(s) to save at the end.
@@ -198,6 +258,60 @@ class BudgetingManagerMixin:
 
     @signals.disable()
     def bulk_actualize_all(self, instances, **kwargs):
+        """
+        Performs the actualization routines on the provided instances, which
+        can consist of instances of :obj:`BudgetAccount`, :obj:`Budget`,
+        :obj:`Markup` and :obj:`BudgetSubAccount`.
+
+        The actualization methodology behaves like a filtration, starting
+        at the lowest point of the budget ancestry tree and working it's
+        way upwards, keeping track of every entity that needs to be
+        reactualized (i.e. it's actual value is recalculated) as a result of
+        the actual value of one of it's children changing.
+
+        Consider the definition of the budget ancestry tree to be the tree
+        that is constructed from the parent/child relationships amongst the
+        entities of a :obj:`Budget` or :obj:`Template`:
+
+        - Budget
+            - BudgetAccount
+                - BudgetSubAccount
+                    - BudgetSubAccount
+                    - Markup
+                - BudgetSubAccount
+                - BudgetSubAccount
+                - Markup
+                - Markup
+            - BudgetAccount
+                - BudgetSubAccount
+                    - BudgetSubAccount
+                    - BudgetSubAccount
+                - Markup
+            - BudgetAccount
+            - Markup
+
+        The filtration starts at the lowest level of the tree, which consists
+        of :obj:`SubAccount`(s) and :obj:`Markup`(s).  Each entity in the lowest
+        level of the tree is reactualized.  If it is determined that the actual
+        value changed, then we must also reactualize it's parent.  So the parent
+        is added to the ongoing set of entities that must be reactualized at
+        each level of the tree.
+
+        Level 0: [BudgetSubAccount, Markup]
+            Since the SubAccount level of the ancestry tree is recursive, the
+            parent of each :obj:`BudgetSubAccount` or :obj:`Markup` can either
+            be a :obj:`BudgetSubAccount` or a :obj:`BudgetAccount`.
+
+            Parents: [BudgetAccount, BudgetSubAccount]
+
+        ...
+
+        Level n: [BudgetAccount, Markup]
+            Parents: [Budget]
+
+        Level n + 1: [Budget]
+            Parents: None
+        """
         from greenbudget.app.account.models import BudgetAccount
         from greenbudget.app.budget.models import Budget
         from greenbudget.app.markup.models import Markup
@@ -217,9 +331,11 @@ class BudgetingManagerMixin:
         # Set of ongoing Account(s) that need to be saved after they are
         # reactualized, either directly or via the children.
         accounts = set([])
+
         # Set of ongoing Budget(s) that need to be saved after they are
         # reactualized, either directly or via the children.
         budgets = set([])
+
         # Set of ongoing budgets that still need to be reactualized after the
         # children are reactualized.
         budgets_filtration = set([
@@ -244,6 +360,7 @@ class BudgetingManagerMixin:
         # them again and add them to the set of Budget(s) to save at the end.
         budgets.update(b)
         budgets_filtration = budgets_filtration.difference(b)
+
         # The returned Account(s) will be actualized, and thus require a save.
         # So we need to remove them from the filtration so as to not actualize
         # them again and add them to the set of Account(s) to save at the end.
@@ -267,6 +384,7 @@ class BudgetingManagerMixin:
             **kwargs
         )
         accounts.update(a)
+
         # The returned Budget(s) will be estimated, and thus require a save.
         # So we need to remove them from the filtration so as to not estimate
         # them again and add them to the set of Budget(s) to save at the end.
@@ -305,6 +423,19 @@ class BudgetingManagerMixin:
 
     @signals.disable()
     def bulk_calculate_all(self, instances, **kwargs):
+        """
+        Performs both the estimation and actualization (if applicable) routines
+        on the provided instances, which can consist of instances of
+        :obj:`Account`, :obj:`BaseBudget`, :obj:`Markup` and :obj:`SubAccount`.
+
+        The methodology behaves like a filtration, starting at the lowest point
+        of the budget ancestry tree and working it's way upwards, keeping track
+        of every entity that changed in a way that warrant recalculation of
+        it's parent along the way.
+
+        See the documentation for `bulk_estimate_all` and `bulk_actualize_all`
+        for more details.
+        """
         commit = kwargs.pop('commit', True)
         subaccounts = set([
             obj for obj in set_or_list(instances)
@@ -313,15 +444,18 @@ class BudgetingManagerMixin:
         # Set of ongoing Account(s) that need to be saved after they are
         # reactualized, either directly or via the children.
         accounts = set([])
+
         # Set of ongoing Budget(s) that need to be saved after they are
         # reactualized, either directly or via the children.
         budgets = set([])
+
         # Set of ongoing budgets that still need to be reactualized after the
         # children are reactualized.
         budgets_filtration = set([
             obj for obj in set_or_list(instances)
             if isinstance(obj, self.model.budget_cls)
         ])
+
         # Set of ongoing accounts that still need to be reactualized after the
         # children are reactualized.
         accounts_filtration = set([
@@ -340,6 +474,7 @@ class BudgetingManagerMixin:
         # them again and add them to the set of Budget(s) to save at the end.
         budgets.update(b)
         budgets_filtration = budgets_filtration.difference(b)
+
         # The returned Account(s) will be calculated, and thus require a save.
         # So we need to remove them from the filtration so as to not calculate
         # them again and add them to the set of Budget(s) to save at the end.
@@ -355,7 +490,7 @@ class BudgetingManagerMixin:
             unsaved_account_children[obj.parent.pk].append(obj)
 
         # The returned Account(s) will be those only for which a save is
-        # warranted after actualization.
+        # warranted after recalculation.
         a, b = self.model.account_cls.objects.bulk_calculate(
             instances=accounts_filtration,
             unsaved_children=unsaved_account_children,
@@ -363,6 +498,7 @@ class BudgetingManagerMixin:
             **kwargs
         )
         accounts.update(a)
+
         # The returned Budget(s) will be calculated, and thus require a save.
         # So we need to remove them from the filtration so as to not calculate
         # them again and add them to the set of Budget(s) to save at the end.
@@ -378,7 +514,7 @@ class BudgetingManagerMixin:
             unsaved_budget_children[obj.parent.pk].append(obj)
 
         # The returned Budget(s) will be those only for which a save is
-        # warranted after actualization.
+        # warranted after recalculation.
         b = self.model.budget_cls.objects.bulk_calculate(
             instances=budgets_filtration,
             unsaved_children=unsaved_budget_children,
