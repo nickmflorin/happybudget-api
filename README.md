@@ -25,8 +25,8 @@ $ git clone https://github.com/Saturation-IO/greenbudget-api.git
 
 ##### Python Version
 
-Install [`pyenv`](https://github.com/pyenv/pyenv-virtualenv) first. This will
-allow you to manage your Python version on a project basis.
+First, you need to install [`pyenv`](https://github.com/pyenv/pyenv-virtualenv), a Python version
+manager for development. This will allow you to manage your Python version on a project basis.
 
 ```bash
 $ brew install pyenv
@@ -70,17 +70,24 @@ Now we need to setup the dependencies. We use [`poetry`](https://python-poetry.o
 as a dependency management system, so you will have to install that locally:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
+$ curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
 ```
 
-Then, you need to add it to you `PATH`:
+Note that you may need to upgrade `pip` before installing [`poetry`](https://python-poetry.org/docs/),
+you can do this as follows:
 
 ```bash
-export PATH=$HOME/.poetry/bin:$PATH
+$ python -m pip install --upgrade pip
 ```
 
-Now that [`poetry`](https://python-poetry.org/docs/) is setup, you need to create a virtual environment and install
-the dependencies to that virtual environment.
+Once [`poetry`](https://python-poetry.org/docs/) is intalled, you need to add it to you `PATH`:
+
+```bash
+$ export PATH=$HOME/.poetry/bin:$PATH
+```
+
+Now that [`poetry`](https://python-poetry.org/docs/) is installed and on the system path, you need to create a
+virtual environment and install the dependencies to that virtual environment.
 
 ```bash
 $ python -m venv ./<env_name>
@@ -98,28 +105,7 @@ sensitive information. Ask another team member for help with this.  In order to 
 the `.env` file must specify the `DJANGO_SECRET_KEY`.  The other ENV variables pertain to AWS configuration or
 RSA fingerprints for JWT - these should not be needed when running locally.
 
-## Application Environments
-
-| Environment | Settings Module                  | URL                          | File Storage               | Database                   |
-| :---:       |     :---:                        |          :---:               | :---:                      | :---:                      | 
-| `local`     | `greenbudget.conf.settings.local`| `local.greenbudget.io:8000`  | Local File Storage         | Local PostgreSQL Server    |
-| `test`      | `greenbudget.conf.settings.test` |  N/A                         | Temporary File Storage     | Transactional SQLite3 File |
-| `develop`   | `greenbudget.conf.settings.dev`  | `devapi.greenbudget.io`      | AWS S3                     | PostgreSQL on AWS RDS      |
-| `prod`      | `greenbudget.conf.settings.prod` | `api.greenbudget.io`         | AWS S3                     | PostgreSQL on AWS RDS      |
-
-
-## Development
-
-### Running Locally
-
-To run the application locally, simply activate the virtual environment, start postgres app, and start the Django web server:
-
-```bash
-$ . ./env/bin/activate
-$ python src/manage.py runserver
-```
-
-#### Local Domain
+##### Local Domain
 
 Our authentication protocols rely on the ability to set cookies in the response that dictate user sessions and
 user information.  Recent Google Chrome security improvements have introduced the caveat that the browser no longer
@@ -145,10 +131,21 @@ Add the following configuration to the file:
 Now, when we start the development server, we will be able to access the backend application at
 `local.greenbudget.io:8000`, and the frontend application at `local.greenbudget.io:3000`.
 
-#### Local Database
+##### Local Database
 
 We use `postgresql` for our local (and production) databases, with the exception being our tests which run on
-a lightweight `sqlite` database so they can do transactional tests that do not take forever to run.
+a lightweight `sqlite` database so they can do transactional tests that do not take forever to run.  The first
+step is to install `postgres`:
+
+```bash
+$ brew install postgres
+```
+
+Then, we need to start `postgres` as a service:
+
+```bash
+$ brew services start postgresql
+```
 
 The database configuration parameters can be overridden in a `.env` file, but locally they default to the following
 if not present in the `.env` file:
@@ -162,7 +159,7 @@ DATABASE_PORT=5432
 ```
 
 `postgresql` will, by default, setup a database named `postgres` with `postgres` as the user.  Additionally, `django`
-will try to (by default) use `django` as the `DATABASE_USER`.  To avoid complications around this, as well as complications
+will try to (by default) use "django" as the `DATABASE_USER`.  To avoid complications around this, as well as complications
 that might arise from a developer already having the default `postgres` database name reserved for other purposes, we try to
 isolate these parameters to our use case.
 
@@ -189,6 +186,86 @@ GRANT ALL PRIVILEGES ON DATABASE postgres_greenbudget TO greenbudget;
 ALTER USER greenbudget CREATEDB;
 ALTER DATABASE postgres_greenbudget OWNER TO greenbudget;
 \q
+```
+
+##### Populating the Database
+
+Now that the application environment is setup, there is some data we need to populate in the database before
+we can run the application.  This can either be done via the automated setup command or as outlined here in
+the explicit steps.
+
+Again, make sure that our virtual environment is activated and that `postgres` is running.
+
+```bash
+$ . ./env/bin/activate
+$ brew services start postgresql
+```
+
+###### Automated Setup Command
+
+Simply run the following:
+
+```bash
+$ python src/manage.py setup
+```
+
+This will automatically wipe the local database defined in the `.env` file, run migrations, install fixtures
+and prompt you for information to create a `superuser`.  You should always have a `superuser` account locally,
+and should use that as your primary account for logging into the application.
+
+###### Explicit Setup Commands
+
+If opting not to use the automated setup command (either due to errors with it's usage or personal preference),
+
+The first step is only applicable if we are setting up the application after it was previously setup
+and a database was created.  If we want to start from scratch, we can wipe the database defined in the
+`.env` file as follows:
+
+```bash
+$ python src/manage.py reset_db
+```
+
+If setting up for the first time, or setting up with an existing database, this step can be ignored.
+
+Next, we need to run migrations such that the database tables and schemas are populated in the database.
+To do this, simply run the following command:
+
+```bash
+$ python src/manage.py migrate
+```
+
+Next, we need to load the fixtures into the database:
+
+```bash
+$ python src/manage.py loadfixtures
+```
+
+Then, we need to collect the server side static files for the admin:
+
+```bash
+$ python src/manage.py collectstatic
+```
+
+Finally, we need to create a superuser that we will use to login to the application with:
+
+```bash
+$ python src/manage.py createsuperuser
+```
+
+You should always have a `superuser` account locally, and should use that as your primary account for
+logging into the application.
+
+Congratulations!  You are now ready to run the application.
+
+## Development
+
+### Running Locally
+
+To run the application locally, simply activate the virtual environment, start postgres app, and start the Django web server:
+
+```bash
+$ . ./env/bin/activate
+$ python src/manage.py runserver
 ```
 
 #### Django Settings
@@ -291,6 +368,16 @@ dependencies to allow additional dependencies to be included for local developme
 that we do not want to add in a production environment. By default, when
 running `poetry install` it will include the development dependencies. In production,
 we use `poetry install --no-dev` so that development dependencies are not included.
+
+## Application Environments
+
+| Environment | Settings Module                  | URL                          | File Storage               | Database                   |
+| :---:       |     :---:                        |          :---:               | :---:                      | :---:                      | 
+| `local`     | `greenbudget.conf.settings.local`| `local.greenbudget.io:8000`  | Local File Storage         | Local PostgreSQL Server    |
+| `test`      | `greenbudget.conf.settings.test` |  N/A                         | Temporary File Storage     | Transactional SQLite3 File |
+| `develop`   | `greenbudget.conf.settings.dev`  | `devapi.greenbudget.io`      | AWS S3                     | PostgreSQL on AWS RDS      |
+| `prod`      | `greenbudget.conf.settings.prod` | `api.greenbudget.io`         | AWS S3                     | PostgreSQL on AWS RDS      |
+
 
 ## Setting Up on EC2 Instance
 
