@@ -261,7 +261,7 @@ Congratulations!  You are now ready to run the application.
 
 ### Running Locally
 
-To run the application locally, simply activate the virtual environment, start postgres app, and start the Django web server:
+To run the application locally, simply activate the virtual environment and start the Django web server:
 
 ```bash
 $ . ./env/bin/activate
