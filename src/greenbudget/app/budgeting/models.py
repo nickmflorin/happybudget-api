@@ -4,11 +4,13 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 
 from greenbudget.lib.utils import set_or_list
+from greenbudget.lib.utils.decorators import deprecated
 from greenbudget.lib.django_utils.models import import_model_at_path
 
 from greenbudget.app.tabling.models import RowModel, RowPolymorphicModel
 
 
+@deprecated(reason="Planning on imlementing better cacheing system.")
 class CacheControlMixin:
     def get_cache(self, entity, strict=True):
         for cache in getattr(self, 'CACHES', []):
