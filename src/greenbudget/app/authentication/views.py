@@ -121,10 +121,7 @@ class AbstractUnauthenticatedView(views.GenericView):
         return {}
 
     def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(
-            data=request.data,
-            context={'request': request}
-        )
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.save()
         return response.Response(

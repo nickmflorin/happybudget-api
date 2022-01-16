@@ -14,15 +14,27 @@ from .models import Markup
 logger = logging.getLogger('signals')
 
 
-# NOTE: IF we start bulk updating Markup(s), then we need to apply this logic
-# in the managers as well.
 @dispatch.receiver(signals.post_save, sender=Markup)
 def markup_saved(instance, **kwargs):
+    """
+    Performs cache invalidation, cleanup and reestimation of associated models
+    when a :obj:`Markup` is altered.
+
+    Note:
+    ----
+    This logic is performed only here (and not in the :obj:`Markup`'s manager)
+    because :obj:`Markup`(s) are not bulk updated via the API.  In the case that
+    we start bulk updating :obj:`Markup`(s), then we need to perform this logic
+    in the managers as well, because this signal will not be triggered during a
+    bulk update.
+    """
     # We must reestimate the associated models before we remove the children
-    # because we will need to know what the previous associated models were
-    # if the unit changes to FLAT.
+    # (in the last code block) because we will need to know what the previously
+    # associated models were in the case that the unit changes to FLAT (and no
+    # longer has any children).
     Markup.objects.reestimate_associated(instance)
 
+    # Actuals are only applicable for Budgets, not Templates.
     if instance.budget.domain == 'budget':
         budget_actuals_owners_cache.invalidate(instance.budget)
 
@@ -61,7 +73,8 @@ def markups_changed(instance, reverse, action, model, pk_set, **kwargs):
         children = model.objects.filter(pk__in=pk_set)
         markups = [instance]
     else:
-        # The instance here is the Account or SubAccount.
+        # The instance here is the Account or SubAccount.  A Markup can belong
+        # to several Account(s) or SubAccount(s).
         markups = Markup.objects.filter(pk__in=pk_set)
         children = [instance]
 
@@ -70,9 +83,9 @@ def markups_changed(instance, reverse, action, model, pk_set, **kwargs):
     if action in ('post_add', 'post_remove'):
         SubAccount.objects.bulk_estimate_all(children)
 
-        # After Markups are removed from an Account/SubAcccount, we must clean up
-        # empty Markup instances.
         if action == 'post_remove':
+            # After Markups are removed from an Account/SubAcccount, we must
+            # clean up empty Markup instances.
             markups_to_delete = []
             for markup in markups:
                 if markup.is_empty and markup.unit == Markup.UNITS.percent:
@@ -82,15 +95,23 @@ def markups_changed(instance, reverse, action, model, pk_set, **kwargs):
                         % markup.pk
                     )
                     markups_to_delete.append(markup)
+            # Do not raise exceptions if Markup being deleted no longer exists
+            # because we have to be concerned with race conditions.
             Markup.objects.bulk_delete(markups_to_delete, strict=False)
 
+            # The actuals caches for all of the Budget(s) associated with a
+            # Markup that was deleted because an Actual can be tied to a Markup.
             budgets = set([mk.budget for mk in markups_to_delete])
             budgets = [b for b in budgets if b.domain == 'budget']
             budget_actuals_owners_cache.invalidate(budgets)
 
-    # Before Markup's are added or removed to an Account/SubAccount, we must
-    # ensure that the Markup has the same parent as that Account/SubAccount.
     elif action == 'pre_add':
+        # Before Markup's are added or removed to an Account/SubAccount, we must
+        # ensure that
+        # (1) The Markup has the same parent as that Account/SubAccount, other
+        #     wise the Markup will not appear in the correct place in the Budget.
+        # (2) The Markup is of UNIT type PERCENT - because only PERCENT UNIT
+        #     Markup(s) are applicable for children.
         [validate_unit(markup) for markup in markups]
         if reverse:
             [validate_parent(instance, child) for child in children]

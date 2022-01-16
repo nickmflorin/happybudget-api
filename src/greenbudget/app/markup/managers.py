@@ -1,4 +1,3 @@
-from greenbudget.lib.django_utils.models import generic_fk_instance_change
 from greenbudget.lib.utils import concat
 
 from greenbudget.app import signals
@@ -77,48 +76,18 @@ class MarkupManager(BudgetAncestorQuerier, BudgetingManager):
                     raise e
         self.cleanup(instances)
 
-    def get_parents_to_reestimate(self, obj):
-        parents_to_reestimate = set([])
-        # If the Markup is in the midst of being created, we always want
-        # to estimate the parent.
-        if obj._state.adding is True or obj.was_just_added():
-            if obj.parent is not None:
-                parents_to_reestimate.add(obj.parent)
-        else:
-            # We only need to reestimate the parent if the parent was changed
-            # or the markup unit or rate was changed.
-            old_parent, new_parent = generic_fk_instance_change(obj)
-            if old_parent != new_parent:
-                parents_to_reestimate.update([
-                    x for x in [old_parent, new_parent]
-                    if x is not None
-                ])
-            elif obj.fields_have_changed('unit', 'rate') \
-                    and obj.parent is not None:
-                parents_to_reestimate.add(obj.parent)
-        return parents_to_reestimate
-
-    def get_children_to_reestimate(self, obj):
-        # If the Markup is in the midst of being created, we always want
-        # to estimate the children.
-        if obj._state.adding is True or obj.was_just_added() \
-                or obj.fields_have_changed('unit', 'rate'):
-            return set(
-                list(obj.accounts.all()) + list(obj.subaccounts.all()))
-        return set()
-
     @signals.disable()
     def reestimate_parent(self, obj):
-        parents_to_reestimate = self.get_parents_to_reestimate(obj)
+        parents_to_reestimate = obj.get_parents_to_reestimate()
         self.bulk_estimate_all(parents_to_reestimate)
 
     @signals.disable()
     def reestimate_children(self, obj):
-        children_to_reestimate = self.get_children_to_reestimate(obj)
+        children_to_reestimate = obj.get_children_to_reestimate()
         self.bulk_estimate_all(children_to_reestimate)
 
     @signals.disable()
     def reestimate_associated(self, obj):
-        to_reestimate = self.get_parents_to_reestimate(obj)
-        to_reestimate.update(self.get_children_to_reestimate(obj))
+        to_reestimate = obj.get_parents_to_reestimate()
+        to_reestimate.update(obj.get_children_to_reestimate())
         self.bulk_estimate_all(to_reestimate)
