@@ -54,6 +54,17 @@ class RowManagerMixin(RowQuerier):
 
         return super().bulk_create(instances, **kwargs)
 
+    def evaluate_table_pivot_filter(self, **kwargs):
+        pivot_filter = {}
+        for _, pivot_name in enumerate(self.model.table_pivot):
+            if pivot_name not in kwargs:
+                raise ValueError(
+                    "Must provide pivot %s to retrieve table."
+                    % pivot_name
+                )
+            pivot_filter[pivot_name] = kwargs[pivot_name]
+        return pivot_filter
+
     def get_table(self, *args, **kwargs):
         """
         Retrieves the model instances that belong to the table determined by
@@ -82,13 +93,7 @@ class RowManagerMixin(RowQuerier):
             for i, pivot_value in enumerate(table_key):
                 pivot_filter[self.model.table_pivot[i]] = pivot_value
         else:
-            for i, pivot_name in enumerate(self.model.table_pivot):
-                if pivot_name not in kwargs:
-                    raise ValueError(
-                        "Must provide pivot %s to retrieve table."
-                        % pivot_name
-                    )
-                pivot_filter[pivot_name] = kwargs[pivot_name]
+            pivot_filter = self.evaluate_table_pivot_filter(**kwargs)
         return self.filter(**pivot_filter)
 
     def get_latest_in_table(self, *args, **kwargs):

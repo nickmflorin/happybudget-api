@@ -74,15 +74,37 @@ def test_get_account_subaccounts(api_client, user, budget_f):
     assert response.json()['data'] == response_data
 
 
+def test_get_account_subaccounts_ordered_by_group(api_client, user, budget_f,
+        create_group):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    groups = [
+        create_group(parent=account),
+        create_group(parent=account)
+    ]
+    [
+        budget_f.create_subaccount(parent=account, group=groups[1], order="n"),
+        budget_f.create_subaccount(parent=account, order="t"),
+        budget_f.create_subaccount(parent=account, group=groups[0], order="w"),
+        budget_f.create_subaccount(parent=account, group=groups[1], order="y"),
+        budget_f.create_subaccount(parent=account, group=groups[0], order="yn"),
+    ]
+    api_client.force_login(user)
+    response = api_client.get("/v1/accounts/%s/subaccounts/" % account.pk)
+    assert response.status_code == 200
+    assert response.json()['count'] == 5
+    assert [obj['id'] for obj in response.json()['data']] == [1, 4, 3, 5, 2]
+
+
 def test_create_budget_subaccount(api_client, user, budget_f, models):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     api_client.force_login(user)
     response = api_client.post(
-         "/v1/accounts/%s/subaccounts/" % account.pk, data={
-             'identifier': '100',
-             'description': 'Test'
-         })
+        "/v1/accounts/%s/subaccounts/" % account.pk, data={
+            'identifier': '100',
+            'description': 'Test'
+        })
     assert response.status_code == 201
     subaccount = models.SubAccount.objects.first()
     assert subaccount is not None

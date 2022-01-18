@@ -230,7 +230,8 @@ class BudgetAccountViewSet(
         return context
 
     def get_queryset(self):
-        return BudgetAccount.objects.filter(parent=self.budget).all()
+        return BudgetAccount.objects \
+            .filter(parent=self.budget).order_with_groups()
 
 
 class GenericBudgetViewSet(views.GenericViewSet):

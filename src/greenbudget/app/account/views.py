@@ -127,7 +127,7 @@ class AccountSubAccountViewSet(
         return self.child_instance_cls.objects.filter(
             object_id=self.object_id,
             content_type=self.content_type,
-        )
+        ).order_with_groups()
 
 
 class GenericAccountViewSet(views.GenericViewSet):

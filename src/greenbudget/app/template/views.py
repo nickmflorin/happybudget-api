@@ -156,7 +156,8 @@ class TemplateAccountViewSet(
         return context
 
     def get_queryset(self):
-        return TemplateAccount.objects.filter(parent=self.template).all()
+        return TemplateAccount.objects \
+            .filter(parent=self.template).order_with_groups()
 
 
 class GenericTemplateViewSet(views.GenericViewSet):

@@ -72,7 +72,7 @@ def test_update_budget(api_client, user, create_budget):
     budget = create_budget()
     api_client.force_login(user)
     response = api_client.patch("/v1/budgets/%s/" % budget.pk, data={
-         "name": "New Name"
+        "name": "New Name"
     })
     assert response.status_code == 200
     budget.refresh_from_db()

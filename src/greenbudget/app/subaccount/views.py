@@ -290,4 +290,4 @@ class SubAccountRecursiveViewSet(
         )
         if self.instance_cls is not TemplateSubAccount:
             qs = qs.prefetch_related('attachments')
-        return qs
+        return qs.order_with_groups()

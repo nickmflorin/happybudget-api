@@ -581,6 +581,45 @@ def test_get_template_subaccount_subaccounts(api_client, user, template_df):
     ]
 
 
+def test_get_subaccount_subaccounts_ordered_by_group(api_client, user, budget_f,
+        create_group):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    subaccount = budget_f.create_subaccount(parent=account)
+    groups = [
+        create_group(parent=subaccount),
+        create_group(parent=subaccount)
+    ]
+    [
+        budget_f.create_subaccount(
+            parent=subaccount,
+            group=groups[1],
+            order="n"
+        ),
+        budget_f.create_subaccount(parent=subaccount, order="t"),
+        budget_f.create_subaccount(
+            parent=subaccount,
+            group=groups[0],
+            order="w"
+        ),
+        budget_f.create_subaccount(
+            parent=subaccount,
+            group=groups[1],
+            order="y"
+        ),
+        budget_f.create_subaccount(
+            parent=subaccount,
+            group=groups[0],
+            order="yn"
+        ),
+    ]
+    api_client.force_login(user)
+    response = api_client.get("/v1/subaccounts/%s/subaccounts/" % subaccount.pk)
+    assert response.status_code == 200
+    assert response.json()['count'] == 5
+    assert [obj['id'] for obj in response.json()['data']] == [2, 5, 4, 6, 3]
+
+
 def test_remove_subaccount_from_group(api_client, user, budget_f, models,
         create_group):
     budget = budget_f.create_budget()

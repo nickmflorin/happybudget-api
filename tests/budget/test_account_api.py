@@ -41,6 +41,27 @@ def test_get_accounts(api_client, user, budget_f):
     ]
 
 
+def test_get_accounts_ordered_by_group(api_client, user, budget_f, create_group):
+    budget = budget_f.create_budget()
+    groups = [
+        create_group(parent=budget),
+        create_group(parent=budget)
+    ]
+    [
+        budget_f.create_account(parent=budget, group=groups[1], order="n"),
+        budget_f.create_account(parent=budget, order="t"),
+        budget_f.create_account(parent=budget, group=groups[0], order="w"),
+        budget_f.create_account(parent=budget, group=groups[1], order="y"),
+        budget_f.create_account(parent=budget, group=groups[0], order="yn"),
+    ]
+    api_client.force_login(user)
+    response = api_client.get(
+        "/v1/%ss/%s/accounts/" % (budget_f.context, budget.pk))
+    assert response.status_code == 200
+    assert response.json()['count'] == 5
+    assert [obj['id'] for obj in response.json()['data']] == [1, 4, 3, 5, 2]
+
+
 def test_get_accounts_filtered_by_id(api_client, user, budget_f):
     budget = budget_f.create_budget()
     accounts = budget_f.create_accounts(parent=budget, count=2)
