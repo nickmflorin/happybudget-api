@@ -48,18 +48,11 @@ class SubAccountAsOwnerSerializer(serializers.ModelSerializer):
         fields = ('id', 'identifier', 'type', 'description')
 
 
-class SubAccountAncestorSerializer(SubAccountAsOwnerSerializer):
+class SubAccountSimpleSerializer(SubAccountAsOwnerSerializer):
     domain = serializers.CharField(read_only=True)
 
     class Meta(SubAccountAsOwnerSerializer.Meta):
         fields = SubAccountAsOwnerSerializer.Meta.fields + ('domain', )
-
-
-class SubAccountSimpleSerializer(SubAccountAncestorSerializer):
-    order = serializers.CharField(read_only=True)
-
-    class Meta(SubAccountAncestorSerializer.Meta):
-        fields = SubAccountAncestorSerializer.Meta.fields + ('order', )
 
 
 class SubAccountSerializer(SubAccountSimpleSerializer):
@@ -102,12 +95,13 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
         queryset=Contact.objects.all(),
         user_field='created_by'
     )
+    order = serializers.CharField(read_only=True)
 
     class Meta:
         model = SubAccount
         fields = SubAccountSimpleSerializer.Meta.fields + (
             'quantity', 'rate', 'multiplier', 'unit', 'object_id',
-            'parent_type', 'children', 'fringes', 'group',
+            'parent_type', 'children', 'fringes', 'group', 'order',
             'nominal_value', 'actual', 'fringe_contribution',
             'markup_contribution', 'accumulated_markup_contribution',
             'accumulated_fringe_contribution',
@@ -156,12 +150,12 @@ class BudgetSubAccountSerializer(SubAccountSerializer):
 })
 class BudgetSubAccountDetailSerializer(BudgetSubAccountSerializer):
     ancestors = EntityAncestorSerializer(many=True, read_only=True)
-    siblings = SubAccountSimpleSerializer(many=True, read_only=True)
+    table = SubAccountSimpleSerializer(many=True, read_only=True)
 
     class Meta(BudgetSubAccountSerializer.Meta):
         model = BudgetSubAccount
         fields = BudgetSubAccountSerializer.Meta.fields + (
-            'ancestors', 'siblings')
+            'ancestors', 'table')
 
 
 class TemplateSubAccountSerializer(SubAccountSerializer):
@@ -177,12 +171,12 @@ class TemplateSubAccountSerializer(SubAccountSerializer):
 })
 class TemplateSubAccountDetailSerializer(TemplateSubAccountSerializer):
     ancestors = EntityAncestorSerializer(many=True, read_only=True)
-    siblings = SubAccountSimpleSerializer(many=True, read_only=True)
+    table = SubAccountSimpleSerializer(many=True, read_only=True)
 
     class Meta(TemplateSubAccountSerializer.Meta):
         model = TemplateSubAccount
         fields = TemplateSubAccountSerializer.Meta.fields + (
-            'ancestors', 'siblings')
+            'ancestors', 'table')
 
 
 class SubAccountPdfSerializer(SubAccountSimpleSerializer):
@@ -209,6 +203,7 @@ class SubAccountPdfSerializer(SubAccountSimpleSerializer):
     markup_contribution = serializers.FloatField(read_only=True)
     accumulated_markup_contribution = serializers.FloatField(read_only=True)
     actual = serializers.FloatField(read_only=True)
+    order = serializers.CharField(read_only=True)
 
     class Meta:
         model = BudgetSubAccount
@@ -216,7 +211,7 @@ class SubAccountPdfSerializer(SubAccountSimpleSerializer):
             + (
                 'quantity', 'rate', 'multiplier', 'unit', 'children', 'contact',
                 'group', 'groups', 'children_markups', 'nominal_value', 'actual',
-                'fringe_contribution', 'markup_contribution',
+                'fringe_contribution', 'markup_contribution', 'order',
                 'accumulated_markup_contribution',
                 'accumulated_fringe_contribution'
             )

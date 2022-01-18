@@ -89,18 +89,6 @@ class Account(BudgetingTreePolymorphicRowModel):
         return "Account: %s" % self.identifier
 
     @property
-    def ancestors(self):
-        return [self.parent]
-
-    @property
-    def siblings(self):
-        return self.parent.children.exclude(pk=self.pk).all()
-
-    @property
-    def budget(self):
-        return self.parent
-
-    @property
     def nominal_value(self):
         return self.accumulated_value
 

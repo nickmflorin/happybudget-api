@@ -135,29 +135,6 @@ class SubAccount(BudgetingTreePolymorphicRowModel):
         unique_together = (('content_type', 'object_id', 'order'))
 
     @property
-    def parent_instance_cls(self):
-        return type(self.parent)
-
-    @property
-    def siblings(self):
-        return self.parent.children.exclude(pk=self.pk).all()
-
-    @property
-    def ancestors(self):
-        return self.parent.ancestors + [self.parent]
-
-    @property
-    def parent_type(self):
-        return self.parent.type
-
-    @property
-    def budget(self):
-        parent = self.parent
-        while hasattr(parent, 'parent'):
-            parent = parent.parent
-        return parent
-
-    @property
     def account(self):
         parent = self.parent
         while True:

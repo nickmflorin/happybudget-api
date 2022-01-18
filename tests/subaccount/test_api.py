@@ -75,7 +75,7 @@ def test_get_budget_subaccount(api_client, user, budget_df):
     budget = budget_df.create_budget()
     account = budget_df.create_account(parent=budget)
     subaccount = budget_df.create_subaccount(parent=account)
-    siblings = [
+    table_siblings = [
         budget_df.create_subaccount(parent=account),
         budget_df.create_subaccount(parent=account)
     ]
@@ -105,22 +105,27 @@ def test_get_budget_subaccount(api_client, user, budget_df):
         "attachments": [],
         "order": "n",
         "domain": budget_df.context,
-        "siblings": [
+        "table": [
             {
-                'id': siblings[0].pk,
-                'identifier': siblings[0].identifier,
-                'type': 'subaccount',
-                'description': siblings[0].description,
-                'domain': budget_df.context,
-                'order': 't',
+                "type": "subaccount",
+                "id": subaccount.pk,
+                "identifier": subaccount.identifier,
+                "description": subaccount.description,
+                "domain": budget_df.context,
             },
             {
-                'id': siblings[1].pk,
-                'identifier': siblings[1].identifier,
+                'id': table_siblings[0].pk,
+                'identifier': table_siblings[0].identifier,
                 'type': 'subaccount',
-                'description': siblings[1].description,
+                'description': table_siblings[0].description,
                 'domain': budget_df.context,
-                'order': 'w',
+            },
+            {
+                'id': table_siblings[1].pk,
+                'identifier': table_siblings[1].identifier,
+                'type': 'subaccount',
+                'description': table_siblings[1].description,
+                'domain': budget_df.context,
             }
         ],
         "ancestors": [
@@ -164,7 +169,7 @@ def test_get_template_subaccount(api_client, user, template_df):
     budget = template_df.create_budget()
     account = template_df.create_account(parent=budget)
     subaccount = template_df.create_subaccount(parent=account)
-    siblings = [
+    table_siblings = [
         template_df.create_subaccount(parent=account),
         template_df.create_subaccount(parent=account)
     ]
@@ -192,22 +197,27 @@ def test_get_template_subaccount(api_client, user, template_df):
         "unit": None,
         "order": "n",
         "domain": template_df.context,
-        "siblings": [
+        "table": [
             {
-                'id': siblings[0].pk,
-                'identifier': siblings[0].identifier,
-                'type': 'subaccount',
-                'description': siblings[0].description,
-                'domain': template_df.context,
-                'order': 't',
+                "type": "subaccount",
+                "id": subaccount.pk,
+                "identifier": subaccount.identifier,
+                "description": subaccount.description,
+                "domain": template_df.context,
             },
             {
-                'id': siblings[1].pk,
-                'identifier': siblings[1].identifier,
+                'id': table_siblings[0].pk,
+                'identifier': table_siblings[0].identifier,
                 'type': 'subaccount',
-                'description': siblings[1].description,
+                'description': table_siblings[0].description,
                 'domain': template_df.context,
-                'order': 'w',
+            },
+            {
+                'id': table_siblings[1].pk,
+                'identifier': table_siblings[1].identifier,
+                'type': 'subaccount',
+                'description': table_siblings[1].description,
+                'domain': template_df.context,
             }
         ],
         "ancestors": [
@@ -263,25 +273,31 @@ def test_update_budget_subaccount(api_client, user, budget_df):
         "actual": 0.0,
         "children": [],
         "fringes": [],
-        "siblings": [],
         "unit": None,
         "contact": None,
         "attachments": [],
         "order": "n",
         "domain": budget_df.context,
+        "table": [{
+            "id": subaccount.id,
+            "type": "subaccount",
+            "identifier": subaccount.identifier,
+            "description": subaccount.description,
+            "domain": budget_df.context,
+        }],
         "ancestors": [
             {
                 "type": "budget",
                 "id": budget.pk,
                 "name": budget.name,
-                "domain": "budget",
+                "domain": budget_df.context
             },
             {
                 "id": account.id,
                 "type": "account",
                 "identifier": account.identifier,
                 "description": account.description,
-                "domain": "budget",
+                "domain": budget_df.context
             }
         ]
     }
@@ -326,23 +342,29 @@ def test_update_template_subaccount(api_client, user, template_df):
         "actual": 0.0,
         "children": [],
         "fringes": [],
-        "siblings": [],
         "unit": None,
         "order": "n",
         "domain": template_df.context,
+        "table": [{
+            "id": subaccount.id,
+            "type": "subaccount",
+            "identifier": subaccount.identifier,
+            "description": subaccount.description,
+            "domain": template_df.context,
+        }],
         "ancestors": [
             {
                 "type": "budget",
                 "id": budget.pk,
                 "name": budget.name,
-                "domain": "template",
+                "domain": template_df.context,
             },
             {
                 "id": account.id,
                 "type": "account",
                 "identifier": account.identifier,
                 "description": account.description,
-                "domain": "template"
+                "domain": template_df.context,
             }
         ]
     }
@@ -392,10 +414,16 @@ def test_create_subaccount(api_client, user, budget_f):
         "actual": 0.0,
         "children": [],
         "fringes": [],
-        "siblings": [],
         "unit": None,
         "order": "n",
         "domain": budget_f.context,
+        "table": [{
+            "id": child.id,
+            "type": "subaccount",
+            "identifier": child.identifier,
+            "description": child.description,
+            "domain": budget_f.context,
+        }],
         "ancestors": [
             {
                 "type": "budget",

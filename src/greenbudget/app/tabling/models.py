@@ -52,8 +52,12 @@ class RowModelMixin(models.Model):
     def get_table(self, include_self=True):
         qs = type(self).objects.filter(**self.table_filter)
         if include_self is False:
-            return qs.exclude(pk=self.pk)
-        return qs
+            return qs.exclude(pk=self.pk).order_with_groups()
+        return qs.order_with_groups()
+
+    @property
+    def table(self):
+        return self.get_table()
 
     def order_at_bottom(self, commit=True):
         try:

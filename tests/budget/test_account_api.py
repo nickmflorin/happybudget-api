@@ -114,7 +114,15 @@ def test_create_account(api_client, user, budget_f, models):
         "accumulated_markup_contribution": 0.0,
         "actual": 0.0,
         "children": [],
-        "siblings": [],
+        "table": [
+            {
+                "type": "account",
+                "id": account.pk,
+                "identifier": account.identifier,
+                "description": account.description,
+                "domain": budget_f.context,
+            }
+        ],
         "order": "n",
         "domain": budget_f.context,
         "ancestors": [{

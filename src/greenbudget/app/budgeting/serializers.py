@@ -11,8 +11,8 @@ from greenbudget.app.template.models import Template
 
 class EntityAncestorSerializer(PolymorphicNonPolymorphicSerializer):
     choices = {
-        Account: "greenbudget.app.account.serializers.AccountAncestorSerializer",
-        SubAccount: "greenbudget.app.subaccount.serializers.SubAccountAncestorSerializer",  # noqa
+        Account: "greenbudget.app.account.serializers.AccountSimpleSerializer",
+        SubAccount: "greenbudget.app.subaccount.serializers.SubAccountSimpleSerializer",  # noqa
         Budget: "greenbudget.app.budget.serializers.BaseBudgetSerializer",
         Template: "greenbudget.app.budget.serializers.BaseBudgetSerializer",
     }

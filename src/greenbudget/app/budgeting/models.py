@@ -115,6 +115,28 @@ class BudgetingTreeModelMixin(BudgetingModelMixin, CacheControlMixin):
             return self.parent
 
     @property
+    def ancestors(self):
+        # If the parent is a Budget or Template, it will not have any ancestors.
+        if hasattr(self.parent, 'ancestors'):
+            return self.parent.ancestors + [self.parent]
+        return [self.parent]
+
+    @property
+    def parent_instance_cls(self):
+        return type(self.parent)
+
+    @property
+    def parent_type(self):
+        return self.parent.type
+
+    @property
+    def budget(self):
+        parent = self.parent
+        while hasattr(parent, 'parent'):
+            parent = parent.parent
+        return parent
+
+    @property
     def reestimated_fields(self):
         return [
             fld for fld in self.ESTIMATED_FIELDS

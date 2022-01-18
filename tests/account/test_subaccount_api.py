@@ -131,7 +131,15 @@ def test_create_budget_subaccount(api_client, user, budget_f, models):
         "children": [],
         "fringes": [],
         "order": "n",
-        "siblings": [],
+        "table": [
+            {
+                "type": "account",
+                "id": account.pk,
+                "identifier": account.identifier,
+                "description": account.description,
+                "domain": budget_f.context,
+            }
+        ],
         "domain": budget_f.context,
         "ancestors": [
             {

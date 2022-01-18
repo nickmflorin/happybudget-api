@@ -11,7 +11,7 @@ from greenbudget.app.tabling.serializers import row_order_serializer
 from .models import Account, BudgetAccount, TemplateAccount
 
 
-class AccountAncestorSerializer(serializers.ModelSerializer):
+class AccountSimpleSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     identifier = serializers.CharField(
         required=False,
@@ -33,13 +33,6 @@ class AccountAncestorSerializer(serializers.ModelSerializer):
         fields = ('id', 'identifier', 'type', 'description', 'domain')
 
 
-class AccountSimpleSerializer(AccountAncestorSerializer):
-    order = serializers.CharField(read_only=True)
-
-    class Meta(AccountAncestorSerializer.Meta):
-        fields = AccountAncestorSerializer.Meta.fields + ('order', )
-
-
 class AccountSerializer(AccountSimpleSerializer):
     nominal_value = serializers.FloatField(read_only=True)
     accumulated_fringe_contribution = serializers.FloatField(read_only=True)
@@ -54,10 +47,11 @@ class AccountSerializer(AccountSimpleSerializer):
         child_instance_cls=Group,
         write_only=True,
     )
+    order = serializers.CharField(read_only=True)
 
     class Meta(AccountSimpleSerializer.Meta):
         fields = AccountSimpleSerializer.Meta.fields + (
-            'children', 'nominal_value', 'group', 'actual',
+            'children', 'nominal_value', 'group', 'actual', 'order',
             'markup_contribution', 'accumulated_markup_contribution',
             'accumulated_fringe_contribution',
         )
@@ -71,11 +65,11 @@ class BudgetAccountSerializer(AccountSerializer):
 @row_order_serializer(table_filter=lambda d: {'parent_id': d.parent.id})
 class BudgetAccountDetailSerializer(BudgetAccountSerializer):
     ancestors = EntityAncestorSerializer(many=True, read_only=True)
-    siblings = AccountSimpleSerializer(many=True, read_only=True)
+    table = AccountSimpleSerializer(many=True, read_only=True)
 
     class Meta(BudgetAccountSerializer.Meta):
         fields = BudgetAccountSerializer.Meta.fields + (
-            "ancestors", "siblings")
+            "ancestors", "table")
 
 
 class TemplateAccountSerializer(AccountSerializer):
@@ -86,11 +80,11 @@ class TemplateAccountSerializer(AccountSerializer):
 @row_order_serializer(table_filter=lambda d: {'parent_id': d.parent.id})
 class TemplateAccountDetailSerializer(TemplateAccountSerializer):
     ancestors = EntityAncestorSerializer(many=True, read_only=True)
-    siblings = AccountSimpleSerializer(many=True, read_only=True)
+    table = AccountSimpleSerializer(many=True, read_only=True)
 
     class Meta(TemplateAccountSerializer.Meta):
         fields = TemplateAccountSerializer.Meta.fields + (
-            "ancestors", "siblings")
+            "ancestors", "table")
 
 
 class AccountPdfSerializer(AccountSimpleSerializer):
@@ -103,12 +97,13 @@ class AccountPdfSerializer(AccountSimpleSerializer):
     children_markups = MarkupSerializer(many=True, read_only=True)
     children = SubAccountPdfSerializer(many=True, read_only=True)
     groups = GroupSerializer(many=True, read_only=True)
+    order = serializers.CharField(read_only=True)
 
     class Meta:
         model = BudgetAccount
         fields = AccountSimpleSerializer.Meta.fields \
             + ('children', 'groups', 'nominal_value', 'children_markups',
-                'markup_contribution', 'actual',
+                'markup_contribution', 'actual', 'order',
                 'accumulated_markup_contribution',
                 'accumulated_fringe_contribution',
             )

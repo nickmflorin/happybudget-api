@@ -6,7 +6,7 @@ def test_get_account(api_client, user, budget_f):
     api_client.force_login(user)
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
-    siblings = [
+    table_siblings = [
         budget_f.create_account(parent=budget),
         budget_f.create_account(parent=budget)
     ]
@@ -24,22 +24,27 @@ def test_get_account(api_client, user, budget_f):
         "accumulated_markup_contribution": 0.0,
         "actual": 0.0,
         "children": [],
-        "siblings": [
+        "table": [
             {
-                'id': siblings[0].pk,
-                'identifier': siblings[0].identifier,
+                'id': account.pk,
+                'identifier': account.identifier,
                 'type': 'account',
-                'description': siblings[0].description,
+                'description': account.description,
                 'domain': budget_f.context,
-                'order': 't',
             },
             {
-                'id': siblings[1].pk,
-                'identifier': siblings[1].identifier,
+                'id': table_siblings[0].pk,
+                'identifier': table_siblings[0].identifier,
                 'type': 'account',
-                'description': siblings[1].description,
+                'description': table_siblings[0].description,
                 'domain': budget_f.context,
-                'order': 'w',
+            },
+            {
+                'id': table_siblings[1].pk,
+                'identifier': table_siblings[1].identifier,
+                'type': 'account',
+                'description': table_siblings[1].description,
+                'domain': budget_f.context,
             }
         ],
         "order": "n",
