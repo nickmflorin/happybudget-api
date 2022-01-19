@@ -89,6 +89,13 @@ class RowQuerier:
         - Account (order = 6)
         - Account (order = 8)
         """
+        # We cannot perform the order_by if there are no results in the current
+        # queryset because the models.Case() will try to order the queryset by
+        # a NULL value, which will hit an SQL error even though there are no
+        # results to order.
+        if self.count() == 0:
+            return self
+
         # Make sure that all instances belong to the same table.  Unfortunately,
         # a dict is not hashable, so we cannot just check the size of a set.
         table_filter = None
