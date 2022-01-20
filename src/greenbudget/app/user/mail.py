@@ -26,7 +26,8 @@ email_api = sib_api_v3_sdk.TransactionalEmailsApi(client)
 
 def user_is_on_waitlist(email):
     try:
-        response = contacts_api.get_contacts()
+        response = contacts_api.get_contacts_from_list(
+            settings.SEND_IN_BLUE_WHITELIST_ID)
     except ApiException as e:
         logger.error(
             "There was a request error checking the waitlist for user %s: \n%s"
