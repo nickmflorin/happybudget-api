@@ -32,10 +32,17 @@ manager for development. This will allow you to manage your Python version on a 
 $ brew install pyenv
 ```
 
-We then need to initialize `pyenv`, so add this to your `~/.bash_profile`:
+We then need to initialize `pyenv`, so add this to your `~/.bash_profile` (or `~/.zshrc`,
+or whatever default shell script your machine uses):
 
 ```bash
 $ eval "$(pyenv init -)"
+```
+
+Then source your shell profile as:
+
+```bash
+$ . . ~/.bash_profile
 ```
 
 Get `pyenv` setup with the Python version you will need for this application.
@@ -63,6 +70,16 @@ to initialize `pyenv` as follows:
 ```bash
 $ eval "$(pyenv init --path)"
 ```
+
+Then, resource the shell profile and make sure that `pyenv` is pointing at the local Python version:
+
+```bash
+$ . . ~/.bash_profile
+$ pyenv local
+$ 3.9.0
+```
+
+If this still doesn't work, contact a team member before proceeding further.
 
 ##### Dependencies
 
