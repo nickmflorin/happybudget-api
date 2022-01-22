@@ -165,7 +165,7 @@ class User(AbstractUser):
 
     def has_product(self, product):
         assert product is not None, "Product must be non-null."
-        if product == '__all__':
+        if product == '__any__':
             return self.billing_status == BillingStatus.ACTIVE \
                 and self.product_id is not None
         return self.billing_status == BillingStatus.ACTIVE \

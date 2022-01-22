@@ -1,7 +1,7 @@
 from greenbudget.app.authentication.exceptions import PermissionErrorCodes
 from greenbudget.app.authentication.permissions import (
     AdminPermissionMixin, IsOwner)
-from greenbudget.app.budget.permissions import BudgetSubscriptionPermission
+from greenbudget.app.budget.permissions import BudgetProductPermission
 
 from .models import TemplateAccount
 
@@ -18,7 +18,7 @@ class AccountOwnershipPermission(AdminPermissionMixin, IsOwner):
         return super().has_object_permission(request, view, obj)
 
 
-class AccountSubscriptionPermission(BudgetSubscriptionPermission):
+class AccountProductPermission(BudgetProductPermission):
     access_entity_name = 'account'
 
     def get_budget(self, obj):

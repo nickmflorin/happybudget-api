@@ -61,9 +61,10 @@ def test_get_permissioned_budget(api_client, user, create_budget):
             'The user does not have the correct subscription to view this '
             'budget.'
         ),
-        'code': 'subscription_permission_error',
+        'code': 'product_permission_error',
         'error_type': 'permission',
-        'products': '__all__'
+        'products': '__any__',
+        'permission_id': 'multiple_budgets'
     }]}
 
 
@@ -120,13 +121,11 @@ def test_create_additional_budget_unsubscribed(api_client, user, create_budget):
     response = api_client.post("/v1/budgets/", data={"name": "Test Name"})
     assert response.status_code == 403
     assert response.json() == {'errors': [{
-        'message': (
-            'The user does not have the correct subscription to create an '
-            'additional budget.'
-        ),
-        'code': 'subscription_permission_error',
+        'message': "The user's subscription does not support multiple budgets.",
+        'code': 'product_permission_error',
         'error_type': 'permission',
-        'products': '__all__'
+        'products': '__any__',
+        'permission_id': 'multiple_budgets'
     }]}
 
 
@@ -187,13 +186,11 @@ def test_duplicate_budget_unsubscribed(api_client, user, create_budget):
     response = api_client.post("/v1/budgets/%s/duplicate/" % original.pk)
     assert response.status_code == 403
     assert response.json() == {'errors': [{
-        'message': (
-            'The user does not have the correct subscription to create an '
-            'additional budget.'
-        ),
-        'code': 'subscription_permission_error',
+        'message': "The user's subscription does not support multiple budgets.",
+        'code': 'product_permission_error',
         'error_type': 'permission',
-        'products': '__all__'
+        'products': '__any__',
+        'permission_id': 'multiple_budgets'
     }]}
 
 

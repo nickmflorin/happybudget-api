@@ -186,6 +186,19 @@ class Budget(BaseBudget):
         verbose_name = "Budget"
         verbose_name_plural = "Budgets"
 
+    @property
+    def is_first_created(self):
+        first_created = type(self).objects \
+            .filter(created_by=self.created_by) \
+            .only('pk') \
+            .order_by('created_at').first()
+        # Since this property is on an instance that exists, it should be
+        # guaranteed that the query returns at least 1 result unless the budget
+        # was just deleted.
+        assert first_created is not None, \
+            "Cannot access property for budgets that were just deleted."
+        return first_created.id == self.id
+
     def actualize(self, **kwargs):
         children, kwargs = self.children_from_kwargs(**kwargs)
         markups_to_be_deleted = kwargs.get('markups_to_be_deleted', []) or []

@@ -7,7 +7,6 @@ from greenbudget.app.markup.serializers import MarkupSerializer
 from greenbudget.app.template.models import Template
 
 from .models import BaseBudget, Budget
-from .permissions import budget_is_first_created
 
 
 class BaseBudgetSerializer(serializers.ModelSerializer):
@@ -65,8 +64,11 @@ class BudgetSimpleSerializer(BaseBudgetSerializer):
             'updated_at', 'template', 'image', 'is_permissioned')
 
     def get_is_permissioned(self, instance):
-        if not self.context['user'].has_product('__all__'):
-            return not budget_is_first_created(self.context['user'], instance)
+        if not self.context['user'].has_product('__any__'):
+            assert instance.created_by == self.context['user'], \
+                "Cannot check budget permissions created by user for a budget " \
+                "created by another user."
+            return not instance.is_first_created
         return False
 
     def create(self, validated_data):

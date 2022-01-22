@@ -27,7 +27,7 @@ from .cache import (
 )
 from .permissions import (
     AccountOwnershipPermission,
-    AccountSubscriptionPermission
+    AccountProductPermission
 )
 from .serializers import (
     BudgetAccountDetailSerializer,
@@ -204,7 +204,7 @@ class AccountViewSet(
     """
     extra_permission_classes = [
         AccountOwnershipPermission,
-        AccountSubscriptionPermission(products='__all__')
+        AccountProductPermission(products='__any__')
     ]
 
     def get_serializer_context(self):

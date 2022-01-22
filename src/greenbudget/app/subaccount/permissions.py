@@ -1,6 +1,6 @@
 from greenbudget.app.authentication.permissions import (
     AdminPermissionMixin, IsOwner)
-from greenbudget.app.budget.permissions import BudgetSubscriptionPermission
+from greenbudget.app.budget.permissions import BudgetProductPermission
 
 from .models import TemplateSubAccount
 
@@ -17,7 +17,7 @@ class SubAccountOwnershipPermission(AdminPermissionMixin, IsOwner):
         return super().has_object_permission(request, view, obj)
 
 
-class SubAccountSubscriptionPermission(BudgetSubscriptionPermission):
+class SubAccountProductPermission(BudgetProductPermission):
     access_entity_name = 'subaccount'
 
     def get_budget(self, obj):

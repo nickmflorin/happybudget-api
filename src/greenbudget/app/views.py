@@ -13,7 +13,7 @@ from rest_framework_simplejwt.exceptions import AuthenticationFailed
 from greenbudget.lib.utils import ensure_iterable, get_nested_attribute
 from greenbudget.lib.utils.urls import parse_ids_from_request
 
-from greenbudget.app.authentication.exceptions import SubscriptionPermissionError
+from greenbudget.app.billing.exceptions import ProductPermissionError
 
 
 logger = logging.getLogger('greenbudget')
@@ -521,9 +521,12 @@ def exception_handler(exc, context):
         # There are cases where we need to include information about the products
         # that a user needs to be subscribed to in order to perform a certain
         # action.
-        if isinstance(exc, SubscriptionPermissionError):
-            products = getattr(exc, 'products')
-            include_in_detail(data, products=products)
+        if isinstance(exc, ProductPermissionError):
+            include_in_detail(
+                data=data,
+                products=getattr(exc, 'products'),
+                permission_id=getattr(exc, 'permission_id')
+            )
 
     elif isinstance(exc.detail, dict):
         default_error_type = 'field'

@@ -34,8 +34,8 @@ from .cache import (
 from .models import Budget
 from .mixins import BudgetNestedMixin
 from .permissions import (
-    BudgetSubscriptionPermission,
-    BudgetCountSubscriptionPermission
+    BudgetProductPermission,
+    MultipleBudgetPermission
 )
 from .serializers import (
     BudgetSerializer,
@@ -323,8 +323,8 @@ class BudgetViewSet(
     (12) POST /budgets/<pk>/duplicate/
     """
     extra_permission_classes = [
-        BudgetSubscriptionPermission(products="__all__"),
-        BudgetCountSubscriptionPermission(products="__all__"),
+        BudgetProductPermission(products="__any__"),
+        MultipleBudgetPermission(products="__any__"),
     ]
 
     def get_queryset(self):

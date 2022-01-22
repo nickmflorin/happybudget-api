@@ -10,27 +10,15 @@ from rest_framework import exceptions, status
 from rest_framework_simplejwt.exceptions import TokenError as BaseTokenError
 
 from greenbudget.lib.drf.exceptions import InvalidFieldError
-from greenbudget.lib.utils import ensure_iterable
 
 
 class PermissionErrorCodes(object):
     PERMISSION_ERROR = "permission_error"
-    SUBSCRIPTION_ERROR = "subscription_permission_error"
+    PRODUCT_PERMISSION_ERROR = "product_permission_error"
 
 
 class PermissionError(exceptions.PermissionDenied):
     default_code = PermissionErrorCodes.PERMISSION_ERROR
-
-
-class SubscriptionPermissionError(PermissionError):
-    default_detail = _("The account does not have the correct subscription.")
-    default_code = PermissionErrorCodes.SUBSCRIPTION_ERROR
-
-    def __init__(self, *args, **kwargs):
-        self.products = kwargs.pop('products', '__all__')
-        if self.products != '__all__':
-            self.products = ensure_iterable(self.products)
-        super().__init__(*args, **kwargs)
 
 
 class NotAuthenticatedErrorCodes(object):
@@ -38,7 +26,6 @@ class NotAuthenticatedErrorCodes(object):
     ACCOUNT_NOT_AUTHENTICATED = "account_not_authenticated"
     ACCOUNT_NOT_VERIFIED = "account_not_verified"
     ACCOUNT_NOT_ON_WAITLIST = "account_not_on_waitlist"
-    ACCOUNT_SUBSCRIPTION_ERROR = "account_subscription_error"
     INVALID_TOKEN = "token_not_valid"
     EXPIRED_TOKEN = "token_expired"
 

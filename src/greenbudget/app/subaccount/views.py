@@ -23,7 +23,7 @@ from .cache import (
 from .mixins import SubAccountNestedMixin
 from .models import SubAccount, TemplateSubAccount, SubAccountUnit
 from .permissions import (
-    SubAccountSubscriptionPermission,
+    SubAccountProductPermission,
     SubAccountOwnershipPermission
 )
 from .serializers import (
@@ -227,7 +227,7 @@ class SubAccountViewSet(
     """
     extra_permission_classes = [
         SubAccountOwnershipPermission,
-        SubAccountSubscriptionPermission(products='__all__')
+        SubAccountProductPermission(products='__any__')
     ]
 
     @property
@@ -274,7 +274,7 @@ class SubAccountRecursiveViewSet(
     """
     extra_permission_classes = [
         SubAccountOwnershipPermission,
-        SubAccountSubscriptionPermission(products='__all__')
+        SubAccountProductPermission(products='__any__')
     ]
 
     def get_serializer_context(self):

@@ -159,9 +159,10 @@ def test_get_permissioned_budget_subaccount(api_client, user, create_budget,
             'The user does not have the correct subscription to view this '
             'subaccount.'
         ),
-        'code': 'subscription_permission_error',
+        'code': 'product_permission_error',
         'error_type': 'permission',
-        'products': '__all__'
+        'products': '__any__',
+        'permission_id': 'multiple_budgets'
     }]}
 
 

@@ -6,7 +6,7 @@ from greenbudget.app.budgeting.mixins import NestedObjectViewMixin
 from .models import SubAccount
 from .permissions import (
     SubAccountOwnershipPermission,
-    SubAccountSubscriptionPermission
+    SubAccountProductPermission
 )
 
 
@@ -17,7 +17,7 @@ class SubAccountNestedMixin(NestedObjectViewMixin):
     view_name = 'subaccount'
     subaccount_permission_classes = [
         SubAccountOwnershipPermission,
-        SubAccountSubscriptionPermission(products='__all__')
+        SubAccountProductPermission(products='__any__')
     ]
     subaccount_lookup_field = ("pk", "subaccount_pk")
 

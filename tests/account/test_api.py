@@ -68,9 +68,10 @@ def test_get_permissioned_account(api_client, user, budget_df):
             'The user does not have the correct subscription to view this '
             'account.'
         ),
-        'code': 'subscription_permission_error',
+        'code': 'product_permission_error',
         'error_type': 'permission',
-        'products': '__all__'
+        'products': '__any__',
+        'permission_id': 'multiple_budgets'
     }]}
 
 
