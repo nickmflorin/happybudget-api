@@ -1,7 +1,7 @@
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Case, Q, When, Value as V, BooleanField
 
-from greenbudget.lib.utils import concat, set_or_list
+from greenbudget.lib.utils import concat, ensure_iterable
 
 from greenbudget.app import signals
 from greenbudget.app.budget.cache import budget_actuals_owners_cache
@@ -111,7 +111,7 @@ class SubAccountManager(SubAccountQuerier, BudgetingPolymorphicRowManager):
         instances = calculated.union(instances)
         groups = [obj.group for obj in instances if obj.group is not None]
 
-        for obj in set_or_list(instances):
+        for obj in ensure_iterable(instances):
             if obj.children.count() != 0:
                 obj.clear_deriving_fields(commit=False)
 

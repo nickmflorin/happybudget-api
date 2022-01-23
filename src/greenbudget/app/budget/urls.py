@@ -20,31 +20,26 @@ router.register(r'', BudgetViewSet, basename='budget')
 
 budget_fringes_router = routers.NestedSimpleRouter(router, r'', lookup='budget')
 budget_fringes_router.register(
-    r'fringes', BudgetFringeViewSet, basename='budget-fringes')
+    r'fringes', BudgetFringeViewSet, basename='fringes')
 
 budget_actuals_owners_router = routers.NestedSimpleRouter(
     router, r'', lookup='budget')
 budget_actuals_owners_router.register(
-    r'actual-owners', BudgetActualsOwnersViewSet, basename='budget-actual-owner')
+    r'actual-owners', BudgetActualsOwnersViewSet, basename='actual-owner')
 
-budget_markup_router = routers.NestedSimpleRouter(
-    router, r'', lookup='budget')
+budget_markup_router = routers.NestedSimpleRouter(router, r'', lookup='budget')
 budget_markup_router.register(
-    r'markups', BudgetMarkupViewSet, basename='budget-markup')
+    r'markups', BudgetMarkupViewSet, basename='markup')
 
-budget_groups_router = routers.NestedSimpleRouter(
-    router, r'', lookup='budget')
-budget_groups_router.register(
-    r'groups', BudgetGroupViewSet, basename='budget-group')
+budget_groups_router = routers.NestedSimpleRouter(router, r'', lookup='budget')
+budget_groups_router.register(r'groups', BudgetGroupViewSet, basename='group')
 
-budget_actuals_router = routers.NestedSimpleRouter(
-    router, r'', lookup='budget')
+budget_actuals_router = routers.NestedSimpleRouter(router, r'', lookup='budget')
 budget_actuals_router.register(
-    r'actuals', BudgetActualsViewSet, basename='budget-actual')
+    r'actuals', BudgetActualsViewSet, basename='actual')
 
 budget_accounts_router = routers.SimpleRouter()
-budget_accounts_router.register(
-    r'', BudgetAccountViewSet, basename='budget-account')
+budget_accounts_router.register(r'', BudgetAccountViewSet, basename='account')
 
 urlpatterns = combine_routers(
     router,

@@ -3,7 +3,7 @@ from polymorphic.models import PolymorphicModel
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 
-from greenbudget.lib.utils import set_or_list
+from greenbudget.lib.utils import ensure_iterable
 from greenbudget.lib.utils.decorators import deprecated
 from greenbudget.lib.django_utils.models import import_model_at_path
 
@@ -159,7 +159,7 @@ class BudgetingTreeModelMixin(BudgetingModelMixin, CacheControlMixin):
         else:
             children = [c for c in children if c.pk not in [
                 c.pk for c in unsaved_children if c.pk is not None]]
-        children += set_or_list(unsaved_children)
+        children += ensure_iterable(unsaved_children)
         return children, kwargs
 
 

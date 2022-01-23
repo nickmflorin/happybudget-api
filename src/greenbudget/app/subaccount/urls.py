@@ -23,24 +23,27 @@ subaccount_actuals_router.register(
 
 subaccount_groups_router = routers.SimpleRouter()
 subaccount_groups_router.register(
-    r'', SubAccountGroupViewSet,
-    basename='subaccount-group'
+    r'',
+    SubAccountGroupViewSet,
+    basename='group'
 )
 
 subaccount_markup_router = routers.SimpleRouter()
 subaccount_markup_router.register(
-    r'', SubAccountMarkupViewSet,
-    basename='subaccount-markup'
+    r'',
+    SubAccountMarkupViewSet,
+    basename='markup'
 )
 
 subaccount_attachments_router = routers.SimpleRouter()
 subaccount_attachments_router.register(
-    r'', SubAccountAttachmentViewSet,
-    basename='subaccount-attachment'
+    r'',
+    SubAccountAttachmentViewSet,
+    basename='attachment'
 )
 
 router = routers.SimpleRouter()
-router.register(r'units', SubAccountUnitViewSet, basename='subaccount-unit')
+router.register(r'units', SubAccountUnitViewSet, basename='unit')
 router.register(r'', SubAccountViewSet, basename='subaccount')
 
 urlpatterns = router.urls + [

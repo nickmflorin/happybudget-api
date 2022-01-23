@@ -12,14 +12,16 @@ app_name = "account"
 
 account_groups_router = routers.SimpleRouter()
 account_groups_router.register(
-    r'', AccountGroupViewSet,
-    basename='account-subaccount-group'
+    r'',
+    AccountGroupViewSet,
+    basename='group'
 )
 
 account_markup_router = routers.SimpleRouter()
 account_markup_router.register(
-    r'', AccountMarkupViewSet,
-    basename='account-subaccount-markup'
+    r'',
+    AccountMarkupViewSet,
+    basename='markup'
 )
 
 account_subaccounts_router = routers.SimpleRouter()

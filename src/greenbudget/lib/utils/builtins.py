@@ -2,14 +2,6 @@ import importlib
 import six
 
 
-def set_or_list(obj):
-    if isinstance(obj, set):
-        return list(obj)
-    elif not hasattr(obj, '__iter__'):
-        return [obj]
-    return list(obj)
-
-
 def get_nested_attribute(obj, attr):
     if '.' in attr:
         parts = attr.split('.')
@@ -101,16 +93,18 @@ def concat(arrays):
 
 def ensure_iterable(value, strict=False, cast=list):
     """
-    Ensures that the provided value is an iterable, either raising a ValueError
-    (if `strict = True`) or returning the value as the first element in an
-    iterable (if `strict = False`).
+    Ensures that the provided value is an iterable that can be indexed
+    numerically.
     """
     if value is None:
         return cast()
+    # A str instance has an `__iter__` method.
     if isinstance(value, str):
         return [value]
-    if not hasattr(value, '__iter__') or isinstance(value, type):
-        if strict:
-            raise ValueError("Value %s is not an iterable." % value)
-        return cast([value])
-    return value
+    elif hasattr(value, '__iter__') and not isinstance(value, type):
+        # We have to cast the value instead of just returning it because a
+        # instance of set() has the `__iter__` method but is not indexable.
+        return cast(value)
+    elif strict:
+        raise ValueError("Value %s is not an iterable." % value)
+    return cast([value])

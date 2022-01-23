@@ -3,7 +3,7 @@ import logging
 from django.db import models
 from polymorphic.models import PolymorphicManager
 
-from greenbudget.lib.utils import set_or_list
+from greenbudget.lib.utils import ensure_iterable
 from greenbudget.lib.django_utils.models import (
     PrePKBulkCreateQuerySet,
     BulkCreatePolymorphicQuerySet
@@ -159,7 +159,7 @@ class BudgetingManagerMixin:
         """
         commit = kwargs.pop('commit', True)
         subaccounts = set([
-            obj for obj in set_or_list(instances)
+            obj for obj in ensure_iterable(instances)
             if isinstance(obj, self.model.subaccount_cls)
         ])
         # Set of ongoing Account(s) that need to be saved after they are
@@ -169,7 +169,7 @@ class BudgetingManagerMixin:
         # Set of ongoing accounts that still need to be reactualized after the
         # children are reactualized.
         accounts_filtration = set([
-            obj for obj in set_or_list(instances)
+            obj for obj in ensure_iterable(instances)
             if isinstance(obj, self.model.account_cls)
         ])
         # Set of ongoing Budget(s) that need to be saved after they are
@@ -179,7 +179,7 @@ class BudgetingManagerMixin:
         # Set of ongoing Budget(s) that still need to be reestimated after the
         # children are reestimated.
         budgets_filtration = set([
-            obj for obj in set_or_list(instances)
+            obj for obj in ensure_iterable(instances)
             if isinstance(obj, self.model.budget_cls)
         ])
 
@@ -325,7 +325,8 @@ class BudgetingManagerMixin:
         # the Markup itself because it's actual value is derived from an
         # @property.
         subaccounts = set([
-            obj for obj in set_or_list(instances) + [m.parent for m in markups]
+            obj for obj in ensure_iterable(instances)
+            + [m.parent for m in markups]
             if isinstance(obj, BudgetSubAccount)
         ])
         # Set of ongoing Account(s) that need to be saved after they are
@@ -339,13 +340,15 @@ class BudgetingManagerMixin:
         # Set of ongoing budgets that still need to be reactualized after the
         # children are reactualized.
         budgets_filtration = set([
-            obj for obj in set_or_list(instances) + [m.parent for m in markups]
+            obj for obj in ensure_iterable(instances)
+            + [m.parent for m in markups]
             if isinstance(obj, Budget)
         ])
         # Set of ongoing accounts that still need to be reactualized after the
         # children are reactualized.
         accounts_filtration = set([
-            obj for obj in set_or_list(instances) + [m.parent for m in markups]
+            obj for obj in ensure_iterable(instances)
+            + [m.parent for m in markups]
             if isinstance(obj, BudgetAccount)
         ])
         # The returned SubAccount(s) will be those only for which a save is
@@ -438,7 +441,7 @@ class BudgetingManagerMixin:
         """
         commit = kwargs.pop('commit', True)
         subaccounts = set([
-            obj for obj in set_or_list(instances)
+            obj for obj in ensure_iterable(instances)
             if isinstance(obj, self.model.subaccount_cls)
         ])
         # Set of ongoing Account(s) that need to be saved after they are
@@ -452,14 +455,14 @@ class BudgetingManagerMixin:
         # Set of ongoing budgets that still need to be reactualized after the
         # children are reactualized.
         budgets_filtration = set([
-            obj for obj in set_or_list(instances)
+            obj for obj in ensure_iterable(instances)
             if isinstance(obj, self.model.budget_cls)
         ])
 
         # Set of ongoing accounts that still need to be reactualized after the
         # children are reactualized.
         accounts_filtration = set([
-            obj for obj in set_or_list(instances)
+            obj for obj in ensure_iterable(instances)
             if isinstance(obj, self.model.account_cls)
         ])
         # The returned SubAccount(s) will be those only for which a save is
