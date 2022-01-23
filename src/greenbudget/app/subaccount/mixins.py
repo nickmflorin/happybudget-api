@@ -1,7 +1,7 @@
 from django.contrib.contenttypes.models import ContentType
 from django.utils.functional import cached_property
 
-from greenbudget.app.budgeting.mixins import NestedObjectViewMixin
+from greenbudget.app import mixins
 
 from .models import SubAccount
 from .permissions import (
@@ -10,7 +10,7 @@ from .permissions import (
 )
 
 
-class SubAccountNestedMixin(NestedObjectViewMixin):
+class SubAccountNestedMixin(mixins.NestedObjectViewMixin):
     """
     A mixin for views that extend off of an subaccount's detail endpoint.
     """

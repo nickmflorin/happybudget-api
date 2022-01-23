@@ -1,13 +1,13 @@
 from django.contrib.contenttypes.models import ContentType
 from django.utils.functional import cached_property
 
-from greenbudget.app.budgeting.mixins import NestedObjectViewMixin
+from greenbudget.app import mixins
 
 from .models import Budget
 from .permissions import BudgetProductPermission
 
 
-class BudgetNestedMixin(NestedObjectViewMixin):
+class BudgetNestedMixin(mixins.NestedObjectViewMixin):
     """
     A mixin for views that extend off of a budget's detail endpoint.
     """

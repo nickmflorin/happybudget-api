@@ -1,9 +1,9 @@
-from greenbudget.app.budgeting.mixins import NestedObjectViewMixin
+from greenbudget.app import mixins
 
 from .models import Actual
 
 
-class ActualNestedMixin(NestedObjectViewMixin):
+class ActualNestedMixin(mixins.NestedObjectViewMixin):
     """
     A mixin for views that extend off of an account's detail endpoint.
     """
