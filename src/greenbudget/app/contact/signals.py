@@ -13,9 +13,9 @@ def contact_to_save(instance, **kwargs):
 
 @dispatch.receiver(signals.post_save, sender=Contact)
 def contact_saved(instance, **kwargs):
-    user_contacts_cache.invalidate(instance.created_by)
+    user_contacts_cache.invalidate()
 
 
 @dispatch.receiver(signals.pre_delete, sender=Contact)
 def contact_to_delete(instance, **kwargs):
-    user_contacts_cache.invalidate(instance.created_by)
+    user_contacts_cache.invalidate()

@@ -20,7 +20,7 @@ router.register(r'', BudgetViewSet, basename='budget')
 
 budget_fringes_router = routers.NestedSimpleRouter(router, r'', lookup='budget')
 budget_fringes_router.register(
-    r'fringes', BudgetFringeViewSet, basename='fringes')
+    r'fringes', BudgetFringeViewSet, basename='fringe')
 
 budget_actuals_owners_router = routers.NestedSimpleRouter(
     router, r'', lookup='budget')

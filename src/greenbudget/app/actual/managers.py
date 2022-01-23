@@ -1,32 +1,25 @@
 from greenbudget.lib.django_utils.models import generic_fk_instance_change
 
 from greenbudget.app import signals
-from greenbudget.app.budget.cache import budget_actuals_cache
+from greenbudget.app.account.cache import (
+    account_instance_cache, account_subaccounts_cache)
+from greenbudget.app.budget.cache import budget_instance_cache
 from greenbudget.app.budgeting.managers import BudgetingRowManager
+from greenbudget.app.subaccount.cache import (
+    subaccount_instance_cache, subaccount_subaccounts_cache)
 
 
 class ActualManager(BudgetingRowManager):
-    def cleanup(self, instances, **kwargs):
-        super().cleanup(instances)
-        budgets = set([
-            obj.intermittent_budget for obj in instances
-            if obj.intermittent_budget is not None
-        ])
-        # We want to update the Budget's `updated_at` property regardless of
-        # whether or not the Budget was reactualized.
-        for budget in budgets:
-            budget_actuals_cache.invalidate(budget)
-            budget.mark_updated()
-
     @signals.disable()
     def bulk_delete(self, instances):
-        owners = [obj.owner for obj in instances]
+        budgets = set([obj.budget for obj in instances])
+        owners = set([obj.owner for obj in instances])
 
         for obj in instances:
             obj.delete()
 
-        self.cleanup(instances)
-        self.bulk_actualize_all(set(owners))
+        self.mark_budgets_updated(budgets)
+        self.bulk_actualize_all(owners)
 
     @signals.disable()
     def bulk_add(self, instances):
@@ -36,6 +29,8 @@ class ActualManager(BudgetingRowManager):
 
         owners_to_reactualize = set(
             [obj.owner for obj in created if obj.owner is not None])
+
+        self.mark_budgets_updated(created)
         self.bulk_actualize_all(owners_to_reactualize)
         return created
 
@@ -53,6 +48,7 @@ class ActualManager(BudgetingRowManager):
         for obj in instances:
             owners_to_reactualize.update(self.get_owners_to_reactualize(obj))
 
+        self.mark_budgets_updated(instances)
         self.bulk_actualize_all(owners_to_reactualize)
 
     def get_owners_to_reactualize(self, obj):
@@ -75,10 +71,13 @@ class ActualManager(BudgetingRowManager):
                 owners_to_reactualize.add(obj.owner)
         return owners_to_reactualize
 
-    @signals.disable()
-    def reactualize_owner(self, obj, deleting=False):
-        owners_to_reactualize = self.get_owners_to_reactualize(obj)
-        if deleting:
-            owners_to_reactualize = set([obj.owner])
+    def bulk_actualize_all(self, instances, **kwargs):
+        tree = super().bulk_actualize_all(instances, **kwargs)
+        budget_instance_cache.invalidate(tree.budgets)
 
-        self.bulk_actualize_all(owners_to_reactualize)
+        account_instance_cache.invalidate(tree.accounts, ignore_deps=True)
+        account_subaccounts_cache.invalidate(tree.accounts)
+
+        subaccount_instance_cache.invalidate(tree.subaccounts, ignore_deps=True)
+        subaccount_subaccounts_cache.invalidate(tree.subaccounts)
+        return tree

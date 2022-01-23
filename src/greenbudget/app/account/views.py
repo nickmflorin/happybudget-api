@@ -39,7 +39,7 @@ from .serializers import (
 
 
 @views.filter_by_ids
-@account_markups_cache(get_instance_from_view=lambda view: view.account.pk)
+@account_markups_cache
 class AccountMarkupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -73,7 +73,7 @@ class AccountMarkupViewSet(
 
 
 @views.filter_by_ids
-@account_groups_cache(get_instance_from_view=lambda view: view.account.pk)
+@account_groups_cache
 class AccountGroupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -101,7 +101,7 @@ class AccountGroupViewSet(
 
 
 @views.filter_by_ids
-@account_subaccounts_cache(get_instance_from_view=lambda view: view.account.pk)
+@account_subaccounts_cache
 class AccountSubAccountViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -186,7 +186,7 @@ class GenericAccountViewSet(views.GenericViewSet):
         )
     ]
 )
-@account_instance_cache(get_instance_from_view=lambda view: view.instance.pk)
+@account_instance_cache
 class AccountViewSet(
     mixins.UpdateModelMixin,
     mixins.RetrieveModelMixin,

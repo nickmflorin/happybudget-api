@@ -1,9 +1,16 @@
-from greenbudget.lib.utils import concat
+from greenbudget.lib.utils import concat, ensure_iterable
 
 from greenbudget.app import signals
-from greenbudget.app.budget.cache import budget_actuals_owners_cache
+from greenbudget.app.account.cache import account_instance_cache
+from greenbudget.app.budget.cache import (
+    budget_actuals_owners_cache,
+    invalidate_budget_instance_cache,
+    invalidate_budget_accounts_cache
+)
+from greenbudget.app.budgeting.cache import invalidate_markups_cache
 from greenbudget.app.budgeting.managers import BudgetingManager
 from greenbudget.app.budgeting.query import BudgetAncestorQuerier
+from greenbudget.app.subaccount.cache import subaccount_instance_cache
 from greenbudget.app.tabling.query import RowQuerySet
 
 
@@ -14,15 +21,39 @@ class MarkupQuerySet(BudgetAncestorQuerier, RowQuerySet):
 class MarkupManager(BudgetAncestorQuerier, BudgetingManager):
     queryset_class = MarkupQuerySet
 
+    def invalidate_related_caches(self, instances, old_parent=None):
+        instances = ensure_iterable(instances)
+
+        budgets = set([inst.budget for inst in instances])
+        budget_actuals_owners_cache.invalidate([
+            b for b in budgets if b.domain == 'budget'])
+
+        invalidate_budget_instance_cache(budgets, ignore_deps=True)
+        invalidate_budget_accounts_cache(budgets, ignore_deps=True)
+
+        # Invalidate the Markup caches of the parents that contain information
+        # about the Markup.
+        parents = set([obj.parent for obj in instances])
+        if old_parent:
+            parents.add(old_parent)
+        invalidate_markups_cache(parents)
+
+        # A given Account or SubAccount references Markup(s) in their responses.
+        accounts = set(concat([list(obj.accounts.all()) for obj in instances]))
+        account_instance_cache.invalidate(accounts)
+        subaccounts = set(concat([
+            list(obj.subaccounts.all()) for obj in instances]))
+        subaccount_instance_cache.invalidate(subaccounts)
+
     @signals.disable()
-    def pre_delete(self, instances):
-        parents = set([
-            obj.intermittent_parent
-            for obj in instances if obj.intermittent_parent is not None
-        ])
+    def recalculate_associated_instances(self, instances, **kwargs):
+        instances = ensure_iterable(instances)
+
+        self.invalidate_related_caches(instances)
+
         # Actualization does not apply to the Template domain.
         parents_to_reactualize = set([
-            obj for obj in parents
+            obj for obj in [obj.parent for obj in instances]
             if obj.domain == 'budget'
         ])
         # Note: We cannot access instance.children.all() because that will
@@ -32,41 +63,28 @@ class MarkupManager(BudgetAncestorQuerier, BudgetingManager):
             list(obj.accounts.all()) + list(obj.subaccounts.all())
             for obj in instances
         ]) + [
-            obj.intermittent_parent
+            obj.parent
             # If the Markup is of type PERCENT, the contribution is not
             # applicable to the parent estimated values directly.
-            for obj in instances if obj.intermittent_parent is not None
-            and obj.unit == self.model.UNITS.flat
+            for obj in instances if obj.unit == self.model.UNITS.flat
         ])
-        parents = [
-            obj.intermittent_parent
-            # If the Markup is of type PERCENT, the contribution is not
-            # applicable to the parent estimated values directly.
-            for obj in instances if obj.intermittent_parent is not None
-        ]
-        [instance.invalidate_markups_cache() for instance in parents]
 
-        self.bulk_actualize_all(
-            instances=parents_to_reactualize,
-            markups_to_be_deleted=[obj.pk for obj in instances]
-        )
-        self.bulk_estimate_all(
-            instances=objects_to_reestimate,
-            markups_to_be_deleted=[obj.pk for obj in instances]
-        )
-
-    def cleanup(self, instances, **kwargs):
-        super().cleanup(instances)
-        budgets = set([inst.intermittent_budget for inst in instances])
-        # We want to update the Budget's `updated_at` property regardless of
-        # whether or not the Budget was recalculated.
-        for budget in [b for b in budgets if b is not None]:
-            budget.mark_updated()
-            budget_actuals_owners_cache.invalidate(budget)
+        tree = self.bulk_actualize_all(parents_to_reactualize, **kwargs)
+        estimated_tree = self.bulk_estimate_all(objects_to_reestimate, **kwargs)
+        tree.merge(estimated_tree)
+        # The instances in the tree that were reactualized or reestimated will
+        # already have their caches invalidated due to the previous method.
+        return tree
 
     @signals.disable()
     def bulk_delete(self, instances, strict=True):
-        self.pre_delete(instances)
+        budgets = set([inst.budget for inst in instances])
+        budget_actuals_owners_cache.invalidate([
+            b for b in budgets if b.domain == 'budget'])
+        self.recalculate_associated_instances(
+            instances,
+            markups_to_be_deleted=[obj.pk for obj in instances],
+        )
         for obj in instances:
             # We have to be concerned with race conditions here.
             try:
@@ -74,20 +92,3 @@ class MarkupManager(BudgetAncestorQuerier, BudgetingManager):
             except self.model.DoesNotExist as e:
                 if strict:
                     raise e
-        self.cleanup(instances)
-
-    @signals.disable()
-    def reestimate_parent(self, obj):
-        parents_to_reestimate = obj.get_parents_to_reestimate()
-        self.bulk_estimate_all(parents_to_reestimate)
-
-    @signals.disable()
-    def reestimate_children(self, obj):
-        children_to_reestimate = obj.get_children_to_reestimate()
-        self.bulk_estimate_all(children_to_reestimate)
-
-    @signals.disable()
-    def reestimate_associated(self, obj):
-        to_reestimate = obj.get_parents_to_reestimate()
-        to_reestimate.update(obj.get_children_to_reestimate())
-        self.bulk_estimate_all(to_reestimate)

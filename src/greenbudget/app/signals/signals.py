@@ -24,11 +24,8 @@ def any_fields_changed_signal(fields, **kwargs):
         changed_fields = [change.field for change in kw['changes']]
         if any([f in changed_fields for f in fields]):
             if isinstance(instance, kwargs['sender']):
-                temp_signal.send(
-                    instance=instance,
-                    **kw
-                )
-    fields_changed.connect(field_receiver, weak=False, **kwargs)
+                temp_signal.send(instance=instance, **kw)
+    fields_changed.connect(field_receiver, **kwargs)
     return temp_signal
 
 
@@ -45,5 +42,5 @@ def field_changed_signal(field, **kwargs):
                 **kw
             )
 
-    field_changed.connect(field_receiver, weak=False, **kwargs)
+    field_changed.connect(field_receiver, **kwargs)
     return temp_signal

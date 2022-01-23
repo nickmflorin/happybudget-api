@@ -171,6 +171,7 @@ MIDDLEWARE = [
     'greenbudget.app.authentication.middleware.BillingTokenCookieMiddleware',
     'greenbudget.app.authentication.middleware.AuthTokenCookieMiddleware',
     'greenbudget.app.signals.middleware.ModelSignalMiddleware',
+    'greenbudget.app.middleware.CacheUserMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',

@@ -45,7 +45,7 @@ from .serializers import (
 
 
 @views.filter_by_ids
-@budget_markups_cache(get_instance_from_view=lambda view: view.budget.pk)
+@budget_markups_cache
 class BudgetMarkupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -76,7 +76,7 @@ class BudgetMarkupViewSet(
 
 
 @views.filter_by_ids
-@budget_groups_cache(get_instance_from_view=lambda view: view.budget.pk)
+@budget_groups_cache
 class BudgetGroupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -110,7 +110,7 @@ class BudgetGroupViewSet(
 
 
 @views.filter_by_ids
-@budget_actuals_cache(get_instance_from_view=lambda view: view.budget.pk)
+@budget_actuals_cache
 class BudgetActualsViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
@@ -139,8 +139,7 @@ class BudgetActualsViewSet(
         return Actual.objects.filter(budget=self.budget)
 
 
-@budget_actuals_owners_cache(
-    get_instance_from_view=lambda view: view.budget.pk)
+@budget_actuals_owners_cache
 class BudgetActualsOwnersViewSet(
     mixins.ListModelMixin,
     BudgetNestedMixin,
@@ -178,7 +177,7 @@ class BudgetActualsOwnersViewSet(
 
 
 @views.filter_by_ids
-@budget_fringes_cache(get_instance_from_view=lambda view: view.budget.pk)
+@budget_fringes_cache
 class BudgetFringeViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -205,7 +204,7 @@ class BudgetFringeViewSet(
 
 
 @views.filter_by_ids
-@budget_accounts_cache(get_instance_from_view=lambda view: view.budget.pk)
+@budget_accounts_cache
 class BudgetAccountViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -297,7 +296,7 @@ class GenericBudgetViewSet(views.GenericViewSet):
         )
     ]
 )
-@budget_instance_cache(get_instance_from_view=lambda view: view.instance.pk)
+@budget_instance_cache
 class BudgetViewSet(
     mixins.CreateModelMixin,
     mixins.UpdateModelMixin,

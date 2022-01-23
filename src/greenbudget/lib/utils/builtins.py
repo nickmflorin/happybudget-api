@@ -2,6 +2,31 @@ import importlib
 import six
 
 
+class empty:
+    """
+    This class is used to represent no data being provided for a given input
+    or output value.
+    It is required because `None` may be a valid input or output value.
+    """
+    pass
+
+
+def humanize_list(value, callback=six.text_type, conjunction='and',
+        oxford_comma=True):
+    """
+    Turns an interable list into a human readable string.
+    """
+    num = len(value)
+    if num == 0:
+        return ""
+    elif num == 1:
+        return callback(value[0])
+    s = u", ".join(map(callback, value[:num - 1]))
+    if len(value) >= 3 and oxford_comma is True:
+        s += ","
+    return "%s %s %s" % (s, conjunction, callback(value[num - 1]))
+
+
 def get_nested_attribute(obj, attr):
     if '.' in attr:
         parts = attr.split('.')
@@ -31,22 +56,6 @@ def get_string_formatted_kwargs(value):
             if current_formatted_kwarg is not None:
                 current_formatted_kwarg = current_formatted_kwarg + char
     return formatted_kwargs
-
-
-def humanize_list(value, callback=six.text_type, conjunction='and',
-        oxford_comma=True):
-    """
-    Turns an interable list into a human readable string.
-    """
-    num = len(value)
-    if num == 0:
-        return ""
-    elif num == 1:
-        return callback(value[0])
-    s = u", ".join(map(callback, value[:num - 1]))
-    if len(value) >= 3 and oxford_comma is True:
-        s += ","
-    return "%s %s %s" % (s, conjunction, callback(value[num - 1]))
 
 
 def conditionally_separate_strings(strings, separator=" "):

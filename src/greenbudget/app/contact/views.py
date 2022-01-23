@@ -66,7 +66,7 @@ class ContactSearchFilterBackend(filters.SearchFilter):
         return super().filter_queryset(request, qs, view)
 
 
-@user_contacts_cache(get_instance_from_view=lambda view: view.request.user.pk)
+@user_contacts_cache
 class ContactViewSet(
     mixins.UpdateModelMixin,
     mixins.RetrieveModelMixin,

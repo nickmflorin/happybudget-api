@@ -53,7 +53,7 @@ class SubAccountUnitViewSet(
 
 
 @views.filter_by_ids
-@subaccount_markups_cache(get_instance_from_view=lambda view: view.subaccount.pk)
+@subaccount_markups_cache
 class SubAccountMarkupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -81,7 +81,7 @@ class SubAccountMarkupViewSet(
 
 
 @views.filter_by_ids
-@subaccount_groups_cache(get_instance_from_view=lambda view: view.subaccount.pk)
+@subaccount_groups_cache
 class SubAccountGroupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -209,7 +209,7 @@ class GenericSubAccountViewSet(views.GenericViewSet):
         )
     ]
 )
-@subaccount_instance_cache(get_instance_from_view=lambda view: view.instance.pk)
+@subaccount_instance_cache
 class SubAccountViewSet(
     mixins.UpdateModelMixin,
     mixins.RetrieveModelMixin,
@@ -258,8 +258,7 @@ class SubAccountViewSet(
 
 
 @views.filter_by_ids
-@subaccount_subaccounts_cache(
-    get_instance_from_view=lambda view: view.subaccount.pk)
+@subaccount_subaccounts_cache
 class SubAccountRecursiveViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,

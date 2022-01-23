@@ -1,6 +1,5 @@
 from model_utils import Choices
 
-from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 
 from greenbudget.app import signals
@@ -64,14 +63,6 @@ class Fringe(BudgetingRowModel):
         if self.unit is None:
             return ""
         return self.UNITS[self.unit]
-
-    @property
-    def intermittent_budget(self):
-        try:
-            self.budget.refresh_from_db()
-        except (ObjectDoesNotExist, AttributeError):
-            return None
-        return self.budget
 
 
 class BudgetFringe(Fringe):

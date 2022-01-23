@@ -1,3 +1,4 @@
+import copy
 import datetime
 import functools
 import logging
@@ -7,19 +8,11 @@ from django.db import models
 
 from greenbudget.app import signals
 from greenbudget.app.budgeting.models import (
-    BudgetingTreePolymorphicModel, AssociatedModel)
+    BudgetingTreePolymorphicModel, AssociatedModel, children_method_handler)
 from greenbudget.app.group.models import Group
 from greenbudget.app.markup.models import Markup
 from greenbudget.app.io.utils import upload_user_image_to
 
-from .cache import (
-    budget_markups_cache,
-    budget_instance_cache,
-    budget_accounts_cache,
-    budget_groups_cache,
-    budget_fringes_cache,
-    budget_actuals_cache
-)
 from .managers import BudgetManager, BaseBudgetManager
 
 
@@ -69,15 +62,6 @@ class BaseBudget(BudgetingTreePolymorphicModel):
     objects = BaseBudgetManager()
     non_polymorphic = models.Manager()
 
-    CACHES = [
-        budget_instance_cache,
-        budget_markups_cache,
-        budget_groups_cache,
-        budget_fringes_cache,
-        budget_actuals_cache,
-        budget_accounts_cache
-    ]
-
     class Meta:
         get_latest_by = "updated_at"
         ordering = ('-updated_at', )
@@ -107,8 +91,8 @@ class BaseBudget(BudgetingTreePolymorphicModel):
         )
         self.save(update_fields=['updated_at'])
 
-    def accumulate_value(self, children=None):
-        children = children or self.children.all()
+    @children_method_handler
+    def accumulate_value(self, children):
         previous_value = self.accumulated_value
         self.accumulated_value = functools.reduce(
             lambda current, account: current + account.nominal_value,
@@ -117,12 +101,11 @@ class BaseBudget(BudgetingTreePolymorphicModel):
         )
         return previous_value != self.accumulated_value
 
-    def accumulate_markup_contribution(self, children=None, to_be_deleted=None):
-        children = children or self.children.all()
+    @children_method_handler
+    def accumulate_markup_contribution(self, children, to_be_deleted=None):
         markups = self.children_markups.filter(unit=Markup.UNITS.flat).exclude(
             pk__in=to_be_deleted or [],
         )
-
         previous_value = self.accumulated_markup_contribution
         self.accumulated_markup_contribution = functools.reduce(
             lambda current, account: current + account.markup_contribution
@@ -136,8 +119,8 @@ class BaseBudget(BudgetingTreePolymorphicModel):
         )
         return self.accumulated_markup_contribution != previous_value
 
-    def accumulate_fringe_contribution(self, children=None):
-        children = children or self.children.all()
+    @children_method_handler
+    def accumulate_fringe_contribution(self, children):
         previous_value = self.accumulated_fringe_contribution
         self.accumulated_fringe_contribution = functools.reduce(
             lambda current, account: current
@@ -147,14 +130,13 @@ class BaseBudget(BudgetingTreePolymorphicModel):
         )
         return self.accumulated_fringe_contribution != previous_value
 
-    def estimate(self, **kwargs):
-        children, kwargs = self.children_from_kwargs(**kwargs)
-
+    @children_method_handler
+    def estimate(self, children, **kwargs):
         alterations = [
-            self.accumulate_value(children=children),
-            self.accumulate_fringe_contribution(children=children),
+            self.accumulate_value(children),
+            self.accumulate_fringe_contribution(children),
             self.accumulate_markup_contribution(
-                children=children,
+                children,
                 to_be_deleted=kwargs.get('markups_to_be_deleted', [])
             )
         ]
@@ -163,11 +145,12 @@ class BaseBudget(BudgetingTreePolymorphicModel):
                 "Updating %s %s -> Accumulated Value: %s"
                 % (type(self).__name__, self.pk, self.accumulated_value)
             )
-            self.save(update_fields=self.reestimated_fields)
+            self.save()
         return any(alterations)
 
-    def calculate(self, **kwargs):
-        return self.estimate(**kwargs)
+    @children_method_handler
+    def calculate(self, children, **kwargs):
+        return self.estimate(children, **kwargs)
 
 
 @signals.model()
@@ -199,8 +182,8 @@ class Budget(BaseBudget):
             "Cannot access property for budgets that were just deleted."
         return first_created.id == self.id
 
-    def actualize(self, **kwargs):
-        children, kwargs = self.children_from_kwargs(**kwargs)
+    @children_method_handler
+    def actualize(self, children, **kwargs):
         markups_to_be_deleted = kwargs.get('markups_to_be_deleted', []) or []
 
         previous_value = self.actual
@@ -221,24 +204,20 @@ class Budget(BaseBudget):
             self.save(update_fields=['actual'])
         return previous_value != self.actual
 
-    def calculate(self, **kwargs):
-        children, kwargs = self.children_from_kwargs(**kwargs)
+    @children_method_handler
+    def calculate(self, children, **kwargs):
         commit = kwargs.pop('commit', False)
+
+        alteration_kwargs = copy.deepcopy(kwargs)
+        alteration_kwargs.update(
+            trickle=False,
+            commit=False,
+            children=children
+        )
         alterations = [
-            super().calculate(
-                children=children,
-                trickle=False,
-                commit=False,
-                **kwargs
-            ),
-            self.actualize(
-                children=children,
-                trickle=False,
-                commit=False,
-                **kwargs
-            )
+            super().calculate(**alteration_kwargs),
+            self.actualize(**alteration_kwargs)
         ]
         if any(alterations) and commit:
-            self.save(
-                update_fields=tuple(self.reestimated_fields) + ('actual', ))
+            self.save()
         return any(alterations)

@@ -1,3 +1,5 @@
+import collections
+
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Case, Q, When, Value as V, BooleanField
 
@@ -6,7 +8,10 @@ from greenbudget.lib.utils import concat, ensure_iterable
 from greenbudget.app import signals
 from greenbudget.app.budget.cache import budget_actuals_owners_cache
 from greenbudget.app.budgeting.managers import BudgetingPolymorphicRowManager
+from greenbudget.app.budgeting.models import BudgetTree
 from greenbudget.app.tabling.query import RowQuerier, RowPolymorphicQuerySet
+
+from .cache import subaccount_instance_cache, invalidate_parent_instance_cache
 
 
 class SubAccountQuerier(RowQuerier):
@@ -75,22 +80,53 @@ class SubAccountQuerySet(SubAccountQuerier, RowPolymorphicQuerySet):
 class SubAccountManager(SubAccountQuerier, BudgetingPolymorphicRowManager):
     queryset_class = SubAccountQuerySet
 
-    def cleanup(self, instances, mark_budgets=True):
-        super().cleanup(instances)
-        budgets = set([inst.budget for inst in instances])
-        if mark_budgets:
-            self.mark_budgets_updated(instances)
-        budget_actuals_owners_cache.invalidate(budgets)
+    def bulk_update(self, instances, fields, **kwargs):
+        """
+        Due to the recursive nature of a :obj:`SubAccount`, in the sense that
+        the :obj:`SubAccount` can be a parent of another :obj:`SubAccount`, if
+        we bulk update a series of :obj:`SubAccount`(s) where given instances
+        are referential to other instances in the series, we will run into
+        database transaction locks with the self-referential Foreign Keys.
+
+        To avoid this, we have to update the :obj:`SubAccount`(s) one level
+        at a time - starting from the bottom of the tree and working its way
+        upwards.
+        """
+        updated = 0
+        for _, subaccounts in self.group_by_nested_level(instances):
+            updated += super().bulk_update(subaccounts, fields, **kwargs)
+        return updated
+
+    def group_by_nested_level(self, instances, reverse=True):
+        """
+        Groups the provided :obj:`SubAccount`(s) by the level they exist at
+        in the budget ancestry tree.
+
+        Instances of :obj:`SubAccount`(s) are self-referential, meaning that
+        they can have parent/child relationships with the same model.  When
+        updating entities in the budget ancestry tree, we need to treat each
+        :obj:`SubAccount` level of the tree in isolation.
+        """
+        grouped = collections.defaultdict(list)
+        for instance in ensure_iterable(instances, cast=set):
+            grouped[instance.nested_level].append(instance)
+        return sorted(
+            list(grouped.items()), key=lambda tup: tup[0], reverse=reverse)
 
     @signals.disable()
     def bulk_delete(self, instances):
         groups = [obj.group for obj in instances if obj.group is not None]
+        budgets = set([inst.budget for inst in instances])
+
+        # We must invalidate the caches before the delete is performed so
+        # we still have access to the PKs.
+        subaccount_instance_cache.invalidate(instances)
+        budget_actuals_owners_cache.invalidate(budgets)
 
         for obj in instances:
             obj.delete()
 
-        self.cleanup(instances)
-
+        self.mark_budgets_updated(budgets)
         self.bulk_calculate_all([obj.parent for obj in instances])
         self.bulk_delete_empty_groups(groups)
 
@@ -99,32 +135,34 @@ class SubAccountManager(SubAccountQuerier, BudgetingPolymorphicRowManager):
         # It is important to perform the bulk create first, because we need
         # the primary keys for the instances to be hashable.
         created = self.bulk_create(instances, return_created_objects=True)
+        self.mark_budgets_updated(created)
+        budget_actuals_owners_cache.invalidate(created)
+
+        parents = set([p.parent for p in created])
+        invalidate_parent_instance_cache(parents)
         self.bulk_calculate(created)
         return created
 
     @signals.disable()
     def bulk_save(self, instances, update_fields):
-        calculated, accounts, budgets = self.bulk_calculate(
-            instances, commit=False)
-        instances = calculated.union(instances)
+        instances = ensure_iterable(instances)
+
+        tree = self.bulk_calculate(instances, commit=False)
+        instances = tree.subaccounts.union(instances)
+        subaccount_instance_cache.invalidate(instances)
+
         groups = [obj.group for obj in instances if obj.group is not None]
 
-        for obj in ensure_iterable(instances):
-            if obj.children.count() != 0:
-                obj.clear_deriving_fields(commit=False)
+        for obj in [i for i in instances if i.children.count() != 0]:
+            obj.clear_deriving_fields(commit=False)
 
         self.bulk_update(
             instances,
-            tuple(self.model.CALCULATED_FIELDS) + tuple(update_fields),
-            mark_budgets=False
+            tuple(self.model.CALCULATED_FIELDS) + tuple(update_fields)
         )
-        self.model.account_cls.objects.bulk_update_post_calculation(
-            accounts,
-            mark_budgets=False
-        )
-        self.model.budget_cls.objects.bulk_update_post_calculation(
-            budgets
-        )
+        self.model.account_cls.objects.bulk_update_post_calc(tree.accounts)
+        self.model.budget_cls.objects.bulk_update_post_calc(tree.budgets)
+
         self.bulk_delete_empty_groups(groups)
         self.mark_budgets_updated(instances)
 
@@ -132,116 +170,116 @@ class SubAccountManager(SubAccountQuerier, BudgetingPolymorphicRowManager):
     def bulk_calculate(self, *args, **kwargs):
         return self.bulk_estimate(*args, **kwargs)
 
+    def _subaccounts_recursion(self, tree, method_name, **kwargs):
+        extra_conditional = kwargs.pop('extra_conditional', None)
+        pass_up_kwargs = dict(**kwargs, **{'commit': False, 'trickle': False})
+
+        def recursion(subaccounts, unsaved=None):
+            unsaved = unsaved or {}
+            # Since SubAccount(s) can be self-referential, and children affect
+            # the parents, we need to incrementally work our way up from the
+            # lowest level of SubAccount(s) to the highest level of
+            # SubAccount(s).
+            for _, subs_at_level in self.group_by_nested_level(subaccounts):
+                altered_subaccounts = []
+                for obj in subs_at_level:
+                    altered = getattr(obj, method_name)(
+                        unsaved_children=unsaved.get(obj.pk),
+                        **pass_up_kwargs
+                    )
+                    conditional = altered
+                    if extra_conditional:
+                        conditional = conditional or extra_conditional(obj)
+
+                    if conditional or obj.was_just_added():
+                        tree.add(obj.parent)
+
+                        if conditional:
+                            altered_subaccounts.append(obj)
+
+                        # This is why this method has to be recursive - when
+                        # reestimating the SubAccount(s) at a given level, it
+                        # might lead to the requirement to reestimate a parent
+                        # SubAccount at the next level up.
+                        if isinstance(obj.parent, self.model):
+                            subaccounts.add(obj.parent)
+
+                # Add the altered SubAccount(s) to the tree of objects that have
+                # to be saved after the routine.
+                tree.add(altered_subaccounts)
+                # Remove the SubAccount(s) we just itereated through from the
+                # filtration so we do not iterate through them in the next
+                # recursion.
+                subaccounts = subaccounts.difference(set(subs_at_level))
+                # Update the unsaved children for either the next level up of
+                # the SubAccount recursion or the Account level if we reached
+                # the highest SubAccount level in the tree.
+                unsaved_children = self.group_by_parents(altered_subaccounts)
+
+            return subaccounts, unsaved_children
+        return recursion
+
+    def perform_bulk_routine(self, instances, method_name, **kwargs):
+        instances = ensure_iterable(instances)
+        unsaved = kwargs.pop('unsaved_children', {}) or {}
+        extra_conditional = kwargs.pop('extra_conditional', None)
+
+        tree = BudgetTree()
+
+        pass_up_kwargs = dict(**kwargs, **{'commit': False, 'trickle': False})
+        recursive_method = self._subaccounts_recursion(
+            tree,
+            method_name,
+            extra_conditional=extra_conditional,
+            **kwargs
+        )
+        # Continue to work our way up the SubAccount levels of the budget
+        # ancestry tree until we reach the Account level - at which point the
+        # filtration will be empty.
+        filtration = set(instances)
+        while filtration:
+            filtration, unsaved = recursive_method(filtration, unsaved=unsaved)
+
+        altered_accounts = []
+        for obj in tree.accounts:
+            altered = getattr(obj, method_name)(
+                unsaved_children=unsaved.get(obj.pk),
+                **pass_up_kwargs
+            )
+            if altered or obj.was_just_added():
+                altered_accounts.append(obj)
+                tree.add(obj.parent)
+
+        tree.add(altered_accounts)
+        unsaved = self.group_by_parents(altered_accounts)
+
+        for obj in tree.budgets:
+            altered = getattr(obj, method_name)(
+                unsaved_children=unsaved.get(obj.pk),
+                **pass_up_kwargs
+            )
+            if altered:
+                tree.add(obj)
+        return tree
+
     @signals.disable()
     def bulk_estimate(self, instances, **kwargs):
+        instances = ensure_iterable(instances)
         commit = kwargs.pop('commit', True)
-        unsaved_children = kwargs.pop('unsaved_children', {}) or {}
-
-        instances_to_save = set([])
-
-        accounts_to_reestimate = {}
-        subaccounts_to_reestimate = {}
-
-        for obj in instances:
-            assert isinstance(obj, self.model)
-            altered = obj.estimate(
-                commit=False,
-                trickle=False,
-                # We need to include the unsaved children in the estimation
-                # method so the method accounts for them in the estimation of
-                # the parent.
-                unsaved_children=unsaved_children.get(obj.pk),
-                **kwargs
-            )
-            if altered or obj.raw_value_changed:
-                instances_to_save.add(obj)
+        tree = self.perform_bulk_routine(
+            instances=instances,
+            method_name='estimate',
             # The raw_value of the SubAccount is not calculated in the estimate
             # method, but does affect the nominal_value and will affect the
-            # estimated values of parents - so we have to check if that changed
-            # as well.
-            if (altered or obj.raw_value_changed or obj.was_just_added()) \
-                    and obj.parent is not None:
-                assert isinstance(
-                    obj.parent, (self.model.account_cls, self.model))
-                # A SubAccount can have either a SubAccount or an Account as
-                # it's parent.
-                object_store = subaccounts_to_reestimate
-                if isinstance(obj.parent, self.model.account_cls):
-                    object_store = accounts_to_reestimate
-                object_store.setdefault(obj.parent.pk, {
-                    'instance': obj.parent,
-                    'unsaved': set()
-                })
-                object_store[obj.parent.pk]['unsaved'].add(obj)
-
-        budgets_to_reestimate = {}
-        accounts = set([])
-        for _, v in accounts_to_reestimate.items():
-            obj = v['instance']
-            altered = obj.estimate(
-                commit=False,
-                trickle=False,
-                # We need to include the unsaved children in the estimation
-                # method so the method accounts for them in the estimation of
-                # the parent.
-                unsaved_children=v['unsaved'],
-                **kwargs
-            )
-            if altered:
-                accounts.add(obj)
-            # If the Account was altered during the estimation or the Account
-            # was just added, the Account's parent (a Budget or Template) must
-            # also be reestimated.  Note that `obj.parent is None` is an edge
-            # case that can happen during CASCADE deletes.
-            if (altered or obj.was_just_added()) and obj.parent is not None:
-                budgets_to_reestimate.setdefault(obj.parent.pk, {
-                    'instance': obj.parent,
-                    'unsaved': set()
-                })
-                budgets_to_reestimate[obj.parent.pk]['unsaved'].add(obj)
-
-        budgets = set([])
-        for _, v in budgets_to_reestimate.items():
-            obj = v['instance']
-            altered = obj.estimate(
-                commit=False,
-                # We need to include the unsaved children in the estimation
-                # method so the method accounts for them in the estimation of
-                # the parent.
-                unsaved_children=v['unsaved'],
-                **kwargs
-            )
-            if altered:
-                budgets.add(obj)
-
-        if subaccounts_to_reestimate:
-            s, a, b = self.bulk_estimate(
-                instances=[
-                    v['instance']
-                    for _, v in subaccounts_to_reestimate.items()
-                ],
-                commit=False,
-                # We need to include the unsaved children in the estimation
-                # method so the method accounts for them in the estimation of
-                # the parent.
-                unsaved_children={
-                    v['instance'].pk: v['unsaved']
-                    for _, v in subaccounts_to_reestimate.items()
-                },
-                **kwargs
-            )
-            instances_to_save = instances_to_save.union(s)
-            accounts = accounts.union(a)
-            budgets = budgets.union(b)
-
+            # estimated values of parents.
+            extra_conditional=lambda obj: obj.raw_value_changed,
+            **kwargs
+        )
         if commit:
-            self.bulk_update_post_estimation(instances_to_save)
-            self.model.account_cls.objects.bulk_update_post_estimation(
-                accounts)
-            self.model.budget_cls.objects.bulk_update_post_estimation(budgets)
-            return instances_to_save, accounts, budgets
-
-        return instances_to_save, accounts, budgets
+            self.bulk_update_post_est(tree.subaccounts)
+            self.model.account_cls.objects.bulk_update_post_est(tree.accounts)
+            self.model.budget_cls.objects.bulk_update_post_est(tree.budgets)
+        return tree
 
 
 class TemplateSubAccountManager(SubAccountManager):
@@ -254,134 +292,27 @@ class BudgetSubAccountManager(SubAccountManager):
     def bulk_calculate(self, instances, **kwargs):
         commit = kwargs.pop('commit', True)
 
-        subaccounts, accounts, budgets = super().bulk_calculate(
-            instances=instances,
-            commit=False,
-            **kwargs
-        )
-        actualized, accts, bgts = self.bulk_actualize(
-            instances=instances,
-            commit=False,
-            **kwargs
-        )
-        subaccounts = subaccounts.union(actualized)
-        accounts = accounts.union(accts)
-        budgets = budgets.union(bgts)
+        tree = super().bulk_calculate(instances, commit=False, **kwargs)
+        actualized_tree = self.bulk_actualize(instances, commit=False, **kwargs)
+        tree.merge(actualized_tree)
 
         if commit:
-            self.bulk_update_post_calculation(subaccounts)
-            self.model.account_cls.objects.bulk_update_post_calculation(
-                accounts)
-            self.model.budget_cls.objects.bulk_update_post_calculation(
-                budgets)
-        return subaccounts, accounts, budgets
+            self.bulk_update_post_calc(tree.subaccounts)
+            self.model.account_cls.objects.bulk_update_post_calc(tree.accounts)
+            self.model.budget_cls.objects.bulk_update_post_calc(tree.budgets)
+        return tree
 
     @signals.disable()
     def bulk_actualize(self, instances, **kwargs):
+        instances = ensure_iterable(instances)
         commit = kwargs.pop('commit', True)
-        unsaved_children = kwargs.pop('unsaved_children', {}) or {}
-
-        instances_to_save = set([])
-
-        accounts_to_reactualize = {}
-        subaccounts_to_reactualize = {}
-
-        for obj in instances:
-            assert isinstance(obj, self.model)
-            altered = obj.actualize(
-                commit=False,
-                trickle=False,
-                # We need to include the unsaved children in the actualization
-                # method so the method accounts for them in the actualization of
-                # the parent.
-                unsaved_children=unsaved_children.get(obj.pk),
-                **kwargs
-            )
-            if altered:
-                instances_to_save.add(obj)
-            # If the SubAccount was altered during the actualization or the
-            # SubAccount was just added, the SubAccount's parent (a SubAccount
-            # or Account) must also be reactualized.  Note that `obj.parent is
-            # None` is an edge case that can happen during CASCADE deletes.
-            if (altered or obj.was_just_added()) and obj.parent is not None:
-                assert isinstance(obj.parent, (
-                    self.model.account_cls, self.model))
-                # A SubAccount can have either a SubAccount or an Account as
-                # it's parent.
-                object_store = subaccounts_to_reactualize
-                if isinstance(obj.parent, self.model.account_cls):
-                    object_store = accounts_to_reactualize
-                object_store.setdefault(obj.parent.pk, {
-                    'instance': obj.parent,
-                    'unsaved': set()
-                })
-                object_store[obj.parent.pk]['unsaved'].add(obj)
-
-        budgets_to_reactualize = {}
-        accounts = set([])
-        for _, v in accounts_to_reactualize.items():
-            obj = v['instance']
-            altered = obj.actualize(
-                commit=False,
-                trickle=False,
-                # We need to include the unsaved children in the actualization
-                # method so the method accounts for them in the actualization of
-                # the parent.
-                unsaved_children=v['unsaved'],
-                **kwargs
-            )
-            if altered:
-                accounts.add(obj)
-            # If the Account was altered during the actualization or the Account
-            # was just added, the Account's parent (a Budget or Template) must
-            # also be reactualized.  Note that `obj.parent is None` is an edge
-            # case that can happen during CASCADE deletes.
-            if (altered or obj.was_just_added()) and obj.parent is not None:
-                budgets_to_reactualize.setdefault(obj.parent.pk, {
-                    'instance': obj.parent,
-                    'unsaved': set()
-                })
-                budgets_to_reactualize[obj.parent.pk]['unsaved'].add(obj)
-
-        budgets = set([])
-        for _, v in budgets_to_reactualize.items():
-            obj = v['instance']
-            altered = obj.actualize(
-                commit=False,
-                # We need to include the unsaved children in the actualization
-                # method so the method accounts for them in the actualization of
-                # the parent.
-                unsaved_children=v['unsaved'],
-                **kwargs
-            )
-            if altered:
-                budgets.add(obj)
-
-        if subaccounts_to_reactualize:
-            s, a, b = self.bulk_actualize(
-                instances=[
-                    v['instance']
-                    for _, v in subaccounts_to_reactualize.items()
-                ],
-                commit=False,
-                # We need to include the unsaved children in the actualization
-                # method so the method accounts for them in the actualization of
-                # the parent.
-                unsaved_children={
-                    v['instance'].pk: v['unsaved']
-                    for _, v in subaccounts_to_reactualize.items()
-                },
-                **kwargs
-            )
-            instances_to_save = instances_to_save.union(s)
-            accounts = accounts.union(a)
-            budgets = budgets.union(b)
-
+        tree = self.perform_bulk_routine(
+            instances=instances,
+            method_name='actualize',
+            **kwargs
+        )
         if commit:
-            self.bulk_update_post_actualization(instances_to_save)
-            self.model.account_cls.objects.bulk_update_post_actualization(
-                accounts)
-            self.model.budget_cls.objects.bulk_update_post_actualization(
-                budgets)
-
-        return instances_to_save, accounts, budgets
+            self.bulk_update_post_act(tree.subaccounts)
+            self.model.account_cls.objects.bulk_update_post_act(tree.accounts)
+            self.model.budget_cls.objects.bulk_update_post_act(tree.budgets)
+        return tree

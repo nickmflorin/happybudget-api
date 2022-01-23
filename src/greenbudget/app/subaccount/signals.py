@@ -1,14 +1,41 @@
 from django import dispatch
+from django.db import IntegrityError
 
 from greenbudget.lib.django_utils.models import generic_fk_instance_change
 
 from greenbudget.app import signals
 from greenbudget.app.account.models import Account
 from greenbudget.app.budget.cache import budget_actuals_owners_cache
+from greenbudget.app.fringe.models import Fringe
 
-from .cache import subaccount_units_cache
+from .cache import subaccount_units_cache, subaccount_instance_cache
 from .models import (
     SubAccount, BudgetSubAccount, TemplateSubAccount, SubAccountUnit)
+
+
+@dispatch.receiver(signals.m2m_changed, sender=SubAccount.fringes.through)
+def validate_fringes(instance, reverse, **kwargs):
+    if kwargs['action'] == 'pre_add':
+        if reverse:
+            subaccounts = SubAccount.objects.filter(pk__in=kwargs['pk_set'])
+            for subaccount in subaccounts:
+                if subaccount.budget != instance.budget:
+                    raise IntegrityError(
+                        "The fringes that belong to a sub-account must belong "
+                        "to the same budget as that sub-account."
+                    )
+        else:
+            fringes = (Fringe.objects
+                .filter(pk__in=kwargs['pk_set'])
+                .prefetch_related('budget')
+                .only('budget')
+                .all())
+            for fringe in fringes:
+                if fringe.budget != instance.budget:
+                    raise IntegrityError(
+                        "The fringes that belong to a sub-account must belong "
+                        "to the same budget as that sub-account."
+                    )
 
 
 @dispatch.receiver(
@@ -19,13 +46,13 @@ from .models import (
     signal=signals.m2m_changed,
     sender=TemplateSubAccount.fringes.through
 )
-def invalidate_caches_on_fringe_changes(instance, action, reverse, **kwargs):
+def fringes_changed(instance, action, reverse, model, pk_set, **kwargs):
     if action in ('post_add', 'post_remove'):
         instances = [instance]
         if reverse:
             instances = kwargs['model'].objects.filter(pk__in=kwargs['pk_set'])
-        for instance in instances:
-            instance.invalidate_caches(entities=["detail"])
+        subaccount_instance_cache.invalidate(instances)
+        SubAccount.objects.bulk_estimate(instances)
 
 
 @dispatch.receiver(
@@ -41,12 +68,12 @@ def invalidate_caches_on_markup_changes(instance, action, reverse, **kwargs):
         instances = [instance]
         if reverse:
             instances = kwargs['model'].objects.filter(pk__in=kwargs['pk_set'])
-        for instance in instances:
-            instance.invalidate_caches(entities=["detail"])
 
-        budgets = set([instance.budget for instance in instances])
-        budgets = [b for b in budgets if b.domain == 'budget']
-        budget_actuals_owners_cache.invalidate(budgets)
+        subaccount_instance_cache.invalidate(instances)
+        budget_actuals_owners_cache.invalidate([
+            b for b in set([instance.budget for instance in instances])
+            if b.domain == 'budget'
+        ])
 
 
 @dispatch.receiver(signals.post_save, sender=BudgetSubAccount)
@@ -77,8 +104,7 @@ def subaccount_saved(instance, **kwargs):
         instances_to_recalculate.extend([old_parent, new_parent])
         instances_to_reestimate = []
 
-    instance.invalidate_caches(["detail"])
-    instance.parent.invalidate_caches(["detail", "children"])
+    subaccount_instance_cache.invalidate(instance)
     if instance.domain == 'budget':
         budget_actuals_owners_cache.invalidate(instance.budget)
 
@@ -92,21 +118,16 @@ def subaccount_saved(instance, **kwargs):
 
 
 @dispatch.receiver(signals.pre_delete, sender=BudgetSubAccount)
+@dispatch.receiver(signals.pre_delete, sender=TemplateSubAccount)
 def subaccount_to_delete(instance, **kwargs):
-    budget_actuals_owners_cache.invalidate(instance.budget)
-
-
-@dispatch.receiver(signals.post_delete, sender=BudgetSubAccount)
-@dispatch.receiver(signals.post_delete, sender=TemplateSubAccount)
-def subaccount_deleted(instance, **kwargs):
-    instance.invalidate_caches(["detail"])
-
-    if instance.intermittent_parent is not None:
-        instance.intermittent_parent.invalidate_caches(["children"])
-        instance.intermittent_parent.calculate(commit=True, trickle=True)
-
-        type(instance.intermittent_parent).objects.bulk_calculate(
-            [instance.intermittent_parent])
+    subaccount_instance_cache.invalidate(instance)
+    if instance.domain == 'budget':
+        budget_actuals_owners_cache.invalidate(instance.budget)
+    instance.parent.calculate(
+        commit=True,
+        trickle=True,
+        children_to_delete=[instance.pk]
+    )
 
 
 @dispatch.receiver(signals.pre_save, sender=BudgetSubAccount)

@@ -1,11 +1,13 @@
+import collections
 import datetime
 import logging
 
 from django.db import models, transaction
+
 from polymorphic.models import PolymorphicManager
 
 from greenbudget.lib.utils import ensure_iterable
-from greenbudget.lib.django_utils.models import (
+from greenbudget.lib.django_utils.query import (
     PrePKBulkCreateQuerySet,
     BulkCreatePolymorphicQuerySet
 )
@@ -13,6 +15,9 @@ from greenbudget.lib.django_utils.models import (
 from greenbudget.app import signals
 from greenbudget.app.tabling.managers import RowManagerMixin
 from greenbudget.app.tabling.query import RowPolymorphicQuerySet, RowQuerySet
+
+from .cache import invalidate_groups_cache
+from .models import BudgetTree
 
 
 logger = logging.getLogger('greenbudget')
@@ -25,63 +30,55 @@ class BudgetingManagerMixin:
             if hasattr(instance, 'validate_before_save'):
                 instance.validate_before_save(bulk_context=True)
 
-    def bulk_update(self, instances, fields, mark_budgets=True, **kwargs):
+    def bulk_update(self, instances, fields, **kwargs):
         self.validate_before_save(instances)
-        results = super().bulk_update(instances, fields, **kwargs)
-        self.cleanup(instances, mark_budgets=mark_budgets)
-        return results
+        with transaction.atomic():
+            return self.select_for_update() \
+                .filter(pk__in=set([obj.pk for obj in instances])) \
+                .bulk_update(instances, fields, **kwargs)
 
-    def bulk_create(self, instances, mark_budgets=True, **kwargs):
+    def bulk_create(self, instances, **kwargs):
         self.validate_before_save(instances)
-        results = super().bulk_create(instances, **kwargs)
-        self.cleanup(instances, mark_budgets=mark_budgets)
-        return results
+        return super().bulk_create(instances, **kwargs)
 
-    def cleanup(self, instances, **kwargs):
-        for instance in instances:
-            # Not all of the models that use these managers will have the
-            # CacheControlMixin.
-            if hasattr(instance, 'CACHES'):
-                instance.invalidate_caches(["detail"])
-                if hasattr(instance, 'parent'):
-                    instance.parent.invalidate_caches(["detail", "children"])
-
-    def bulk_update_post_calculation(self, instances, **kwargs):
+    def bulk_update_post_calc(self, instances, **kwargs):
         if instances:
             return self.bulk_update(
-                instances=instances,
+                instances,
                 fields=self.model.CALCULATED_FIELDS,
                 **kwargs
             )
         return None
 
-    def bulk_update_post_estimation(self, instances, **kwargs):
+    def bulk_update_post_est(self, instances, **kwargs):
         if instances:
             return self.bulk_update(
-                instances=instances,
+                instances,
                 fields=self.model.ESTIMATED_FIELDS,
                 **kwargs
             )
         return None
 
-    def bulk_update_post_actualization(self, instances, **kwargs):
+    def bulk_update_post_act(self, instances, **kwargs):
         if instances:
             return self.bulk_update(
-                instances=instances,
-                fields=['actual'],
-                **kwargs
-            )
+                instances, fields=['actual'], **kwargs)
         return None
 
     @signals.disable()
     def bulk_delete_empty_groups(self, groups):
         from greenbudget.app.group.models import Group
-
+        groups_to_delete = set([])
         for group in groups:
             id = group if not isinstance(group, Group) else group.pk
             if self.model.objects.filter(group_id=id).count() == 0:
                 try:
-                    Group.objects.get(pk=id).delete()
+                    group = Group.objects.get(pk=id)
+                except Group.DoesNotExist:
+                    # We have to be concerned with race conditions here.
+                    pass
+                else:
+                    groups_to_delete.add(group)
                     logger.info(
                         "Deleting group %s after it was removed from %s "
                         "because the group no longer has any children."
@@ -90,22 +87,43 @@ class BudgetingManagerMixin:
                             self.model.__class__.__name__,
                         )
                     )
-                except Group.DoesNotExist:
-                    # We have to be concerned with race conditions here.
-                    pass
 
-    @signals.disable()
-    def bulk_estimate_all(self, instances, **kwargs):
+        group_parents = set([g.parent for g in groups_to_delete])
+        invalidate_groups_cache(group_parents)
+
+        for group in groups_to_delete:
+            try:
+                group.delete()
+            except Group.DoesNotExist:
+                # We have to be concerned with race conditions here.
+                pass
+
+    def group_by_parents(self, instances):
+        grouped = collections.defaultdict(list)
+        for obj in instances:
+            grouped[obj.parent.pk].append(obj)
+        return grouped
+
+    def perform_filtration_routines(self, filtration, routine_method, **kwargs):
         """
-        Performs the estimation routines on the provided instances, which
-        can consist of instances of :obj:`Account`, :obj:`BaseBudget`,
-        :obj:`Markup` and :obj:`SubAccount`.
+        Performs the filtration routines for a given routine method, whether it
+        be actualization, estimation or calculation, on the provided instances,
+        which can consist of instances of :obj:`Account`, :obj:`BaseBudget`,
+        and :obj:`SubAccount`.
 
-        The estimation methodology behaves like a filtration, starting
-        at the lowest point of the budget ancestry tree and working it's
-        way upwards, keeping track of every entity that needs to be
-        reestimated as a result of any values of one of it's children that
-        contribute to the estimation changing.
+        This method allows us to reestimate, reactualize or recalculate any
+        number of instances belonging to any number of :obj:`Budget`(s), such
+        that we are performing the estimation, actualization or calculation
+        logic the minimum number of times and saving the entities to the
+        database - the minimum number of times, which is obviously a large
+        performance boost.
+
+        The routine methodology behaves like a filtration, starting at the
+        lowest point of the :obj:`BaseBudget` ancestry tree and working its way
+        upwards, keeping track of every entity in the tree that needs to be
+        either reactualized, reestimated or recalculated (depending on the
+        specific `routine_method`) as a result of any values of it's children
+        changing that contribute to the values of it's parent.
 
         Consider the definition of the budget ancestry tree to be the tree
         that is constructed from the parent/child relationships amongst the
@@ -113,30 +131,30 @@ class BudgetingManagerMixin:
 
         - Budget/Template
             - Account
-                - SubAccount
+                - SubAccount (Recursive)
                     - SubAccount
-                    - Markup
                 - SubAccount
                 - SubAccount
-                - Markup
-                - Markup
             - Account
-                - SubAccount
+                - SubAccount (Recursive)
                     - SubAccount
                     - SubAccount
-                - Markup
             - Account
-            - Markup
 
-        The filtration starts at the lowest level of the tree, which consists
-        of :obj:`SubAccount`(s) and :obj:`Markup`(s).  Each entity in the lowest
-        level of the tree is reestimated.  If it is determined that any of the
-        values that contribute to the parent's estimation have changed, then
-        we must also reestimate the parent.  So the parent is added to the
-        ongoing set of entities that must be reestimated at each level of the
-        tree.
+        For each level of the tree that the provided instances instances exist
+        in, the filtration will start at the base level and work it's way
+        upwards, keeping track of the entities that need to be saved due to
+        a reestimated, recalculated or reactualized value either as a result of
+        it's children changing or as a result of the instance being in the set
+        of provided instances that explicitly warrants the reestimation,
+        recalculation or reactualization.
 
-        Level 0: [SubAccount, Markup]
+        Then, after all entities in the provided instances and entities that are
+        parents (at any level) in the tree of the provided instances have been
+        reesetimated, reactualized or recalculated - they are all saved in a
+        batch.
+
+        Level 0: [SubAccount]
             Since the SubAccount level of the ancestry tree is recursive, the
             parent of each :obj:`SubAccount` or :obj:`Markup` can either
             be a :obj:`SubAccount` or a :obj:`Account`.
@@ -145,110 +163,147 @@ class BudgetingManagerMixin:
 
         ...
 
-        Level n: [Account, Markup]
+        Level n: [Account]
             Parents: [Budget]
 
         Level n + 1: [Budget]
             Parents: None
         """
+        tree = BudgetTree()
+
+        methods = {}
+        if isinstance(routine_method, dict):
+            methods = routine_method
+        else:
+            methods = {
+                'subaccount': getattr(
+                    self.model.subaccount_cls.objects, routine_method),
+                'account': getattr(
+                    self.model.account_cls.objects, routine_method),
+                'budget': getattr(
+                    self.model.budget_cls.objects, routine_method)
+            }
+
+        # An array of tuples, where each tuple represents the nested level and
+        # the SubAccount(s) at that level, ordered by the nested level moving
+        # upwards in the ancestry tree.  This allows us to address the recursive
+        # nature of the SubAccount levels of the tree, ensuring that we only
+        # apply logic to the parents after all it's children have been addressed.
+        grouped = self.model.subaccount_cls.objects.group_by_nested_level(
+            filtration.subaccounts)
+
+        # Initially, there are no unsaved children - because no children have
+        # been reestimated, reactualized or recalculated just yet.
+        unsaved_children = {}
+        for _, subs_at_level in grouped:
+            # The instances in the returned tree will be only those that have
+            # changed in the tree as a result of the logic being applied to the
+            # children.
+            sub_tree = methods['subaccount'](
+                # If the logic was already applied to the SubAccount as a result
+                # of applying the logic to a child of the SubAccount, do not
+                # reapply the logic.
+                instances=[
+                    s for s in subs_at_level
+                    if s in filtration.subaccounts
+                ],
+                commit=False,
+                unsaved_children=unsaved_children,
+                **kwargs
+            )
+            # Since we are saving all of the instances at the end, we need to
+            # to provide the unsaved children to the logic at each level of the
+            # tree such that the logic is applied to the parent nodes accounting
+            # for unsaved changes to the children nodes.
+            unsaved_children = self.group_by_parents(sub_tree.subaccounts)
+            tree.merge(sub_tree)
+
+            # The logic has been applied to all entities in the tree, so they
+            # can be removed from the set of ongoing entities requiring
+            # application of the logic.
+            filtration.difference(sub_tree)
+
+        # The instances in the returned tree will be only those that have
+        # changed in the tree as a result of the logic being applied to the
+        # children.
+        account_tree = methods['account'](
+            instances=filtration.accounts,
+            commit=False,
+            unsaved_children=unsaved_children,
+            **kwargs
+        )
+        tree.merge(account_tree)
+
+        # The logic has been applied to all entities in the tree, so they
+        # can be removed from the set of ongoing entities requiring
+        # application of the logic.
+        filtration.difference(account_tree)
+
+        # The instances in the returned tree will be only those that have
+        # changed in the tree as a result of the logic being applied to the
+        # children.
+        budget_tree = methods['budget'](
+            instances=filtration.budgets,
+            commit=False,
+            unsaved_children=self.group_by_parents(tree.accounts),
+            **kwargs
+        )
+        tree.merge(budget_tree)
+
+        # The logic has been applied to all entities in the tree, so they
+        # can be removed from the set of ongoing entities requiring
+        # application of the logic.
+        filtration.difference(budget_tree)
+
+        # At this point, the filtration should be entirely empty - since we
+        # have traversed any and all paths of the tree for each instance in
+        # the original filtration.
+        return tree
+
+    @signals.disable()
+    def bulk_estimate_all(self, instances, **kwargs):
+        """
+        Performs the estimation routines on the provided instances, which
+        can consist of instances of :obj:`Account`, :obj:`BaseBudget`,
+        and :obj:`SubAccount`.
+        """
         commit = kwargs.pop('commit', True)
+        accounts = set([
+            obj for obj in ensure_iterable(instances)
+            if isinstance(obj, self.model.account_cls)
+        ])
+        budgets = set([
+            obj for obj in ensure_iterable(instances)
+            if isinstance(obj, self.model.budget_cls)
+        ])
+        # This set represents all SubAccount(s), regardless of where they are
+        # in the ancestry tree.  This means that SubAccount(s) will be in this
+        # list along with the SubAccount they they may be children of.  Since
+        # metrics of the children affect the metrics of the parent, which is how
+        # this method works, we have to incrementally work our way upwards, from
+        # the SubAccount(s) at the lowest levels of the tree to the SubAccount(s)
+        # at the highest levels of the tree.  Otherwise, we would be potentially
+        # reestimating a parent SubAccount pre-emptively, before it's children
+        # were reestimated.
         subaccounts = set([
             obj for obj in ensure_iterable(instances)
             if isinstance(obj, self.model.subaccount_cls)
         ])
-        # Set of ongoing Account(s) that need to be saved after they are
-        # reestimated, either directly or via the children.
-        accounts = set([])
-
-        # Set of ongoing accounts that still need to be reactualized after the
-        # children are reactualized.
-        accounts_filtration = set([
-            obj for obj in ensure_iterable(instances)
-            if isinstance(obj, self.model.account_cls)
-        ])
-        # Set of ongoing Budget(s) that need to be saved after they are
-        # reestimated, either directly or via the children.
-        budgets = set([])
-
-        # Set of ongoing Budget(s) that still need to be reestimated after the
-        # children are reestimated.
-        budgets_filtration = set([
-            obj for obj in ensure_iterable(instances)
-            if isinstance(obj, self.model.budget_cls)
-        ])
-
-        # The returned SubAccount(s) will be those only for which a save is
-        # warranted after estimation.
-        subaccounts, a, b = self.model.subaccount_cls.objects.bulk_estimate(
-            instances=subaccounts,
-            commit=False,
+        tree = self.perform_filtration_routines(
+            filtration=BudgetTree(
+                accounts=accounts,
+                subaccounts=subaccounts,
+                budgets=budgets
+            ),
+            routine_method='bulk_estimate',
             **kwargs
         )
-        # The returned Budget(s) will be estimated, and thus require a save.
-        # So we need to remove them from the filtration so as to not estimate
-        # them again and add them to the set of Budget(s) to save at the end.
-        budgets.update(b)
-        budgets_filtration = budgets_filtration.difference(b)
-
-        # The returned Account(s) will be estimated, and thus require a save.
-        # So we need to remove them from the filtration so as to not estimate
-        # them again and add them to the set of Account(s) to save at the end.
-        accounts.update(a)
-        accounts_filtration = accounts_filtration.difference(a)
-
-        # Since we are saving all of the instances at the end, we need to
-        # to provide the unsaved children to the actualization so that their
-        # updated values are included in any potential calculations.
-        unsaved_account_children = {}
-        for obj in subaccounts:
-            unsaved_account_children.setdefault(obj.parent.pk, [])
-            unsaved_account_children[obj.parent.pk].append(obj)
-
-        # The returned Account(s) will be those only for which a save is
-        # warranted after estimation.
-        a, b = self.model.account_cls.objects.bulk_estimate(
-            instances=accounts_filtration,
-            commit=False,
-            unsaved_children=unsaved_account_children,
-            **kwargs
-        )
-        accounts.update(a)
-
-        # The returned Budget(s) will be estimated, and thus require a save.
-        # So we need to remove them from the filtration so as to not estimate
-        # them again and add them to the set of Budget(s) to save at the end.
-        budgets_filtration = budgets_filtration.difference(b)
-        budgets.update(b)
-
-        # Since we are saving all of the instances at the end, we need to
-        # to provide the unsaved children to the actualization so that their
-        # updated values are included in any potential calculations.
-        unsaved_budget_children = {}
-        for obj in accounts:
-            unsaved_budget_children.setdefault(obj.parent.pk, [])
-            unsaved_budget_children[obj.parent.pk].append(obj)
-
-        # The returned Budget(s) will be those only for which a save is
-        # warranted after estimation.
-        b = self.model.budget_cls.objects.bulk_estimate(
-            instances=budgets_filtration,
-            commit=False,
-            unsaved_children=unsaved_budget_children,
-            **kwargs
-        )
-        budgets.update(b)
-
         if commit:
-            self.model.subaccount_cls.objects.bulk_update_post_estimation(
-                instances=subaccounts
-            )
-            self.model.account_cls.objects.bulk_update_post_estimation(
-                instances=accounts
-            )
-            self.model.budget_cls.objects.bulk_update_post_estimation(
-                instances=budgets
-            )
-        return subaccounts, accounts, budgets
+            self.model.subaccount_cls.objects.bulk_update_post_est(
+                tree.subaccounts)
+            self.model.account_cls.objects.bulk_update_post_est(tree.accounts)
+            self.model.budget_cls.objects.bulk_update_post_est(tree.budgets)
+        return tree
 
     @signals.disable()
     def bulk_actualize_all(self, instances, **kwargs):
@@ -256,55 +311,6 @@ class BudgetingManagerMixin:
         Performs the actualization routines on the provided instances, which
         can consist of instances of :obj:`BudgetAccount`, :obj:`Budget`,
         :obj:`Markup` and :obj:`BudgetSubAccount`.
-
-        The actualization methodology behaves like a filtration, starting
-        at the lowest point of the budget ancestry tree and working it's
-        way upwards, keeping track of every entity that needs to be
-        reactualized (i.e. it's actual value is recalculated) as a result of
-        the actual value of one of it's children changing.
-
-        Consider the definition of the budget ancestry tree to be the tree
-        that is constructed from the parent/child relationships amongst the
-        entities of a :obj:`Budget` or :obj:`Template`:
-
-        - Budget
-            - BudgetAccount
-                - BudgetSubAccount
-                    - BudgetSubAccount
-                    - Markup
-                - BudgetSubAccount
-                - BudgetSubAccount
-                - Markup
-                - Markup
-            - BudgetAccount
-                - BudgetSubAccount
-                    - BudgetSubAccount
-                    - BudgetSubAccount
-                - Markup
-            - BudgetAccount
-            - Markup
-
-        The filtration starts at the lowest level of the tree, which consists
-        of :obj:`SubAccount`(s) and :obj:`Markup`(s).  Each entity in the lowest
-        level of the tree is reactualized.  If it is determined that the actual
-        value changed, then we must also reactualize it's parent.  So the parent
-        is added to the ongoing set of entities that must be reactualized at
-        each level of the tree.
-
-        Level 0: [BudgetSubAccount, Markup]
-            Since the SubAccount level of the ancestry tree is recursive, the
-            parent of each :obj:`BudgetSubAccount` or :obj:`Markup` can either
-            be a :obj:`BudgetSubAccount` or a :obj:`BudgetAccount`.
-
-            Parents: [BudgetAccount, BudgetSubAccount]
-
-        ...
-
-        Level n: [BudgetAccount, Markup]
-            Parents: [Budget]
-
-        Level n + 1: [Budget]
-            Parents: None
         """
         from greenbudget.app.account.models import BudgetAccount
         from greenbudget.app.budget.models import Budget
@@ -313,110 +319,56 @@ class BudgetingManagerMixin:
 
         commit = kwargs.pop('commit', True)
         markups = set([
-            obj for obj in instances if isinstance(obj, Markup)])
-        # If an Actual is associated with a Markup instance, the parent of that
-        # Markup instance must be reactualized - we do not have to reactualize
-        # the Markup itself because it's actual value is derived from an
-        # @property.
-        subaccounts = set([
             obj for obj in ensure_iterable(instances)
-            + [m.parent for m in markups]
-            if isinstance(obj, BudgetSubAccount)
+            if isinstance(obj, Markup)
         ])
-        # Set of ongoing Account(s) that need to be saved after they are
-        # reactualized, either directly or via the children.
-        accounts = set([])
-
-        # Set of ongoing Budget(s) that need to be saved after they are
-        # reactualized, either directly or via the children.
-        budgets = set([])
-
-        # Set of ongoing budgets that still need to be reactualized after the
-        # children are reactualized.
-        budgets_filtration = set([
-            obj for obj in ensure_iterable(instances)
-            + [m.parent for m in markups]
-            if isinstance(obj, Budget)
-        ])
-        # Set of ongoing accounts that still need to be reactualized after the
-        # children are reactualized.
-        accounts_filtration = set([
+        accounts = set([
             obj for obj in ensure_iterable(instances)
             + [m.parent for m in markups]
             if isinstance(obj, BudgetAccount)
         ])
-        # The returned SubAccount(s) will be those only for which a save is
-        # warranted after actualization.
-        subaccounts, a, b = BudgetSubAccount.objects.bulk_actualize(
-            instances=subaccounts,
-            commit=False,
+        budgets = set([
+            obj for obj in ensure_iterable(instances)
+            + [m.parent for m in markups]
+            if isinstance(obj, Budget)
+        ])
+        # This set represents all SubAccount(s), regardless of where they are
+        # in the ancestry tree.  This means that SubAccount(s) will be in this
+        # list along with the SubAccount they they may be children of.  Since
+        # metrics of the children affect the metrics of the parent, which is
+        # how this method works, we have to incrementally work our way upwards,
+        # from the SubAccount(s) at the lowest levels of the tree to the
+        # SubAccount(s) at the highest levels of the tree.  Otherwise, we would
+        # be potentially reestimating a parent SubAccount pre-emptively, before
+        # it's children were reestimated.
+        subaccounts = set([
+            obj for obj in ensure_iterable(instances)
+            # If an Actual is associated with a Markup instance, the parent of
+            # that Markup instance must be reactualized - we do not have to
+            # reactualize the Markup itself because it's actual value is derived
+            # from an @property.
+            + [m.parent for m in markups]
+            if isinstance(obj, BudgetSubAccount)
+        ])
+        tree = self.perform_filtration_routines(
+            filtration=BudgetTree(
+                accounts=accounts,
+                subaccounts=subaccounts,
+                budgets=budgets
+            ),
+            routine_method={
+                'account': BudgetAccount.objects.bulk_actualize,
+                'subaccount': BudgetSubAccount.objects.bulk_actualize,
+                'budget': Budget.objects.bulk_actualize,
+            },
             **kwargs
         )
-        # The returned Budget(s) will be actualized, and thus require a save.
-        # So we need to remove them from the filtration so as to not actualize
-        # them again and add them to the set of Budget(s) to save at the end.
-        budgets.update(b)
-        budgets_filtration = budgets_filtration.difference(b)
-
-        # The returned Account(s) will be actualized, and thus require a save.
-        # So we need to remove them from the filtration so as to not actualize
-        # them again and add them to the set of Account(s) to save at the end.
-        accounts.update(a)
-        accounts_filtration = accounts_filtration.difference(a)
-
-        # Since we are saving all of the instances at the end, we need to
-        # to provide the unsaved children to the actualization so that their
-        # updated values are included in any potential calculations.
-        unsaved_account_children = {}
-        for obj in subaccounts:
-            unsaved_account_children.setdefault(obj.parent.pk, [])
-            unsaved_account_children[obj.parent.pk].append(obj)
-
-        # The returned Account(s) will be those only for which a save is
-        # warranted after actualization.
-        a, b = BudgetAccount.objects.bulk_actualize(
-            instances=accounts_filtration,
-            commit=False,
-            unsaved_children=unsaved_account_children,
-            **kwargs
-        )
-        accounts.update(a)
-
-        # The returned Budget(s) will be estimated, and thus require a save.
-        # So we need to remove them from the filtration so as to not estimate
-        # them again and add them to the set of Budget(s) to save at the end.
-        budgets_filtration = budgets_filtration.difference(b)
-        budgets.update(b)
-
-        # Since we are saving all of the instances at the end, we need to
-        # to provide the unsaved children to the actualization so that their
-        # updated values are included in any potential calculations.
-        unsaved_budget_children = {}
-        for obj in accounts:
-            unsaved_budget_children.setdefault(obj.parent.pk, [])
-            unsaved_budget_children[obj.parent.pk].append(obj)
-
-        # The returned Budget(s) will be those only for which a save is
-        # warranted after actualization.
-        b = Budget.objects.bulk_actualize(
-            instances=budgets_filtration,
-            commit=False,
-            unsaved_children=unsaved_budget_children,
-            **kwargs
-        )
-        budgets.update(b)
         if commit:
-            BudgetSubAccount.objects.bulk_update_post_actualization(
-                instances=subaccounts
-            )
-            BudgetAccount.objects.bulk_update_post_actualization(
-                instances=accounts
-            )
-            Budget.objects.bulk_update_post_actualization(
-                instances=budgets
-            )
+            BudgetSubAccount.objects.bulk_update_post_act(tree.subaccounts)
+            BudgetAccount.objects.bulk_update_post_act(tree.accounts)
+            Budget.objects.bulk_update_post_act(tree.budgets)
 
-        return subaccounts, accounts, budgets
+        return tree
 
     @signals.disable()
     def bulk_calculate_all(self, instances, **kwargs):
@@ -424,114 +376,48 @@ class BudgetingManagerMixin:
         Performs both the estimation and actualization (if applicable) routines
         on the provided instances, which can consist of instances of
         :obj:`Account`, :obj:`BaseBudget`, :obj:`Markup` and :obj:`SubAccount`.
-
-        The methodology behaves like a filtration, starting at the lowest point
-        of the budget ancestry tree and working it's way upwards, keeping track
-        of every entity that changed in a way that warrant recalculation of
-        it's parent along the way.
-
-        See the documentation for `bulk_estimate_all` and `bulk_actualize_all`
-        for more details.
         """
+        from greenbudget.app.markup.models import Markup
+
         commit = kwargs.pop('commit', True)
-        subaccounts = set([
+        markups = set([
             obj for obj in ensure_iterable(instances)
-            if isinstance(obj, self.model.subaccount_cls)
+            if isinstance(obj, Markup)
         ])
-        # Set of ongoing Account(s) that need to be saved after they are
-        # reactualized, either directly or via the children.
-        accounts = set([])
-
-        # Set of ongoing Budget(s) that need to be saved after they are
-        # reactualized, either directly or via the children.
-        budgets = set([])
-
-        # Set of ongoing budgets that still need to be reactualized after the
-        # children are reactualized.
-        budgets_filtration = set([
+        accounts = set([
             obj for obj in ensure_iterable(instances)
-            if isinstance(obj, self.model.budget_cls)
-        ])
-
-        # Set of ongoing accounts that still need to be reactualized after the
-        # children are reactualized.
-        accounts_filtration = set([
-            obj for obj in ensure_iterable(instances)
+            + [m.parent for m in markups]
             if isinstance(obj, self.model.account_cls)
         ])
-        # The returned SubAccount(s) will be those only for which a save is
-        # warranted after actualization.
-        subaccounts, a, b = self.model.subaccount_cls.objects.bulk_calculate(
-            instances=subaccounts,
-            commit=False,
+        budgets = set([
+            obj for obj in ensure_iterable(instances)
+            + [m.parent for m in markups]
+            if isinstance(obj, self.model.budget_cls)
+        ])
+        subaccounts = set([
+            obj for obj in ensure_iterable(instances)
+            # If an Actual is associated with a Markup instance, the parent of
+            # that Markup instance must be reactualized - we do not have to
+            # reactualize the Markup itself because it's actual value is derived
+            # from an @property.
+            + [m.parent for m in markups]
+            if isinstance(obj, self.model.subaccount_cls)
+        ])
+        tree = self.perform_filtration_routines(
+            filtration=BudgetTree(
+                accounts=accounts,
+                subaccounts=subaccounts,
+                budgets=budgets
+            ),
+            routine_method='bulk_calculate',
             **kwargs
         )
-        # The returned Budget(s) will be calculated, and thus require a save.
-        # So we need to remove them from the filtration so as to not calculate
-        # them again and add them to the set of Budget(s) to save at the end.
-        budgets.update(b)
-        budgets_filtration = budgets_filtration.difference(b)
-
-        # The returned Account(s) will be calculated, and thus require a save.
-        # So we need to remove them from the filtration so as to not calculate
-        # them again and add them to the set of Budget(s) to save at the end.
-        accounts.update(a)
-        accounts_filtration = accounts_filtration.difference(a)
-
-        # Since we are saving all of the instances at the end, we need to
-        # to provide the unsaved children to the actualization so that their
-        # updated values are included in any potential calculations.
-        unsaved_account_children = {}
-        for obj in subaccounts:
-            unsaved_account_children.setdefault(obj.parent.pk, [])
-            unsaved_account_children[obj.parent.pk].append(obj)
-
-        # The returned Account(s) will be those only for which a save is
-        # warranted after recalculation.
-        a, b = self.model.account_cls.objects.bulk_calculate(
-            instances=accounts_filtration,
-            unsaved_children=unsaved_account_children,
-            commit=False,
-            **kwargs
-        )
-        accounts.update(a)
-
-        # The returned Budget(s) will be calculated, and thus require a save.
-        # So we need to remove them from the filtration so as to not calculate
-        # them again and add them to the set of Budget(s) to save at the end.
-        budgets_filtration = budgets_filtration.difference(b)
-        budgets.update(b)
-
-        # Since we are saving all of the instances at the end, we need to
-        # to provide the unsaved children to the actualization so that their
-        # updated values are included in any potential calculations.
-        unsaved_budget_children = {}
-        for obj in accounts:
-            unsaved_budget_children.setdefault(obj.parent.pk, [])
-            unsaved_budget_children[obj.parent.pk].append(obj)
-
-        # The returned Budget(s) will be those only for which a save is
-        # warranted after recalculation.
-        b = self.model.budget_cls.objects.bulk_calculate(
-            instances=budgets_filtration,
-            unsaved_children=unsaved_budget_children,
-            commit=False,
-            **kwargs
-        )
-        budgets.update(b)
-
         if commit:
-            self.model.subaccount_cls.objects.bulk_update_post_calculation(
-                instances=subaccounts
-            )
-            self.model.account_cls.objects.bulk_update_post_calculation(
-                instances=accounts
-            )
-            self.model.budget_cls.objects.bulk_update_post_calculation(
-                instances=budgets
-            )
-
-        return subaccounts, accounts, budgets
+            self.model.subaccount_cls.objects.bulk_update_post_calc(
+                tree.subaccounts)
+            self.model.account_cls.objects.bulk_update_post_calc(tree.accounts)
+            self.model.budget_cls.objects.bulk_update_post_calc(tree.budgets)
+        return tree
 
 
 class BudgetingManager(BudgetingManagerMixin, models.Manager):
@@ -558,7 +444,7 @@ class BudgetingRowManager(
         # We need to wrap this in an atomic transaction block with a select
         # for update clause to avoid dead locks.
         with transaction.atomic():
-            BaseBudget.objects.select_for_update() \
+            self.model.budget_cls.objects.select_for_update() \
                 .filter(pk__in=budgets) \
                 .update(updated_at=datetime.datetime.now().replace(
                     tzinfo=datetime.timezone.utc))

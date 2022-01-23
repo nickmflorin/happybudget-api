@@ -1,5 +1,7 @@
+from greenbudget.lib.utils import ensure_iterable
 from greenbudget.app import signals
 from greenbudget.app.budgeting.managers import BudgetingPolymorphicManager
+from greenbudget.app.budgeting.models import BudgetTree
 
 from .duplication import duplicate
 
@@ -9,22 +11,34 @@ class BaseBudgetManager(BudgetingPolymorphicManager):
     def bulk_calculate(self, *args, **kwargs):
         return self.bulk_estimate(*args, **kwargs)
 
-    @signals.disable()
-    def bulk_estimate(self, instances, **kwargs):
-        commit = kwargs.pop('commit', True)
-        unsaved_children = kwargs.pop('unsaved_children', {}) or {}
-        instances_to_save = set([])
+    def perform_bulk_routine(self, instances, method_name, **kwargs):
+        instances = ensure_iterable(instances)
+        unsaved = kwargs.pop('unsaved_children', {}) or {}
+
+        tree = BudgetTree()
+
+        pass_up_kwargs = dict(**kwargs, **{'commit': False, 'trickle': False})
         for obj in instances:
-            altered = obj.estimate(
-                commit=False,
-                unsaved_children=unsaved_children.get(obj.pk),
-                **kwargs
+            altered = getattr(obj, method_name)(
+                unsaved_children=unsaved.get(obj.pk),
+                **pass_up_kwargs
             )
             if altered:
-                instances_to_save.add(obj)
+                tree.add(obj)
+        return tree
+
+    @signals.disable()
+    def bulk_estimate(self, instances, **kwargs):
+        instances = ensure_iterable(instances)
+        commit = kwargs.pop('commit', True)
+        tree = self.perform_bulk_routine(
+            instances=instances,
+            method_name='estimate',
+            **kwargs
+        )
         if commit:
-            self.bulk_update_post_estimation(instances_to_save)
-        return instances_to_save
+            self.bulk_update_post_est(tree.budgets)
+        return tree
 
     def duplicate(self, budget, user, **overrides):
         return duplicate(budget, user, **overrides)
@@ -34,34 +48,22 @@ class BudgetManager(BaseBudgetManager):
     @signals.disable()
     def bulk_calculate(self, instances, **kwargs):
         commit = kwargs.pop('commit', True)
-        instances_to_save = super().bulk_calculate(
-            instances=instances,
-            commit=False,
-            **kwargs
-        )
-        actualized_instances = self.bulk_actualize(
-            instances=instances,
-            commit=False,
-            **kwargs
-        )
-        instances_to_save = instances_to_save.union(actualized_instances)
+        tree = super().bulk_calculate(instances, commit=False, **kwargs)
+        actualized_tree = self.bulk_actualize(instances, commit=False, **kwargs)
+        tree.merge(actualized_tree)
         if commit:
-            self.bulk_update_post_calculation(instances_to_save)
-        return instances_to_save
+            self.bulk_update_post_calc(tree.budgets)
+        return tree
 
     @signals.disable()
     def bulk_actualize(self, instances, **kwargs):
+        instances = ensure_iterable(instances)
         commit = kwargs.pop('commit', True)
-        unsaved_children = kwargs.pop('unsaved_children', {}) or {}
-        instances_to_save = set([])
-        for obj in instances:
-            altered = obj.actualize(
-                commit=False,
-                unsaved_children=unsaved_children.get(obj.pk),
-                **kwargs
-            )
-            if altered:
-                instances_to_save.add(obj)
-        if commit and instances_to_save:
-            self.bulk_update_post_actualization(instances_to_save)
-        return instances_to_save
+        tree = self.perform_bulk_routine(
+            instances=instances,
+            method_name='actualize',
+            **kwargs
+        )
+        if commit:
+            self.bulk_update_post_act(tree.budgets)
+        return tree

@@ -2,9 +2,7 @@ import logging
 
 from rest_framework import mixins, response, status
 
-from greenbudget.lib.django_utils.cache import endpoint_cache
-
-from greenbudget.app import views
+from greenbudget.app import views, cache
 from greenbudget.app.user.serializers import UserSerializer
 
 from .exceptions import StripeBadRequest
@@ -104,7 +102,7 @@ class SubscriptionView(mixins.RetrieveModelMixin, views.GenericViewSet):
             {"subscription": data}, status=status.HTTP_200_OK)
 
 
-@endpoint_cache(method="list")
+@cache.endpoint_cache(id='products', path="/billing/products/")
 class ProductView(mixins.ListModelMixin, views.GenericViewSet):
     serializer_class = StripeProductSerializer
 

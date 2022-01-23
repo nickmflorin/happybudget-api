@@ -47,10 +47,14 @@ DATABASES = {
 DATABASES['default']['ATOMIC_REQUESTS'] = True
 
 CACHE_ENABLED = False
-# We still define the CACHES so that in the case we are testing the cache, AWS
-# ElastiCache will not be used.
+
+# Even though the cache is disabled by default, there are tests that test the
+# cacheing behavior.  In these tests, we want to ensure that we are using the
+# DatabaseCache.  For an explanation of why we use the DatabaseCache, see the
+# documentation in regard to :obj:`greenbudget.app.cache.endpoint_cache`.
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'cache_table',
     }
 }

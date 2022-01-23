@@ -303,10 +303,16 @@ def create_bulk_create_serializer(serializer_cls, **kwargs):
             children = []
             m2m_fields = []
 
+            # The validated data consists of a series of key-value pairs that
+            # should apply to all created models with the exception of the
+            # `data` key, which is an array where each element applies to only
+            # one model we are creating.  There are edge cases where the `data`
+            # argument will not be in the validated_data, which usually happens
+            # if the request payload isn't serialized properly.
+            data = validated_data.pop('data', [])
+
             # Instantiate the model instances for each set of data in the
             # overall data set.
-            data = validated_data.pop('data')
-
             for model_data in data:
                 # At this point, the change already represents the validated
                 # data for that specific serializer.  So we do not need to

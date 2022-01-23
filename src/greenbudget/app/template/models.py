@@ -9,8 +9,6 @@ from .managers import TemplateManager
 
 @signals.model()
 class Template(BaseBudget):
-    domain = "template"
-
     community = models.BooleanField(default=False)
     hidden = models.BooleanField(default=False)
     objects = TemplateManager()
@@ -18,6 +16,8 @@ class Template(BaseBudget):
     budget_cls = AssociatedModel('template', 'template')
     account_cls = AssociatedModel('account', 'templateaccount')
     subaccount_cls = AssociatedModel('subaccount', 'templatesubaccount')
+
+    domain = "template"
 
     class Meta(BaseBudget.Meta):
         verbose_name = "Template"

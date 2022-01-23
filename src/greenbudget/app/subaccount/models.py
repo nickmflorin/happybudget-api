@@ -1,3 +1,4 @@
+import copy
 import functools
 
 from django.contrib.contenttypes.fields import (
@@ -9,19 +10,13 @@ from django.utils.functional import cached_property
 from greenbudget.app import signals
 from greenbudget.app.actual.models import Actual
 from greenbudget.app.budgeting.models import (
-    BudgetingTreePolymorphicRowModel, AssociatedModel)
+    BudgetingTreePolymorphicRowModel, AssociatedModel, children_method_handler)
 from greenbudget.app.fringe.utils import contribution_from_fringes
 from greenbudget.app.group.models import Group
 from greenbudget.app.markup.models import Markup
 from greenbudget.app.markup.utils import contribution_from_markups
 from greenbudget.app.tagging.models import Tag
 
-from .cache import (
-    subaccount_markups_cache,
-    subaccount_groups_cache,
-    subaccount_instance_cache,
-    subaccount_subaccounts_cache
-)
 from .managers import (
     SubAccountManager,
     BudgetSubAccountManager,
@@ -120,12 +115,6 @@ class SubAccount(BudgetingTreePolymorphicRowModel):
     table_pivot = ('content_type_id', 'object_id')
     child_instance_cls = AssociatedModel('self')
     DERIVING_FIELDS = ("quantity", "rate", "multiplier", "unit")
-    CACHES = [
-        subaccount_markups_cache,
-        subaccount_groups_cache,
-        subaccount_instance_cache,
-        subaccount_subaccounts_cache
-    ]
 
     class Meta:
         get_latest_by = "order"
@@ -181,8 +170,8 @@ class SubAccount(BudgetingTreePolymorphicRowModel):
             )
         super().validate_before_save(bulk_context=bulk_context)
 
-    def accumulate_value(self, children=None):
-        children = children or self.children.all()
+    @children_method_handler
+    def accumulate_value(self, children):
         previous_value = self.accumulated_value
         self.accumulated_value = functools.reduce(
             lambda current, sub: current + sub.nominal_value,
@@ -191,8 +180,8 @@ class SubAccount(BudgetingTreePolymorphicRowModel):
         )
         return previous_value != self.accumulated_value
 
-    def accumulate_markup_contribution(self, children=None, to_be_deleted=None):
-        children = children or self.children.all()
+    @children_method_handler
+    def accumulate_markup_contribution(self, children, to_be_deleted=None):
         markups = self.children_markups.filter(unit=Markup.UNITS.flat).exclude(
             pk__in=to_be_deleted or [],
         )
@@ -209,8 +198,8 @@ class SubAccount(BudgetingTreePolymorphicRowModel):
         )
         return previous_value != self.accumulated_markup_contribution
 
-    def accumulate_fringe_contribution(self, children=None):
-        children = children or self.children.all()
+    @children_method_handler
+    def accumulate_fringe_contribution(self, children):
         previous_value = self.accumulated_fringe_contribution
         self.accumulated_fringe_contribution = functools.reduce(
             lambda current, sub: current + sub.fringe_contribution
@@ -236,8 +225,8 @@ class SubAccount(BudgetingTreePolymorphicRowModel):
         )
         return previous_value != self.markup_contribution
 
-    def calculate(self, **kwargs):
-        return self.estimate(**kwargs)
+    def calculate(self, *args, **kwargs):
+        return self.estimate(*args, **kwargs)
 
     @signals.disable()
     def clear_deriving_fields(self, commit=True):
@@ -249,15 +238,14 @@ class SubAccount(BudgetingTreePolymorphicRowModel):
         if commit:
             self.save(update_fields=self.DERIVING_FIELDS)
 
-    def estimate(self, **kwargs):
-        children, kwargs = self.children_from_kwargs(**kwargs)
+    @children_method_handler
+    def estimate(self, children, **kwargs):
         markups_to_be_deleted = kwargs.get('markups_to_be_deleted', [])
-
         alterations = [
-            self.accumulate_value(children=children),
-            self.accumulate_fringe_contribution(children=children),
+            self.accumulate_value(children),
+            self.accumulate_fringe_contribution(children),
             self.accumulate_markup_contribution(
-                children=children,
+                children,
                 to_be_deleted=markups_to_be_deleted
             ),
             # Because Fringes are a M2M field on the instance, the instance
@@ -276,11 +264,8 @@ class SubAccount(BudgetingTreePolymorphicRowModel):
             unsaved_recursive_children = [self]
             if kwargs.get('commit', False):
                 unsaved_recursive_children = None
-                self.save(update_fields=self.reestimated_fields)
-
-            # There are cases with CASCADE deletes where a non-nullable field
-            # will be temporarily null.
-            if kwargs.get('trickle', True) and self.parent is not None:
+                self.save()
+            if kwargs.get('trickle', True):
                 self.parent.estimate(
                     unsaved_children=unsaved_recursive_children,
                     **kwargs
@@ -334,44 +319,27 @@ class BudgetSubAccount(SubAccount):
         if commit:
             self.save(update_fields=self.DERIVING_FIELDS)
 
-    def calculate(self, **kwargs):
-        children, kwargs = self.children_from_kwargs(**kwargs)
-        trickle = kwargs.pop('trickle', True)
-        commit = kwargs.pop('commit', False)
-
+    @children_method_handler
+    def calculate(self, children, **kwargs):
+        alteration_kwargs = copy.deepcopy(kwargs)
+        alteration_kwargs.update(trickle=False, commit=False)
         alterations = [
-            super().calculate(
-                children=children,
-                trickle=False,
-                commit=False,
-                **kwargs
-            ),
-            self.actualize(
-                children=children,
-                trickle=False,
-                commit=False,
-                **kwargs
-            )
+            super().calculate(children, **alteration_kwargs),
+            self.actualize(children, **alteration_kwargs)
         ]
         if any(alterations):
-            unsaved_recursive_children = [self]
-            if commit:
-                unsaved_recursive_children = None
-                self.save(
-                    update_fields=tuple(self.reestimated_fields) + ('actual', ))
-
-            if trickle and self.parent is not None:
-                self.parent.calculate(
-                    commit=commit,
-                    unsaved_children=unsaved_recursive_children,
-                    **kwargs
-                )
+            unsaved = [self]
+            if kwargs.get('commit', False):
+                unsaved = None
+                self.save()
+            if kwargs.get('trickle', True):
+                self.parent.calculate(unsaved_children=unsaved, **kwargs)
         return any(alterations)
 
-    def actualize(self, **kwargs):
-        children, kwargs = self.children_from_kwargs(**kwargs)
+    @children_method_handler
+    def actualize(self, children, **kwargs):
         markups_to_be_deleted = kwargs.get('markups_to_be_deleted', []) or []
-
+        actuals_to_be_deleted = kwargs.pop('actuals_to_be_deleted', []) or []
         previous_value = self.actual
         self.actual = functools.reduce(
             lambda current, child: current + (child.actual or 0),
@@ -379,25 +347,29 @@ class BudgetSubAccount(SubAccount):
             0
         ) + functools.reduce(
             lambda current, markup: current + (markup.actual or 0),
-            self.children_markups.exclude(pk__in=markups_to_be_deleted or []),
+            self.children_markups.exclude(pk__in=markups_to_be_deleted),
             0
         ) + functools.reduce(
             lambda current, actual: current + (actual.value or 0),
-            self.actuals.all(),
+            self.actuals.exclude(pk__in=actuals_to_be_deleted),
             0
         )
         if previous_value != self.actual:
-            unsaved_recursive_children = [self]
+            unsaved = [self]
             if kwargs.get('commit', False):
-                unsaved_recursive_children = None
+                unsaved = None
                 self.save(update_fields=['actual'])
-            # There are cases with CASCADE deletes where a non-nullable field
-            # will be temporarily null.
-            if kwargs.get('trickle', True) and self.parent is not None:
-                self.parent.actualize(
-                    unsaved_children=unsaved_recursive_children,
-                    **kwargs
-                )
+
+            if kwargs.get('trickle', True):
+                parent_actualization_kwargs = copy.deepcopy(kwargs)
+                parent_actualization_kwargs.update(unsaved_children=unsaved)
+                # The actuals only contribute to the actual value directly if
+                # the parent is a SubAccount.
+                if isinstance(self.parent, BudgetSubAccount):
+                    parent_actualization_kwargs.update(
+                        actuals_to_be_deleted=actuals_to_be_deleted
+                    )
+                self.parent.actualize(**parent_actualization_kwargs)
         return previous_value != self.actual
 
 

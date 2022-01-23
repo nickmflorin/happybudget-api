@@ -1,16 +1,19 @@
 from io import BytesIO
 import logging
+import mock
 from PIL import Image
 import pytest
 import requests
 
+from django.core.cache import cache as django_cache
 from django.contrib.contenttypes.models import ContentType
-from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.files.images import ImageFile
+from django.db import connection
 
 from rest_framework.test import APIClient
 
+from greenbudget.app import cache
 from greenbudget.app.budget.models import Budget
 from greenbudget.app.fringe.models import Fringe
 from greenbudget.app.group.models import Group
@@ -22,13 +25,45 @@ from .fixtures import *  # noqa
 from .stripe_fixtures import *  # noqa
 
 
+VALID_CACHE_BACKEND = 'django.core.cache.backends.db.DatabaseCache'
+
+
 @pytest.fixture(autouse=True)
-def reset_cache(settings):
-    yield
-    backend = settings.CACHES["default"]["BACKEND"]
-    if backend != "django.core.cache.backends.locmem.LocMemCache":
-        raise Exception("Incompatible cache configured for tests.")
-    cache.clear()
+def validate_cache():
+    return cache.is_engine(
+        engine=VALID_CACHE_BACKEND,
+        strict=True
+    )
+
+
+@pytest.fixture(autouse=True)
+def mock_cache_pattern_deletion(settings, monkeypatch):
+    cache.is_engine(engine=VALID_CACHE_BACKEND, strict=True)
+    cache_table = settings.CACHES['default']['LOCATION']
+    original_invalidate = cache.endpoint_cache._invalidate
+
+    def mock_invalidate(instance, key):
+        if key.key.endswith('*'):
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "DELETE FROM %s WHERE cache_key LIKE '%s'"
+                    % (cache_table,
+                        django_cache.make_key(key.key.replace('*', '%')))
+                )
+            return
+        original_invalidate(instance, key)
+
+    monkeypatch.setattr(cache.endpoint_cache, '_invalidate', mock_invalidate)
+
+
+@pytest.fixture
+def establish_cache_user():
+    mock_request = mock.MagicMock()
+
+    def establish(user):
+        mock_request.user = user
+        cache.endpoint_cache.thread.request = mock_request
+    return establish
 
 
 @pytest.fixture(autouse=True)

@@ -16,27 +16,27 @@ app_name = "template"
 
 router = routers.SimpleRouter()
 router.register(
-    r'community', TemplateCommunityViewSet, basename='template-community')
+    r'community', TemplateCommunityViewSet, basename='community')
 router.register(r'', TemplateViewSet, basename='template')
 
 template_fringes_router = routers.NestedSimpleRouter(
     router, r'', lookup='template')
 template_fringes_router.register(
-    r'fringes', TemplateFringeViewSet, basename='template-fringe')
+    r'fringes', TemplateFringeViewSet, basename='fringe')
 
 template_groups_router = routers.NestedSimpleRouter(
     router, r'', lookup='template')
 template_groups_router.register(
-    r'groups', TemplateGroupViewSet, basename='template-group')
+    r'groups', TemplateGroupViewSet, basename='group')
 
 template_markup_router = routers.NestedSimpleRouter(
     router, r'', lookup='template')
 template_markup_router.register(
-    r'markups', TemplateMarkupViewSet, basename='template-markup')
+    r'markups', TemplateMarkupViewSet, basename='markup')
 
 template_accounts_router = routers.SimpleRouter()
 template_accounts_router.register(
-    r'', TemplateAccountViewSet, basename='template-account')
+    r'', TemplateAccountViewSet, basename='account')
 
 urlpatterns = combine_routers(
     router,

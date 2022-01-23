@@ -3,9 +3,10 @@ import logging
 from django import dispatch
 from django.db import IntegrityError
 
+from greenbudget.lib.django_utils.models import generic_fk_instance_change
+
 from greenbudget.app import signals
 from greenbudget.app.account.models import Account
-from greenbudget.app.budget.cache import budget_actuals_owners_cache
 from greenbudget.app.subaccount.models import SubAccount
 
 from .models import Markup
@@ -14,33 +15,82 @@ from .models import Markup
 logger = logging.getLogger('signals')
 
 
+def get_children_to_reestimate_on_save(markup):
+    """
+    If :obj:`Markup` has a non-null value for `rate`, then the
+    :obj:`Markup`'s will have a contribution to the estimated values of it's
+    children, whether the children be instances of :obj:`Account` or
+    :obj:SubAccount`, has changed.
+
+    This means that when a :obj:`Markup` is just created or it's values for
+    `rate` and/or `unit` have changed, it's children have to be reestimated.
+
+    This method looks at an instance of :obj:`Markup` and returns the
+    children that need to be reestimated as a result of a change to the
+    :obj:`Markup` or the creation of the :obj:`Markup`.
+    """
+    # If the Markup is in the midst of being created, we always want
+    # to estimate the children.
+    if markup._state.adding is True or markup.was_just_added() \
+            or markup.fields_have_changed('unit', 'rate'):
+        return set(
+            list(markup.accounts.all()) + list(markup.subaccounts.all()))
+    return set()
+
+
+def get_parents_to_reestimate_on_save(markup):
+    """
+    If :obj:`Markup` has a non-null value for `rate`, that :obj:`Markup`
+    will have a contribution to the estimated values of it's parent, whether
+    that parent be a :obj:`BaseBudget`, :obj:`Account` or :obj:`SubAccount`.
+
+    This means that whenever a :obj:`Markup` is added, it's parent is
+    changed or it's `unit` or `rate` fields have changed, the parent needs
+    to be reestimated.  In the case that the parent has changed, both the
+    new and old parent need to be reesetimated.
+
+    This method looks at an instance of :obj:`Markup` and returns the parent
+    or parents (in the case that the parent has changed) that need to be
+    reestimated as a result of a change to the :obj:`Markup` or the
+    creation of the :obj:`Markup`.
+    """
+    parents_to_reestimate = set([])
+    # If the Markup is in the midst of being created, we always want
+    # to estimate the parent.
+    if markup._state.adding is True or markup.was_just_added():
+        assert markup.parent is not None
+        parents_to_reestimate.add(markup.parent)
+    else:
+        # We only need to reestimate the parent if the parent was changed
+        # or the markup unit or rate was changed.
+        old_parent, new_parent = generic_fk_instance_change(markup)
+        if old_parent != new_parent:
+            parents_to_reestimate.update([
+                x for x in [old_parent, new_parent]
+                if x is not None
+            ])
+        elif markup.fields_have_changed('unit', 'rate') \
+                and markup.parent is not None:
+            parents_to_reestimate.add(markup.parent)
+    return parents_to_reestimate
+
+
 @dispatch.receiver(signals.post_save, sender=Markup)
 def markup_saved(instance, **kwargs):
-    """
-    Performs cache invalidation, cleanup and reestimation of associated models
-    when a :obj:`Markup` is altered.
+    old_parent = None
+    old, new = generic_fk_instance_change(instance)
+    if old != new:
+        old_parent = old
 
-    Note:
-    ----
-    This logic is performed only here (and not in the :obj:`Markup`'s manager)
-    because :obj:`Markup`(s) are not bulk updated via the API.  In the case that
-    we start bulk updating :obj:`Markup`(s), then we need to perform this logic
-    in the managers as well, because this signal will not be triggered during a
-    bulk update.
-    """
+    Markup.objects.invalidate_related_caches(instance, old_parent=old_parent)
+
     # We must reestimate the associated models before we remove the children
     # (in the last code block) because we will need to know what the previously
     # associated models were in the case that the unit changes to FLAT (and no
     # longer has any children).
-    Markup.objects.reestimate_associated(instance)
-
-    # Actuals are only applicable for Budgets, not Templates.
-    if instance.budget.domain == 'budget':
-        budget_actuals_owners_cache.invalidate(instance.budget)
-
-    # Invalidate the caches that contain information about the Markup.
-    for child in instance.children.all():
-        child.parent.invalidate_markups_cache()
+    to_reestimate = get_parents_to_reestimate_on_save(instance)
+    to_reestimate.update(get_children_to_reestimate_on_save(instance))
+    Markup.objects.bulk_estimate_all(to_reestimate, **kwargs)
 
     # Flat Markup(s) are not allowed to have children, so if the unit was
     # changed to Flat we need to remove the children.  Since we already
@@ -95,15 +145,10 @@ def markups_changed(instance, reverse, action, model, pk_set, **kwargs):
                         % markup.pk
                     )
                     markups_to_delete.append(markup)
+
             # Do not raise exceptions if Markup being deleted no longer exists
             # because we have to be concerned with race conditions.
             Markup.objects.bulk_delete(markups_to_delete, strict=False)
-
-            # The actuals caches for all of the Budget(s) associated with a
-            # Markup that was deleted because an Actual can be tied to a Markup.
-            budgets = set([mk.budget for mk in markups_to_delete])
-            budgets = [b for b in budgets if b.domain == 'budget']
-            budget_actuals_owners_cache.invalidate(budgets)
 
     elif action == 'pre_add':
         # Before Markup's are added or removed to an Account/SubAccount, we must
@@ -121,9 +166,14 @@ def markups_changed(instance, reverse, action, model, pk_set, **kwargs):
 
 @dispatch.receiver(signals.pre_delete, sender=Markup)
 def markup_to_delete(instance, **kwargs):
-    Markup.objects.pre_delete([instance])
+    Markup.objects.invalidate_related_caches(instance)
 
+    to_reestimate = set([instance.parent])
+    to_reestimate.update(set(
+        list(instance.accounts.all()) + list(instance.subaccounts.all())))
+    Markup.objects.bulk_estimate_all(
+        to_reestimate, markups_to_be_deleted=[instance.pk])
 
-@dispatch.receiver(signals.post_delete, sender=Markup)
-def markup_deleted(instance, **kwargs):
-    Markup.objects.cleanup([instance])
+    if instance.parent.domain == 'budget':
+        Markup.objects.bulk_actualize_all(
+            instance.parent, markups_to_be_deleted=[instance.pk])

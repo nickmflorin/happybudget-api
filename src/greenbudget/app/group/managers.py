@@ -1,7 +1,7 @@
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
-from greenbudget.lib.django_utils.models import PrePKBulkCreateQuerySet
+from greenbudget.lib.django_utils.query import PrePKBulkCreateQuerySet
 from greenbudget.app.budgeting.query import BudgetAncestorQuerier
 
 

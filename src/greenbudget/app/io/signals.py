@@ -7,6 +7,7 @@ from greenbudget.app.actual.models import Actual
 from greenbudget.app.budget.cache import budget_actuals_cache
 from greenbudget.app.contact.cache import user_contacts_cache
 from greenbudget.app.contact.models import Contact
+from greenbudget.app.subaccount.cache import subaccount_instance_cache
 from greenbudget.app.subaccount.models import BudgetSubAccount
 
 from .models import Attachment
@@ -57,20 +58,12 @@ def attachments_to_changed(instance, reverse, action, model, pk_set, **kwargs):
                 if attachment.is_empty():
                     attachment.delete()
 
-        contacts = [obj for obj in related if isinstance(obj, Contact)]
-        users = set([contact.created_by for contact in contacts])
-        for user in users:
-            user_contacts_cache.invalidate(user)
+        user_contacts_cache.invalidate()
 
         actuals = [obj for obj in related if isinstance(obj, Actual)]
         budgets = set([actual.budget for actual in actuals])
-        for budget in budgets:
-            budget_actuals_cache.invalidate(budget)
+        budget_actuals_cache.invalidate(budgets)
 
         subaccounts = [
             obj for obj in related if isinstance(obj, BudgetSubAccount)]
-        for sub in subaccounts:
-            sub.invalidate_caches(entities=["detail"])
-        parents = set([sub.parent for sub in subaccounts])
-        for parent in parents:
-            parent.invalidate_caches(entities=["children"])
+        subaccount_instance_cache.invalidate(subaccounts)

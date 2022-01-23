@@ -25,10 +25,10 @@ def test_delete_subaccount_reestimates(budget_f, freezer):
     freezer.move_to('2019-05-20')
 
     subaccount.delete()
+
     assert account.nominal_value == 0.0
     assert budget.nominal_value == 0.0
     assert parent_subaccount.nominal_value == 0.0
-
     assert budget.updated_at == datetime.datetime(
         2019, 5, 20).replace(tzinfo=timezone.utc)
 

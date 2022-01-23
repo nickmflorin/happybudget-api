@@ -43,6 +43,8 @@ CORS_ORIGIN_REGEX_WHITELIST = (
     r'^(https?://)?local.greenbudget.io:?[\d]*?$'
 )
 
+# For an explanation as to why LocMemCache is used, see documentation in regard
+# to :obj:`greenbudget.app.cache.endpoint_cache`.
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'

@@ -6,13 +6,6 @@ from greenbudget.app import views, mixins
 from greenbudget.app.account.models import TemplateAccount
 from greenbudget.app.account.serializers import TemplateAccountSerializer
 from greenbudget.app.account.views import GenericAccountViewSet
-from greenbudget.app.budget.cache import (
-    budget_groups_cache,
-    budget_accounts_cache,
-    budget_markups_cache,
-    budget_instance_cache,
-    budget_fringes_cache
-)
 from greenbudget.app.budgeting.decorators import (
     register_bulk_operations, BulkAction, BulkDeleteAction)
 from greenbudget.app.authentication.permissions import IsAdminOrReadOnly
@@ -23,6 +16,13 @@ from greenbudget.app.group.serializers import GroupSerializer
 from greenbudget.app.markup.models import Markup
 from greenbudget.app.markup.serializers import MarkupSerializer
 
+from .cache import (
+    template_groups_cache,
+    template_accounts_cache,
+    template_markups_cache,
+    template_instance_cache,
+    template_fringes_cache
+)
 from .models import Template
 from .mixins import TemplateNestedMixin
 from .permissions import TemplateObjPermission
@@ -30,7 +30,7 @@ from .serializers import TemplateSerializer, TemplateSimpleSerializer
 
 
 @views.filter_by_ids
-@budget_markups_cache(get_instance_from_view=lambda view: view.template.pk)
+@template_markups_cache
 class TemplateMarkupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -61,7 +61,7 @@ class TemplateMarkupViewSet(
 
 
 @views.filter_by_ids
-@budget_groups_cache(get_instance_from_view=lambda view: view.template.pk)
+@template_groups_cache
 class TemplateGroupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -103,7 +103,7 @@ class TemplateGroupViewSet(
 
 
 @views.filter_by_ids
-@budget_fringes_cache(get_instance_from_view=lambda view: view.template.pk)
+@template_fringes_cache
 class TemplateFringeViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -131,7 +131,7 @@ class TemplateFringeViewSet(
 
 
 @views.filter_by_ids
-@budget_accounts_cache(get_instance_from_view=lambda view: view.template.pk)
+@template_accounts_cache
 class TemplateAccountViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -215,7 +215,7 @@ class GenericTemplateViewSet(views.GenericViewSet):
         )
     ]
 )
-@budget_instance_cache(get_instance_from_view=lambda view: view.instance.pk)
+@template_instance_cache
 class TemplateViewSet(
     mixins.CreateModelMixin,
     mixins.UpdateModelMixin,

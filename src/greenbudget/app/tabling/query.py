@@ -1,7 +1,7 @@
 import collections
 from django.db import models
 
-from greenbudget.lib.django_utils.models import (
+from greenbudget.lib.django_utils.query import (
     PrePKBulkCreateQuerySet,
     BulkCreatePolymorphicQuerySet
 )
