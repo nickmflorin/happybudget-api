@@ -148,6 +148,8 @@ INSTALLED_APPS = [
     'greenbudget.app.custom_admin',
     'greenbudget.app.fringe',
     'greenbudget.app.group',
+    'greenbudget.app.integrations',
+    'greenbudget.app.integrations.plaid',
     'greenbudget.app.io',
     'greenbudget.app.markup',
     'greenbudget.app.pdf',

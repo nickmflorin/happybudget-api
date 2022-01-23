@@ -1,0 +1,2 @@
+class Integrations:
+    PLAID = "plaid"
