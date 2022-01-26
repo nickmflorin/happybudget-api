@@ -78,10 +78,8 @@ class SubAccountManager(SubAccountQuerier, BudgetingPolymorphicRowManager):
     def cleanup(self, instances, mark_budgets=True):
         super().cleanup(instances)
         budgets = set([inst.budget for inst in instances])
-        # This has occasionally caused dead locks, so we should keep an eye on
-        # it.
         if mark_budgets:
-            self.mark_budgets(budgets=budgets)
+            self.mark_budgets_updated(instances)
         budget_actuals_owners_cache.invalidate(budgets)
 
     @signals.disable()
@@ -128,7 +126,7 @@ class SubAccountManager(SubAccountQuerier, BudgetingPolymorphicRowManager):
             budgets
         )
         self.bulk_delete_empty_groups(groups)
-        self.mark_budgets(instances=instances)
+        self.mark_budgets_updated(instances)
 
     @signals.disable()
     def bulk_calculate(self, *args, **kwargs):

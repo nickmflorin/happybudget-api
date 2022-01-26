@@ -8,7 +8,7 @@ class AccountManager(BudgetingPolymorphicRowManager):
         super().cleanup(instances)
         budgets = set([inst.budget for inst in instances])
         if mark_budgets:
-            self.mark_budgets(budgets=budgets)
+            self.mark_budgets_updated(budgets)
 
     @signals.disable()
     def bulk_delete(self, instances):
@@ -43,7 +43,7 @@ class AccountManager(BudgetingPolymorphicRowManager):
         )
 
         self.bulk_delete_empty_groups(groups)
-        self.mark_budgets(instances=instances)
+        self.mark_budgets_updated(instances)
 
     @signals.disable()
     def bulk_add(self, instances):

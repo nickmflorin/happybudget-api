@@ -1,6 +1,8 @@
 import datetime
 from datetime import timezone
 
+from greenbudget.app.budgeting.managers import BudgetingPolymorphicRowManager
+
 
 def test_get_account(api_client, user, budget_f):
     api_client.force_login(user)
@@ -308,7 +310,10 @@ def test_bulk_update_subaccounts_budget_updated_once(api_client, user, budget_f,
 
     calls = []
     monkeypatch.setattr(
-        budget_f.budget_cls, 'save', lambda *a, **k: calls.append(None))
+        BudgetingPolymorphicRowManager,
+        'mark_budgets_updated',
+        lambda obj, instances: calls.append(None)
+    )
     response = api_client.patch(
         "/v1/accounts/%s/bulk-update-subaccounts/" % account.pk,
         format='json',

@@ -1,6 +1,7 @@
 import datetime
 from datetime import timezone
-import mock
+
+from greenbudget.app.budgeting.managers import BudgetingPolymorphicRowManager
 
 
 def test_unit_properly_serializes(api_client, user, budget_f,
@@ -885,7 +886,7 @@ def test_bulk_delete_subaccount_subaccounts(api_client, user, budget_f, models):
 
 
 def test_bulk_update_subaccount_subaccounts_budget_updated_once(api_client,
-        user, budget_f):
+        user, budget_f, monkeypatch):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccount = budget_f.create_subaccount(parent=account)
@@ -894,25 +895,31 @@ def test_bulk_update_subaccount_subaccounts_budget_updated_once(api_client,
         budget_f.create_subaccount(parent=subaccount)
     ]
     api_client.force_login(user)
-    with mock.patch(
-            'greenbudget.app.budget.models.BaseBudget.mark_updated') as save:
-        response = api_client.patch(
-            "/v1/subaccounts/%s/bulk-update-subaccounts/" % subaccount.pk,
-            format='json',
-            data={
-                'data': [
-                    {
-                        'id': subaccounts[0].pk,
-                        'description': 'New Desc 1',
-                    },
-                    {
-                        'id': subaccounts[1].pk,
-                        'description': 'New Desc 2',
-                    }
-                ]
-            })
+
+    calls = []
+    monkeypatch.setattr(
+        BudgetingPolymorphicRowManager,
+        'mark_budgets_updated',
+        lambda obj, instances: calls.append(None)
+    )
+
+    response = api_client.patch(
+        "/v1/subaccounts/%s/bulk-update-subaccounts/" % subaccount.pk,
+        format='json',
+        data={
+            'data': [
+                {
+                    'id': subaccounts[0].pk,
+                    'description': 'New Desc 1',
+                },
+                {
+                    'id': subaccounts[1].pk,
+                    'description': 'New Desc 2',
+                }
+            ]
+        })
     assert response.status_code == 200
-    assert save.call_count == 1
+    assert len(calls) == 1
 
 
 def test_bulk_create_subaccount_subaccounts(api_client, user, budget_f, models):

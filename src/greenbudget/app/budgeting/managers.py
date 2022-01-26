@@ -1,6 +1,7 @@
+import datetime
 import logging
 
-from django.db import models
+from django.db import models, transaction
 from polymorphic.models import PolymorphicManager
 
 from greenbudget.lib.utils import ensure_iterable
@@ -18,13 +19,6 @@ logger = logging.getLogger('greenbudget')
 
 
 class BudgetingManagerMixin:
-    def mark_budgets(self, instances=None, budgets=None):
-        assert budgets is not None or instances is not None, \
-            "Must either provide the budgets or instances."
-        if budgets is None:
-            budgets = set([inst.budget for inst in instances])
-        for budget in budgets:
-            budget.mark_updated()
 
     def validate_before_save(self, instances):
         for instance in instances:
@@ -540,10 +534,6 @@ class BudgetingManagerMixin:
         return subaccounts, accounts, budgets
 
 
-class BudgetingRowManagerMixin(RowManagerMixin, BudgetingManagerMixin):
-    pass
-
-
 class BudgetingManager(BudgetingManagerMixin, models.Manager):
     queryset_class = PrePKBulkCreateQuerySet
 
@@ -551,8 +541,27 @@ class BudgetingManager(BudgetingManagerMixin, models.Manager):
         return self.queryset_class(self.model)
 
 
-class BudgetingRowManager(BudgetingRowManagerMixin, models.Manager):
+class BudgetingRowManager(
+        RowManagerMixin, BudgetingManagerMixin, models.Manager):
     queryset_class = RowQuerySet
+
+    def mark_budgets_updated(self, instances):
+        from greenbudget.app.budget.models import BaseBudget
+
+        budgets = set([])
+        for instance in instances:
+            if isinstance(instance, BaseBudget):
+                budgets.add(instance.pk)
+            else:
+                budgets.add(getattr(instance, 'budget').pk)
+
+        # We need to wrap this in an atomic transaction block with a select
+        # for update clause to avoid dead locks.
+        with transaction.atomic():
+            BaseBudget.objects.select_for_update() \
+                .filter(pk__in=budgets) \
+                .update(updated_at=datetime.datetime.now().replace(
+                    tzinfo=datetime.timezone.utc))
 
 
 class BudgetingPolymorphicManager(BudgetingManagerMixin, PolymorphicManager):
@@ -563,5 +572,5 @@ class BudgetingPolymorphicManager(BudgetingManagerMixin, PolymorphicManager):
 
 
 class BudgetingPolymorphicRowManager(
-        BudgetingRowManagerMixin, PolymorphicManager):
+        BudgetingRowManager, PolymorphicManager):
     queryset_class = RowPolymorphicQuerySet
