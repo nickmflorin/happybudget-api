@@ -82,10 +82,6 @@ budget_actuals_owners_cache = cache.endpoint_cache(
 )
 
 
-def budget_instance_cache_dependency(instance):
-    budget_children_cache.invalidate(instance)
-
-
 budget_instance_cache = cache.endpoint_cache(
     id='detail',
     path=cache.ConditionalPath(conditions=[

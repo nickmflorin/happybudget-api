@@ -4,7 +4,8 @@ from greenbudget.lib.django_utils.models import ModelMap, group_models_by_type
 from greenbudget.lib.django_utils.urls import lazy_reverse
 
 from greenbudget.app import cache
-from greenbudget.app.account.cache import account_instance_cache
+from greenbudget.app.account.cache import (
+    account_instance_cache, account_children_cache)
 
 
 subaccount_children_cache = cache.endpoint_cache(
@@ -31,14 +32,34 @@ subaccount_units_cache = cache.endpoint_cache(
 )
 
 
-def subaccount_instance_cache_dependency(instance):
-    subaccount_children_cache.invalidate(instance.parent)
-    invalidate_parent_instance_cache(instance.parent)
+def invalidate_parent_instance_cache(instances, **kwargs):
+    grouped_instances = group_models_by_type(
+        instances=instances,
+        types=list(parent_instance_cache_map.keys())
+    )
+    for grouped_type, type_instances in grouped_instances.items():
+        get_parent_instance_cache(grouped_type).invalidate(
+            type_instances, **kwargs)
+
+
+def invalidate_parent_children_cache(instances, **kwargs):
+    grouped_instances = group_models_by_type(
+        instances=instances,
+        types=list(parent_instance_cache_map.keys())
+    )
+    for grouped_type, type_instances in grouped_instances.items():
+        get_parent_children_cache(grouped_type).invalidate(
+            type_instances, **kwargs)
 
 
 subaccount_instance_cache = cache.endpoint_cache(
     id='detail',
-    dependency=subaccount_instance_cache_dependency,
+    dependency=[
+        lambda instance: invalidate_parent_instance_cache(
+            instance.parent),
+        lambda instance: invalidate_parent_children_cache(
+            instance.parent),
+    ],
     path=lambda instance: reverse(
         'subaccount:subaccount-detail', kwargs={'pk': instance.pk})
 )
@@ -54,11 +75,11 @@ def get_parent_instance_cache(instance_or_type):
     return parent_instance_cache_map.get(instance_or_type, strict=True)
 
 
-def invalidate_parent_instance_cache(instances, **kwargs):
-    grouped_instances = group_models_by_type(
-        instances=instances,
-        types=list(parent_instance_cache_map.keys())
-    )
-    for grouped_type, type_instances in grouped_instances.items():
-        get_parent_instance_cache(grouped_type).invalidate(
-            type_instances, **kwargs)
+parent_children_cache_map = ModelMap({
+    'account.Account': account_children_cache,
+    'subaccount.SubAccount': subaccount_children_cache
+})
+
+
+def get_parent_children_cache(instance_or_type):
+    return parent_children_cache_map.get(instance_or_type, strict=True)

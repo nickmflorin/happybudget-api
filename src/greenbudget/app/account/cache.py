@@ -1,7 +1,8 @@
 from django.urls import reverse
 
 from greenbudget.app import cache
-from greenbudget.app.budget.cache import budget_instance_cache
+from greenbudget.app.budget.cache import (
+    budget_instance_cache, budget_children_cache)
 
 
 account_children_cache = cache.endpoint_cache(
@@ -22,15 +23,13 @@ account_groups_cache = cache.endpoint_cache(
         'account:group-list', kwargs={'account_pk': instance.pk})
 )
 
-
-def account_instance_cache_dependency(instance):
-    account_children_cache.invalidate(instance)
-    budget_instance_cache.invalidate(instance.budget)
-
-
 account_instance_cache = cache.endpoint_cache(
     id='detail',
-    dependency=account_instance_cache_dependency,
+    dependency=[
+        lambda instance: budget_instance_cache.invalidate(
+            instance.budget),
+        lambda instance: budget_children_cache.invalidate(instance.budget)
+    ],
     path=lambda instance: reverse(
         'account:account-detail', kwargs={'pk': instance.pk})
 )

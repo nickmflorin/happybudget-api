@@ -7,7 +7,8 @@ from greenbudget.app.actual.models import Actual
 from greenbudget.app.budget.cache import budget_actuals_cache
 from greenbudget.app.contact.cache import user_contacts_cache
 from greenbudget.app.contact.models import Contact
-from greenbudget.app.subaccount.cache import subaccount_instance_cache
+from greenbudget.app.subaccount.cache import (
+    subaccount_instance_cache, invalidate_parent_children_cache)
 from greenbudget.app.subaccount.models import BudgetSubAccount
 
 from .models import Attachment
@@ -30,7 +31,7 @@ def attachment_deleted(instance, **kwargs):
     signal=signals.m2m_changed,
     sender=Contact.attachments.through
 )
-def attachments_to_changed(instance, reverse, action, model, pk_set, **kwargs):
+def attachments_changed(instance, reverse, action, model, pk_set, **kwargs):
     def validate(attachment, obj):
         if obj.created_by != attachment.created_by:
             raise IntegrityError(
@@ -58,12 +59,14 @@ def attachments_to_changed(instance, reverse, action, model, pk_set, **kwargs):
                 if attachment.is_empty():
                     attachment.delete()
 
-        user_contacts_cache.invalidate()
+        if any([isinstance(obj, Contact) for obj in related]):
+            user_contacts_cache.invalidate()
 
         actuals = [obj for obj in related if isinstance(obj, Actual)]
         budgets = set([actual.budget for actual in actuals])
         budget_actuals_cache.invalidate(budgets)
 
-        subaccounts = [
-            obj for obj in related if isinstance(obj, BudgetSubAccount)]
+        subaccounts = set([
+            obj for obj in related if isinstance(obj, BudgetSubAccount)])
         subaccount_instance_cache.invalidate(subaccounts)
+        invalidate_parent_children_cache(set([s.parent for s in subaccounts]))

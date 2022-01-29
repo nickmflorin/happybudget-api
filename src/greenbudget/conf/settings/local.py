@@ -51,4 +51,4 @@ CACHES = {
     }
 }
 
-CACHE_ENABLED = False
+CACHE_ENABLED = True

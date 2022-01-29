@@ -86,10 +86,14 @@ class endpoint_cache:
         takes the model instance as it's first and only argument.
 
     dependency: :obj:`tuple` or :obj:`list` or :obj:`lambda` (optional)
-        An iterable of callbacks or a single callback that should be called
-        when the given :obj:`endpoint_cache` instance is invalidated.  Each
-        callback should take the instance that is invalidating the cache as
-        it's first and only argument.
+        An iterable of dependencies or a single dependency that should also
+        be used to invalidate subsequent caches when this :obj:`endpoint_cache`
+        is invalidated.
+
+        We define a cache dependency either as a callback that takes the
+        instance as it's first and only argument (applicable for caches with
+        paths that depend on an instance only) or another :obj:`endpoint_cache`
+        instance that should be invalidated after the current instance is.
 
         Default: []
 
@@ -348,7 +352,10 @@ class endpoint_cache:
             self._invalidate(keyi)
             if not ignore_deps:
                 for dep in self.dependencies:
-                    dep(keyi.instance)
+                    if isinstance(dep, self.__class__):
+                        dep.invalidate(*args, **kwargs)
+                    else:
+                        dep(keyi.instance)
 
     def _cache_key(self, path, user='*', query=None, wildcard=False):
         # The wildcard is used in place of query parameters, when we are

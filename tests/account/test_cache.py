@@ -51,6 +51,12 @@ def test_detail_cache_invalidated_on_bulk_save(api_client, user, budget_f):
     assert response.status_code == 200
     assert response.json()['id'] == account.pk
 
+    response = api_client.get(
+        "/v1/%ss/%s/children/" % (budget_f.context, budget.pk))
+    assert response.status_code == 200
+    assert response.json()['count'] == 1
+    assert response.json()['data'][0]['identifier'] == account.identifier
+
     response = api_client.patch(
         "/v1/%ss/%s/bulk-update-children/" % (budget_f.context, budget.pk),
         format='json',
@@ -61,6 +67,12 @@ def test_detail_cache_invalidated_on_bulk_save(api_client, user, budget_f):
     response = api_client.get("/v1/accounts/%s/" % account.pk)
     assert response.status_code == 200
     assert response.json()['identifier'] == '1000'
+
+    response = api_client.get(
+        "/v1/%ss/%s/children/" % (budget_f.context, budget.pk))
+    assert response.status_code == 200
+    assert response.json()['count'] == 1
+    assert response.json()['data'][0]['identifier'] == '1000'
 
 
 @override_settings(CACHE_ENABLED=True)
