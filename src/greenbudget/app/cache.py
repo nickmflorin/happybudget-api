@@ -339,6 +339,7 @@ class endpoint_cache:
         # multiple keys to make it easier to monkeypatch in tests.
         if not settings.CACHE_ENABLED or self._disabled:
             return
+        print("INVALIDATING AT %s" % key)
         logger.debug("Invalidating Cache %s at Key %s" % (self, key.key))
         cache.delete(key.key)
 
@@ -485,12 +486,16 @@ class endpoint_cache:
         assert len(cache_key) == 1
         data = cache.get(cache_key[0].key)
         if data:
+            print("CACHE DADTA AT %s." % cache_key[0].key)
             logger.debug("Returning cached value at %s." % cache_key[0].key)
+        else:
+            print("NO CACHE DADTA AT %s." % cache_key[0].key)
         return data
 
     def set(self, request, response):
         cache_key = self.get_cache_key(request=request)
         assert len(cache_key) == 1
+        print("CACHEING AT %s." % cache_key[0].key)
         cache.set(cache_key[0].key, response.data, settings.CACHE_EXPIRY)
 
     def decorated_func(self, func):
