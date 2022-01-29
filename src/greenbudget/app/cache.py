@@ -10,7 +10,7 @@ from django.core.cache import cache
 from rest_framework import response, status
 
 from greenbudget.conf import Environments
-from greenbudget.lib.utils import ensure_iterable
+from greenbudget.lib.utils import ensure_iterable, concat
 
 from greenbudget.app.user.models import User
 
@@ -340,7 +340,6 @@ class endpoint_cache:
         if not settings.CACHE_ENABLED or self._disabled:
             return
         logger.debug("Invalidating Cache %s at Key %s" % (self, key.key))
-        print("INVALIDATING AT %s." % key.key)
         cache.delete(key.key)
 
     def invalidate(self, *args, **kwargs):
@@ -358,13 +357,7 @@ class endpoint_cache:
                     else:
                         dep(keyi.instance)
 
-    def _cache_key(self, path, user='*', query=None, wildcard=False):
-        # The wildcard is used in place of query parameters, when we are
-        # reverse engineering the cache key during invalidation (and do not
-        # know what the query parameters are because there is no request).
-        assert not (query and wildcard), \
-            "A wildcard cannot be used with query parameters."
-
+    def _cache_key(self, path, user='*', wildcard=False, query=None):
         # Requests need to be cached on a user basis, so if the user is not
         # authenticated we cannot cache the request.
         if isinstance(user, AnonymousUser):
@@ -375,20 +368,25 @@ class endpoint_cache:
         # performed outside the scope of a request.
         assert isinstance(user, User) or user == "*"
 
-        # When using a LocMemCache, wildcard supporting is not allowed - so
-        # we cannot cache requests on a per-user basis, and we cannot cache
-        # any requests with query parameters.
-        if is_locmem_engine(environments=[Environments.LOCAL, Environments.TEST]):  # noqa
-            return f"{self.method}-{path}"
-        else:
-            user_component = getattr(user, 'id') \
-                if isinstance(user, User) else user
+        if not wildcard:
+            # When using a LocMemCache, wildcard supporting is not allowed - so
+            # we cannot cache requests on a per-user basis, and we cannot cache
+            # any requests with query parameters.
+            if is_locmem_engine(environments=[Environments.LOCAL, Environments.TEST]):  # noqa
+                return [f"{self.method}-{path}"]
+            # Allow user to be provided as User object or ID.
+            user_component = getattr(user, 'id', user)
             cache_key = f"{user_component}-{self.method}-{path}"
             if query:
-                return cache_key + query.urlencode()
-            elif wildcard:
-                return [cache_key, f"{cache_key}*"]
-            return cache_key
+                cache_key += query.urlencode()
+            return [cache_key]
+
+        # The wildcard is used in place of query parameters, when we are
+        # reverse engineering the cache key during invalidation (and do not
+        # know what the query parameters are because there is no request).
+        assert query is None, "A wildcard cannot be used with query parameters."
+        key = self._cache_key(path, user=user)
+        return [key[0], f"{key[0]}*"]
 
     def get_cache_key(self, *args, **kwargs):
         """
@@ -403,7 +401,7 @@ class endpoint_cache:
 
             (a) The user is obtained from the request.
             (b) The cache key is generated solely from the request.
-        .
+
         (2) Invalidate Context:
             This happens outside of the dispatch method where the request is not
             available.  In this context:
@@ -437,11 +435,13 @@ class endpoint_cache:
                 "cache implementation."
 
             # Cache key can be constructed entirely from the request.
-            return [CacheKey(instance=None, key=self._cache_key(
+            keys = self._cache_key(
                 user=request.user,
                 path=request.path,
                 query=request.query_params
-            ))]
+            )
+            return [CacheKey(instance=None, key=k) for k in keys]
+
         # Cache key needs to be reverse engineered from the `path` argument
         # supplied on initialization and an optionally provided set of instances
         # or a single instance (in the case that the request path pertains to
@@ -462,20 +462,31 @@ class endpoint_cache:
                     "This means that we have to invalidate the cache for all "
                     "users to be safe.", extra={'paths': paths}
                 )
-            return [CacheKey(
-                key=self._cache_key(path=p.path, user='*', wildcard=True),
-                instance=p.instance
-            ) for p in paths]
+            return concat([[
+                CacheKey(instance=p.instance, key=k)
+                for k in self._cache_key(path=p.path, user='*')
+            ] for p in paths])
 
-        keys = []
-        for p in paths:
-            for k in self._cache_key(
-                path=p.path,
-                wildcard=True,
-                user=self.thread.request.user
-            ):
-                keys.append(CacheKey(instance=p.instance, key=k))
-        return keys
+        return concat([[
+            CacheKey(instance=p.instance, key=k)
+            for k in self._cache_key(path=p.path, user='*', wildcard=True)
+        ] for p in paths])
+
+    def get(self, request):
+        # Since we are creating the cache key from the request, and not an
+        # instance (or an iterable of instances) there should only be 1
+        # cache key returned.
+        cache_key = self.get_cache_key(request=request)
+        assert len(cache_key) == 1
+        data = cache.get(cache_key[0].key)
+        if data:
+            logger.debug("Returning cached value at %s." % cache_key[0].key)
+        return data
+
+    def set(self, request, response):
+        cache_key = self.get_cache_key(request=request)
+        assert len(cache_key) == 1
+        cache.set(cache_key[0].key, response.data, settings.CACHE_EXPIRY)
 
     def decorated_func(self, func):
         """
@@ -547,28 +558,17 @@ class endpoint_cache:
             # This may be deprecated by DRF.
             view.headers = view.default_response_headers
 
-            # Since we are creating the cache key from the request, and not an
-            # instance (or an iterable of instances) there should only be 1
-            # cache key returned.
-            cache_key = self.get_cache_key(request=modified_request)
-            assert len(cache_key) == 1
-
-            data = cache.get(cache_key[0].key)
+            data = self.get(modified_request)
             if data:
-                print("CACHED DATA AT %s" % cache_key[0].key)
-                logger.debug("Returning cached value at %s." % cache_key[0].key)
-                # It is safe to assume that the response status code
-                # should be 200 because cacheing is only allowed
-                # currently for GET requests.
+                # It is safe to assume that the response status code should be
+                # 200 because cacheing is only allowed currently for GET
+                # requests.
                 kwargs['response'] = response.Response(
                     data, status=status.HTTP_200_OK)
                 return dispatch_routine(view, modified_request, *args, **kwargs)
-            else:
-                print("NO CACHED DATA AT %s" % cache_key[0].key)
-                # Do not call the original dispatch method with the modified
-                # request.
-                r = func(view, request, *args, **kwargs)
-                cache.set(cache_key[0].key, r.data, settings.CACHE_EXPIRY)
-                return r
+            # Do not call the original dispatch method with the modified request.
+            r = func(view, request, *args, **kwargs)
+            self.set(modified_request, r)
+            return r
 
         return dispatch
