@@ -376,6 +376,7 @@ class endpoint_cache:
                 return [f"{self.method}-{path}"]
             # Allow user to be provided as User object or ID.
             user_component = getattr(user, 'id', user)
+            assert isinstance(user_component, (int, str))
             cache_key = f"{user_component}-{self.method}-{path}"
             if query:
                 cache_key += query.urlencode()
@@ -469,7 +470,11 @@ class endpoint_cache:
 
         return concat([[
             CacheKey(instance=p.instance, key=k)
-            for k in self._cache_key(path=p.path, user='*', wildcard=True)
+            for k in self._cache_key(
+                path=p.path,
+                user=self.thread.request.user,
+                wildcard=True
+            )
         ] for p in paths])
 
     def get(self, request):
