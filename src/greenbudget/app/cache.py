@@ -340,6 +340,7 @@ class endpoint_cache:
         if not settings.CACHE_ENABLED or self._disabled:
             return
         logger.debug("Invalidating Cache %s at Key %s" % (self, key.key))
+        print("INVALIDATING AT %s." % key.key)
         cache.delete(key.key)
 
     def invalidate(self, *args, **kwargs):
@@ -549,6 +550,7 @@ class endpoint_cache:
 
             data = cache.get(cache_key[0].key)
             if data:
+                print("CACHED DATA AT %s" % cache_key[0].key)
                 logger.debug("Returning cached value at %s." % cache_key[0].key)
                 # It is safe to assume that the response status code
                 # should be 200 because cacheing is only allowed
@@ -557,6 +559,7 @@ class endpoint_cache:
                     data, status=status.HTTP_200_OK)
                 return dispatch_routine(view, modified_request, *args, **kwargs)
             else:
+                print("NO CACHED DATA AT %s" % cache_key[0].key)
                 # Do not call the original dispatch method with the modified
                 # request.
                 r = func(view, request, *args, **kwargs)
