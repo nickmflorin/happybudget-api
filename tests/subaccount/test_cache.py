@@ -639,15 +639,3 @@ def test_caches_invalidated_on_create_markup():
 @override_settings(CACHE_ENABLED=True)
 def test_caches_invalidated_on_update_markup():
     pass
-
-
-@need_to_write
-@override_settings(CACHE_ENABLED=True)
-def test_caches_invalidated_on_create_group():
-    pass
-
-
-@need_to_write
-@override_settings(CACHE_ENABLED=True)
-def test_caches_invalidated_on_delete_group():
-    pass
