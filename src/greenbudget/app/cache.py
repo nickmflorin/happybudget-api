@@ -58,6 +58,10 @@ def is_locmem_engine(**kwargs):
 InstancePath = collections.namedtuple('InstancePath', ['instance', 'path'])
 CacheKey = collections.namedtuple('CacheKey', ['instance', 'key'])
 
+PathConditional = collections.namedtuple(
+    'PathConditional', ['condition', 'path'])
+ConditionalPath = collections.namedtuple('ConditionalPath', ['conditions'])
+
 
 class endpoint_cache:
     """
@@ -256,7 +260,7 @@ class endpoint_cache:
         setattr(cls, 'dispatch', self.decorated_func(cls.dispatch))
         return cls
 
-    def _validate_and_format_path(self, path):
+    def _format_path(self, path):
         assert path.endswith('/'), \
             "The request path must end with a trailing slash."
         assert path.startswith('/'), \
@@ -265,7 +269,7 @@ class endpoint_cache:
             return f"/v1{path}"
         return path
 
-    def _call_path(self, instance):
+    def _call_path(self, instance, path_caller):
         # We need to make sure that the instance still has an ID before
         # reconstructing the path.  This can happen in cases where we are
         # invalidating detail caches after their associated instances are
@@ -276,31 +280,54 @@ class endpoint_cache:
                 "cannot be invalidated because the instance does not have an "
                 "ID."
             )
-        return self._path(instance)
+        path = path_caller(instance)
+        return self._format_path(path)
 
-    def _instance_paths(self, instance=None):
+    def _instance_paths(self, instance=None, path=None):
         """
         Returns an array of request paths that are reverse engineered based
         on an optionally provided instance or instances.  The paths are
         reverse engineered based on the `path` parameter provided to the cache
         on initialization.
         """
-        assert isinstance(self._path, str) or callable(self._path), \
-            "The cache request path must be a string or a callable taking " \
-            "the instance as it's first and only argument."
-        if callable(self._path):
+        instances = ensure_iterable(instance)
+        path = path or self._path
+
+        assert isinstance(self._path, str) or callable(self._path) \
+            or isinstance(self._path, ConditionalPath), \
+            "The cache request path must be a string, a callable taking " \
+            "the instance as it's first and only argument, or an instance of " \
+            "ConditionalPath."
+
+        if isinstance(path, ConditionalPath):
+            instance_paths = []
+            for condition in self._path.conditions:
+                instances_meeting_condition = [
+                    obj for obj in instances
+                    if condition.condition(obj)
+                ]
+                instance_paths += self._instance_paths(
+                    instance=instances_meeting_condition,
+                    path=condition.path
+                )
+            return instance_paths
+
+        elif callable(path):
             assert instance is not None, \
                 "If the request path is a callable, the instance must be " \
                 "provided in the case that the request is not in scope."
             return [
                 InstancePath(
-                    instance=i,
-                    path=self._validate_and_format_path(self._call_path(i))
-                ) for i in ensure_iterable(instance)
+                    instance=obj,
+                    path=self._format_path(self._call_path(obj, path))
+                ) for obj in instances
             ]
+        assert instance is None, \
+            "The instance should not be provided when the cached request path " \
+            "is not dependent on one."
         return [InstancePath(
             instance=None,
-            path=self._validate_and_format_path(self._path)
+            path=self._format_path(path)
         )]
 
     def _invalidate(self, key):

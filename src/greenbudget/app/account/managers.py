@@ -2,8 +2,8 @@ from greenbudget.lib.utils import ensure_iterable
 
 from greenbudget.app import signals
 from greenbudget.app.budget.cache import (
-    invalidate_budget_groups_cache,
-    invalidate_budget_instance_cache
+    budget_groups_cache,
+    budget_instance_cache
 )
 from greenbudget.app.budgeting.managers import BudgetingPolymorphicRowManager
 from greenbudget.app.budgeting.models import BudgetTree
@@ -20,7 +20,7 @@ class AccountManager(BudgetingPolymorphicRowManager):
         # We must invalidate the caches before the delete is performed so
         # we still have access to the PKs.
         account_instance_cache.invalidate(instances)
-        invalidate_budget_groups_cache(budgets)
+        budget_groups_cache.invalidate(budgets)
 
         for obj in instances:
             obj.delete()
@@ -53,8 +53,8 @@ class AccountManager(BudgetingPolymorphicRowManager):
         created = self.bulk_create(instances, return_created_objects=True)
 
         parents = set([inst.parent for inst in created])
-        invalidate_budget_groups_cache(parents)
-        invalidate_budget_instance_cache(parents)
+        budget_groups_cache.invalidate(parents)
+        budget_instance_cache.invalidate(parents)
 
         self.bulk_calculate(created)
         self.mark_budgets_updated(created)

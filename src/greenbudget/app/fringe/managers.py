@@ -6,9 +6,7 @@ from greenbudget.app import signals
 from greenbudget.app.account.cache import (
     account_instance_cache, account_subaccounts_cache)
 from greenbudget.app.budget.cache import (
-    invalidate_fringes_cache,
-    invalidate_budget_instance_cache
-)
+    budget_fringes_cache, budget_instance_cache)
 from greenbudget.app.budgeting.managers import BudgetingRowManager
 from greenbudget.app.subaccount.cache import (
     subaccount_instance_cache, subaccount_subaccounts_cache)
@@ -47,7 +45,7 @@ class FringeManager(FringeQuerier, BudgetingRowManager):
         # reestimated as a result of changes to the Fringe/Fringe(s).
         tree = self.model.subaccount_cls.objects.bulk_estimate(subs, **kwargs)
 
-        invalidate_budget_instance_cache(tree.budgets)
+        budget_instance_cache.invalidate(tree.budgets)
 
         # We only have to invalidate the Account(s) that have been reestimated
         # because Account(s) do not have a concrete reference to a Fringe.
@@ -80,7 +78,7 @@ class FringeManager(FringeQuerier, BudgetingRowManager):
         for obj in instances:
             obj.delete()
 
-        invalidate_fringes_cache(budgets)
+        budget_fringes_cache.invalidate(budgets)
         self.mark_budgets_updated(budgets)
 
     @signals.disable()
@@ -95,8 +93,7 @@ class FringeManager(FringeQuerier, BudgetingRowManager):
         created = self.bulk_create(instances, predetermine_pks=True)
         self.bulk_estimate_fringe_subaccounts(created)
 
-        invalidate_fringes_cache(
-            set([obj.budget for obj in created]))
+        budget_fringes_cache.invalidate(set([obj.budget for obj in created]))
         self.mark_budgets_updated(created)
         return created
 
@@ -111,8 +108,7 @@ class FringeManager(FringeQuerier, BudgetingRowManager):
         updated = self.bulk_update(instances, update_fields)
         self.bulk_estimate_fringe_subaccounts(instances)
 
-        invalidate_fringes_cache(
-            set([obj.budget for obj in instances]))
+        budget_fringes_cache.invalidate(set([obj.budget for obj in instances]))
 
         self.mark_budgets_updated(instances)
         return updated

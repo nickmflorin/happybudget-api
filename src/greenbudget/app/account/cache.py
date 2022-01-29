@@ -2,7 +2,6 @@ from django.urls import reverse
 
 from greenbudget.app import cache
 from greenbudget.app.budget.cache import budget_instance_cache
-from greenbudget.app.template.cache import template_instance_cache
 
 
 account_subaccounts_cache = cache.endpoint_cache(
@@ -25,12 +24,8 @@ account_groups_cache = cache.endpoint_cache(
 
 
 def account_instance_cache_dependency(instance):
-    from greenbudget.app.budget.models import Budget
     account_subaccounts_cache.invalidate(instance)
-    if isinstance(instance.budget, Budget):
-        budget_instance_cache.invalidate(instance.budget)
-    else:
-        template_instance_cache.invalidate(instance.budget)
+    budget_instance_cache.invalidate(instance.budget)
 
 
 account_instance_cache = cache.endpoint_cache(

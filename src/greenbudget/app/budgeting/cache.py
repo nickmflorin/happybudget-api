@@ -6,13 +6,10 @@ from greenbudget.app.budget.cache import (
     budget_groups_cache, budget_markups_cache)
 from greenbudget.app.subaccount.cache import (
     subaccount_groups_cache, subaccount_markups_cache)
-from greenbudget.app.template.cache import (
-    template_groups_cache, template_markups_cache)
 
 
 groups_cache_map = ModelMap({
-    'budget.Budget': budget_groups_cache,
-    'template.Template': template_groups_cache,
+    'budget.BaseBudget': budget_groups_cache,
     'account.Account': account_groups_cache,
     'subaccount.SubAccount': subaccount_groups_cache
 })
@@ -32,8 +29,7 @@ def invalidate_groups_cache(instances):
 
 
 markups_cache_map = ModelMap({
-    'budget.Budget': budget_markups_cache,
-    'template.Template': template_markups_cache,
+    'budget.BaseBudget': budget_markups_cache,
     'account.Account': account_markups_cache,
     'subaccount.SubAccount': subaccount_markups_cache
 })

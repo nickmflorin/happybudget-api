@@ -1,7 +1,7 @@
 from django import dispatch
 
 from greenbudget.app import signals
-from greenbudget.app.budget.cache import invalidate_fringes_cache
+from greenbudget.app.budget.cache import budget_fringes_cache
 
 from .models import Fringe
 
@@ -13,14 +13,14 @@ def fringe_to_save(instance, **kwargs):
 
 @dispatch.receiver(signals.post_save, sender=Fringe)
 def fringe_saved(instance, **kwargs):
-    invalidate_fringes_cache(instance.budget)
+    budget_fringes_cache.invalidate(instance.budget)
     if instance.fields_have_changed('unit', 'cutoff', 'rate'):
         Fringe.objects.bulk_estimate_fringe_subaccounts(instance)
 
 
 @dispatch.receiver(signals.pre_delete, sender=Fringe)
 def fringe_to_be_deleted(instance, **kwargs):
-    invalidate_fringes_cache(instance.budget)
+    budget_fringes_cache.invalidate(instance.budget)
     Fringe.objects.bulk_estimate_fringe_subaccounts(
         instance,
         fringes_to_be_deleted=[instance.pk]

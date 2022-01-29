@@ -12,14 +12,14 @@ from greenbudget.app.subaccount.models import (
     BudgetSubAccount, TemplateSubAccount)
 from greenbudget.app.template.models import Template
 
-from .cache import invalidate_budget_instance_cache
+from .cache import budget_instance_cache
 from .models import Budget
 
 
 @dispatch.receiver(signals.post_save, sender=Budget)
 @dispatch.receiver(signals.post_save, sender=Template)
 def budget_saved(instance, **kwargs):
-    invalidate_budget_instance_cache(instance)
+    budget_instance_cache.invalidate(instance)
 
 
 @dispatch.receiver(signals.post_save, sender=BudgetAccount)
@@ -43,4 +43,4 @@ def update_budget_updated_at(instance, **kwargs):
 @dispatch.receiver(signals.post_delete, sender=Template)
 def budget_to_be_deleted(instance, **kwargs):
     instance.image.delete(False)
-    invalidate_budget_instance_cache(instance)
+    budget_instance_cache.invalidate(instance)
