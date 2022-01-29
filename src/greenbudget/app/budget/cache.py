@@ -3,18 +3,18 @@ from django.urls import reverse
 from greenbudget.app import cache
 
 
-budget_accounts_cache = cache.endpoint_cache(
+budget_children_cache = cache.endpoint_cache(
     id='children',
     path=cache.ConditionalPath(conditions=[
         cache.PathConditional(
             condition=lambda instance: instance.domain == 'template',
             path=lambda instance: reverse(
-                'template:account-list', kwargs={'template_pk': instance.pk})
+                'template:child-list', kwargs={'template_pk': instance.pk})
         ),
         cache.PathConditional(
             condition=lambda instance: instance.domain == 'budget',
             path=lambda instance: reverse(
-                'budget:account-list', kwargs={'budget_pk': instance.pk})
+                'budget:child-list', kwargs={'budget_pk': instance.pk})
         )
     ])
 )
@@ -83,7 +83,7 @@ budget_actuals_owners_cache = cache.endpoint_cache(
 
 
 def budget_instance_cache_dependency(instance):
-    budget_accounts_cache.invalidate(instance)
+    budget_children_cache.invalidate(instance)
 
 
 budget_instance_cache = cache.endpoint_cache(

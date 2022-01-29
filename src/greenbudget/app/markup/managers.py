@@ -5,7 +5,7 @@ from greenbudget.app.account.cache import account_instance_cache
 from greenbudget.app.budget.cache import (
     budget_actuals_owners_cache,
     budget_instance_cache,
-    budget_accounts_cache
+    budget_children_cache
 )
 from greenbudget.app.budgeting.cache import invalidate_markups_cache
 from greenbudget.app.budgeting.managers import BudgetingManager
@@ -29,7 +29,7 @@ class MarkupManager(BudgetAncestorQuerier, BudgetingManager):
             b for b in budgets if b.domain == 'budget'])
 
         budget_instance_cache.invalidate(budgets, ignore_deps=True)
-        budget_accounts_cache.invalidate(budgets, ignore_deps=True)
+        budget_children_cache.invalidate(budgets, ignore_deps=True)
 
         # Invalidate the Markup caches of the parents that contain information
         # about the Markup.

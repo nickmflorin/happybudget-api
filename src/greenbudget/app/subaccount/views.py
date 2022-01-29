@@ -14,7 +14,7 @@ from greenbudget.app.markup.serializers import MarkupSerializer
 from greenbudget.app.template.serializers import TemplateSerializer
 
 from .cache import (
-    subaccount_subaccounts_cache,
+    subaccount_children_cache,
     subaccount_markups_cache,
     subaccount_groups_cache,
     subaccount_instance_cache,
@@ -190,7 +190,7 @@ class GenericSubAccountViewSet(views.GenericViewSet):
             ),
         ),
         BulkAction(
-            url_path='bulk-{action_name}-subaccounts',
+            url_path='bulk-{action_name}-children',
             child_cls=lambda context: context.view.child_instance_cls,
             child_serializer_cls=lambda context: context.view.child_serializer_cls,  # noqa
             filter_qs=lambda context: models.Q(
@@ -222,8 +222,8 @@ class SubAccountViewSet(
     (1) GET /subaccounts/<pk>/
     (2) PATCH /subaccounts/<pk>/
     (3) DELETE /subaccounts/<pk>/
-    (4) PATCH /subaccounts/<pk>/bulk-update-subaccounts/
-    (5) PATCH /subaccounts/<pk>/bulk-create-subaccounts/
+    (4) PATCH /subaccounts/<pk>/bulk-update-children/
+    (5) PATCH /subaccounts/<pk>/bulk-create-children/
     """
     extra_permission_classes = [
         SubAccountOwnershipPermission,
@@ -258,7 +258,7 @@ class SubAccountViewSet(
 
 
 @views.filter_by_ids
-@subaccount_subaccounts_cache
+@subaccount_children_cache
 class SubAccountRecursiveViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -268,8 +268,8 @@ class SubAccountRecursiveViewSet(
     """
     ViewSet to handle requests to the following endpoints:
 
-    (1) GET /subaccounts/<pk>/subaccounts
-    (2) POST /subaccounts/<pk>/subaccounts
+    (1) GET /subaccounts/<pk>/children
+    (2) POST /subaccounts/<pk>/children
     """
     extra_permission_classes = [
         SubAccountOwnershipPermission,

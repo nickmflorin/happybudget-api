@@ -52,11 +52,11 @@ def test_caches_on_search(api_client, user, budget_f):
 
     api_client.force_login(user)
     response = api_client.get(
-        "/v1/%ss/%s/accounts/" % (budget_f.context, budget.pk))
+        "/v1/%ss/%s/children/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
 
     response = api_client.get(
-        "/v1/%ss/%s/accounts/?search=jill" % (budget_f.context, budget.pk))
+        "/v1/%ss/%s/children/?search=jill" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 1
 
@@ -72,7 +72,7 @@ def test_caches_invalidated_on_delete(api_client, user, budget_f):
     api_client.force_login(user)
 
     response = api_client.get(
-        "/v1/%ss/%s/accounts/" % (budget_f.context, budget.pk))
+        "/v1/%ss/%s/children/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 2
 
@@ -80,7 +80,7 @@ def test_caches_invalidated_on_delete(api_client, user, budget_f):
     assert response.status_code == 204
 
     response = api_client.get(
-        "/v1/%ss/%s/accounts/" % (budget_f.context, budget.pk))
+        "/v1/%ss/%s/children/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 1
 
@@ -95,7 +95,7 @@ def test_caches_invalidated_on_update(api_client, user, budget_f):
     api_client.force_login(user)
 
     response = api_client.get(
-        "/v1/%ss/%s/accounts/" % (budget_f.context, budget.pk))
+        "/v1/%ss/%s/children/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'][0]['identifier'] == accounts[0].identifier
@@ -106,7 +106,7 @@ def test_caches_invalidated_on_update(api_client, user, budget_f):
     assert response.status_code == 200
 
     response = api_client.get(
-        "/v1/%ss/%s/accounts/" % (budget_f.context, budget.pk))
+        "/v1/%ss/%s/children/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'][0]['identifier'] == '1000'
@@ -120,18 +120,18 @@ def test_caches_invalidated_on_create(api_client, user, budget_f):
     api_client.force_login(user)
 
     response = api_client.get(
-        "/v1/%ss/%s/accounts/" % (budget_f.context, budget.pk))
+        "/v1/%ss/%s/children/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 2
 
     response = api_client.post(
-        "/v1/%ss/%s/accounts/" % (budget_f.context, budget.pk),
+        "/v1/%ss/%s/children/" % (budget_f.context, budget.pk),
         data={'identifier': '1000'}
     )
     assert response.status_code == 201
 
     response = api_client.get(
-        "/v1/%ss/%s/accounts/" % (budget_f.context, budget.pk))
+        "/v1/%ss/%s/children/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 3
 
@@ -144,18 +144,18 @@ def test_caches_invalidated_on_bulk_create(api_client, user, budget_f):
     api_client.force_login(user)
 
     response = api_client.get(
-        "/v1/%ss/%s/accounts/" % (budget_f.context, budget.pk))
+        "/v1/%ss/%s/children/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 2
 
     response = api_client.patch(
-        "/v1/%ss/%s/bulk-create-accounts/" % (budget_f.context, budget.pk),
+        "/v1/%ss/%s/bulk-create-children/" % (budget_f.context, budget.pk),
         format='json',
         data={'data': [{'identifier': '1000'}]}
     )
     assert response.status_code == 201
     response = api_client.get(
-        "/v1/%ss/%s/accounts/" % (budget_f.context, budget.pk))
+        "/v1/%ss/%s/children/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 3
 
@@ -189,7 +189,7 @@ def test_caches_invalidated_on_add_fringe(api_client, user, budget_f,
     api_client.force_login(user)
 
     response = api_client.get(
-        "/v1/%ss/%s/accounts/" % (budget_f.context, budget.pk))
+        "/v1/%ss/%s/children/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 1
     assert response.json()['data'][0]['accumulated_fringe_contribution'] == 210.0
@@ -203,7 +203,7 @@ def test_caches_invalidated_on_add_fringe(api_client, user, budget_f,
     subaccounts[0].fringes.add(new_fringe)
 
     response = api_client.get(
-        "/v1/%ss/%s/accounts/" % (budget_f.context, budget.pk))
+        "/v1/%ss/%s/children/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 1
     assert response.json()['data'][0]['accumulated_fringe_contribution'] == 260.0
@@ -240,7 +240,7 @@ def test_caches_invalidated_on_update_fringe(api_client, user, budget_f,
     api_client.force_login(user)
 
     response = api_client.get(
-        "/v1/%ss/%s/accounts/" % (budget_f.context, budget.pk))
+        "/v1/%ss/%s/children/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 1
     assert response.json()['data'][0]['accumulated_fringe_contribution'] == 210.0
@@ -256,7 +256,7 @@ def test_caches_invalidated_on_update_fringe(api_client, user, budget_f,
     assert response.status_code == 200
 
     response = api_client.get(
-        "/v1/%ss/%s/accounts/" % (budget_f.context, budget.pk))
+        "/v1/%ss/%s/children/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 1
     assert response.json()['data'][0]['accumulated_fringe_contribution'] == 270.0
@@ -293,7 +293,7 @@ def test_caches_invalidated_on_bulk_update_fringes(api_client, user, budget_f,
     api_client.force_login(user)
 
     response = api_client.get(
-        "/v1/%ss/%s/accounts/" % (budget_f.context, budget.pk))
+        "/v1/%ss/%s/children/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 1
     assert response.json()['data'][0]['accumulated_fringe_contribution'] == 210.0
@@ -314,7 +314,7 @@ def test_caches_invalidated_on_bulk_update_fringes(api_client, user, budget_f,
     assert response.status_code == 200
 
     response = api_client.get(
-        "/v1/%ss/%s/accounts/" % (budget_f.context, budget.pk))
+        "/v1/%ss/%s/children/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 1
     assert response.json()['data'][0]['accumulated_fringe_contribution'] == 330.0
@@ -352,7 +352,7 @@ def test_caches_invalidated_on_delete_fringe(api_client, user, budget_f,
     api_client.force_login(user)
 
     response = api_client.get(
-        "/v1/%ss/%s/accounts/" % (budget_f.context, budget.pk))
+        "/v1/%ss/%s/children/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 1
     assert response.json()['data'][0]['accumulated_fringe_contribution'] == 210.0
@@ -366,7 +366,7 @@ def test_caches_invalidated_on_delete_fringe(api_client, user, budget_f,
     assert response.status_code == 204
 
     response = api_client.get(
-        "/v1/%ss/%s/accounts/" % (budget_f.context, budget.pk))
+        "/v1/%ss/%s/children/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 1
     assert response.json()['data'][0]['accumulated_fringe_contribution'] == 60.0
@@ -404,7 +404,7 @@ def test_caches_invalidated_on_bulk_delete_fringes(api_client, user, budget_f,
     api_client.force_login(user)
 
     response = api_client.get(
-        "/v1/%ss/%s/accounts/" % (budget_f.context, budget.pk))
+        "/v1/%ss/%s/children/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 1
     assert response.json()['data'][0]['accumulated_fringe_contribution'] == 210.0
@@ -422,7 +422,7 @@ def test_caches_invalidated_on_bulk_delete_fringes(api_client, user, budget_f,
     assert response.status_code == 200
 
     response = api_client.get(
-        "/v1/%ss/%s/accounts/" % (budget_f.context, budget.pk))
+        "/v1/%ss/%s/children/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 1
     assert response.json()['data'][0]['accumulated_fringe_contribution'] == 60.0

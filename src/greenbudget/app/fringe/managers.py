@@ -4,12 +4,12 @@ from greenbudget.lib.utils import concat, ensure_iterable
 
 from greenbudget.app import signals
 from greenbudget.app.account.cache import (
-    account_instance_cache, account_subaccounts_cache)
+    account_instance_cache, account_children_cache)
 from greenbudget.app.budget.cache import (
     budget_fringes_cache, budget_instance_cache)
 from greenbudget.app.budgeting.managers import BudgetingRowManager
 from greenbudget.app.subaccount.cache import (
-    subaccount_instance_cache, subaccount_subaccounts_cache)
+    subaccount_instance_cache, subaccount_children_cache)
 from greenbudget.app.tabling.query import RowQuerier, RowQuerySet
 
 
@@ -58,13 +58,13 @@ class FringeManager(FringeQuerier, BudgetingRowManager):
         account_instance_cache.invalidate([
             s.parent for s in subs if isinstance(s.parent, Account)
         ])
-        account_subaccounts_cache.invalidate([
+        account_children_cache.invalidate([
             s.parent for s in subs if isinstance(s.parent, Account)
         ])
         subaccount_instance_cache.invalidate([
             s.parent for s in subs if isinstance(s.parent, SubAccount)
         ])
-        subaccount_subaccounts_cache.invalidate([
+        subaccount_children_cache.invalidate([
             s.parent for s in subs if isinstance(s.parent, SubAccount)
         ])
 

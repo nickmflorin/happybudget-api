@@ -4,10 +4,10 @@ from greenbudget.app import cache
 from greenbudget.app.budget.cache import budget_instance_cache
 
 
-account_subaccounts_cache = cache.endpoint_cache(
+account_children_cache = cache.endpoint_cache(
     id='children',
     path=lambda instance: reverse(
-        'account:subaccount-list', kwargs={'account_pk': instance.pk})
+        'account:child-list', kwargs={'account_pk': instance.pk})
 )
 
 account_markups_cache = cache.endpoint_cache(
@@ -24,7 +24,7 @@ account_groups_cache = cache.endpoint_cache(
 
 
 def account_instance_cache_dependency(instance):
-    account_subaccounts_cache.invalidate(instance)
+    account_children_cache.invalidate(instance)
     budget_instance_cache.invalidate(instance.budget)
 
 

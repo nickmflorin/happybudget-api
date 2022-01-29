@@ -119,7 +119,7 @@ def test_bulk_update_subaccounts(api_client, user, freezer, budget_f):
     api_client.force_login(user)
     freezer.move_to("2021-01-01")
     response = api_client.patch(
-        "/v1/accounts/%s/bulk-update-subaccounts/" % account.pk,
+        "/v1/accounts/%s/bulk-update-children/" % account.pk,
         format='json',
         data={'data': [
             {
@@ -200,7 +200,7 @@ def test_bulk_update_subaccount_fringes(api_client, user, create_fringe,
     ]
     api_client.force_login(user)
     response = api_client.patch(
-        "/v1/accounts/%s/bulk-update-subaccounts/" % account.pk,
+        "/v1/accounts/%s/bulk-update-children/" % account.pk,
         format='json',
         data={
             'data': [{
@@ -265,7 +265,7 @@ def test_bulk_delete_subaccounts(api_client, user, models, budget_f):
     ]
     api_client.force_login(user)
     response = api_client.patch(
-        "/v1/accounts/%s/bulk-delete-subaccounts/" % account.pk,
+        "/v1/accounts/%s/bulk-delete-children/" % account.pk,
         data={'ids': [sub.pk for sub in subaccounts]}
     )
     assert response.status_code == 200
@@ -315,7 +315,7 @@ def test_bulk_update_subaccounts_budget_updated_once(api_client, user, budget_f,
         lambda obj, instances: calls.append(None)
     )
     response = api_client.patch(
-        "/v1/accounts/%s/bulk-update-subaccounts/" % account.pk,
+        "/v1/accounts/%s/bulk-update-children/" % account.pk,
         format='json',
         data={
             'data': [
@@ -339,7 +339,7 @@ def test_bulk_create_subaccounts(api_client, user, models, budget_f):
 
     api_client.force_login(user)
     response = api_client.patch(
-        "/v1/accounts/%s/bulk-create-subaccounts/" % account.pk,
+        "/v1/accounts/%s/bulk-create-children/" % account.pk,
         format='json',
         data={'data': [
             {

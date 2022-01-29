@@ -14,11 +14,11 @@ def test_caches_on_search(api_client, user, budget_f):
     budget_f.create_subaccount(parent=subaccount, identifier='Jill')
 
     api_client.force_login(user)
-    response = api_client.get("/v1/subaccounts/%s/subaccounts/" % subaccount.pk)
+    response = api_client.get("/v1/subaccounts/%s/children/" % subaccount.pk)
     assert response.status_code == 200
 
     response = api_client.get(
-        "/v1/subaccounts/%s/subaccounts/?search=jill" % subaccount.pk)
+        "/v1/subaccounts/%s/children/?search=jill" % subaccount.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 1
 
@@ -40,7 +40,7 @@ def test_caches_invalidated_on_upload_attachment(api_client, user,
     api_client.force_login(user)
 
     # Make the first request to the sub accounts endpoints to cache the results.
-    response = api_client.get("/v1/subaccounts/%s/subaccounts/" % subaccount.pk)
+    response = api_client.get("/v1/subaccounts/%s/children/" % subaccount.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'][0]['attachments'] == []
@@ -59,7 +59,7 @@ def test_caches_invalidated_on_upload_attachment(api_client, user,
 
     # Make another request to the sub accounts endpoints to ensure that the
     # results are not cached.
-    response = api_client.get("/v1/subaccounts/%s/subaccounts/" % subaccount.pk)
+    response = api_client.get("/v1/subaccounts/%s/children/" % subaccount.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'][0]['attachments'] == [{
@@ -96,7 +96,7 @@ def test_caches_invalidated_on_delete(api_client, user, budget_f):
     assert response.json()['id'] == subaccount.pk
     assert response.json()['children'] == [s.pk for s in subaccounts]
 
-    response = api_client.get("/v1/subaccounts/%s/subaccounts/" % subaccount.pk)
+    response = api_client.get("/v1/subaccounts/%s/children/" % subaccount.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
 
@@ -111,7 +111,7 @@ def test_caches_invalidated_on_delete(api_client, user, budget_f):
     assert response.json()['id'] == subaccount.pk
     assert response.json()['children'] == [subaccounts[1].pk]
 
-    response = api_client.get("/v1/subaccounts/%s/subaccounts/" % subaccount.pk)
+    response = api_client.get("/v1/subaccounts/%s/children/" % subaccount.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 1
 
@@ -134,7 +134,7 @@ def test_caches_invalidated_on_update(api_client, user, budget_f):
 
     api_client.force_login(user)
 
-    response = api_client.get("/v1/subaccounts/%s/subaccounts/" % subaccount.pk)
+    response = api_client.get("/v1/subaccounts/%s/children/" % subaccount.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'][0]['identifier'] == subaccounts[0].identifier
@@ -149,7 +149,7 @@ def test_caches_invalidated_on_update(api_client, user, budget_f):
     })
     assert response.status_code == 200
 
-    response = api_client.get("/v1/subaccounts/%s/subaccounts/" % subaccount.pk)
+    response = api_client.get("/v1/subaccounts/%s/children/" % subaccount.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'][0]['identifier'] == '1000'
@@ -176,12 +176,12 @@ def test_caches_invalidated_on_create(api_client, user, budget_f):
     assert response.status_code == 200
     assert response.json()['children'] == [s.pk for s in subaccounts]
 
-    response = api_client.get("/v1/subaccounts/%s/subaccounts/" % subaccount.pk)
+    response = api_client.get("/v1/subaccounts/%s/children/" % subaccount.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
 
     response = api_client.post(
-        "/v1/subaccounts/%s/subaccounts/" % subaccount.pk,
+        "/v1/subaccounts/%s/children/" % subaccount.pk,
         data={'identifier': '1000'}
     )
     assert response.status_code == 201
@@ -192,7 +192,7 @@ def test_caches_invalidated_on_create(api_client, user, budget_f):
     assert response.json()['children'] == [
         s.pk for s in subaccounts] + [created_id]
 
-    response = api_client.get("/v1/subaccounts/%s/subaccounts/" % subaccount.pk)
+    response = api_client.get("/v1/subaccounts/%s/children/" % subaccount.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 3
 
@@ -213,12 +213,12 @@ def test_caches_invalidated_on_bulk_create(api_client, user, budget_f):
     assert response.status_code == 200
     assert response.json()['children'] == [s.pk for s in subaccounts]
 
-    response = api_client.get("/v1/subaccounts/%s/subaccounts/" % subaccount.pk)
+    response = api_client.get("/v1/subaccounts/%s/children/" % subaccount.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
 
     response = api_client.patch(
-        "/v1/subaccounts/%s/bulk-create-subaccounts/" % subaccount.pk,
+        "/v1/subaccounts/%s/bulk-create-children/" % subaccount.pk,
         format='json',
         data={'data': [{'identifier': '1000'}]}
     )
@@ -230,7 +230,7 @@ def test_caches_invalidated_on_bulk_create(api_client, user, budget_f):
     assert response.json()['children'] == [
         s.pk for s in subaccounts] + [created_id]
 
-    response = api_client.get("/v1/subaccounts/%s/subaccounts/" % subaccount.pk)
+    response = api_client.get("/v1/subaccounts/%s/children/" % subaccount.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 3
 
@@ -264,7 +264,7 @@ def test_caches_invalidated_on_add_fringe(api_client, user, budget_f,
 
     api_client.force_login(user)
 
-    response = api_client.get("/v1/subaccounts/%s/subaccounts/" % subaccount.pk)
+    response = api_client.get("/v1/subaccounts/%s/children/" % subaccount.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'][0]['fringes'] == [f.pk for f in fringes]
@@ -282,7 +282,7 @@ def test_caches_invalidated_on_add_fringe(api_client, user, budget_f,
     new_fringe = create_fringe(budget=budget, rate=0.5)
     subaccounts[0].fringes.add(new_fringe)
 
-    response = api_client.get("/v1/subaccounts/%s/subaccounts/" % subaccount.pk)
+    response = api_client.get("/v1/subaccounts/%s/children/" % subaccount.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'][0]['fringes'] == [
@@ -328,7 +328,7 @@ def test_caches_invalidated_on_update_fringe(api_client, user, budget_f,
 
     api_client.force_login(user)
 
-    response = api_client.get("/v1/subaccounts/%s/subaccounts/" % subaccount.pk)
+    response = api_client.get("/v1/subaccounts/%s/children/" % subaccount.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'][0]['fringes'] == [f.pk for f in fringes]
@@ -355,7 +355,7 @@ def test_caches_invalidated_on_update_fringe(api_client, user, budget_f,
     })
     assert response.status_code == 200
 
-    response = api_client.get("/v1/subaccounts/%s/subaccounts/" % subaccount.pk)
+    response = api_client.get("/v1/subaccounts/%s/children/" % subaccount.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'][0]['fringes'] == [f.pk for f in fringes]
@@ -406,7 +406,7 @@ def test_caches_invalidated_on_bulk_update_fringes(api_client, user, budget_f,
 
     api_client.force_login(user)
 
-    response = api_client.get("/v1/subaccounts/%s/subaccounts/" % subaccount.pk)
+    response = api_client.get("/v1/subaccounts/%s/children/" % subaccount.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'][0]['fringes'] == [f.pk for f in fringes]
@@ -438,7 +438,7 @@ def test_caches_invalidated_on_bulk_update_fringes(api_client, user, budget_f,
     )
     assert response.status_code == 200
 
-    response = api_client.get("/v1/subaccounts/%s/subaccounts/" % subaccount.pk)
+    response = api_client.get("/v1/subaccounts/%s/children/" % subaccount.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'][0]['fringes'] == [f.pk for f in fringes]
@@ -489,7 +489,7 @@ def test_caches_invalidated_on_delete_fringe(api_client, user, budget_f,
     ]
     api_client.force_login(user)
 
-    response = api_client.get("/v1/subaccounts/%s/subaccounts/" % subaccount.pk)
+    response = api_client.get("/v1/subaccounts/%s/children/" % subaccount.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'][0]['fringes'] == [f.pk for f in fringes]
@@ -514,7 +514,7 @@ def test_caches_invalidated_on_delete_fringe(api_client, user, budget_f,
     response = api_client.delete("/v1/fringes/%s/" % fringes[0].pk)
     assert response.status_code == 204
 
-    response = api_client.get("/v1/subaccounts/%s/subaccounts/" % subaccount.pk)
+    response = api_client.get("/v1/subaccounts/%s/children/" % subaccount.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'][0]['fringes'] == [fringes[1].pk]
@@ -565,7 +565,7 @@ def test_caches_invalidated_on_bulk_delete_fringes(api_client, user, budget_f,
     ]
     api_client.force_login(user)
 
-    response = api_client.get("/v1/subaccounts/%s/subaccounts/" % subaccount.pk)
+    response = api_client.get("/v1/subaccounts/%s/children/" % subaccount.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'][0]['fringes'] == [f.pk for f in fringes]
@@ -594,7 +594,7 @@ def test_caches_invalidated_on_bulk_delete_fringes(api_client, user, budget_f,
     )
     assert response.status_code == 200
 
-    response = api_client.get("/v1/subaccounts/%s/subaccounts/" % subaccount.pk)
+    response = api_client.get("/v1/subaccounts/%s/children/" % subaccount.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'][0]['fringes'] == [fringes[1].pk]

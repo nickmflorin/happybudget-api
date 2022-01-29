@@ -386,7 +386,7 @@ def test_create_subaccount(api_client, user, budget_f):
     )
     api_client.force_login(user)
     response = api_client.post(
-        "/v1/subaccounts/%s/subaccounts/" % subaccount.pk,
+        "/v1/subaccounts/%s/children/" % subaccount.pk,
         data={
             "description": "New Description",
             "identifier": "New identifier",
@@ -491,7 +491,7 @@ def test_get_subaccount_subaccounts(api_client, user, budget_df):
         )
     ]
     api_client.force_login(user)
-    response = api_client.get("/v1/subaccounts/%s/subaccounts/" % parent.pk)
+    response = api_client.get("/v1/subaccounts/%s/children/" % parent.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'] == [
@@ -560,7 +560,7 @@ def test_get_template_subaccount_subaccounts(api_client, user, template_df):
         )
     ]
     api_client.force_login(user)
-    response = api_client.get("/v1/subaccounts/%s/subaccounts/" % parent.pk)
+    response = api_client.get("/v1/subaccounts/%s/children/" % parent.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'] == [
@@ -644,7 +644,7 @@ def test_get_subaccount_subaccounts_ordered_by_group(api_client, user, budget_f,
         ),
     ]
     api_client.force_login(user)
-    response = api_client.get("/v1/subaccounts/%s/subaccounts/" % subaccount.pk)
+    response = api_client.get("/v1/subaccounts/%s/children/" % subaccount.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 5
     assert [obj['id'] for obj in response.json()['data']] == [2, 5, 4, 6, 3]
@@ -687,7 +687,7 @@ def test_bulk_update_subaccount_subaccounts(api_client, user, freezer, budget_f)
     api_client.force_login(user)
     freezer.move_to("2021-01-01")
     response = api_client.patch(
-        "/v1/subaccounts/%s/bulk-update-subaccounts/" % subaccount.pk,
+        "/v1/subaccounts/%s/bulk-update-children/" % subaccount.pk,
         format='json',
         data={'data': [
             {
@@ -774,7 +774,7 @@ def test_bulk_update_subaccount_subaccounts_fringes(api_client, user, budget_f,
     ]
     api_client.force_login(user)
     response = api_client.patch(
-        "/v1/subaccounts/%s/bulk-update-subaccounts/" % subaccount.pk,
+        "/v1/subaccounts/%s/bulk-update-children/" % subaccount.pk,
         format='json',
         data={
             'data': [
@@ -853,7 +853,7 @@ def test_bulk_delete_subaccount_subaccounts(api_client, user, budget_f, models):
 
     api_client.force_login(user)
     response = api_client.patch(
-        "/v1/subaccounts/%s/bulk-delete-subaccounts/" % subaccount.pk,
+        "/v1/subaccounts/%s/bulk-delete-children/" % subaccount.pk,
         data={'ids': [sub.pk for sub in subaccounts]}
     )
     assert response.status_code == 200
@@ -904,7 +904,7 @@ def test_bulk_update_subaccount_subaccounts_budget_updated_once(api_client,
     )
 
     response = api_client.patch(
-        "/v1/subaccounts/%s/bulk-update-subaccounts/" % subaccount.pk,
+        "/v1/subaccounts/%s/bulk-update-children/" % subaccount.pk,
         format='json',
         data={
             'data': [
@@ -929,7 +929,7 @@ def test_bulk_create_subaccount_subaccounts(api_client, user, budget_f, models):
 
     api_client.force_login(user)
     response = api_client.patch(
-        "/v1/subaccounts/%s/bulk-create-subaccounts/" % subaccount.pk,
+        "/v1/subaccounts/%s/bulk-create-children/" % subaccount.pk,
         format='json',
         data={'data': [
             {

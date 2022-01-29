@@ -13,9 +13,9 @@ from .views import (
 
 app_name = "subaccount"
 
-subaccount_subaccounts_router = routers.SimpleRouter()
-subaccount_subaccounts_router.register(
-    r'', SubAccountRecursiveViewSet, basename='subaccount')
+subaccount_children_router = routers.SimpleRouter()
+subaccount_children_router.register(
+    r'', SubAccountRecursiveViewSet, basename='child')
 
 subaccount_actuals_router = routers.SimpleRouter()
 subaccount_actuals_router.register(
@@ -48,7 +48,7 @@ router.register(r'', SubAccountViewSet, basename='subaccount')
 
 urlpatterns = router.urls + [
     path('<int:subaccount_pk>/', include([
-        path('subaccounts/', include(subaccount_subaccounts_router.urls)),
+        path('children/', include(subaccount_children_router.urls)),
         path('attachments/', include(subaccount_attachments_router.urls)),
         path('actuals/', include(subaccount_actuals_router.urls)),
         path('groups/', include(subaccount_groups_router.urls)),

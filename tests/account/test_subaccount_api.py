@@ -17,7 +17,7 @@ def test_get_account_subaccounts(api_client, user, budget_f):
         budget_f.create_subaccount(parent=another_account)
     ]
     api_client.force_login(user)
-    response = api_client.get("/v1/accounts/%s/subaccounts/" % account.pk)
+    response = api_client.get("/v1/accounts/%s/children/" % account.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
 
@@ -90,7 +90,7 @@ def test_get_account_subaccounts_ordered_by_group(api_client, user, budget_f,
         budget_f.create_subaccount(parent=account, group=groups[0], order="yn"),
     ]
     api_client.force_login(user)
-    response = api_client.get("/v1/accounts/%s/subaccounts/" % account.pk)
+    response = api_client.get("/v1/accounts/%s/children/" % account.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 5
     assert [obj['id'] for obj in response.json()['data']] == [1, 4, 3, 5, 2]
@@ -101,7 +101,7 @@ def test_create_budget_subaccount(api_client, user, budget_f, models):
     account = budget_f.create_account(parent=budget)
     api_client.force_login(user)
     response = api_client.post(
-        "/v1/accounts/%s/subaccounts/" % account.pk, data={
+        "/v1/accounts/%s/children/" % account.pk, data={
             'identifier': '100',
             'description': 'Test'
         })
@@ -177,7 +177,7 @@ def test_get_community_template_account_subaccounts(api_client, user,
         )
     ]
     api_client.force_login(user)
-    response = api_client.get("/v1/accounts/%s/subaccounts/" % account.pk)
+    response = api_client.get("/v1/accounts/%s/children/" % account.pk)
     assert response.status_code == 403
 
 
@@ -198,6 +198,6 @@ def test_get_another_users_community_template_account_subaccounts(api_client,
         )
     ]
     api_client.force_login(staff_user)
-    response = api_client.get("/v1/accounts/%s/subaccounts/" % account.pk)
+    response = api_client.get("/v1/accounts/%s/children/" % account.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2

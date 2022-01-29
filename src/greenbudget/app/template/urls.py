@@ -34,9 +34,9 @@ template_markup_router = routers.NestedSimpleRouter(
 template_markup_router.register(
     r'markups', TemplateMarkupViewSet, basename='markup')
 
-template_accounts_router = routers.SimpleRouter()
-template_accounts_router.register(
-    r'', TemplateAccountViewSet, basename='account')
+template_children_router = routers.SimpleRouter()
+template_children_router.register(
+    r'', TemplateAccountViewSet, basename='child')
 
 urlpatterns = combine_routers(
     router,
@@ -45,6 +45,6 @@ urlpatterns = combine_routers(
     template_groups_router,
 ) + [
     path('<int:template_pk>/', include([
-        path('accounts/', include(template_accounts_router.urls)),
+        path('children/', include(template_children_router.urls)),
     ]))
 ]

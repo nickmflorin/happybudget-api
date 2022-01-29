@@ -5,7 +5,7 @@ from .views import (
     AccountViewSet,
     AccountMarkupViewSet,
     AccountGroupViewSet,
-    AccountSubAccountViewSet
+    AccountChildrenViewSet
 )
 
 app_name = "account"
@@ -24,9 +24,9 @@ account_markup_router.register(
     basename='markup'
 )
 
-account_subaccounts_router = routers.SimpleRouter()
-account_subaccounts_router.register(
-    r'', AccountSubAccountViewSet, basename='subaccount')
+account_children_router = routers.SimpleRouter()
+account_children_router.register(
+    r'', AccountChildrenViewSet, basename='child')
 
 router = routers.SimpleRouter()
 router.register(r'', AccountViewSet, basename='account')
@@ -35,6 +35,6 @@ urlpatterns = router.urls + [
     path('<int:account_pk>/', include([
         path('groups/', include(account_groups_router.urls)),
         path('markups/', include(account_markup_router.urls)),
-        path('subaccounts/', include(account_subaccounts_router.urls)),
+        path('children/', include(account_children_router.urls)),
     ]))
 ]

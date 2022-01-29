@@ -124,7 +124,7 @@ def test_groups_cache_invalidated_on_create_child(api_client, user, budget_f,
     assert response.json()['children'] == [s.pk for s in accounts]
 
     response = api_client.post(
-        "/v1/%ss/%s/accounts/" % (budget_f.context, budget.pk),
+        "/v1/%ss/%s/children/" % (budget_f.context, budget.pk),
         data={'group': group.pk}
     )
     assert response.status_code == 201
@@ -166,7 +166,7 @@ def test_groups_cache_invalidated_on_bulk_create_children(api_client, user,
     assert response.json()['children'] == [s.pk for s in accounts]
 
     response = api_client.patch(
-        "/v1/%ss/%s/bulk-create-accounts/" % (budget_f.context, budget.pk),
+        "/v1/%ss/%s/bulk-create-children/" % (budget_f.context, budget.pk),
         format='json',
         data={'data': [{'group': group.pk}]}
     )
@@ -249,7 +249,7 @@ def test_groups_cache_invalidated_on_bulk_update_child(api_client, user,
     assert response.json()['children'] == [s.pk for s in accounts]
 
     response = api_client.patch(
-        "/v1/%ss/%s/bulk-update-accounts/" % (budget_f.context, budget.pk),
+        "/v1/%ss/%s/bulk-update-children/" % (budget_f.context, budget.pk),
         format='json',
         data={'data': [{'id': accounts[0].pk, 'group': None}]}
     )
@@ -325,7 +325,7 @@ def test_groups_cache_invalidated_on_bulk_delete_child(api_client, user,
     assert response.json()['children'] == [s.pk for s in accounts]
 
     response = api_client.patch(
-        "/v1/%ss/%s/bulk-delete-accounts/" % (budget_f.context, budget.pk),
+        "/v1/%ss/%s/bulk-delete-children/" % (budget_f.context, budget.pk),
         data={'ids': [accounts[0].pk]}
     )
     assert response.status_code == 200

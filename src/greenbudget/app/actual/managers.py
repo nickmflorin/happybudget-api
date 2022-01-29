@@ -2,11 +2,11 @@ from greenbudget.lib.django_utils.models import generic_fk_instance_change
 
 from greenbudget.app import signals
 from greenbudget.app.account.cache import (
-    account_instance_cache, account_subaccounts_cache)
+    account_instance_cache, account_children_cache)
 from greenbudget.app.budget.cache import budget_instance_cache
 from greenbudget.app.budgeting.managers import BudgetingRowManager
 from greenbudget.app.subaccount.cache import (
-    subaccount_instance_cache, subaccount_subaccounts_cache)
+    subaccount_instance_cache, subaccount_children_cache)
 
 
 class ActualManager(BudgetingRowManager):
@@ -76,8 +76,8 @@ class ActualManager(BudgetingRowManager):
         budget_instance_cache.invalidate(tree.budgets)
 
         account_instance_cache.invalidate(tree.accounts, ignore_deps=True)
-        account_subaccounts_cache.invalidate(tree.accounts)
+        account_children_cache.invalidate(tree.accounts)
 
         subaccount_instance_cache.invalidate(tree.subaccounts, ignore_deps=True)
-        subaccount_subaccounts_cache.invalidate(tree.subaccounts)
+        subaccount_children_cache.invalidate(tree.subaccounts)
         return tree

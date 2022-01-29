@@ -6,7 +6,7 @@ def test_get_accounts(api_client, user, budget_f):
     accounts = budget_f.create_accounts(parent=budget, count=2)
     api_client.force_login(user)
     response = api_client.get(
-        "/v1/%ss/%s/accounts/" % (budget_f.context, budget.pk))
+        "/v1/%ss/%s/children/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'] == [
@@ -56,7 +56,7 @@ def test_get_accounts_ordered_by_group(api_client, user, budget_f, create_group)
     ]
     api_client.force_login(user)
     response = api_client.get(
-        "/v1/%ss/%s/accounts/" % (budget_f.context, budget.pk))
+        "/v1/%ss/%s/children/" % (budget_f.context, budget.pk))
     assert response.status_code == 200
     assert response.json()['count'] == 5
     assert [obj['id'] for obj in response.json()['data']] == [1, 4, 3, 5, 2]
@@ -67,7 +67,7 @@ def test_get_accounts_filtered_by_id(api_client, user, budget_f):
     accounts = budget_f.create_accounts(parent=budget, count=2)
     api_client.force_login(user)
     url = add_query_params_to_url(
-        "/v1/%ss/%s/accounts/" % (budget_f.context, budget.pk),
+        "/v1/%ss/%s/children/" % (budget_f.context, budget.pk),
         ids=[accounts[0].pk, 400]
     )
 
@@ -96,7 +96,7 @@ def test_create_account(api_client, user, budget_f, models):
     budget = budget_f.create_budget()
     api_client.force_login(user)
     response = api_client.post(
-        "/v1/%ss/%s/accounts/" % (budget_f.context, budget.pk),
+        "/v1/%ss/%s/children/" % (budget_f.context, budget.pk),
         data={'identifier': 'new_account'}
     )
     assert response.status_code == 201
@@ -140,7 +140,7 @@ def test_bulk_update_accounts(api_client, user, budget_f, create_group):
     accounts = budget_f.create_accounts(parent=budget, count=2)
     api_client.force_login(user)
     response = api_client.patch(
-        "/v1/%ss/%s/bulk-update-accounts/" % (budget_f.context, budget.pk),
+        "/v1/%ss/%s/bulk-update-children/" % (budget_f.context, budget.pk),
         format='json',
         data={
             'data': [
@@ -182,7 +182,7 @@ def test_bulk_update_accounts_outside_budget(api_client, user, budget_f):
     ]
     api_client.force_login(user)
     response = api_client.patch(
-        "/v1/%ss/%s/bulk-update-accounts/" % (budget_f.context, budget.pk),
+        "/v1/%ss/%s/bulk-update-children/" % (budget_f.context, budget.pk),
         format='json',
         data={
             'data': [
@@ -203,7 +203,7 @@ def test_bulk_create_accounts(api_client, user, budget_f, models):
     budget = budget_f.create_budget()
     api_client.force_login(user)
     response = api_client.patch(
-        "/v1/%ss/%s/bulk-create-accounts/" % (budget_f.context, budget.pk),
+        "/v1/%ss/%s/bulk-create-children/" % (budget_f.context, budget.pk),
         format='json',
         data={
             'data': [
@@ -264,7 +264,7 @@ def test_bulk_delete_accounts(api_client, user, budget_f, models):
     )
     api_client.force_login(user)
     response = api_client.patch(
-        "/v1/%ss/%s/bulk-delete-accounts/" % (budget_f.context, budget.pk),
+        "/v1/%ss/%s/bulk-delete-children/" % (budget_f.context, budget.pk),
         data={'ids': [a.pk for a in accounts]}
     )
     assert response.status_code == 200

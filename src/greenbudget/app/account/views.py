@@ -20,7 +20,7 @@ from greenbudget.app.subaccount.views import GenericSubAccountViewSet
 from greenbudget.app.template.serializers import TemplateSerializer
 
 from .cache import (
-    account_subaccounts_cache,
+    account_children_cache,
     account_groups_cache,
     account_markups_cache,
     account_instance_cache
@@ -101,8 +101,8 @@ class AccountGroupViewSet(
 
 
 @views.filter_by_ids
-@account_subaccounts_cache
-class AccountSubAccountViewSet(
+@account_children_cache
+class AccountChildrenViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
     AccountNestedMixin,
@@ -167,7 +167,7 @@ class GenericAccountViewSet(views.GenericViewSet):
             ),
         ),
         BulkAction(
-            url_path='bulk-{action_name}-subaccounts',
+            url_path='bulk-{action_name}-children',
             child_cls=lambda context: context.view.child_instance_cls,
             child_serializer_cls=lambda context: context.view.child_serializer_cls,  # noqa
             filter_qs=lambda context: models.Q(
@@ -199,8 +199,8 @@ class AccountViewSet(
     (1) GET /accounts/<pk>/
     (2) PATCH /accounts/<pk>/
     (3) DELETE /accounts/<pk>/
-    (4) PATCH /accounts/<pk>/bulk-update-subaccounts/
-    (5) PATCH /accounts/<pk>/bulk-create-subaccounts/
+    (4) PATCH /accounts/<pk>/bulk-update-children/
+    (5) PATCH /accounts/<pk>/bulk-create-children/
     """
     extra_permission_classes = [
         AccountOwnershipPermission,

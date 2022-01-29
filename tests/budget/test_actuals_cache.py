@@ -191,12 +191,12 @@ def test_bulk_update_actuals_invalidates_caches(api_client, user, budget_df,
     assert response.status_code == 200
     assert response.json()['actual'] == 220.0
 
-    response = api_client.get("/v1/budgets/%s/accounts/" % budget.pk)
+    response = api_client.get("/v1/budgets/%s/children/" % budget.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 1
     assert response.json()['data'][0]['actual'] == 220.0
 
-    response = api_client.get("/v1/accounts/%s/subaccounts/" % account.pk)
+    response = api_client.get("/v1/accounts/%s/children/" % account.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'][0]['actual'] == 100.0
@@ -236,7 +236,7 @@ def test_bulk_update_actuals_invalidates_caches(api_client, user, budget_df,
     assert response.status_code == 200
     assert response.json()['actual'] == 140.0
 
-    response = api_client.get("/v1/budgets/%s/accounts/" % budget.pk)
+    response = api_client.get("/v1/budgets/%s/children/" % budget.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 1
     assert response.json()['data'][0]['actual'] == 140.0
@@ -252,7 +252,7 @@ def test_bulk_update_actuals_invalidates_caches(api_client, user, budget_df,
     assert response.json()['data'][0]['value'] == 120.0
     assert response.json()['data'][1]['value'] == 20.0
 
-    response = api_client.get("/v1/accounts/%s/subaccounts/" % account.pk)
+    response = api_client.get("/v1/accounts/%s/children/" % account.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'][0]['actual'] == 0.0
@@ -286,12 +286,12 @@ def test_bulk_create_actuals_invalidates_caches(api_client, user, budget_df,
     assert response.status_code == 200
     assert response.json()['actual'] == 220.0
 
-    response = api_client.get("/v1/budgets/%s/accounts/" % budget.pk)
+    response = api_client.get("/v1/budgets/%s/children/" % budget.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 1
     assert response.json()['data'][0]['actual'] == 220.0
 
-    response = api_client.get("/v1/accounts/%s/subaccounts/" % account.pk)
+    response = api_client.get("/v1/accounts/%s/children/" % account.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'][0]['actual'] == 100.0
@@ -334,7 +334,7 @@ def test_bulk_create_actuals_invalidates_caches(api_client, user, budget_df,
     assert response.status_code == 200
     assert response.json()['actual'] == 360.0
 
-    response = api_client.get("/v1/budgets/%s/accounts/" % budget.pk)
+    response = api_client.get("/v1/budgets/%s/children/" % budget.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 1
     assert response.json()['data'][0]['actual'] == 360.0
@@ -352,7 +352,7 @@ def test_bulk_create_actuals_invalidates_caches(api_client, user, budget_df,
     assert response.json()['data'][2]['value'] == 120.0
     assert response.json()['data'][3]['value'] == 20.0
 
-    response = api_client.get("/v1/accounts/%s/subaccounts/" % account.pk)
+    response = api_client.get("/v1/accounts/%s/children/" % account.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'][0]['actual'] == 100.0
@@ -390,12 +390,12 @@ def test_bulk_delete_actuals_invalidates_caches(api_client, user, budget_df,
     assert response.status_code == 200
     assert response.json()['actual'] == 300.0
 
-    response = api_client.get("/v1/budgets/%s/accounts/" % budget.pk)
+    response = api_client.get("/v1/budgets/%s/children/" % budget.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 1
     assert response.json()['data'][0]['actual'] == 300.0
 
-    response = api_client.get("/v1/accounts/%s/subaccounts/" % account.pk)
+    response = api_client.get("/v1/accounts/%s/children/" % account.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'][0]['actual'] == 160.0
@@ -429,7 +429,7 @@ def test_bulk_delete_actuals_invalidates_caches(api_client, user, budget_df,
     assert response.status_code == 200
     assert response.json()['actual'] == 80.0
 
-    response = api_client.get("/v1/budgets/%s/accounts/" % budget.pk)
+    response = api_client.get("/v1/budgets/%s/children/" % budget.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 1
     assert response.json()['data'][0]['actual'] == 80.0
@@ -445,7 +445,7 @@ def test_bulk_delete_actuals_invalidates_caches(api_client, user, budget_df,
     assert response.json()['data'][0]['value'] == 60.0
     assert response.json()['data'][1]['value'] == 20.0
 
-    response = api_client.get("/v1/accounts/%s/subaccounts/" % account.pk)
+    response = api_client.get("/v1/accounts/%s/children/" % account.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'][0]['actual'] == 60.0

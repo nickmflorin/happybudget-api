@@ -10,7 +10,7 @@ from greenbudget.app.budgeting.decorators import (
     register_bulk_operations, BulkAction, BulkDeleteAction)
 from greenbudget.app.authentication.permissions import IsAdminOrReadOnly
 from greenbudget.app.budget.cache import (
-    budget_accounts_cache,
+    budget_children_cache,
     budget_groups_cache,
     budget_markups_cache,
     budget_instance_cache,
@@ -131,7 +131,7 @@ class TemplateFringeViewSet(
 
 
 @views.filter_by_ids
-@budget_accounts_cache
+@budget_children_cache
 class TemplateAccountViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -142,8 +142,8 @@ class TemplateAccountViewSet(
     """
     ViewSet to handle requests to the following endpoints:
 
-    (1) GET /templates/<pk>/accounts/
-    (2) POST /templates/<pk>/accounts/
+    (1) GET /templates/<pk>/children/
+    (2) POST /templates/<pk>/children/
     """
     instance_cls = Template
 
@@ -184,7 +184,7 @@ class GenericTemplateViewSet(views.GenericViewSet):
     ),
     actions=[
         BulkAction(
-            url_path='bulk-{action_name}-accounts',
+            url_path='bulk-{action_name}-children',
             child_cls=TemplateAccount,
             child_serializer_cls=TemplateAccountSerializer,
             filter_qs=lambda context: models.Q(parent=context.instance),
@@ -232,8 +232,8 @@ class TemplateViewSet(
     (3) GET /templates/<pk>/
     (4) PATCH /templates/<pk>/
     (5) DELETE /templates/<pk>/
-    (6) PATCH /templates/<pk>/bulk-update-accounts/
-    (7) PATCH /templates/<pk>/bulk-create-accounts/
+    (6) PATCH /templates/<pk>/bulk-update-children/
+    (7) PATCH /templates/<pk>/bulk-create-children/
     (8) PATCH /templates/<pk>/bulk-update-actuals/
     (9) PATCH /templates/<pk>/bulk-update-fringes/
     (10) PATCH /templates/<pk>/bulk-create-fringes/

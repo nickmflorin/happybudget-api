@@ -5,7 +5,7 @@ def test_ordering_bulk_create(api_client, user, models, budget_f):
 
     api_client.force_login(user)
     response = api_client.patch(
-        "/v1/subaccounts/%s/bulk-create-subaccounts/" % subaccount.pk,
+        "/v1/subaccounts/%s/bulk-create-children/" % subaccount.pk,
         format='json',
         data={'data': [{}, {}, {}]}
     )

@@ -7,10 +7,10 @@ from greenbudget.app import cache
 from greenbudget.app.account.cache import account_instance_cache
 
 
-subaccount_subaccounts_cache = cache.endpoint_cache(
+subaccount_children_cache = cache.endpoint_cache(
     id='children',
     path=lambda instance: reverse(
-        'subaccount:subaccount-list', kwargs={'subaccount_pk': instance.pk})
+        'subaccount:child-list', kwargs={'subaccount_pk': instance.pk})
 )
 
 subaccount_markups_cache = cache.endpoint_cache(
@@ -32,7 +32,7 @@ subaccount_units_cache = cache.endpoint_cache(
 
 
 def subaccount_instance_cache_dependency(instance):
-    subaccount_subaccounts_cache.invalidate(instance.parent)
+    subaccount_children_cache.invalidate(instance.parent)
     invalidate_parent_instance_cache(instance.parent)
 
 

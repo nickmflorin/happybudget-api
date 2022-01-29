@@ -23,7 +23,7 @@ from greenbudget.app.markup.serializers import MarkupSerializer
 from greenbudget.app.subaccount.models import BudgetSubAccount
 
 from .cache import (
-    budget_accounts_cache,
+    budget_children_cache,
     budget_groups_cache,
     budget_markups_cache,
     budget_instance_cache,
@@ -204,8 +204,8 @@ class BudgetFringeViewSet(
 
 
 @views.filter_by_ids
-@budget_accounts_cache
-class BudgetAccountViewSet(
+@budget_children_cache
+class BudgetChildrenViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
     mixins.UpdateModelMixin,
@@ -215,8 +215,8 @@ class BudgetAccountViewSet(
     """
     ViewSet to handle requests to the following endpoints:
 
-    (1) GET /budgets/<pk>/accounts/
-    (2) POST /budgets/<pk>/accounts/
+    (1) GET /budgets/<pk>/children/
+    (2) POST /budgets/<pk>/children/
     """
     instance_cls = Budget
 
@@ -254,7 +254,7 @@ class GenericBudgetViewSet(views.GenericViewSet):
     ),
     actions=[
         BulkAction(
-            url_path='bulk-{action_name}-accounts',
+            url_path='bulk-{action_name}-children',
             child_cls=BudgetAccount,
             child_serializer_cls=BudgetAccountSerializer,
             filter_qs=lambda context: models.Q(parent=context.instance),
@@ -313,8 +313,8 @@ class BudgetViewSet(
     (3) GET /budgets/<pk>/
     (4) PATCH /budgets/<pk>/
     (5) DELETE /budgets/<pk>/
-    (6) PATCH /budgets/<pk>/bulk-update-accounts/
-    (7) PATCH /budgets/<pk>/bulk-create-accounts/
+    (6) PATCH /budgets/<pk>/bulk-update-children/
+    (7) PATCH /budgets/<pk>/bulk-create-children/
     (8) PATCH /budgets/<pk>/bulk-update-actuals/
     (9) PATCH /budgets/<pk>/bulk-update-fringes/
     (10) PATCH /budgets/<pk>/bulk-create-fringes/

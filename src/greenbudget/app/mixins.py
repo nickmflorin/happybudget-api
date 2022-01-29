@@ -121,8 +121,8 @@ class NestedObjectViewMixin(metaclass=NestedObjectViewMeta):
     that we want to branch off of this endpoint such that they are still
     associated with a single :obj:`Budget` instance:
 
-    POST /budgets/<pk>/accounts/
-    GET /budgets/<pk>/accounts/
+    POST /budgets/<pk>/children/
+    GET /budgets/<pk>/children/
 
     A mixin can be created that extends :obj:`NestedObjectViewMixin` and defines
     permissioning methods and object lookup methods in regard to the parent

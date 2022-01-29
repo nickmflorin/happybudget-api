@@ -9,7 +9,7 @@ from .views import (
     BudgetGroupViewSet,
     BudgetMarkupViewSet,
     BudgetActualsViewSet,
-    BudgetAccountViewSet,
+    BudgetChildrenViewSet,
     BudgetActualsOwnersViewSet
 )
 
@@ -38,8 +38,8 @@ budget_actuals_router = routers.NestedSimpleRouter(router, r'', lookup='budget')
 budget_actuals_router.register(
     r'actuals', BudgetActualsViewSet, basename='actual')
 
-budget_accounts_router = routers.SimpleRouter()
-budget_accounts_router.register(r'', BudgetAccountViewSet, basename='account')
+budget_children_router = routers.SimpleRouter()
+budget_children_router.register(r'', BudgetChildrenViewSet, basename='child')
 
 urlpatterns = combine_routers(
     router,
@@ -50,6 +50,6 @@ urlpatterns = combine_routers(
     budget_actuals_router
 ) + [
     path('<int:budget_pk>/', include([
-        path('accounts/', include(budget_accounts_router.urls)),
+        path('children/', include(budget_children_router.urls)),
     ]))
 ]
