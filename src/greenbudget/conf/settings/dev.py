@@ -13,8 +13,6 @@ from .base import (
 
 ENVIRONMENT = Environments.DEV
 
-CACHE_ENABLED = True
-
 APP_DOMAIN = 'devapi.greenbudget.io'
 APP_URL = 'https://%s' % APP_DOMAIN
 FRONTEND_URL = "https://dev.greenbudget.io/"
