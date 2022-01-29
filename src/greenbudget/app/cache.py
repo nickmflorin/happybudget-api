@@ -379,16 +379,16 @@ class endpoint_cache:
         # we cannot cache requests on a per-user basis, and we cannot cache
         # any requests with query parameters.
         if is_locmem_engine(environments=[Environments.LOCAL, Environments.TEST]):  # noqa
-            cache_key = f"{self.method}-{path}"
+            return f"{self.method}-{path}"
         else:
             user_component = getattr(user, 'id') \
                 if isinstance(user, User) else user
             cache_key = f"{user_component}-{self.method}-{path}"
             if query:
-                cache_key += query.urlencode()
+                return cache_key + query.urlencode()
             elif wildcard:
-                cache_key = f"{cache_key}*"
-        return cache_key
+                return [cache_key, f"{cache_key}*"]
+            return cache_key
 
     def get_cache_key(self, *args, **kwargs):
         """
@@ -466,11 +466,16 @@ class endpoint_cache:
                 key=self._cache_key(path=p.path, user='*', wildcard=True),
                 instance=p.instance
             ) for p in paths]
-        return [CacheKey(instance=p.instance, key=self._cache_key(
-            path=p.path,
-            wildcard=True,
-            user=self.thread.request.user
-        )) for p in paths]
+
+        keys = []
+        for p in paths:
+            for k in self._cache_key(
+                path=p.path,
+                wildcard=True,
+                user=self.thread.request.user
+            ):
+                keys.append(CacheKey(instance=p.instance, key=k))
+        return keys
 
     def decorated_func(self, func):
         """
