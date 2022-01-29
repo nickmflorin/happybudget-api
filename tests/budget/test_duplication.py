@@ -2,7 +2,7 @@ import pytest
 
 
 @pytest.fixture
-def generate_data(create_fringe, create_group, create_markup):
+def generate_data(create_fringe, create_group, create_markup, colors):
     def generate(factory, user):
         template = factory.create_budget(created_by=user, name="Test Name")
         original_fringes = [
@@ -64,8 +64,8 @@ def generate_data(create_fringe, create_group, create_markup):
             ]
             # Create 2 Groups per Account
             original_subaccount_groups[account.pk] = [
-                create_group(parent=account),
-                create_group(parent=account),
+                create_group(parent=account, color=colors[0]),
+                create_group(parent=account, color=colors[1]),
             ]
             # Create 2 SubAccount(s) for each Account, each with it's own Group.
             new_subaccounts = []
@@ -85,8 +85,8 @@ def generate_data(create_fringe, create_group, create_markup):
 
                 # Create 2 Groups per SubAccount
                 original_child_subaccount_groups[subaccount.pk] = [
-                    create_group(parent=subaccount),
-                    create_group(parent=subaccount),
+                    create_group(parent=subaccount, color=colors[0]),
+                    create_group(parent=subaccount, color=colors[0]),
                 ]
                 # Create 2 Markups per SubAccount
                 original_child_subaccount_markups[subaccount.pk] = [

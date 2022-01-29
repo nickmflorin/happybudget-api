@@ -5,6 +5,9 @@ import logging
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
+from greenbudget.lib.django_utils.models import ModelMap
+from greenbudget.lib.utils import ensure_iterable
+
 from greenbudget.app import signals
 
 
@@ -19,30 +22,52 @@ DISALLOWED_FIELDS = [
     models.ForeignKey,
     models.OneToOneField,
     models.ImageField,
-    models.FileField
+    models.FileField,
+    ((models.fields.DateTimeField, models.fields.DateField),
+        lambda field: field.auto_now_add is True or field.auto_now is True)
 ]
 
+ALLOW_FIELD_OVERRIDES = ModelMap({
+    'group.Group': ('color', models.ForeignKey)
+})
 
-def field_can_be_duplicated(field):
+
+def _field_obj_is_disallowed(field):
+    for disallowed_field in DISALLOWED_FIELDS:
+        if isinstance(disallowed_field, tuple):
+            fields = ensure_iterable(disallowed_field[0])
+            if type(field) in fields and disallowed_field[1](field):
+                return True
+        elif issubclass(disallowed_field, models.fields.Field) \
+                and type(field) is disallowed_field:
+            return True
+    return False
+
+
+def field_obj_is_disallowed(field, model_cls):
+    disallowed = _field_obj_is_disallowed(field)
+    override = ALLOW_FIELD_OVERRIDES.get(model_cls, strict=False)
+    if override is None:
+        return disallowed
+    if field.name == override[0] and type(field) is override[1]:
+        return False
+    return disallowed
+
+
+def field_can_be_duplicated(field, model_cls):
     if field.name in DISALLOWED_FIELD_NAMES:
         return False
     for attr_set in DISALLOWED_ATTRIBUTES:
         if getattr(field, attr_set[0], None) is attr_set[1]:
             return False
-    if type(field) in DISALLOWED_FIELDS:
-        return False
-    elif type(field) in (models.fields.DateTimeField, models.fields.DateField):
-        if field.auto_now_add is True or field.auto_now is True:
-            return False
-        return True
-    return True
+    return not field_obj_is_disallowed(field, model_cls)
 
 
 def instantiate_duplicate(instance, user, **overrides):
     kwargs = {}
     destination_cls = overrides.pop('destination_cls', type(instance))
     for field_obj in type(instance)._meta.fields:
-        if field_can_be_duplicated(field_obj) \
+        if field_can_be_duplicated(field_obj, type(instance)) \
                 and field_obj in destination_cls._meta.fields \
                 and field_obj.name not in overrides:
             kwargs[field_obj.name] = getattr(instance, field_obj.name)
