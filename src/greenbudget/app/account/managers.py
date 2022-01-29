@@ -3,7 +3,8 @@ from greenbudget.lib.utils import ensure_iterable
 from greenbudget.app import signals
 from greenbudget.app.budget.cache import (
     budget_groups_cache,
-    budget_instance_cache
+    budget_instance_cache,
+    budget_children_cache
 )
 from greenbudget.app.budgeting.managers import BudgetingPolymorphicRowManager
 from greenbudget.app.budgeting.models import BudgetTree
@@ -32,7 +33,11 @@ class AccountManager(BudgetingPolymorphicRowManager):
     @signals.disable()
     def bulk_save(self, instances, update_fields):
         tree = self.bulk_calculate(instances, commit=False)
+
         account_instance_cache.invalidate(instances)
+
+        budgets = set([inst.budget for inst in instances])
+        budget_groups_cache.invalidate(budgets)
 
         groups = []
         if 'group' in update_fields:
@@ -55,6 +60,7 @@ class AccountManager(BudgetingPolymorphicRowManager):
         parents = set([inst.parent for inst in created])
         budget_groups_cache.invalidate(parents)
         budget_instance_cache.invalidate(parents)
+        budget_children_cache.invalidate(parents)
 
         self.bulk_calculate(created)
         self.mark_budgets_updated(created)

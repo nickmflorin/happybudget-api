@@ -1,18 +1,19 @@
 from greenbudget.lib.django_utils.models import generic_fk_instance_change
 
 from greenbudget.app import signals
-from greenbudget.app.account.cache import (
-    account_instance_cache, account_children_cache)
-from greenbudget.app.budget.cache import budget_instance_cache
+from greenbudget.app.account.cache import account_instance_cache
+from greenbudget.app.budget.cache import (
+    budget_instance_cache, budget_actuals_cache, budget_children_cache)
 from greenbudget.app.budgeting.managers import BudgetingRowManager
 from greenbudget.app.subaccount.cache import (
-    subaccount_instance_cache, subaccount_children_cache)
+    subaccount_instance_cache, invalidate_parent_children_cache)
 
 
 class ActualManager(BudgetingRowManager):
     @signals.disable()
     def bulk_delete(self, instances):
         budgets = set([obj.budget for obj in instances])
+        budget_actuals_cache.invalidate(budgets)
         owners = set([obj.owner for obj in instances])
 
         for obj in instances:
@@ -32,10 +33,16 @@ class ActualManager(BudgetingRowManager):
 
         self.mark_budgets_updated(created)
         self.bulk_actualize_all(owners_to_reactualize)
+
+        budgets = set([obj.budget for obj in created])
+        budget_actuals_cache.invalidate(budgets)
         return created
 
     @signals.disable()
     def bulk_save(self, instances, update_fields):
+        budgets = set([obj.budget for obj in instances])
+        budget_actuals_cache.invalidate(budgets)
+
         # Bulk updating can only be done with "concrete fields".  The "owner"
         # field is a GFK.
         if 'owner' in update_fields:
@@ -73,11 +80,15 @@ class ActualManager(BudgetingRowManager):
 
     def bulk_actualize_all(self, instances, **kwargs):
         tree = super().bulk_actualize_all(instances, **kwargs)
+
         budget_instance_cache.invalidate(tree.budgets)
 
         account_instance_cache.invalidate(tree.accounts, ignore_deps=True)
-        account_children_cache.invalidate(tree.accounts)
+        parents = [a.parent for a in tree.accounts]
+        budget_children_cache.invalidate(parents)
 
         subaccount_instance_cache.invalidate(tree.subaccounts, ignore_deps=True)
-        subaccount_children_cache.invalidate(tree.subaccounts)
+        parents = [a.parent for a in tree.subaccounts]
+        invalidate_parent_children_cache(parents, ignore_deps=True)
+
         return tree

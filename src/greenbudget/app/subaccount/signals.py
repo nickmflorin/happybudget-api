@@ -8,7 +8,11 @@ from greenbudget.app.account.models import Account
 from greenbudget.app.budget.cache import budget_actuals_owners_cache
 from greenbudget.app.fringe.models import Fringe
 
-from .cache import subaccount_units_cache, subaccount_instance_cache
+from .cache import (
+    subaccount_instance_cache,
+    subaccount_units_cache,
+    invalidate_parent_groups_cache
+)
 from .models import (
     SubAccount, BudgetSubAccount, TemplateSubAccount, SubAccountUnit)
 
@@ -105,6 +109,7 @@ def subaccount_saved(instance, **kwargs):
         instances_to_reestimate = []
 
     subaccount_instance_cache.invalidate(instance)
+    invalidate_parent_groups_cache(instance.parent)
     if instance.domain == 'budget':
         budget_actuals_owners_cache.invalidate(instance.budget)
 
@@ -121,6 +126,8 @@ def subaccount_saved(instance, **kwargs):
 @dispatch.receiver(signals.pre_delete, sender=TemplateSubAccount)
 def subaccount_to_delete(instance, **kwargs):
     subaccount_instance_cache.invalidate(instance)
+    invalidate_parent_groups_cache(instance.parent)
+
     if instance.domain == 'budget':
         budget_actuals_owners_cache.invalidate(instance.budget)
     instance.parent.calculate(

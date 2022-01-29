@@ -11,7 +11,12 @@ from greenbudget.app.budgeting.managers import BudgetingPolymorphicRowManager
 from greenbudget.app.budgeting.models import BudgetTree
 from greenbudget.app.tabling.query import RowQuerier, RowPolymorphicQuerySet
 
-from .cache import subaccount_instance_cache, invalidate_parent_instance_cache
+from .cache import (
+    subaccount_instance_cache,
+    invalidate_parent_instance_cache,
+    invalidate_parent_children_cache,
+    invalidate_parent_groups_cache
+)
 
 
 class SubAccountQuerier(RowQuerier):
@@ -123,6 +128,9 @@ class SubAccountManager(SubAccountQuerier, BudgetingPolymorphicRowManager):
         subaccount_instance_cache.invalidate(instances)
         budget_actuals_owners_cache.invalidate(budgets)
 
+        parents = set([s.parent for s in instances])
+        invalidate_parent_groups_cache(parents)
+
         for obj in instances:
             obj.delete()
 
@@ -139,7 +147,10 @@ class SubAccountManager(SubAccountQuerier, BudgetingPolymorphicRowManager):
         budget_actuals_owners_cache.invalidate(created)
 
         parents = set([p.parent for p in created])
+        invalidate_parent_children_cache(parents)
         invalidate_parent_instance_cache(parents)
+        invalidate_parent_groups_cache(parents)
+
         self.bulk_calculate(created)
         return created
 
@@ -150,6 +161,9 @@ class SubAccountManager(SubAccountQuerier, BudgetingPolymorphicRowManager):
         tree = self.bulk_calculate(instances, commit=False)
         instances = tree.subaccounts.union(instances)
         subaccount_instance_cache.invalidate(instances)
+
+        parents = set([s.parent for s in instances])
+        invalidate_parent_groups_cache(parents)
 
         groups = [obj.group for obj in instances if obj.group is not None]
 

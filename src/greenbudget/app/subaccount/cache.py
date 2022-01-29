@@ -5,7 +5,7 @@ from greenbudget.lib.django_utils.urls import lazy_reverse
 
 from greenbudget.app import cache
 from greenbudget.app.account.cache import (
-    account_instance_cache, account_children_cache)
+    account_instance_cache, account_children_cache, account_groups_cache)
 
 
 subaccount_children_cache = cache.endpoint_cache(
@@ -45,10 +45,20 @@ def invalidate_parent_instance_cache(instances, **kwargs):
 def invalidate_parent_children_cache(instances, **kwargs):
     grouped_instances = group_models_by_type(
         instances=instances,
-        types=list(parent_instance_cache_map.keys())
+        types=list(parent_children_cache_map.keys())
     )
     for grouped_type, type_instances in grouped_instances.items():
         get_parent_children_cache(grouped_type).invalidate(
+            type_instances, **kwargs)
+
+
+def invalidate_parent_groups_cache(instances, **kwargs):
+    grouped_instances = group_models_by_type(
+        instances=instances,
+        types=list(parent_group_cache_map.keys())
+    )
+    for grouped_type, type_instances in grouped_instances.items():
+        get_parent_group_cache(grouped_type).invalidate(
             type_instances, **kwargs)
 
 
@@ -83,3 +93,13 @@ parent_children_cache_map = ModelMap({
 
 def get_parent_children_cache(instance_or_type):
     return parent_children_cache_map.get(instance_or_type, strict=True)
+
+
+parent_group_cache_map = ModelMap({
+    'account.Account': account_groups_cache,
+    'subaccount.SubAccount': subaccount_groups_cache
+})
+
+
+def get_parent_group_cache(instance_or_type):
+    return parent_group_cache_map.get(instance_or_type, strict=True)

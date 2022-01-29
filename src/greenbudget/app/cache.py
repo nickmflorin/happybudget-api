@@ -388,7 +388,7 @@ class endpoint_cache:
         # know what the query parameters are because there is no request).
         assert query is None, "A wildcard cannot be used with query parameters."
         key = self._cache_key(path, user=user)
-        return [key[0], f"{key[0]}*"]
+        return [key[0], f"{key[0]}?*"]
 
     def get_cache_key(self, *args, **kwargs):
         """
@@ -435,13 +435,15 @@ class endpoint_cache:
             assert request.user == self.thread.request.user, \
                 "Middleware is not properly associating the request with the " \
                 "cache implementation."
-
+            print("QIERY")
+            print(request.query_params.urlencode())
             # Cache key can be constructed entirely from the request.
             keys = self._cache_key(
                 user=request.user,
                 path=request.path,
                 query=request.query_params
             )
+            print(keys)
             return [CacheKey(instance=None, key=k) for k in keys]
 
         # Cache key needs to be reverse engineered from the `path` argument
@@ -468,7 +470,6 @@ class endpoint_cache:
                 CacheKey(instance=p.instance, key=k)
                 for k in self._cache_key(path=p.path, user='*')
             ] for p in paths])
-
         return concat([[
             CacheKey(instance=p.instance, key=k)
             for k in self._cache_key(
@@ -485,8 +486,13 @@ class endpoint_cache:
         cache_key = self.get_cache_key(request=request)
         assert len(cache_key) == 1
         data = cache.get(cache_key[0].key)
+        print(cache_key[0].key)
         if data:
+            print('Data in there')
+            print(request.query_params)
             logger.debug("Returning cached value at %s." % cache_key[0].key)
+        else:
+            print('No data in there')
         return data
 
     def set(self, request, response):

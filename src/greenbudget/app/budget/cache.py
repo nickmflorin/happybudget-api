@@ -68,7 +68,6 @@ budget_fringes_cache = cache.endpoint_cache(
     ])
 )
 
-
 budget_actuals_cache = cache.endpoint_cache(
     id='actual',
     path=lambda instance: reverse(
@@ -80,7 +79,6 @@ budget_actuals_owners_cache = cache.endpoint_cache(
     path=lambda instance: reverse(
         'budget:actual-owner-list', kwargs={'budget_pk': instance.pk})
 )
-
 
 budget_instance_cache = cache.endpoint_cache(
     id='detail',
