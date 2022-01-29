@@ -348,15 +348,17 @@ class endpoint_cache:
             return
         ignore_deps = kwargs.pop('ignore_deps', False)
         key = self.get_cache_key(*args, **kwargs)
-
+        print(key)
         for keyi in key:
             self._invalidate(keyi)
             if not ignore_deps:
-                for dep in self.dependencies:
-                    if isinstance(dep, self.__class__):
-                        dep.invalidate(*args, **kwargs)
-                    else:
-                        dep(keyi.instance)
+                for dep in [d for d in self.dependencies
+                        if not isinstance(d, self.__class__)]:
+                    dep(keyi.instance)
+        if not ignore_deps:
+            for dep in [d for d in self.dependencies
+                    if isinstance(d, self.__class__)]:
+                dep.invalidate(*args, **kwargs)
 
     def _cache_key(self, path, user='*', wildcard=False, query=None):
         # Requests need to be cached on a user basis, so if the user is not
