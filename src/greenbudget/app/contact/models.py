@@ -1,6 +1,5 @@
 from model_utils import Choices
 
-from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 
 from greenbudget.lib.utils import conditionally_separate_strings
@@ -62,13 +61,3 @@ class Contact(RowModel):
     @property
     def full_name(self):
         return conditionally_separate_strings([self.first_name, self.last_name])
-
-    @property
-    def intermittent_user(self):
-        try:
-            user = self.created_by.refresh_from_db()
-        except (ObjectDoesNotExist, AttributeError):
-            # If the user instance is deleted, this CASCADE delete might lead
-            # to the Contact not having an associated user.
-            return None
-        return user
