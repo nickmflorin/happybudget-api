@@ -7,7 +7,7 @@ from rest_framework.settings import api_settings
 from greenbudget.conf import Environments
 
 
-def api_datetime_string(value):
+def api_datetime_string(value, strict=True):
     """
     Parses either a provivded `obj:datetime.datetime` instance, a provided
     `obj:datetime.date` instance or a valid date formatted `obj:str` instance
@@ -20,6 +20,8 @@ def api_datetime_string(value):
         value (`obj:datetime.datetime`, `obj:datetime.date` or `obj:str)
             The value that should be converted to a datetime string.
     """
+    if value is None and strict is False:
+        return None
     value = ensure_datetime(value)
     return value.strftime(api_settings.DATETIME_FORMAT)
 

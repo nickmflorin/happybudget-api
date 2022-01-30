@@ -9,6 +9,7 @@ from greenbudget.lib.drf.bulk_serializers import (
 )
 
 from greenbudget.app import views, mixins
+from greenbudget.app.actual.serializers import TaggedActualSerializer
 from greenbudget.app.io.views import GenericAttachmentViewSet
 
 from .cache import user_contacts_cache
@@ -64,6 +65,22 @@ class ContactSearchFilterBackend(filters.SearchFilter):
             )
         )
         return super().filter_queryset(request, qs, view)
+
+
+class ContactTaggedActualsViewSet(
+    mixins.ListModelMixin,
+    ContactNestedMixin,
+    views.GenericViewSet
+):
+    """
+    ViewSet to handle requests to the following endpoints:
+
+    (1) GET /contacts/<pk>/tagged-actuals/
+    """
+    serializer_class = TaggedActualSerializer
+
+    def get_queryset(self):
+        return self.instance.tagged_actuals.order_by('date')
 
 
 @user_contacts_cache

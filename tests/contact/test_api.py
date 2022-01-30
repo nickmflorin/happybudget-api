@@ -1,3 +1,6 @@
+from greenbudget.lib.utils.dateutils import api_datetime_string
+
+
 def test_get_contact(api_client, user, create_contact, models):
     contact = create_contact()
     api_client.force_login(user)
@@ -24,6 +27,56 @@ def test_get_contact(api_client, user, create_contact, models):
             "name": models.Contact.TYPES[contact.contact_type]
         }
     }
+
+
+def test_get_contact_tagged_actuals(api_client, user, create_contact,
+        create_actual, create_budget):
+    budget = create_budget()
+    contact = create_contact()
+    actuals = [
+        create_actual(budget=budget, contact=contact),
+        create_actual(budget=budget, contact=contact)
+    ]
+    api_client.force_login(user)
+    response = api_client.get("/v1/contacts/%s/tagged-actuals/" % contact.pk)
+    assert response.status_code == 200
+    assert response.json()['count'] == 2
+    assert response.json()['data'] == [
+        {
+            'id': actuals[0].pk,
+            'name': actuals[0].name,
+            'value': actuals[0].value,
+            'date': api_datetime_string(actuals[0].date, strict=False),
+            'owner': None,
+            'type': 'actual',
+            'budget': {
+                'id': budget.pk,
+                'name': budget.name,
+                'type': 'budget',
+                'domain': 'budget',
+                'updated_at': api_datetime_string(budget.updated_at),
+                'image': None,
+                'is_permissioned': False
+            }
+        },
+        {
+            'id': actuals[1].pk,
+            'name': actuals[1].name,
+            'value': actuals[1].value,
+            'date': api_datetime_string(actuals[1].date, strict=False),
+            'owner': None,
+            'type': 'actual',
+            'budget': {
+                'id': budget.pk,
+                'name': budget.name,
+                'type': 'budget',
+                'domain': 'budget',
+                'updated_at': api_datetime_string(budget.updated_at),
+                'image': None,
+                'is_permissioned': False
+            }
+        }
+    ]
 
 
 def test_get_contacts(api_client, user, create_contacts, models):

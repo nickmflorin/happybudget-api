@@ -42,7 +42,7 @@ class Actual(BudgetingRowModel):
         to='contact.Contact',
         null=True,
         on_delete=models.SET_NULL,
-        related_name='assigned_actuals'
+        related_name='tagged_actuals'
     )
     attachments = models.ManyToManyField(
         to='io.Attachment',

@@ -3,6 +3,7 @@ from rest_framework import serializers
 from greenbudget.lib.drf.fields import GenericRelatedField
 from greenbudget.lib.drf.serializers import PolymorphicNonPolymorphicSerializer
 
+from greenbudget.app.budget.serializers import BudgetSimpleSerializer
 from greenbudget.app.contact.models import Contact
 from greenbudget.app.io.models import Attachment
 from greenbudget.app.io.serializers import SimpleAttachmentSerializer
@@ -60,15 +61,35 @@ class ActualTypeSerializer(TagSerializer):
         fields = TagSerializer.Meta.fields + ("color", )
 
 
-class ActualSerializer(serializers.ModelSerializer):
+class TaggedActualSerializer(serializers.ModelSerializer):
     type = serializers.CharField(read_only=True)
-    order = serializers.CharField(read_only=True)
     name = serializers.CharField(
         required=False,
         allow_blank=False,
         allow_null=True,
         trim_whitespace=False
     )
+    date = serializers.DateTimeField(
+        required=False,
+        allow_null=True
+    )
+    value = serializers.FloatField(required=False, allow_null=True)
+    owner = ActualOwnerField(
+        required=False,
+        allow_null=True,
+        model_classes={'subaccount': BudgetSubAccount, 'markup': Markup}
+    )
+    budget = BudgetSimpleSerializer()
+
+    class Meta:
+        model = Actual
+        fields = (
+            'id', 'name', 'value', 'date', 'owner', 'type', 'budget')
+        read_only_fields = fields
+
+
+class ActualSerializer(TaggedActualSerializer):
+    order = serializers.CharField(read_only=True)
     notes = serializers.CharField(
         required=False,
         allow_blank=False,
@@ -78,10 +99,6 @@ class ActualSerializer(serializers.ModelSerializer):
     purchase_order = serializers.CharField(
         required=False,
         allow_blank=False,
-        allow_null=True
-    )
-    date = serializers.DateTimeField(
-        required=False,
         allow_null=True
     )
     payment_id = serializers.CharField(
@@ -94,17 +111,11 @@ class ActualSerializer(serializers.ModelSerializer):
         required=False,
         many=True
     )
-    value = serializers.FloatField(required=False, allow_null=True)
     actual_type = TagField(
         serializer_class=ActualTypeSerializer,
         queryset=ActualType.objects.all(),
         required=False,
         allow_null=True
-    )
-    owner = ActualOwnerField(
-        required=False,
-        allow_null=True,
-        model_classes={'subaccount': BudgetSubAccount, 'markup': Markup}
     )
     contact = UserFilteredQuerysetPKField(
         required=False,
