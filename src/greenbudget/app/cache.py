@@ -380,7 +380,7 @@ class endpoint_cache:
             assert isinstance(user_component, (int, str))
             cache_key = f"{user_component}-{self.method}-{path}"
             if query:
-                cache_key += query.urlencode()
+                cache_key += f"?{query.urlencode()}"
             return [cache_key]
 
         # The wildcard is used in place of query parameters, when we are
