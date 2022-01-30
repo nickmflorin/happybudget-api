@@ -56,11 +56,15 @@ def is_locmem_engine(**kwargs):
 
 
 InstancePath = collections.namedtuple('InstancePath', ['instance', 'path'])
-CacheKey = collections.namedtuple('CacheKey', ['instance', 'key'])
+EngineeredCacheKey = collections.namedtuple('CacheKey', ['instance', 'key'])
 
 PathConditional = collections.namedtuple(
     'PathConditional', ['condition', 'path'])
 ConditionalPath = collections.namedtuple('ConditionalPath', ['conditions'])
+
+
+class RequestCannotBeCached(Exception):
+    pass
 
 
 class endpoint_cache:
@@ -358,6 +362,96 @@ class endpoint_cache:
                     if isinstance(d, self.__class__)]:
                 dep.invalidate(*args, **kwargs)
 
+    def _raw_cache_key(self, path, user=None, query=None, wildcard=False):
+        # Requests need to be cached on a user basis, so if the user is not
+        # authenticated we cannot cache the request.
+        if isinstance(user, AnonymousUser):
+            raise Exception(
+                "Endpoints can only be cached for authenticated users.")
+
+        # The user can be a wildcard in the case that the invalidation is being
+        # performed outside the scope of a request.
+        assert isinstance(user, User) or user == "*"
+
+        if not wildcard:
+            cache_key = f"{self.method}-{path}"
+            if user:
+                cache_key = f"{getattr(user, 'id', user)}-{cache_key}"
+            if query:
+                cache_key += f"?{query.urlencode()}"
+            return cache_key
+        # The wildcard is used in place of query parameters, when we are
+        # reverse engineering the cache key during invalidation (and do not
+        # know what the query parameters are because there is no request).
+        assert query is None, "A wildcard cannot be used with query parameters."
+        key = self._raw_cache_key(path, user=user)
+        return [key, f"{key}?*"]
+
+    def request_cache_key(self, request):
+        # Enforce that we are cacheing the request or using the cached
+        # response only for GET requests.
+        assert request.method.upper() == self.method, \
+            f"Requests of method ${request.method} cannot be cached."
+
+        # Since we are obtaining the cache key for a request, the request should
+        # be in the active context on this class and should be set on the
+        # thread.
+        assert request.user == self.thread.request.user, \
+            "Middleware is not properly associating the request with the " \
+            "cache implementation."
+
+        if is_locmem_engine(environments=[Environments.LOCAL, Environments.TEST]):  # noqa
+            # When using a LocMemCache, wildcard supporting is not allowed.
+            # This means that we cannot cache requests with query params at all
+            # - because we would have no means of invalidating them when the
+            # request path without query parameters was invalidated, and we
+            # cannot cache request by user because we would not be able to
+            # invalidate against wildcard * users.  However, the latter is okay,
+            # for local development, because we do not need to be concerned with
+            # multiple users sending requests simultaneously.
+            if request.query_params is not None:
+                raise RequestCannotBeCached()
+            # Return a cache-key that is not dependent on the user - we can
+            # only do this since we are guaranteed to be in a local environment.
+            return self._raw_cache_key(path=request.path)
+        return self._raw_cache_key(
+            path=request.path,
+            user=request.user,
+            query=request.query_params
+        )
+
+    def engineered_cache_keys(self, instance=None):
+        paths = self._instance_paths(instance=instance)
+        if getattr(self.thread, 'request', None) is None:
+            # LocMemCache does support indexing cached responses by user so we
+            # do not need to worry about issuing a warning.
+            if not is_locmem_engine(
+                    environments=[Environments.LOCAL, Environments.TEST]):
+                logger.warn(
+                    "Cannot obtain user from active request because the cache "
+                    "is being invalidated outside the scope of an API request. "
+                    "This means that we have to invalidate the cache for all "
+                    "users to be safe.", extra={'paths': paths}
+                )
+                return concat([[
+                    EngineeredCacheKey(instance=p.instance, key=k)
+                    for k in self._raw_cache_key(
+                        path=p.path, user='*', wildcard=True)
+                ] for p in paths])
+
+            # If using the LocMemCache, then we did not cache the request by
+            # the user to begin with.
+            return concat([[
+                EngineeredCacheKey(instance=p.instance, key=k)
+                for k in self._raw_cache_key(path=p.path, wildcard=True)
+            ] for p in paths])
+
+        return concat([[
+            EngineeredCacheKey(instance=p.instance, key=k)
+            for k in self._raw_cache_key(
+                path=p.path, user=self.thread.request.user, wildcard=True)
+        ] for p in paths])
+
     def _cache_key(self, path, user='*', wildcard=False, query=None):
         # Requests need to be cached on a user basis, so if the user is not
         # authenticated we cannot cache the request.
@@ -427,22 +521,7 @@ class endpoint_cache:
         """
         request = kwargs.pop('request', None)
         if request is not None:
-            # Enforce that we are cacheing the request or using the cached
-            # response only for GET requests.
-            assert request.method.upper() == self.method, \
-                f"Requests of method ${request.method} cannot be cached."
-
-            assert request.user == self.thread.request.user, \
-                "Middleware is not properly associating the request with the " \
-                "cache implementation."
-
-            # Cache key can be constructed entirely from the request.
-            keys = self._cache_key(
-                user=request.user,
-                path=request.path,
-                query=request.query_params
-            )
-            return [CacheKey(instance=None, key=k) for k in keys]
+            return self.request_cache_key(request)
 
         # Cache key needs to be reverse engineered from the `path` argument
         # supplied on initialization and an optionally provided set of instances
@@ -451,47 +530,24 @@ class endpoint_cache:
         # keys, associated with a given invalidation routine if there are
         # multiple instances passed in.
         instance = args[0] if args else kwargs.pop('instance', None)
-
-        paths = self._instance_paths(instance=instance)
-        if getattr(self.thread, 'request', None) is None:
-            # LocMemCache does support indexing cached responses by user so we
-            # do not need to worry about issuing a warning.
-            if not is_locmem_engine(
-                    environments=[Environments.LOCAL, Environments.TEST]):
-                logger.warn(
-                    "Cannot obtain user from active request because the cache "
-                    "is being invalidated outside the scope of an API request. "
-                    "This means that we have to invalidate the cache for all "
-                    "users to be safe.", extra={'paths': paths}
-                )
-            return concat([[
-                CacheKey(instance=p.instance, key=k)
-                for k in self._cache_key(path=p.path, user='*')
-            ] for p in paths])
-        return concat([[
-            CacheKey(instance=p.instance, key=k)
-            for k in self._cache_key(
-                path=p.path,
-                user=self.thread.request.user,
-                wildcard=True
-            )
-        ] for p in paths])
+        return self.engineered_cache_keys(instance=instance)
 
     def get(self, request):
         # Since we are creating the cache key from the request, and not an
         # instance (or an iterable of instances) there should only be 1
         # cache key returned.
         cache_key = self.get_cache_key(request=request)
-        assert len(cache_key) == 1
-        data = cache.get(cache_key[0].key)
+        data = cache.get(cache_key)
         if data:
-            logger.debug("Returning cached value at %s." % cache_key[0].key)
+            logger.debug("Returning cached value at %s." % cache_key)
         return data
 
     def set(self, request, response):
-        cache_key = self.get_cache_key(request=request)
-        assert len(cache_key) == 1
-        cache.set(cache_key[0].key, response.data, settings.CACHE_EXPIRY)
+        try:
+            cache_key = self.get_cache_key(request=request)
+        except RequestCannotBeCached:
+            return
+        cache.set(cache_key, response.data, settings.CACHE_EXPIRY)
 
     def decorated_func(self, func):
         """
@@ -563,7 +619,13 @@ class endpoint_cache:
             # This may be deprecated by DRF.
             view.headers = view.default_response_headers
 
-            data = self.get(modified_request)
+            try:
+                data = self.get(modified_request)
+            except RequestCannotBeCached:
+                # Do not call the original dispatch method with the modified
+                # request.
+                r = func(view, request, *args, **kwargs)
+                return r
             if data:
                 # It is safe to assume that the response status code should be
                 # 200 because cacheing is only allowed currently for GET
