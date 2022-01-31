@@ -13,7 +13,7 @@ from greenbudget.lib.utils import ensure_iterable
 from .signals import field_changed, fields_changed, post_create_by_user
 
 
-logger = logging.getLogger('signals')
+logger = logging.getLogger('greenbudget')
 
 
 FieldChange = collections.namedtuple(

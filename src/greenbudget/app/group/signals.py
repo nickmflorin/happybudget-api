@@ -1,5 +1,3 @@
-import logging
-
 from django import dispatch
 
 from greenbudget.app import signals
@@ -9,9 +7,6 @@ from greenbudget.app.subaccount.models import (
     BudgetSubAccount, TemplateSubAccount)
 
 from .models import Group
-
-
-logger = logging.getLogger('signals')
 
 
 @dispatch.receiver(signals.post_save, sender=Group)

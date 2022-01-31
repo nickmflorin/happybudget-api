@@ -43,12 +43,6 @@ LOGGING = {
             'stream': sys.stdout,
             'formatter': 'dynamic'
         },
-        'signals.handler': {
-            'level': logging.INFO,
-            'class': 'logging.StreamHandler',
-            'stream': sys.stdout,
-            'formatter': 'dynamic'
-        },
         'django.server': {
             'level': logging.INFO,
             'class': 'logging.StreamHandler',
@@ -59,10 +53,6 @@ LOGGING = {
             'class': 'logging.StreamHandler',
             'formatter': 'simple',
         },
-        'sentry': {
-            'level': logging.WARNING,
-            'class': 'raven.contrib.django.raven_compat.handlers.SentryHandler',
-        },
         'null': {
             'class': 'logging.NullHandler',
         },
@@ -71,7 +61,7 @@ LOGGING = {
     'loggers': {
         'root': {
             'level': logging.WARNING,
-            'handlers': ['sentry'],
+            'handlers': [],
         },
         'django': {
             'handlers': ['console.simple'],
@@ -90,12 +80,7 @@ LOGGING = {
         },
         'requests': {'level': logging.WARNING},
         'greenbudget': {
-            'handlers': ['greenbudget.handler', 'sentry'],
-            'level': logging.INFO,
-            'propagate': False,
-        },
-        'signals': {
-            'handlers': ['signals.handler'],
+            'handlers': ['greenbudget.handler'],
             'level': logging.INFO,
             'propagate': False,
         },

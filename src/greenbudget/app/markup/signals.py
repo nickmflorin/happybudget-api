@@ -12,7 +12,7 @@ from greenbudget.app.subaccount.models import SubAccount
 from .models import Markup
 
 
-logger = logging.getLogger('signals')
+logger = logging.getLogger('greenbudget')
 
 
 def get_children_to_reestimate_on_save(markup):

@@ -1,5 +1,3 @@
-import logging
-
 from django.contrib.auth import get_user_model
 from django.contrib.auth.backends import ModelBackend
 
@@ -8,9 +6,6 @@ from rest_framework import authentication
 from .exceptions import (
     InvalidCredentialsError, EmailDoesNotExist, NotAuthenticatedError)
 from .utils import user_can_authenticate
-
-
-logger = logging.getLogger('greenbudget')
 
 
 class SocialModelAuthentication(ModelBackend):

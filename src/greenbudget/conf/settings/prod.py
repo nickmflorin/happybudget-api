@@ -41,6 +41,15 @@ LOGGING["handlers"]["watchtower"] = {
     "boto3_session": logger_boto3_session
 }
 
+LOGGING["handlers"]["sentry"] = {
+    'level': logging.WARNING,
+    'class': 'raven.contrib.django.raven_compat.handlers.SentryHandler',
+}
+
 for logger_name in ("django", "django.request", "django.server", "greenbudget"):
     LOGGING["loggers"][logger_name]["handlers"] = LOGGING[
         "loggers"][logger_name]["handlers"] + ["watchtower"]
+
+for logger_name in ("root", "greenbudget"):
+    LOGGING["loggers"][logger_name]["handlers"] = LOGGING[
+        "loggers"][logger_name]["handlers"] + ["sentry"]
