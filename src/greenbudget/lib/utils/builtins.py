@@ -100,13 +100,15 @@ def concat(arrays):
     return concatenated
 
 
-def ensure_iterable(value, strict=False, cast=list):
+def ensure_iterable(value, strict=False, cast=list, cast_none=True):
     """
     Ensures that the provided value is an iterable that can be indexed
     numerically.
     """
     if value is None:
-        return cast()
+        if cast_none:
+            return cast()
+        return None
     # A str instance has an `__iter__` method.
     if isinstance(value, str):
         return [value]

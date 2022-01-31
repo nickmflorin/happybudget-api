@@ -2,30 +2,32 @@ import pytest
 
 
 @pytest.fixture
-def generate_data(create_fringe, create_group, create_markup, colors):
-    def generate(factory, user):
-        template = factory.create_budget(created_by=user, name="Test Name")
+def generate_data(create_fringe, create_group, create_markup, colors,
+        create_actual, create_contact):
+    def generate(factory, user, include_actuals=False):
+        contacts = [create_contact(), create_contact()]
+        base = factory.create_budget(created_by=user, name="Test Name")
         original_fringes = [
             create_fringe(
-                budget=template,
+                budget=base,
                 created_by=user,
                 updated_by=user
             ),
             create_fringe(
-                budget=template,
+                budget=base,
                 created_by=user,
                 updated_by=user
             ),
         ]
         original_account_groups = [
-            create_group(parent=template),
-            create_group(parent=template),
-            create_group(parent=template)
+            create_group(parent=base),
+            create_group(parent=base),
+            create_group(parent=base)
         ]
         original_account_markups = [
-            create_markup(parent=template),
-            create_markup(parent=template),
-            create_markup(parent=template)
+            create_markup(parent=base),
+            create_markup(parent=base),
+            create_markup(parent=base)
         ]
         # Determines how Markup's should be allocated amongst each individual
         # account.
@@ -42,7 +44,7 @@ def generate_data(create_fringe, create_group, create_markup, colors):
             if g_designation is not None:
                 group = original_account_groups[g_designation]
             original_accounts.append(factory.create_account(
-                parent=template,
+                parent=base,
                 created_by=user,
                 updated_by=user,
                 group=group,
@@ -70,14 +72,17 @@ def generate_data(create_fringe, create_group, create_markup, colors):
             # Create 2 SubAccount(s) for each Account, each with it's own Group.
             new_subaccounts = []
             for i in range(2):
-                new_subaccounts.append(factory.create_subaccount(
-                    parent=account,
-                    created_by=user,
-                    updated_by=user,
-                    fringes=[original_fringes[i]],
-                    markups=[original_subaccount_markups[account.pk][i]],
-                    group=original_subaccount_groups[account.pk][i]
-                ))
+                kwargs = {
+                    'parent': account,
+                    'created_by': user,
+                    'updated_by': user,
+                    'fringes': [original_fringes[i]],
+                    'markups': [original_subaccount_markups[account.pk][i]],
+                    'group': original_subaccount_groups[account.pk][i],
+                }
+                if factory.context == 'budget':
+                    kwargs.update(contact=contacts[i])
+                new_subaccounts.append(factory.create_subaccount(**kwargs))
             original_subaccounts[account.pk] = new_subaccounts
 
             for subaccount in new_subaccounts:
@@ -96,6 +101,7 @@ def generate_data(create_fringe, create_group, create_markup, colors):
                 # Create 2 SubAccount(s) for each SubAccount, each with it's own
                 # Group.
                 for i in range(2):
+                    # Intentionally leave out contacts so we can treat as null.
                     original_child_subaccounts[subaccount.pk].append(
                         factory.create_subaccount(
                             parent=subaccount,
@@ -106,8 +112,8 @@ def generate_data(create_fringe, create_group, create_markup, colors):
                             group=original_child_subaccount_groups[subaccount.pk][i]  # noqa
                         ))
 
-        return {
-            'base': template,
+        data = {
+            'base': base,
             'fringes': original_fringes,
             'account_groups': original_account_groups,
             'account_markups': original_account_markups,
@@ -116,12 +122,29 @@ def generate_data(create_fringe, create_group, create_markup, colors):
             'subaccount_groups': original_subaccount_groups,
             'child_subaccounts': original_child_subaccounts
         }
+        if include_actuals:
+            actuals = [
+                create_actual(
+                    contact=contacts[0],
+                    created_by=user,
+                    updated_by=user,
+                    budget=data['base']
+                ),
+                # Intentionally leave out contacts so we can treat as null.
+                create_actual(
+                    created_by=user,
+                    updated_by=user,
+                    budget=data['base']
+                ),
+            ]
+            data.update(contacts=contacts, actuals=actuals)
+        return data
     return generate
 
 
 @pytest.fixture
 def make_assertions():
-    def make_assert(data, base, user):
+    def make_assert(data, base, user, include_actuals=False):
         assert base.name == "Test Name"
         assert base.children.count() == len(data['accounts'])
         assert base.created_by == user
@@ -206,6 +229,14 @@ def make_assertions():
         def assert_fringes(original, derived):
             assert_models(original, derived, asserter=assert_fringe)
 
+        def assert_actual(original, derived):
+            assert_model(original, derived, [
+                "contact", "name", "value", "date", "payment_id", "notes",
+                "purchase_order"])
+
+        def assert_actuals(original, derived):
+            assert_models(original, derived, asserter=assert_actual)
+
         def assert_markup(original, derived):
             assert_model(original, derived, [
                 "identifier", "description", "rate", "unit"])
@@ -225,9 +256,14 @@ def make_assertions():
             assert_markups(original.markups, derived.markups)
 
         def assert_subaccount(original, derived, parent):
-            assert_model(original, derived, [
+            fields = [
                 "identifier", "description", "rate", "quantity", "multiplier",
-                "unit"])
+                "unit"
+            ]
+            if derived.domain == 'budget' and original.domain == 'budget':
+                fields = fields + ["contact"]
+
+            assert_model(original, derived, fields)
             assert derived.parent == parent
             if original.group is None:
                 assert derived.group is None
@@ -242,6 +278,9 @@ def make_assertions():
         assert_markups(data['account_markups'], base.children_markups)
         assert_groups(data['account_groups'], base.groups)
         assert_fringes(data['fringes'], base.fringes)
+
+        if include_actuals:
+            assert_actuals(data['actuals'], base.actuals)
 
         for i, account in enumerate(base.children.all()):
             original_account = data['accounts'][i]
@@ -270,11 +309,10 @@ def make_assertions():
 
 def test_duplicate_budget(budget_df, user, generate_data, make_assertions,
         models):
-    # TODO: Incorporate actuals into the test.
-    data = generate_data(budget_df, user)
+    data = generate_data(budget_df, user, include_actuals=True)
     budget = models.Budget.objects.duplicate(data['base'], user)
     assert isinstance(budget, models.Budget)
-    make_assertions(data, budget, user)
+    make_assertions(data, budget, user, include_actuals=True)
 
 
 def test_duplicate_template(template_df, user, generate_data, make_assertions,

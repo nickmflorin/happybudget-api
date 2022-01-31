@@ -1,5 +1,6 @@
 import collections
 import contextlib
+import datetime
 import logging
 
 from django.contrib.contenttypes.models import ContentType
@@ -14,63 +15,138 @@ from greenbudget.app import signals
 logger = logging.getLogger('greenbudget')
 
 
-DISALLOWED_ATTRIBUTES = [('editable', False), ('primary_key', True)]
-DISALLOWED_FIELD_NAMES = ['id', 'object_id']
+DT_FIELDS = (models.fields.DateTimeField, models.fields.DateField)
+
+
+class DisallowedField:
+    def __init__(self, **kwargs):
+        self._attribute = ensure_iterable(
+            kwargs.get('attribute'), cast_none=False)
+        self._cls = ensure_iterable(kwargs.get('cls'), cast_none=False)
+        self._name = ensure_iterable(kwargs.get('name'), cast_none=False)
+        self._conditional = kwargs.get('conditional')
+
+    def field_cls_is_disallowed(self, field):
+        if self._cls is not None:
+            return type(field) in self._cls
+        return None
+
+    def field_name_is_disallowed(self, field):
+        if self._name is not None:
+            return field.name in self._name
+        return None
+
+    def field_conditional_is_disallowed(self, field):
+        if self._conditional is not None:
+            return type(field) in ensure_iterable(self._conditional['cls']) \
+                and self._conditional['disallowed'](field)
+        return None
+
+    def field_attribute_is_disallowed(self, field):
+        if self._attribute is not None:
+            return any([
+                getattr(field, attr[0], None) == attr[1]
+                for attr in self._attribute
+            ])
+        return None
+
+    def is_disallowed(self, field):
+        evaluated = [result for result in [
+            self.field_cls_is_disallowed(field),
+            self.field_name_is_disallowed(field),
+            self.field_conditional_is_disallowed(field),
+            self.field_attribute_is_disallowed(field)
+        ] if isinstance(result, bool)]
+        return len(evaluated) != 0 and all(evaluated)
+
+
 DISALLOWED_FIELDS = [
-    models.fields.AutoField,
-    models.ManyToManyField,
-    models.ForeignKey,
-    models.OneToOneField,
-    models.ImageField,
-    models.FileField,
-    ((models.fields.DateTimeField, models.fields.DateField),
-        lambda field: field.auto_now_add is True or field.auto_now is True)
+    DisallowedField(attribute=[('editable', False), ('primary_key', True)]),
+    DisallowedField(name=('id', 'object_id')),
+    DisallowedField(cls=[
+        models.fields.AutoField,
+        models.ManyToManyField,
+        models.ForeignKey,
+        models.OneToOneField,
+        models.ImageField,
+        models.FileField,
+    ]),
+    DisallowedField(
+        conditional={
+            'cls': DT_FIELDS,
+            'disallowed': lambda field: field.auto_now_add is True
+            or field.auto_now is True
+        }
+    )
 ]
 
+
+def _field_is_disallowed(field):
+    return any([obj.is_disallowed(field) for obj in DISALLOWED_FIELDS])
+
+
 ALLOW_FIELD_OVERRIDES = ModelMap({
-    'group.Group': ('color', models.ForeignKey)
+    'group.Group': ('color', models.ForeignKey),
+    'actual.Actual': {
+        'field': ('contact', models.ForeignKey),
+        'allowed': lambda value, user: value is None or value.created_by == user
+    },
+    'subaccount.SubAccount': {
+        'field': ('contact', models.ForeignKey),
+        'allowed': lambda value, user: value is None or value.created_by == user
+    }
 })
 
 
-def _field_obj_is_disallowed(field):
-    for disallowed_field in DISALLOWED_FIELDS:
-        if isinstance(disallowed_field, tuple):
-            fields = ensure_iterable(disallowed_field[0])
-            if type(field) in fields and disallowed_field[1](field):
-                return True
-        elif issubclass(disallowed_field, models.fields.Field) \
-                and type(field) is disallowed_field:
-            return True
+def _field_obj_is_allowed_by_override(field, model_cls, value, user):
+    def override_is_allowed(override):
+        assert len(override) == 2, "Improperly defined override."
+        return field.name == override[0] and type(field) is override[1]
+
+    override = ALLOW_FIELD_OVERRIDES.get(model_cls, strict=False)
+    if override is None:
+        return False
+    assert isinstance(override, (dict, tuple)), "Improperly defined override."
+    if isinstance(override, tuple):
+        return override_is_allowed(override)
+    assert 'field' in override and 'allowed' in override, \
+        "Improperly defined override."
+    if override_is_allowed(override['field']):
+        return override['allowed'](value, user)
     return False
 
 
-def field_obj_is_disallowed(field, model_cls):
-    disallowed = _field_obj_is_disallowed(field)
-    override = ALLOW_FIELD_OVERRIDES.get(model_cls, strict=False)
-    if override is None:
-        return disallowed
-    if field.name == override[0] and type(field) is override[1]:
+def field_obj_is_disallowed(field, model_cls, value, user):
+    disallowed = _field_is_disallowed(field)
+    if disallowed and _field_obj_is_allowed_by_override(
+            field, model_cls, value, user):
         return False
     return disallowed
 
 
-def field_can_be_duplicated(field, model_cls):
-    if field.name in DISALLOWED_FIELD_NAMES:
-        return False
-    for attr_set in DISALLOWED_ATTRIBUTES:
-        if getattr(field, attr_set[0], None) is attr_set[1]:
-            return False
-    return not field_obj_is_disallowed(field, model_cls)
+def field_can_be_duplicated(field, model_cls, value, user):
+    return not field_obj_is_disallowed(field, model_cls, value, user)
 
 
 def instantiate_duplicate(instance, user, **overrides):
     kwargs = {}
     destination_cls = overrides.pop('destination_cls', type(instance))
     for field_obj in type(instance)._meta.fields:
-        if field_can_be_duplicated(field_obj, type(instance)) \
-                and field_obj in destination_cls._meta.fields \
+        if field_obj in destination_cls._meta.fields \
                 and field_obj.name not in overrides:
-            kwargs[field_obj.name] = getattr(instance, field_obj.name)
+            instance_value = getattr(instance, field_obj.name)
+            can_be_duplicated = field_can_be_duplicated(
+                field=field_obj,
+                model_cls=type(instance),
+                value=instance_value,
+                user=user
+            )
+            if can_be_duplicated:
+                kwargs[field_obj.name] = getattr(instance, field_obj.name)
+            elif isinstance(field_obj, DT_FIELDS) \
+                    and (field_obj.auto_now_add or field_obj.auto_now):
+                kwargs[field_obj.name] = datetime.datetime.now()
+
     if hasattr(instance.__class__, 'created_by'):
         kwargs['created_by'] = user
     if hasattr(instance.__class__, 'updated_by'):
@@ -79,6 +155,11 @@ def instantiate_duplicate(instance, user, **overrides):
 
 
 class ObjectRelationship:
+    """
+    An object representing the relationship between an original model class
+    instance and it's duplicated form.
+    """
+
     def __init__(self, instance, original, created=False, saved=False,
             update_fields=None):
         self.instance = instance
@@ -111,13 +192,18 @@ class AssociatedObjectNotFound(KeyError):
 
 
 class ObjectSet(collections.abc.Mapping):
+    """
+    A mapping of the original instance ID to the :obj:`ObjectRelationship` for
+    that original instance that is used to maintain the duplicated relationships
+    for a given model class.
+    """
     bulk_create_kwargs = {}
 
     def __init__(self, model_cls, user):
         self.user = user
         self.model_cls = model_cls
         # Data that stores a mapping of original model PKs to the associated
-        # DuplicatedInstance.
+        # ObjectRelationship.
         self._data = {}
 
     @contextlib.contextmanager
