@@ -1,30 +1,16 @@
-from greenbudget.app.authentication.exceptions import PermissionErrorCodes
-from greenbudget.app.authentication.permissions import (
-    AdminPermissionMixin, IsOwner)
-from greenbudget.app.budget.permissions import BudgetProductPermission
-
-from .models import TemplateAccount
+from greenbudget.app.budget.permissions import (
+    BudgetProductPermission, BudgetOwnershipPermission)
 
 
-class AccountOwnershipPermission(AdminPermissionMixin, IsOwner):
-    message = "The user must does not have permission to view this account."
-    code = PermissionErrorCodes.PERMISSION_ERROR
+class AccountOwnershipPermission(BudgetOwnershipPermission):
+    object_name = 'account'
 
-    def has_object_permission(self, request, view, obj):
-        if isinstance(obj, TemplateAccount):
-            if obj.parent.community is True:
-                return self.has_admin_permission(request, view)
-            return super().has_object_permission(request, view, obj)
-        return super().has_object_permission(request, view, obj)
+    def get_permissioned_obj(self, obj):
+        return obj.parent
 
 
 class AccountProductPermission(BudgetProductPermission):
-    access_entity_name = 'account'
+    object_name = 'account'
 
-    def get_budget(self, obj):
-        return obj.budget
-
-    def has_object_permission(self, request, view, obj):
-        if not isinstance(obj, TemplateAccount):
-            return super().has_object_permission(request, view, obj)
-        return True
+    def get_permissioned_obj(self, obj):
+        return obj.parent

@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.backends import ModelBackend
 
@@ -126,3 +127,22 @@ class CsrfExcemptCookieSessionAuthentication(CookieSessionAuthentication):
     but does not enforce the CSRF check.
     """
     csrf_excempt = True
+
+
+class CsrfExcemptShareAuthentication(CsrfExcemptCookieSessionAuthentication):
+    """
+    An extension of :obj:`rest_framework.authentication.SessionAuthentication`
+    that provides the authentication header `WWW-Authenticate` header for
+    share token authentication protocols.
+    """
+    user_ref = 'user'
+    csrf_excempt = True
+
+    def authenticate_header(self, request):
+        """
+        Return a string to be used as the value of the `WWW-Authenticate`
+        header in a `401 Unauthenticated` response.  This is necessary to force
+        DRF to return a 401 status code when authentication fails, vs. a 403
+        status code.
+        """
+        return settings.SHARE_TOKEN_HEADER

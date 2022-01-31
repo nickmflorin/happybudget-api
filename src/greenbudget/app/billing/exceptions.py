@@ -2,10 +2,7 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import exceptions
 
 from greenbudget.lib.utils import ensure_iterable
-from greenbudget.app.authentication.exceptions import (
-    PermissionError,
-    PermissionErrorCodes
-)
+from greenbudget.app.permissions import PermissionError, PermissionErrorCodes
 
 from .mixins import ProductPermissionIdMixin
 

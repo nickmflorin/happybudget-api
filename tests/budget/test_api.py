@@ -47,25 +47,9 @@ def test_get_budget(api_client, user, create_budget):
         "type": "budget",
         "domain": "budget",
         "image": None,
-        "is_permissioned": False
+        "is_permissioned": False,
+        "share_token": None
     }
-
-
-def test_get_permissioned_budget(api_client, user, create_budget):
-    budgets = [create_budget(), create_budget()]
-    api_client.force_login(user)
-    response = api_client.get("/v1/budgets/%s/" % budgets[1].pk)
-    assert response.status_code == 403
-    assert response.json() == {'errors': [{
-        'message': (
-            'The user does not have the correct subscription to view this '
-            'budget.'
-        ),
-        'code': 'product_permission_error',
-        'error_type': 'permission',
-        'products': '__any__',
-        'permission_id': 'multiple_budgets'
-    }]}
 
 
 @pytest.mark.freeze_time('2020-01-01')
@@ -89,7 +73,8 @@ def test_update_budget(api_client, user, create_budget):
         "type": "budget",
         "domain": "budget",
         "image": None,
-        "is_permissioned": False
+        "is_permissioned": False,
+        "share_token": None
     }
 
 
@@ -111,22 +96,9 @@ def test_create_budget(api_client, user, models):
         "type": "budget",
         "domain": "budget",
         "image": None,
-        "is_permissioned": False
+        "is_permissioned": False,
+        "share_token": None
     }
-
-
-def test_create_additional_budget_unsubscribed(api_client, user, create_budget):
-    create_budget()
-    api_client.force_login(user)
-    response = api_client.post("/v1/budgets/", data={"name": "Test Name"})
-    assert response.status_code == 403
-    assert response.json() == {'errors': [{
-        'message': "The user's subscription does not support multiple budgets.",
-        'code': 'product_permission_error',
-        'error_type': 'permission',
-        'products': '__any__',
-        'permission_id': 'multiple_budgets'
-    }]}
 
 
 @pytest.mark.freeze_time('2020-01-01')
@@ -152,7 +124,8 @@ def test_derive_budget(api_client, user, template_df, staff_user, models):
         "type": "budget",
         "domain": "budget",
         "image": None,
-        "is_permissioned": False
+        "is_permissioned": False,
+        "share_token": None
     }
 
 
@@ -176,22 +149,9 @@ def test_duplicate_budget(api_client, standard_product_user, create_budget,
         "type": "budget",
         "domain": "budget",
         "image": None,
-        "is_permissioned": False
+        "is_permissioned": False,
+        "share_token": None
     }
-
-
-def test_duplicate_budget_unsubscribed(api_client, user, create_budget):
-    original = create_budget(created_by=user)
-    api_client.force_login(user)
-    response = api_client.post("/v1/budgets/%s/duplicate/" % original.pk)
-    assert response.status_code == 403
-    assert response.json() == {'errors': [{
-        'message': "The user's subscription does not support multiple budgets.",
-        'code': 'product_permission_error',
-        'error_type': 'permission',
-        'products': '__any__',
-        'permission_id': 'multiple_budgets'
-    }]}
 
 
 def test_delete_budget(api_client, user, create_budget, models,

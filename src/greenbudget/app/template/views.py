@@ -2,13 +2,12 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from rest_framework import response, status, decorators
 
-from greenbudget.app import views, mixins
+from greenbudget.app import views, mixins, permissions
 from greenbudget.app.account.models import TemplateAccount
 from greenbudget.app.account.serializers import TemplateAccountSerializer
 from greenbudget.app.account.views import GenericAccountViewSet
 from greenbudget.app.budgeting.decorators import (
     register_bulk_operations, BulkAction, BulkDeleteAction)
-from greenbudget.app.authentication.permissions import IsAdminOrReadOnly
 from greenbudget.app.budget.cache import (
     budget_children_cache,
     budget_groups_cache,
@@ -16,6 +15,7 @@ from greenbudget.app.budget.cache import (
     budget_instance_cache,
     budget_fringes_cache
 )
+from greenbudget.app.budget.permissions import BudgetOwnershipPermission
 from greenbudget.app.fringe.models import Fringe
 from greenbudget.app.fringe.serializers import FringeSerializer
 from greenbudget.app.group.models import Group
@@ -25,7 +25,6 @@ from greenbudget.app.markup.serializers import MarkupSerializer
 
 from .models import Template
 from .mixins import TemplateNestedMixin
-from .permissions import TemplateObjPermission
 from .serializers import TemplateSerializer, TemplateSimpleSerializer
 
 
@@ -238,7 +237,7 @@ class TemplateViewSet(
     (9) PATCH /templates/<pk>/bulk-update-fringes/
     (10) PATCH /templates/<pk>/bulk-create-fringes/
     """
-    extra_permission_classes = (TemplateObjPermission, )
+    extra_permission_classes = (BudgetOwnershipPermission, )
 
     def get_queryset(self):
         qs = Template.objects.all()
@@ -267,7 +266,7 @@ class TemplateCommunityViewSet(
     (1) GET /templates/community/
     (2) POST /templates/community/
     """
-    permission_classes = (IsAdminOrReadOnly, )
+    permission_classes = (permissions.IsAdminOrReadOnly, )
 
     def create_kwargs(self, serializer):
         return {**super().create_kwargs(serializer), **{'community': True}}

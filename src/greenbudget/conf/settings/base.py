@@ -51,6 +51,9 @@ SENTRY_DSN = "https://9eeab5e26f804bd582385ffc5eda991d@o591585.ingest.sentry.io/
 PWD_RESET_LINK_EXPIRY_TIME_IN_HRS = 24
 GOOGLE_OAUTH_API_URL = "https://www.googleapis.com/oauth2/v3/tokeninfo/"
 
+# Share Configuration
+SHARE_TOKEN_HEADER = "Share-Token"
+
 # Session Configuration
 SESSION_COOKIE_NAME = 'greenbudgetsessionid'
 SESSION_COOKIE_SECURE = True
@@ -168,6 +171,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     # This middleware must come before authentication middleware classes.
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'greenbudget.app.authentication.middleware.ShareTokenMiddleware',
     # This middleware must come before the TokenCookieMiddleware.
     'greenbudget.app.authentication.middleware.BillingTokenCookieMiddleware',
     'greenbudget.app.authentication.middleware.AuthTokenCookieMiddleware',
@@ -328,9 +332,7 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'greenbudget.app.authentication.permissions.IsAuthenticated',
-        'greenbudget.app.authentication.permissions.IsActive',
-        'greenbudget.app.authentication.permissions.IsVerified'
+        'greenbudget.app.permissions.IsFullyAuthenticated',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'greenbudget.app.authentication.backends.SessionAuthentication',

@@ -53,11 +53,7 @@ class Contact(RowModel):
         unique_together = (('created_by', 'order'))
 
     def __str__(self):
-        return "<{cls} id={id}, email={email}>".format(
-            cls=self.__class__.__name__,
-            id=self.pk,
-            email=self.email,
-        )
+        return self.email
 
     @property
     def full_name(self):

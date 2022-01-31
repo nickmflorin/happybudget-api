@@ -1,4 +1,5 @@
-import collections
+from .tokens import AuthToken
+from .models import ShareToken
 import logging
 
 from django.conf import settings
@@ -12,14 +13,10 @@ from greenbudget.lib.utils import empty
 
 from .exceptions import (
     BaseTokenError, InvalidToken, ExpiredToken, NotAuthenticatedError)
-from .tokens import AuthToken
+from .models import AnonymousShareToken
 
 
 logger = logging.getLogger('greenbudget')
-
-
-SocialUser = collections.namedtuple(
-    'SocialUser', ['first_name', 'last_name', 'email'])
 
 
 def request_is_write_method(request):
@@ -35,7 +32,7 @@ def request_is_admin(request):
 
 
 def user_can_authenticate(user, raise_exception=True, permissions=None):
-    from .permissions import check_user_permissions
+    from greenbudget.app.permissions import check_user_permissions
     try:
         check_user_permissions(user, permissions=permissions)
     except NotAuthenticatedError as e:
@@ -54,8 +51,35 @@ def parse_token_from_request(request):
     return request.COOKIES.get(settings.JWT_TOKEN_COOKIE_NAME)
 
 
+def parse_share_token_from_request(request):
+    return request.headers.get(settings.SHARE_TOKEN_HEADER)
+
+
 def parse_user_id_from_token(token_obj):
     return token_obj.get(api_settings.USER_ID_CLAIM)
+
+
+def parse_share_token(token=empty, request=None, instance=None, public=False):
+    assert token is not empty or request is not None, \
+        "Either the request or token must be provided."
+    if token is empty:
+        token = parse_share_token_from_request(request)
+        return parse_share_token(token=token, instance=instance, public=public)
+
+    if token is None:
+        return AnonymousShareToken()
+
+    kwargs = {'public_id': str(token)} if public else {'private_id': str(token)}
+    try:
+        share_token = ShareToken.objects.get(**kwargs)
+    except ShareToken.DoesNotExist:
+        raise InvalidToken()
+    else:
+        if instance is not None and share_token.instance != instance:
+            raise InvalidToken()
+        elif share_token.is_expired:
+            raise ExpiredToken()
+        return share_token
 
 
 def parse_token(token=empty, request=None, token_cls=None):
@@ -65,12 +89,13 @@ def parse_token(token=empty, request=None, token_cls=None):
         token = parse_token_from_request(request)
         return parse_token(token=token, token_cls=token_cls)
 
+    assert token is None or isinstance(token, str), \
+        "The token must be a valid string or None."
+
     if token is None:
         return AnonymousUser(), None
 
     token_cls = token_cls or AuthToken
-    assert token is not None and isinstance(token, str), \
-        "The token must be a valid string."
     try:
         token_obj = token_cls(token, verify=False)
     except BaseTokenError:

@@ -3,7 +3,7 @@ from django.db import models
 
 from rest_framework import response, status, decorators
 
-from greenbudget.app import views, mixins
+from greenbudget.app import views, mixins, permissions
 from greenbudget.app.account.models import BudgetAccount
 from greenbudget.app.account.serializers import BudgetAccountSerializer
 from greenbudget.app.account.views import GenericAccountViewSet
@@ -11,6 +11,8 @@ from greenbudget.app.actual.models import Actual
 from greenbudget.app.actual.serializers import (
     ActualSerializer, ActualOwnerSerializer)
 from greenbudget.app.actual.views import GenericActualViewSet
+from greenbudget.app.authentication.models import ShareToken
+from greenbudget.app.authentication.serializers import ShareTokenSerializer
 from greenbudget.app.budgeting.decorators import (
     register_bulk_operations, BulkAction, BulkDeleteAction)
 from greenbudget.app.fringe.models import Fringe
@@ -32,7 +34,7 @@ from .cache import (
     budget_actuals_owners_cache
 )
 from .models import Budget
-from .mixins import BudgetNestedMixin
+from .mixins import BudgetNestedMixin, BudgetSharedNestedMixin
 from .permissions import (
     BudgetProductPermission,
     MultipleBudgetPermission
@@ -49,7 +51,7 @@ from .serializers import (
 class BudgetMarkupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
-    BudgetNestedMixin,
+    BudgetSharedNestedMixin,
     views.GenericViewSet
 ):
     """
@@ -59,6 +61,13 @@ class BudgetMarkupViewSet(
     (2) GET /budgets/<pk>/markups/
     """
     serializer_class = MarkupSerializer
+    permission_classes = [
+        permissions.OR(
+            permissions.IsFullyAuthenticated,
+            permissions.IsShared(
+                get_nested_obj=lambda view: view.budget),
+        )
+    ]
 
     def create_kwargs(self, serializer):
         return {**super().create_kwargs(serializer), **{'parent': self.budget}}
@@ -80,7 +89,7 @@ class BudgetMarkupViewSet(
 class BudgetGroupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
-    BudgetNestedMixin,
+    BudgetSharedNestedMixin,
     views.GenericViewSet
 ):
     """
@@ -90,6 +99,13 @@ class BudgetGroupViewSet(
     (2) GET /budgets/<pk>/groups/
     """
     serializer_class = GroupSerializer
+    permission_classes = [
+        permissions.OR(
+            permissions.IsFullyAuthenticated,
+            permissions.IsShared(
+                get_nested_obj=lambda view: view.budget),
+        )
+    ]
 
     def create_kwargs(self, serializer):
         return {**super().create_kwargs(serializer), **{
@@ -181,7 +197,7 @@ class BudgetActualsOwnersViewSet(
 class BudgetFringeViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
-    BudgetNestedMixin,
+    BudgetSharedNestedMixin,
     GenericFringeViewSet
 ):
     """
@@ -190,6 +206,13 @@ class BudgetFringeViewSet(
     (1) GET /budgets/<pk>/fringes/
     (2) POST /budgets/<pk>/fringes/
     """
+    permission_classes = [
+        permissions.OR(
+            permissions.IsFullyAuthenticated,
+            permissions.IsShared(
+                get_nested_obj=lambda view: view.budget),
+        )
+    ]
 
     def create_kwargs(self, serializer):
         return {**super().create_kwargs(serializer), **{'budget': self.budget}}
@@ -209,7 +232,7 @@ class BudgetChildrenViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
     mixins.UpdateModelMixin,
-    BudgetNestedMixin,
+    BudgetSharedNestedMixin,
     GenericAccountViewSet
 ):
     """
@@ -219,6 +242,13 @@ class BudgetChildrenViewSet(
     (2) POST /budgets/<pk>/children/
     """
     instance_cls = Budget
+    permission_classes = [
+        permissions.OR(
+            permissions.IsFullyAuthenticated,
+            permissions.IsShared(
+                get_nested_obj=lambda view: view.budget),
+        )
+    ]
 
     def create_kwargs(self, serializer):
         return {**super().create_kwargs(serializer), **{'parent': self.budget}}
@@ -231,6 +261,38 @@ class BudgetChildrenViewSet(
     def get_queryset(self):
         return BudgetAccount.objects \
             .filter(parent=self.budget).order_with_groups()
+
+
+class BudgetShareTokenViewSet(
+    mixins.CreateModelMixin,
+    BudgetNestedMixin,
+    views.GenericViewSet
+):
+    """
+    ViewSet to handle requests to the following endpoints:
+
+    (1) POST /budgets/<pk>/share-token/
+    """
+    serializer_class = ShareTokenSerializer
+
+    def create_kwargs(self, serializer):
+        return {**super().create_kwargs(serializer), **{
+            'content_type': self.content_type,
+            'object_id': self.budget.pk,
+            'created_by': self.request.user
+        }}
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update(instance=self.budget)
+        return context
+
+    def get_queryset(self):
+        return ShareToken.objects.filter(
+            created_by=self.request.user,
+            object_id=self.budget.pk,
+            content_type=self.content_type
+        )
 
 
 class GenericBudgetViewSet(views.GenericViewSet):
@@ -321,13 +383,26 @@ class BudgetViewSet(
     (11) GET /budgets/<pk>/pdf/
     (12) POST /budgets/<pk>/duplicate/
     """
-    extra_permission_classes = [
-        BudgetProductPermission(products="__any__"),
-        MultipleBudgetPermission(products="__any__"),
+    permission_classes = [
+        permissions.OR(
+            permissions.AND(
+                permissions.IsFullyAuthenticated(affects_after=True),
+                permissions.IsOwner(object_name='budget', affects_after=True),
+                MultipleBudgetPermission(
+                    products="__any__",
+                    applicable_methods=["POST"]
+                ),
+                BudgetProductPermission(products="__any__")
+            ),
+            permissions.AND(
+                permissions.IsViewAction('retrieve'),
+                permissions.IsShared
+            )
+        )
     ]
 
     def get_queryset(self):
-        return Budget.objects.filter(created_by=self.request.user).all()
+        return Budget.objects.all()
 
     @decorators.action(detail=True, methods=["GET"])
     def pdf(self, request, *args, **kwargs):

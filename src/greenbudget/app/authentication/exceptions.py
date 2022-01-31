@@ -12,15 +12,6 @@ from rest_framework_simplejwt.exceptions import TokenError as BaseTokenError
 from greenbudget.lib.drf.exceptions import InvalidFieldError
 
 
-class PermissionErrorCodes(object):
-    PERMISSION_ERROR = "permission_error"
-    PRODUCT_PERMISSION_ERROR = "product_permission_error"
-
-
-class PermissionError(exceptions.PermissionDenied):
-    default_code = PermissionErrorCodes.PERMISSION_ERROR
-
-
 class NotAuthenticatedErrorCodes(object):
     ACCOUNT_DISABLED = "account_disabled"
     ACCOUNT_NOT_AUTHENTICATED = "account_not_authenticated"
@@ -72,7 +63,7 @@ class ExpiredToken(InvalidToken):
     A DRF AuthenticationFailed exception used by views when a token is
     expired.
     """
-    default_detail = _('The provided token is expired.')
+    default_detail = _('Token is expired.')
     default_code = NotAuthenticatedErrorCodes.EXPIRED_TOKEN
 
 

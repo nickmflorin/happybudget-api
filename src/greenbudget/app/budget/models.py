@@ -7,6 +7,7 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 
 from greenbudget.app import signals
+from greenbudget.app.authentication.models import ShareToken
 from greenbudget.app.budgeting.models import (
     BudgetingTreePolymorphicModel, AssociatedModel, children_method_handler)
 from greenbudget.app.group.models import Group
@@ -58,6 +59,7 @@ class BaseBudget(BudgetingTreePolymorphicModel):
 
     groups = GenericRelation(Group)
     children_markups = GenericRelation(Markup)
+    share_tokens = GenericRelation(ShareToken)
 
     objects = BaseBudgetManager()
     non_polymorphic = models.Manager()
@@ -70,6 +72,10 @@ class BaseBudget(BudgetingTreePolymorphicModel):
 
     def __str__(self):
         return "Budget: %s" % self.name
+
+    @property
+    def share_token(self):
+        return self.share_tokens.first()
 
     @property
     def child_instance_cls(self):

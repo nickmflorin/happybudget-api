@@ -1,11 +1,11 @@
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
-from greenbudget.app import views, mixins
-from greenbudget.app.actual.views import GenericActualViewSet
+from greenbudget.app import views, mixins, permissions
 from greenbudget.app.budget.serializers import BudgetSerializer
 from greenbudget.app.budgeting.decorators import (
     register_bulk_operations, BulkAction, BulkDeleteAction)
+from greenbudget.app.budgeting.permissions import IsBudgetDomain
 from greenbudget.app.group.models import Group
 from greenbudget.app.group.serializers import GroupSerializer
 from greenbudget.app.io.views import GenericAttachmentViewSet
@@ -20,7 +20,7 @@ from .cache import (
     subaccount_instance_cache,
     subaccount_units_cache
 )
-from .mixins import SubAccountNestedMixin
+from .mixins import SubAccountNestedMixin, SubAccountSharedNestedMixin
 from .models import SubAccount, TemplateSubAccount, SubAccountUnit
 from .permissions import (
     SubAccountProductPermission,
@@ -47,6 +47,14 @@ class SubAccountUnitViewSet(
     (1) GET /subaccounts/units/
     """
     serializer_class = SubAccountUnitSerializer
+    permission_classes = [
+        permissions.OR(
+            permissions.IsFullyAuthenticated(affects_after=True),
+            # Since there is no shared object here, this will simply check if
+            # there is a valid share token in the request.
+            permissions.IsShared()
+        )
+    ]
 
     def get_queryset(self):
         return SubAccountUnit.objects.all()
@@ -57,7 +65,7 @@ class SubAccountUnitViewSet(
 class SubAccountMarkupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
-    SubAccountNestedMixin,
+    SubAccountSharedNestedMixin,
     views.GenericViewSet
 ):
     """
@@ -85,7 +93,7 @@ class SubAccountMarkupViewSet(
 class SubAccountGroupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
-    SubAccountNestedMixin,
+    SubAccountSharedNestedMixin,
     views.GenericViewSet
 ):
     """
@@ -106,37 +114,6 @@ class SubAccountGroupViewSet(
         context = super().get_serializer_context()
         context.update(parent=self.instance)
         return context
-
-
-@views.filter_by_ids
-class SubAccountActualsViewSet(
-    mixins.ListModelMixin,
-    mixins.CreateModelMixin,
-    SubAccountNestedMixin,
-    GenericActualViewSet
-):
-    """
-    ViewSet to handle requests to the following endpoints:
-
-    (1) GET /subaccounts/<pk>/actuals/
-    (2) POST /subaccounts/<pk>/actuals/
-
-    Note:
-    ----
-    This view is currently not cached because it is not in use.  If we do start
-    using it by the FE, we should cache it.
-    """
-
-    def create_kwargs(self, serializer):
-        return {**super().create_kwargs(serializer), **{'budget': self.budget}}
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context.update(budget=self.instance.budget)
-        return context
-
-    def get_queryset(self):
-        return self.instance.actuals.all()
 
 
 class SubAccountAttachmentViewSet(
@@ -225,9 +202,20 @@ class SubAccountViewSet(
     (4) PATCH /subaccounts/<pk>/bulk-update-children/
     (5) PATCH /subaccounts/<pk>/bulk-create-children/
     """
-    extra_permission_classes = [
-        SubAccountOwnershipPermission,
-        SubAccountProductPermission(products='__any__')
+    permission_classes = [
+        permissions.OR(
+            permissions.AND(
+                permissions.IsFullyAuthenticated(affects_after=True),
+                SubAccountOwnershipPermission(affects_after=True),
+                SubAccountProductPermission(products="__any__")
+            ),
+            permissions.AND(
+                IsBudgetDomain,
+                permissions.IsViewAction('retrieve'),
+                permissions.IsShared(
+                    get_permissioned_obj=lambda obj: obj.budget)
+            )
+        )
     ]
 
     @property
@@ -254,7 +242,7 @@ class SubAccountViewSet(
         return context
 
     def get_queryset(self):
-        return SubAccount.objects.filter(created_by=self.request.user)
+        return SubAccount.objects.all()
 
 
 @views.filter_by_ids
@@ -262,7 +250,7 @@ class SubAccountViewSet(
 class SubAccountRecursiveViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
-    SubAccountNestedMixin,
+    SubAccountSharedNestedMixin,
     GenericSubAccountViewSet
 ):
     """
@@ -271,10 +259,6 @@ class SubAccountRecursiveViewSet(
     (1) GET /subaccounts/<pk>/children
     (2) POST /subaccounts/<pk>/children
     """
-    extra_permission_classes = [
-        SubAccountOwnershipPermission,
-        SubAccountProductPermission(products='__any__')
-    ]
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -284,8 +268,7 @@ class SubAccountRecursiveViewSet(
     def get_queryset(self):
         qs = type(self.instance).objects.filter(
             object_id=self.object_id,
-            content_type=self.content_type,
-            created_by=self.request.user
+            content_type=self.content_type
         )
         if self.instance_cls is not TemplateSubAccount:
             qs = qs.prefetch_related('attachments')

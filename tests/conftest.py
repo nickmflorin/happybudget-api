@@ -1,3 +1,4 @@
+import copy
 from io import BytesIO
 import logging
 import mock
@@ -14,6 +15,7 @@ from django.db import connection
 from rest_framework.test import APIClient
 
 from greenbudget.app import cache
+from greenbudget.app.authentication.models import ShareToken
 from greenbudget.app.budget.models import Budget
 from greenbudget.app.fringe.models import Fringe
 from greenbudget.app.group.models import Group
@@ -100,11 +102,31 @@ def disable_logging(caplog):
 
 
 @pytest.fixture
-def api_client():
+def api_client(settings):
     class GreenbudgetApiClient(APIClient):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self._dynamic_headers = {}
+
         def force_login(self, user, **kwargs):
             self.force_authenticate(user)
             super().force_login(user, **kwargs)
+
+        def generic(self, *args, **kwargs):
+            kwargs_with_headers = copy.deepcopy(self._dynamic_headers)
+            if self._dynamic_headers:
+                # Headers provided on request should always override those set
+                # dynamically on the client.
+                kwargs_with_headers.update(**kwargs)
+            return super().generic(*args, **kwargs_with_headers)
+
+        def include_share_token(self, token):
+            header_name = (
+                f"HTTP_{settings.SHARE_TOKEN_HEADER.replace('-', '_')}".upper())
+            if isinstance(token, ShareToken):
+                self._dynamic_headers[header_name] = str(token.private_id)
+            else:
+                self._dynamic_headers[header_name] = str(token)
 
     return GreenbudgetApiClient()
 

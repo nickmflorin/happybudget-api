@@ -13,7 +13,7 @@ from rest_framework_simplejwt.exceptions import AuthenticationFailed
 from greenbudget.lib.utils import ensure_iterable, get_nested_attribute
 from greenbudget.lib.utils.urls import parse_ids_from_request
 
-from greenbudget.app.authentication import permissions
+from greenbudget.app import permissions
 from greenbudget.app.billing.exceptions import ProductPermissionError
 
 
@@ -54,6 +54,15 @@ class GenericView(generics.GenericAPIView):
     `rest_framework.generics.GenericAPIView` class for specific functionality
     used in this application.
     """
+
+    def check_permissions(self, request):
+        permission = permissions.AND(self.get_permissions())
+        permission.has_permission(request, self, raise_exception=True)
+
+    def check_object_permissions(self, request, obj):
+        permission = permissions.AND(self.get_permissions())
+        permission.has_object_permission(
+            request, self, obj, raise_exception=True)
 
     def get_serializer_context(self):
         context = super().get_serializer_context()

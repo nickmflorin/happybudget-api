@@ -1,9 +1,9 @@
 from django.utils.decorators import method_decorator
 from django.views.decorators.debug import sensitive_post_parameters
 
-from rest_framework import response, permissions, status
+from rest_framework import response, status
 
-from greenbudget.app import views, mixins
+from greenbudget.app import views, mixins, permissions
 from greenbudget.app.user.mail import send_email_confirmation_email
 
 from .serializers import (

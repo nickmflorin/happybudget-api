@@ -2,20 +2,23 @@ from django.contrib.auth import logout
 from django.utils.decorators import method_decorator
 from django.views.decorators.debug import sensitive_post_parameters
 
-from rest_framework import response, status, permissions
+from rest_framework import response, status
 
-from greenbudget.app import views
+from greenbudget.app import views, mixins, permissions
 from greenbudget.app.user.serializers import UserSerializer
 
-from .backends import CsrfExcemptCookieSessionAuthentication
+from .backends import (
+    CsrfExcemptCookieSessionAuthentication,
+    CsrfExcemptShareAuthentication
+)
 from .middleware import AuthTokenCookieMiddleware
-from .permissions import (
-    IsAnonymous, IsAuthenticated, IsActive, IsVerified)
+from .models import ShareToken
 from .serializers import (
     LoginSerializer, SocialLoginSerializer, VerifyEmailSerializer,
     AuthTokenValidationSerializer, RecoverPasswordSerializer,
     TokenValidationSerializer, EmailTokenValidationSerializer,
-    ResetPasswordTokenValidationSerializer)
+    ResetPasswordTokenValidationSerializer, ShareTokenSerializer,
+    ShareTokenValidationSerializer)
 from .tokens import AuthToken, AccessToken
 from .utils import parse_token_from_request, user_can_authenticate
 
@@ -24,9 +27,32 @@ def sensitive_post_parameters_m(*args):
     return method_decorator(sensitive_post_parameters(*args))
 
 
+class ShareTokenValidateView(views.GenericView):
+    serializer_class = ShareTokenValidationSerializer
+    authentication_classes = (CsrfExcemptShareAuthentication, )
+    permission_classes = (permissions.AllowAny, )
+
+    @sensitive_post_parameters_m('token')
+    def dispatch(self, request, *args, **kwargs):
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data, *args, **kwargs)
+        serializer.is_valid(raise_exception=True)
+        token = serializer.save()
+        return response.Response(
+            {'token_id': token.private_id},
+            status=status.HTTP_201_CREATED
+        )
+
+
 class TokenValidateView(views.GenericView):
     serializer_class = TokenValidationSerializer
-    token_user_permission_classes = [IsAuthenticated, IsActive, IsVerified]
+    token_user_permission_classes = [
+        permissions.IsAuthenticated,
+        permissions.IsActive,
+        permissions.IsVerified
+    ]
 
     @property
     def token_cls(self):
@@ -71,35 +97,38 @@ class AuthTokenValidateView(TokenValidateView):
 
 
 class PasswordRecoveryTokenValidateView(TokenValidateView):
-    permission_classes = (IsAnonymous, )
+    permission_classes = (permissions.IsAnonymous, )
     token_cls = AccessToken
-    authentication_classes = []
+    authentication_classes = ()
 
 
 class EmailTokenValidateView(TokenValidateView):
     serializer_class = EmailTokenValidationSerializer
     token_cls = AccessToken
-    permission_classes = (IsAnonymous, )
-    authentication_classes = []
-    token_user_permission_classes = [IsAuthenticated, IsActive]
+    permission_classes = (permissions.IsAnonymous, )
+    authentication_classes = ()
+    token_user_permission_classes = [
+        permissions.IsAuthenticated,
+        permissions.IsActive
+    ]
 
     def validate_user(self, user):
         return user_can_authenticate(
             user=user,
-            permissions=[IsAuthenticated, IsActive]
+            permissions=self.token_user_permission_classes
         )
 
 
 class PasswordResetTokenValidateView(TokenValidateView):
     serializer_class = ResetPasswordTokenValidationSerializer
     token_cls = AccessToken
-    permission_classes = (IsAnonymous, )
-    authentication_classes = []
+    permission_classes = (permissions.IsAnonymous, )
+    authentication_classes = ()
 
     def validate_user(self, user):
         return user_can_authenticate(
             user=user,
-            permissions=[IsAuthenticated, IsActive]
+            permissions=[permissions.IsAuthenticated, permissions.IsActive]
         )
 
 
@@ -115,7 +144,7 @@ class LogoutView(views.GenericView):
 
 class AbstractUnauthenticatedView(views.GenericView):
     authentication_classes = []
-    permission_classes = (IsAnonymous, )
+    permission_classes = (permissions.IsAnonymous, )
 
     def get_response_data(self, data):
         return {}
@@ -161,3 +190,15 @@ class VerifyEmailView(AbstractUnauthenticatedView):
 
 class RecoverPasswordView(AbstractUnauthenticatedView):
     serializer_class = RecoverPasswordSerializer
+
+
+class ShareTokenView(
+    mixins.DestroyModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.RetrieveModelMixin,
+    views.GenericViewSet
+):
+    serializer_class = ShareTokenSerializer
+
+    def get_queryset(self):
+        return ShareToken.objects.filter(created_by=self.request.user)

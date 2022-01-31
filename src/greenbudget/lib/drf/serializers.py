@@ -4,7 +4,24 @@ from rest_framework import serializers
 from greenbudget.lib.utils import import_at_module_path
 
 
-class LazyContext(collections.abc.Mapping):
+class ContextFieldLookupError(LookupError):
+    def __init__(self, field, ref=None):
+        self._field = field
+        self._ref = ref
+
+    def __str__(self):
+        if self._ref is None:
+            return (
+                f"The field {self._field} was expected in the context but is "
+                "missing."
+            )
+        return (
+            f"The field {self._field} was expected in the context for "
+            f"{self._ref} but is missing."
+        )
+
+
+class LazyContext(collections.abc.MutableMapping):
     """
     A mapping object that wraps a serializer's context such that a more helpful
     error is raised when accessing an element of the context that is required
@@ -25,31 +42,26 @@ class LazyContext(collections.abc.Mapping):
     def __iter__(self):
         return self._data.__iter__()
 
-    def field_missing_message(self, field):
-        if self._ref is not None:
-            return (
-                "The field `%s` must be provided in context when using %s."
-                % (field, self._ref)
-            )
-        return "The field `%s` must be provided in context." % field
-
     def __getattr__(self, attr):
         try:
             return self.__getitem__(attr)
         except KeyError:
-            raise Exception(self.field_missing_message(attr))
+            raise ContextFieldLookupError(attr, ref=self._ref)
 
     def __getitem__(self, attr):
         return self._data.__getitem__(attr)
 
-    def __setitem__(self, k, v):
-        raise Exception("Cannot set a value on LazyContext.")
+    def __setitem__(self, attr):
+        return self._data.__setitem__(attr)
 
     def __len__(self):
         return self._data.__len__()
 
     def __delitem__(self, k):
         return self._data.__delitem__(k)
+
+    def update(self, *args, **kwargs):
+        return self._data.update(*args, **kwargs)
 
 
 class PolymorphicNonPolymorphicSerializer(serializers.Serializer):

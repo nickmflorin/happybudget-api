@@ -44,8 +44,8 @@ class GenericRelatedField(serializers.PrimaryKeyRelatedField):
 
     def __init__(self, *args, **kwargs):
         self._model_classes = kwargs.pop('model_classes', {})
-        if len(self._model_classes) == 0 or len(self._model_classes) == 1:
-            raise Exception("Must provide at least two model classes to map.")
+        if len(self._model_classes) == 0:
+            raise Exception("Must provide at least one model class to map.")
         super().__init__(*args, **kwargs)
 
     def get_model_cls(self, data):

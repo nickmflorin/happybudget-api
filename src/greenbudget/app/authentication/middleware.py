@@ -13,14 +13,34 @@ from rest_framework_simplejwt.settings import api_settings
 
 from greenbudget.conf import Environments
 
-from .tokens import AuthToken
 from .exceptions import InvalidToken
+from .tokens import AuthToken
 from .utils import (
     parse_token_from_request, parse_token, user_can_authenticate,
-    request_is_admin, request_is_write_method)
+    request_is_admin, request_is_write_method, parse_share_token)
 
 
 logger = logging.getLogger('greenbudget')
+
+
+def get_share_token(request):
+    if not hasattr(request, '_cached_share_token'):
+        request._cached_share_token = parse_share_token(request=request)
+    return request._cached_share_token
+
+
+class ShareTokenMiddleware(MiddlewareMixin):
+    """
+    Middleware that automatically maintains a share token on the request,
+    as it is provided via the the request header defined by the settings
+    configuration `SHARE_TOKEN_HEADER`.
+    """
+
+    def process_request(self, request):
+        assert hasattr(settings, 'SHARE_TOKEN_HEADER'), \
+            'ShareTokenMiddleware requires the SHARE_TOKEN_HEADER setting ' \
+            'to be set.'
+        request.share_token = SimpleLazyObject(lambda: get_share_token(request))
 
 
 def get_session_user(request, cache_stripe_info=True):

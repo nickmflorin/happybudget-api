@@ -36,6 +36,15 @@ class token_cached_stripe_property(cached_stripe_property):
 
 
 class StripeCustomer:
+    """
+    Wraps a :obj:`User` instance that is registered with Stripe such that
+    methods are exposed that retrieve data from Stripe that is associated with
+    that :obj:`User` instance.
+
+    Many of the requests embedded in the methods on this class are cached on
+    the class such that subsequent and redundant requests to Stripe's API can
+    be avoided.
+    """
 
     def __init__(self, user):
         self.stripe_id = user.stripe_id

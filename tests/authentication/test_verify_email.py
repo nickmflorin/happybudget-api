@@ -61,7 +61,7 @@ def test_verify_email_expired_token(api_client, unverified_user):
     )
     assert response.json() == {
         'errors': [{
-            'message': 'The provided token is expired.',
+            'message': 'Token is expired.',
             'code': 'token_expired',
             'error_type': 'auth',
             'user_id': unverified_user.id,

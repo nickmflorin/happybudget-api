@@ -1,7 +1,8 @@
 from django.contrib.contenttypes.models import ContentType
 from django.utils.functional import cached_property
 
-from greenbudget.app import mixins
+from greenbudget.app import mixins, permissions
+from greenbudget.app.budgeting.permissions import IsBudgetDomain
 
 from .models import SubAccount
 from .permissions import (
@@ -45,3 +46,30 @@ class SubAccountNestedMixin(mixins.NestedObjectViewMixin):
             'content_type': self.content_type,
             'object_id': self.object_id
         }}
+
+
+class SubAccountSharedNestedMixin(SubAccountNestedMixin):
+    subaccount_permission_classes = [
+        permissions.OR(
+            permissions.AND(
+                SubAccountOwnershipPermission(affects_after=True),
+                SubAccountProductPermission(products='__any__')
+            ),
+            permissions.AND(
+                IsBudgetDomain(get_permissioned_obj=lambda view: view.budget),
+                permissions.IsShared(
+                    get_permissioned_obj=lambda view: view.budget),
+            )
+        )
+    ]
+    permission_classes = [
+        permissions.OR(
+            permissions.IsFullyAuthenticated,
+            permissions.AND(
+                IsBudgetDomain(
+                    get_nested_obj=lambda view: view.subaccount.budget),
+                permissions.IsShared(
+                    get_nested_obj=lambda view: view.subaccount.budget),
+            )
+        )
+    ]

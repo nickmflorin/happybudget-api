@@ -60,7 +60,7 @@ def test_password_recovery_expired_token(api_client, user, path, extra_data):
     }})
     assert response.json() == {
         'errors': [{
-            'message': 'The provided token is expired.',
+            'message': 'Token is expired.',
             'code': 'token_expired',
             'error_type': 'auth',
             'user_id': user.id,

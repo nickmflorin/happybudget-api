@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from greenbudget.lib.drf.exceptions import InvalidFieldError
 
-from greenbudget.app.authentication.exceptions import PermissionError
+from greenbudget.app import permissions
 from greenbudget.app.budget.serializers import BaseBudgetSerializer
 from greenbudget.app.io.fields import Base64ImageField
 
@@ -56,7 +56,7 @@ class TemplateSerializer(TemplateSimpleSerializer):
         else:
             is_community = attrs.get("community", self.instance.community)
             if not request.user.is_staff and is_community:
-                raise PermissionError(
+                raise permissions.PermissionError(
                     "Only staff users can modify community templates.")
             elif 'hidden' in attrs:
                 if not is_community:

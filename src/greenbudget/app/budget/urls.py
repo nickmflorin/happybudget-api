@@ -10,7 +10,8 @@ from .views import (
     BudgetMarkupViewSet,
     BudgetActualsViewSet,
     BudgetChildrenViewSet,
-    BudgetActualsOwnersViewSet
+    BudgetActualsOwnersViewSet,
+    BudgetShareTokenViewSet
 )
 
 app_name = "budget"
@@ -38,6 +39,10 @@ budget_actuals_router = routers.NestedSimpleRouter(router, r'', lookup='budget')
 budget_actuals_router.register(
     r'actuals', BudgetActualsViewSet, basename='actual')
 
+budget_share_token_router = routers.SimpleRouter()
+budget_share_token_router.register(
+    r'', BudgetShareTokenViewSet, basename='share-token')
+
 budget_children_router = routers.SimpleRouter()
 budget_children_router.register(r'', BudgetChildrenViewSet, basename='child')
 
@@ -47,9 +52,11 @@ urlpatterns = combine_routers(
     budget_actuals_owners_router,
     budget_groups_router,
     budget_markup_router,
-    budget_actuals_router
+    budget_actuals_router,
+    budget_share_token_router
 ) + [
     path('<int:budget_pk>/', include([
         path('children/', include(budget_children_router.urls)),
+        path('share-token/', include(budget_share_token_router.urls))
     ]))
 ]

@@ -1,5 +1,4 @@
 from django.db import models
-from django.db.models.functions import Concat
 from rest_framework import decorators, response, status, filters
 
 from greenbudget.lib.drf.bulk_serializers import (
@@ -13,6 +12,7 @@ from greenbudget.app.actual.serializers import TaggedActualSerializer
 from greenbudget.app.io.views import GenericAttachmentViewSet
 
 from .cache import user_contacts_cache
+from .filters import ContactSearchFilterBackend
 from .mixins import ContactNestedMixin
 from .models import Contact
 from .serializers import ContactSerializer, ContactDetailSerializer
@@ -30,41 +30,6 @@ class ContactAttachmentViewSet(
     (3) POST /contacts/<pk>/attachments/
     """
     pass
-
-
-class ContactSearchFilterBackend(filters.SearchFilter):
-    def filter_queryset(self, request, queryset, view):
-        qs = queryset.annotate(
-            name=models.Case(
-                models.When(
-                    first_name=None,
-                    last_name=None,
-                    then=models.Value(None)
-                ),
-                models.When(
-                    first_name=None,
-                    then=models.F('last_name')
-                ),
-                models.When(
-                    last_name=None,
-                    then=models.F('first_name')
-                ),
-                default=Concat(
-                    models.F('first_name'),
-                    models.Value(' '),
-                    models.F('last_name'),
-                    output_field=models.CharField()
-                )
-            ),
-            label=models.Case(
-                models.When(
-                    contact_type=Contact.TYPES.vendor,
-                    then=models.F('company'),
-                ),
-                default=None
-            )
-        )
-        return super().filter_queryset(request, qs, view)
 
 
 class ContactTaggedActualsViewSet(

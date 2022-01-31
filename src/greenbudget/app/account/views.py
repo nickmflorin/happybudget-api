@@ -1,13 +1,13 @@
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
-from greenbudget.app import views, mixins
+from greenbudget.app import views, mixins, permissions
 
 from greenbudget.app.account.models import Account
-from greenbudget.app.account.mixins import AccountNestedMixin
 from greenbudget.app.budget.serializers import BudgetSerializer
 from greenbudget.app.budgeting.decorators import (
     register_bulk_operations, BulkAction, BulkDeleteAction)
+from greenbudget.app.budgeting.permissions import IsBudgetDomain
 from greenbudget.app.group.models import Group
 from greenbudget.app.group.serializers import GroupSerializer
 from greenbudget.app.markup.models import Markup
@@ -25,6 +25,7 @@ from .cache import (
     account_markups_cache,
     account_instance_cache
 )
+from .mixins import AccountSharedNestedMixin
 from .permissions import (
     AccountOwnershipPermission,
     AccountProductPermission
@@ -43,7 +44,7 @@ from .serializers import (
 class AccountMarkupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
-    AccountNestedMixin,
+    AccountSharedNestedMixin,
     views.GenericViewSet,
 ):
     """
@@ -77,7 +78,7 @@ class AccountMarkupViewSet(
 class AccountGroupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
-    AccountNestedMixin,
+    AccountSharedNestedMixin,
     views.GenericViewSet,
 ):
     """
@@ -105,7 +106,7 @@ class AccountGroupViewSet(
 class AccountChildrenViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
-    AccountNestedMixin,
+    AccountSharedNestedMixin,
     GenericSubAccountViewSet,
 ):
     """
@@ -202,9 +203,20 @@ class AccountViewSet(
     (4) PATCH /accounts/<pk>/bulk-update-children/
     (5) PATCH /accounts/<pk>/bulk-create-children/
     """
-    extra_permission_classes = [
-        AccountOwnershipPermission,
-        AccountProductPermission(products='__any__')
+    permission_classes = [
+        permissions.OR(
+            permissions.AND(
+                permissions.IsFullyAuthenticated(affects_after=True),
+                AccountOwnershipPermission(affects_after=True),
+                AccountProductPermission(products="__any__")
+            ),
+            permissions.AND(
+                IsBudgetDomain,
+                permissions.IsViewAction('retrieve'),
+                permissions.IsShared(
+                    get_permissioned_obj=lambda obj: obj.budget)
+            )
+        )
     ]
 
     def get_serializer_context(self):
@@ -231,4 +243,4 @@ class AccountViewSet(
         }[self.instance_cls.domain]
 
     def get_queryset(self):
-        return Account.objects.filter(created_by=self.request.user)
+        return Account.objects.all()

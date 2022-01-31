@@ -1,6 +1,7 @@
 from rest_framework import serializers, exceptions
 
 from greenbudget.app.account.serializers import AccountPdfSerializer
+from greenbudget.app.authentication.serializers import ShareTokenSerializer
 from greenbudget.app.group.serializers import GroupSerializer
 from greenbudget.app.io.fields import Base64ImageField
 from greenbudget.app.markup.serializers import MarkupSerializer
@@ -48,7 +49,6 @@ class BudgetPdfSerializer(BaseBudgetSerializer):
 
 
 class BudgetSimpleSerializer(BaseBudgetSerializer):
-    is_permissioned = serializers.SerializerMethodField()
     updated_at = serializers.DateTimeField(read_only=True)
     image = Base64ImageField(required=False, allow_null=True)
     template = serializers.PrimaryKeyRelatedField(
@@ -61,15 +61,7 @@ class BudgetSimpleSerializer(BaseBudgetSerializer):
     class Meta:
         model = Budget
         fields = BaseBudgetSerializer.Meta.fields + (
-            'updated_at', 'template', 'image', 'is_permissioned')
-
-    def get_is_permissioned(self, instance):
-        if not self.context['user'].has_product('__any__'):
-            assert instance.created_by == self.context['user'], \
-                "Cannot check budget permissions created by user for a budget " \
-                "created by another user."
-            return not instance.is_first_created
-        return False
+            'updated_at', 'template', 'image')
 
     def create(self, validated_data):
         if 'template' not in validated_data:
@@ -89,19 +81,38 @@ class BudgetSimpleSerializer(BaseBudgetSerializer):
                     "Do not have permission to use template.")
         return template
 
+    def to_representation(self, instance):
+        # We allow unauthenticated users to retrieve information about a
+        # Budget that is associated with a ShareToken.  In this case, we cannot
+        # include whether or not the Budget is permissioned, both because the
+        # user is anonymous and we would not want to include that info in a
+        # response.
+        data = super().to_representation(instance)
+        if self.context['user'].is_authenticated:
+            assert instance.created_by == self.context['user']
+            data['is_permissioned'] = False
+            if not self.context['user'].has_product('__any__'):
+                data['is_permissioned'] = not instance.is_first_created
+        return data
+
 
 class BudgetSerializer(BudgetSimpleSerializer):
     nominal_value = serializers.FloatField(read_only=True)
     accumulated_fringe_contribution = serializers.FloatField(read_only=True)
     accumulated_markup_contribution = serializers.FloatField(read_only=True)
     actual = serializers.FloatField(read_only=True)
+    share_token = ShareTokenSerializer(read_only=True)
 
     class Meta:
         model = Budget
         fields = BudgetSimpleSerializer.Meta.fields \
-            + (
-                'nominal_value',
-                'actual',
+            + ('nominal_value', 'actual', 'share_token',
                 'accumulated_markup_contribution',
                 'accumulated_fringe_contribution'
             )
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if not self.context['user'].is_authenticated:
+            del data['share_token']
+        return data

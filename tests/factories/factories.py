@@ -4,6 +4,7 @@ from django.contrib.contenttypes.models import ContentType
 
 from greenbudget.app.account.models import BudgetAccount, TemplateAccount
 from greenbudget.app.actual.models import Actual, ActualType
+from greenbudget.app.authentication.models import ShareToken
 from greenbudget.app.budget.models import Budget
 from greenbudget.app.contact.models import Contact
 from greenbudget.app.fringe.models import Fringe
@@ -83,6 +84,14 @@ class TagFactory(CustomModelFactory):
 
     class Meta:
         abstract = True
+
+
+class ShareTokenFactory(CustomModelFactory):
+    """
+    A DjangoModelFactory to create instances of :obj:`ShareToken`.
+    """
+    class Meta:
+        model = ShareToken
 
 
 class UserFactory(CustomModelFactory):

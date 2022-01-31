@@ -5,13 +5,6 @@ from greenbudget.lib.utils.dateutils import api_datetime_string
 from greenbudget.app.authentication.tokens import AuthToken
 
 
-@pytest.fixture
-def validate_auth_token(jwt_authenticated_client):
-    def inner():
-        return jwt_authenticated_client.post("/v1/auth/validate/")
-    return inner
-
-
 @pytest.mark.freeze_time('2020-01-01')
 def test_validate_auth_token(api_client, settings, standard_product_user):
     token = AuthToken.for_user(standard_product_user)
@@ -71,9 +64,9 @@ def test_validate_auth_token_twice_fetches_from_stripe_once(settings,
 
 
 def test_force_logout_on_auth_token_removal(jwt_authenticated_client, user,
-        validate_auth_token, settings):
+        settings):
     jwt_authenticated_client.force_login(user)
-    response = validate_auth_token()
+    response = jwt_authenticated_client.post("/v1/auth/validate/")
     assert response.status_code == 201
     assert settings.JWT_TOKEN_COOKIE_NAME in response.cookies
 
@@ -83,9 +76,9 @@ def test_force_logout_on_auth_token_removal(jwt_authenticated_client, user,
 
 
 def test_validate_auth_token_inactive_user(inactive_user, settings,
-        validate_auth_token, jwt_authenticated_client):
+        jwt_authenticated_client):
     jwt_authenticated_client.force_login(inactive_user)
-    response = validate_auth_token()
+    response = jwt_authenticated_client.post("/v1/auth/validate/")
     assert response.status_code == 401
     assert response.json() == {
         'errors': [{
@@ -98,10 +91,10 @@ def test_validate_auth_token_inactive_user(inactive_user, settings,
     assert settings.JWT_TOKEN_COOKIE_NAME not in response.cookies
 
 
-def test_validate_auth_token_unverified_user(validate_auth_token,
-        unverified_user, jwt_authenticated_client, settings):
+def test_validate_auth_token_unverified_user(unverified_user,
+        jwt_authenticated_client, settings):
     jwt_authenticated_client.force_login(unverified_user)
-    response = validate_auth_token()
+    response = jwt_authenticated_client.post("/v1/auth/validate/")
     assert response.status_code == 401
     assert response.json() == {
         'errors': [{

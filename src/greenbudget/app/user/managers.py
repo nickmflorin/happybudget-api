@@ -44,7 +44,6 @@ SOCIAL_USER_LOOKUPS = {
 
 
 class UserQuerier(object):
-
     def active(self):
         return self.filter(is_active=True)
 
