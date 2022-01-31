@@ -1,7 +1,7 @@
 from django.db import models
 from polymorphic.models import PolymorphicModel
 
-from greenbudget.lib.utils import ensure_iterable
+from greenbudget.lib.utils import ensure_iterable, humanize_list
 from .utils import lexographic_midpoint, validate_order
 
 
@@ -37,16 +37,22 @@ class RowModelMixin(models.Model):
 
     @property
     def table_filter(self):
-        pivot_filter = {}
-        for fk_pivot in ensure_iterable(self.table_pivot):
-            pivot_filter[fk_pivot] = getattr(self, fk_pivot)
-        return pivot_filter
+        return {
+            pivot: getattr(self, pivot)
+            for pivot in ensure_iterable(self.table_pivot)
+        }
 
     @property
     def table_key(self):
-        table_key = []
-        for fk_pivot in ensure_iterable(self.table_pivot):
-            table_key.append(getattr(self, fk_pivot))
+        pivot = ensure_iterable(self.table_pivot)
+        table_key = [getattr(self, fk_pivot) for fk_pivot in pivot]
+        missing_pivots = [
+            pivot[i] for i, v in enumerate(table_key) if v is None]
+        if missing_pivots:
+            raise Exception(
+                "Table key cannot be constructed because pivots for fields "
+                f"{humanize_list(missing_pivots)} are not defined."
+            )
         return tuple(table_key)
 
     def get_table(self, include_self=True):
@@ -60,6 +66,9 @@ class RowModelMixin(models.Model):
         return self.get_table()
 
     def order_at_bottom(self, commit=True):
+        # TODO: At some point, we are going to have to be concerned with locking
+        # the table while we retrieve the latest in the table in order to order
+        # this instance after it.
         try:
             last_in_table = self.get_table().latest()
         except self.DoesNotExist:
