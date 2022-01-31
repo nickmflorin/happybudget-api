@@ -1,5 +1,5 @@
 import collections
-from django.db import models
+from django.db import models, transaction
 
 from greenbudget.lib.utils import ensure_iterable
 from greenbudget.lib.django_utils.query import (
@@ -14,16 +14,21 @@ ModelsAndGroup = collections.namedtuple("ModelsAndGroup", ["models", "group"])
 
 
 class RowQuerier:
-    def reorder(self, commit=True, instances=None):
-        instances = instances.all() or self.all()
-        ordering = order_after(len(instances))
-        [
+    @transaction.atomic
+    def reorder(self, commit=True):
+        self.select_for_update()
+        ordering = order_after(self.count())
+
+        instances = self.all()
+        # TODO: We might want to write this such that it operates on each subset
+        # table comprised of the instances individually.
+        assert len(set([obj.table_key for obj in instances])) == 1, \
+            "Can only reorder instances that all belong to the same table."
+        for i in range(self.count()):
             setattr(instances[i], "order", ordering[i])
-            for i in range(len(instances))
-        ]
+
         if commit:
-            self.bulk_update(
-                instances, ["order"], batch_size=len(instances))
+            self.bulk_update(instances, ["order"], batch_size=len(instances))
         return instances
 
     def reorder_by(self, *fields, commit=True):
