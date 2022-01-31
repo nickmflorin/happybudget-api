@@ -32,8 +32,18 @@ class SocialModelAuthentication(ModelBackend):
 class ModelAuthentication(ModelBackend):
     """
     An extension of :obj:`django.contrib.auth.backends.ModelBackend` that
-    enforces that a user has a verified email address before allowing them
-    to fully login.
+    adds the following enhancements:
+
+    (1) Performs additional checks on the :obj:`User` instance (such as
+        ensuring that their email address is verified) before allowing the
+        :obj:`User` to login.
+    (2) Raises exceptions that trigger our error response handling instead
+        of returning None, in the case that the :obj:`User` is not successfully
+        authenticated.
+
+    In the case that the login request is coming from the Admin, we have to
+    use the default behavior (returning None) because the Admin is not built
+    to handle DRF exceptions.
     """
 
     def authenticate(self, request, username=None, email=None, password=None):
