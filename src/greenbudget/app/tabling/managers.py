@@ -41,7 +41,6 @@ class RowManagerMixin(RowQuerier):
                 if instance.order is not None
             ]
             try:
-                # orders.append(self.get_latest_in_table(table_key).order)
                 orders.append(
                     all_table_instances.get_latest_in_table(table_key).order)
             except self.model.DoesNotExist:
