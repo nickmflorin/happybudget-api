@@ -18,10 +18,9 @@ def field_changed_receiver(field, **kwargs):
 
 @dispatch.receiver(models.signals.post_save)
 def handle_universal_post_save(instance, sender, signal, **kwargs):
-    if sender.__module__.startswith("greenbudget.app"):
-        if kwargs['created'] is True:
-            post_create.send(sender, instance=instance, **kwargs)
-        post_save.send(sender, instance=instance, **kwargs)
+    if kwargs['created'] is True:
+        post_create.send(sender, instance=instance, **kwargs)
+    post_save.send(sender, instance=instance, **kwargs)
 
 
 @dispatch.receiver(models.signals.m2m_changed)

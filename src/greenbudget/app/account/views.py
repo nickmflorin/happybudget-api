@@ -178,7 +178,7 @@ class GenericAccountViewSet(views.GenericViewSet):
             perform_update=lambda serializer, context: serializer.save(
                 updated_by=context.request.user
             ),
-            perform_create=lambda serializer, context: serializer.save(  # noqa
+            perform_create=lambda serializer, context: serializer.save(
                 created_by=context.request.user,
                 updated_by=context.request.user,
                 parent=context.instance
