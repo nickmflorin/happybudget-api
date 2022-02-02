@@ -50,7 +50,8 @@ def test_social_login_user_exists(api_client, create_user):
         "timezone": "America/New_York",
         "is_first_time": False,
         "product_id": None,
-        "billing_status": None
+        "billing_status": None,
+        "num_budgets": 0
     }
 
 
@@ -99,7 +100,8 @@ def test_social_login_user_does_not_exist(api_client, models):
         "timezone": "America/New_York",
         "is_first_time": True,
         "product_id": None,
-        "billing_status": None
+        "billing_status": None,
+        "num_budgets": 0
     }
 
 

@@ -46,7 +46,8 @@ def test_validate_email_token(validate_email_token, unverified_user):
         "profile_image": None,
         "is_first_time": False,
         "product_id": None,
-        "billing_status": None
+        "billing_status": None,
+        "num_budgets": 0
     }
 
 

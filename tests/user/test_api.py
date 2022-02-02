@@ -67,7 +67,8 @@ def test_registration(api_client, models, settings, user):
                 "timezone": "America/New_York",
                 "is_first_time": True,
                 "billing_status": None,
-                "product_id": None
+                "product_id": None,
+                "num_budgets": 0
             }
 
     assert m.called
@@ -163,7 +164,8 @@ def test_update_logged_in_user(api_client, user):
         "timezone": str(user.timezone),
         "is_first_time": False,
         "billing_status": None,
-        "product_id": None
+        "product_id": None,
+        "num_budgets": 0
     }
 
     user.refresh_from_db()
@@ -199,7 +201,8 @@ def test_change_password(api_client, user, user_password):
         "timezone": str(user.timezone),
         "is_first_time": False,
         "billing_status": None,
-        "product_id": None
+        "product_id": None,
+        "num_budgets": 0
     }
 
     user.refresh_from_db()

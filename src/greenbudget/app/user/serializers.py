@@ -113,6 +113,7 @@ class UserSerializer(serializers.ModelSerializer):
         validators=[
             validators.UniqueValidator(queryset=User.objects.all())]
     )
+    num_budgets = serializers.IntegerField(read_only=True)
     company = serializers.CharField(allow_null=True, required=False)
     position = serializers.CharField(allow_null=True, required=False)
     address = serializers.CharField(allow_null=True, required=False)
@@ -135,4 +136,4 @@ class UserSerializer(serializers.ModelSerializer):
             'is_active', 'is_admin', 'is_superuser', 'is_staff', 'full_name',
             'profile_image', 'last_login', 'date_joined', 'timezone',
             'is_first_time', 'company', 'position', 'address', 'phone_number',
-            'product_id', 'billing_status')
+            'product_id', 'billing_status', 'num_budgets')

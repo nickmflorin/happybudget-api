@@ -42,7 +42,8 @@ def test_validate_password_token(api_client, user):
         "profile_image": None,
         "is_first_time": False,
         "product_id": None,
-        "billing_status": None
+        "billing_status": None,
+        "num_budgets": 0
     }
 
 
@@ -215,6 +216,7 @@ def test_reset_password(user, api_client):
         "is_first_time": False,
         "product_id": None,
         "billing_status": None,
+        "num_budgets": 0
     }
 
 

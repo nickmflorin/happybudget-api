@@ -72,6 +72,10 @@ class User(AbstractUser):
     def full_name(self):
         return self.first_name + " " + self.last_name
 
+    @property
+    def num_budgets(self):
+        return self.budgets.count()
+
     def sync_with_social_provider(self, social_user=None, token=None,
             provider=None):
         assert social_user is not None \

@@ -42,7 +42,8 @@ def test_login(login, user_with_password, settings):
         "timezone": "America/New_York",
         "is_first_time": False,
         "product_id": None,
-        "billing_status": None
+        "billing_status": None,
+        "num_budgets": 0
     }
 
 
