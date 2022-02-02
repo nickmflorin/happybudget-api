@@ -140,6 +140,8 @@ def subaccount_to_delete(instance, **kwargs):
 @dispatch.receiver(signals.pre_save, sender=BudgetSubAccount)
 @dispatch.receiver(signals.pre_save, sender=TemplateSubAccount)
 def subaccount_to_save(instance, **kwargs):
+    if instance.order is None:
+        instance.order_at_bottom()
     instance.validate_before_save()
 
 

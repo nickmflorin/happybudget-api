@@ -34,14 +34,6 @@ class RowQuerier:
     def reorder_by(self, *fields, commit=True):
         return self.reorder(commit=commit, instances=self.order_by(*fields))
 
-    def get_table(self, *args, **kwargs):
-        """
-        Returns a queryset that filters for the model instances belong to the
-        table determined by the set of arguments provided.
-        """
-        pivot_filter = self.construct_table_pivot_filter(*args, **kwargs)
-        return self.filter(pivot_filter)
-
     def get_all_in_tables(self, table_keys):
         """
         Returns a queryset that filters for the model instances belonging to
@@ -49,20 +41,21 @@ class RowQuerier:
         """
         table_keys = ensure_iterable(table_keys)
         assert len(table_keys), "At least 1 table key must be provided."
-        qs_filter = self.construct_table_pivot_filter(table_keys[0])
+        qs_filter = self.model.get_table_filter(table_key=table_keys[0])
         for table_key in table_keys[1:]:
-            qs_filter = qs_filter | self.construct_table_pivot_filter(table_key)
+            qs_filter = qs_filter | self.model.get_table_filter(
+                table_key=table_key)
         return self.filter(qs_filter)
 
     def get_latest_in_table(self, *args, **kwargs):
-        return self.get_table(*args, **kwargs).latest()
+        return self.model.get_table(*args, **kwargs).latest()
 
     def get_distinct_tables(self):
         fk_pivots = ensure_iterable(self.model.table_pivot)
         fk_pivots = tuple(fk_pivots)
 
         distinct_filters = [
-            self.construct_table_pivot_filter(obj)
+            self.model.get_table_filter(obj)
             for obj in self.order_by(*tuple(fk_pivots))
             .distinct(*tuple(fk_pivots))
         ]
@@ -75,43 +68,6 @@ class RowQuerier:
         if commit:
             self.bulk_update(updated, ["order"])
         return updated
-
-    def construct_table_pivot_filter(self, *args, **kwargs):
-        """
-        Returns the filter that is used to filter model instances that belong
-        to the table determined by the set of arguments provided.  The arguments
-        for selecting the table can be provided as:
-
-        (1) Args: The Table Key
-            The tuple representation of the field values associated with the
-            model table pivot fields.  For instance, if the model has pivot
-            fields (content_type_id, object_id), the Table Key should be
-            provided as ((5, 10)) (as an example).
-
-        (2) Kwargs: The Table Filter
-            The keyword arguments that are used to filter the model instances
-            to retrieve the instances that belong to a given table.  For
-            instance, if the model has pivot fields (content_type_id, object_id),
-            the keyword arguments should be provided as
-            (content_type_id=5, object_id=10) (as an example).
-        """
-        if args:
-            table_key = args[0]
-            if len(table_key) != len(self.model.table_pivot):
-                raise ValueError("Invalid table key %s provided." % table_key)
-            return models.Q(**{
-                self.model.table_pivot[i]: pivot_value
-                for i, pivot_value in enumerate(table_key)
-            })
-        pivot_filter = {}
-        for _, pivot_name in enumerate(self.model.table_pivot):
-            if pivot_name not in kwargs:
-                raise ValueError(
-                    "Must provide pivot %s to retrieve table."
-                    % pivot_name
-                )
-            pivot_filter[pivot_name] = kwargs[pivot_name]
-        return models.Q(**pivot_filter)
 
     def order_with_groups(self):
         """
@@ -224,7 +180,7 @@ class RowQuerier:
 
         # We need to return a QuerySet instance, not a list.
         preserved = models.Case(*[models.When(
-            pk=pk, then=pos) for pos, pk in enumerate(ordered)])
+            pk=obj.pk, then=pos) for pos, obj in enumerate(ordered)])
         return self.order_by(preserved)
 
 

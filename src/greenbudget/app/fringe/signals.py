@@ -8,6 +8,8 @@ from .models import Fringe
 
 @dispatch.receiver(signals.pre_save, sender=Fringe)
 def fringe_to_save(instance, **kwargs):
+    if instance.order is None:
+        instance.order_at_bottom()
     instance.validate_before_save()
 
 

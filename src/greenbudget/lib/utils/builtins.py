@@ -36,6 +36,36 @@ def get_nested_attribute(obj, attr):
     return getattr(obj, attr)
 
 
+def get_attribute(*args, **kwargs):
+    """
+    Retrieves an attribute from either the provided instance, provided
+    :obj:`dict` or from the set of provided keyword arguments.
+    """
+    strict = kwargs.pop('strict', True)
+    default = kwargs.pop('default', None)
+
+    def get_from_dict(v, k):
+        if strict:
+            return v[k]
+        return v.get(k, default)
+
+    def get_from_instance(v, k):
+        if strict:
+            return getattr(v, k)
+        return getattr(v, k, default)
+
+    assert len(args) == 2 or (kwargs and len(args) == 1), \
+        "The attribute must be obtained from either a provided dict, " \
+        "instance or set of keyword arguments, and none of these were " \
+        "provided."
+
+    if len(args) == 2:
+        if isinstance(args[1], dict):
+            return get_from_dict(args[1], args[0])
+        return get_from_instance(args[1], args[0])
+    return get_from_dict(kwargs, args[0])
+
+
 def get_string_formatted_kwargs(value):
     """
     Returns the string arguments that are used to format the string.  For

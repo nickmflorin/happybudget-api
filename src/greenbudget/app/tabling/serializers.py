@@ -1,5 +1,7 @@
 from copy import deepcopy
 
+from django.db import transaction
+
 from greenbudget.lib.drf.exceptions import InvalidFieldError
 from greenbudget.lib.drf.serializers import LazyContext
 
@@ -16,6 +18,25 @@ class row_order_serializer:
     Due to the complexities and inheritance patterns of most of our serializers
     related to tabular data, incorporating this behavior via inheritance is not
     possible or clean, so this decorator should be used instead.
+
+    Race Conditions in Regard to Ordering
+    -------------------------------------
+    When creating a new instance and a default order is required, we need to
+    look at the current ordering of the other instances that comprise the same
+    table subset in the database.  If we are not careful, race conditions can
+    cause conflictings values for `order` as the time between when the ordering
+    of the existing table subset is evaluated and when the new instance is saved
+    is not negligible.  In order to avoid this, we use transaction locks on rows
+    that correspond to other instances of the same table subset when defaulting
+    the order of a newly created row.
+
+    While this logic is also applied in the pre-save signals for the relevant
+    models, that logic should be relied on more as a fallback for when instances
+    are manually updated or created via management commands or shell commands.
+    This is because we cannot lock the rows for the entire time between when
+    the pre-save signal is triggered and when the instance is saved - so it will
+    be more prone to race condition conflicts during HTTP requests than if we
+    were to apply the logic here as well.
     """
 
     def __init__(self, table_filter):
@@ -32,61 +53,102 @@ class row_order_serializer:
         setattr(klass, 'Meta', Meta)
         model_cls = klass.Meta.model
 
-        original_validate = getattr(klass, 'validate')
+        original_create = getattr(klass, 'create')
+        original_update = getattr(klass, 'update')
 
-        def validate(serializer, attrs):
+        def get_instance_bounds(table, previous):
+            if previous is not None:
+                index = list(table).index(previous)
+                try:
+                    next_instance = table[index + 1]
+                except IndexError:
+                    next_instance = None
+            else:
+                next_instance = table.first()
+            return [previous, next_instance]
+
+        def get_relative_order(table, previous):
+            bounds = get_instance_bounds(table, previous)
+            if bounds[0] is None:
+                return lexographic_midpoint(upper=bounds[1].order)
+            elif bounds[1] is None:
+                return lexographic_midpoint(lower=bounds[0].order)
+            else:
+                return lexographic_midpoint(
+                    lower=bounds[0].order,
+                    upper=bounds[1].order
+                )
+
+        @transaction.atomic
+        def create(serializer, validated_data):
+            """
+            Overrides the traditional `ModelSerializer.create` method such that
+            the rows corresponding to the table subset of instances are locked
+            during the transaction to avoid conflicting values of the `order`
+            field due to race conditions.
+            """
+            # Lock the rows corresponding to other instances in the table
+            # subset such that two requests to create an instance at the
+            # same time do not result in conflicting orders for the new
+            # instance.
             context = LazyContext(serializer)
-            filter_data = self._table_filter(context)
-            table = model_cls.objects.get_table(**filter_data)
+            table = model_cls.get_table(
+                self._table_filter(context)).select_for_update()
 
-            def get_bounds(previous):
-                if previous is not None:
-                    index = list(table).index(previous)
-                    try:
-                        next_instance = table[index + 1]
-                    except IndexError:
-                        next_instance = None
+            # When creating instances, either the `prevous` instance is included
+            # in the request data or the order is defaulted to the end of the
+            # table.
+            if 'previous' in validated_data:
+                previous = validated_data.pop('previous')
+                validated_data['order'] = get_relative_order(table, previous)
+            else:
+                try:
+                    last_in_table = table.latest()
+                except model_cls.DoesNotExist:
+                    validated_data['order'] = lexographic_midpoint()
                 else:
-                    next_instance = table.first()
-                return [previous, next_instance]
+                    validated_data['order'] = lexographic_midpoint(
+                        lower=last_in_table.order)
+            return original_create(serializer, validated_data)
 
-            validated = original_validate(serializer, attrs)
-            if 'previous' in validated:
-                previous = validated.pop('previous')
-                bounds = get_bounds(previous)
+        @transaction.atomic
+        def update(serializer, instance, validated_data):
+            """
+            Overrides the traditional `ModelSerializer.update` method such that
+            the rows corresponding to the table subset of instances are locked
+            during the transaction to avoid conflicting values of the `order`
+            field due to race conditions.
+            """
+            if 'previous' in validated_data:
+                previous = validated_data.pop('previous')
+                if previous == instance:
+                    raise InvalidFieldError('previous', message=(
+                        'Previous instance cannot be the instance being '
+                        'updated.'
+                    ))
+                # Lock the rows corresponding to other instances in the table
+                # subset such that two requests to create an instance at the
+                # same time do not result in conflicting orders for the new
+                # instance.
+                context = LazyContext(serializer)
+                table = model_cls.get_table(
+                    self._table_filter(context)).select_for_update()
+                bounds = get_instance_bounds(table, previous)
 
-                if serializer.instance is not None:
-                    if previous == serializer.instance:
-                        raise InvalidFieldError('previous', message=(
-                            'Previous instance cannot be the instance being '
-                            'updated.'
-                        ))
-                    # Check to make sure that the previous instance that the
-                    # updating instance is being ordered relative to is not
-                    # already the previous instance before the updating instance.
-                    # If it is, no update is required.
-                    current_index = list(table).index(serializer.instance)
-                    current_previous = None
-                    if current_index >= 1:
-                        current_previous = table[current_index - 1]
-                    if current_previous == bounds[0]:
-                        return validated
+                # Check to make sure that the previous instance that the
+                # updating instance is being ordered relative to is not
+                # already the previous instance before the updating instance.
+                # If it is, no update is required.
+                current_index = list(table).index(instance)
+                current_previous = None
+                if current_index >= 1:
+                    current_previous = table[current_index - 1]
+                if current_previous != bounds[0]:
+                    validated_data['order'] = get_relative_order(table, previous)
+            return original_update(serializer, instance, validated_data)
 
-                bounds = get_bounds(previous)
-                if bounds[0] is None:
-                    validated['order'] = lexographic_midpoint(
-                        upper=bounds[1].order)
-                elif bounds[1] is None:
-                    validated['order'] = lexographic_midpoint(
-                        lower=bounds[0].order)
-                else:
-                    validated['order'] = lexographic_midpoint(
-                        lower=bounds[0].order,
-                        upper=bounds[1].order
-                    )
-            return validated
-
-        setattr(klass, 'validate', validate)
+        setattr(klass, 'create', create)
+        setattr(klass, 'update', update)
 
         previous_field = TablePrimaryKeyRelatedField(
             required=False,

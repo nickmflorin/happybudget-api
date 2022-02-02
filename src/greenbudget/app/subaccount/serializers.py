@@ -143,10 +143,9 @@ class BudgetSubAccountSerializer(SubAccountSerializer):
         return data
 
 
-@row_order_serializer(table_filter=lambda context: {
-    'object_id': context['parent'].id,
-    'content_type_id': ContentType.objects.get_for_model(
-        type(context['parent'])).id
+@row_order_serializer(table_filter=lambda d: {
+    'object_id': d.parent.id,
+    'content_type_id': ContentType.objects.get_for_model(type(d.parent)).id
 })
 class BudgetSubAccountDetailSerializer(BudgetSubAccountSerializer):
     ancestors = EntityAncestorSerializer(many=True, read_only=True)
@@ -164,10 +163,9 @@ class TemplateSubAccountSerializer(SubAccountSerializer):
         fields = SubAccountSerializer.Meta.fields
 
 
-@row_order_serializer(table_filter=lambda context: {
-    'object_id': context.parent.id,
-    'content_type_id': ContentType.objects.get_for_model(
-        type(context.parent)).id
+@row_order_serializer(table_filter=lambda d: {
+    'object_id': d.parent.id,
+    'content_type_id': ContentType.objects.get_for_model(type(d.parent)).id
 })
 class TemplateSubAccountDetailSerializer(TemplateSubAccountSerializer):
     ancestors = EntityAncestorSerializer(many=True, read_only=True)

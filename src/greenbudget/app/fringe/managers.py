@@ -68,7 +68,7 @@ class FringeManager(FringeQuerier, BudgetingRowManager):
             s.parent for s in subs if isinstance(s.parent, SubAccount)
         ])
 
-    @signals.disable(test=True)
+    @signals.disable()
     def bulk_delete(self, instances):
         budgets = set([obj.budget for obj in instances])
         self.bulk_estimate_fringe_subaccounts(

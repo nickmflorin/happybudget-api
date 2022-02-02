@@ -27,4 +27,6 @@ def account_to_delete(instance, **kwargs):
 @dispatch.receiver(signals.pre_save, sender=BudgetAccount)
 @dispatch.receiver(signals.pre_save, sender=TemplateAccount)
 def account_to_save(instance, **kwargs):
+    if instance.order is None:
+        instance.order_at_bottom()
     instance.validate_before_save()

@@ -22,7 +22,7 @@ class TablePrimaryKeyRelatedField(serializers.PrimaryKeyRelatedField):
         model_cls = self.parent.Meta.model
         context = LazyContext(self.parent, ref=type(self).__name__)
         filter_data = self._table_filter(context)
-        return model_cls.objects.get_table(**filter_data)
+        return model_cls.get_table(**filter_data)
 
 
 class TableChildrenPrimaryKeyRelatedField(serializers.PrimaryKeyRelatedField):

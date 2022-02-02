@@ -16,9 +16,6 @@ class RowManagerMixin(RowQuerier):
         # individual "tables" we are creating models for, so we do not create
         # additional entries in those table subsets with orders that would cause
         # a unique constraint in this method.
-        # TODO: We may need to actually lock the entire table at some point, to
-        # prevent bulk additions to the table "table" subset from happening at
-        # the same time.
         all_table_instances = self.get_all_in_tables(
             set([obj.table_key for obj in instances])).select_for_update()
 
@@ -41,8 +38,8 @@ class RowManagerMixin(RowQuerier):
                 if instance.order is not None
             ]
             try:
-                orders.append(
-                    all_table_instances.get_latest_in_table(table_key).order)
+                orders.append(all_table_instances.get_latest_in_table(
+                    table_key=table_key).order)
             except self.model.DoesNotExist:
                 pass
             last_order = None

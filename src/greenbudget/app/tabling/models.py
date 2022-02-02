@@ -1,7 +1,10 @@
+import copy
+
 from django.db import models
 from polymorphic.models import PolymorphicModel
 
-from greenbudget.lib.utils import ensure_iterable, humanize_list
+from greenbudget.lib.utils import (
+    ensure_iterable, humanize_list, get_attribute, empty)
 from .utils import lexographic_midpoint, validate_order
 
 
@@ -37,17 +40,81 @@ class RowModelMixin(models.Model):
 
     @property
     def table_filter(self):
-        return {
-            pivot: getattr(self, pivot)
-            for pivot in ensure_iterable(self.table_pivot)
+        return self.get_table_filter(self)
+
+    @classmethod
+    def get_table_filter(cls, *args, **kwargs):
+        """
+        Returns the queryset filter that is used to select all of the related
+        models belonging to the same "table", based on the `table_pivot` defined
+        on the model class and the values corresponding to the fields of the
+        `table_pivot` provided to this method.
+
+        The values corresponding to the fields of the `table_pivot` can either
+        be provided as the model instance, a :obj:`dict` instance or a set of
+        keyword arguments.  The reason for this flexibility is that there are
+        cases when we need to retrieve the table instances before the additional
+        instance is created - in which case we can supply the values as a
+        mapping.
+        """
+        assert (len(args) == 1 and isinstance(args[0], (cls, dict))) or kwargs, \
+            "Either the current instance or the data used to create the " \
+            "instance must be provided to get the table filter."
+
+        if not hasattr(cls, 'table_pivot'):
+            raise Exception(f"Model {cls.__name__} does not define table pivot.")
+
+        if 'table_key' in kwargs:
+            table_key = kwargs.pop('table_key')
+            if len(table_key) != len(cls.table_pivot):
+                raise ValueError("Invalid table key %s provided." % table_key)
+            return models.Q(**{
+                cls.table_pivot[i]: pivot_value
+                for i, pivot_value in enumerate(table_key)
+            })
+
+        getter_kwargs = copy.deepcopy(kwargs)
+        getter_kwargs.update(default=empty, strict=False)
+
+        query_kwargs = {
+            k: get_attribute(k, *args, **getter_kwargs)
+            for k in ensure_iterable(cls.table_pivot)
         }
+        missing_pivots = [k for k, v in query_kwargs.items() if v is empty]
+        if missing_pivots:
+            raise Exception(
+                "Table filter cannot be constructed because pivots for fields "
+                f"{humanize_list(missing_pivots)} are not defined."
+            )
+        return models.Q(**query_kwargs)
 
     @property
     def table_key(self):
-        pivot = ensure_iterable(self.table_pivot)
-        table_key = [getattr(self, fk_pivot) for fk_pivot in pivot]
-        missing_pivots = [
-            pivot[i] for i, v in enumerate(table_key) if v is None]
+        return self.get_table_key(self)
+
+    @classmethod
+    def get_table_key(cls, *args, **kwargs):
+        """
+        Returns the tuple of values corresponding to the iterable of fields
+        that comprise the `table_pivot` defined on the class, for either a
+        instance of the class or a mapping - provided as an :obj:`dict` instance
+        or a set of keyword arguments.
+        """
+        assert (len(args) == 1 and isinstance(args[0], (cls, dict))) or kwargs, \
+            "Either the current instance or the data used to create the " \
+            "instance must be provided to get the table key."
+
+        if not hasattr(cls, 'table_pivot'):
+            raise Exception(f"Model {cls.__name__} does not define table pivot.")
+
+        getter_kwargs = copy.deepcopy(kwargs)
+        getter_kwargs.update(default=empty, strict=False)
+
+        table_key = [
+            get_attribute(k, *args, **getter_kwargs)
+            for k in ensure_iterable(cls.table_pivot)
+        ]
+        missing_pivots = [k for k in table_key if k is empty]
         if missing_pivots:
             raise Exception(
                 "Table key cannot be constructed because pivots for fields "
@@ -55,22 +122,23 @@ class RowModelMixin(models.Model):
             )
         return tuple(table_key)
 
-    def get_table(self, include_self=True):
-        qs = type(self).objects.filter(**self.table_filter)
-        if include_self is False:
-            return qs.exclude(pk=self.pk).order_with_groups()
-        return qs.order_with_groups()
+    @classmethod
+    def get_table(cls, *args, **kwargs):
+        """
+        Returns the queryset that filters instances the class that belong to
+        the same "table" - which is determined by the instances that have the
+        same table-key(s).
+        """
+        query = cls.get_table_filter(*args, **kwargs)
+        return cls.objects.filter(query).order_with_groups()
 
     @property
     def table(self):
-        return self.get_table()
+        return self.get_table(self)
 
-    def order_at_bottom(self, commit=True):
-        # TODO: At some point, we are going to have to be concerned with locking
-        # the table while we retrieve the latest in the table in order to order
-        # this instance after it.
+    def order_at_bottom(self):
         try:
-            last_in_table = self.get_table().latest()
+            last_in_table = self.table.latest()
         except self.DoesNotExist:
             self.order = lexographic_midpoint()
         else:
@@ -78,19 +146,8 @@ class RowModelMixin(models.Model):
                 return
             self.order = lexographic_midpoint(lower=last_in_table.order)
 
-        if commit:
-            self.save(update_fields=["order"])
-
-    def validate_before_save(self, bulk_context=False):
-        # If the ordering of the instance is not explicitly defined, default it
-        # to being the last in the table.  However, we cannot do this when we
-        # are adding multiple models at the same time, because `order_at_bottom`
-        # method requires that all the other models be commited to the DB.
-        if bulk_context is not True:
-            if self.order is None:
-                self.order_at_bottom(commit=False)
-            else:
-                validate_order(self.order)
+    def validate_before_save(self):
+        validate_order(self.order)
 
 
 class RowModel(RowModelMixin):

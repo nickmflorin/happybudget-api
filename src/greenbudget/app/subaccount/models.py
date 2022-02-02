@@ -163,12 +163,12 @@ class SubAccount(BudgetingTreePolymorphicRowModel):
         return self.nominal_value + self.accumulated_fringe_contribution \
             + self.accumulated_markup_contribution
 
-    def validate_before_save(self, bulk_context=False):
+    def validate_before_save(self):
         if self.group is not None and self.group.parent != self.parent:
             raise IntegrityError(
                 "Can only add groups with the same parent as the instance."
             )
-        super().validate_before_save(bulk_context=bulk_context)
+        super().validate_before_save()
 
     @children_method_handler
     def accumulate_value(self, children):
@@ -301,8 +301,8 @@ class BudgetSubAccount(SubAccount):
     def __str__(self):
         return "Budget Sub Account: %s" % self.identifier
 
-    def validate_before_save(self, bulk_context=False):
-        super().validate_before_save(bulk_context=bulk_context)
+    def validate_before_save(self):
+        super().validate_before_save()
         if self.contact is not None \
                 and self.contact.created_by != self.created_by:
             raise IntegrityError(

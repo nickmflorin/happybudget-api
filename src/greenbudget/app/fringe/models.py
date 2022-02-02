@@ -51,8 +51,8 @@ class Fringe(BudgetingRowModel):
             name=self.name
         )
 
-    def validate_before_save(self, bulk_context=False):
-        super().validate_before_save(bulk_context=bulk_context)
+    def validate_before_save(self):
+        super().validate_before_save()
         # In the case that the Fringe is added with a flat value, the cutoff
         # is irrelevant.
         if self.unit == self.UNITS.flat:
