@@ -333,7 +333,7 @@ def test_bulk_update_subaccounts_budget_updated_once(api_client, user, budget_f,
     assert len(calls) == 1
 
 
-def test_bulk_create_subaccounts(api_client, user, models, budget_f):
+def test_bulk_create_subaccount(api_client, user, models, budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
 

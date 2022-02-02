@@ -1,3 +1,4 @@
+import functools
 from io import BytesIO
 from PIL import Image
 
@@ -19,6 +20,7 @@ def contextual_fixture(**contextuals):
     def decorator(func):
         @pytest.fixture
         def fixture(user, db):
+            @allow_multiple
             def inner(*args, **kw):
                 context = kw.pop('context', 'budget')
                 assert context in ('budget', 'template'), \
@@ -37,6 +39,16 @@ def contextual_fixture(**contextuals):
     return decorator
 
 
+def allow_multiple(func):
+    @functools.wraps(func)
+    def inner(*args, **kwargs):
+        count = kwargs.pop('count', None)
+        if count is not None:
+            return [func(*args, **kwargs) for _ in range(count)]
+        return func(*args, **kwargs)
+    return inner
+
+
 @pytest.fixture
 def create_attachment(db, user, temp_media_root):
     """
@@ -50,6 +62,7 @@ def create_attachment(db, user, temp_media_root):
     >>>     attachment = create_attachment()
     >>>     assert attachment.created_by == user
     """
+    @allow_multiple
     def inner(*args, **kwargs):
         kwargs.setdefault('created_by', user)
         if 'file' not in kwargs:
@@ -82,6 +95,7 @@ def create_color(db):
     >>>     color.code
     >>>     #EFEFEF
     """
+    @allow_multiple
     def inner(*args, **kwargs):
         return ColorFactory(*args, **kwargs)
     return inner
@@ -100,6 +114,7 @@ def create_user(db):
     >>>     user = create_user(first_name="jack")
     >>>     assert user.first_name == "jack"
     """
+    @allow_multiple
     def inner(*args, **kwargs):
         return UserFactory(*args, **kwargs)
     return inner
@@ -118,6 +133,7 @@ def create_budget(user, db):
     >>>     budget = create_budget(name='Test Budget')
     >>>     assert budget.name == 'Test Budget'
     """
+    @allow_multiple
     def inner(*args, **kwargs):
         kwargs.setdefault('created_by', user)
         return BudgetFactory(*args, **kwargs)
@@ -137,6 +153,7 @@ def create_template(user, db):
     >>>     template = create_template(name='Test Template')
     >>>     assert template.name == 'Test Template'
     """
+    @allow_multiple
     def inner(*args, **kwargs):
         kwargs.setdefault('created_by', user)
         return TemplateFactory(*args, **kwargs)
@@ -172,31 +189,11 @@ def create_fringe(user, db):
     >>>     fringe = create_fringe(rate=2.5)
     >>>     assert fringe.rate == 2.5
     """
+    @allow_multiple
     def inner(*args, **kwargs):
         kwargs.setdefault('created_by', user)
         kwargs.setdefault('updated_by', user)
         return FringeFactory(*args, **kwargs)
-    return inner
-
-
-@pytest.fixture
-def create_fringes(create_fringe):
-    """
-    A fixture that creates a series of :obj:`Fringe` instances using associated
-    factories.
-
-    Usage:
-    -----
-    >>> def test_fringes(create_fringes):
-    >>>     fringes = create_fringes(count=2)
-    >>>     assert isinstance(fringes[0], Fringe)
-    """
-    def inner(*args, **kwargs):
-        count = kwargs.pop('count', 1)
-        return [
-            create_fringe(*args, **kwargs)
-            for i in range(count)
-        ]
     return inner
 
 
@@ -213,6 +210,7 @@ def create_budget_account(user, db):
     >>>     account = create_budget_account(description='Test Account')
     >>>     assert account.description == 'Test Account'
     """
+    @allow_multiple
     def inner(*args, **kwargs):
         kwargs.setdefault('created_by', user)
         kwargs.setdefault('updated_by', user)
@@ -233,6 +231,7 @@ def create_template_account(user, db):
     >>>     account = create_template_account(description='Test Account')
     >>>     assert account.description == 'Test Account'
     """
+    @allow_multiple
     def inner(*args, **kwargs):
         kwargs.setdefault('created_by', user)
         kwargs.setdefault('updated_by', user)
@@ -260,28 +259,6 @@ def create_account():
 
 
 @pytest.fixture
-def create_accounts(create_account):
-    """
-    A fixture that creates a series of :obj:`BudgetAccount` or
-    :obj:`TemplateAccount` instances using associated factories determined
-    by the `context` argument provided to the fixture.
-
-    Usage:
-    -----
-    >>> def test_accounts(create_accounts):
-    >>>     accounts = create_accounts(context='budget', count=2)
-    >>>     assert isinstance(accounts[0], BudgetAccount)
-    """
-    def inner(*args, **kwargs):
-        count = kwargs.pop('count', 1)
-        return [
-            create_account(*args, **kwargs)
-            for i in range(count)
-        ]
-    return inner
-
-
-@pytest.fixture
 def create_subaccount_unit(db):
     """
     A fixture that creates a :obj:`SubAccountUnit` instance using the
@@ -294,6 +271,7 @@ def create_subaccount_unit(db):
     >>>     unit = create_subaccount_unit(title='Test')
     >>>     assert unit.title == 'Test'
     """
+    @allow_multiple
     def inner(*args, **kwargs):
         return SubAccountUnitFactory(*args, **kwargs)
     return inner
@@ -312,31 +290,11 @@ def create_budget_subaccount(user, db):
     >>>     subaccount = create_budget_subaccount(name='Test Account')
     >>>     assert subaccount.name == 'Test Account'
     """
+    @allow_multiple
     def inner(*args, **kwargs):
         kwargs.setdefault('created_by', user)
         kwargs.setdefault('updated_by', user)
         return BudgetSubAccountFactory(*args, **kwargs)
-    return inner
-
-
-@pytest.fixture
-def create_budget_subaccounts(create_budget_subaccount):
-    """
-    A fixture that creates a series of :obj:`BudgetSubAccount` instances using
-    the :obj:`BudgetSubAccountFactory`.
-
-    Usage:
-    -----
-    >>> def test_budget_subaccount(create_budget_subaccounts):
-    >>>     subaccounts = create_budget_subaccounts(name='Test', count=1)
-    >>>     assert subaccounts[0].name == 'Test'
-    """
-    def inner(*args, **kwargs):
-        count = kwargs.pop('count', 1)
-        return [
-            create_budget_subaccount(*args, **kwargs)
-            for i in range(count)
-        ]
     return inner
 
 
@@ -353,31 +311,11 @@ def create_template_subaccount(user, db):
     >>>     subaccount = create_template_subaccount(name='Test Account')
     >>>     assert subaccount.name == 'Test Account'
     """
+    @allow_multiple
     def inner(*args, **kwargs):
         kwargs.setdefault('created_by', user)
         kwargs.setdefault('updated_by', user)
         return TemplateSubAccountFactory(*args, **kwargs)
-    return inner
-
-
-@pytest.fixture
-def create_template_subaccounts(create_template_subaccount):
-    """
-    A fixture that creates a series of :obj:`TemplateSubAccount` instances using
-    the :obj:`TemplateSubAccountFactory`.
-
-    Usage:
-    -----
-    >>> def test_template_subaccount(create_template_subaccounts):
-    >>>     subaccounts = create_template_subaccounts(name='Test', count=1)
-    >>>     assert subaccounts[0].name == 'Test'
-    """
-    def inner(*args, **kwargs):
-        count = kwargs.pop('count', 1)
-        return [
-            create_template_subaccount(*args, **kwargs)
-            for i in range(count)
-        ]
     return inner
 
 
@@ -401,28 +339,6 @@ def create_subaccount():
 
 
 @pytest.fixture
-def create_subaccounts(create_subaccount):
-    """
-    A fixture that creates a series of :obj:`BudgetSubAccount` or
-    :obj:`TemplateSubAccount` instances using associated factories determined
-    by the `context` argument provided to the fixture.
-
-    Usage:
-    -----
-    >>> def test_subaccounts(create_subaccounts):
-    >>>     subaccounts = create_subaccounts(context='budget', count=2)
-    >>>     assert isinstance(subaccounts[0], BudgetSubAccount)
-    """
-    def inner(*args, **kwargs):
-        count = kwargs.pop('count', 1)
-        return [
-            create_subaccount(*args, **kwargs)
-            for i in range(count)
-        ]
-    return inner
-
-
-@pytest.fixture
 def create_group(user, db):
     """
     A fixture that creates a :obj:`Group` instance using the
@@ -435,6 +351,7 @@ def create_group(user, db):
     >>>     group = create_group(name='Test Group')
     >>>     assert group.name == 'Test Group'
     """
+    @allow_multiple
     def inner(*args, **kwargs):
         kwargs.setdefault('created_by', user)
         kwargs.setdefault('updated_by', user)
@@ -443,27 +360,6 @@ def create_group(user, db):
             ct = ContentType.objects.get_for_model(type(parent))
             kwargs.update(content_type=ct, object_id=parent.pk)
         return GroupFactory(*args, **kwargs)
-    return inner
-
-
-@pytest.fixture
-def create_groups(create_group):
-    """
-    A fixture that creates a series of :obj:`Group` instances using associated
-    factories.
-
-    Usage:
-    -----
-    >>> def test_groups(create_groups):
-    >>>     groups = create_groups(count=2)
-    >>>     assert isinstance(groups[0], Group)
-    """
-    def inner(*args, **kwargs):
-        count = kwargs.pop('count', 1)
-        return [
-            create_group(*args, **kwargs)
-            for i in range(count)
-        ]
     return inner
 
 
@@ -480,6 +376,7 @@ def create_markup(user, db):
     >>>     markup = create_markup(identifier='Test Markup')
     >>>     assert markup.identifier == 'Test Markup'
     """
+    @allow_multiple
     def inner(*args, **kwargs):
         kwargs.setdefault('created_by', user)
         kwargs.setdefault('updated_by', user)
@@ -500,6 +397,7 @@ def create_actual_type(db):
     >>>     type = create_actual_type(title='Test')
     >>>     assert type.title == 'Test'
     """
+    @allow_multiple
     def inner(*args, **kwargs):
         return ActualTypeFactory(*args, **kwargs)
     return inner
@@ -518,31 +416,11 @@ def create_actual(user, db):
     >>>     actual = create_actual(description='Test Actual')
     >>>     assert actual.description == 'Test Actual'
     """
+    @allow_multiple
     def inner(*args, **kwargs):
         kwargs.setdefault('created_by', user)
         kwargs.setdefault('updated_by', user)
         return ActualFactory(*args, **kwargs)
-    return inner
-
-
-@pytest.fixture
-def create_actuals(create_actual):
-    """
-    A fixture that creates a series of :obj:`Actual` instances using associated
-    factories.
-
-    Usage:
-    -----
-    >>> def test_actuals(create_actuals):
-    >>>     actuals = create_actuals(count=2)
-    >>>     assert isinstance(actuals[0], Actual)
-    """
-    def inner(*args, **kwargs):
-        count = kwargs.pop('count', 1)
-        return [
-            create_actual(*args, **kwargs)
-            for i in range(count)
-        ]
     return inner
 
 
@@ -559,31 +437,11 @@ def create_contact(user, db):
     >>>     contact = create_contact(first_name='Jack')
     >>>     assert contact.first_name == 'Jack'
     """
+    @allow_multiple
     def inner(*args, **kwargs):
         kwargs.setdefault('created_by', user)
         kwargs.setdefault('updated_by', user)
         return ContactFactory(*args, **kwargs)
-    return inner
-
-
-@pytest.fixture
-def create_contacts(create_contact):
-    """
-    A fixture that creates a series of :obj:`Contact` instances using associated
-    factories.
-
-    Usage:
-    -----
-    >>> def test_contacts(create_contacts):
-    >>>     contacts = create_contacts(count=2)
-    >>>     assert isinstance(contacts[0], Contact)
-    """
-    def inner(*args, **kwargs):
-        count = kwargs.pop('count', 1)
-        return [
-            create_contact(*args, **kwargs)
-            for i in range(count)
-        ]
     return inner
 
 

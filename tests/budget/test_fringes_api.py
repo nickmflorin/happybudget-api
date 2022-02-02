@@ -75,7 +75,7 @@ def test_create_fringe(api_client, user, budget_f, models):
     assert fringe.unit == 1
 
 
-def test_bulk_create_fringes(api_client, user, models, budget_f):
+def test_bulk_create_fringe(api_client, user, models, budget_f):
     budget = budget_f.create_budget()
     accounts = [
         budget_f.create_account(parent=budget),

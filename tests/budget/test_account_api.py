@@ -3,7 +3,7 @@ from greenbudget.lib.utils.urls import add_query_params_to_url
 
 def test_get_accounts(api_client, user, budget_f):
     budget = budget_f.create_budget()
-    accounts = budget_f.create_accounts(parent=budget, count=2)
+    accounts = budget_f.create_account(parent=budget, count=2)
     api_client.force_login(user)
     response = api_client.get(
         "/v1/%ss/%s/children/" % (budget_f.context, budget.pk))
@@ -64,7 +64,7 @@ def test_get_accounts_ordered_by_group(api_client, user, budget_f, create_group)
 
 def test_get_accounts_filtered_by_id(api_client, user, budget_f):
     budget = budget_f.create_budget()
-    accounts = budget_f.create_accounts(parent=budget, count=2)
+    accounts = budget_f.create_account(parent=budget, count=2)
     api_client.force_login(user)
     url = add_query_params_to_url(
         "/v1/%ss/%s/children/" % (budget_f.context, budget.pk),
@@ -137,7 +137,7 @@ def test_create_account(api_client, user, budget_f, models):
 def test_bulk_update_accounts(api_client, user, budget_f, create_group):
     budget = budget_f.create_budget()
     group = create_group(parent=budget)
-    accounts = budget_f.create_accounts(parent=budget, count=2)
+    accounts = budget_f.create_account(parent=budget, count=2)
     api_client.force_login(user)
     response = api_client.patch(
         "/v1/%ss/%s/bulk-update-children/" % (budget_f.context, budget.pk),
@@ -199,7 +199,7 @@ def test_bulk_update_accounts_outside_budget(api_client, user, budget_f):
     assert response.status_code == 400
 
 
-def test_bulk_create_accounts(api_client, user, budget_f, models):
+def test_bulk_create_account(api_client, user, budget_f, models):
     budget = budget_f.create_budget()
     api_client.force_login(user)
     response = api_client.patch(
@@ -245,7 +245,7 @@ def test_bulk_create_accounts(api_client, user, budget_f, models):
 
 def test_bulk_delete_accounts(api_client, user, budget_f, models):
     budget = budget_f.create_budget()
-    accounts = budget_f.create_accounts(parent=budget, count=2)
+    accounts = budget_f.create_account(parent=budget, count=2)
     # We need to create SubAccount(s) so that the accounts themselves have
     # calculated values, and thus the Budget itself has calculated values, so
     # we can test whether or not the deletion recalculates the metrics on the

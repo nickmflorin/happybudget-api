@@ -19,7 +19,7 @@ def test_move_subaccount_down(api_client, user, models, budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccount = budget_f.create_subaccount(parent=account)
-    subaccounts = budget_f.create_subaccounts(parent=subaccount, count=10)
+    subaccounts = budget_f.create_subaccount(parent=subaccount, count=10)
     assert [a.order for a in subaccounts] == \
         ['n', 't', 'w', 'y', 'yn', 'ynt', 'yntw', 'yntwy', 'yntwyn', 'yntwynt']
     assert [a.pk for a in subaccounts] == [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
@@ -41,7 +41,7 @@ def test_move_subaccount_to_start(api_client, user, models, budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccount = budget_f.create_subaccount(parent=account)
-    subaccounts = budget_f.create_subaccounts(parent=subaccount, count=10)
+    subaccounts = budget_f.create_subaccount(parent=subaccount, count=10)
     assert [a.order for a in subaccounts] == \
         ['n', 't', 'w', 'y', 'yn', 'ynt', 'yntw', 'yntwy', 'yntwyn', 'yntwynt']
     assert [a.pk for a in subaccounts] == [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
@@ -64,7 +64,7 @@ def test_move_subaccount_to_end(api_client, user, models, budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccount = budget_f.create_subaccount(parent=account)
-    subaccounts = budget_f.create_subaccounts(parent=subaccount, count=10)
+    subaccounts = budget_f.create_subaccount(parent=subaccount, count=10)
     assert [a.order for a in subaccounts] == \
         ['n', 't', 'w', 'y', 'yn', 'ynt', 'yntw', 'yntwy', 'yntwyn', 'yntwynt']
     assert [a.pk for a in subaccounts] == [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
@@ -87,7 +87,7 @@ def test_move_subaccount_self_referential(api_client, user, budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccount = budget_f.create_subaccount(parent=account)
-    subaccounts = budget_f.create_subaccounts(parent=subaccount, count=10)
+    subaccounts = budget_f.create_subaccount(parent=subaccount, count=10)
     api_client.force_login(user)
     response = api_client.patch(
         "/v1/subaccounts/%s/" % subaccounts[3].pk,
@@ -100,7 +100,7 @@ def test_move_subaccount_same_order(api_client, user, models, budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccount = budget_f.create_subaccount(parent=account)
-    subaccounts = budget_f.create_subaccounts(parent=subaccount, count=10)
+    subaccounts = budget_f.create_subaccount(parent=subaccount, count=10)
     assert [a.order for a in subaccounts] == \
         ['n', 't', 'w', 'y', 'yn', 'ynt', 'yntw', 'yntwy', 'yntwyn', 'yntwynt']
     assert [a.pk for a in subaccounts] == [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
@@ -122,7 +122,7 @@ def test_move_subaccount_up(api_client, user, models, budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccount = budget_f.create_subaccount(parent=account)
-    subaccounts = budget_f.create_subaccounts(parent=subaccount, count=10)
+    subaccounts = budget_f.create_subaccount(parent=subaccount, count=10)
 
     assert [a.order for a in subaccounts] == \
         ['n', 't', 'w', 'y', 'yn', 'ynt', 'yntw', 'yntwy', 'yntwyn', 'yntwynt']

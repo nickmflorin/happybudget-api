@@ -3,32 +3,15 @@ import pytest
 
 @pytest.fixture
 def generate_data(create_fringe, create_group, create_markup, colors,
-        create_actual, create_contact):
+        create_actual, create_contact, create_subaccount_unit):
     def generate(factory, user, include_actuals=False):
-        contacts = [create_contact(), create_contact()]
+        contacts = create_contact(count=2)
         base = factory.create_budget(created_by=user, name="Test Name")
-        original_fringes = [
-            create_fringe(
-                budget=base,
-                created_by=user,
-                updated_by=user
-            ),
-            create_fringe(
-                budget=base,
-                created_by=user,
-                updated_by=user
-            ),
-        ]
-        original_account_groups = [
-            create_group(parent=base),
-            create_group(parent=base),
-            create_group(parent=base)
-        ]
-        original_account_markups = [
-            create_markup(parent=base),
-            create_markup(parent=base),
-            create_markup(parent=base)
-        ]
+        fringes = create_fringe(
+            budget=base, created_by=user, updated_by=user, count=2)
+        account_groups = create_group(parent=base, count=3)
+        account_markups = create_markup(parent=base, count=3)
+
         # Determines how Markup's should be allocated amongst each individual
         # account.
         markup_designation = [(0, 1), None, (0, 1, 2), None, (0, 1, 2), (2, )]
@@ -36,36 +19,38 @@ def generate_data(create_fringe, create_group, create_markup, colors,
         # account.
         group_designation = [0, 0, None, 1, 1, 2]
 
-        original_accounts = []
+        accounts = []
         for i in range(6):
             m_designation = markup_designation[i] or []
             g_designation = group_designation[i]
             group = None
             if g_designation is not None:
-                group = original_account_groups[g_designation]
-            original_accounts.append(factory.create_account(
+                group = account_groups[g_designation]
+            accounts.append(factory.create_account(
                 parent=base,
                 created_by=user,
                 updated_by=user,
                 group=group,
-                markups=[original_account_markups[j] for j in m_designation]
+                markups=[account_markups[j] for j in m_designation]
             ))
 
-        original_subaccount_markups = {}
-        original_subaccount_groups = {}
-        original_child_subaccount_groups = {}
-        original_child_subaccount_markups = {}
-        original_subaccounts = {}
-        original_child_subaccounts = {}
+        subaccount_markups = {}
+        subaccount_groups = {}
+        child_subaccount_groups = {}
+        child_subaccount_markups = {}
+        subaccounts = {}
+        child_subaccounts = {}
 
-        for account in original_accounts:
+        subaccount_units = create_subaccount_unit(count=4)
+
+        for account in accounts:
             # Create 2 Markups per Account
-            original_subaccount_markups[account.pk] = [
-                create_markup(parent=account),
-                create_markup(parent=account),
-            ]
+            subaccount_markups[account.pk] = create_markup(
+                count=2,
+                parent=account
+            )
             # Create 2 Groups per Account
-            original_subaccount_groups[account.pk] = [
+            subaccount_groups[account.pk] = [
                 create_group(parent=account, color=colors[0]),
                 create_group(parent=account, color=colors[1]),
             ]
@@ -76,51 +61,55 @@ def generate_data(create_fringe, create_group, create_markup, colors,
                     'parent': account,
                     'created_by': user,
                     'updated_by': user,
-                    'fringes': [original_fringes[i]],
-                    'markups': [original_subaccount_markups[account.pk][i]],
-                    'group': original_subaccount_groups[account.pk][i],
+                    'fringes': [fringes[i]],
+                    'markups': [subaccount_markups[account.pk][i]],
+                    'group': subaccount_groups[account.pk][i],
+                    'unit': subaccount_units[i]
                 }
+
                 if factory.context == 'budget':
                     kwargs.update(contact=contacts[i])
                 new_subaccounts.append(factory.create_subaccount(**kwargs))
-            original_subaccounts[account.pk] = new_subaccounts
+
+            subaccounts[account.pk] = new_subaccounts
 
             for subaccount in new_subaccounts:
-                original_child_subaccounts[subaccount.pk] = []
+                child_subaccounts[subaccount.pk] = []
 
                 # Create 2 Groups per SubAccount
-                original_child_subaccount_groups[subaccount.pk] = [
+                child_subaccount_groups[subaccount.pk] = [
                     create_group(parent=subaccount, color=colors[0]),
                     create_group(parent=subaccount, color=colors[0]),
                 ]
                 # Create 2 Markups per SubAccount
-                original_child_subaccount_markups[subaccount.pk] = [
-                    create_markup(parent=subaccount),
-                    create_markup(parent=subaccount),
-                ]
+                child_subaccount_markups[subaccount.pk] = create_markup(
+                    count=2,
+                    parent=subaccount
+                )
                 # Create 2 SubAccount(s) for each SubAccount, each with it's own
                 # Group.
                 for i in range(2):
                     # Intentionally leave out contacts so we can treat as null.
-                    original_child_subaccounts[subaccount.pk].append(
-                        factory.create_subaccount(
-                            parent=subaccount,
-                            created_by=user,
-                            updated_by=user,
-                            fringes=[original_fringes[i]],
-                            markups=[original_child_subaccount_markups[subaccount.pk][i]],  # noqa
-                            group=original_child_subaccount_groups[subaccount.pk][i]  # noqa
-                        ))
+                    sub = factory.create_subaccount(
+                        parent=subaccount,
+                        created_by=user,
+                        updated_by=user,
+                        fringes=[fringes[i]],
+                        unit=subaccount_units[i + 2],
+                        markups=[child_subaccount_markups[subaccount.pk][i]],
+                        group=child_subaccount_groups[subaccount.pk][i]
+                    )
+                    child_subaccounts[subaccount.pk].append(sub)
 
         data = {
             'base': base,
-            'fringes': original_fringes,
-            'account_groups': original_account_groups,
-            'account_markups': original_account_markups,
-            'accounts': original_accounts,
-            'subaccounts': original_subaccounts,
-            'subaccount_groups': original_subaccount_groups,
-            'child_subaccounts': original_child_subaccounts
+            'fringes': fringes,
+            'account_groups': account_groups,
+            'account_markups': account_markups,
+            'accounts': accounts,
+            'subaccounts': subaccounts,
+            'subaccount_groups': subaccount_groups,
+            'child_subaccounts': child_subaccounts
         }
         if include_actuals:
             actuals = [

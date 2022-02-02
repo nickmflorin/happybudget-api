@@ -60,6 +60,19 @@ class DisallowedField:
         return len(evaluated) != 0 and all(evaluated)
 
 
+class AllowedFieldOverride:
+    def __init__(self, name, cls, conditional=None):
+        self._name = name
+        self._cls = cls
+        self._conditional = conditional
+
+    def is_overridden(self, field, value, user):
+        overridden = field.name == self._name and type(field) is self._cls
+        if overridden and self._conditional is not None:
+            return self._conditional(value, user)
+        return overridden
+
+
 DISALLOWED_FIELDS = [
     DisallowedField(attribute=[('editable', False), ('primary_key', True)]),
     DisallowedField(name=('id', 'object_id')),
@@ -81,44 +94,38 @@ DISALLOWED_FIELDS = [
 ]
 
 
-def _field_is_disallowed(field):
-    return any([obj.is_disallowed(field) for obj in DISALLOWED_FIELDS])
-
-
 ALLOW_FIELD_OVERRIDES = ModelMap({
-    'group.Group': ('color', models.ForeignKey),
-    'actual.Actual': {
-        'field': ('contact', models.ForeignKey),
-        'allowed': lambda value, user: value is None or value.created_by == user
-    },
-    'subaccount.SubAccount': {
-        'field': ('contact', models.ForeignKey),
-        'allowed': lambda value, user: value is None or value.created_by == user
-    }
+    'group.Group': AllowedFieldOverride(name='color', cls=models.ForeignKey),
+    'actual.Actual': AllowedFieldOverride(
+        name='contact',
+        cls=models.ForeignKey,
+        conditional=lambda value, user: value is None or value.created_by == user
+    ),
+    'subaccount.SubAccount': [
+        AllowedFieldOverride(
+            name='contact',
+            cls=models.ForeignKey,
+            conditional=lambda value, user: value is None
+            or value.created_by == user
+        ),
+        AllowedFieldOverride(name='unit', cls=models.ForeignKey)
+    ]
 })
 
 
-def _field_obj_is_allowed_by_override(field, model_cls, value, user):
-    def override_is_allowed(override):
-        assert len(override) == 2, "Improperly defined override."
-        return field.name == override[0] and type(field) is override[1]
-
+def field_obj_is_allowed_by_override(field, model_cls, value, user):
     override = ALLOW_FIELD_OVERRIDES.get(model_cls, strict=False)
     if override is None:
         return False
-    assert isinstance(override, (dict, tuple)), "Improperly defined override."
-    if isinstance(override, tuple):
-        return override_is_allowed(override)
-    assert 'field' in override and 'allowed' in override, \
-        "Improperly defined override."
-    if override_is_allowed(override['field']):
-        return override['allowed'](value, user)
-    return False
+    if isinstance(override, AllowedFieldOverride):
+        return override.is_overridden(field, value, user)
+    assert hasattr(override, '__iter__')
+    return any([o.is_overridden(field, value, user) for o in override])
 
 
 def field_obj_is_disallowed(field, model_cls, value, user):
-    disallowed = _field_is_disallowed(field)
-    if disallowed and _field_obj_is_allowed_by_override(
+    disallowed = any([obj.is_disallowed(field) for obj in DISALLOWED_FIELDS])
+    if disallowed and field_obj_is_allowed_by_override(
             field, model_cls, value, user):
         return False
     return disallowed

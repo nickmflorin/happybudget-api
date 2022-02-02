@@ -195,16 +195,16 @@ def test_duplicate_budget_unsubscribed(api_client, user, create_budget):
 
 
 def test_delete_budget(api_client, user, create_budget, models,
-        create_budget_account, create_budget_subaccounts):
+        create_budget_account, create_budget_subaccount):
     budget = create_budget()
     accounts = [
         create_budget_account(parent=budget),
         create_budget_account(parent=budget),
         create_budget_account(parent=budget)
     ]
-    create_budget_subaccounts(count=6, parent=accounts[0])
-    create_budget_subaccounts(count=6, parent=accounts[1])
-    create_budget_subaccounts(count=6, parent=accounts[2])
+    create_budget_subaccount(count=6, parent=accounts[0])
+    create_budget_subaccount(count=6, parent=accounts[1])
+    create_budget_subaccount(count=6, parent=accounts[2])
 
     api_client.force_login(user)
     response = api_client.delete("/v1/budgets/%s/" % budget.pk)

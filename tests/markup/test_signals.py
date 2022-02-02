@@ -5,7 +5,7 @@ import pytest
 def test_markup_changed_to_flat(budget_f, create_markup, models):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
-    budget_f.create_subaccounts(
+    budget_f.create_subaccount(
         parent=account,
         quantity=10,
         multiplier=4,
@@ -58,7 +58,7 @@ def test_markup_changed_to_flat(budget_f, create_markup, models):
 def test_account_markups_change(budget_f, create_markup):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
-    budget_f.create_subaccounts(parent=account, quantity=10, rate=10)
+    budget_f.create_subaccount(parent=account, quantity=10, rate=10)
     markups = [
         create_markup(
             parent=budget,
@@ -93,7 +93,7 @@ def test_account_markups_change(budget_f, create_markup):
 def test_subaccount_markups_change(budget_f, create_markup):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
-    subaccounts = budget_f.create_subaccounts(
+    subaccounts = budget_f.create_subaccount(
         count=2,
         parent=account,
         quantity=10,
@@ -152,7 +152,7 @@ def test_subaccount_markups_change(budget_f, create_markup):
 def test_account_markup_changes_rate(budget_f, create_markup):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
-    budget_f.create_subaccounts(parent=account, quantity=10, rate=10)
+    budget_f.create_subaccount(parent=account, quantity=10, rate=10)
     markups = [
         create_markup(
             parent=budget,
@@ -190,7 +190,7 @@ def test_account_markup_changes_rate(budget_f, create_markup):
 def test_account_markup_changes_unit(budget_f, create_markup, models):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
-    budget_f.create_subaccounts(parent=account, quantity=10, rate=10)
+    budget_f.create_subaccount(parent=account, quantity=10, rate=10)
     markups = [
         create_markup(
             parent=budget,
@@ -230,7 +230,7 @@ def test_account_markup_changes_unit(budget_f, create_markup, models):
 def test_account_markup_deleted(budget_f, create_markup):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
-    budget_f.create_subaccounts(
+    budget_f.create_subaccount(
         parent=account,
         quantity=10,
         multiplier=4,

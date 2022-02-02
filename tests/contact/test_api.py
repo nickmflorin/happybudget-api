@@ -79,8 +79,8 @@ def test_get_contact_tagged_actuals(api_client, user, create_contact,
     ]
 
 
-def test_get_contacts(api_client, user, create_contacts, models):
-    contacts = create_contacts(count=2)
+def test_get_contacts(api_client, user, create_contact, models):
+    contacts = create_contact(count=2)
     api_client.force_login(user)
     response = api_client.get("/v1/contacts/")
     assert response.status_code == 200
@@ -263,8 +263,8 @@ def test_delete_contact(api_client, user, create_contact, models):
     assert models.Contact.objects.first() is None
 
 
-def test_bulk_delete_contacts(api_client, user, create_contacts, models):
-    contacts = create_contacts(count=2)
+def test_bulk_delete_contacts(api_client, user, create_contact, models):
+    contacts = create_contact(count=2)
     api_client.force_login(user)
     response = api_client.patch("/v1/contacts/bulk-delete/", data={
         'ids': [c.pk for c in contacts]
@@ -273,7 +273,7 @@ def test_bulk_delete_contacts(api_client, user, create_contacts, models):
     assert models.Contact.objects.count() == 0
 
 
-def test_bulk_create_contacts(api_client, user, models):
+def test_bulk_create_contact(api_client, user, models):
     api_client.force_login(user)
     response = api_client.patch(
         "/v1/contacts/bulk-create/",
@@ -339,8 +339,8 @@ def test_bulk_create_contacts(api_client, user, models):
     ]
 
 
-def test_bulk_update_contacts(api_client, user, create_contacts):
-    contacts = create_contacts(count=2)
+def test_bulk_update_contacts(api_client, user, create_contact):
+    contacts = create_contact(count=2)
     api_client.force_login(user)
     response = api_client.patch(
         "/v1/contacts/bulk-update/",

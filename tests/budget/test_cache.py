@@ -115,7 +115,7 @@ def test_caches_invalidated_on_update(api_client, user, budget_f):
 @override_settings(CACHE_ENABLED=True)
 def test_caches_invalidated_on_create(api_client, user, budget_f):
     budget = budget_f.create_budget()
-    budget_f.create_accounts(parent=budget, count=2)
+    budget_f.create_account(parent=budget, count=2)
 
     api_client.force_login(user)
 
@@ -139,7 +139,7 @@ def test_caches_invalidated_on_create(api_client, user, budget_f):
 @override_settings(CACHE_ENABLED=True)
 def test_caches_invalidated_on_bulk_create(api_client, user, budget_f):
     budget = budget_f.create_budget()
-    budget_f.create_accounts(parent=budget, count=2)
+    budget_f.create_account(parent=budget, count=2)
 
     api_client.force_login(user)
 

@@ -35,7 +35,7 @@ def test_get_account_markups(api_client, user, models, create_markup, budget_f):
 def test_create_account_flat_markup(api_client, user, budget_f, models):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
-    subaccounts = budget_f.create_subaccounts(
+    subaccounts = budget_f.create_subaccount(
         parent=account,
         quantity=1,
         rate=10,
@@ -111,7 +111,7 @@ def test_create_account_flat_markup(api_client, user, budget_f, models):
 def test_create_account_percent_markup(api_client, user, budget_f, models):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
-    subaccounts = budget_f.create_subaccounts(
+    subaccounts = budget_f.create_subaccount(
         parent=account,
         quantity=1,
         rate=10,

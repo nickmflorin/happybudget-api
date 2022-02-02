@@ -1,4 +1,4 @@
-def test_bulk_create_accounts(user, budget_f):
+def test_bulk_create_account(user, budget_f):
     budget = budget_f.create_budget()
     account_cls = budget_f.budget_cls.account_cls
     instances = [

@@ -104,7 +104,7 @@ def test_create_markup_actual(api_client, user, create_budget_account,
     assert actual.owner == markup
 
 
-def test_bulk_create_actuals(api_client, user, create_budget, create_markup,
+def test_bulk_create_actual(api_client, user, create_budget, create_markup,
         create_budget_account, create_budget_subaccount, models):
     budget = create_budget()
     accounts = [
