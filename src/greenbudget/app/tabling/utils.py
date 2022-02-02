@@ -3,6 +3,13 @@ import math
 import string
 
 
+class Bounds:
+    def __init__(self, base, index, bounds):
+        self.base = base
+        self.index = index
+        self.bounds = bounds
+
+
 class BoundsError(Exception):
     def __init__(self, message):
         self.message = message
@@ -23,7 +30,9 @@ class InconsistentOrderingError(Exception):
 
 
 def has_index(a_string, index):
-    # Less confusing alternative to always checking length - 1.
+    # Less confusing and more readable (in this context) alternative to always
+    # having to check if the length of a string is index - 1 before acessing
+    # an element.
     try:
         a_string[index]
     except IndexError:
@@ -36,20 +45,61 @@ def char_index(char):
 
 
 def get_midpoint(upper, lower=None, floor=False):
+    """
+    Returns the character at the lexographic midpoint between two other
+    characters in the alphabet.
+
+    Parameters:
+    ----------
+    upper: :obj:`str`
+        The upper bound (further in the alphabetical sequence) character to
+        find the midpoint before.
+
+    lower: :obj:`str` (optional)
+        The lower bound (earlier in the alphabetical sequence) character to
+        find the midpoint after.  If not provided, defaults to the first
+        character in the alphabet.
+
+        Default: "a"
+
+    floor: :obj:`boolean` (optional)
+        Whether or not the lexographic midpoint should be chosen as the first
+        character when the midpoint is "in between" two characters.
+
+        Characters are obviously not numbers.  We cannot bisect "c" and "d"
+        as "c.5" as we would bisect 3 and 4 as 3.5.  For this reason, we have
+        to choose between the left and right characters that wrap the
+        theoretical "exact" midpoint between two endpoints, when there is an
+        even number of characters separating the two endpoints.
+
+        Default: False
+    """
     if upper is None:
         raise BoundsError(message="Upper bound cannot be None.")
-    elif lower == upper:
-        raise BoundsError(message="Bounds cannot be equal.")
 
+    # The upper bound (further in the alphabetical sequence) must always be
+    # provided since we can never use the end of the alphabet - but the lower
+    # bound can default to the beginning of the alphabet if it is not provided.
     upper = upper.lower()
     lower = (lower or "a").lower()
 
+    if lower == upper:
+        raise BoundsError(message="Bounds cannot be equal.")
+    elif lower > upper:
+        raise BoundsError(message="Bounds are not sequential.")
+    elif len(lower) != 1 or len(upper) != 1:
+        raise BoundsError(message=(
+            "Endpoint characters must be a single character, not an arbitrary "
+            "string."
+        ))
+
+    # Only edge case where the bounds can be consecutive.
     if [lower, upper] == ['a', 'b']:
         if floor:
             return 'a'
         return 'b'
 
-    # The bounds cannot be consecutive.
+    # The bounds cannot be consecutive, unless they are ["a", "b"].
     if char_index(lower) + 1 == char_index(upper):
         raise BoundsError(message="Bounds cannot be consecutive.")
 
@@ -60,6 +110,35 @@ def get_midpoint(upper, lower=None, floor=False):
 
 
 def get_bounds(string_a, string_b):
+    """
+    Returns the base string, the first differing index and the "bounds" given
+    two lexographically sequential strings.
+
+    The above terminology can be defined as follows:
+
+    base string:
+        The string that is constructed from all of the characters that are
+        common between two strings up until the first character at which they
+        differ or the end of the shorter string.
+
+        Ex) ["abcdgf", "abcdef"] => "abcd"
+        Ex) ["abc", "abcdef"] => "abc"
+
+    first differing index:
+        The first index at which the characters from the two strings are not
+        equal or the end of one of the strings has been reached.
+
+        Ex) ["abcdgf", "abcdef"] => 4
+        Ex) ["abc", "abcdef"] => 3
+
+    bounds:
+        The leftover characters from each string that are still present after
+        the first differing index.  A bound can be None if the string terminates
+        early.
+
+        Ex) ["abcdgf", "abcdef"] => ["gf", "ef"]
+        Ex) ["abc", "abcdef"] => [None, "def"]
+    """
     if not string_a < string_b:
         raise InconsistentOrderingError(
             a=string_a,
@@ -96,11 +175,23 @@ def get_bounds(string_a, string_b):
                     b=string_b,
                     message="Strings are not lexographically in order."
                 )
-            return ''.join(encountered), i, [None, char_base]
+            return Bounds(
+                base=''.join(encountered),
+                index=i,
+                bounds=[None, char_base]
+            )
         elif char_base != shorter_string[i]:
             if base == 'b':
-                return ''.join(encountered), i, [shorter_string[i], char_base]
-            return ''.join(encountered), i, [char_base, shorter_string[i]]
+                return Bounds(
+                    base=''.join(encountered),
+                    index=i,
+                    bounds=[shorter_string[i], char_base]
+                )
+            return Bounds(
+                base=''.join(encountered),
+                index=i,
+                bounds=[char_base, shorter_string[i]]
+            )
         encountered.append(char_base)
 
     # This should only happen if both strings are empty strings, or the same
@@ -129,6 +220,10 @@ def validate_order(value):
 
 
 def validate_result(func):
+    """
+    Safety/precautionary check that validates the result of the lexographic
+    midpoint algorithm before allowing the calling logic to proceed.
+    """
     @functools.wraps(func)
     def decorator(lower=None, upper=None):
         result = func(lower=lower, upper=upper)
@@ -225,10 +320,10 @@ def lexographic_midpoint(lower=None, upper=None):
         raise InconsistentOrderingError(
             string_a, string_b, message='Bounds are not in correct order.')
 
-    base, differing_index, bounds = get_bounds(string_a, string_b)
+    bounds = get_bounds(string_a, string_b)
 
     # Case 2
-    if bounds[1] in ('a', 'b'):
+    if bounds.bounds[1] in ('a', 'b'):
         # If the right string (B) is a or b, the left string (A) must be less
         # characters than B because A is lexographically "less than" (i.e.
         # occurs before alphabetically) B, and the algorithm prevents the
@@ -236,24 +331,28 @@ def lexographic_midpoint(lower=None, upper=None):
         if len(string_a) > len(string_b):
             raise InconsistentOrderingError(string_a, string_b)
         try:
-            next_character = string_b[differing_index + 1]
+            next_character = string_b[bounds.index + 1]
         except IndexError:
             # This happens when, for example, A = abc, B = abcb.
-            base = base + bounds[1]
+            bounds.base = bounds.base + bounds.bounds[1]
         else:
-            base = base + bounds[1] + next_character
+            bounds.base = bounds.base + bounds.bounds[1] + next_character
             # Continuing adding the next character in B to the base until we
             # encounter either the end of B or a character that is not a or b.
             while next_character in ('a', 'b'):
-                differing_index += 1
+                bounds.index = bounds.index + 1
                 try:
-                    next_character = string_b[differing_index + 1]
+                    next_character = string_b[bounds.index + 1]
                 except IndexError:
                     break
-                base = base + next_character
+                bounds.base = bounds.base + next_character
 
         try:
-            base = base[:-1] + get_midpoint(base[-1], lower="a", floor=True)
+            bounds.base = bounds.base[:-1] + get_midpoint(
+                upper=bounds.base[-1],
+                lower="a",
+                floor=True
+            )
         except BoundsError as e:
             raise InconsistentOrderingError(
                 a=string_a,
@@ -266,15 +365,15 @@ def lexographic_midpoint(lower=None, upper=None):
         # This means that the strings would be, for example, A = abc, B = abcab.
         # In this case, we have to append an additional character halfway
         # through the alphabet.
-        if base[-1] in ('a', 'b'):
-            return base + get_midpoint("z", lower="a")
-        return base
+        if bounds.base[-1] in ('a', 'b'):
+            return bounds.base + get_midpoint("z", lower="a")
+        return bounds.base
 
     # Case 1
-    elif lexographically_consecutive(bounds[0], bounds[1]):
+    elif lexographically_consecutive(bounds.bounds[0], bounds.bounds[1]):
         # Edge case where we are finding the midpoint between a y[?][?]... and
         # end of the alphabet (z) -> i.e. ynt and z.
-        if base == "" and bounds[1] == "z":
+        if bounds.base == "" and bounds.bounds[1] == "z":
             if string_a[-1] == "y":
                 return string_a + get_midpoint("z", lower="a")
             try:
@@ -289,17 +388,18 @@ def lexographic_midpoint(lower=None, upper=None):
         # This will happen in the case of A = abh, B = abit because the bounds
         # will be [h, i] and h is at the end of A.  In this case, we add the
         # left bound and then the midpoint of the alphabet.
-        if not has_index(string_a, differing_index + 1):
+        if not has_index(string_a, bounds.index + 1):
             # This algorithm should ensure that if we are at the end of A,
             # then the lower bound should be the last character in A.  This
             # is because otherwise, the strings would not have any room to
             # insert in between, which this algorithm prevents.  For an example,
             # this would happen if A = abc, B = abd, which this algorithm
             # prevents.
-            if bounds[0] != string_a[-1]:
+            if bounds.bounds[0] != string_a[-1]:
                 raise InconsistentOrderingError(string_a, string_b)
             try:
-                return base + bounds[0] + get_midpoint("z", lower="a")
+                return bounds.base + bounds.bounds[0] \
+                    + get_midpoint("z", lower="a")
             except BoundsError as e:
                 raise InconsistentOrderingError(
                     a=string_a,
@@ -310,32 +410,42 @@ def lexographic_midpoint(lower=None, upper=None):
         if string_a.endswith('z'):
             return string_a + get_midpoint("z", lower="a")
 
-        def add_and_return(base, bounds):
+        # Defined for required recursive behavior.
+        def add_and_return(bounds):
             try:
-                if string_a[len(base)] == 'z':
-                    base = base + string_a[len(base)]
-                    bounds[0] = string_a[len(base)]
-                    return add_and_return(base, bounds)
-                try:
-                    return base + get_midpoint("z", lower=string_a[len(base)])
-                except BoundsError as e:
-                    raise InconsistentOrderingError(
-                        a=string_a,
-                        b=string_b,
-                        message=e.message
-                    )
+                string_a_end = string_a[len(bounds.base)]
             except IndexError:
-                return base + get_midpoint("z", lower="a")
+                return bounds.base + get_midpoint("z", lower="a")
 
-        base = base + bounds[0]
-        return add_and_return(base, bounds)
+            if string_a_end == 'z':
+                bounds.base = bounds.base + string_a_end
+                bounds.bounds[0] = string_a_end
+                return add_and_return(bounds)
+
+            try:
+                return bounds.base + get_midpoint("z", lower=string_a_end)
+            except BoundsError as e:
+                raise InconsistentOrderingError(
+                    a=string_a,
+                    b=string_b,
+                    message=e.message
+                )
+
+        bounds.base = bounds.base + bounds.bounds[0]
+        return add_and_return(bounds)
 
     # Case 3
     else:
-        return base + get_midpoint(bounds[1], lower=bounds[0])
+        return bounds.base + get_midpoint(
+            bounds.bounds[1], lower=bounds.bounds[0])
 
 
 def order_after(count, last_order=None):
+    """
+    Creates an array of strings with length `count` that are lexographically
+    sequential such that the sequence is lexographically after the `last_order`
+    string (if provided).
+    """
     ordering = []
     if count != 0:
         # If the last order is None, start the ordering off at the midpoint of
