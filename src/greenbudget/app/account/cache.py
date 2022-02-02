@@ -6,25 +6,25 @@ from greenbudget.app.budget.cache import (
 
 
 account_children_cache = cache.endpoint_cache(
-    id='children',
+    id='account-children',
     path=lambda instance: reverse(
         'account:child-list', kwargs={'account_pk': instance.pk})
 )
 
 account_markups_cache = cache.endpoint_cache(
-    id="markup",
+    id="account-markup",
     path=lambda instance: reverse(
         'account:markup-list', kwargs={'account_pk': instance.pk})
 )
 
 account_groups_cache = cache.endpoint_cache(
-    id='group',
+    id='account-group',
     path=lambda instance: reverse(
         'account:group-list', kwargs={'account_pk': instance.pk})
 )
 
 account_instance_cache = cache.endpoint_cache(
-    id='detail',
+    id='account-detail',
     dependency=[
         lambda instance: budget_instance_cache.invalidate(
             instance.budget),

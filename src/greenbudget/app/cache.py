@@ -1,4 +1,5 @@
 import collections
+import contextlib
 import functools
 import logging
 import threading
@@ -61,6 +62,35 @@ EngineeredCacheKey = collections.namedtuple('CacheKey', ['instance', 'key'])
 PathConditional = collections.namedtuple(
     'PathConditional', ['condition', 'path'])
 ConditionalPath = collections.namedtuple('ConditionalPath', ['conditions'])
+
+
+class Registry:
+    """
+    A maintained registry of the registered instances of :obj:`endpoint_cache`
+    in the application.  The :obj:`Registry` is used for temporarily disabling
+    caches by their registered ID or disabling all registered caches.
+    """
+
+    def __init__(self, caches=None):
+        self._caches = caches or []
+
+    @property
+    def caches(self):
+        return self._caches
+
+    def add(self, cache):
+        assert cache.id is not None
+        if cache.id in [c.id for c in self._caches]:
+            raise Exception("Cannot register caches with the same ID.")
+        self._caches.append(cache)
+
+    def get_cache(self, id):
+        if id not in [c.name for c in self._caches]:
+            raise LookupError("No registered cache with ID %s." % id)
+        return [c for c in self._caches if c.id == id][0]
+
+
+registry = Registry()
 
 
 class RequestCannotBeCached(Exception):
@@ -245,11 +275,19 @@ class endpoint_cache:
     def __init__(self, id, path, dependency=None, disabled=False):
         self.id = id
         self._path = path
-        self._disabled = disabled
         self._dependency = dependency
+
+        self._disabled = False
+        self._hard_disabled = disabled
+        registry.add(self)
 
     def __call__(self, cls):
         return self.decorate(cls)
+
+    @property
+    def disabled(self):
+        return not settings.CACHE_ENABLED or self._disabled \
+            or self._hard_disabled
 
     def __str__(self):
         return "%s: %s" % (self.__class__.__name__, self.id)
@@ -261,8 +299,31 @@ class endpoint_cache:
     def request_can_be_cached(self, request):
         if request.method.upper() != self.method.upper():
             return False
-        # In certain environments, we do not want the cache to be enabled.
-        return settings.CACHE_ENABLED and not self._disabled
+        return not self.disabled
+
+    @contextlib.contextmanager
+    def with_disable(self):
+        self._disabled = True
+        try:
+            yield self
+        finally:
+            self._disabled = False
+
+    def disable(self, *args):
+        """
+        A decorator or context manager that will temporarily disable this
+        :obj:`endpoint_cache` instance inside the decorated function or
+        inside of the context.
+        """
+        if len(args) == 1 and hasattr(args[0], '__call__'):
+            func = args[0]
+
+            @functools.wraps(func)
+            def decorated(*args, **kwargs):
+                with self.with_disable():
+                    return func(*args, **kwargs)
+            return decorated
+        return self.with_disable()
 
     def decorate(self, cls):
         setattr(cls, 'dispatch', self.decorated_func(cls.dispatch))
@@ -341,13 +402,13 @@ class endpoint_cache:
     def _invalidate(self, key):
         # Invalidating a single key is separated from the invalidation of
         # multiple keys to make it easier to monkeypatch in tests.
-        if not settings.CACHE_ENABLED or self._disabled:
+        if self.disabled:
             return
         logger.debug("Invalidating Cache %s at Key %s" % (self, key.key))
         cache.delete(key.key)
 
     def invalidate(self, *args, **kwargs):
-        if not settings.CACHE_ENABLED or self._disabled:
+        if self.disabled:
             return
         ignore_deps = kwargs.pop('ignore_deps', False)
         key = self.get_cache_key(*args, **kwargs)
@@ -369,13 +430,12 @@ class endpoint_cache:
             raise Exception(
                 "Endpoints can only be cached for authenticated users.")
 
-        # The user can be a wildcard in the case that the invalidation is being
-        # performed outside the scope of a request.
-        assert isinstance(user, User) or user == "*"
-
         if not wildcard:
             cache_key = f"{self.method}-{path}"
             if user:
+                # The user can be a wildcard in the case that the invalidation
+                # is being performed outside the scope of a request.
+                assert isinstance(user, User) or user == "*"
                 cache_key = f"{getattr(user, 'id', user)}-{cache_key}"
             if query:
                 cache_key += f"?{query.urlencode()}"
@@ -639,3 +699,52 @@ class endpoint_cache:
             return r
 
         return dispatch
+
+
+class disable(contextlib.ContextDecorator):
+    """
+    Context manager or function decorator that will temporarily disable
+    :obj:`endpoint_cache` instance(s) inside of the context or inside of the
+    function implementation.
+
+    Parameters:
+    ----------
+    signals: :obj:`list` or :obj:`tuple` or :obj:`Signal` or None
+        The specific signal, or iterable of signals, that should be disabled
+        inside the context.  Signals can be referenced either by their
+        registered name or by the :obj:`Signal` instance itself.  If no
+        :obj:`Signal`(s) are provided, all :obj:`Signal`(s) will be disabled
+        in the context.
+
+        Default: None
+    """
+
+    def __init__(self, **kwargs):
+        # Caches that should be disabled in context, either identified by
+        # their ID in the registry or the :obj:`endpoint_cache` instance.  If
+        # not provided, all caches in the registry will be disabled in
+        # context.
+        self._caches = kwargs.pop('signals', None)
+        super().__init__()
+
+    @property
+    def caches(self):
+        if not self._caches:
+            return registry.caches
+        cache_instances = []
+        for c in ensure_iterable(self._caches):
+            if isinstance(c, str):
+                cache_instances.append(registry.get_cache(c))
+            else:
+                cache_instances.append(c)
+        return cache_instances
+
+    def __enter__(self):
+        for c in self.caches:
+            c._disabled = True
+        return self
+
+    def __exit__(self, *exc):
+        for c in self.caches:
+            c._disabled = False
+        return False

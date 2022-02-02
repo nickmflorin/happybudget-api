@@ -3,6 +3,8 @@ from django.core import management
 from greenbudget.management.base import CustomCommand
 from greenbudget.management.decorators import askable, skippable, debug_only
 
+from greenbudget.app import cache
+
 
 @debug_only
 class Command(CustomCommand):
@@ -69,6 +71,7 @@ class Command(CustomCommand):
         management.call_command("createsuperuser")
 
     @management.base.no_translations
+    @cache.disable()
     def handle(self, *args, **options):
         database_reset = self.reset_db(**options)
         self.migrate(ask=not database_reset, **options)

@@ -4,7 +4,7 @@ from greenbudget.app import cache
 
 
 budget_children_cache = cache.endpoint_cache(
-    id='children',
+    id='budget-children',
     path=cache.ConditionalPath(conditions=[
         cache.PathConditional(
             condition=lambda instance: instance.domain == 'template',
@@ -21,7 +21,7 @@ budget_children_cache = cache.endpoint_cache(
 
 
 budget_groups_cache = cache.endpoint_cache(
-    id='group',
+    id='budget-group',
     path=cache.ConditionalPath(conditions=[
         cache.PathConditional(
             condition=lambda instance: instance.domain == 'template',
@@ -37,7 +37,7 @@ budget_groups_cache = cache.endpoint_cache(
 )
 
 budget_markups_cache = cache.endpoint_cache(
-    id='markup',
+    id='budget-markup',
     path=cache.ConditionalPath(conditions=[
         cache.PathConditional(
             condition=lambda instance: instance.domain == 'template',
@@ -53,7 +53,7 @@ budget_markups_cache = cache.endpoint_cache(
 )
 
 budget_fringes_cache = cache.endpoint_cache(
-    id='fringe',
+    id='budget-fringe',
     path=cache.ConditionalPath(conditions=[
         cache.PathConditional(
             condition=lambda instance: instance.domain == 'template',
@@ -69,19 +69,19 @@ budget_fringes_cache = cache.endpoint_cache(
 )
 
 budget_actuals_cache = cache.endpoint_cache(
-    id='actual',
+    id='budget-actual',
     path=lambda instance: reverse(
         'budget:actual-list', kwargs={'budget_pk': instance.pk})
 )
 
 budget_actuals_owners_cache = cache.endpoint_cache(
-    id='actuals-owners',
+    id='budget-actuals-owners',
     path=lambda instance: reverse(
         'budget:actual-owner-list', kwargs={'budget_pk': instance.pk})
 )
 
 budget_instance_cache = cache.endpoint_cache(
-    id='detail',
+    id='budget-detail',
     path=cache.ConditionalPath(conditions=[
         cache.PathConditional(
             condition=lambda instance: instance.domain == 'template',
