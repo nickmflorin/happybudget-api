@@ -1,6 +1,7 @@
 import stripe
 from timezone_field import TimeZoneField
 
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -73,6 +74,12 @@ class User(AbstractUser):
         return self.first_name + " " + self.last_name
 
     @property
+    def email_is_verified(self):
+        if settings.EMAIL_VERIFICATION_ENABLED is False:
+            return True
+        return self.is_verified
+
+    @property
     def num_budgets(self):
         return self.budgets.count()
 
@@ -97,7 +104,7 @@ class User(AbstractUser):
         if self.stripe_customer is not None:
             self.stripe_customer.cache_from_token(token_obj)
         elif self.stripe_id is not None and self.is_authenticated \
-                and self.is_verified:
+                and self.email_is_verified:
             self._stripe_customer = StripeCustomer.from_token(
                 token_obj=token_obj,
                 user=self

@@ -93,7 +93,7 @@ class SessionAuthentication(authentication.SessionAuthentication):
     def authenticate(self, request):
         user = getattr(request._request, self.user_ref, None)
         if not user or not user.is_authenticated or not user.is_active \
-                or not user.is_verified:
+                or not user.email_is_verified:
             return None
         if not self.csrf_excempt:
             self.enforce_csrf(request)

@@ -118,6 +118,7 @@ AUTH_USER_MODEL = 'user.User'
 # When True, User's will not be allowed to register unless they are on a
 # waitlist in SendGrid.
 WAITLIST_ENABLED = True
+EMAIL_VERIFICATION_ENABLED = True
 
 INSTALLED_APPS = [
     'compressor',
