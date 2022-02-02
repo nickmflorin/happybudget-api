@@ -427,8 +427,10 @@ class endpoint_cache:
         # Requests need to be cached on a user basis, so if the user is not
         # authenticated we cannot cache the request.
         if isinstance(user, AnonymousUser):
-            raise Exception(
-                "Endpoints can only be cached for authenticated users.")
+            # If the user is not authenticated, we do not want to raise an
+            # exception - because we need to allow the force logout process
+            # to proceed via the middleware.
+            raise RequestCannotBeCached()
 
         if not wildcard:
             cache_key = f"{self.method}-{path}"
@@ -684,8 +686,7 @@ class endpoint_cache:
             except RequestCannotBeCached:
                 # Do not call the original dispatch method with the modified
                 # request.
-                r = func(view, request, *args, **kwargs)
-                return r
+                return func(view, request, *args, **kwargs)
             if data:
                 # It is safe to assume that the response status code should be
                 # 200 because cacheing is only allowed currently for GET
