@@ -166,7 +166,7 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-.grp-object-tools a.grp-add-link {
+.grp-object-tools a {
   @extend .btn;
   @include primary();
 }

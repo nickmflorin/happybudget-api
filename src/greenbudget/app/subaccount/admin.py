@@ -38,13 +38,19 @@ class SubAccountAdmin(admin.ModelAdmin):
 class BudgetSubAccountAdminForm(forms.ModelForm):
     class Meta:
         model = BudgetSubAccount
-        fields = '__all__'
+        fields = (
+            'identifier', 'description', 'quantity', 'multiplier', 'rate',
+            'unit', 'fringes', 'markups', 'group', 'attachments', 'contact'
+        )
 
 
 class TemplateSubAccountAdminForm(forms.ModelForm):
     class Meta:
         model = TemplateSubAccount
-        fields = '__all__'
+        fields = (
+            'identifier', 'description', 'quantity', 'multiplier', 'rate',
+            'unit', 'fringes', 'markups', 'group'
+        )
 
 
 @admin.register(BudgetSubAccount)

@@ -12,13 +12,13 @@ class AccountAdmin(admin.ModelAdmin):
 class BudgetAccountAdminForm(forms.ModelForm):
     class Meta:
         model = BudgetAccount
-        fields = '__all__'
+        fields = ('identifier', 'description', 'markups', 'group')
 
 
 class TemplateAccountAdminForm(forms.ModelForm):
     class Meta:
         model = TemplateAccount
-        fields = '__all__'
+        fields = ('identifier', 'description', 'markups', 'group')
 
 
 class BudgetAccountAdmin(AccountAdmin):
