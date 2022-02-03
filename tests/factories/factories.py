@@ -93,7 +93,6 @@ class UserFactory(CustomModelFactory):
     last_name = factory.Faker('last_name')
     email = factory.Faker('email')
     is_staff = False
-    is_admin = False
     is_superuser = False
     is_active = True
     is_first_time = False
@@ -102,21 +101,8 @@ class UserFactory(CustomModelFactory):
         model = User
 
     class Params:
-        superuser = factory.Trait(
-            is_superuser=True,
-            is_admin=False,
-            is_staff=True
-        )
-        admin = factory.Trait(
-            is_superuser=False,
-            is_admin=True,
-            is_staff=False
-        )
-        staff = factory.Trait(
-            is_superuser=False,
-            is_admin=False,
-            is_staff=True
-        )
+        superuser = factory.Trait(is_superuser=True, is_staff=True)
+        staff = factory.Trait(is_superuser=False, is_staff=True)
 
 
 class BaseBudgetFactory(CustomModelFactory):

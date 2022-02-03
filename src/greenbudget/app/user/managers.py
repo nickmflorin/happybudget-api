@@ -41,7 +41,6 @@ class UserManager(UserQuerier, DjangoUserManager):
     def create_user(self, email, **kwargs):
         kwargs.setdefault('is_staff', False)
         kwargs.setdefault('is_superuser', False)
-        kwargs.setdefault('is_admin', False)
         kwargs.setdefault('is_active', True)
         return self._create_user(email, **kwargs)
 

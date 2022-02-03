@@ -119,7 +119,6 @@ class UserSerializer(serializers.ModelSerializer):
     address = serializers.CharField(allow_null=True, required=False)
     phone_number = serializers.IntegerField(allow_null=True, required=False)
     is_active = serializers.BooleanField(default=True, read_only=True)
-    is_admin = serializers.BooleanField(default=False, read_only=True)
     is_staff = serializers.BooleanField(default=False, read_only=True)
     is_superuser = serializers.BooleanField(default=False, read_only=True)
     last_login = serializers.DateTimeField(read_only=True)
@@ -133,7 +132,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('id', 'first_name', 'last_name', 'email',
-            'is_active', 'is_admin', 'is_superuser', 'is_staff', 'full_name',
+            'is_active', 'is_superuser', 'is_staff', 'full_name',
             'profile_image', 'last_login', 'date_joined', 'timezone',
             'is_first_time', 'company', 'position', 'address', 'phone_number',
             'product_id', 'billing_status', 'num_budgets')

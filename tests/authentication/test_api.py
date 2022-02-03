@@ -28,7 +28,6 @@ def test_login(login, user_with_password, settings):
         "last_name": user_with_password.last_name,
         "email": user_with_password.email,
         "is_active": True,
-        "is_admin": False,
         "is_superuser": False,
         "is_staff": False,
         "company": user_with_password.company,

@@ -15,7 +15,7 @@ class UserAdminForm(forms.ModelForm):
 class UserAdmin(admin.ModelAdmin):
     list_display = (
         "first_name", "last_name", "email", "created_at", "last_login",
-        "is_admin", "is_staff", "is_superuser", "email_actions")
+        "is_staff", "is_superuser", "email_actions")
     fieldsets = (
         ('Profile info', {
             'fields': (
@@ -24,7 +24,7 @@ class UserAdmin(admin.ModelAdmin):
         }),
         ('Restrictions & Permissions', {
             'fields': (
-                'is_admin', 'is_superuser', 'is_staff', 'is_verified',
+                'is_superuser', 'is_staff', 'is_verified',
                 'is_first_time'
             )
         }),

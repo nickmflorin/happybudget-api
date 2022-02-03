@@ -33,7 +33,6 @@ def test_validate_email_token(validate_email_token, unverified_user):
         'full_name': unverified_user.full_name,
         'email': unverified_user.email,
         'is_active': unverified_user.is_active,
-        'is_admin': unverified_user.is_admin,
         'is_superuser': unverified_user.is_superuser,
         'is_staff': unverified_user.is_staff,
         "company": unverified_user.company,

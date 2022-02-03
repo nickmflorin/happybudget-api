@@ -29,14 +29,13 @@ def upload_to(instance, filename):
 @signals.model(track_user=False)
 class User(AbstractUser):
     username = None
-    first_name = models.CharField(max_length=30)
-    last_name = models.CharField(max_length=30)
-    email = models.EmailField(unique=True)
-    is_admin = models.BooleanField(default=False)
+    first_name = models.CharField(_('Fist Name'), max_length=150, blank=False)
+    last_name = models.CharField(_('Last Name'), max_length=150, blank=False)
+    email = models.EmailField(_('Email Address'), blank=False, unique=True)
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
     updated_at = models.DateTimeField(auto_now=True, editable=False)
     date_joined = models.DateTimeField(
-        _('date joined'),
+        _('Date Joined'),
         auto_now_add=True,
         editable=False
     )
@@ -47,9 +46,19 @@ class User(AbstractUser):
     timezone = TimeZoneField(default='America/New_York')
     profile_image = models.ImageField(upload_to=upload_to, null=True, blank=True)
     is_active = models.BooleanField(
-        _('active'),
+        _('Active'),
         default=True,
         help_text=_("Designates whether this user's account is disabled."),
+    )
+    is_staff = models.BooleanField(
+        _('Staff'),
+        default=False,
+        help_text=_("Designates whether this user can login to the admin site."),
+    )
+    is_superuser = models.BooleanField(
+        _('Superuser'),
+        default=False,
+        help_text=_('Designates whether this user is a superuser.'),
     )
     is_first_time = models.BooleanField(
         _('First Time Login'),
@@ -63,7 +72,12 @@ class User(AbstractUser):
             'Designates whether this user has verified their email address.'
         ),
     )
-    stripe_id = models.CharField(max_length=128, blank=True, null=True)
+    stripe_id = models.CharField(
+        max_length=128,
+        blank=True,
+        null=True,
+        editable=False
+    )
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['first_name', 'last_name']

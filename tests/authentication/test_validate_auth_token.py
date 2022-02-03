@@ -30,7 +30,6 @@ def test_validate_auth_token(api_client, settings, standard_product_user):
         'full_name': standard_product_user.full_name,
         'email': standard_product_user.email,
         'is_active': standard_product_user.is_active,
-        'is_admin': standard_product_user.is_admin,
         'is_superuser': standard_product_user.is_superuser,
         'is_staff': standard_product_user.is_staff,
         "company": standard_product_user.company,

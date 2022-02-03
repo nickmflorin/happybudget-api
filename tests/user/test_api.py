@@ -53,7 +53,6 @@ def test_registration(api_client, models, settings, user):
                 "last_name": "Johnson",
                 "email": "jjohnson@gmail.com",
                 "is_active": True,
-                "is_admin": False,
                 "is_superuser": False,
                 "is_staff": False,
                 "company": None,
@@ -85,7 +84,6 @@ def test_registration(api_client, models, settings, user):
     assert user.last_name == "Johnson"
     assert user.email == "jjohnson@gmail.com"
     assert user.is_staff is False
-    assert user.is_admin is False
     assert user.is_superuser is False
     assert user.is_active is True
     assert user.check_password("hoopla@H9_12") is True
@@ -150,7 +148,6 @@ def test_update_logged_in_user(api_client, user):
         "last_name": "New Last Name",
         "email": user.email,
         "is_active": True,
-        "is_admin": False,
         "is_superuser": False,
         "is_staff": False,
         "company": user.company,
@@ -187,7 +184,6 @@ def test_change_password(api_client, user, user_password):
         "last_name": user.last_name,
         "email": user.email,
         "is_active": True,
-        "is_admin": False,
         "is_superuser": False,
         "is_staff": False,
         "company": user.company,
