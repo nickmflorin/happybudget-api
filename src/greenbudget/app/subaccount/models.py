@@ -60,12 +60,12 @@ CALCULATED_FIELDS = ESTIMATED_FIELDS + ('actual', )
 
 
 class SubAccount(BudgetingTreePolymorphicRowModel):
-    identifier = models.CharField(null=True, max_length=128)
-    description = models.CharField(null=True, max_length=128)
-    quantity = models.FloatField(null=True)
-    rate = models.FloatField(null=True)
-    multiplier = models.IntegerField(null=True)
-    actual = models.FloatField(default=0.0)
+    identifier = models.CharField(null=True, max_length=128, blank=True)
+    description = models.CharField(null=True, max_length=128, blank=True)
+    quantity = models.FloatField(null=True, blank=True)
+    rate = models.FloatField(null=True, blank=True)
+    multiplier = models.IntegerField(null=True, blank=True)
+    actual = models.FloatField(default=0.0, blank=True)
 
     ESTIMATED_FIELDS = ESTIMATED_FIELDS
     CALCULATED_FIELDS = CALCULATED_FIELDS

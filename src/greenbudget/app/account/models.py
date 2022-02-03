@@ -29,8 +29,8 @@ CALCULATED_FIELDS = ESTIMATED_FIELDS + ('actual', )
 
 
 class Account(BudgetingTreePolymorphicRowModel):
-    identifier = models.CharField(null=True, max_length=128)
-    description = models.CharField(null=True, max_length=128)
+    identifier = models.CharField(null=True, max_length=128, blank=True)
+    description = models.CharField(null=True, max_length=128, blank=True)
     parent = models.ForeignKey(
         to='budget.BaseBudget',
         on_delete=models.CASCADE,
