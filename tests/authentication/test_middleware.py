@@ -67,22 +67,39 @@ def test_get_cookie_user_request_has_cached_user(middleware_patch, req, user):
         assert mock_fn.call_count == 0
 
 
-def test_get_cookie_user_raises_expired_token(middleware_patch, req):
-    request = req()
+def test_get_cookie_user_raises_expired_token(middleware_patch, rf, user):
+    # The middleware will simply use the session user in the case that the
+    # request is not to the validate endpoint.
+    request = rf.post("/v1/auth/validate/")
+    # If there isn't a session user on the request, the middleware will not
+    # attempt to parse the JWT token.
+    request.user = user
     with middleware_patch('parse_token', side_effect=ExpiredToken()):
         with pytest.raises(ExpiredToken):
             get_cookie_user(request)
 
 
-def test_get_cookie_user_raises_invalid_token(middleware_patch, req):
-    request = req()
+def test_get_cookie_user_raises_invalid_token(middleware_patch, rf, user):
+    # The middleware will simply use the session user in the case that the
+    # request is not to the validate endpoint.
+    request = rf.post("/v1/auth/validate/")
+    # If there isn't a session user on the request, the middleware will not
+    # attempt to parse the JWT token.
+    request.user = user
     with middleware_patch('parse_token', side_effect=InvalidToken()):
         with pytest.raises(InvalidToken):
             get_cookie_user(request)
 
 
-def test_get_cookie_user_passes_cookie_args(settings, middleware_patch, req):
-    request = req(**{settings.JWT_TOKEN_COOKIE_NAME: 'token'})
+def test_get_cookie_user_passes_cookie_args(settings, middleware_patch, rf,
+        user):
+    rf.cookies = SimpleCookie({settings.JWT_TOKEN_COOKIE_NAME: 'token'})
+    # The middleware will simply use the session user in the case that the
+    # request is not to the validate endpoint.
+    request = rf.post("/v1/auth/validate/")
+    # If there isn't a session user on the request, the middleware will not
+    # attempt to parse the JWT token.
+    request.user = user
     middleware = AuthTokenCookieMiddleware()
     middleware.process_request(request)
     with middleware_patch('parse_token', return_value=(None, None)) as mock_fn:
@@ -90,7 +107,7 @@ def test_get_cookie_user_passes_cookie_args(settings, middleware_patch, req):
     assert mock_fn.mock_calls == [mock.call('token')]
 
 
-@pytest.mark.freeze_time('2021-01-01')
+@ pytest.mark.freeze_time('2021-01-01')
 def test_process_response_sets_cookies(settings, req, user):
     token = AuthToken.for_user(user)
 
@@ -131,7 +148,7 @@ def test_middleware_corrupted_token_deletes_cookies(settings, req, user):
     assert new_response.cookies[settings.JWT_TOKEN_COOKIE_NAME].value == ''
 
 
-@pytest.mark.freeze_time('2021-01-01')
+@ pytest.mark.freeze_time('2021-01-01')
 def test_middleware_expired_token_deletes_cookies(settings, req, user):
     token = AuthToken.for_user(user)
     token.set_exp(claim='refresh_exp', from_time=datetime(2010, 1, 1))
@@ -161,7 +178,7 @@ def test_middleware_invalid_token_deletes_cookies(settings, req):
     assert new_response.cookies[settings.JWT_TOKEN_COOKIE_NAME].value == ''
 
 
-@pytest.mark.parametrize("method", ['get', 'head', 'options'])
+@ pytest.mark.parametrize("method", ['get', 'head', 'options'])
 def test_middleware_doesnt_update_cookie_for_read_only_methods(
         method, middleware_patch, user, settings, req):
     middleware = AuthTokenCookieMiddleware()

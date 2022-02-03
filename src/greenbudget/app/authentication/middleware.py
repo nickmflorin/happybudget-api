@@ -67,20 +67,22 @@ def get_cookie_user(request):
     is_validate_url = request.path == reverse('authentication:validate')
     if not hasattr(request, '_cached_cookie_user'):
         request._cached_cookie_user = AnonymousUser()
+        # If the session user is not authenticated, we do not want to allow the
+        # token validation endpoints to return the user based on the JWT token.
         session_user = getattr(request, 'user', None)
         if session_user \
-                and user_can_authenticate(session_user, raise_exception=False) \
-                and not is_validate_url:
-            request._cached_cookie_user = session_user
-        else:
-            raw_token = parse_token_from_request(request)
-            token_user, token_obj = parse_token(raw_token)
-            if user_can_authenticate(token_user, raise_exception=False):
-                # We want to also prepopulate billing related values on the
-                # token user so that the JWT authentication token validation
-                # view does not make repetitive requests to Stripe's API.
-                token_user.cache_stripe_from_token(token_obj)
-                request._cached_cookie_user = token_user
+                and user_can_authenticate(session_user, raise_exception=False):
+            if not is_validate_url:
+                request._cached_cookie_user = session_user
+            else:
+                raw_token = parse_token_from_request(request)
+                token_user, token_obj = parse_token(raw_token)
+                if user_can_authenticate(token_user, raise_exception=False):
+                    # We want to also prepopulate billing related values on the
+                    # token user so that the JWT authentication token validation
+                    # view does not make repetitive requests to Stripe's API.
+                    token_user.cache_stripe_from_token(token_obj)
+                    request._cached_cookie_user = token_user
     return request._cached_cookie_user
 
 

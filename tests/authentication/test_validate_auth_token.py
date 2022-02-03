@@ -125,13 +125,15 @@ def test_validate_auth_token_invalid_token(api_client, user, settings):
     api_client.cookies = SimpleCookie({
         settings.JWT_TOKEN_COOKIE_NAME: "invalid-token"
     })
+    api_client.force_login(user)
     response = api_client.post("/v1/auth/validate/")
     assert response.status_code == 401
     assert response.json() == {
         'errors': [{
             'message': 'Token is invalid.',
             'code': 'token_not_valid',
-            'error_type': 'auth'
+            'error_type': 'auth',
+            'user_id': 1
         }]
     }
     assert settings.JWT_TOKEN_COOKIE_NAME not in response.cookies
