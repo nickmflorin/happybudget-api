@@ -166,6 +166,11 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+.grp-object-tools a.grp-add-link {
+  @extend .btn;
+  @include primary();
+}
+
 a.grp-button, button.grp-button, input[type=button].grp-button, button, .grp-button, input[type="submit"] {
   @extend .btn;
 }
