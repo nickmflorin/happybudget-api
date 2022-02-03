@@ -1,0 +1,182 @@
+@import "./_variables.scss";
+
+// This class is not meant to be used in the components.
+.btn-link-base {
+  font-size: 12px;
+  letter-spacing: 0.028em;
+  font-stretch: normal;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  align-items: center;
+  user-select: none;
+  vertical-align: middle;
+  justify-content: center;
+  border-color: $transparent;
+
+  &:disabled,
+  &.disabled,
+  &.fake-disabled,
+  &:hover:not(:disabled):not(.disabled):not(.fake-disabled),
+  &:focus:not(:disabled):not(.disabled):not(.fake-disabled),
+  &.hovered:not(:disabled):not(.disabled):not(.fake-disabled) {
+    border-color: $transparent;
+  }
+}
+
+@mixin color_on_hover($c) {
+  &:hover:not(:disabled):not(.disabled):not(.fake-disabled),
+  &:focus:not(:disabled):not(.disabled):not(.fake-disabled),
+  &.hovered:not(:disabled):not(.disabled):not(.fake-disabled) {
+    color: $c;
+  }
+}
+
+@mixin color_on_disabled($c: $disabled-color) {
+  &:disabled,
+  &.disabled,
+  &.fake-disabled {
+    color: $c;
+  }
+}
+
+@mixin color_on_hover_and_disabled($c) {
+  @include color_on_hover($c);
+  @include color_on_disabled($c);
+}
+
+@mixin bg_color_on_hover($c) {
+  &:hover:not(:disabled):not(.disabled):not(.fake-disabled),
+  &:focus:not(:disabled):not(.disabled):not(.fake-disabled),
+  &.hovered:not(:disabled):not(.disabled):not(.fake-disabled) {
+    background-color: $c;
+    background: $c;
+  }
+}
+
+@mixin bg_color_on_disabled($c) {
+  &:disabled,
+  &.disabled,
+  &.fake-disabled {
+    background-color: $c;
+    background: $c;
+  }
+}
+
+@mixin bg_color_on_hover_and_disabled($c) {
+  @include bg_color_on_hover($c);
+  @include bg_color_on_disabled($c);
+}
+
+@mixin color($c) {
+  color: $c;
+}
+
+@mixin bg_color($c) {
+  background-color: $c;
+  background: $c;
+}
+
+@mixin green() {
+  @include color_set($green, $green-darker);
+}
+
+@mixin green_on_hover() {
+  @include color_on_hover($green);
+}
+
+@mixin color_set($c, $h: lighten($c, 20%), $d: $disabled-color) {
+  @include color($c);
+  @include color_on_disabled($d);
+  @include color_on_hover($h);
+
+  .spinner {
+    color: $c;
+  }
+
+	.anticon-loading {
+		color: $c !important;
+	}
+}
+
+@mixin bg_color_set($c, $h: darken($c, 20%), $d: darken($c, 20%)) {
+  @include bg_color($c);
+  @include bg_color_on_disabled($d);
+  @include bg_color_on_hover($h);
+}
+
+@mixin solid_color($c) {
+  @include color_set($c, $c, $c);
+}
+
+@mixin primary() {
+  @include bg_color_set($green, $green-darker, $green-darker);
+  @include solid_color($white);
+  border-color: $transparent !important;
+}
+
+@mixin danger() {
+  @include bg_color_set($red, $red-darker, $red-darker);
+  @include solid_color($white);
+  border-color: $transparent !important;
+}
+
+@mixin default() {
+  @include bg_color_set(#ececec, darken(#ececec, 10%), darken(#ececec, 10%));
+  @include solid_color($text-secondary);
+  border-color: #d9d9d9 !important;
+}
+
+.link {
+  @extend .btn-link-base;
+  font-family: $roboto;
+  font-weight: 400;
+  transition: none;
+  background-color: transparent;
+  padding: 0;
+  border: none !important;
+	color: $blue;
+	&:hover {
+		color: lighten($blue, 10%);
+	}
+}
+
+.btn {
+  @extend .btn-link-base;
+  background-image: none !important;
+  font-family: $open-sans;
+  letter-spacing: 0.01em;
+  font-weight: 600;
+  padding: 8px 12px;
+  min-width: 80px;
+  height: 36px;
+  line-height: 20px;
+  border-radius: 4px;
+  margin: 0;
+  display: inline-flex;
+  outline: 0;
+  border-width: 1px;
+  color: $text-secondary;
+  box-sizing: border-box;
+  box-shadow: none !important;
+  @include default();
+
+  -moz-appearance: none;
+  -webkit-appearance: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+a.grp-button, button.grp-button, input[type=button].grp-button, button, .grp-button, input[type="submit"] {
+  @extend .btn;
+}
+
+.grp-fixed-footer input[type="submit"]:hover, .grp-fixed-footer input[type="submit"]:focus {
+  @extend .btn;
+}
+
+.grp-button {
+  &.grp-delete-link {
+    @extend .btn;
+    @include danger();
+  }
+}

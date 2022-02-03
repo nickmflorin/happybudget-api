@@ -40,15 +40,24 @@ class User(AbstractUser):
         auto_now_add=True,
         editable=False
     )
-    position = models.CharField(max_length=128, null=True)
-    company = models.CharField(max_length=128, null=True)
-    address = models.CharField(max_length=30, null=True)
-    phone_number = models.BigIntegerField(null=True)
+    position = models.CharField(max_length=128, null=True, blank=True)
+    company = models.CharField(max_length=128, null=True, blank=True)
+    address = models.CharField(max_length=30, null=True, blank=True)
+    phone_number = models.BigIntegerField(null=True, blank=True)
     timezone = TimeZoneField(default='America/New_York')
     profile_image = models.ImageField(upload_to=upload_to, null=True, blank=True)
-    is_first_time = models.BooleanField(default=True)
+    is_active = models.BooleanField(
+        _('active'),
+        default=True,
+        help_text=_("Designates whether this user's account is disabled."),
+    )
+    is_first_time = models.BooleanField(
+        _('First Time Login'),
+        default=True,
+        help_text=_('Designates whether this user has logged in yet.'),
+    )
     is_verified = models.BooleanField(
-        _('verified'),
+        _('Verified'),
         default=False,
         help_text=_(
             'Designates whether this user has verified their email address.'

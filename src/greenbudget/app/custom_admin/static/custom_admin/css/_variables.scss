@@ -1,0 +1,79 @@
+// Generic Colors
+$red: #d73a49;
+$red-hover: #e2707b;
+$red-alpha: #fff1f0;
+$red-light: #ffdce0;
+$red-darker: #c1272d;
+
+$green: #0fb767;
+$green-light: #32d387;
+$green-alpha: #f6ffed;
+$green-darker: #05a479;
+
+$orange: #fd905f;
+$orange-light: #ffd591;
+$orange-alpha: #fff7e6;
+
+$blue: #2182e4;
+$blue-light: #91d5ff;
+$blue-light-light: #caf1ff;
+$blue-alpha: #e6f7ff;
+
+$yellow: #efcd5d;
+
+$white: #ffffff;
+$hover: rgba(232, 232, 232, 0.5);
+$off-white: #fbfbfb;
+$black: #000000;
+$gray-dark: #595959;
+$gray: #b9b9b9;
+$gray-hover: lighten($gray-dark, 20%);
+$gray-light: #f7f7f7;
+$gray-highlight: rgba(245, 245, 245, 0.4);
+$transparent: rgba(0, 0, 0, 0);
+
+// Typography Colors - These need to be revisited.
+$text-primary: #404152;
+$text-secondary: #424242;
+$text-tertiary: rgba(64, 65, 82, 0.85);
+
+// Icon Colors
+$icon-color: #5a5a5a;
+$grid-icon-color: #bababa;
+$disabled-color: #d3d3d3;
+
+// Feedback Colors
+$error-background-color: #fff2f0;
+$error-border-color: #ffccc7;
+$warning-background-color: #fffbe6;
+$warning-border-color: #ffe58f;
+$info-background-color: #e6f7ff;
+$info-border-color: #91d5ff;
+$success-background-color: #f6ffed;
+$success-border-color: #b7eb8f;
+
+$separator-color: #e6e6e6;
+$border-color: #efefef;
+$border: 1px solid $border-color;
+$table-border-color: #f8f8f8;
+$table-border: 1px solid $table-border-color;
+
+$roboto: 'Roboto', sans-serif;
+$open-sans: 'Open Sans', sans-serif;
+
+// Layout
+$header-height: 50px;
+$header-background-color: $white;
+
+$app-background-color: $white;
+$app-alt-background-color: #fcfcfc;
+
+// Input Fields
+$input-border-radius: 6px;
+$input-small-border-radius: 4px;
+
+$menu-border-color: $border-color;
+$menu-border: 1px solid $menu-border-color;
+
+$field-border-color: $border-color;
+$field-border: 1px solid $field-border-color;

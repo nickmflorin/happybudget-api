@@ -1,0 +1,105 @@
+@import './variables';
+
+// This is to get rid of the blue-background that Chrome sometimes sets on
+// auto-fill fields.
+button:-webkit-autofill,
+button:-webkit-autofill:hover,
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+input:focus,
+textarea:focus,
+select:-webkit-autofill:focus {
+  box-shadow: 0 0 0px 1000px $gray-light inset !important;
+  -webkit-box-shadow: 0 0 0px 1000px $gray-light inset !important;
+}
+
+input:-webkit-autofill::first-line {
+  font-size: 13px;
+  color: $text-primary !important;
+  font-family: $open-sans;
+  font-weight: 500;
+  width: 100%;
+  line-height: 22px;
+}
+
+input:focus-visible {
+  outline: none !important;
+}
+
+// This class is not meant to be used in the components.
+.input-base {
+  transition: all 0.3s;
+  border: none;
+  background-color: $gray-light !important;
+  color: $text-primary !important;
+  cursor: text;
+  position: relative;
+  box-sizing: border-box;
+  align-items: center;
+  font-variant: tabular-nums;
+  list-style: none;
+  font-feature-settings: 'tnum';
+  font-family: $open-sans;
+  font-weight: 500;
+  width: 100%;
+  line-height: 22px;
+  font-size: 13px;
+  border-radius: $input-border-radius;
+  // Padding with line-height must be 36px for our standard size.  7px + 7px + 22px = 36px
+  padding-top: 7px;
+  padding-bottom: 7px;
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+.input-small-base {
+  line-height: 16px !important;
+  font-size: 12px !important;
+  padding-top: 5px !important;
+  padding-bottom: 5px !important;
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+  border-radius: $input-small-border-radius !important;
+}
+
+input:not([type='checkbox']) {
+  @extend .input-base;
+
+  &:hover,
+  &:focus {
+    border-color: transparent !important;
+    box-shadow: none !important;
+  }
+}
+
+textarea {
+  background-color: $gray-light !important;
+  color: $text-secondary !important;
+  font-family: $roboto !important;
+  font-weight: 400;
+  border-radius: 10px !important;
+  border: 1px solid transparent !important;
+  min-height: 36px !important;
+  font-size: 12px;
+}
+
+select {
+  @extend .input-base;
+  box-shadow: none !important;
+  background-color: $white !important;
+  border-color: #ebebeb !important;
+  border: 1px solid #ebebeb !important;
+  position: relative;
+  font-weight: 500;
+  float: none !important;
+  padding-top: 0px !important;
+  padding-bottom: 0px !important;
+  height: 36px !important;
+  margin: 0;
+}

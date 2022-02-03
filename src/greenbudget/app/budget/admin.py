@@ -7,7 +7,7 @@ from .models import Budget
 class BudgetAdminForm(forms.ModelForm):
     class Meta:
         model = Budget
-        fields = '__all__'
+        fields = ('name', 'image')
 
 
 class BudgetAdmin(admin.ModelAdmin):

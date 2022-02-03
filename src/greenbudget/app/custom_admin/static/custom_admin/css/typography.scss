@@ -1,0 +1,51 @@
+@import "./variables";
+
+.header-base {
+  color: $text-primary;
+  margin-top: 0;
+  margin-bottom: 0;
+  font-family: $open-sans;
+  font-weight: 600;
+  text-shadow: none !important;
+}
+
+h1 {
+  @extend .header-base;
+  &.ant-typography {
+    font-size: 28px;
+  }
+}
+
+h1#grp-admin-title {
+  color: $white !important;
+  font-size: 20px;
+  padding: 10px 0;
+  line-height: 20px;
+}
+
+h2 {
+  @extend .header-base;
+}
+
+h3 {
+  @extend .header-base;
+}
+
+h4 {
+  @extend .header-base;
+
+  &.ant-typography {
+    color: $text-secondary;
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 20px;
+  }
+}
+
+h5 {
+  @extend .header-base;
+}
+
+h6 {
+  @extend .header-base;
+}
