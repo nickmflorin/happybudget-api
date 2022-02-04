@@ -13,6 +13,7 @@ from rest_framework_simplejwt.exceptions import AuthenticationFailed
 from greenbudget.lib.utils import ensure_iterable, get_nested_attribute
 from greenbudget.lib.utils.urls import parse_ids_from_request
 
+from greenbudget.app.authentication import permissions
 from greenbudget.app.billing.exceptions import ProductPermissionError
 
 
@@ -92,10 +93,9 @@ class GenericView(generics.GenericAPIView):
         """
         extra_permissions = getattr(self, 'extra_permission_classes', [])
         extra_permissions = ensure_iterable(extra_permissions)
-        permissions = list(self.permission_classes)[:] + [
+        pm = list(self.permission_classes)[:] + [
             p for p in extra_permissions if p not in self.permission_classes]
-        permissions = [p() if isinstance(p, type) else p for p in permissions]
-        return permissions
+        return permissions.instantiate_permissions(pm)
 
     def get_serializer_class(self):
         """

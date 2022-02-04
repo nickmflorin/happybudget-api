@@ -32,6 +32,7 @@ class ModelAuthentication(ModelBackend):
     (1) Performs additional checks on the :obj:`User` instance (such as
         ensuring that their email address is verified) before allowing the
         :obj:`User` to login.
+
     (2) Raises exceptions that trigger our error response handling instead
         of returning None, in the case that the :obj:`User` is not successfully
         authenticated.

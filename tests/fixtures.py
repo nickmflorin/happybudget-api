@@ -19,7 +19,7 @@ from .factories import (
 def contextual_fixture(**contextuals):
     def decorator(func):
         @pytest.fixture
-        def fixture(user, db):
+        def fixture(user):
             @allow_multiple
             def inner(*args, **kw):
                 context = kw.pop('context', 'budget')
@@ -121,7 +121,7 @@ def create_user(db):
 
 
 @pytest.fixture
-def create_budget(user, db):
+def create_budget(user):
     """
     A fixture that creates a :obj:`Budget` instance using the
     :obj:`BudgetFactory`.  Any data that is not explicitly provided will
@@ -141,7 +141,7 @@ def create_budget(user, db):
 
 
 @pytest.fixture
-def create_template(user, db):
+def create_template(user):
     """
     A fixture that creates a :obj:`Template` instance using the
     :obj:`TemplateFactory`.  Any data that is not explicitly provided will
@@ -177,7 +177,7 @@ def create_context_budget():
 
 
 @pytest.fixture
-def create_fringe(user, db):
+def create_fringe(user):
     """
     A fixture that creates a :obj:`Fringe` instance using the
     :obj:`FringeFactory`.  Any data that is not explicitly provided will
@@ -198,7 +198,7 @@ def create_fringe(user, db):
 
 
 @pytest.fixture
-def create_budget_account(user, db):
+def create_budget_account(user):
     """
     A fixture that creates a :obj:`BudgetAccount` instance using the
     :obj:`BudgetAccountFactory`.  Any data that is not explicitly provided will
@@ -219,7 +219,7 @@ def create_budget_account(user, db):
 
 
 @pytest.fixture
-def create_template_account(user, db):
+def create_template_account(user):
     """
     A fixture that creates a :obj:`TemplateAccount` instance using the
     :obj:`TemplateAccountFactory`.  Any data that is not explicitly provided
@@ -278,7 +278,7 @@ def create_subaccount_unit(db):
 
 
 @pytest.fixture
-def create_budget_subaccount(user, db):
+def create_budget_subaccount(user):
     """
     A fixture that creates a :obj:`BudgetSubAccount` instance using the
     :obj:`BudgetSubAccountFactory`.  Any data that is not explicitly provided
@@ -299,7 +299,7 @@ def create_budget_subaccount(user, db):
 
 
 @pytest.fixture
-def create_template_subaccount(user, db):
+def create_template_subaccount(user):
     """
     A fixture that creates a :obj:`TemplateSubAccount` instance using the
     :obj:`TemplateSubAccountFactory`.  Any data that is not explicitly provided
@@ -339,7 +339,7 @@ def create_subaccount():
 
 
 @pytest.fixture
-def create_group(user, db):
+def create_group(user):
     """
     A fixture that creates a :obj:`Group` instance using the
     :obj:`GroupFactory`.  Any data that is not explicitly provided will be
@@ -364,7 +364,7 @@ def create_group(user, db):
 
 
 @pytest.fixture
-def create_markup(user, db):
+def create_markup(user):
     """
     A fixture that creates a :obj:`Markup` instance using the
     :obj:`MarkupFactory`.  Any data that is not explicitly provided will be
@@ -404,7 +404,7 @@ def create_actual_type(db):
 
 
 @pytest.fixture
-def create_actual(user, db):
+def create_actual(user):
     """
     A fixture that creates a :obj:`Actual` instance using the
     :obj:`ActualFactory`.  Any data that is not explicitly provided will
@@ -425,7 +425,7 @@ def create_actual(user, db):
 
 
 @pytest.fixture
-def create_contact(user, db):
+def create_contact(user):
     """
     A fixture that creates a :obj:`Contact` instance using the
     :obj:`ContactFactory`.  Any data that is not explicitly provided will
@@ -446,7 +446,7 @@ def create_contact(user, db):
 
 
 @pytest.fixture
-def create_header_template(user, db):
+def create_header_template(user):
     """
     A fixture that creates a :obj:`HeaderTemplate` instance using the
     :obj:`HeaderTemplateFactory`.  Any data that is not explicitly provided will

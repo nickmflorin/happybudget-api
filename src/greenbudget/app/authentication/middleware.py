@@ -15,7 +15,9 @@ from greenbudget.conf import Environments
 
 from .tokens import AuthToken
 from .exceptions import InvalidToken
-from .utils import parse_token_from_request, parse_token, user_can_authenticate
+from .utils import (
+    parse_token_from_request, parse_token, user_can_authenticate,
+    request_is_admin, request_is_write_method)
 
 
 logger = logging.getLogger('greenbudget')
@@ -130,11 +132,9 @@ class AuthTokenCookieMiddleware(MiddlewareMixin):
         """
         is_missing_jwt = settings.JWT_TOKEN_COOKIE_NAME not in request.COOKIES
         is_validate_url = request.path == reverse('authentication:validate')
-
-        is_write_method = request.method not in ('GET', 'HEAD', 'OPTIONS')
-        is_admin = '/admin/' in request.path
-        return not is_admin and (
-            is_missing_jwt or is_write_method or is_validate_url)
+        return not request_is_admin(request) and (
+            is_missing_jwt or request_is_write_method(request)
+            or is_validate_url)
 
     def persist_cookie(self, request, response):
         """

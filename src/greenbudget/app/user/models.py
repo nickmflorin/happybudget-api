@@ -1,3 +1,4 @@
+import collections
 import stripe
 from timezone_field import TimeZoneField
 
@@ -9,8 +10,7 @@ from django.utils.translation import gettext_lazy as _
 from greenbudget.lib.utils import ensure_iterable
 
 from greenbudget.app import signals
-from greenbudget.app.authentication.utils import (
-    get_user_from_social_token, parse_user_id_from_token)
+from greenbudget.app.authentication.utils import parse_user_id_from_token
 from greenbudget.app.billing import StripeCustomer
 from greenbudget.app.billing.constants import BillingStatus
 from greenbudget.app.io.utils import upload_user_image_to
@@ -24,6 +24,10 @@ def upload_to(instance, filename):
         filename=filename,
         directory="profile"
     )
+
+
+SocialUser = collections.namedtuple(
+    'SocialUser', ['first_name', 'last_name', 'email'])
 
 
 @signals.model(track_user=False)
@@ -114,7 +118,7 @@ class User(AbstractUser):
         if social_user is None:
             assert provider == "google", \
                 "Unsupported social provider %s." % provider
-            social_user = get_user_from_social_token(token, provider)
+            social_user = User.objects.get_social_user(token, provider)
         if self.first_name is None or self.first_name == "":
             self.first_name = social_user.first_name
         if self.last_name is None or self.last_name == "":

@@ -1,8 +1,46 @@
+import logging
+import requests
+
+from django.conf import settings
 from django.contrib.auth.models import UserManager as DjangoUserManager
 from django.db import models
 
-from greenbudget.app.authentication.exceptions import InvalidSocialToken
-from greenbudget.app.authentication.utils import get_google_user_from_token
+from greenbudget.lib.utils.urls import add_query_params_to_url
+
+from greenbudget.app.authentication.exceptions import (
+    InvalidSocialProvider, InvalidSocialToken)
+
+
+logger = logging.getLogger('greenbudget')
+
+
+def get_social_google_user(token):
+    from .models import SocialUser
+    url = add_query_params_to_url(
+        settings.GOOGLE_OAUTH_API_URL, id_token=token)
+    try:
+        response = requests.get(url)
+    except requests.RequestException as e:
+        logger.error("Network Error Validating Google Token: %s" % e)
+        raise InvalidSocialToken()
+    else:
+        try:
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            logger.error("HTTP Error Validating Google Token: %s" % e)
+            raise InvalidSocialToken()
+        else:
+            data = response.json()
+            return SocialUser(
+                first_name=data['given_name'],
+                last_name=data['family_name'],
+                email=data['email']
+            )
+
+
+SOCIAL_USER_LOOKUPS = {
+    'google': get_social_google_user
+}
 
 
 class UserQuerier(object):
@@ -48,9 +86,15 @@ class UserManager(UserQuerier, DjangoUserManager):
         kwargs.update(is_staff=True, is_superuser=True, is_verified=True)
         return self._create_user(email, **kwargs)
 
+    def get_social_user(self, token, provider):
+        try:
+            return SOCIAL_USER_LOOKUPS[provider](token)
+        except KeyError:
+            raise InvalidSocialProvider()
+
     def get_from_google_token(self, token_id):
         try:
-            google_user = get_google_user_from_token(token_id)
+            google_user = self.get_social_user(token_id, "google")
         except InvalidSocialToken:
             raise self.model.DoesNotExist()
         else:
@@ -60,7 +104,7 @@ class UserManager(UserQuerier, DjangoUserManager):
             return user
 
     def create_from_google_token(self, token_id):
-        google_user = get_google_user_from_token(token_id)
+        google_user = self.get_social_user(token_id, "google")
         return self.create(
             email=google_user.email,
             is_verified=True,

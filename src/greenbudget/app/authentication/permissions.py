@@ -62,6 +62,10 @@ class IsVerified(UserPermission):
         return True
 
 
+def instantiate_permissions(permissions):
+    return [p() if isinstance(p, type) else p for p in permissions]
+
+
 def get_default_permissions():
     permission_paths = settings.REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES']
     return [import_at_module_path(p) for p in permission_paths]
@@ -76,8 +80,7 @@ def check_user_permissions(user, permissions=None):
     """
     permissions = permissions if permissions is not None \
         else get_default_permissions()
-    permissions = [p() if isinstance(p, type) else p for p in permissions]
-    for permission in permissions:
+    for permission in instantiate_permissions(permissions):
         assert hasattr(permission, 'user_has_permission'), \
             "Permission must extend `UserPermission`."
 
