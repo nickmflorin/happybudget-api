@@ -22,7 +22,7 @@ select:-webkit-autofill:focus {
 input:-webkit-autofill::first-line {
   font-size: 13px;
   color: $text-primary !important;
-  font-family: $open-sans;
+  font-family: $avenir;
   font-weight: 500;
   width: 100%;
   line-height: 22px;
@@ -45,7 +45,7 @@ input:focus-visible {
   font-variant: tabular-nums;
   list-style: none;
   font-feature-settings: 'tnum';
-  font-family: $open-sans;
+  font-family: $avenir;
   font-weight: 500;
   width: 100%;
   line-height: 22px;

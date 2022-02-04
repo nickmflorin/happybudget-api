@@ -1,10 +1,60 @@
 @import "./variables";
 
+@mixin fface($family, $type: "Regular", $weight: 400, $style: normal) {
+  $src: null;
+  /*
+  We need to use different font files for cross-browser compatibility and
+  compatibility with potentially less modern browsers.  This is also needed
+  to prpoerly render fonts in iOS.  Note that .woff2 is the most modern standard.
+  */
+  $filename: null;
+  @if $style == "italic" {
+    $filename: "../fonts/#{$family}/#{$type}/Italic/#{$family}-#{$type}Italic";
+  } @else {
+    $filename: "../fonts/#{$family}/#{$type}/#{$family}-#{$type}";
+  }
+
+  $src: append($src, url("#{$filename}.woff") format("woff"), comma);
+  $src: append($src, url("#{$filename}.woff2") format("woff2"), comma);
+  $src: append($src, url("#{$filename}.ttf") format("truetype"), comma);
+  $src: append($src, url("#{$filename}.svg") format("svg"), comma);
+
+  @font-face {
+    font-family: $family;
+    // For compatibility reasons EOT comes first and is not appended.
+    src: url("#{$filename}.eot");
+    src: $src;
+    font-weight: $weight;
+    font-style: $style;
+    font-display: swap;
+  }
+}
+
+// For whatever reason, loading the italic styles after the non-italic styles
+// is causing all fonts to use the italic counterpart - regardless of the
+// `font-style` property.
+@include fface("AvenirNext", "Regular", 400, "italic");
+@include fface("AvenirNext", "SemiBold", 600, "italic");
+@include fface("AvenirNext", "Bold", 700, "italic");
+@include fface("AvenirNext", "Light", 300);
+@include fface("AvenirNext", "Regular", 400, "normal");
+@include fface("AvenirNext", "Medium", 500);
+@include fface("AvenirNext", "SemiBold", 600);
+@include fface("AvenirNext", "Bold", 700);
+@include fface("Roboto", "Light", 300);
+@include fface("Roboto", "Light", 300, "italic");
+@include fface("Roboto", "Medium", 500, "italic");
+@include fface("Roboto", "Bold", 700, "italic");
+@include fface("Roboto");
+@include fface("Roboto", "Medium", 500);
+@include fface("Roboto", "Bold", 700);
+
+
 .header-base {
   color: $text-primary;
   margin-top: 0;
   margin-bottom: 0;
-  font-family: $open-sans;
+  font-family: $avenir;
   font-weight: 600;
   text-shadow: none !important;
   padding: 0;

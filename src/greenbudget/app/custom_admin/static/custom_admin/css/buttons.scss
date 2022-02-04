@@ -136,15 +136,29 @@
   padding: 0;
   border: none !important;
 	color: $blue;
+
 	&:hover {
 		color: lighten($blue, 10%);
 	}
+
+  &--dark {
+    color: $text-primary;
+    text-transform: none !important;
+
+		&:hover {
+			color: lighten($text-primary, 10%);
+		}
+  }
+}
+
+a {
+  @extend .link;
 }
 
 .btn {
   @extend .btn-link-base;
   background-image: none !important;
-  font-family: $open-sans;
+  font-family: $avenir;
   letter-spacing: 0.01em;
   font-weight: 600;
   padding: 8px 12px;

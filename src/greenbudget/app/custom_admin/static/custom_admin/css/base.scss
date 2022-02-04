@@ -1,5 +1,10 @@
-@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@200;300;400;600;700;800&family=Roboto:wght@100;300;400;500;700&display=swap&family=Open+Sans:wght@300;400;600;700&display=swap");
 @import "./_variables.scss";
+@import "./buttons.scss";
+@import "./layout.scss";
+@import "./input.scss";
+@import "./login.scss";
+@import "./typography.scss";
+@import "./tables.scss";
 
 body {
   margin: 0;
@@ -71,65 +76,36 @@ code {
 }
 
 .grp-module {
-  background: #ececec;
+  background: $white;
   border: $border;
-}
 
-#grp-navigation {
-  background-image: none !important;
-  background-color: $green !important;
-  display: flex;
-  flex-direction: row;
-  float: none !important;
-
-  #grp-admin-title {
-    flex-grow: 100;
-    float: none !important;
+  h2 {
+    padding: 5px 10px 4px;
+    text-shadow: none !important;
+    border-bottom: $table-border;
+    background-color: $table-border-color;
+    border-radius: 2px !important;
+    background-image: none !important;
   }
 
-  a {
-    color: $text-secondary;
-  }
+  .grp-row:not(tr) {
+    position: relative;
+    float: left;
+    clear: both;
+    padding: 5px 10px;
+    width: 100%;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    border-top: none !important;
+    border-bottom: $table-border !important;
 
-  ul li.grp-collapse.grp-open > ul {
-    @extend .menu-base;
-    position: absolute;
-    z-index: 1010;
-    display: block;
-    margin: 0 !important;
-    width: 140px;
-  }
-
-  ul.grp-user-options {
-    @extend .menu-base;
-    li {
-      @extend .menu-item;
-    }
-  }
-
-  #grp-user-tools {
-    border-left: none !important;
-    float: none !important;
-    margin: 0;
-
-    > li {
-      border-left: none !important;
-      border-right: none !important;
-      width: auto;
-      height: 100%;
-
-      > a {
-        display: block;
-        padding: 5px 10px !important;
-        line-height: 30px !important;
-        color: white;
-        &:hover {
-          color: rgba(215, 215, 215, 1);
-        }
-      }
+    a {
+      @extend .link--dark;
     }
   }
 }
+
 
 #grp-content-title {
   margin-bottom: 20px;
@@ -199,86 +175,3 @@ li.grp-changelist-actions .grp-horizontal-list .grp-button {
   }
 }
 
-body.grp-login .grp-module-login {
-  background: white !important;
-}
-
-body.grp-login .grp-module-login h1 {
-  font-size: 18px;
-  padding: 12px;
-  border: none;
-  border-bottom: 0;
-  -moz-border-radius-topleft: 4px;
-  -webkit-border-top-left-radius: 4px;
-  border-top-left-radius: 4px;
-  -moz-border-radius-topright: 4px;
-  -webkit-border-top-right-radius: 4px;
-  border-top-right-radius: 4px;
-  background-image: none;
-  background-color: $green;
-}
-
-body.grp-login .grp-module-login h1 span.grp-current-page {
-  display: none;
-}
-
-body.grp-login .grp-module-login h1 span.grp-admin-title {
-  color: white;
-  padding: 0px;
-}
-
-body.grp-login .grp-module-login .grp-module {
-  background: white !important;
-  border: 1px solid #efefef;
-  border-top: none;
-}
-
-body.grp-login .grp-module-login .grp-module .grp-row.grp-connected {
-  border-top: none;
-  background: white !important;
-}
-
-body.grp-login .grp-module-login .grp-module .grp-row {
-  padding: 20px;
-}
-
-body.grp-login .grp-submit-row {
-  li {
-    width: 100%;
-    background: none;
-  }
-  input.grp-button.grp-default {
-    background-color: $green;
-    color: $white;
-    border: 1px solid transparent;
-    font-family: $open-sans;
-    font-weight: 600;
-    background-image: none !important;
-    width: 100%;
-
-    &:hover,
-    &:focus {
-      border-color: transparent !important;
-      background-color: $green-darker !important;
-      color: $white !important;
-      box-shadow: none !important;
-    }
-
-    &.disabled {
-      background-color: rgba(0, 0, 0, 0.12);
-    }
-  }
-}
-
-.grp-fixed-footer {
-  background-image: none !important;
-  background: $app-alt-background-color !important;
-  background-color: $app-alt-background-color !important;
-}
-
-#grp-context-navigation {
-  background-image: none !important;
-  background: $app-alt-background-color !important;
-  background-color: $app-alt-background-color !important;
-  border-bottom: $border !important;
-}

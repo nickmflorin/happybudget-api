@@ -1,0 +1,73 @@
+@import "./_variables";
+
+body.grp-login .grp-module-login {
+  background: $white !important;
+}
+
+body.grp-login .grp-module-login h1 {
+  font-size: 18px;
+  padding: 12px;
+  border: none;
+  border-bottom: 0;
+  -moz-border-radius-topleft: 4px;
+  -webkit-border-top-left-radius: 4px;
+  border-top-left-radius: 4px;
+  -moz-border-radius-topright: 4px;
+  -webkit-border-top-right-radius: 4px;
+  border-top-right-radius: 4px;
+  background-image: none;
+  background-color: $green;
+}
+
+body.grp-login .grp-module-login h1 span.grp-current-page {
+  display: none;
+}
+
+body.grp-login .grp-module-login h1 span.grp-admin-title {
+  color: white;
+  padding: 0px;
+}
+
+body.grp-login .grp-module-login .grp-module {
+  background: white !important;
+  border: 1px solid #efefef;
+  border-top: none;
+}
+
+body.grp-login .grp-module-login .grp-module .grp-row.grp-connected {
+  border-top: none;
+  background: white !important;
+}
+
+body.grp-login .grp-module-login .grp-module .grp-row {
+  padding: 20px;
+}
+
+body.grp-login .grp-submit-row {
+  li {
+    width: 100%;
+    background: none;
+  }
+  input.grp-button.grp-default {
+    background-color: $green;
+    color: $white;
+    border: 1px solid transparent;
+    font-family: $avenir;
+    font-weight: 600;
+    background-image: none !important;
+    width: 100%;
+
+    &:hover,
+    &:focus {
+      border-color: transparent !important;
+      background-color: $green-darker !important;
+      color: $white !important;
+      box-shadow: none !important;
+    }
+
+    &.disabled {
+      background-color: rgba(0, 0, 0, 0.12);
+    }
+  }
+}
+
