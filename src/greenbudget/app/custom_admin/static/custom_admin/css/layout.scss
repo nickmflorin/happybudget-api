@@ -63,6 +63,16 @@
   background-image: none !important;
   background: $app-alt-background-color !important;
   background-color: $app-alt-background-color !important;
+
+  > ul {
+    display: flex;
+    flex-direction: row;
+
+    li.grp-float-left {
+      flex-grow: 100;
+      float: none !important;
+    }
+  }
 }
 
 #grp-context-navigation {
