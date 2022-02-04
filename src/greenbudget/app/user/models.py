@@ -29,7 +29,7 @@ def upload_to(instance, filename):
 @signals.model(track_user=False)
 class User(AbstractUser):
     username = None
-    first_name = models.CharField(_('Fist Name'), max_length=150, blank=False)
+    first_name = models.CharField(_('First Name'), max_length=150, blank=False)
     last_name = models.CharField(_('Last Name'), max_length=150, blank=False)
     email = models.EmailField(_('Email Address'), blank=False, unique=True)
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
