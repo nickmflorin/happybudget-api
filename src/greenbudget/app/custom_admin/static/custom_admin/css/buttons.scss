@@ -16,27 +16,25 @@
 
   &:disabled,
   &.disabled,
-  &.fake-disabled,
-  &:hover:not(:disabled):not(.disabled):not(.fake-disabled),
-  &:focus:not(:disabled):not(.disabled):not(.fake-disabled),
-  &.hovered:not(:disabled):not(.disabled):not(.fake-disabled) {
-    border-color: $transparent;
+  &:hover:not(:disabled):not(.disabled),
+  &:focus:not(:disabled):not(.disabled),
+  &.hovered:not(:disabled):not(.disabled) {
+    border-color: $transparent !important;
   }
 }
 
 @mixin color_on_hover($c) {
-  &:hover:not(:disabled):not(.disabled):not(.fake-disabled),
-  &:focus:not(:disabled):not(.disabled):not(.fake-disabled),
-  &.hovered:not(:disabled):not(.disabled):not(.fake-disabled) {
-    color: $c;
+  &:hover:not(:disabled):not(.disabled),
+  &:focus:not(:disabled):not(.disabled),
+  &.hovered:not(:disabled):not(.disabled) {
+    color: $c !important;
   }
 }
 
 @mixin color_on_disabled($c: $disabled-color) {
   &:disabled,
-  &.disabled,
-  &.fake-disabled {
-    color: $c;
+  &.disabled {
+    color: $c !important;
   }
 }
 
@@ -46,20 +44,19 @@
 }
 
 @mixin bg_color_on_hover($c) {
-  &:hover:not(:disabled):not(.disabled):not(.fake-disabled),
-  &:focus:not(:disabled):not(.disabled):not(.fake-disabled),
-  &.hovered:not(:disabled):not(.disabled):not(.fake-disabled) {
-    background-color: $c;
-    background: $c;
+  &:hover:not(:disabled):not(.disabled),
+  &:focus:not(:disabled):not(.disabled),
+  &.hovered:not(:disabled):not(.disabled) {
+    background-color: $c !important;
+    background: $c !important;
   }
 }
 
 @mixin bg_color_on_disabled($c) {
   &:disabled,
-  &.disabled,
-  &.fake-disabled {
-    background-color: $c;
-    background: $c;
+  &.disabled {
+    background-color: $c !important;
+    background: $c !important;
   }
 }
 
@@ -69,12 +66,12 @@
 }
 
 @mixin color($c) {
-  color: $c;
+  color: $c !important;
 }
 
 @mixin bg_color($c) {
-  background-color: $c;
-  background: $c;
+  background-color: $c !important;
+  background: $c !important;
 }
 
 @mixin green() {
@@ -89,14 +86,6 @@
   @include color($c);
   @include color_on_disabled($d);
   @include color_on_hover($h);
-
-  .spinner {
-    color: $c;
-  }
-
-	.anticon-loading {
-		color: $c !important;
-	}
 }
 
 @mixin bg_color_set($c, $h: darken($c, 20%), $d: darken($c, 20%)) {
@@ -182,6 +171,8 @@ a {
 
 .grp-object-tools a {
   @extend .btn;
+  background: none !important;
+  padding-left: 12px !important;
   @include primary();
 }
 
