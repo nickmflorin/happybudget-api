@@ -4,6 +4,20 @@ from rest_framework import serializers
 from greenbudget.lib.drf.fields import find_field_original_serializer
 
 
+class EmailField(serializers.EmailField):
+    def to_representation(self, value):
+        value = super().to_representation(value).lower()
+        if value is not None:
+            return value.lower()
+        return value
+
+    def to_internal_value(self, data):
+        value = super().to_internal_value(data)
+        if value is not None:
+            return value.lower()
+        return value
+
+
 class UserFilteredQuerysetPKField(serializers.PrimaryKeyRelatedField):
     default_error_messages = {
         **serializers.PrimaryKeyRelatedField.default_error_messages,

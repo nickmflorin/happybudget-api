@@ -8,6 +8,7 @@ from greenbudget.app.user.mail import user_is_on_waitlist
 from greenbudget.app.authentication.utils import validate_password
 from greenbudget.app.io.fields import Base64ImageField
 
+from .fields import EmailField
 from .models import User
 
 
@@ -53,7 +54,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         allow_blank=False,
         allow_null=False
     )
-    email = serializers.EmailField(
+    email = EmailField(
         required=True,
         allow_blank=False,
         allow_null=False,
@@ -84,7 +85,7 @@ class SimpleUserSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(read_only=True)
     last_name = serializers.CharField(read_only=True)
     full_name = serializers.CharField(read_only=True)
-    email = serializers.CharField(read_only=True)
+    email = EmailField(read_only=True)
     profile_image = serializers.ImageField(read_only=True)
 
     class Meta:
@@ -106,7 +107,7 @@ class UserSerializer(serializers.ModelSerializer):
         allow_null=False
     )
     full_name = serializers.CharField(read_only=True)
-    email = serializers.EmailField(
+    email = EmailField(
         required=True,
         allow_blank=False,
         allow_null=False,

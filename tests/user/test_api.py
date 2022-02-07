@@ -103,7 +103,7 @@ def test_registration_user_on_waitlist(api_client):
             "first_name": "Jack",
             "last_name": "Johnson",
             "password": "hoopla@H9_12",
-            "email": "jjohnson@gmail.com",
+            "email": "jJohnson@gmail.com",
         })
     assert m.called
     assert response.status_code == 201
