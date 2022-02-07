@@ -16,7 +16,7 @@ actual_attachments_router.register(
 )
 
 urlpatterns = router.urls + [
-    path('<int:actual_pk>/', include([
+    path('<int:pk>/', include([
         path('attachments/', include(actual_attachments_router.urls)),
     ]))
 ]

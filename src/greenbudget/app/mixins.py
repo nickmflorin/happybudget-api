@@ -27,40 +27,65 @@ class NestedObjectViewMeta(type):
         if len(bases) == 0:
             return klass
 
+        def filter_queryset(instance, qs):
+            nested_filter = f"filter_{view_name}_queryset"
+            if hasattr(instance, nested_filter):
+                return getattr(instance, nested_filter)(qs)
+            return qs
+
+        def get_queryset(instance):
+            nested_get = f"get_{view_name}_queryset"
+            if not hasattr(instance, nested_get):
+                raise NotImplementedError(
+                    "%s must define the method %s."
+                    % (klass.__name__, nested_get)
+                )
+            return getattr(instance, nested_get)()
+
+        def get_object(instance):
+            pms = getattr(instance, '%s_permission_classes' % view_name, [])
+            pms = permissions.instantiate_permissions(pms)
+            permission = permissions.AND(pms)
+
+            permission.has_permission(
+                instance.request, instance, raise_exception=True)
+
+            queryset = filter_queryset(instance, get_queryset(instance))
+
+            lookup_url_kwarg_attr = f"{view_name}_lookup_url_kwarg"
+            lookup_url_kwarg = getattr(
+                instance,
+                lookup_url_kwarg_attr,
+                getattr(instance, 'lookup_url_kwarg', None)
+            )
+
+            lookup_field_attr = f"{view_name}_lookup_field"
+            lookup_field = getattr(
+                instance,
+                lookup_field_attr,
+                getattr(instance, 'lookup_field')
+            )
+
+            lookup_url_kwarg = lookup_url_kwarg or lookup_field
+            if lookup_url_kwarg not in instance.kwargs:
+                raise Exception(
+                    f'Expected view {instance.__class__.__name__} to be '
+                    'called with a URL keyword argument named '
+                    f'"{lookup_url_kwarg}". Fix your URL conf, or set the '
+                    '`.lookup_field` attribute on the view correctly.'
+                )
+            filter_kwargs = {lookup_field: instance.kwargs[lookup_url_kwarg]}
+            obj = get_object_or_404(queryset, **filter_kwargs)
+
+            permission.has_object_permission(
+                instance.request, instance, obj, raise_exception=True)
+
+            return obj
+
         def nested_object():
             @cached_property
             def _nested_object(instance):
-                pms = getattr(instance, '%s_permission_classes' % view_name, [])
-                pms = permissions.instantiate_permissions(pms)
-                permission = permissions.AND(pms)
-
-                lookup_field = getattr(
-                    instance, '%s_lookup_field' % view_name, None)
-                if lookup_field is None:
-                    raise NotImplementedError(
-                        "%s must define the @property %s."
-                        % (cls.__name__, '%s_lookup_field' % view_name)
-                    )
-                qs_getter = getattr(
-                    instance, 'get_%s_queryset' % view_name, None)
-                if qs_getter is None:
-                    raise NotImplementedError(
-                        "%s must define the method %s."
-                        % (cls.__name__, 'get_%s_queryset' % view_name)
-                    )
-
-                permission = permissions.AND(pms)
-                permission.has_permission(
-                    instance.request, instance, raise_exception=True)
-
-                qs = qs_getter(instance.request)
-                obj = get_object_or_404(qs, **{
-                    lookup_field[0]: instance.kwargs[lookup_field[1]]
-                })
-                permission.has_object_permission(
-                    instance.request, instance, obj, raise_exception=True)
-
-                return obj
+                return getattr(instance, f'get_{view_name}_object')()
 
             _nested_object.__set_name__(cls, view_name)
             return _nested_object
@@ -68,6 +93,7 @@ class NestedObjectViewMeta(type):
         if view_name is not None:
             delattr(klass, 'view_name')
             setattr(klass, view_name, nested_object())
+            setattr(klass, f'get_{view_name}_object', get_object)
         return klass
 
 
@@ -102,13 +128,12 @@ class NestedObjectViewMixin(metaclass=NestedObjectViewMeta):
     -------
     >>> class BudgetNestedMixin(NestedObjectViewMixin):
     >>>     budget_permission_classes = [
-    >>>         BudgetProductPermission
+    >>>         BudgetOwnershipPermission
     >>>     ]
     >>>     view_name = "budget"
-    >>>     budget_lookup_field = ("pk", "budget_pk")
     >>>
-    >>>     def get_budget_queryset(self, request):
-    >>>         return Budget.objects.filter(created_by=request.user).all()
+    >>>     def get_budget_queryset(self):
+    >>>         return Budget.objects.filter(created_by=self.request.user).all()
 
     In this example, a view that is responsible for handling the nested
     endpoints above will have access to a `budget` property, which returns

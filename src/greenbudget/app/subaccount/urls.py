@@ -42,7 +42,7 @@ router.register(r'units', SubAccountUnitViewSet, basename='unit')
 router.register(r'', SubAccountViewSet, basename='subaccount')
 
 urlpatterns = router.urls + [
-    path('<int:subaccount_pk>/', include([
+    path('<int:pk>/', include([
         path('children/', include(subaccount_children_router.urls)),
         path('attachments/', include(subaccount_attachments_router.urls)),
         path('groups/', include(subaccount_groups_router.urls)),

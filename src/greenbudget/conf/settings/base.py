@@ -333,7 +333,9 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'greenbudget.app.permissions.IsFullyAuthenticated',
+        'greenbudget.app.permissions.IsAuthenticated',
+        'greenbudget.app.permissions.IsActive',
+        'greenbudget.app.permissions.IsVerified'
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'greenbudget.app.authentication.backends.SessionAuthentication',

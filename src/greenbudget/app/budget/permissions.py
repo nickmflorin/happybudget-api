@@ -18,6 +18,7 @@ class BudgetOwnershipPermission(permissions.AdminPermissionMixin,
 
 
 class BudgetProductPermission(BaseProductPermission):
+    message = "The user's subscription does not support multiple budgets."
     default_permission_id = ProductPermissionId.MULTIPLE_BUDGETS
     object_name = "budget"
 
@@ -35,20 +36,17 @@ class BudgetProductPermission(BaseProductPermission):
         return True
 
 
-class MultipleBudgetPermission(BaseProductPermission):
+class MultipleBudgetPermission(BudgetProductPermission):
     """
     Permissions whether or not the :obj:`User` can create more than 1
     :obj:`Budget`.
     """
-    message = "The user's subscription does not support multiple budgets."
-    default_permission_id = ProductPermissionId.MULTIPLE_BUDGETS
 
     def has_permission(self, request, view):
         assert request.user.is_authenticated, \
             f"Permission class {self.__class__.__name__} should always be " \
             "preceeded by a permission class that guarantees authentication."
         if not self.user_has_products(request.user) \
-                and request.method == "POST" \
                 and Budget.objects.filter(created_by=request.user).count() > 0:
             return False
         return True

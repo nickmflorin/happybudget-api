@@ -9,10 +9,7 @@ def test_get_account_markups(api_client, user, models, budget_f, create_markup):
     account = budget_f.create_account(parent=budget, markups=[markup])
 
     api_client.force_login(user)
-    response = api_client.get(
-        "/v1/%ss/%s/markups/"
-        % (budget_f.context, budget.pk)
-    )
+    response = api_client.get("/v1/budgets/%s/markups/" % budget.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 1
     assert response.json()['data'] == [{
@@ -58,13 +55,11 @@ def test_create_flat_markup(api_client, user, models, budget_f):
     assert budget.accumulated_markup_contribution == 0.0
 
     api_client.force_login(user)
-    response = api_client.post(
-        "/v1/%ss/%s/markups/" % (budget_f.context, account.pk),
-        data={
-            'identifier': 'Markup Identifier',
-            'rate': 20,
-            'unit': models.Markup.UNITS.flat
-        })
+    response = api_client.post("/v1/budgets/%s/markups/" % budget.pk, data={
+        'identifier': 'Markup Identifier',
+        'rate': 20,
+        'unit': models.Markup.UNITS.flat
+    })
     assert response.status_code == 201
 
     subaccounts[0].refresh_from_db()
@@ -135,14 +130,12 @@ def test_create_percent_markup(api_client, user, models, budget_f):
     assert budget.accumulated_markup_contribution == 0.0
 
     api_client.force_login(user)
-    response = api_client.post(
-        "/v1/%ss/%s/markups/" % (budget_f.context, account.pk),
-        data={
-            'identifier': 'Markup Identifier',
-            'rate': 0.5,
-            'unit': models.Markup.UNITS.percent,
-            'children': [account.pk],
-        })
+    response = api_client.post("/v1/budgets/%s/markups/" % budget.pk, data={
+        'identifier': 'Markup Identifier',
+        'rate': 0.5,
+        'unit': models.Markup.UNITS.percent,
+        'children': [account.pk],
+    })
     assert response.status_code == 201
 
     subaccounts[0].refresh_from_db()
@@ -192,13 +185,11 @@ def test_create_percent_markup_invalid_child(api_client, user, models, budget_f)
     account = budget_f.create_account(parent=another_budget)
 
     api_client.force_login(user)
-    response = api_client.post(
-        "/v1/%ss/%s/markups/" % (budget_f.context, budget.pk),
-        data={
-            'children': [account.pk],
-            'rate': 20,
-            'unit': models.Markup.UNITS.percent,
-        })
+    response = api_client.post("/v1/budgets/%s/markups/" % budget.pk, data={
+        'children': [account.pk],
+        'rate': 20,
+        'unit': models.Markup.UNITS.percent,
+    })
     assert response.status_code == 400
     assert response.json() == {
         'errors': [{
@@ -221,10 +212,7 @@ def test_create_percent_markup_invalid_child(api_client, user, models, budget_f)
 def test_create_percent_markup_no_children(api_client, user, data, budget_f):
     budget = budget_f.create_budget()
     api_client.force_login(user)
-    response = api_client.post(
-        "/v1/%ss/%s/markups/" % (budget_f.context, budget.pk),
-        data=data
-    )
+    response = api_client.post("/v1/budgets/%s/markups/" % budget.pk, data=data)
     assert response.status_code == 400
     assert response.json() == {
         'errors': [{
@@ -241,13 +229,11 @@ def test_create_flat_markup_children(api_client, user, models, budget_f):
     account = budget_f.create_account(parent=budget)
 
     api_client.force_login(user)
-    response = api_client.post(
-        "/v1/%ss/%s/markups/" % (budget_f.context, account.pk),
-        data={
-            'children': [account.pk],
-            'rate': 20,
-            'unit': models.Markup.UNITS.flat
-        })
+    response = api_client.post("/v1/budgets/%s/markups/" % budget.pk, data={
+        'children': [account.pk],
+        'rate': 20,
+        'unit': models.Markup.UNITS.flat
+    })
     assert response.status_code == 400
     assert response.json() == {
         'errors': [{
@@ -290,7 +276,7 @@ def test_bulk_delete_markups(api_client, user, models, create_markup, budget_f):
 
     api_client.force_login(user)
     response = api_client.patch(
-        "/v1/%ss/%s/bulk-delete-markups/" % (budget_f.context, budget.pk),
+        "/v1/budgets/%s/bulk-delete-markups/" % budget.pk,
         data={'ids': [m.pk for m in [markups[0], markups[2]]]}
     )
 

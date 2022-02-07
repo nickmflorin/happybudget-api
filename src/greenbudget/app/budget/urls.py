@@ -1,7 +1,5 @@
 from django.urls import path, include
-from rest_framework_nested import routers
-
-from greenbudget.lib.drf.router import combine_routers
+from rest_framework import routers
 
 from .views import (
     BudgetViewSet,
@@ -19,25 +17,21 @@ app_name = "budget"
 router = routers.SimpleRouter()
 router.register(r'', BudgetViewSet, basename='budget')
 
-budget_fringes_router = routers.NestedSimpleRouter(router, r'', lookup='budget')
-budget_fringes_router.register(
-    r'fringes', BudgetFringeViewSet, basename='fringe')
+budget_fringes_router = routers.SimpleRouter()
+budget_fringes_router.register(r'', BudgetFringeViewSet, basename='fringe')
 
-budget_actuals_owners_router = routers.NestedSimpleRouter(
-    router, r'', lookup='budget')
+budget_actuals_owners_router = routers.SimpleRouter()
 budget_actuals_owners_router.register(
-    r'actual-owners', BudgetActualsOwnersViewSet, basename='actual-owner')
+    r'', BudgetActualsOwnersViewSet, basename='actual-owner')
 
-budget_markup_router = routers.NestedSimpleRouter(router, r'', lookup='budget')
-budget_markup_router.register(
-    r'markups', BudgetMarkupViewSet, basename='markup')
+budget_markup_router = routers.SimpleRouter()
+budget_markup_router.register(r'', BudgetMarkupViewSet, basename='markup')
 
-budget_groups_router = routers.NestedSimpleRouter(router, r'', lookup='budget')
-budget_groups_router.register(r'groups', BudgetGroupViewSet, basename='group')
+budget_groups_router = routers.SimpleRouter()
+budget_groups_router.register(r'', BudgetGroupViewSet, basename='group')
 
-budget_actuals_router = routers.NestedSimpleRouter(router, r'', lookup='budget')
-budget_actuals_router.register(
-    r'actuals', BudgetActualsViewSet, basename='actual')
+budget_actuals_router = routers.SimpleRouter()
+budget_actuals_router.register(r'', BudgetActualsViewSet, basename='actual')
 
 budget_share_token_router = routers.SimpleRouter()
 budget_share_token_router.register(
@@ -46,17 +40,14 @@ budget_share_token_router.register(
 budget_children_router = routers.SimpleRouter()
 budget_children_router.register(r'', BudgetChildrenViewSet, basename='child')
 
-urlpatterns = combine_routers(
-    router,
-    budget_fringes_router,
-    budget_actuals_owners_router,
-    budget_groups_router,
-    budget_markup_router,
-    budget_actuals_router,
-    budget_share_token_router
-) + [
-    path('<int:budget_pk>/', include([
+urlpatterns = router.urls + [
+    path('<int:pk>/', include([
         path('children/', include(budget_children_router.urls)),
-        path('share-token/', include(budget_share_token_router.urls))
+        path('share-token/', include(budget_share_token_router.urls)),
+        path('actuals/', include(budget_actuals_router.urls)),
+        path('fringes/', include(budget_fringes_router.urls)),
+        path('markups/', include(budget_markup_router.urls)),
+        path('groups/', include(budget_groups_router.urls)),
+        path('actual-owners/', include(budget_actuals_owners_router.urls))
     ]))
 ]

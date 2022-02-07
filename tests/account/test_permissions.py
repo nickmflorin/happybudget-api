@@ -1,6 +1,3 @@
-import pytest
-
-
 def test_get_account_not_logged_in(api_client, budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
@@ -53,7 +50,6 @@ def test_get_shared_budget_account_subaccounts(api_client, create_budget,
     assert response.status_code == 200
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_get_another_shared_budget_account_subaccounts(api_client, create_budget,
         create_share_token, create_budget_account):
     budget = create_budget()
@@ -75,7 +71,6 @@ def test_get_template_account_subaccounts_with_share_token(api_client,
     assert response.status_code == 401
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_get_shared_budget_account(api_client, create_budget,
         create_share_token, create_budget_account):
     budget = create_budget()
@@ -86,7 +81,6 @@ def test_get_shared_budget_account(api_client, create_budget,
     assert response.status_code == 200
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_get_another_shared_budget_account(api_client, create_budget,
         create_share_token, create_budget_account):
     budget = create_budget()
@@ -111,17 +105,6 @@ def test_update_shared_budget_account(api_client, create_budget,
     assert response.status_code == 401
 
 
-def test_create_shared_budget_account(api_client, create_budget,
-        create_share_token):
-    budget = create_budget()
-    share_token = create_share_token(instance=budget)
-    api_client.include_share_token(share_token)
-    response = api_client.post("/v1/budgets/%s/children/" % budget.pk, data={
-        'identifier': 'New Identifier'
-    })
-    assert response.status_code == 401
-
-
 def test_get_permissioned_account(api_client, user, budget_df):
     budgets = [budget_df.create_budget(), budget_df.create_budget()]
     account = budget_df.create_account(parent=budgets[1])
@@ -129,10 +112,7 @@ def test_get_permissioned_account(api_client, user, budget_df):
     response = api_client.get("/v1/accounts/%s/" % account.pk)
     assert response.status_code == 403
     assert response.json() == {'errors': [{
-        'message': (
-            'The user does not have the correct subscription to view this '
-            'account.'
-        ),
+        'message': "The user's subscription does not support multiple budgets.",
         'code': 'product_permission_error',
         'error_type': 'permission',
         'products': '__any__',

@@ -26,7 +26,7 @@ contact_tagged_actuals_router.register(
 )
 
 urlpatterns = router.urls + [
-    path('<int:contact_pk>/', include([
+    path('<int:pk>/', include([
         path('attachments/', include(contact_attachments_router.urls)),
         path('tagged-actuals/', include(contact_tagged_actuals_router.urls)),
     ]))

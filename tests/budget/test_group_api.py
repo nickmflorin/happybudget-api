@@ -3,8 +3,7 @@ def test_get_account_groups(api_client, user, create_group, budget_f):
     group = create_group(parent=budget)
     account = budget_f.create_account(parent=budget, group=group)
     api_client.force_login(user)
-    response = api_client.get(
-        "/v1/%ss/%s/groups/" % (budget_f.context, budget.pk))
+    response = api_client.get("/v1/budgets/%s/groups/" % budget.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 1
     assert response.json()['data'] == [{
@@ -22,7 +21,7 @@ def test_create_account_group(api_client, user, models, budget_f):
 
     api_client.force_login(user)
     response = api_client.post(
-        "/v1/%ss/%s/groups/" % (budget_f.context, budget.pk),
+        "/v1/budgets/%s/groups/" % budget.pk,
         data={
             'name': 'Group Name',
             'children': [account.pk],
@@ -56,7 +55,7 @@ def test_create_account_group_invalid_child(api_client, user, budget_f):
 
     api_client.force_login(user)
     response = api_client.post(
-        "/v1/%ss/%s/groups/" % (budget_f.context, budget.pk),
+        "/v1/budgets/%s/groups/" % budget.pk,
         data={
             'name': 'Group Name',
             'children': [account.pk],

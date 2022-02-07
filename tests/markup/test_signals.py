@@ -12,6 +12,7 @@ def test_markup_changed_to_flat(budget_f, create_markup, models):
         rate=10,
         count=2
     )
+    account.refresh_from_db()
     assert account.nominal_value == 800.0
     assert account.markup_contribution == 0.0
     markups = [
@@ -140,6 +141,7 @@ def test_subaccount_markups_change(budget_f, create_markup):
     assert subaccounts[1].nominal_value == 100.0
     assert subaccounts[1].markup_contribution == 50.0
 
+    account.refresh_from_db()
     assert account.nominal_value == 200.0
     assert account.markup_contribution == 0.0
     assert account.accumulated_markup_contribution == 100.0

@@ -429,7 +429,7 @@ def test_caches_invalidated_on_bulk_update_fringes(api_client, user, budget_f,
     assert detail_response.json()['accumulated_fringe_contribution'] == 210.0
 
     response = api_client.patch(
-        "/v1/%ss/%s/bulk-update-fringes/" % (budget_f.context, budget.pk),
+        "/v1/budgets/%s/bulk-update-fringes/" % budget.pk,
         format='json',
         data={'data': [
             {'id': fringes[0].pk, 'rate': 0.7},
@@ -588,7 +588,7 @@ def test_caches_invalidated_on_bulk_delete_fringes(api_client, user, budget_f,
     assert detail_response.json()['accumulated_fringe_contribution'] == 210.0
 
     response = api_client.patch(
-        "/v1/%ss/%s/bulk-delete-fringes/" % (budget_f.context, budget.pk),
+        "/v1/budgets/%s/bulk-delete-fringes/" % budget.pk,
         data={'ids': [fringes[0].pk]},
         format='json'
     )

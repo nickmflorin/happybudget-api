@@ -51,14 +51,13 @@ def test_detail_cache_invalidated_on_bulk_save(api_client, user, budget_f):
     assert response.status_code == 200
     assert response.json()['id'] == account.pk
 
-    response = api_client.get(
-        "/v1/%ss/%s/children/" % (budget_f.context, budget.pk))
+    response = api_client.get("/v1/budgets/%s/children/" % budget.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 1
     assert response.json()['data'][0]['identifier'] == account.identifier
 
     response = api_client.patch(
-        "/v1/%ss/%s/bulk-update-children/" % (budget_f.context, budget.pk),
+        "/v1/budgets/%s/bulk-update-children/" % budget.pk,
         format='json',
         data={'data': [{'id': account.pk, 'identifier': '1000'}]}
     )
@@ -68,8 +67,7 @@ def test_detail_cache_invalidated_on_bulk_save(api_client, user, budget_f):
     assert response.status_code == 200
     assert response.json()['identifier'] == '1000'
 
-    response = api_client.get(
-        "/v1/%ss/%s/children/" % (budget_f.context, budget.pk))
+    response = api_client.get("/v1/budgets/%s/children/" % budget.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 1
     assert response.json()['data'][0]['identifier'] == '1000'
@@ -86,7 +84,7 @@ def test_detail_cache_invalidated_on_bulk_delete(api_client, user, budget_f):
     assert response.json()['id'] == account.pk
 
     response = api_client.patch(
-        "/v1/%ss/%s/bulk-delete-children/" % (budget_f.context, budget.pk),
+        "/v1/budgets/%s/bulk-delete-children/" % budget.pk,
         format='json',
         data={'ids': [account.pk]}
     )
@@ -437,7 +435,7 @@ def test_caches_invalidated_on_bulk_update_fringes(api_client, user, budget_f,
     assert detail_response.json()['accumulated_fringe_contribution'] == 210.0
 
     response = api_client.patch(
-        "/v1/%ss/%s/bulk-update-fringes/" % (budget_f.context, budget.pk),
+        "/v1/budgets/%s/bulk-update-fringes/" % budget.pk,
         format='json',
         data={'data': [
             {'id': fringes[0].pk, 'rate': 0.7},
@@ -552,7 +550,7 @@ def test_caches_invalidated_on_bulk_delete_fringes(api_client, user, budget_f,
     assert detail_response.json()['accumulated_fringe_contribution'] == 210.0
 
     response = api_client.patch(
-        "/v1/%ss/%s/bulk-delete-fringes/" % (budget_f.context, budget.pk),
+        "/v1/budgets/%s/bulk-delete-fringes/" % budget.pk,
         data={'ids': [fringes[0].pk]},
         format='json'
     )

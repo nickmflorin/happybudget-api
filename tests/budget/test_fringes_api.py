@@ -5,8 +5,7 @@ def test_get_fringes(api_client, user, create_fringe, models, budget_f):
         create_fringe(budget=budget)
     ]
     api_client.force_login(user)
-    response = api_client.get(
-        "/v1/%ss/%s/fringes/" % (budget_f.context, budget.pk))
+    response = api_client.get("/v1/budgets/%s/fringes/" % budget.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'] == [
@@ -44,14 +43,12 @@ def test_get_fringes(api_client, user, create_fringe, models, budget_f):
 def test_create_fringe(api_client, user, budget_f, models):
     budget = budget_f.create_budget()
     api_client.force_login(user)
-    response = api_client.post(
-        "/v1/%ss/%s/fringes/" % (budget_f.context, budget.pk),
-        data={
-            'name': 'Test Fringe',
-            'rate': 5.5,
-            'cutoff': 100,
-            'unit': 1,
-        })
+    response = api_client.post("/v1/budgets/%s/fringes/" % budget.pk, data={
+        'name': 'Test Fringe',
+        'rate': 5.5,
+        'cutoff': 100,
+        'unit': 1,
+    })
     assert response.status_code == 201
     fringe = models.Fringe.objects.first()
     assert fringe is not None
@@ -99,7 +96,7 @@ def test_bulk_create_fringe(api_client, user, models, budget_f):
 
     api_client.force_login(user)
     response = api_client.patch(
-        "/v1/%ss/%s/bulk-create-fringes/" % (budget_f.context, budget.pk),
+        "/v1/budgets/%s/bulk-create-fringes/" % budget.pk,
         format='json',
         data={'data': [
             {'name': 'fringe-a', 'rate': 1.2},
@@ -194,7 +191,7 @@ def test_bulk_update_fringes(api_client, user, create_fringe, budget_f):
 
     api_client.force_login(user)
     response = api_client.patch(
-        "/v1/%ss/%s/bulk-update-fringes/" % (budget_f.context, budget.pk),
+        "/v1/budgets/%s/bulk-update-fringes/" % budget.pk,
         format='json',
         data={'data': [
             {'id': fringes[0].pk, 'rate': 0.7},
@@ -299,7 +296,7 @@ def test_bulk_delete_fringes(api_client, user, create_fringe, models, budget_f):
 
     api_client.force_login(user)
     response = api_client.patch(
-        "/v1/%ss/%s/bulk-delete-fringes/" % (budget_f.context, budget.pk),
+        "/v1/budgets/%s/bulk-delete-fringes/" % budget.pk,
         data={'ids': [f.pk for f in fringes]}
     )
     assert response.status_code == 200

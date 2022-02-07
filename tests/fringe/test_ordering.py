@@ -3,7 +3,7 @@ def test_ordering_bulk_create(api_client, user, models, budget_f):
 
     api_client.force_login(user)
     response = api_client.patch(
-        "/v1/%ss/%s/bulk-create-fringes/" % (budget_f.context, budget.pk),
+        "/v1/budgets/%s/bulk-create-fringes/" % budget.pk,
         format='json',
         data={'data': [{}, {}, {}]}
     )

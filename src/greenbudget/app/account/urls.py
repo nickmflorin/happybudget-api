@@ -32,7 +32,7 @@ router = routers.SimpleRouter()
 router.register(r'', AccountViewSet, basename='account')
 
 urlpatterns = router.urls + [
-    path('<int:account_pk>/', include([
+    path('<int:pk>/', include([
         path('groups/', include(account_groups_router.urls)),
         path('markups/', include(account_markup_router.urls)),
         path('children/', include(account_children_router.urls)),

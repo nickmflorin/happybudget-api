@@ -148,13 +148,9 @@ class IsShared(BasePermission):
     exception_class = NotAuthenticatedError
 
     def has_permission(self, request, view):
-        if not request_is_safe_method(request):
-            return False
         return request.share_token.is_authenticated
 
     def has_object_permission(self, request, view, obj):
-        if not request_is_safe_method(request):
-            return False
         return request.share_token.is_authenticated \
             and request.share_token.instance == obj
 
@@ -197,3 +193,15 @@ class IsViewAction(BasePermission):
 
     def has_object_permission(self, request, view, obj):
         return view.action in self._actions
+
+
+class IsNotViewAction(BasePermission):
+    def __init__(self, *actions):
+        self._actions = list(actions)
+        super().__init__(*actions)
+
+    def has_permission(self, request, view):
+        return view.action not in self._actions
+
+    def has_object_permission(self, request, view, obj):
+        return view.action not in self._actions

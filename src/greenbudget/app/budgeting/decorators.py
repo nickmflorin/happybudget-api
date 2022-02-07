@@ -1,3 +1,4 @@
+import collections
 from copy import deepcopy
 from dataclasses import dataclass
 import functools
@@ -23,16 +24,40 @@ class ActionContext:
 
 
 class BaseBulkAction:
-    def __init__(self, url_path: str, filter_qs: Any = None):
-        self.url_path = url_path
+    def __init__(self, url_path: str, filter_qs: Any = None,
+            name: Any = None, entity: Any = None):
+        self._url_path = url_path
         self.filter_qs = filter_qs
+        self._name = name
+        self.entity = entity
+
+    def url_path(self, registrar):
+        url_path = self._url_path
+        if '{action_name}' in url_path and '{entity}' in url_path:
+            url_path = url_path.format(
+                action_name=registrar.action_name,
+                entity=self.entity
+            )
+        elif '{action_name}' in url_path:
+            url_path = url_path.format(action_name=registrar.action_name)
+        elif '{entity}' in url_path and self.entity is not None:
+            url_path = url_path.format(entity=self.entity)
+        return url_path
+
+    def name(self, registrar):
+        return self._name or self.url_path(registrar).replace('-', '_')
 
 
 class BulkDeleteAction(BaseBulkAction):
     action_names = ["delete"]
 
     def __init__(self, url_path: str, child_cls: type, **kwargs):
-        super().__init__(url_path, filter_qs=kwargs.get('filter_qs'))
+        super().__init__(
+            url_path=url_path,
+            filter_qs=kwargs.get('filter_qs'),
+            name=kwargs.get('name'),
+            entity=kwargs.get('entity')
+        )
         self._init(child_cls, **kwargs)
 
     def _init(self, child_cls: type, **kwargs):
@@ -44,7 +69,12 @@ class BulkCreateAction(BaseBulkAction):
     action_names = ["create"]
 
     def __init__(self, url_path, child_serializer_cls, **kwargs):
-        super().__init__(url_path, filter_qs=kwargs.get('filter_qs'))
+        super().__init__(
+            url_path=url_path,
+            filter_qs=kwargs.get('filter_qs'),
+            name=kwargs.get('name'),
+            entity=kwargs.get('entity')
+        )
         self._init(child_serializer_cls, **kwargs)
 
     def _init(self, child_serializer_cls, **kwargs):
@@ -57,7 +87,12 @@ class BulkUpdateAction(BaseBulkAction):
     action_names = ["update"]
 
     def __init__(self, url_path, child_serializer_cls, **kwargs):
-        super().__init__(url_path, filter_qs=kwargs.get('filter_qs'))
+        super().__init__(
+            url_path=url_path,
+            filter_qs=kwargs.get('filter_qs'),
+            name=kwargs.get('name'),
+            entity=kwargs.get('entity')
+        )
         self._init(child_serializer_cls, **kwargs)
 
     def _init(self, child_serializer_cls, **kwargs):
@@ -70,7 +105,12 @@ class BulkAction(BaseBulkAction):
     action_names = ["delete", "create", "update"]
 
     def __init__(self, url_path, child_cls, child_serializer_cls, **kwargs):
-        super().__init__(url_path, filter_qs=kwargs.get('filter_qs'))
+        super().__init__(
+            url_path=url_path,
+            filter_qs=kwargs.get('filter_qs'),
+            name=kwargs.get('name'),
+            entity=kwargs.get('entity')
+        )
         BulkDeleteAction._init(self, child_cls, **kwargs)
         BulkCreateAction._init(self, child_serializer_cls, **kwargs)
         BulkUpdateAction._init(self, child_serializer_cls, **kwargs)
@@ -142,8 +182,6 @@ class bulk_action:
     @property
     def base_serializer_cls(self):
         if self._base_serializer_cls is None:
-            if getattr(self.context.view, 'serializer_class', None) is not None:
-                return getattr(self.context.view, 'serializer_class')
             return self.context.view.get_serializer_class()
         elif inspect.isclass(self._base_serializer_cls):
             return self._base_serializer_cls
@@ -305,6 +343,14 @@ class bulk_registration:
             'include_budget_in_response', True)
 
         self._actions = []
+
+        # Keep track of what action names and entities are registered to
+        # the concrete action methods so we can reverse engineer a given entity
+        # or method to determine if the current view's action is associated with
+        # the given entity or method.
+        self._action_name_lookup = collections.defaultdict(list)
+        self._action_entity_lookup = collections.defaultdict(list)
+
         actions = kwargs.pop('actions', [])
         for original_action in actions:
             action = deepcopy(original_action)
@@ -315,8 +361,15 @@ class bulk_registration:
             self._actions.append(action)
 
     def __call__(self, cls):
+        self._action_name_lookup = collections.defaultdict(list)
+        self._action_entity_lookup = collections.defaultdict(list)
+
         for action in self._actions:
             self._register_action(action, cls)
+            self._action_name_lookup[self.action_name].append(action.name(self))
+            if action.entity is not None:
+                self._action_entity_lookup[action.entity].append(
+                    action.name(self))
 
         # Expose a property on the class instance that will return whether or
         # not we are using a bulk action method.
@@ -324,40 +377,54 @@ class bulk_registration:
             return instance.action in getattr(
                 instance, '__registered_bulk_actions', [])
 
+        # Expose a property on the class instance that will return whether or
+        # not the current action is of a given entity.
+        def in_bulk_entity(instance, entity):
+            if entity not in self._action_entity_lookup:
+                raise LookupError(f'Unregistered entity {entity}.')
+            return instance.action in self._action_entity_lookup[entity]
+
+        # Expose a property on the class instance that will return whether or
+        # not the current action is of a given action name/type.
+        def in_bulk_action_name(instance, name):
+            if name not in self._action_entity_lookup:
+                raise LookupError(f'Unregistered action name {name}.')
+            return instance.action in self._action_name_lookup[name]
+
         setattr(cls, 'in_bulk_context',
             property(lambda instance: in_bulk_context(instance)))
+        setattr(cls, 'in_bulk_action_name', in_bulk_action_name)
+        setattr(cls, 'in_bulk_entity', in_bulk_entity)
         return cls
 
     def _register_action(self, action, cls):
-        url_path = action.url_path
-        if '{action_name}' in action.url_path:
-            url_path = action.url_path.format(action_name=self.action_name)
-
-        method_name = url_path.replace('-', '_')
-
         # Keep track of what bulk context actions are registered for the view.
         setattr(cls, '__registered_bulk_actions',
-            getattr(cls, '__registered_bulk_actions', []) + [method_name])
+            getattr(cls, '__registered_bulk_actions', []) + [action.name(self)])
 
         @self.decorate(
             action=action,
             base_cls=self._base_cls,
             base_serializer_cls=self._base_serializer_cls,
-            url_path=url_path,
+            url_path=action.url_path(self),
             get_budget=self._get_budget,
             budget_serializer=self._budget_serializer,
             include_budget_in_response=self._include_budget_in_response
         )
-        @decorators.action(detail=True, methods=["PATCH"], url_path=url_path)
+        @decorators.action(
+            detail=True,
+            methods=["PATCH"],
+            url_path=action.url_path(self)
+        )
         def func(*args, **kwargs):
             pass
 
-        func.__name__ = method_name
+        func.__name__ = action.name(self)
         # This is part of the underlying mechanics of DRF's @action
         # decorator.  Without this, we will get 404s because DRF will not
         # be able to find the appropriate function name.
-        func.mapping['patch'] = method_name
-        setattr(cls, method_name, func)
+        func.mapping['patch'] = action.name(self)
+        setattr(cls, action.name(self), func)
 
 
 class register_bulk_updating(bulk_registration):

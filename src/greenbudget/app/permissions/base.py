@@ -1,27 +1,11 @@
 import copy
-from dataclasses import dataclass
 import functools
-from typing import Union, List
-
 from rest_framework import permissions
 
-from greenbudget.lib.utils import (
-    get_string_formatted_kwargs, empty, ensure_iterable, humanize_list)
-
+from greenbudget.lib.utils import get_string_formatted_kwargs
 from greenbudget.app.authentication.exceptions import NotAuthenticatedError
-from greenbudget.app.authentication.utils import (
-    request_is_safe_method, request_is_write_method)
 
 from .exceptions import PermissionError
-
-
-@dataclass
-class PermissionConfig:
-    attr: str
-    type: type = None
-    default: Union[bool, None] = empty
-    required: bool = False
-    conflicts: Union[str, List[str]] = empty
 
 
 def with_raise_exception(func):
@@ -64,9 +48,8 @@ class BasePermissionMetaclass(permissions.BasePermissionMetaclass):
     def __new__(cls, name, bases, dct):
         @with_raise_exception
         def has_permission(instance, request, view):
-            if not instance.is_applicable(request, view):
-                return True
-            elif not instance.has_user_permission(request.user):
+            if hasattr(instance, 'has_user_permission') \
+                    and not instance.has_user_permission(request.user):
                 return False
             if instance._get_nested_obj is not None:
                 nested_parent = instance._get_nested_obj(view)
@@ -88,9 +71,8 @@ class BasePermissionMetaclass(permissions.BasePermissionMetaclass):
 
         @with_raise_exception
         def has_obj_permission(instance, request, view, obj):
-            if not instance.is_applicable(request, view):
-                return True
-            elif not instance.has_user_permission(request.user):
+            if hasattr(instance, 'has_user_permission') \
+                    and not instance.has_user_permission(request.user):
                 return False
             obj = get_permissioned_obj(instance, obj)
             return _has_object_permission(instance, request, view, obj)
@@ -124,12 +106,13 @@ class BasePermissionMetaclass(permissions.BasePermissionMetaclass):
 
         _has_object_permission = getattr(klass, 'has_object_permission')
         _has_permission = getattr(klass, 'has_permission')
-        _user_has_permission = getattr(klass, 'has_user_permission')
+        _user_has_permission = getattr(klass, 'has_user_permission', None)
         _get_permissioned_obj = getattr(klass, 'get_permissioned_obj', None)
 
         setattr(klass, 'has_object_permission', has_obj_permission)
         setattr(klass, 'has_permission', has_permission)
-        setattr(klass, 'has_user_permission', has_user_permission)
+        if _user_has_permission:
+            setattr(klass, 'has_user_permission', has_user_permission)
         return klass
 
 
@@ -232,73 +215,39 @@ class BasePermission(metaclass=BasePermissionMetaclass):
 
         Default: False
 
-    write_only_applicable: :obj:`bool` (optional)
-        If True, the permission will only be evaluated for HTTP write methods
-        (POST, PATCH, PUT, DELETE, etc.).
+    is_view_applicable: :obj:`bool` or :obj:`lambda` (optional)
+        Either a boolean value or a callback that takes the view context as its
+        first and only argument that is used to denote whether or not a given
+        permission in an operator (AND or OR) is applicable in the view context.
 
-        Default: False
+        This is useful when we have situations where we do not want the
+        evaluated permission to count towards the overall operand in certain
+        contexts.
 
-    read_only_applicable: :obj:`bool` (optional)
-        If True, the permission will only be evaluated for HTTP safe methods
-        (GET, OPTIONS, HEAD, etc.).
+        Permissions that have view applicability evaluating to False will not
+        have their `has_permission` methods evaluated in the given context
+        inside of an operand.
 
-        Default: False
+        Default: True
 
-    applicable_actions: :obj:`tuple` or :obj:`list` or :obj:`str` (optional)
-        An iterable of strings or a single string that define the view actions
-        that the permission is applicable for.  If the incoming request is not
-        associated with one of the applicable actions, the permission will not
-        be evaluated.
+    is_object_applicable: :obj:`bool` or :obj:`lambda` (optional)
+        Either a boolean value or a callback that takes the object context as its
+        first and only argument that is used to denote whether or not a given
+        permission in an operator (AND or OR) is applicable in the object
+        context.
 
-        Default: None
+        This is useful when we have situations where we do not want the
+        evaluated permission to count towards the overall operand in certain
+        contexts.
 
-    applicable_methods: :obj:`tuple` or :obj:`list` or :obj:`str` (optional)
-        An iterable of strings or a single string that define the request
-        methods (GET, PUT, PATCH, etc.) that the permission is applicable for.
-        If the incoming request is not associated with one of the applicable
-        methods, the permission will not be evaluated.
+        Permissions that have object applicability evaluating to False will not
+        have their `has_object_permission` methods evaluated in the given context
+        inside of an operand.
 
-        Default: None
+        Default: True
     """
     exception_class = PermissionError
     exception_kwargs = {}
-
-    config = [
-        PermissionConfig(
-            attr='write_only_applicable',
-            type=bool,
-            default=False,
-            conflicts=[
-                'read_only_applicable',
-                'applicable_actions',
-                'applicable_methods'
-            ]
-        ),
-        PermissionConfig(
-            attr='read_only_applicable',
-            type=bool,
-            default=False,
-            conflicts=[
-                'write_only_applicable',
-                'applicable_actions',
-                'applicable_methods'
-            ]
-        ),
-        PermissionConfig(
-            attr='applicable_methods',
-            type=list,
-            default=None,
-            conflicts=['write_only_applicable', 'read_only_applicable']
-        ),
-        PermissionConfig(
-            attr='applicable_actions',
-            type=list,
-            default=None,
-            conflicts=['write_only_applicable', 'read_only_applicable']
-        ),
-        PermissionConfig(attr='priority', type=bool, default=False),
-        PermissionConfig(attr='affects_after', type=bool, default=False),
-    ]
 
     def __init__(self, *args, **options):
         # Maintain set of arguments used to instantiate the permission class so
@@ -306,55 +255,12 @@ class BasePermission(metaclass=BasePermissionMetaclass):
         self._args = list(args)
         self._kwargs = copy.deepcopy(options)
 
+        self._priority = options.get('priority', False)
+        self._affects_after = options.get('affects_after', False)
         self._get_permissioned_obj = options.get('get_permissioned_obj', None)
         self._get_nested_obj = options.get('get_nested_obj', None)
-
-        for c in self.config:
-            v = options.get(c.attr, empty)
-            if v is empty:
-                v = getattr(self, c.attr, empty)
-
-            # Make sure that the permission class is not configured with
-            # conflicting configuration values.
-            if v is not empty and c.conflicts is not empty:
-                present_conflicts = [
-                    ci for ci in self.config
-                    if ci.attr != c.attr and ci.attr in options
-                    and ci.attr in c.conflicts
-                ]
-                if present_conflicts:
-                    humanized = humanize_list(
-                        [ci.attr for ci in present_conflicts] + [c.attr])
-                    raise ValueError(
-                        f"Parameters {humanized} are mutually exclusive and "
-                        f"cannot all be provided to {self.__class__.__name__}"
-                    )
-
-            default_set = False
-            if v is empty:
-                if c.required:
-                    raise ValueError(
-                        f"Configuration value for attribute {c.attr} is not "
-                        f"provided on initialization or statically on the "
-                        "{self.__class__.__name__} class."
-                    )
-                elif c.default is empty:
-                    raise Exception(
-                        f"Configuration {c.attr} is not required but no default "
-                        "is defined."
-                    )
-                default_set = True
-                v = c.default
-
-            if c.type is list:
-                v = ensure_iterable(v, cast_none=False)
-            if not default_set and c.type is not None \
-                    and not isinstance(v, c.type):
-                raise ValueError(
-                    f"Invalid value {v} provided for configuration {c.attr}. "
-                    f"Expected value of type {c.type}."
-                )
-            setattr(self, f'_{c.attr}', v)
+        self._is_view_applicable = options.get('is_view_applicable', True)
+        self._is_object_applicable = options.get('is_object_applicable', True)
 
     def __call__(self, **kwargs):
         """
@@ -365,24 +271,22 @@ class BasePermission(metaclass=BasePermissionMetaclass):
         kw.update(kwargs)
         return self.__class__(*self._args, **kw)
 
-    def is_applicable(self, request, view):
-        """
-        Returns whether or not the given :obj:`BasePermission` instance is
-        applicable for the provided request and view.  If the
-        :obj:`BasePermission` is not applicable for the request/view, the
-        :obj:`BasePermission` will not be evaluated.
-        """
-        if self._read_only_applicable and not request_is_safe_method(request):
-            return False
-        elif self._write_only_applicable \
-                and not request_is_write_method(request):
-            return False
-        elif self._applicable_actions is not None:
-            return view.action in self._applicable_actions
-        elif self._applicable_methods is not None:
-            return request.method.upper() in [
-                m.upper() for m in self._applicable_methods]
-        return True
+    def is_prioritized(self, context):
+        if self._priority is not None:
+            if hasattr(self._priority, '__call__'):
+                return self._priority(context)
+            return self._priority
+        return False
+
+    def is_object_applicable(self, context):
+        if isinstance(self._is_object_applicable, bool):
+            return self._is_object_applicable
+        return self._is_object_applicable(context)
+
+    def is_view_applicable(self, context):
+        if isinstance(self._is_view_applicable, bool):
+            return self._is_view_applicable
+        return self._is_view_applicable(context)
 
     @property
     def exception_kwargs(self):
@@ -417,9 +321,6 @@ class BasePermission(metaclass=BasePermissionMetaclass):
             kwargs['detail'] = message
 
         raise self.exception_class(**exception_kwargs)
-
-    def has_user_permission(self, user):
-        return True
 
     def has_object_permission(self, request, view, obj):
         return True

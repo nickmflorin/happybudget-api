@@ -7,7 +7,6 @@ from greenbudget.app.account.models import Account
 from greenbudget.app.budget.serializers import BudgetSerializer
 from greenbudget.app.budgeting.decorators import (
     register_bulk_operations, BulkAction, BulkDeleteAction)
-from greenbudget.app.budgeting.permissions import IsBudgetDomain
 from greenbudget.app.group.models import Group
 from greenbudget.app.group.serializers import GroupSerializer
 from greenbudget.app.markup.models import Markup
@@ -211,10 +210,10 @@ class AccountViewSet(
                 AccountProductPermission(products="__any__")
             ),
             permissions.AND(
-                IsBudgetDomain,
-                permissions.IsViewAction('retrieve'),
                 permissions.IsShared(
-                    get_permissioned_obj=lambda obj: obj.budget)
+                    get_permissioned_obj=lambda obj: obj.budget),
+                permissions.IsSafeRequestMethod,
+                is_object_applicable=lambda c: c.obj.domain == "budget"
             )
         )
     ]

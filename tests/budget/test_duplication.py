@@ -41,7 +41,10 @@ def generate_data(create_fringe, create_group, create_markup, colors,
         subaccounts = {}
         child_subaccounts = {}
 
-        subaccount_units = create_subaccount_unit(count=4)
+        subaccount_units = create_subaccount_unit(
+            count=4,
+            title_array=['Title 1', 'Title 2', 'Title 3', 'Title 4']
+        )
 
         for account in accounts:
             # Create 2 Markups per Account

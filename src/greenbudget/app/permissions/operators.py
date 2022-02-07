@@ -1,9 +1,8 @@
 import functools
 
-from greenbudget.app.authentication.exceptions import NotAuthenticatedError
-
 from .base import BasePermission
-from .exceptions import PermissionError
+from .constants import (
+    ObjectContext, PErrors, PermissionOperation, PermissionContext, ViewContext)
 from .utils import instantiate_permissions
 
 
@@ -16,6 +15,7 @@ class Operator(BasePermission):
         super().__init__(*permissions, **kwargs)
         self._permissions = permissions
         self._failed_permissions = []
+        self._default = kwargs.pop('default', None)
 
     @property
     def failed_permissions(self):
@@ -25,18 +25,36 @@ class Operator(BasePermission):
     def permissions(self):
         return instantiate_permissions(self._permissions)
 
-    def has_permission(self, request, view):
-        return self.evaluate('has_permission', request, view)
+    def permissions_for_context(self, context, *args):
+        pms = self.permissions[:]
+        if context == PermissionContext.VIEW:
+            pms = [
+                p for p in pms
+                if p.is_view_applicable(self.view_context(*args))
+            ]
+        elif context == PermissionContext.OBJECT:
+            pms = [
+                p for p in pms
+                if p.is_object_applicable(self.object_context(*args))
+            ]
+        if len(pms) == 0 and self._default is not None:
+            if isinstance(self._default, BaseException):
+                raise self._default
+            return [self._default]
+        return pms
 
-    def has_object_permission(self, request, view, obj):
-        return self.evaluate('has_object_permission', request, view, obj)
+    def view_context(self, request, view):
+        return ViewContext(request=request, view=view)
+
+    def object_context(self, request, view, obj):
+        return ObjectContext(request=request, view=view, obj=obj)
 
     @property
     def failed_priority_permission(self):
         if self.failed_permissions:
             priorities = [
                 p for p in self.failed_permissions
-                if p[0].priority
+                if p[1] is True
             ]
             prior = priorities[0] if priorities else self.failed_permissions[0]
             if isinstance(prior[0], Operator):
@@ -47,7 +65,14 @@ class Operator(BasePermission):
 
     def handle_failed_permissions(self):
         if self.failed_priority_permission:
-            raise self.failed_priority_permission[1]
+            priority = self.failed_priority_permission
+            assert priority[2] is not True
+            if isinstance(priority[2], PErrors):
+                raise priority[2]
+            elif isinstance(priority[2], str):
+                priority[0].permission_denied(message=priority[1])
+            else:
+                priority[0].permission_denied()
         return True
 
     def permission_denied(self, **kwargs):
@@ -57,23 +82,23 @@ class Operator(BasePermission):
         self.failed_priority_permission[0].permission_denied(**kwargs)
 
 
-def track_failed_permissions(**kw):
+def track_failed_permissions(context):
     def decorator(func):
         @functools.wraps(func)
         def inner(instance, *args, **kwargs):
             instance._failed_permissions = []
-            for permission in instance.permissions:
-                evaluated = func(instance, permission, *args, **kwargs)
-                # If the returned value is None, that means the permission is
-                # not applicable.
-                if evaluated is None:
-                    continue
+            permissions = instance.permissions_for_context(context, *args)
+            for permission in permissions:
+                try:
+                    evaluated = func(instance, permission, *args, **kwargs)
+                except PErrors as e:
+                    evaluated = e
                 # If the value is True, that means that the permission was
                 # granted.  In the case of an OR clause, we can exit the
                 # permission check of the operator early since one permission
                 # was granted.
                 if evaluated is True:
-                    if kw.get('exit_on_grant', False):
+                    if instance.operation == PermissionOperation.OR:
                         return evaluated
                     continue
                 else:
@@ -81,18 +106,20 @@ def track_failed_permissions(**kw):
                     # error message or a PermissionError indicates that the
                     # permission was not granted.
                     assert evaluated is False or isinstance(evaluated, str) \
-                        or isinstance(evaluated,
-                            (PermissionError, NotAuthenticatedError)), \
+                        or isinstance(evaluated, PErrors), \
                         f"Unexpected type {type(evaluated)} returned from " \
                         f"permission method.  Expected either a string, a " \
                         "boolean or a PermissionError."
 
-                    instance._failed_permissions.append((permission, evaluated))
+                    prioritized = permission.is_prioritized(*args[:1])
+
+                    instance._failed_permissions.append(
+                        (permission, prioritized, evaluated))
                     # If the permission is required to be granted for subsequent
                     # permissions, and the permission failed - we need to exit
                     # early.
                     if permission.affects_after \
-                            and kw.get('break_after_failure', False):
+                            and instance.operation == PermissionOperation.AND:
                         break
             return instance.handle_failed_permissions()
         return inner
@@ -108,19 +135,15 @@ class AND(Operator):
     Grants permission only if all of the applicable children permission classes
     grant permission.
     """
-    @track_failed_permissions(break_after_failure=True)
-    def has_user_permission(self, permission, user):
-        try:
-            return permission.has_user_permission(user, raise_exception=True)
-        except (PermissionError, NotAuthenticatedError) as e:
-            return e
+    operation = PermissionOperation.AND
 
-    @track_failed_permissions(break_after_failure=True)
-    def evaluate(self, permission, method, *args):
-        try:
-            return getattr(permission, method)(*args, raise_exception=True)
-        except (PermissionError, NotAuthenticatedError) as e:
-            return e
+    @track_failed_permissions(context=PermissionContext.OBJECT)
+    def has_object_permission(self, permission, *args):
+        return permission.has_object_permission(*args, raise_exception=True)
+
+    @track_failed_permissions(context=PermissionContext.VIEW)
+    def has_permission(self, permission, *args):
+        return permission.has_permission(*args, raise_exception=True)
 
 
 class OR(Operator):
@@ -132,22 +155,12 @@ class OR(Operator):
     Grants permission only if at least one of the applicable children permission
     classes grant permission.
     """
-    @track_failed_permissions(exit_on_grant=True)
-    def has_user_permission(self, permission, user):
-        # Do not immediately raise the exception, but store it - such
-        # that we can determine after all permissions have been checked
-        # which failing permission the exception should be raised for.
-        return permission.has_user_permission(user, raise_exception=False)
+    operation = PermissionOperation.OR
 
-    @track_failed_permissions(exit_on_grant=True)
-    def evaluate(self, permission, method, request, view, *args):
-        # The permission class will evaluate to True if it is not applicable,
-        # but we do not want that True value to contribute to the OR clause
-        # evaluating to True - since the permission is not applicable.
-        if permission.is_applicable(request, view):
-            # Do not immediately raise the exception, but store it - such
-            # that we can determine after all permissions have been checked
-            # which failing permission the exception should be raised for.
-            return getattr(permission, method)(
-                request, view, *args, raise_exception=False)
-        return None
+    @track_failed_permissions(context=PermissionContext.OBJECT)
+    def has_object_permission(self, permission, *args):
+        return permission.has_object_permission(*args, raise_exception=False)
+
+    @track_failed_permissions(context=PermissionContext.VIEW)
+    def has_permission(self, permission, *args):
+        return permission.has_permission(*args, raise_exception=False)

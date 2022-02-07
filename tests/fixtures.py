@@ -1,3 +1,4 @@
+import copy
 import functools
 from io import BytesIO
 from PIL import Image
@@ -44,7 +45,33 @@ def allow_multiple(func):
     def inner(*args, **kwargs):
         count = kwargs.pop('count', None)
         if count is not None:
-            return [func(*args, **kwargs) for _ in range(count)]
+            raw_array_properties = {}
+            for k, v in kwargs.items():
+                if k.endswith('_array'):
+                    if not isinstance(v, (tuple, list)):
+                        raise Exception(
+                            f"Model factory attribute {k} was specified but "
+                            "the value was not an iterable!"
+                        )
+                    elif len(v) != count:
+                        raise Exception(
+                            f"Model factory attribute {k} was specified but "
+                            "the value did not have a length equal to the "
+                            "count parameter!"
+                        )
+                    raw_array_properties[k] = v
+
+            array_properties = {}
+            for k, v in raw_array_properties.items():
+                array_properties[k.split('_array')[0]] = kwargs.pop(k)
+
+            instances = []
+            for i in range(count):
+                model_kwargs = copy.deepcopy(kwargs)
+                for k, v in array_properties.items():
+                    model_kwargs[k] = v[i]
+                instances.append(func(*args, **model_kwargs))
+            return instances
         return func(*args, **kwargs)
     return inner
 

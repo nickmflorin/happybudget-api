@@ -8,10 +8,9 @@ class ContactNestedMixin(mixins.NestedObjectViewMixin):
     A mixin for views that extend off of an contacts's detail endpoint.
     """
     view_name = 'contact'
-    contact_lookup_field = ("pk", "contact_pk")
 
-    def get_contact_queryset(self, request):
-        return Contact.objects.filter(created_by=request.user)
+    def get_contact_queryset(self):
+        return Contact.objects.filter(created_by=self.request.user)
 
     @property
     def instance(self):

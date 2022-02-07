@@ -4,8 +4,8 @@ from django.db import models
 from rest_framework import response, status, decorators
 
 from greenbudget.app import views, mixins, permissions
-from greenbudget.app.account.models import BudgetAccount
-from greenbudget.app.account.serializers import BudgetAccountSerializer
+from greenbudget.app.account.serializers import (
+    BudgetAccountSerializer, TemplateAccountSerializer)
 from greenbudget.app.account.views import GenericAccountViewSet
 from greenbudget.app.actual.models import Actual
 from greenbudget.app.actual.serializers import (
@@ -15,6 +15,7 @@ from greenbudget.app.authentication.models import ShareToken
 from greenbudget.app.authentication.serializers import ShareTokenSerializer
 from greenbudget.app.budgeting.decorators import (
     register_bulk_operations, BulkAction, BulkDeleteAction)
+from greenbudget.app.budgeting.permissions import IsBudgetDomain
 from greenbudget.app.fringe.models import Fringe
 from greenbudget.app.fringe.serializers import FringeSerializer
 from greenbudget.app.fringe.views import GenericFringeViewSet
@@ -23,6 +24,7 @@ from greenbudget.app.group.serializers import GroupSerializer
 from greenbudget.app.markup.models import Markup
 from greenbudget.app.markup.serializers import MarkupSerializer
 from greenbudget.app.subaccount.models import BudgetSubAccount
+from greenbudget.app.template.serializers import TemplateSerializer
 
 from .cache import (
     budget_children_cache,
@@ -33,12 +35,9 @@ from .cache import (
     budget_fringes_cache,
     budget_actuals_owners_cache
 )
-from .models import Budget
-from .mixins import BudgetNestedMixin, BudgetSharedNestedMixin
-from .permissions import (
-    BudgetProductPermission,
-    MultipleBudgetPermission
-)
+from .models import Budget, BaseBudget
+from .mixins import BudgetNestedMixin, BaseBudgetSharedNestedMixin
+from .permissions import MultipleBudgetPermission, BudgetOwnershipPermission
 from .serializers import (
     BudgetSerializer,
     BudgetSimpleSerializer,
@@ -51,7 +50,7 @@ from .serializers import (
 class BudgetMarkupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
-    BudgetSharedNestedMixin,
+    BaseBudgetSharedNestedMixin,
     views.GenericViewSet
 ):
     """
@@ -64,8 +63,11 @@ class BudgetMarkupViewSet(
     permission_classes = [
         permissions.OR(
             permissions.IsFullyAuthenticated,
-            permissions.IsShared(
-                get_nested_obj=lambda view: view.budget),
+            permissions.AND(
+                IsBudgetDomain(get_nested_obj=lambda view: view.budget),
+                permissions.IsShared(get_nested_obj=lambda view: view.budget),
+                permissions.IsSafeRequestMethod,
+            )
         )
     ]
 
@@ -74,7 +76,7 @@ class BudgetMarkupViewSet(
 
     def get_queryset(self):
         return Markup.objects.filter(
-            content_type=ContentType.objects.get_for_model(Budget),
+            content_type=self.content_type,
             object_id=self.budget.pk
         )
 
@@ -89,7 +91,7 @@ class BudgetMarkupViewSet(
 class BudgetGroupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
-    BudgetSharedNestedMixin,
+    BaseBudgetSharedNestedMixin,
     views.GenericViewSet
 ):
     """
@@ -102,8 +104,11 @@ class BudgetGroupViewSet(
     permission_classes = [
         permissions.OR(
             permissions.IsFullyAuthenticated,
-            permissions.IsShared(
-                get_nested_obj=lambda view: view.budget),
+            permissions.AND(
+                IsBudgetDomain(get_nested_obj=lambda view: view.budget),
+                permissions.IsShared(get_nested_obj=lambda view: view.budget),
+                permissions.IsSafeRequestMethod,
+            )
         )
     ]
 
@@ -197,7 +202,7 @@ class BudgetActualsOwnersViewSet(
 class BudgetFringeViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
-    BudgetSharedNestedMixin,
+    BaseBudgetSharedNestedMixin,
     GenericFringeViewSet
 ):
     """
@@ -209,8 +214,11 @@ class BudgetFringeViewSet(
     permission_classes = [
         permissions.OR(
             permissions.IsFullyAuthenticated,
-            permissions.IsShared(
-                get_nested_obj=lambda view: view.budget),
+            permissions.AND(
+                IsBudgetDomain(get_nested_obj=lambda view: view.budget),
+                permissions.IsShared(get_nested_obj=lambda view: view.budget),
+                permissions.IsSafeRequestMethod,
+            )
         )
     ]
 
@@ -231,8 +239,7 @@ class BudgetFringeViewSet(
 class BudgetChildrenViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
-    mixins.UpdateModelMixin,
-    BudgetSharedNestedMixin,
+    BaseBudgetSharedNestedMixin,
     GenericAccountViewSet
 ):
     """
@@ -241,12 +248,14 @@ class BudgetChildrenViewSet(
     (1) GET /budgets/<pk>/children/
     (2) POST /budgets/<pk>/children/
     """
-    instance_cls = Budget
     permission_classes = [
         permissions.OR(
             permissions.IsFullyAuthenticated,
-            permissions.IsShared(
-                get_nested_obj=lambda view: view.budget),
+            permissions.AND(
+                IsBudgetDomain(get_nested_obj=lambda view: view.budget),
+                permissions.IsShared(get_nested_obj=lambda view: view.budget),
+                permissions.IsSafeRequestMethod,
+            )
         )
     ]
 
@@ -258,9 +267,13 @@ class BudgetChildrenViewSet(
         context.update(parent=self.budget)
         return context
 
+    @property
+    def child_instance_cls(self):
+        return self.instance.child_instance_cls
+
     def get_queryset(self):
-        return BudgetAccount.objects \
-            .filter(parent=self.budget).order_with_groups()
+        return self.child_instance_cls.objects \
+            .filter(parent=self.instance).order_with_groups()
 
 
 class BudgetShareTokenViewSet(
@@ -299,26 +312,36 @@ class GenericBudgetViewSet(views.GenericViewSet):
     ordering_fields = ['updated_at', 'name', 'created_at']
     search_fields = ['name']
     serializer_class = BudgetSerializer
-    serializer_classes = [
-        ({'action': 'list'}, BudgetSimpleSerializer)
-    ]
+    serializer_classes = (
+        ({'action': 'list'}, BudgetSimpleSerializer),
+        ({'action': 'create'}, BudgetSerializer),
+        ({'instance_cls.domain': 'template'}, TemplateSerializer)
+    )
 
 
 @register_bulk_operations(
-    base_cls=Budget,
+    base_cls=BaseBudget,
     get_budget=lambda instance: instance,
     # Since the Budget is the entity being updated, it will already be included
     # in the response by default.  We do not want to double include it.
     include_budget_in_response=False,
+    budget_serializer=lambda context: {
+        'budget': BudgetSerializer,
+        'template': TemplateSerializer
+    }[context.instance.domain],
     child_context=lambda context: {"parent": context.instance},
     perform_update=lambda serializer, context: serializer.save(
         updated_by=context.request.user
     ),
     actions=[
         BulkAction(
-            url_path='bulk-{action_name}-children',
-            child_cls=BudgetAccount,
-            child_serializer_cls=BudgetAccountSerializer,
+            entity='children',
+            url_path='bulk-{action_name}-{entity}',
+            child_cls=lambda context: context.instance.account_cls,
+            child_serializer_cls=lambda context: {
+                'template': TemplateAccountSerializer,
+                'budget': BudgetAccountSerializer
+            }[context.instance.domain],
             filter_qs=lambda context: models.Q(parent=context.instance),
             perform_create=lambda serializer, context: serializer.save(
                 created_by=context.request.user,
@@ -327,17 +350,22 @@ class GenericBudgetViewSet(views.GenericViewSet):
             ),
         ),
         BulkDeleteAction(
-            url_path='bulk-{action_name}-markups',
+            entity='markups',
+            url_path='bulk-{action_name}-{entity}',
             child_cls=Markup,
             filter_qs=lambda context: models.Q(
-                content_type=ContentType.objects.get_for_model(Budget),
+                content_type=ContentType.objects.get_for_model(
+                    type(context.instance)),
                 object_id=context.instance.pk
             ),
         ),
         BulkAction(
-            url_path='bulk-{action_name}-actuals',
+            entity='actuals',
+            url_path='bulk-{action_name}-{entity}',
             child_cls=Actual,
             child_serializer_cls=ActualSerializer,
+            disabled=lambda context: context.instance.domain != "budget",
+
             filter_qs=lambda context: models.Q(budget=context.instance),
             perform_create=lambda serializer, context: serializer.save(
                 created_by=context.request.user,
@@ -346,7 +374,8 @@ class GenericBudgetViewSet(views.GenericViewSet):
             ),
         ),
         BulkAction(
-            url_path='bulk-{action_name}-fringes',
+            entity='fringes',
+            url_path='bulk-{action_name}-{entity}',
             child_cls=Fringe,
             child_serializer_cls=FringeSerializer,
             filter_qs=lambda context: models.Q(budget=context.instance),
@@ -377,35 +406,53 @@ class BudgetViewSet(
     (5) DELETE /budgets/<pk>/
     (6) PATCH /budgets/<pk>/bulk-update-children/
     (7) PATCH /budgets/<pk>/bulk-create-children/
-    (8) PATCH /budgets/<pk>/bulk-update-actuals/
-    (9) PATCH /budgets/<pk>/bulk-update-fringes/
-    (10) PATCH /budgets/<pk>/bulk-create-fringes/
-    (11) GET /budgets/<pk>/pdf/
-    (12) POST /budgets/<pk>/duplicate/
+    (8) PATCH /budgets/<pk>/bulk-delete-children/
+    (9) PATCH /budgets/<pk>/bulk-update-actuals/
+    (10) PATCH /budgets/<pk>/bulk-create-actuals/
+    (11) PATCH /budgets/<pk>/bulk-delete-actuals/
+    (12) PATCH /budgets/<pk>/bulk-update-fringes/
+    (13) PATCH /budgets/<pk>/bulk-create-fringes/
+    (14) PATCH /budgets/<pk>/bulk-delete-fringes/
+    (15) PATCH /budgets/<pk>/bulk-delete-markups/
+    (16) GET /budgets/<pk>/pdf/
+    (17) POST /budgets/<pk>/duplicate/
     """
     permission_classes = [
-        permissions.OR(
-            permissions.AND(
-                permissions.IsFullyAuthenticated(affects_after=True),
-                permissions.IsOwner(object_name='budget', affects_after=True),
-                MultipleBudgetPermission(
-                    products="__any__",
-                    applicable_methods=["POST"]
+        permissions.AND(
+            permissions.OR(
+                permissions.AND(
+                    permissions.IsFullyAuthenticated(affects_after=True),
+                    BudgetOwnershipPermission(affects_after=True),
+                    MultipleBudgetPermission(
+                        products="__any__",
+                        is_view_applicable=lambda c: c.view.action in (
+                            'create', 'duplicate')
+                    ),
                 ),
-                BudgetProductPermission(products="__any__")
+                permissions.AND(
+                    permissions.IsSafeRequestMethod,
+                    permissions.IsShared,
+                    is_view_applicable=lambda c: c.view.action != "list"
+                ),
+                is_object_applicable=lambda c: c.obj.domain == 'budget',
             ),
             permissions.AND(
-                permissions.IsViewAction('retrieve'),
-                permissions.IsShared
-            )
+                permissions.IsFullyAuthenticated(affects_after=True),
+                BudgetOwnershipPermission(affects_after=True),
+                is_object_applicable=lambda c: c.obj.domain == 'template',
+                is_view_applicable=False
+            ),
+            default=permissions.IsFullyAuthenticated
         )
     ]
 
     def get_queryset(self):
-        qs = Budget.objects
-        if self.action == 'list':
-            return qs.filter(created_by=self.request.user)
-        return qs
+        base_cls = BaseBudget
+        if self.action in ('pdf', 'list') or self.in_bulk_entity('actuals'):
+            base_cls = Budget
+        elif self.action == 'list':
+            return base_cls.objects.filter(created_by=self.request.user)
+        return base_cls.objects.all()
 
     @decorators.action(detail=True, methods=["GET"])
     def pdf(self, request, *args, **kwargs):
@@ -416,8 +463,9 @@ class BudgetViewSet(
     def duplicate(self, request, *args, **kwargs):
         duplicated = type(self.instance).objects.duplicate(
             self.instance, request.user)
+        serializer_class = self.get_serializer_class()
         return response.Response(
-            self.serializer_class(
+            serializer_class(
                 duplicated,
                 context=self.get_serializer_context()
             ).data,

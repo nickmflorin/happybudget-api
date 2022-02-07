@@ -20,9 +20,8 @@ class SubAccountNestedMixin(mixins.NestedObjectViewMixin):
         SubAccountOwnershipPermission,
         SubAccountProductPermission(products='__any__')
     ]
-    subaccount_lookup_field = ("pk", "subaccount_pk")
 
-    def get_subaccount_queryset(self, request):
+    def get_subaccount_queryset(self):
         return SubAccount.objects.all()
 
     @cached_property
@@ -56,9 +55,11 @@ class SubAccountSharedNestedMixin(SubAccountNestedMixin):
                 SubAccountProductPermission(products='__any__')
             ),
             permissions.AND(
-                IsBudgetDomain(get_permissioned_obj=lambda view: view.budget),
                 permissions.IsShared(
                     get_permissioned_obj=lambda view: view.budget),
+                permissions.IsSafeRequestMethod,
+                is_object_applicable=lambda c: c.obj.domain == 'budget',
+                is_view_applicable=False
             )
         )
     ]
@@ -70,6 +71,7 @@ class SubAccountSharedNestedMixin(SubAccountNestedMixin):
                     get_nested_obj=lambda view: view.subaccount.budget),
                 permissions.IsShared(
                     get_nested_obj=lambda view: view.subaccount.budget),
+                permissions.IsSafeRequestMethod,
             )
         )
     ]

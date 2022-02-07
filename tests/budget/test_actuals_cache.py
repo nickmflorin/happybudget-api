@@ -17,7 +17,7 @@ def test_delete_actual_invalidates_caches(api_client, user, budget_df,
 
     api_client.force_login(user)
 
-    response = api_client.get("/v1/%ss/%s/" % (budget_df.context, budget.pk))
+    response = api_client.get("/v1/budgets/%s/" % budget.pk)
     assert response.status_code == 200
     assert response.json()['actual'] == 100
 
@@ -29,15 +29,14 @@ def test_delete_actual_invalidates_caches(api_client, user, budget_df,
     assert response.status_code == 200
     assert response.json()['actual'] == 100
 
-    response = api_client.get(
-        "/v1/%ss/%s/actuals/" % (budget_df.context, budget.pk))
+    response = api_client.get("/v1/budgets/%s/actuals/" % budget.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 1
 
     response = api_client.delete("/v1/actuals/%s/" % actual.pk)
     assert response.status_code == 204
 
-    response = api_client.get("/v1/%ss/%s/" % (budget_df.context, budget.pk))
+    response = api_client.get("/v1/budgets/%s/" % budget.pk)
     assert response.status_code == 200
     assert response.json()['actual'] == 0
 
@@ -49,8 +48,7 @@ def test_delete_actual_invalidates_caches(api_client, user, budget_df,
     assert response.status_code == 200
     assert response.json()['actual'] == 0
 
-    response = api_client.get(
-        "/v1/%ss/%s/actuals/" % (budget_df.context, budget.pk))
+    response = api_client.get("/v1/budgets/%s/actuals/" % budget.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 0
 
@@ -65,7 +63,7 @@ def test_create_actual_invalidates_caches(api_client, user, budget_df,
 
     api_client.force_login(user)
 
-    response = api_client.get("/v1/%ss/%s/" % (budget_df.context, budget.pk))
+    response = api_client.get("/v1/budgets/%s/" % budget.pk)
     assert response.status_code == 200
     assert response.json()['actual'] == 100
 
@@ -77,13 +75,12 @@ def test_create_actual_invalidates_caches(api_client, user, budget_df,
     assert response.status_code == 200
     assert response.json()['actual'] == 100
 
-    response = api_client.get(
-        "/v1/%ss/%s/actuals/" % (budget_df.context, budget.pk))
+    response = api_client.get("/v1/budgets/%s/actuals/" % budget.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 1
 
     response = api_client.post(
-        "/v1/%ss/%s/actuals/" % (budget_df.context, budget.pk),
+        "/v1/budgets/%s/actuals/" % budget.pk,
         format='json',
         data={
             'value': 100.0,
@@ -94,7 +91,7 @@ def test_create_actual_invalidates_caches(api_client, user, budget_df,
             }
         })
 
-    response = api_client.get("/v1/%ss/%s/" % (budget_df.context, budget.pk))
+    response = api_client.get("/v1/budgets/%s/" % budget.pk)
     assert response.status_code == 200
     assert response.json()['actual'] == 200
 
@@ -106,8 +103,7 @@ def test_create_actual_invalidates_caches(api_client, user, budget_df,
     assert response.status_code == 200
     assert response.json()['actual'] == 200
 
-    response = api_client.get(
-        "/v1/%ss/%s/actuals/" % (budget_df.context, budget.pk))
+    response = api_client.get("/v1/budgets/%s/actuals/" % budget.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'][1]['name'] == 'New Actual'
@@ -124,7 +120,7 @@ def test_update_actual_invalidates_caches(api_client, user, budget_df,
 
     api_client.force_login(user)
 
-    response = api_client.get("/v1/%ss/%s/" % (budget_df.context, budget.pk))
+    response = api_client.get("/v1/budgets/%s/" % budget.pk)
     assert response.status_code == 200
     assert response.json()['actual'] == 100
 
@@ -136,8 +132,7 @@ def test_update_actual_invalidates_caches(api_client, user, budget_df,
     assert response.status_code == 200
     assert response.json()['actual'] == 100
 
-    response = api_client.get(
-        "/v1/%ss/%s/actuals/" % (budget_df.context, budget.pk))
+    response = api_client.get("/v1/budgets/%s/actuals/" % budget.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 1
 
@@ -145,7 +140,7 @@ def test_update_actual_invalidates_caches(api_client, user, budget_df,
         'value': 150.0
     })
 
-    response = api_client.get("/v1/%ss/%s/" % (budget_df.context, budget.pk))
+    response = api_client.get("/v1/budgets/%s/" % budget.pk)
     assert response.status_code == 200
     assert response.json()['actual'] == 150
 
@@ -157,8 +152,7 @@ def test_update_actual_invalidates_caches(api_client, user, budget_df,
     assert response.status_code == 200
     assert response.json()['actual'] == 150
 
-    response = api_client.get(
-        "/v1/%ss/%s/actuals/" % (budget_df.context, budget.pk))
+    response = api_client.get("/v1/budgets/%s/actuals/" % budget.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 1
     assert response.json()['data'][0]['value'] == 150.0
@@ -206,13 +200,12 @@ def test_bulk_update_actuals_invalidates_caches(api_client, user, budget_df,
     assert response.status_code == 200
     assert response.json()['actual'] == 220.0
 
-    response = api_client.get(
-        "/v1/%ss/%s/actuals/" % (budget_df.context, budget.pk))
+    response = api_client.get("/v1/budgets/%s/actuals/" % budget.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
 
     response = api_client.patch(
-        "/v1/%ss/%s/bulk-update-actuals/" % (budget_df.context, budget.pk),
+        "/v1/budgets/%s/bulk-update-actuals/" % budget.pk,
         format='json',
         data={'data': [
             {'id': actuals[0].pk, 'value': 120.0, 'owner': {
@@ -245,8 +238,7 @@ def test_bulk_update_actuals_invalidates_caches(api_client, user, budget_df,
     assert response.status_code == 200
     assert response.json()['actual'] == 140.0
 
-    response = api_client.get(
-        "/v1/%ss/%s/actuals/" % (budget_df.context, budget.pk))
+    response = api_client.get("/v1/budgets/%s/actuals/" % budget.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'][0]['value'] == 120.0
@@ -301,13 +293,12 @@ def test_bulk_create_actual_invalidates_caches(api_client, user, budget_df,
     assert response.status_code == 200
     assert response.json()['actual'] == 220.0
 
-    response = api_client.get(
-        "/v1/%ss/%s/actuals/" % (budget_df.context, budget.pk))
+    response = api_client.get("/v1/budgets/%s/actuals/" % budget.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
 
     response = api_client.patch(
-        "/v1/%ss/%s/bulk-create-actuals/" % (budget_df.context, budget.pk),
+        "/v1/budgets/%s/bulk-create-actuals/" % budget.pk,
         format='json',
         data={'data': [
             {'value': 120.0, 'owner': {
@@ -343,8 +334,7 @@ def test_bulk_create_actual_invalidates_caches(api_client, user, budget_df,
     assert response.status_code == 200
     assert response.json()['actual'] == 360.0
 
-    response = api_client.get(
-        "/v1/%ss/%s/actuals/" % (budget_df.context, budget.pk))
+    response = api_client.get("/v1/budgets/%s/actuals/" % budget.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 4
     assert response.json()['data'][0]['value'] == 100.0
@@ -405,13 +395,12 @@ def test_bulk_delete_actuals_invalidates_caches(api_client, user, budget_df,
     assert response.status_code == 200
     assert response.json()['actual'] == 300.0
 
-    response = api_client.get(
-        "/v1/%ss/%s/actuals/" % (budget_df.context, budget.pk))
+    response = api_client.get("/v1/budgets/%s/actuals/" % budget.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 4
 
     response = api_client.patch(
-        "/v1/%ss/%s/bulk-delete-actuals/" % (budget_df.context, budget.pk),
+        "/v1/budgets/%s/bulk-delete-actuals/" % budget.pk,
         format='json',
         data={'ids': [actuals[0].pk, actuals[2].pk]}
     )
@@ -438,8 +427,7 @@ def test_bulk_delete_actuals_invalidates_caches(api_client, user, budget_df,
     assert response.status_code == 200
     assert response.json()['actual'] == 80.0
 
-    response = api_client.get(
-        "/v1/%ss/%s/actuals/" % (budget_df.context, budget.pk))
+    response = api_client.get("/v1/budgets/%s/actuals/" % budget.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 2
     assert response.json()['data'][0]['value'] == 60.0

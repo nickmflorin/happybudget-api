@@ -20,9 +20,8 @@ class AccountNestedMixin(mixins.NestedObjectViewMixin):
         AccountProductPermission(products="__any__")
     ]
     view_name = 'account'
-    account_lookup_field = ("pk", "account_pk")
 
-    def get_account_queryset(self, request):
+    def get_account_queryset(self):
         return Account.objects.all()
 
     @property
@@ -52,9 +51,11 @@ class AccountSharedNestedMixin(AccountNestedMixin):
                 AccountProductPermission(products="__any__")
             ),
             permissions.AND(
-                IsBudgetDomain(get_permissioned_obj=lambda view: view.budget),
                 permissions.IsShared(
                     get_permissioned_obj=lambda obj: obj.budget),
+                permissions.IsSafeRequestMethod,
+                is_object_applicable=lambda c: c.obj.domain == 'budget',
+                is_view_applicable=False
             )
         )
     ]
@@ -64,6 +65,8 @@ class AccountSharedNestedMixin(AccountNestedMixin):
             permissions.AND(
                 IsBudgetDomain(get_nested_obj=lambda view: view.account.budget),
                 permissions.IsShared(
-                    get_nested_obj=lambda view: view.account.budget))
+                    get_nested_obj=lambda view: view.account.budget),
+                permissions.IsSafeRequestMethod,
+            ),
         )
     ]
