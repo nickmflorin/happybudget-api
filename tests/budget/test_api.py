@@ -2,8 +2,11 @@ import pytest
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_budgets(api_client, user, create_budget):
-    budgets = [create_budget(), create_budget()]
+def test_get_budgets(api_client, user, admin_user, create_budget):
+    budgets = create_budget(count=2)
+    # Add additional budgets created by another use to ensure that those are
+    # not included in the response.
+    create_budget(count=2, created_by=admin_user)
     api_client.force_login(user)
     response = api_client.get("/v1/budgets/")
     assert response.status_code == 200

@@ -402,7 +402,10 @@ class BudgetViewSet(
     ]
 
     def get_queryset(self):
-        return Budget.objects.all()
+        qs = Budget.objects
+        if self.action == 'list':
+            return qs.filter(created_by=self.request.user)
+        return qs
 
     @decorators.action(detail=True, methods=["GET"])
     def pdf(self, request, *args, **kwargs):
