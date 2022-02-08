@@ -52,12 +52,25 @@
 
 .header-base {
   color: $text-primary;
-  margin-top: 0;
-  margin-bottom: 0;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  margin: 0 !important;
   font-family: $avenir;
   font-weight: 600;
   text-shadow: none !important;
   padding: 0;
+}
+
+p {
+  font-family: $avenir;
+  font-weight: 500;
+  color: $text-secondary;
+}
+
+label {
+  font-family: $avenir !important;
+  font-weight: 500 !important;
+  color: $text-primary !important;
 }
 
 h1 {
@@ -99,4 +112,14 @@ h5 {
 
 h6 {
   @extend .header-base;
+}
+
+p.file-upload {
+  margin: 6px 0 3px;
+  font-size: 12px;
+  line-height: 18px;
+
+  input[type="file"] {
+    margin-top: 4px;
+  }
 }

@@ -124,24 +124,34 @@
   background-color: transparent;
   padding: 0;
   border: none !important;
-	color: $blue;
+  color: $blue;
 
-	&:hover {
-		color: lighten($blue, 10%);
-	}
+  &:hover {
+    color: lighten($blue, 10%);
+  }
 
   &--dark {
     color: $text-primary;
     text-transform: none !important;
 
-		&:hover {
-			color: lighten($text-primary, 10%);
-		}
+    &:hover {
+      color: lighten($text-primary, 10%);
+    }
   }
 }
 
 a {
   @extend .link;
+}
+
+p.file-upload {
+  a {
+    color: $blue !important;
+
+    &:hover {
+      color: lighten($blue, 10%) !important;
+    }
+  }
 }
 
 .btn {
@@ -176,11 +186,17 @@ a {
   @include primary();
 }
 
-a.grp-button, button.grp-button, input[type=button].grp-button, button, .grp-button, input[type="submit"] {
+a.grp-button,
+button.grp-button,
+input[type="button"].grp-button,
+button,
+.grp-button,
+input[type="submit"] {
   @extend .btn;
 }
 
-.grp-fixed-footer input[type="submit"]:hover, .grp-fixed-footer input[type="submit"]:focus {
+.grp-fixed-footer input[type="submit"]:hover,
+.grp-fixed-footer input[type="submit"]:focus {
   @extend .btn;
 }
 

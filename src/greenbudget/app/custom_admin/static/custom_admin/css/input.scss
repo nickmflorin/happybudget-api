@@ -36,7 +36,6 @@ input:focus-visible {
 .input-base {
   transition: all 0.3s;
   border: none;
-  background-color: $gray-light !important;
   color: $text-primary !important;
   cursor: text;
   position: relative;
@@ -50,12 +49,6 @@ input:focus-visible {
   width: 100%;
   line-height: 22px;
   font-size: 13px;
-  border-radius: $input-border-radius;
-  // Padding with line-height must be 36px for our standard size.  7px + 7px + 22px = 36px
-  padding-top: 7px;
-  padding-bottom: 7px;
-  padding-left: 12px;
-  padding-right: 12px;
 }
 
 .input-small-base {
@@ -76,6 +69,17 @@ input:not([type='checkbox']) {
     border-color: transparent !important;
     box-shadow: none !important;
   }
+}
+
+input:not([type='checkbox']):not([type="file"]) {
+  background-color: $gray-light !important;
+  // Padding with line-height must be 36px for our standard size.  7px + 7px + 22px = 36px
+  padding-top: 5px;
+  padding-bottom: 5px;
+  padding-left: 12px;
+  padding-right: 12px;
+  height: 32px;
+  border-radius: $input-border-radius;
 }
 
 textarea {
@@ -102,4 +106,10 @@ select {
   padding-bottom: 0px !important;
   height: 36px !important;
   margin: 0;
+}
+
+fieldset.grp-module .grp-row label {
+  margin: 0 !important;
+  font-size: 12px;
+  line-height: 32px;
 }

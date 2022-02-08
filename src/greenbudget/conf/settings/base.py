@@ -140,6 +140,7 @@ INSTALLED_APPS = [
     'colorful',
     'rest_framework',
     'generic_relations',
+    'nested_admin',
     'corsheaders',
     'timezone_field',
     'greenbudget.app',

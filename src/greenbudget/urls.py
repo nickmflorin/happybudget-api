@@ -13,6 +13,7 @@ urlpatterns = [
     path('grappelli/', include('grappelli.urls')),
     path('admin/', admin.site.urls),
     path('v1/', include('greenbudget.app.urls')),
+    path('_nested_admin/', include('nested_admin.urls')),
 ]
 
 if settings.ENVIRONMENT in (Environments.LOCAL, Environments.TEST):

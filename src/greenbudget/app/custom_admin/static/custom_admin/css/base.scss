@@ -1,23 +1,21 @@
-@import "./_variables.scss";
-@import "./buttons.scss";
-@import "./layout.scss";
-@import "./input.scss";
-@import "./login.scss";
-@import "./typography.scss";
-@import "./tables.scss";
+@import './_variables.scss';
+@import './buttons.scss';
+@import './layout.scss';
+@import './input.scss';
+@import './login.scss';
+@import './typography.scss';
+@import './tables.scss';
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-    sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans',
+    'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
-    monospace;
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
 .menu-base {
@@ -25,7 +23,7 @@ code {
   margin: 0;
   padding: 0;
   font-variant: tabular-nums;
-  font-feature-settings: "tnum";
+  font-feature-settings: 'tnum';
   margin-bottom: 0;
   padding-left: 0;
   color: $text-secondary;
@@ -40,7 +38,7 @@ code {
   width: 100%;
   background-color: $white;
   border: $menu-border !important;
-  border-radius: 3px;
+  border-radius: $border-radius;
 }
 
 .menu-item {
@@ -82,10 +80,12 @@ code {
   h2 {
     padding: 5px 10px 4px;
     text-shadow: none !important;
-    border-bottom: $table-border;
-    background-color: $table-border-color;
+    border-bottom: $border;
+    background-color: $border-color;
     border-radius: 2px !important;
     background-image: none !important;
+    border-bottom-left-radius: 0px !important;
+    border-bottom-right-radius: 0px !important;
   }
 
   .grp-row:not(tr) {
@@ -98,14 +98,56 @@ code {
     -webkit-box-sizing: border-box;
     box-sizing: border-box;
     border-top: none !important;
-    border-bottom: $table-border !important;
+
+    &:not(:last-child) {
+      border-bottom: $border !important;
+    }
 
     a {
       @extend .link--dark;
+      strong {
+        font-weight: 500 !important;
+      }
     }
   }
 }
 
+.grp-group {
+  position: relative;
+  float: none !important;
+  // clear: both;
+  // margin: 0 -4px 5px;
+  margin: 0;
+  padding: 0px;
+  width: 100%;
+  border-radius: $border-radius;
+  -moz-border-radius: $border-radius;
+  -webkit-border-radius: $border-radius;
+  background: $white;
+  border: $border;
+
+  > h2 {
+    padding: 4px 8px !important;
+    border: none !important;
+    background-image: none !important;
+    background-color: $app-alt-background-color;
+    line-height: 24px;
+  }
+}
+
+.djn-item {
+  > h3.grp-collapse-handler {
+    background-image: none !important;
+    border-radius: $border-radius;
+    -moz-border-radius: $border-radius;
+    -webkit-border-radius: $border-radius;
+    background: $white;
+  }
+}
+
+.djn-item[data-is-initial='true'] {
+  margin-top: 8px !important;
+}
 
 #grp-content-title {
   margin-bottom: 20px;
@@ -174,4 +216,3 @@ li.grp-changelist-actions .grp-horizontal-list .grp-button {
     }
   }
 }
-

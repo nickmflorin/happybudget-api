@@ -1,5 +1,9 @@
 @import "./_variables";
 
+#grp-breadcrumbs > ul a {
+  font-weight: 400;
+  content: "\f09a";
+}
 
 #grp-navigation {
   background-image: none !important;
