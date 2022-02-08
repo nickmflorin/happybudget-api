@@ -89,7 +89,10 @@ class BudgetSimpleSerializer(BaseBudgetSerializer):
         # response.
         data = super().to_representation(instance)
         if self.context['user'].is_authenticated:
-            assert instance.created_by == self.context['user']
+            assert instance.created_by == self.context['user'], \
+                f"Attempting to access budget {instance.pk} created by user " \
+                f"{instance.created_by.id} as logged in user " \
+                f"{self.context['user'].pk}!"
             data['is_permissioned'] = False
             if not self.context['user'].has_product('__any__'):
                 data['is_permissioned'] = not instance.is_first_created
