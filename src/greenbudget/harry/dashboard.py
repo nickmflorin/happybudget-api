@@ -3,7 +3,7 @@ from grappelli.dashboard import modules, Dashboard as BaseDashboard
 
 
 class Dashboard(BaseDashboard):
-    template = "custom_admin/dashboard.html"
+    template = "harry/dashboard.html"
 
     def init_with_context(self, context):
         self.children.append(modules.ModelList(

@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib import admin
 
-from greenbudget.app.custom_admin.utils import color_icon
+from greenbudget.harry.utils import color_icon
 
 from .models import Group
 
