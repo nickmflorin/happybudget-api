@@ -6,7 +6,6 @@ from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers, exceptions
 
 from greenbudget.lib.drf.exceptions import InvalidFieldError
-from greenbudget.lib.drf.fields import GenericRelatedField
 from greenbudget.lib.drf.validators import UniqueTogetherValidator
 from greenbudget.app.user.mail import (
     send_email_confirmation_email,
@@ -17,6 +16,7 @@ from greenbudget.app.user.fields import EmailField
 from greenbudget.app.user.models import User
 
 from .exceptions import EmailDoesNotExist
+from .fields import ShareTokenInstanceField
 from .models import ShareToken
 from .tokens import AuthToken, AccessToken
 from .utils import (
@@ -93,7 +93,7 @@ class ShareTokenSerializer(serializers.ModelSerializer):
 
 
 class ShareTokenValidationSerializer(serializers.Serializer):
-    instance = GenericRelatedField(
+    instance = ShareTokenInstanceField(
         required=True,
         allow_null=False,
         model_classes={'budget': Budget}

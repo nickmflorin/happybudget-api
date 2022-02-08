@@ -83,3 +83,23 @@ def test_validate_share_token_invalid_instance(api_client, create_budget,
         'code': 'token_not_valid',
         'error_type': 'auth'
     }]}
+
+
+def test_validate_share_token_non_existent_instance(api_client, create_budget,
+        create_share_token):
+    budget = create_budget()
+    share_token = create_share_token(instance=budget)
+    response = api_client.post(
+        "/v1/auth/validate-share/",
+        format='json',
+        data={
+            'token': share_token.public_id,
+            'instance': {'type': 'budget', 'id': '5'}
+        }
+    )
+    assert response.status_code == 401
+    assert response.json() == {'errors': [{
+        'message': 'Token is invalid.',
+        'code': 'token_not_valid',
+        'error_type': 'auth'
+    }]}
