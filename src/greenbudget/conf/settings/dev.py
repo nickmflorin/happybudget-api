@@ -12,7 +12,7 @@ from .base import (
     AWS_DEFAULT_REGION)
 
 ENVIRONMENT = Environments.DEV
-CACHE_ENABLED = True
+CACHE_ENABLED = False
 
 APP_DOMAIN = 'devapi.greenbudget.io'
 APP_URL = 'https://%s' % APP_DOMAIN
