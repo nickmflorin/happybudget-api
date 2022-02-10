@@ -40,9 +40,7 @@ class BudgetPdfSerializer(BaseBudgetSerializer):
         fields = ('children', 'groups', 'children_markups') \
             + BaseBudgetSerializer.Meta.fields \
             + (
-                'nominal_value',
-                'actual',
-                'accumulated_markup_contribution',
+                'nominal_value', 'actual', 'accumulated_markup_contribution',
                 'accumulated_fringe_contribution'
         )
         read_only_fields = fields
