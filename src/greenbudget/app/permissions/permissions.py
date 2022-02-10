@@ -25,8 +25,7 @@ def PermissionOnWrite(permission_cls):
 
 
 class AllowAny(BasePermission):
-    def has_permission(self, request, view):
-        return True
+    pass
 
 
 class IsAdminUser(BasePermission):
@@ -43,6 +42,7 @@ class IsAuthenticated(BasePermission):
     and active.
     """
     exception_class = NotAuthenticatedError
+    affects_after = True
 
     def has_user_permission(self, user):
         if user is None or not user.is_authenticated:
@@ -80,11 +80,7 @@ class IsVerified(BasePermission):
         return True
 
 
-IsFullyAuthenticated = AND(
-    IsAuthenticated(affects_after=True),
-    IsActive,
-    IsVerified
-)
+IsFullyAuthenticated = AND(IsAuthenticated, IsActive, IsVerified)
 
 
 class IsAnonymous(BasePermission):

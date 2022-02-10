@@ -75,6 +75,17 @@ def test_force_logout_on_auth_token_removal(jwt_authenticated_client, user,
     assert response.status_code == 401
 
 
+def test_validate_auth_token_not_logged_in(settings, jwt_authenticated_client):
+    response = jwt_authenticated_client.post("/v1/auth/validate/")
+    assert response.status_code == 401
+    assert response.json() == {'errors': [{
+        'message': 'User is not authenticated.',
+        'code': 'account_not_authenticated',
+        'error_type': 'auth'
+    }]}
+    assert settings.JWT_TOKEN_COOKIE_NAME not in response.cookies
+
+
 def test_validate_auth_token_inactive_user(inactive_user, settings,
         jwt_authenticated_client):
     jwt_authenticated_client.force_login(inactive_user)

@@ -255,9 +255,11 @@ class BasePermission(metaclass=BasePermissionMetaclass):
         self._args = list(args)
         self._kwargs = copy.deepcopy(options)
 
-        self._priority = options.get('priority', False)
-        self._affects_after = options.get('affects_after', False)
-        self._get_permissioned_obj = options.get('get_permissioned_obj', None)
+        self._priority = options.get('priority',
+            getattr(self, 'priority', False))
+        self._affects_after = options.get('affects_after',
+            getattr(self, 'affects_after', False))
+        self._get_permissioned_obj = options.get('get_permissioned_obj')
         self._get_nested_obj = options.get('get_nested_obj', None)
         self._is_view_applicable = options.get('is_view_applicable', True)
         self._is_object_applicable = options.get('is_object_applicable', True)
