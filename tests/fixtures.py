@@ -17,16 +17,30 @@ from .factories import (
     ActualTypeFactory, AttachmentFactory, ShareTokenFactory)
 
 
-def contextual_fixture(**contextuals):
+def domain_fixture(**contextuals):
+    """
+    Decorates a fixture such that the fixture uses the factory associated
+    with the domain provided to the fixture method.
+
+    Usage:
+    -----
+    >>> @domain_fixture(budget=FactoryA, template=FactoryB)
+    >>> def my_fixture():
+    >>>     pass
+
+    When using the fixture `my_fixture` in tests, the factory that will be
+    used will depend on whether or not the fixture function is called with
+    a domain value equal to `budget` or `template`.
+    """
     def decorator(func):
         @pytest.fixture
         def fixture(user):
             @allow_multiple
             def inner(*args, **kw):
-                context = kw.pop('context', 'budget')
-                assert context in ('budget', 'template'), \
-                    "Invalid context %s." % context
-                factory = contextuals[context]
+                domain = kw.pop('domain', 'budget')
+                assert domain in ('budget', 'template'), \
+                    "Invalid domain %s." % domain
+                factory = contextuals[domain]
                 if hasattr(factory._meta.model, 'created_by'):
                     kw.setdefault('created_by', user)
                 if hasattr(factory._meta.model, 'updated_by'):
@@ -41,6 +55,29 @@ def contextual_fixture(**contextuals):
 
 
 def allow_multiple(func):
+    """
+    Allows a factory fixture to create multiple instances with the same
+    keyword arguments if a `count` parameter is provided.  The keyword
+    arguments that the factory fixture is called with will be applied to all
+    instances that are created, unless the keyword parameter ends with `_array`.
+
+    In the case that the keyword parameter ends with `_array`, the parameter
+    value must be an iterable with length equal to `count`, and each of the
+    values of the array will be used sequantially when creating the instances.
+
+    Usage:
+    -----
+    >>> @allow_multiple
+    >>> def factory_fn(**kwargs):
+    >>>    return create_budget(**kwargs)
+
+    When the decorator is used in the above case, we can call the factory
+    function as `create_budget(count=3, name='Budget')`.  This will create 3
+    :obj:`Budget` instances, all with the same name; "Budget".  If we call
+    the factory function as `create_budget(count=3, name=["a", "b", "c"])`,
+    then 3 :obj:`Budget` instances will be created, with names "a", "b" and
+    "c" respectively.
+    """
     @functools.wraps(func)
     def inner(*args, **kwargs):
         count = kwargs.pop('count', None)
@@ -210,17 +247,17 @@ def create_template(user):
     return inner
 
 
-@contextual_fixture(budget=BudgetFactory, template=TemplateFactory)
-def create_context_budget():
+@domain_fixture(budget=BudgetFactory, template=TemplateFactory)
+def create_domain_budget():
     """
     A fixture that creates a :obj:`Budget` or :obj:`Template` instance using
-    associated factories determined by the `context` argument provided to the
+    associated factories determined by the `domain` argument provided to the
     fixture.
 
     Usage:
     -----
-    >>> def test_context_budget(create_context_budget):
-    >>>     budget = create_context_budget(context='budget')
+    >>> def test_context_budget(create_domain_budget):
+    >>>     budget = create_domain_budget(domain='budget')
     >>>     assert isinstance(budget, Budget)
     """
     pass
@@ -289,20 +326,20 @@ def create_template_account(user):
     return inner
 
 
-@contextual_fixture(
+@domain_fixture(
     budget=BudgetAccountFactory,
     template=TemplateAccountFactory
 )
 def create_account():
     """
     A fixture that creates a :obj:`BudgetAccount` or :obj:`TemplateAccount`
-    instance using associated factories determined by the `context` argument
+    instance using associated factories determined by the `domain` argument
     provided to the fixture.
 
     Usage:
     -----
     >>> def test_account(create_account):
-    >>>     subaccount = create_account(context='budget')
+    >>>     subaccount = create_account(domain='budget')
     >>>     assert isinstance(subaccount, BudgetAccount)
     """
     pass
@@ -369,20 +406,20 @@ def create_template_subaccount(user):
     return inner
 
 
-@contextual_fixture(
+@domain_fixture(
     budget=BudgetSubAccountFactory,
     template=TemplateSubAccountFactory
 )
 def create_subaccount():
     """
     A fixture that creates a :obj:`BudgetSubAccount` or :obj:`TemplateSubAccount`
-    instance using associated factories determined by the `context` argument
+    instance using associated factories determined by the `domain` argument
     provided to the fixture.
 
     Usage:
     -----
     >>> def test_subaccount(create_subaccount):
-    >>>     subaccount = create_subaccount(context='budget')
+    >>>     subaccount = create_subaccount(domain='budget')
     >>>     assert isinstance(subaccount, BudgetSubAccount)
     """
     pass

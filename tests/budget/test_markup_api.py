@@ -196,7 +196,7 @@ def test_create_percent_markup_invalid_child(api_client, user, models, budget_f)
             'message': (
                 'The child account with ID %s either does not exist '
                 'or does not belong to the same parent (%s with ID %s) as '
-                'the markup.' % (account.id, budget_f.context, budget.id)
+                'the markup.' % (account.id, budget_f.domain, budget.id)
             ),
             'code': 'does_not_exist',
             'error_type': 'field',

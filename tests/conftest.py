@@ -251,12 +251,12 @@ CONTEXT_BUDGETS = {
 
 
 @pytest.fixture
-def budget_factories(create_context_budget, create_account, create_subaccount):
+def budget_factories(create_domain_budget, create_account, create_subaccount):
 
     class BudgetFactories:
-        def __init__(self, context):
-            self.context = context
-            self.budget_cls = CONTEXT_BUDGETS[self.context]
+        def __init__(self, domain):
+            self.domain = domain
+            self.budget_cls = CONTEXT_BUDGETS[self.domain]
 
         @property
         def account_cls(self):
@@ -267,15 +267,15 @@ def budget_factories(create_context_budget, create_account, create_subaccount):
             return self.budget_cls.subaccount_cls
 
         def create_budget(self, *args, **kwargs):
-            kwargs.setdefault('context', self.context)
-            return create_context_budget(*args, **kwargs)
+            kwargs.setdefault('domain', self.domain)
+            return create_domain_budget(*args, **kwargs)
 
         def create_account(self, *args, **kwargs):
-            kwargs.setdefault('context', self.context)
+            kwargs.setdefault('domain', self.domain)
             return create_account(*args, **kwargs)
 
         def create_subaccount(self, *args, **kwargs):
-            kwargs.setdefault('context', self.context)
+            kwargs.setdefault('domain', self.domain)
             return create_subaccount(*args, **kwargs)
 
     def inner(param):
@@ -303,4 +303,4 @@ def budget_f(request, budget_factories):
     if request.param in marker_names:
         yield budget_factories(request.param)
     else:
-        pytest.skip("Test is not applicable for `%s` context." % request.param)
+        pytest.skip("Test is not applicable for `%s` domain." % request.param)

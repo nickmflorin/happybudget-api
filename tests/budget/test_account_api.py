@@ -21,7 +21,7 @@ def test_get_accounts(api_client, user, budget_f):
             "actual": 0.0,
             "children": [],
             "order": "n",
-            "domain": budget_f.context,
+            "domain": budget_f.domain,
         },
         {
             "id": accounts[1].pk,
@@ -35,7 +35,7 @@ def test_get_accounts(api_client, user, budget_f):
             "actual": 0.0,
             "children": [],
             "order": "t",
-            "domain": budget_f.context,
+            "domain": budget_f.domain,
         }
     ]
 
@@ -85,7 +85,7 @@ def test_get_accounts_filtered_by_id(api_client, user, budget_f):
             "actual": 0.0,
             "children": [],
             "order": "n",
-            "domain": budget_f.context,
+            "domain": budget_f.domain,
         }
     ]
 
@@ -118,14 +118,14 @@ def test_create_account(api_client, user, budget_f, models):
                 "id": account.pk,
                 "identifier": account.identifier,
                 "description": account.description,
-                "domain": budget_f.context,
+                "domain": budget_f.domain,
             }
         ],
         "order": "n",
-        "domain": budget_f.context,
+        "domain": budget_f.domain,
         "ancestors": [{
             "type": "budget",
-            "domain": budget_f.context,
+            "domain": budget_f.domain,
             "id": budget.pk,
             "name": budget.name
         }]

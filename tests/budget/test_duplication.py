@@ -70,7 +70,7 @@ def generate_data(create_fringe, create_group, create_markup, colors,
                     'unit': subaccount_units[i]
                 }
 
-                if factory.context == 'budget':
+                if factory.domain == 'budget':
                     kwargs.update(contact=contacts[i])
                 new_subaccounts.append(factory.create_subaccount(**kwargs))
 

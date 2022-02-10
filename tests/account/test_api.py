@@ -19,7 +19,7 @@ def test_get_account(api_client, user, budget_f):
         "identifier": "%s" % account.identifier,
         "description": account.description,
         "type": "account",
-        "domain": budget_f.context,
+        "domain": budget_f.domain,
         "nominal_value": 0.0,
         "accumulated_fringe_contribution": 0.0,
         "markup_contribution": 0.0,
@@ -32,27 +32,27 @@ def test_get_account(api_client, user, budget_f):
                 'identifier': account.identifier,
                 'type': 'account',
                 'description': account.description,
-                'domain': budget_f.context,
+                'domain': budget_f.domain,
             },
             {
                 'id': table_siblings[0].pk,
                 'identifier': table_siblings[0].identifier,
                 'type': 'account',
                 'description': table_siblings[0].description,
-                'domain': budget_f.context,
+                'domain': budget_f.domain,
             },
             {
                 'id': table_siblings[1].pk,
                 'identifier': table_siblings[1].identifier,
                 'type': 'account',
                 'description': table_siblings[1].description,
-                'domain': budget_f.context,
+                'domain': budget_f.domain,
             }
         ],
         "order": "n",
         "ancestors": [{
             "type": "budget",
-            "domain": budget_f.context,
+            "domain": budget_f.domain,
             "id": budget.pk,
             "name": budget.name
         }]
@@ -76,7 +76,7 @@ def test_update_account(api_client, user, budget_f):
     assert response.json()["description"] == "Account description"
     assert response.json()["ancestors"] == [{
         "type": "budget",
-        "domain": budget_f.context,
+        "domain": budget_f.domain,
         "id": budget.pk,
         "name": budget.name
     }]

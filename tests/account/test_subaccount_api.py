@@ -41,7 +41,7 @@ def test_get_account_subaccounts(api_client, user, budget_f):
             "children": [],
             "fringes": [],
             "unit": None,
-            "domain": budget_f.context,
+            "domain": budget_f.domain,
             "order": "n",
         },
         {
@@ -63,11 +63,11 @@ def test_get_account_subaccounts(api_client, user, budget_f):
             "children": [],
             "fringes": [],
             "unit": None,
-            "domain": budget_f.context,
+            "domain": budget_f.domain,
             "order": "t",
         }
     ]
-    if budget_f.context == 'budget':
+    if budget_f.domain == 'budget':
         for r in response_data:
             r.update(contact=None, attachments=[])
 
@@ -137,14 +137,14 @@ def test_create_budget_subaccount(api_client, user, budget_f, models):
                 "id": account.pk,
                 "identifier": account.identifier,
                 "description": account.description,
-                "domain": budget_f.context,
+                "domain": budget_f.domain,
             }
         ],
-        "domain": budget_f.context,
+        "domain": budget_f.domain,
         "ancestors": [
             {
                 "type": "budget",
-                "domain": budget_f.context,
+                "domain": budget_f.domain,
                 "id": budget.pk,
                 "name": budget.name
             },
@@ -153,11 +153,11 @@ def test_create_budget_subaccount(api_client, user, budget_f, models):
                 "id": account.pk,
                 "identifier": account.identifier,
                 "description": account.description,
-                "domain": budget_f.context,
+                "domain": budget_f.domain,
             }
         ]
     }
-    if budget_f.context == 'budget':
+    if budget_f.domain == 'budget':
         response_data.update(contact=None, attachments=[])
 
 

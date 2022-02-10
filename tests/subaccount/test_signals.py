@@ -107,7 +107,7 @@ def test_change_subaccount_parent_reestimates(models, budget_f):
     assert budget.nominal_value == 50.0
     assert another_account.nominal_value == 0.0
 
-    ct = models.BudgetAccount if budget_f.context == 'budget' \
+    ct = models.BudgetAccount if budget_f.domain == 'budget' \
         else models.TemplateAccount
     subaccount.content_type = ContentType.objects.get_for_model(ct)
     subaccount.object_id = another_account.pk

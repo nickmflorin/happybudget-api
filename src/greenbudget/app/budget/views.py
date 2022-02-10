@@ -450,7 +450,7 @@ class BudgetViewSet(
         base_cls = BaseBudget
         if self.action in ('pdf', 'list') or self.in_bulk_entity('actuals'):
             base_cls = Budget
-        elif self.action == 'list':
+        if self.action == 'list':
             return base_cls.objects.filter(created_by=self.request.user)
         return base_cls.objects.all()
 
