@@ -80,11 +80,7 @@ CORS_ORIGIN_REGEX_WHITELIST = (
     r'^(https?://)?([\w\.-]*?)\.greenbudget\.io:?[\d]*?$',
 )
 
-ALLOWED_HOSTS = [
-    'api.greenbudget.io',
-    '172.31.88.83',
-    'gb-lb-1485149386.us-east-2.elb.amazonaws.com',  # Load Balancer
-]
+ALLOWED_HOSTS = ['api.greenbudget.io']
 
 # We store these externally because rest_framework_simplejwt's reload settings
 # does not work properly, which means that when we override these values in

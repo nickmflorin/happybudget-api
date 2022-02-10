@@ -36,6 +36,7 @@ CSRF_TRUSTED_ORIGINS = [
 ALLOWED_HOSTS = [
     'local.greenbudget.io'
 ]
+
 # CORS Configuration
 CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_REGEX_WHITELIST = (

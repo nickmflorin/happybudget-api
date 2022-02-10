@@ -23,10 +23,7 @@ CSRF_TRUSTED_ORIGINS = [
     'https://devapi.greenbudget.io',
 ]
 
-ALLOWED_HOSTS = [
-    'devapi.greenbudget.io',
-    'gb-dev-lb-563148772.us-east-1.elb.amazonaws.com',  # Load Balancer
-]
+ALLOWED_HOSTS = ['devapi.greenbudget.io']
 
 STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 STATIC_URL = config(
