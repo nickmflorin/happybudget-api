@@ -8,7 +8,9 @@ from django.db import models
 from greenbudget.lib.utils.urls import add_query_params_to_url
 
 from greenbudget.app.authentication.exceptions import (
-    InvalidSocialProvider, InvalidSocialToken)
+    InvalidSocialProvider, InvalidSocialToken, AccountNotOnWaitlist)
+
+from .mail import user_is_on_waitlist
 
 
 logger = logging.getLogger('greenbudget')
@@ -76,9 +78,15 @@ class UserManager(UserQuerier, DjangoUserManager):
         return self.create_user(email, **kwargs)
 
     def create_user(self, email, **kwargs):
+        force = kwargs.pop('force', False)
         kwargs.setdefault('is_staff', False)
         kwargs.setdefault('is_superuser', False)
         kwargs.setdefault('is_active', True)
+
+        if settings.WAITLIST_ENABLED is True and force is not True \
+                and not user_is_on_waitlist(email):
+            raise AccountNotOnWaitlist()
+
         return self._create_user(email, **kwargs)
 
     def create_superuser(self, email, **kwargs):

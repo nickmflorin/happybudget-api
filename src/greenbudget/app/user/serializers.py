@@ -1,10 +1,6 @@
-from django.conf import settings
-
 from rest_framework import serializers, validators
 
-from greenbudget.app.authentication.exceptions import (
-    InvalidCredentialsError, AccountNotOnWaitlist)
-from greenbudget.app.user.mail import user_is_on_waitlist
+from greenbudget.app.authentication.exceptions import InvalidCredentialsError
 from greenbudget.app.authentication.utils import validate_password
 from greenbudget.app.io.fields import Base64ImageField
 
@@ -72,13 +68,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('first_name', 'last_name', 'email', 'password')
-
-    def validate(self, attrs):
-        validated_data = super().validate(attrs)
-        if settings.WAITLIST_ENABLED is True \
-                and not user_is_on_waitlist(validated_data["email"]):
-            raise AccountNotOnWaitlist()
-        return validated_data
 
 
 class SimpleUserSerializer(serializers.ModelSerializer):
