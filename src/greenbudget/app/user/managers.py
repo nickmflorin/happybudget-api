@@ -84,6 +84,8 @@ class UserManager(UserQuerier, DjangoUserManager):
         kwargs.setdefault('is_active', True)
 
         if settings.WAITLIST_ENABLED is True and force is not True \
+                and kwargs['is_staff'] is False \
+                and kwargs['is_superuser'] is False \
                 and not user_is_on_waitlist(email):
             raise AccountNotOnWaitlist()
 
