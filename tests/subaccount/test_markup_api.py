@@ -233,20 +233,7 @@ def test_create_subaccount_percent_markup_invalid_child(api_client, user,
             'unit': models.Markup.UNITS.percent,
         })
     assert response.status_code == 400
-    assert response.json() == {
-        'errors': [{
-            'message': (
-                'The child %s sub account with ID %s either does not exist '
-                'or does not belong to the same parent (%s sub account '
-                'with ID %s) as the markup.' % (
-                    budget_f.domain, child_sub_account.id, budget_f.domain,
-                    subaccount.id)
-            ),
-            'code': 'does_not_exist',
-            'error_type': 'field',
-            'field': 'children'
-        }]
-    }
+    assert response.json()['errors'][0]['code'] == 'does_not_exist_in_table'
 
 
 @pytest.mark.parametrize('data', [

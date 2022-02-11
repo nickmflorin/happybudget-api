@@ -23,13 +23,6 @@ class RowModelMixin(models.Model):
         on_delete=models.CASCADE,
         editable=False
     )
-    order = models.CharField(
-        editable=False,
-        max_length=1024,
-        blank=False,
-        null=False,
-        default=None
-    )
 
     class Meta:
         abstract = True
@@ -130,11 +123,24 @@ class RowModelMixin(models.Model):
         same table-key(s).
         """
         query = cls.get_table_filter(*args, **kwargs)
-        return cls.objects.filter(query).order_with_groups()
+        return cls.objects.filter(query)
 
     @property
     def table(self):
         return self.get_table(self)
+
+
+class OrderedRowModelMixin(RowModelMixin):
+    order = models.CharField(
+        editable=False,
+        max_length=1024,
+        blank=False,
+        null=False,
+        default=None
+    )
+
+    class Meta:
+        abstract = True
 
     def order_at_bottom(self):
         try:
@@ -149,12 +155,27 @@ class RowModelMixin(models.Model):
     def validate_before_save(self):
         validate_order(self.order)
 
+    @classmethod
+    def get_table(cls, *args, **kwargs):
+        return super(OrderedRowModelMixin, cls) \
+            .get_table(*args, **kwargs).order_with_groups()
+
 
 class RowModel(RowModelMixin):
     class Meta:
         abstract = True
 
 
+class OrderedRowModel(OrderedRowModelMixin):
+    class Meta:
+        abstract = True
+
+
 class RowPolymorphicModel(PolymorphicModel, RowModelMixin):
+    class Meta:
+        abstract = True
+
+
+class OrderedRowPolymorphicModel(PolymorphicModel, OrderedRowModelMixin):
     class Meta:
         abstract = True

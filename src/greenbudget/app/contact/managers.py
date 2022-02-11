@@ -1,10 +1,10 @@
 from greenbudget.app import signals
-from greenbudget.app.tabling.managers import RowManager
+from greenbudget.app.tabling.managers import OrderedRowManager
 
 from .cache import user_contacts_cache
 
 
-class ContactManager(RowManager):
+class ContactManager(OrderedRowManager):
     @signals.disable()
     def bulk_delete(self, instances):
         for obj in instances:

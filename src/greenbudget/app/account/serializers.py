@@ -1,11 +1,11 @@
+from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers
 
 from greenbudget.app.budgeting.serializers import EntityAncestorSerializer
-from greenbudget.app.group.models import Group
+from greenbudget.app.group.fields import GroupField
 from greenbudget.app.group.serializers import GroupSerializer
 from greenbudget.app.markup.serializers import MarkupSerializer
 from greenbudget.app.subaccount.serializers import SubAccountPdfSerializer
-from greenbudget.app.tabling.fields import TableChildrenPrimaryKeyRelatedField
 from greenbudget.app.tabling.serializers import row_order_serializer
 
 from .models import Account, BudgetAccount, TemplateAccount
@@ -40,11 +40,14 @@ class AccountSerializer(AccountSimpleSerializer):
     accumulated_markup_contribution = serializers.FloatField(read_only=True)
     actual = serializers.FloatField(read_only=True)
     children = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
-    group = TableChildrenPrimaryKeyRelatedField(
-        obj_name='Group',
+    group = GroupField(
+        table_filter=lambda ctx: {
+            'object_id': ctx.parent.id,
+            'content_type_id': ContentType.objects.get_for_model(
+                type(ctx.parent)).id,
+        },
         required=False,
         allow_null=True,
-        child_instance_cls=Group,
         write_only=True,
     )
     order = serializers.CharField(read_only=True)

@@ -8,7 +8,8 @@ from greenbudget.lib.utils import ensure_iterable, empty
 from greenbudget.lib.django_utils.models import (
     import_model_at_path, get_value_from_model_map)
 
-from greenbudget.app.tabling.models import RowModel, RowPolymorphicModel
+from greenbudget.app.tabling.models import (
+    RowModel, OrderedRowModel, OrderedRowPolymorphicModel)
 
 
 class BudgetTree:
@@ -149,7 +150,7 @@ class BudgetingRowModel(RowModel, BudgetingModelMixin):
         abstract = True
 
 
-class BudgetingTreeModel(RowModel, BudgetingTreeModelMixin):
+class BudgetingOrderedRowModel(OrderedRowModel, BudgetingModelMixin):
     class Meta:
         abstract = True
 
@@ -159,7 +160,7 @@ class BudgetingTreePolymorphicModel(PolymorphicModel, BudgetingTreeModelMixin):
         abstract = True
 
 
-class BudgetingTreePolymorphicRowModel(
-        RowPolymorphicModel, BudgetingTreeModelMixin):
+class BudgetingTreePolymorphicOrderedRowModel(
+        OrderedRowPolymorphicModel, BudgetingTreeModelMixin):
     class Meta:
         abstract = True

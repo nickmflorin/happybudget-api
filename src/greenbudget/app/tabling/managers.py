@@ -2,7 +2,9 @@ import collections
 from django.db import models, transaction
 from polymorphic.models import PolymorphicManager
 
-from .query import RowQuerySet, RowPolymorphicQuerySet, RowQuerier
+from .query import (
+    RowQuerySet, RowPolymorphicQuerySet, RowQuerier, OrderedRowQuerier,
+    OrderedRowQuerySet, OrderedRowPolymorphicQuerySet)
 from .utils import order_after
 
 
@@ -10,6 +12,8 @@ class RowManagerMixin(RowQuerier):
     def get_queryset(self):
         return self.queryset_class(self.model)
 
+
+class OrderedRowManagerMixin(OrderedRowQuerier, RowManagerMixin):
     @transaction.atomic
     def bulk_create(self, instances, **kwargs):
         # We must lock the rows of the model table that correspond to the
@@ -66,5 +70,13 @@ class RowManager(RowManagerMixin, models.Manager):
     queryset_class = RowQuerySet
 
 
+class OrderedRowManager(OrderedRowManagerMixin, models.Manager):
+    queryset_class = OrderedRowQuerySet
+
+
 class RowPolymorphicManager(RowManagerMixin, PolymorphicManager):
     queryset_class = RowPolymorphicQuerySet
+
+
+class OrderedRowPolymorphicManager(OrderedRowManagerMixin, PolymorphicManager):
+    queryset_class = OrderedRowPolymorphicQuerySet

@@ -7,9 +7,11 @@ from greenbudget.lib.utils import concat, ensure_iterable
 
 from greenbudget.app import signals
 from greenbudget.app.budget.cache import budget_actuals_owners_cache
-from greenbudget.app.budgeting.managers import BudgetingPolymorphicRowManager
+from greenbudget.app.budgeting.managers import (
+    BudgetingPolymorphicOrderedRowManager)
 from greenbudget.app.budgeting.models import BudgetTree
-from greenbudget.app.tabling.query import RowQuerier, RowPolymorphicQuerySet
+from greenbudget.app.tabling.query import (
+    OrderedRowQuerier, OrderedRowPolymorphicQuerySet)
 
 from .cache import (
     subaccount_instance_cache,
@@ -19,7 +21,7 @@ from .cache import (
 )
 
 
-class SubAccountQuerier(RowQuerier):
+class SubAccountQuerier(OrderedRowQuerier):
 
     def filter_by_parent(self, parent):
         return self.filter(
@@ -78,11 +80,13 @@ class SubAccountQuerier(RowQuerier):
         return query
 
 
-class SubAccountQuerySet(SubAccountQuerier, RowPolymorphicQuerySet):
+class SubAccountQuerySet(
+        SubAccountQuerier, OrderedRowPolymorphicQuerySet):
     pass
 
 
-class SubAccountManager(SubAccountQuerier, BudgetingPolymorphicRowManager):
+class SubAccountManager(
+        SubAccountQuerier, BudgetingPolymorphicOrderedRowManager):
     queryset_class = SubAccountQuerySet
 
     def bulk_update(self, instances, fields, **kwargs):

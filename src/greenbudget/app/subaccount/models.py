@@ -10,7 +10,8 @@ from django.utils.functional import cached_property
 from greenbudget.app import signals
 from greenbudget.app.actual.models import Actual
 from greenbudget.app.budgeting.models import (
-    BudgetingTreePolymorphicRowModel, AssociatedModel, children_method_handler)
+    BudgetingTreePolymorphicOrderedRowModel, AssociatedModel,
+    children_method_handler)
 from greenbudget.app.fringe.utils import contribution_from_fringes
 from greenbudget.app.group.models import Group
 from greenbudget.app.markup.models import Markup
@@ -59,7 +60,7 @@ ESTIMATED_FIELDS = (
 CALCULATED_FIELDS = ESTIMATED_FIELDS + ('actual', )
 
 
-class SubAccount(BudgetingTreePolymorphicRowModel):
+class SubAccount(BudgetingTreePolymorphicOrderedRowModel):
     identifier = models.CharField(null=True, max_length=128, blank=True)
     description = models.CharField(null=True, max_length=128, blank=True)
     quantity = models.FloatField(null=True, blank=True)

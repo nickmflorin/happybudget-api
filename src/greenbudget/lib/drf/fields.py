@@ -6,13 +6,12 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
 
-def find_field_original_serializer(field):
+def find_parent_base_serializer(field):
     parent = field.parent
-    while parent is not None:
-        new_parent = parent.parent
-        if new_parent is None:
-            break
-        parent = new_parent
+    while not isinstance(parent, serializers.Serializer) and parent is not None:
+        parent = getattr(parent, 'parent')
+    if parent is None:
+        raise Exception("Could not determine base serializer for field!")
     return parent
 
 

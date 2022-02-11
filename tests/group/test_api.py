@@ -140,7 +140,7 @@ def test_update_subaccount_group_child_not_same_parent(api_client, budget_f,
         'children': [subaccount.pk],
     })
     assert response.status_code == 400
-    assert response.json()['errors'][0]['code'] == 'does_not_exist'
+    assert response.json()['errors'][0]['code'] == 'does_not_exist_in_table'
 
 
 def test_account_group_account_already_in_group(api_client, user, budget_df,

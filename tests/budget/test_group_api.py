@@ -1,4 +1,4 @@
-def test_get_account_groups(api_client, user, create_group, budget_f):
+def test_get_budget_groups(api_client, user, create_group, budget_f):
     budget = budget_f.create_budget()
     group = create_group(parent=budget)
     account = budget_f.create_account(parent=budget, group=group)
@@ -15,7 +15,7 @@ def test_get_account_groups(api_client, user, create_group, budget_f):
     }]
 
 
-def test_create_account_group(api_client, user, models, budget_f):
+def test_create_budget_group(api_client, user, models, budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
 
@@ -45,7 +45,7 @@ def test_create_account_group(api_client, user, models, budget_f):
     }
 
 
-def test_create_account_group_invalid_child(api_client, user, budget_f):
+def test_create_budget_group_invalid_child(api_client, user, budget_f):
     budget = budget_f.create_budget()
     another_budget = budget_f.create_budget()
     # We are trying to create the grouping under `budget` but including

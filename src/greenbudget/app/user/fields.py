@@ -1,7 +1,7 @@
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
-from greenbudget.lib.drf.fields import find_field_original_serializer
+from greenbudget.lib.drf.fields import find_parent_base_serializer
 
 
 class EmailField(serializers.EmailField):
@@ -34,12 +34,10 @@ class UserFilteredQuerysetPKField(serializers.PrimaryKeyRelatedField):
         self._user_field = kwargs.pop('user_field', 'created_by')
         super().__init__(*args, **kwargs)
 
-    def get_queryset(self, budget=None):
+    def get_queryset(self):
         qs = super().get_queryset()
 
-        original_serializer = find_field_original_serializer(self)
-        if original_serializer is None:
-            raise Exception("Invalid use of %s." % self.__class__.__name__)
+        original_serializer = find_parent_base_serializer(self)
 
         if self._user_getter is not None:
             user = self._user_getter(original_serializer)

@@ -4,12 +4,12 @@ from greenbudget.app import signals
 from greenbudget.app.account.cache import account_instance_cache
 from greenbudget.app.budget.cache import (
     budget_instance_cache, budget_actuals_cache, budget_children_cache)
-from greenbudget.app.budgeting.managers import BudgetingRowManager
+from greenbudget.app.budgeting.managers import BudgetingOrderedRowManager
 from greenbudget.app.subaccount.cache import (
     subaccount_instance_cache, invalidate_parent_children_cache)
 
 
-class ActualManager(BudgetingRowManager):
+class ActualManager(BudgetingOrderedRowManager):
     @signals.disable()
     def bulk_delete(self, instances):
         budgets = set([obj.budget for obj in instances])

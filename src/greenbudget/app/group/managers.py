@@ -1,11 +1,11 @@
 from django.contrib.contenttypes.models import ContentType
-from django.db import models
 
-from greenbudget.lib.django_utils.query import PrePKBulkCreateQuerySet
 from greenbudget.app.budgeting.query import BudgetAncestorQuerier
+from greenbudget.app.tabling.managers import RowManager
+from greenbudget.app.tabling.query import RowQuerier, RowQuerySet
 
 
-class GroupQuerier(BudgetAncestorQuerier):
+class GroupQuerier(RowQuerier, BudgetAncestorQuerier):
     def for_budgets(self):
         from greenbudget.app.account.models import BudgetAccount
         from greenbudget.app.budget.models import Budget
@@ -27,15 +27,12 @@ class GroupQuerier(BudgetAncestorQuerier):
         return self.filter(content_type__id__in=ctype_ids)
 
 
-class GroupQuery(GroupQuerier, PrePKBulkCreateQuerySet):
+class GroupQuerySet(RowQuerySet, GroupQuerier):
     pass
 
 
-class GroupManager(GroupQuerier, models.Manager):
-    queryset_class = GroupQuery
-
-    def get_queryset(self):
-        return self.queryset_class(self.model)
+class GroupManager(GroupQuerier, RowManager):
+    queryset_class = GroupQuerySet
 
 
 class BudgetGroupManager(GroupManager):

@@ -1,7 +1,8 @@
 import datetime
 from datetime import timezone
 
-from greenbudget.app.budgeting.managers import BudgetingPolymorphicRowManager
+from greenbudget.app.budgeting.managers import (
+    BudgetingPolymorphicOrderedRowManager)
 
 
 def test_unit_properly_serializes(api_client, user, budget_f,
@@ -878,7 +879,7 @@ def test_bulk_update_subaccount_subaccounts_budget_updated_once(api_client,
 
     calls = []
     monkeypatch.setattr(
-        BudgetingPolymorphicRowManager,
+        BudgetingPolymorphicOrderedRowManager,
         'mark_budgets_updated',
         lambda obj, instances: calls.append(None)
     )

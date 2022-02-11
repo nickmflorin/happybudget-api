@@ -5,7 +5,7 @@ from django.db import models
 from greenbudget.lib.utils import conditionally_separate_strings
 
 from greenbudget.app.io.utils import upload_user_image_to
-from greenbudget.app.tabling.models import RowModel
+from greenbudget.app.tabling.models import OrderedRowModel
 
 from .managers import ContactManager
 
@@ -18,7 +18,7 @@ def upload_to(instance, filename):
     )
 
 
-class Contact(RowModel):
+class Contact(OrderedRowModel):
     first_name = models.CharField(max_length=30, null=True)
     last_name = models.CharField(max_length=30, null=True)
     TYPES = Choices(

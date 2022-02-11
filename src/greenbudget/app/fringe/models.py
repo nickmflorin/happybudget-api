@@ -3,13 +3,13 @@ from model_utils import Choices
 from django.db import models
 
 from greenbudget.app import signals
-from greenbudget.app.budgeting.models import BudgetingRowModel
+from greenbudget.app.budgeting.models import BudgetingOrderedRowModel
 
 from .managers import FringeManager, BudgetFringeManager, TemplateFringeManager
 
 
 @signals.model(user_field='updated_by')
-class Fringe(BudgetingRowModel):
+class Fringe(BudgetingOrderedRowModel):
     name = models.CharField(max_length=128, null=True)
     description = models.CharField(null=True, max_length=128)
     cutoff = models.FloatField(null=True)

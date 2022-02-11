@@ -90,17 +90,23 @@ def test_get_accounts_filtered_by_id(api_client, user, budget_f):
     ]
 
 
-def test_create_account(api_client, user, budget_f, models):
+def test_create_account(api_client, user, budget_f, models, create_group):
     budget = budget_f.create_budget()
+    # Make sure that we can create the Account with a Group.  To do this, the
+    # Group must not be empty.
+    group = create_group(parent=budget)
+    budget_f.create_account(group=group, parent=budget)
+
     api_client.force_login(user)
     response = api_client.post(
         "/v1/budgets/%s/children/" % budget.pk,
-        data={'identifier': 'new_account'}
+        data={'identifier': 'new_account', 'group': group.pk}
     )
     assert response.status_code == 201
 
-    account = models.Account.objects.first()
-    assert account is not None
+    accounts = models.Account.objects.all()
+    assert len(accounts) == 2
+    account = accounts[1]
     assert response.json() == {
         "id": account.pk,
         "identifier": 'new_account',
@@ -115,13 +121,20 @@ def test_create_account(api_client, user, budget_f, models):
         "table": [
             {
                 "type": "account",
-                "id": account.pk,
-                "identifier": account.identifier,
-                "description": account.description,
+                "id": accounts[0].pk,
+                "identifier": accounts[0].identifier,
+                "description": accounts[0].description,
+                "domain": budget_f.domain,
+            },
+            {
+                "type": "account",
+                "id": accounts[1].pk,
+                "identifier": accounts[1].identifier,
+                "description": accounts[1].description,
                 "domain": budget_f.domain,
             }
         ],
-        "order": "n",
+        "order": "t",
         "domain": budget_f.domain,
         "ancestors": [{
             "type": "budget",
@@ -132,9 +145,44 @@ def test_create_account(api_client, user, budget_f, models):
     }
 
 
-def test_bulk_update_accounts(api_client, user, budget_f, create_group):
+def test_create_account_group_not_in_table(api_client, user, budget_f,
+        create_group):
+    budget = budget_f.create_budget()
+    another_budget = budget_f.create_budget()
+
+    # The group must not be empty.
+    group = create_group(parent=another_budget)
+    budget_f.create_account(group=group, parent=another_budget)
+
+    api_client.force_login(user)
+    response = api_client.post(
+        "/v1/budgets/%s/children/" % budget.pk,
+        data={'identifier': 'new_account', 'group': group.pk}
+    )
+    assert response.status_code == 400
+    assert response.json()['errors'][0]['code'] == 'does_not_exist_in_table'
+
+
+def test_create_account_group_empty(api_client, user, budget_f,
+        create_group):
     budget = budget_f.create_budget()
     group = create_group(parent=budget)
+    api_client.force_login(user)
+    response = api_client.post(
+        "/v1/budgets/%s/children/" % budget.pk,
+        data={'identifier': 'new_account', 'group': group.pk}
+    )
+    assert response.status_code == 400
+    assert response.json()['errors'][0]['code'] == 'is_empty'
+
+
+def test_bulk_update_accounts(api_client, user, budget_f, create_group):
+    budget = budget_f.create_budget()
+
+    # The group must not be empty.
+    group = create_group(parent=budget)
+    budget_f.create_account(group=group, parent=budget)
+
     accounts = budget_f.create_account(parent=budget, count=2)
     api_client.force_login(user)
     response = api_client.patch(

@@ -7,13 +7,14 @@ from greenbudget.app.account.cache import (
     account_instance_cache, account_children_cache)
 from greenbudget.app.budget.cache import (
     budget_fringes_cache, budget_instance_cache)
-from greenbudget.app.budgeting.managers import BudgetingRowManager
+from greenbudget.app.budgeting.managers import BudgetingOrderedRowManager
 from greenbudget.app.subaccount.cache import (
     subaccount_instance_cache, subaccount_children_cache)
-from greenbudget.app.tabling.query import RowQuerier, RowQuerySet
+from greenbudget.app.tabling.query import (
+    OrderedRowQuerier, OrderedRowQuerySet)
 
 
-class FringeQuerier(RowQuerier):
+class FringeQuerier(OrderedRowQuerier):
 
     def for_budgets(self):
         ctype_id = ContentType.objects.get_for_model(self.model.budget_cls).id
@@ -25,11 +26,11 @@ class FringeQuerier(RowQuerier):
         return self.filter(budget__polymorphic_ctype_id=ctype_id)
 
 
-class FringeQuerySet(FringeQuerier, RowQuerySet):
+class FringeQuerySet(FringeQuerier, OrderedRowQuerySet):
     pass
 
 
-class FringeManager(FringeQuerier, BudgetingRowManager):
+class FringeManager(FringeQuerier, BudgetingOrderedRowManager):
     queryset_class = FringeQuerySet
 
     @signals.disable()

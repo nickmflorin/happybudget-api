@@ -6,7 +6,8 @@ from django.db import models, IntegrityError
 
 from greenbudget.app import signals
 from greenbudget.app.budgeting.models import (
-    BudgetingTreePolymorphicRowModel, AssociatedModel, children_method_handler)
+    BudgetingTreePolymorphicOrderedRowModel, AssociatedModel,
+    children_method_handler)
 from greenbudget.app.group.models import Group
 from greenbudget.app.markup.models import Markup
 from greenbudget.app.markup.utils import contribution_from_markups
@@ -28,7 +29,7 @@ ESTIMATED_FIELDS = (
 CALCULATED_FIELDS = ESTIMATED_FIELDS + ('actual', )
 
 
-class Account(BudgetingTreePolymorphicRowModel):
+class Account(BudgetingTreePolymorphicOrderedRowModel):
     identifier = models.CharField(null=True, max_length=128, blank=True)
     description = models.CharField(null=True, max_length=128, blank=True)
     parent = models.ForeignKey(

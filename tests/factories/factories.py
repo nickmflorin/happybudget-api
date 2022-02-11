@@ -80,7 +80,6 @@ class TagFactory(CustomModelFactory):
     A DjangoModelFactory to create instances of :obj:`User`.
     """
     order = factory.Sequence(lambda n: n + 1)
-    title = factory.Faker('first_name')
 
     class Meta:
         abstract = True

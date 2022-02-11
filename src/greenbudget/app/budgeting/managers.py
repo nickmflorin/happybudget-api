@@ -13,8 +13,10 @@ from greenbudget.lib.django_utils.query import (
 )
 
 from greenbudget.app import signals
-from greenbudget.app.tabling.managers import RowManagerMixin
-from greenbudget.app.tabling.query import RowPolymorphicQuerySet, RowQuerySet
+from greenbudget.app.tabling.managers import (
+    OrderedRowManagerMixin, RowManagerMixin)
+from greenbudget.app.tabling.query import (
+    OrderedRowPolymorphicQuerySet, OrderedRowQuerySet, RowQuerySet)
 
 from .cache import invalidate_groups_cache
 from .models import BudgetTree
@@ -448,6 +450,10 @@ class BudgetingRowManager(
                     tzinfo=datetime.timezone.utc))
 
 
+class BudgetingOrderedRowManager(OrderedRowManagerMixin, BudgetingRowManager):
+    queryset_class = OrderedRowQuerySet
+
+
 class BudgetingPolymorphicManager(BudgetingManagerMixin, PolymorphicManager):
     queryset_class = BulkCreatePolymorphicQuerySet
 
@@ -455,6 +461,6 @@ class BudgetingPolymorphicManager(BudgetingManagerMixin, PolymorphicManager):
         return self.queryset_class(self.model)
 
 
-class BudgetingPolymorphicRowManager(
-        BudgetingRowManager, PolymorphicManager):
-    queryset_class = RowPolymorphicQuerySet
+class BudgetingPolymorphicOrderedRowManager(
+        BudgetingOrderedRowManager, PolymorphicManager):
+    queryset_class = OrderedRowPolymorphicQuerySet

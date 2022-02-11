@@ -4,26 +4,14 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
+from greenbudget.app.tabling.models import RowModel
+
 from .managers import GroupManager, BudgetGroupManager, TemplateGroupManager
 
 
 @signals.model()
-class Group(models.Model):
+class Group(RowModel):
     type = "group"
-    created_at = models.DateTimeField(auto_now_add=True)
-    created_by = models.ForeignKey(
-        to='user.User',
-        related_name='created_groups',
-        on_delete=models.CASCADE,
-        editable=False
-    )
-    updated_at = models.DateTimeField(auto_now=True)
-    updated_by = models.ForeignKey(
-        to='user.User',
-        related_name='updated_groups',
-        on_delete=models.CASCADE,
-        editable=False
-    )
     name = models.CharField(max_length=128)
     color = models.ForeignKey(
         to='tagging.Color',
@@ -45,6 +33,7 @@ class Group(models.Model):
     parent = GenericForeignKey('content_type', 'object_id')
 
     objects = GroupManager()
+    table_pivot = ('object_id', 'content_type_id')
 
     class Meta:
         get_latest_by = "created_at"

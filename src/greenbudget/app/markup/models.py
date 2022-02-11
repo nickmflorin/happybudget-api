@@ -9,7 +9,7 @@ from django.contrib.contenttypes.models import ContentType
 
 from greenbudget.app import signals
 from greenbudget.app.actual.models import Actual
-from greenbudget.app.budgeting.models import BudgetingModel
+from greenbudget.app.budgeting.models import BudgetingRowModel
 
 from .managers import MarkupManager
 
@@ -18,7 +18,7 @@ logger = logging.getLogger('greenbudget')
 
 
 @signals.model(user_field='updated_by')
-class Markup(BudgetingModel):
+class Markup(BudgetingRowModel):
     type = "markup"
     identifier = models.CharField(null=True, max_length=128)
     description = models.CharField(null=True, max_length=128)
@@ -28,20 +28,6 @@ class Markup(BudgetingModel):
     )
     unit = models.IntegerField(choices=UNITS, default=UNITS.percent, null=False)
     rate = models.FloatField(null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    created_by = models.ForeignKey(
-        to='user.User',
-        related_name='created_markups',
-        on_delete=models.CASCADE,
-        editable=False
-    )
-    updated_at = models.DateTimeField(auto_now=True)
-    updated_by = models.ForeignKey(
-        to='user.User',
-        related_name='updated_markups',
-        on_delete=models.CASCADE,
-        editable=False
-    )
     content_type = models.ForeignKey(
         to=ContentType,
         on_delete=models.CASCADE,
@@ -54,6 +40,7 @@ class Markup(BudgetingModel):
 
     actuals = GenericRelation(Actual)
     objects = MarkupManager()
+    table_pivot = ('object_id', 'parent_id')
 
     class Meta:
         get_latest_by = "updated_at"

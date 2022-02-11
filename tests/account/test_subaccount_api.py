@@ -96,17 +96,28 @@ def test_get_account_subaccounts_ordered_by_group(api_client, user, budget_f,
     assert [obj['id'] for obj in response.json()['data']] == [1, 4, 3, 5, 2]
 
 
-def test_create_budget_subaccount(api_client, user, budget_f, models):
+def test_create_budget_subaccount(api_client, user, budget_f, models,
+        create_group):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
+
+    # Make sure that we can create the SubAccount with a Group.  To do this, the
+    # Group must not be empty.
+    group = create_group(parent=account)
+    budget_f.create_subaccount(group=group, parent=account)
+
     api_client.force_login(user)
     response = api_client.post(
         "/v1/accounts/%s/children/" % account.pk, data={
             'identifier': '100',
-            'description': 'Test'
+            'description': 'Test',
+            'group': group.pk
         })
     assert response.status_code == 201
-    subaccount = models.SubAccount.objects.first()
+    subaccounts = models.SubAccount.objects.all()
+    assert len(subaccounts) == 2
+    subaccount = subaccounts[1]
+
     assert subaccount is not None
     assert subaccount.description == "Test"
     assert subaccount.identifier == "100"
@@ -130,13 +141,20 @@ def test_create_budget_subaccount(api_client, user, budget_f, models):
         "actual": 0.0,
         "children": [],
         "fringes": [],
-        "order": "n",
+        "order": "t",
         "table": [
             {
-                "type": "account",
-                "id": account.pk,
-                "identifier": account.identifier,
-                "description": account.description,
+                "type": "subaccount",
+                "id": subaccounts[0].pk,
+                "identifier": subaccounts[0].identifier,
+                "description": subaccounts[0].description,
+                "domain": budget_f.domain,
+            },
+            {
+                "type": "subaccount",
+                "id": subaccounts[1].pk,
+                "identifier": subaccounts[1].identifier,
+                "description": subaccounts[1].description,
                 "domain": budget_f.domain,
             }
         ],
@@ -159,6 +177,40 @@ def test_create_budget_subaccount(api_client, user, budget_f, models):
     }
     if budget_f.domain == 'budget':
         response_data.update(contact=None, attachments=[])
+    assert response.json() == response_data
+
+
+def test_create_subaccount_group_not_in_table(api_client, user, budget_f,
+        create_group):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    another_account = budget_f.create_account(parent=budget)
+
+    # The group must not be empty.
+    group = create_group(parent=another_account)
+    budget_f.create_subaccount(group=group, parent=another_account)
+
+    api_client.force_login(user)
+    response = api_client.post(
+        "/v1/accounts/%s/children/" % account.pk,
+        data={'identifier': 'new_subaccount', 'group': group.pk}
+    )
+    assert response.status_code == 400
+    assert response.json()['errors'][0]['code'] == 'does_not_exist_in_table'
+
+
+def test_create_subaccount_group_empty(api_client, user, budget_f,
+        create_group):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    group = create_group(parent=account)
+    api_client.force_login(user)
+    response = api_client.post(
+        "/v1/accounts/%s/children/" % account.pk,
+        data={'identifier': 'new_subaccount', 'group': group.pk}
+    )
+    assert response.status_code == 400
+    assert response.json()['errors'][0]['code'] == 'is_empty'
 
 
 def test_get_community_template_account_subaccounts(api_client, user,

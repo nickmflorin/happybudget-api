@@ -1,12 +1,28 @@
+from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers
 
 from greenbudget.lib.drf.exceptions import InvalidFieldError
 from greenbudget.lib.drf.fields import ModelChoiceField
 
+from greenbudget.app.budget.models import BaseBudget
 from greenbudget.app.budgeting.serializers import BudgetParentContextSerializer
-from greenbudget.app.tabling.fields import TableChildrenPrimaryKeyRelatedField
+from greenbudget.app.tabling.fields import TablePrimaryKeyRelatedField
 
 from .models import Markup
+
+
+def markup_table_filter(ctx):
+    # If the Group contains Account(s), then it's parent is a Budget and the
+    # table is indexed by the parent ID.  If the Group contains SubAccount(s),
+    # then it's parent is an Account and the table is indexed by the generic
+    # object_id and content_type_id.
+    if isinstance(ctx.parent, BaseBudget):
+        return {'parent_id': ctx.parent.id}
+    return {
+        'object_id': ctx.parent.id,
+        'content_type_id': ContentType.objects.get_for_model(
+            type(ctx.parent)).id,
+    }
 
 
 class MarkupSimpleSerializer(serializers.ModelSerializer):
@@ -52,11 +68,11 @@ class MarkupSerializer(BudgetParentContextSerializer):
         choices=Markup.UNITS,
         allow_null=False,
     )
-    children = TableChildrenPrimaryKeyRelatedField(
-        obj_name='Markup',
+    children = TablePrimaryKeyRelatedField(
+        table_filter=markup_table_filter,
         many=True,
-        required=False,
-        child_instance_cls=lambda parent: parent.child_instance_cls,
+        required=True,
+        table_instance_cls=lambda c: c.parent.child_instance_cls,
     )
 
     class Meta:

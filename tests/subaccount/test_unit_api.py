@@ -1,14 +1,19 @@
+import pytest
 from django.test import override_settings
 import mock
 
 from greenbudget.app.subaccount.views import SubAccountUnitViewSet
 
 
-def test_unit_properly_serializes(api_client, user, create_subaccount_unit):
-    units = [
-        create_subaccount_unit(),
-        create_subaccount_unit()
+@pytest.fixture
+def units(create_subaccount_unit):
+    return [
+        create_subaccount_unit(title='Days'),
+        create_subaccount_unit(title='Weeks')
     ]
+
+
+def test_unit_properly_serializes(api_client, user, units):
     api_client.force_login(user)
     response = api_client.get("/v1/subaccounts/units/")
     assert response.status_code == 200
@@ -32,10 +37,7 @@ def test_unit_properly_serializes(api_client, user, create_subaccount_unit):
 
 
 @override_settings(CACHE_ENABLED=True)
-def test_units_cached(api_client, user, create_subaccount_unit):
-    create_subaccount_unit()
-    create_subaccount_unit()
-
+def test_units_cached(api_client, user, units):
     api_client.force_login(user)
     response = api_client.get("/v1/subaccounts/units/")
     assert response.status_code == 200
@@ -49,10 +51,8 @@ def test_units_cached(api_client, user, create_subaccount_unit):
 
 
 @override_settings(CACHE_ENABLED=True)
-def test_cache_invalidated_on_save(api_client, user, create_subaccount_unit):
-    create_subaccount_unit()
-    create_subaccount_unit()
-
+def test_cache_invalidated_on_save(api_client, user, create_subaccount_unit,
+        units):
     api_client.force_login(user)
     response = api_client.get("/v1/subaccounts/units/")
     assert response.status_code == 200
@@ -67,11 +67,7 @@ def test_cache_invalidated_on_save(api_client, user, create_subaccount_unit):
 
 
 @override_settings(CACHE_ENABLED=True)
-def test_cache_invalidated_on_delete(api_client, user, create_subaccount_unit):
-    units = [
-        create_subaccount_unit(),
-        create_subaccount_unit()
-    ]
+def test_cache_invalidated_on_delete(api_client, user, units):
     api_client.force_login(user)
     response = api_client.get("/v1/subaccounts/units/")
     assert response.status_code == 200

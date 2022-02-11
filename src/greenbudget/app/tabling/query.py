@@ -14,6 +14,86 @@ ModelsAndGroup = collections.namedtuple("ModelsAndGroup", ["models", "group"])
 
 
 class RowQuerier:
+    def get_all_in_tables(self, table_keys):
+        """
+        Returns a queryset that filters for the model instances belonging to
+        all of the tables determined by the set of table keys provided.
+        """
+        table_keys = ensure_iterable(table_keys)
+        assert len(table_keys), "At least 1 table key must be provided."
+        qs_filter = self.model.get_table_filter(table_key=table_keys[0])
+        for table_key in table_keys[1:]:
+            qs_filter = qs_filter | self.model.get_table_filter(
+                table_key=table_key)
+        return self.filter(qs_filter)
+
+    def get_latest_in_table(self, *args, **kwargs):
+        return self.model.get_table(*args, **kwargs).latest()
+
+    @classmethod
+    def get_distinct_table_filters(cls, qs):
+        assert isinstance(qs, (list, tuple, models.QuerySet)), \
+            "Invalid queryset/iterable provided.  Must be an iterable or an " \
+            "instance of `models.QuerySet`."
+        if isinstance(qs, models.QuerySet):
+            fk_pivots = ensure_iterable(cls.model.table_pivot)
+            fk_pivots = tuple(fk_pivots)
+            return [
+                cls.model.get_table_filter(obj)
+                for obj in qs.order_by(*tuple(fk_pivots))
+                .distinct(*tuple(fk_pivots))
+            ]
+        return list(set([obj.table_filter for obj in qs]))
+
+    @classmethod
+    def get_distinct_table_keys(cls, qs):
+        assert isinstance(qs, (list, tuple, models.QuerySet)), \
+            "Invalid queryset/iterable provided.  Must be an iterable or an " \
+            "instance of `models.QuerySet`."
+        if isinstance(qs, models.QuerySet):
+            fk_pivots = ensure_iterable(cls.model.table_pivot)
+            fk_pivots = tuple(fk_pivots)
+            return [
+                cls.model.get_table_key(obj)
+                for obj in qs.order_by(*tuple(fk_pivots))
+                .distinct(*tuple(fk_pivots))
+            ]
+        return list(set([obj.table_key for obj in qs]))
+
+    @classmethod
+    def get_all_in_same_table(cls, qs):
+        assert isinstance(qs, (list, tuple, models.QuerySet)), \
+            "Invalid queryset/iterable provided.  Must be an iterable or an " \
+            "instance of `models.QuerySet`."
+        assert not (
+            (isinstance(qs, models.QuerySet) and qs.count() == 0)
+            or (isinstance(qs, (tuple, list)) and len(qs) == 0)), \
+            "Queryset, tuple or list must be non-empty."
+        return len(cls.get_distinct_table_keys(qs)) == 1
+
+    def all_in_same_table(self):
+        """
+        Returns whether or not the instances of the current :obj:`QuerySet`
+        (self) all belong to the same "table" - where the "table" is determined
+        by the pivot fields on the model that are used to filter the models
+        for a single table.
+        """
+        return self.get_all_in_same_table(self)
+
+    def distinct_table_keys(self):
+        return self.get_distinct_table_keys(self)
+
+    def distinct_tables(self):
+        """
+        Returns an array of :obj:`QuerySet` instances where each :obj:`QuerySet`
+        in the array corresponds to a distinct "table" for at least one of the
+        instances in the current :obj:`QuerySet` (self).
+        """
+        distinct_filters = self.get_distinct_table_filters(self)
+        return [self.filter(fk_filter) for fk_filter in distinct_filters]
+
+
+class OrderedRowQuerier(RowQuerier):
     @transaction.atomic
     def reorder(self, commit=True):
         self.select_for_update()
@@ -34,36 +114,9 @@ class RowQuerier:
     def reorder_by(self, *fields, commit=True):
         return self.reorder(commit=commit, instances=self.order_by(*fields))
 
-    def get_all_in_tables(self, table_keys):
-        """
-        Returns a queryset that filters for the model instances belonging to
-        all of the tables determined by the set of table keys provided.
-        """
-        table_keys = ensure_iterable(table_keys)
-        assert len(table_keys), "At least 1 table key must be provided."
-        qs_filter = self.model.get_table_filter(table_key=table_keys[0])
-        for table_key in table_keys[1:]:
-            qs_filter = qs_filter | self.model.get_table_filter(
-                table_key=table_key)
-        return self.filter(qs_filter)
-
-    def get_latest_in_table(self, *args, **kwargs):
-        return self.model.get_table(*args, **kwargs).latest()
-
-    def get_distinct_tables(self):
-        fk_pivots = ensure_iterable(self.model.table_pivot)
-        fk_pivots = tuple(fk_pivots)
-
-        distinct_filters = [
-            self.model.get_table_filter(obj)
-            for obj in self.order_by(*tuple(fk_pivots))
-            .distinct(*tuple(fk_pivots))
-        ]
-        return [self.filter(fk_filter) for fk_filter in distinct_filters]
-
     def reorder_all(self, commit=True):
         updated = []
-        for table_qs in self.get_distinct_tables():
+        for table_qs in self.distinct_tables():
             updated += table_qs.reorder(commit=False)
         if commit:
             self.bulk_update(updated, ["order"])
@@ -188,5 +241,14 @@ class RowQuerySet(RowQuerier, PrePKBulkCreateQuerySet):
     pass
 
 
+class OrderedRowQuerySet(OrderedRowQuerier, PrePKBulkCreateQuerySet):
+    pass
+
+
 class RowPolymorphicQuerySet(RowQuerier, BulkCreatePolymorphicQuerySet):
+    pass
+
+
+class OrderedRowPolymorphicQuerySet(
+        OrderedRowQuerier, BulkCreatePolymorphicQuerySet):
     pass

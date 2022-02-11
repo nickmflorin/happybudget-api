@@ -6,13 +6,14 @@ from greenbudget.app.budget.cache import (
     budget_instance_cache,
     budget_children_cache
 )
-from greenbudget.app.budgeting.managers import BudgetingPolymorphicRowManager
+from greenbudget.app.budgeting.managers import (
+    BudgetingPolymorphicOrderedRowManager)
 from greenbudget.app.budgeting.models import BudgetTree
 
 from .cache import account_instance_cache
 
 
-class AccountManager(BudgetingPolymorphicRowManager):
+class AccountManager(BudgetingPolymorphicOrderedRowManager):
 
     @signals.disable()
     def bulk_delete(self, instances):
