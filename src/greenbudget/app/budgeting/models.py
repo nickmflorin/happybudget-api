@@ -1,10 +1,10 @@
 import functools
 from polymorphic.models import PolymorphicModel
 
-from django.db import models
+from django.db import models, IntegrityError
 from django.utils.functional import cached_property
 
-from greenbudget.lib.utils import ensure_iterable, empty
+from greenbudget.lib.utils import ensure_iterable, empty, humanize_list
 from greenbudget.lib.django_utils.models import (
     import_model_at_path, get_value_from_model_map)
 
@@ -164,3 +164,33 @@ class BudgetingTreePolymorphicOrderedRowModel(
         OrderedRowPolymorphicModel, BudgetingTreeModelMixin):
     class Meta:
         abstract = True
+
+    @property
+    def valid_parent_cls(self):
+        return tuple([getattr(self, attr) for attr in self.VALID_PARENTS])
+
+    def validate_before_save(self):
+        super().validate_before_save()
+        # The Group that the model belongs to must have the same parent as
+        # the model itself.
+        if self.group is not None and self.group.parent != self.parent:
+            raise IntegrityError(
+                "Can only add groups with the same parent as the instance."
+            )
+        # The `limit_choices_to` property of the content_type ForeignKey field
+        # (in the case of a GFK parent) or the the parent ForeignKey field does
+        # not actually perform validation before a save, just validation via the
+        # Django Admin.  We want to ensure that the parent of the model is
+        # valid - even though we will get an error somewhere else if it is not,
+        # it is better to perform the validation early here.
+        humanized_parents = humanize_list(
+            self.valid_parent_cls, conjunction="or")
+        # If the parent is None, we will get an IntegrityError when saving
+        # regardless, so we do not need to raise one here.
+        if self.parent is not None \
+                and not isinstance(self.parent, self.valid_parent_cls):
+            raise IntegrityError(
+                f"Type {type(self.parent)} is not a valid parent for "
+                f"{self.__class__.__name__}.  Must be one of "
+                f"{humanized_parents}."
+            )

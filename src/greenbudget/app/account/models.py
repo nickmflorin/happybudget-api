@@ -2,7 +2,7 @@ import copy
 import functools
 
 from django.contrib.contenttypes.fields import GenericRelation
-from django.db import models, IntegrityError
+from django.db import models
 
 from greenbudget.app import signals
 from greenbudget.app.budgeting.models import (
@@ -40,6 +40,7 @@ class Account(BudgetingTreePolymorphicOrderedRowModel):
 
     ESTIMATED_FIELDS = ESTIMATED_FIELDS
     CALCULATED_FIELDS = CALCULATED_FIELDS
+    VALID_PARENTS = ['budget_cls']
 
     actual = models.FloatField(default=0.0)
     accumulated_value = models.FloatField(default=0.0)
@@ -86,13 +87,6 @@ class Account(BudgetingTreePolymorphicOrderedRowModel):
     def realized_value(self):
         return self.nominal_value + self.accumulated_fringe_contribution \
             + self.accumulated_markup_contribution
-
-    def validate_before_save(self):
-        if self.group is not None and self.group.parent != self.parent:
-            raise IntegrityError(
-                "Can only add groups with the same parent as the instance."
-            )
-        super().validate_before_save()
 
     @children_method_handler
     def accumulate_value(self, children):

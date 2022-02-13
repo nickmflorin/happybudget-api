@@ -86,6 +86,31 @@ def test_update_account(api_client, user, budget_f):
     assert account.description == "Account description"
 
 
+def test_update_account_invalid_group(api_client, user, budget_f, create_group):
+    budget = budget_f.create_budget()
+    another_budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    # The Group must not be empty, otherwise we will get another error that we
+    # are not testing for.
+    group = create_group(parent=another_budget)
+    budget_f.create_account(
+        count=2,
+        group=group,
+        parent=another_budget
+    )
+    api_client.force_login(user)
+    response = api_client.patch("/v1/accounts/%s/" % account.pk, data={
+        'group': group.pk
+    })
+    assert response.json() == {'errors': [{
+        'message': (
+            'The child group with ID 1 does not belong to the correct table.'),
+        'code': 'does_not_exist_in_table',
+        'error_type': 'field',
+        'field': 'group'
+    }]}
+
+
 def test_bulk_update_subaccounts(api_client, user, freezer, budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
