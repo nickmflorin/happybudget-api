@@ -10,6 +10,7 @@ from greenbudget.app.account.cache import (
 
 subaccount_children_cache = cache.endpoint_cache(
     id='subaccount-children',
+    disabled=True,
     path=lambda instance: reverse(
         'subaccount:child-list', kwargs={'pk': instance.pk})
 )

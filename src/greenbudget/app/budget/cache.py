@@ -5,6 +5,7 @@ from greenbudget.app import cache
 
 budget_children_cache = cache.endpoint_cache(
     id='budget-children',
+    disabled=True,
     path=lambda instance: reverse(
         'budget:child-list', kwargs={'pk': instance.pk})
 )
@@ -29,12 +30,14 @@ budget_fringes_cache = cache.endpoint_cache(
 
 budget_actuals_cache = cache.endpoint_cache(
     id='budget-actual',
+    disabled=True,
     path=lambda instance: reverse(
         'budget:actual-list', kwargs={'pk': instance.pk})
 )
 
 budget_actuals_owners_cache = cache.endpoint_cache(
     id='budget-actuals-owners',
+    disabled=True,
     path=lambda instance: reverse(
         'budget:actual-owner-list', kwargs={'pk': instance.pk})
 )
