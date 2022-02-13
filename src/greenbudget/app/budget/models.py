@@ -6,7 +6,7 @@ import logging
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 
-from greenbudget.app import signals
+from greenbudget.app import model
 from greenbudget.app.authentication.models import ShareToken
 from greenbudget.app.budgeting.models import (
     BudgetingTreePolymorphicModel, AssociatedModel, children_method_handler)
@@ -159,7 +159,7 @@ class BaseBudget(BudgetingTreePolymorphicModel):
         return self.estimate(children, **kwargs)
 
 
-@signals.model()
+@model.model()
 class Budget(BaseBudget):
     pdf_type = "pdf-budget"
     domain = "budget"

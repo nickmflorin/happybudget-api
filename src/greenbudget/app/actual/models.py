@@ -2,7 +2,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models, IntegrityError
 
-from greenbudget.app import signals
+from greenbudget.app import model
 from greenbudget.app.budgeting.models import (
     BudgetingOrderedRowModel, AssociatedModel)
 from greenbudget.app.tagging.models import Tag
@@ -35,7 +35,7 @@ class ActualType(Tag):
         )
 
 
-@signals.model(user_field='updated_by')
+@model.model(user_field='updated_by')
 class Actual(BudgetingOrderedRowModel):
     name = models.CharField(null=True, max_length=128)
     notes = models.CharField(null=True, max_length=256)
@@ -88,7 +88,7 @@ class Actual(BudgetingOrderedRowModel):
         unique_together = (('budget', 'order'))
 
     def __str__(self):
-        return "Actual: %s" % self.value
+        return self.name
 
     def validate_before_save(self):
         try:

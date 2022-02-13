@@ -10,6 +10,7 @@ omit =
     */*wsgi.py
     */manage.py
     */management/*
+    */harry/*
     src/greenbudget/conf/gunicorn_config.py
     src/greenbudget/lib/logging/*
     src/greenbudget/lib/utils/decorators.py
@@ -21,6 +22,7 @@ ignore_errors = True
 exclude_lines =
     pragma: no cover
     def __repr__
+    def __str__
     if settings.DEBUG
     if settings.ENVIRONMENT
     raise AssertionError

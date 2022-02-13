@@ -28,9 +28,6 @@ def actual_deleted(instance, **kwargs):
 @dispatch.receiver(signals.pre_save, sender=Actual)
 def actual_to_save(instance, **kwargs):
     budget_actuals_cache.invalidate(instance.budget)
-    if instance.order is None:
-        instance.order_at_bottom()
-    instance.validate_before_save()
 
 
 @dispatch.receiver(models.signals.post_save, sender=Actual)

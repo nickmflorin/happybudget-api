@@ -6,13 +6,6 @@ from greenbudget.app.budget.cache import budget_fringes_cache
 from .models import Fringe
 
 
-@dispatch.receiver(signals.pre_save, sender=Fringe)
-def fringe_to_save(instance, **kwargs):
-    if instance.order is None:
-        instance.order_at_bottom()
-    instance.validate_before_save()
-
-
 @dispatch.receiver(signals.post_save, sender=Fringe)
 def fringe_saved(instance, **kwargs):
     budget_fringes_cache.invalidate(instance.budget)

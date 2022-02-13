@@ -7,7 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models, IntegrityError
 from django.utils.functional import cached_property
 
-from greenbudget.app import signals
+from greenbudget.app import model, signals
 from greenbudget.app.actual.models import Actual
 from greenbudget.app.budgeting.models import (
     BudgetingTreePolymorphicOrderedRowModel, AssociatedModel,
@@ -61,8 +61,6 @@ CALCULATED_FIELDS = ESTIMATED_FIELDS + ('actual', )
 
 
 class SubAccount(BudgetingTreePolymorphicOrderedRowModel):
-    identifier = models.CharField(null=True, max_length=128, blank=True)
-    description = models.CharField(null=True, max_length=128, blank=True)
     quantity = models.FloatField(null=True, blank=True)
     rate = models.FloatField(null=True, blank=True)
     multiplier = models.IntegerField(null=True, blank=True)
@@ -268,7 +266,7 @@ class SubAccount(BudgetingTreePolymorphicOrderedRowModel):
         return any(alterations)
 
 
-@signals.model(user_field='updated_by')
+@model.model(user_field='updated_by')
 class BudgetSubAccount(SubAccount):
     attachments = models.ManyToManyField(
         to='io.Attachment',
@@ -293,9 +291,6 @@ class BudgetSubAccount(SubAccount):
     class Meta(SubAccount.Meta):
         verbose_name = "Budget Sub Account"
         verbose_name_plural = "Budget Sub Accounts"
-
-    def __str__(self):
-        return "Budget Sub Account: %s" % self.identifier
 
     def validate_before_save(self):
         super().validate_before_save()
@@ -369,7 +364,7 @@ class BudgetSubAccount(SubAccount):
         return previous_value != self.actual
 
 
-@signals.model(user_field='updated_by')
+@model.model(user_field='updated_by')
 class TemplateSubAccount(SubAccount):
     domain = "template"
     budget_cls = AssociatedModel('template', 'template')
@@ -380,6 +375,3 @@ class TemplateSubAccount(SubAccount):
     class Meta(SubAccount.Meta):
         verbose_name = "Template Sub Account"
         verbose_name_plural = "Template Sub Accounts"
-
-    def __str__(self):
-        return "Template Sub Account: %s" % self.identifier

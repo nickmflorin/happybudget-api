@@ -153,6 +153,8 @@ class OrderedRowModelMixin(RowModelMixin):
             self.order = lexographic_midpoint(lower=last_in_table.order)
 
     def validate_before_save(self):
+        if self.order is None:
+            self.order_at_bottom()
         validate_order(self.order)
 
     @classmethod

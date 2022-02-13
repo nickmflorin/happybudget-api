@@ -9,7 +9,7 @@ from django.utils.translation import gettext_lazy as _
 
 from greenbudget.lib.utils import ensure_iterable
 
-from greenbudget.app import signals
+from greenbudget.app import model
 from greenbudget.app.authentication.utils import parse_user_id_from_token
 from greenbudget.app.billing import StripeCustomer
 from greenbudget.app.billing.constants import BillingStatus
@@ -30,7 +30,7 @@ SocialUser = collections.namedtuple(
     'SocialUser', ['first_name', 'last_name', 'email'])
 
 
-@signals.model(track_user=False)
+@model.model(track_user=False)
 class User(AbstractUser):
     username = None
     first_name = models.CharField(_('First Name'), max_length=150, blank=False)

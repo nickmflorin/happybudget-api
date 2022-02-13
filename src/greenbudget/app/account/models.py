@@ -4,7 +4,7 @@ import functools
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 
-from greenbudget.app import signals
+from greenbudget.app import model
 from greenbudget.app.budgeting.models import (
     BudgetingTreePolymorphicOrderedRowModel, AssociatedModel,
     children_method_handler)
@@ -30,8 +30,6 @@ CALCULATED_FIELDS = ESTIMATED_FIELDS + ('actual', )
 
 
 class Account(BudgetingTreePolymorphicOrderedRowModel):
-    identifier = models.CharField(null=True, max_length=128, blank=True)
-    description = models.CharField(null=True, max_length=128, blank=True)
     parent = models.ForeignKey(
         to='budget.BaseBudget',
         on_delete=models.CASCADE,
@@ -75,9 +73,6 @@ class Account(BudgetingTreePolymorphicOrderedRowModel):
         verbose_name = "Account"
         verbose_name_plural = "Accounts"
         unique_together = (('parent', 'order'))
-
-    def __str__(self):
-        return "Account: %s" % self.identifier
 
     @property
     def nominal_value(self):
@@ -166,7 +161,7 @@ class Account(BudgetingTreePolymorphicOrderedRowModel):
         return self.estimate(*args, **kwargs)
 
 
-@signals.model(user_field='updated_by')
+@model.model(user_field='updated_by')
 class BudgetAccount(Account):
     objects = BudgetAccountManager()
 
@@ -221,7 +216,7 @@ class BudgetAccount(Account):
         return any(alterations)
 
 
-@signals.model(user_field='updated_by')
+@model.model(user_field='updated_by')
 class TemplateAccount(Account):
     objects = TemplateAccountManager()
     domain = "template"

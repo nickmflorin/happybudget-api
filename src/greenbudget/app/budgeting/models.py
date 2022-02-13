@@ -162,8 +162,14 @@ class BudgetingTreePolymorphicModel(PolymorphicModel, BudgetingTreeModelMixin):
 
 class BudgetingTreePolymorphicOrderedRowModel(
         OrderedRowPolymorphicModel, BudgetingTreeModelMixin):
+    identifier = models.CharField(null=True, max_length=128, blank=True)
+    description = models.CharField(null=True, max_length=128, blank=True)
+
     class Meta:
         abstract = True
+
+    def __str__(self):
+        return self.identifier or self.description
 
     @property
     def valid_parent_cls(self):

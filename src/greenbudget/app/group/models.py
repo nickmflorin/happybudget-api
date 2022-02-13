@@ -1,15 +1,14 @@
-from greenbudget.app import signals
-
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
+from greenbudget.app import model
 from greenbudget.app.tabling.models import RowModel
 
 from .managers import GroupManager, BudgetGroupManager, TemplateGroupManager
 
 
-@signals.model()
+@model.model()
 class Group(RowModel):
     type = "group"
     name = models.CharField(max_length=128)

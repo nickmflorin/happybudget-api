@@ -7,7 +7,7 @@ from django.contrib.contenttypes.fields import (
     GenericRelation, GenericForeignKey)
 from django.contrib.contenttypes.models import ContentType
 
-from greenbudget.app import signals
+from greenbudget.app import model
 from greenbudget.app.actual.models import Actual
 from greenbudget.app.budgeting.models import BudgetingRowModel
 
@@ -17,7 +17,7 @@ from .managers import MarkupManager
 logger = logging.getLogger('greenbudget')
 
 
-@signals.model(user_field='updated_by')
+@model.model(user_field='updated_by')
 class Markup(BudgetingRowModel):
     type = "markup"
     identifier = models.CharField(null=True, max_length=128)
@@ -49,7 +49,7 @@ class Markup(BudgetingRowModel):
         verbose_name_plural = "Markups"
 
     def __str__(self):
-        return "Markup: %s" % self.identifier
+        return self.identifier or self.description
 
     @property
     def actual(self):

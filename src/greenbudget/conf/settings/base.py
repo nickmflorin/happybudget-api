@@ -172,7 +172,7 @@ MIDDLEWARE = [
     # This middleware must come before the TokenCookieMiddleware.
     'greenbudget.app.authentication.middleware.BillingTokenCookieMiddleware',
     'greenbudget.app.authentication.middleware.AuthTokenCookieMiddleware',
-    'greenbudget.app.signals.middleware.ModelSignalMiddleware',
+    'greenbudget.app.middleware.ModelRequestMiddleware',
     'greenbudget.app.middleware.CacheUserMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',

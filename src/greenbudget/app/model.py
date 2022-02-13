@@ -10,7 +10,7 @@ from django.db import models
 from greenbudget.conf import Environments
 from greenbudget.lib.utils import ensure_iterable
 
-from .signals import field_changed, fields_changed, post_create_by_user
+from .signals.signals import field_changed, fields_changed, post_create_by_user
 
 
 logger = logging.getLogger('greenbudget')
@@ -103,7 +103,7 @@ def field_is_supported(field):
 
 class model:
     """
-    A common decorator for all of our applications :obj:`django.db.models.Model`
+    A common decorator for all of our application's :obj:`django.db.models.Model`
     instances.  All :obj:`django.db.models.Model` instances that have connected
     signals should be decorated with this class.  This class decorator provides
     signal processing behavior and field tracking behavior that is necessary
@@ -336,8 +336,6 @@ class model:
 
             new_instance = instance.id is None
 
-            suppress_dispatch_fields = kwargs.pop(
-                'suppress_dispatch_fields', False)
             track_changes = kwargs.pop('track_changes', True)
 
             save._original(instance, *args, **kwargs)
@@ -361,13 +359,12 @@ class model:
                             field_instance=self.get_field_instance(cls, k)
                         )
                         dispatch_changes.append(change)
-                        if not suppress_dispatch_fields:
-                            field_changed.send(
-                                change=change,
-                                **field_signal_kwargs
-                            )
+                        field_changed.send(
+                            change=change,
+                            **field_signal_kwargs
+                        )
                 # Dispatch signals for the changed fields we are tracking.
-                if dispatch_changes and not suppress_dispatch_fields:
+                if dispatch_changes:
                     fields_changed.send(
                         changes=FieldChanges(dispatch_changes),
                         **field_signal_kwargs
@@ -376,6 +373,10 @@ class model:
 
         def _post_init(sender, instance, **kwargs):
             store(instance)
+
+        def _pre_save(sender, instance, **kwargs):
+            if hasattr(instance, 'validate_before_save'):
+                instance.validate_before_save()
 
         def _post_save(sender, instance, **kwargs):
             if kwargs['created'] is True and self._track_user:
@@ -387,6 +388,7 @@ class model:
 
         models.signals.post_init.connect(_post_init, sender=cls, weak=False)
         models.signals.post_save.connect(_post_save, sender=cls, weak=False)
+        models.signals.pre_save.connect(_pre_save, sender=cls, weak=False)
 
         # Expose helper methods on the model class.
         cls.get_last_saved_data = get_last_saved_data
@@ -419,7 +421,7 @@ class model:
                     raise FieldDoesNotExistError(self._user_field, instance)
                 user = getattr(instance, self._user_field)
             if user is None:
-                if 'greenbudget.app.signals.middleware.ModelSignalMiddleware' \
+                if 'greenbudget.app.middleware.ModelRequestMiddleware' \
                         not in settings.MIDDLEWARE:
                     logger.warning(
                         "The user cannot be inferred for the model save "

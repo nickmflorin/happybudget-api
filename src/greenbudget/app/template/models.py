@@ -1,13 +1,13 @@
-from django.db import models
+from django.db import models, IntegrityError
 
-from greenbudget.app import signals
+from greenbudget.app import model
 from greenbudget.app.budget.models import BaseBudget
 from greenbudget.app.budgeting.models import AssociatedModel
 
 from .managers import TemplateManager
 
 
-@signals.model()
+@model.model()
 class Template(BaseBudget):
     community = models.BooleanField(default=False)
     hidden = models.BooleanField(default=False)
@@ -34,4 +34,9 @@ class Template(BaseBudget):
         )]
 
     def __str__(self):
-        return "Template: %s" % self.name
+        return self.name
+
+    def validate_before_save(self, *args, **kwargs):
+        if self.community is True and not self.created_by.is_staff:
+            raise IntegrityError(
+                "Community templates can only be created by staff users.")

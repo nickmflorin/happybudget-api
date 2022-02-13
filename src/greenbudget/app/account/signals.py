@@ -22,11 +22,3 @@ def account_to_delete(instance, **kwargs):
     account_instance_cache.invalidate(instance)
     budget_groups_cache.invalidate(instance.parent)
     instance.parent.calculate(commit=True, children_to_delete=[instance.pk])
-
-
-@dispatch.receiver(signals.pre_save, sender=BudgetAccount)
-@dispatch.receiver(signals.pre_save, sender=TemplateAccount)
-def account_to_save(instance, **kwargs):
-    if instance.order is None:
-        instance.order_at_bottom()
-    instance.validate_before_save()
