@@ -31,11 +31,9 @@ class BudgetingManagerMixin:
                 instance.validate_before_save(bulk_context=True)
 
     def bulk_update(self, instances, fields, **kwargs):
+        kwargs.setdefault('batch_size', 20)
         self.validate_before_save(instances)
-        with transaction.atomic():
-            return self.select_for_update() \
-                .filter(pk__in=set([obj.pk for obj in instances])) \
-                .bulk_update(instances, fields, **kwargs)
+        return super().bulk_update(instances, fields, **kwargs)
 
     def bulk_create(self, instances, **kwargs):
         self.validate_before_save(instances)
