@@ -35,7 +35,7 @@ class ActualType(Tag):
         )
 
 
-@model.model(user_field='updated_by')
+@model.model(user_field='updated_by', type='actual')
 class Actual(BudgetingOrderedRowModel):
     name = models.CharField(null=True, max_length=128)
     notes = models.CharField(null=True, max_length=256)
@@ -74,7 +74,6 @@ class Actual(BudgetingOrderedRowModel):
     owner = GenericForeignKey('content_type', 'object_id')
     objects = ActualManager()
 
-    type = "actual"
     table_pivot = ('budget_id', )
     budget_cls = AssociatedModel('budget', 'budget')
     account_cls = AssociatedModel('account', 'budgetaccount')

@@ -8,9 +8,8 @@ from greenbudget.app.tabling.models import RowModel
 from .managers import GroupManager, BudgetGroupManager, TemplateGroupManager
 
 
-@model.model()
+@model.model(type='group')
 class Group(RowModel):
-    type = "group"
     name = models.CharField(max_length=128)
     color = models.ForeignKey(
         to='tagging.Color',

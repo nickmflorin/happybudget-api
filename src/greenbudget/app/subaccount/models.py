@@ -111,7 +111,6 @@ class SubAccount(BudgetingTreePolymorphicOrderedRowModel):
     objects = SubAccountManager()
     non_polymorphic = models.Manager()
 
-    type = "subaccount"
     table_pivot = ('content_type_id', 'object_id')
     child_instance_cls = AssociatedModel('self')
     DERIVING_FIELDS = ("quantity", "rate", "multiplier", "unit")
@@ -266,7 +265,7 @@ class SubAccount(BudgetingTreePolymorphicOrderedRowModel):
         return any(alterations)
 
 
-@model.model(user_field='updated_by')
+@model.model(user_field='updated_by', type='subaccount')
 class BudgetSubAccount(SubAccount):
     attachments = models.ManyToManyField(
         to='io.Attachment',
@@ -364,7 +363,7 @@ class BudgetSubAccount(SubAccount):
         return previous_value != self.actual
 
 
-@model.model(user_field='updated_by')
+@model.model(user_field='updated_by', type='subaccount')
 class TemplateSubAccount(SubAccount):
     domain = "template"
     budget_cls = AssociatedModel('template', 'template')

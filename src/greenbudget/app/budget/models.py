@@ -37,7 +37,6 @@ CALCULATED_FIELDS = ESTIMATED_FIELDS + ('actual', )
 
 
 class BaseBudget(BudgetingTreePolymorphicModel):
-    type = "budget"
     name = models.CharField(max_length=256)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -159,7 +158,7 @@ class BaseBudget(BudgetingTreePolymorphicModel):
         return self.estimate(children, **kwargs)
 
 
-@model.model()
+@model.model(type='budget')
 class Budget(BaseBudget):
     pdf_type = "pdf-budget"
     domain = "budget"

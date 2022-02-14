@@ -19,7 +19,7 @@ def upload_to(instance, filename):
     )
 
 
-@model.model()
+@model.model(type='contact')
 class Contact(OrderedRowModel):
     first_name = models.CharField(max_length=30, null=True)
     last_name = models.CharField(max_length=30, null=True)
@@ -43,8 +43,6 @@ class Contact(OrderedRowModel):
     )
 
     objects = ContactManager()
-
-    type = "contact"
     table_pivot = ('created_by_id', )
 
     class Meta:

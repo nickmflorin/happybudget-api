@@ -63,7 +63,6 @@ class Account(BudgetingTreePolymorphicOrderedRowModel):
     objects = AccountManager()
     non_polymorphic = models.Manager()
 
-    type = "account"
     table_pivot = ('parent_id', )
     child_instance_cls = AssociatedModel('subaccount_cls')
 
@@ -161,7 +160,7 @@ class Account(BudgetingTreePolymorphicOrderedRowModel):
         return self.estimate(*args, **kwargs)
 
 
-@model.model(user_field='updated_by')
+@model.model(user_field='updated_by', type="account")
 class BudgetAccount(Account):
     objects = BudgetAccountManager()
 
@@ -216,7 +215,7 @@ class BudgetAccount(Account):
         return any(alterations)
 
 
-@model.model(user_field='updated_by')
+@model.model(user_field='updated_by', type="account")
 class TemplateAccount(Account):
     objects = TemplateAccountManager()
     domain = "template"

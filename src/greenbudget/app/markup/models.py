@@ -17,9 +17,8 @@ from .managers import MarkupManager
 logger = logging.getLogger('greenbudget')
 
 
-@model.model(user_field='updated_by')
+@model.model(user_field='updated_by', type='markup')
 class Markup(BudgetingRowModel):
-    type = "markup"
     identifier = models.CharField(null=True, max_length=128)
     description = models.CharField(null=True, max_length=128)
     UNITS = Choices(

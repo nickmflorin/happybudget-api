@@ -135,13 +135,14 @@ class model:
     thread = threading.local()
 
     def __init__(self, **kwargs):
+        self._type = kwargs.pop('type', None)
+
         # Flags that can be used to disable post save signals on a save-by-save
         # basis.
         self._flags = ensure_iterable(
             kwargs.get('flags', [])) + ['track_changes']
 
         self._track_all_fields = False
-
         self._track_fields = set([])
         self._dispatch_fields = set([])
         self._exclude_fields = ensure_iterable(kwargs.pop('exclude_fields', []))
@@ -213,6 +214,11 @@ class model:
             return deepcopy(self._track_fields)
 
     def __call__(self, cls):
+        assert self._type is not None, \
+            f"The model decorator for {cls.__name__}  must include the model " \
+            "type."
+        cls.type = self._type
+
         if hasattr(cls, '__decorated_for_signals__'):
             raise Exception(
                 "Multi-table inheritance of %s not supported, base class "

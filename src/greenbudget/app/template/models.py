@@ -7,7 +7,7 @@ from greenbudget.app.budgeting.models import AssociatedModel
 from .managers import TemplateManager
 
 
-@model.model()
+@model.model(type='budget')
 class Template(BaseBudget):
     community = models.BooleanField(default=False)
     hidden = models.BooleanField(default=False)
