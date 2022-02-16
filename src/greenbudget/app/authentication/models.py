@@ -6,11 +6,11 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
 
-class AnonymousShareToken:
+class AnonymousPublicToken:
     is_authenticated = False
 
 
-class ShareToken(models.Model):
+class PublicToken(models.Model):
     is_authenticated = True
     public_id = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
     private_id = models.UUIDField(
@@ -36,11 +36,11 @@ class ShareToken(models.Model):
     class Meta:
         get_latest_by = "created_at"
         ordering = ('created_at', )
-        verbose_name = "Share Token"
-        verbose_name_plural = "Share Tokens"
+        verbose_name = "Public Token"
+        verbose_name_plural = "Public Tokens"
         # Note that this unique together constraint effectively makes the GFK
         # a OneToOneField (there is no built in Generic OneToOneField). Right
-        # now, we are restricting ShareToken(s) to 1 token per user/instance,
+        # now, we are restricting PublicToken(s) to 1 token per user/instance,
         # but that might change in the future - in which case we can remove this
         # constraint.
         unique_together = (('content_type', 'object_id'))

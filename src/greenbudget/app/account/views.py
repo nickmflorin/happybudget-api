@@ -24,7 +24,7 @@ from .cache import (
     account_markups_cache,
     account_instance_cache
 )
-from .mixins import AccountSharedNestedMixin
+from .mixins import AccountPublicNestedMixin
 from .permissions import (
     AccountOwnershipPermission,
     AccountProductPermission
@@ -43,7 +43,7 @@ from .serializers import (
 class AccountMarkupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
-    AccountSharedNestedMixin,
+    AccountPublicNestedMixin,
     views.GenericViewSet,
 ):
     """
@@ -77,7 +77,7 @@ class AccountMarkupViewSet(
 class AccountGroupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
-    AccountSharedNestedMixin,
+    AccountPublicNestedMixin,
     views.GenericViewSet,
 ):
     """
@@ -105,7 +105,7 @@ class AccountGroupViewSet(
 class AccountChildrenViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
-    AccountSharedNestedMixin,
+    AccountPublicNestedMixin,
     GenericSubAccountViewSet,
 ):
     """
@@ -210,7 +210,7 @@ class AccountViewSet(
                 AccountProductPermission(products="__any__")
             ),
             permissions.AND(
-                permissions.IsShared(
+                permissions.IsPublic(
                     get_permissioned_obj=lambda obj: obj.budget),
                 permissions.IsSafeRequestMethod,
                 is_object_applicable=lambda c: c.obj.domain == "budget"

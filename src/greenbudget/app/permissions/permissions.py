@@ -140,15 +140,15 @@ class IsOwnerOrReadOnly(IsOwner):
         return super().has_object_permission(request, view, obj)
 
 
-class IsShared(BasePermission):
+class IsPublic(BasePermission):
     exception_class = NotAuthenticatedError
 
     def has_permission(self, request, view):
-        return request.share_token.is_authenticated
+        return request.public_token.is_authenticated
 
     def has_object_permission(self, request, view, obj):
-        return request.share_token.is_authenticated \
-            and request.share_token.instance == obj
+        return request.public_token.is_authenticated \
+            and request.public_token.instance == obj
 
 
 class IsRequestMethod(BasePermission):

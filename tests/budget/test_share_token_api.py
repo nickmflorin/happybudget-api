@@ -3,10 +3,10 @@ import uuid
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_budget_with_share_token(api_client, user, create_budget,
-        create_share_token):
+def test_get_budget_with_public_token(api_client, user, create_budget,
+        create_public_token):
     budget = create_budget()
-    share_token = create_share_token(instance=budget)
+    public_token = create_public_token(instance=budget)
     api_client.force_login(user)
     response = api_client.get("/v1/budgets/%s/" % budget.pk)
     assert response.status_code == 200
@@ -22,10 +22,10 @@ def test_get_budget_with_share_token(api_client, user, create_budget,
         "domain": "budget",
         "image": None,
         "is_permissioned": False,
-        "share_token": {
-            'id': share_token.pk,
+        "public_token": {
+            'id': public_token.pk,
             'created_at': '2020-01-01 00:00:00',
-            'public_id': str(share_token.public_id),
+            'public_id': str(public_token.public_id),
             'expires_at': None,
             'is_expired': False
         }
@@ -33,42 +33,42 @@ def test_get_budget_with_share_token(api_client, user, create_budget,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_budget_share_token(api_client, user, create_budget, models):
+def test_create_budget_public_token(api_client, user, create_budget, models):
     budget = create_budget()
     api_client.force_login(user)
-    response = api_client.post("/v1/budgets/%s/share-token/" % budget.pk, data={
+    response = api_client.post("/v1/budgets/%s/public-token/" % budget.pk, data={
         'expires_at': '2021-01-01',
     })
     assert response.status_code == 201
 
-    share_token = models.ShareToken.objects.first()
-    assert share_token is not None
+    public_token = models.PublicToken.objects.first()
+    assert public_token is not None
     assert response.json() == {
-        'id': share_token.pk,
+        'id': public_token.pk,
         'created_at': '2020-01-01 00:00:00',
-        'public_id': str(share_token.public_id),
+        'public_id': str(public_token.public_id),
         'expires_at': '2021-01-01 00:00:00',
         'is_expired': False
     }
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_budget_share_token_with_uuid(api_client, user, create_budget,
+def test_create_budget_public_token_with_uuid(api_client, user, create_budget,
         models):
     budget = create_budget()
     api_client.force_login(user)
 
     public_id = str(uuid.uuid4())
-    response = api_client.post("/v1/budgets/%s/share-token/" % budget.pk, data={
+    response = api_client.post("/v1/budgets/%s/public-token/" % budget.pk, data={
         'expires_at': '2021-01-01',
         'public_id': public_id
     })
     assert response.status_code == 201
 
-    share_token = models.ShareToken.objects.first()
-    assert share_token is not None
+    public_token = models.PublicToken.objects.first()
+    assert public_token is not None
     assert response.json() == {
-        'id': share_token.pk,
+        'id': public_token.pk,
         'created_at': '2020-01-01 00:00:00',
         'public_id': str(public_id),
         'expires_at': '2021-01-01 00:00:00',
@@ -77,27 +77,27 @@ def test_create_budget_share_token_with_uuid(api_client, user, create_budget,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_budget_share_token_with_existing_uuid(api_client, user,
-        create_budget, create_share_token):
+def test_create_budget_public_token_with_existing_uuid(api_client, user,
+        create_budget, create_public_token):
     budget = create_budget()
     another_budget = create_budget()
     api_client.force_login(user)
-    share_token = create_share_token(instance=another_budget)
+    public_token = create_public_token(instance=another_budget)
 
-    response = api_client.post("/v1/budgets/%s/share-token/" % budget.pk, data={
+    response = api_client.post("/v1/budgets/%s/public-token/" % budget.pk, data={
         'expires_at': '2021-01-01',
-        'public_id': str(share_token.public_id)
+        'public_id': str(public_token.public_id)
     })
     assert response.status_code == 400
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_budget_share_token_with_invalid_uuid(api_client, user,
+def test_create_budget_public_token_with_invalid_uuid(api_client, user,
         create_budget):
     budget = create_budget()
     api_client.force_login(user)
 
-    response = api_client.post("/v1/budgets/%s/share-token/" % budget.pk, data={
+    response = api_client.post("/v1/budgets/%s/public-token/" % budget.pk, data={
         'expires_at': '2021-01-01',
         'public_id': 'jasdlfkj'
     })
@@ -105,18 +105,18 @@ def test_create_budget_share_token_with_invalid_uuid(api_client, user,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_another_budget_share_token(api_client, user, create_budget,
-        models, create_share_token):
+def test_create_another_budget_public_token(api_client, user, create_budget,
+        models, create_public_token):
     budget = create_budget()
-    create_share_token(instance=budget)
+    create_public_token(instance=budget)
     api_client.force_login(user)
-    response = api_client.post("/v1/budgets/%s/share-token/" % budget.pk, data={
+    response = api_client.post("/v1/budgets/%s/public-token/" % budget.pk, data={
         'expires_at': '2021-01-01',
     })
     assert response.status_code == 400
     assert response.json() == {'errors': [{
-        'message': 'Share token already exists for instance.',
+        'message': 'Public token already exists for instance.',
         'code': 'unique',
         'error_type': 'global'
     }]}
-    assert models.ShareToken.objects.count() == 1
+    assert models.PublicToken.objects.count() == 1

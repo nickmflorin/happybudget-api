@@ -46,7 +46,7 @@ class BudgetNestedMixin(BaseBudgetNestedMixin):
         return Budget.objects.all()
 
 
-class BaseBudgetSharedNestedMixin(BaseBudgetNestedMixin):
+class BaseBudgetPublicNestedMixin(BaseBudgetNestedMixin):
     budget_permission_classes = [
         permissions.OR(
             permissions.AND(
@@ -58,19 +58,19 @@ class BaseBudgetSharedNestedMixin(BaseBudgetNestedMixin):
             ),
             permissions.OR(
                 IsTemplateDomain,
-                permissions.IsShared,
+                permissions.IsPublic,
             )
         )
     ]
 
 
-class BudgetSharedNestedMixin(BudgetNestedMixin):
+class BudgetPublicNestedMixin(BudgetNestedMixin):
     budget_permission_classes = [
         permissions.OR(
             permissions.AND(
                 BudgetOwnershipPermission(affects_after=True),
                 BudgetProductPermission(products="__any__")
             ),
-            permissions.IsShared,
+            permissions.IsPublic,
         )
     ]

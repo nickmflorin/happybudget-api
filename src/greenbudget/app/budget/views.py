@@ -11,8 +11,8 @@ from greenbudget.app.actual.models import Actual
 from greenbudget.app.actual.serializers import (
     ActualSerializer, ActualOwnerSerializer)
 from greenbudget.app.actual.views import GenericActualViewSet
-from greenbudget.app.authentication.models import ShareToken
-from greenbudget.app.authentication.serializers import ShareTokenSerializer
+from greenbudget.app.authentication.models import PublicToken
+from greenbudget.app.authentication.serializers import PublicTokenSerializer
 from greenbudget.app.budgeting.decorators import (
     register_bulk_operations, BulkAction, BulkDeleteAction)
 from greenbudget.app.budgeting.permissions import IsBudgetDomain
@@ -36,7 +36,7 @@ from .cache import (
     budget_actuals_owners_cache
 )
 from .models import Budget, BaseBudget
-from .mixins import BudgetNestedMixin, BaseBudgetSharedNestedMixin
+from .mixins import BudgetNestedMixin, BaseBudgetPublicNestedMixin
 from .permissions import MultipleBudgetPermission, BudgetOwnershipPermission
 from .serializers import (
     BudgetSerializer,
@@ -50,7 +50,7 @@ from .serializers import (
 class BudgetMarkupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
-    BaseBudgetSharedNestedMixin,
+    BaseBudgetPublicNestedMixin,
     views.GenericViewSet
 ):
     """
@@ -65,7 +65,7 @@ class BudgetMarkupViewSet(
             permissions.IsFullyAuthenticated,
             permissions.AND(
                 IsBudgetDomain(get_nested_obj=lambda view: view.budget),
-                permissions.IsShared(get_nested_obj=lambda view: view.budget),
+                permissions.IsPublic(get_nested_obj=lambda view: view.budget),
                 permissions.IsSafeRequestMethod,
             )
         )
@@ -91,7 +91,7 @@ class BudgetMarkupViewSet(
 class BudgetGroupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
-    BaseBudgetSharedNestedMixin,
+    BaseBudgetPublicNestedMixin,
     views.GenericViewSet
 ):
     """
@@ -106,7 +106,7 @@ class BudgetGroupViewSet(
             permissions.IsFullyAuthenticated,
             permissions.AND(
                 IsBudgetDomain(get_nested_obj=lambda view: view.budget),
-                permissions.IsShared(get_nested_obj=lambda view: view.budget),
+                permissions.IsPublic(get_nested_obj=lambda view: view.budget),
                 permissions.IsSafeRequestMethod,
             )
         )
@@ -202,7 +202,7 @@ class BudgetActualsOwnersViewSet(
 class BudgetFringeViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
-    BaseBudgetSharedNestedMixin,
+    BaseBudgetPublicNestedMixin,
     GenericFringeViewSet
 ):
     """
@@ -216,7 +216,7 @@ class BudgetFringeViewSet(
             permissions.IsFullyAuthenticated,
             permissions.AND(
                 IsBudgetDomain(get_nested_obj=lambda view: view.budget),
-                permissions.IsShared(get_nested_obj=lambda view: view.budget),
+                permissions.IsPublic(get_nested_obj=lambda view: view.budget),
                 permissions.IsSafeRequestMethod,
             )
         )
@@ -239,7 +239,7 @@ class BudgetFringeViewSet(
 class BudgetChildrenViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
-    BaseBudgetSharedNestedMixin,
+    BaseBudgetPublicNestedMixin,
     GenericAccountViewSet
 ):
     """
@@ -253,7 +253,7 @@ class BudgetChildrenViewSet(
             permissions.IsFullyAuthenticated,
             permissions.AND(
                 IsBudgetDomain(get_nested_obj=lambda view: view.budget),
-                permissions.IsShared(get_nested_obj=lambda view: view.budget),
+                permissions.IsPublic(get_nested_obj=lambda view: view.budget),
                 permissions.IsSafeRequestMethod,
             )
         )
@@ -276,7 +276,7 @@ class BudgetChildrenViewSet(
             .filter(parent=self.instance).order_with_groups()
 
 
-class BudgetShareTokenViewSet(
+class BudgetPublicTokenViewSet(
     mixins.CreateModelMixin,
     BudgetNestedMixin,
     views.GenericViewSet
@@ -284,9 +284,9 @@ class BudgetShareTokenViewSet(
     """
     ViewSet to handle requests to the following endpoints:
 
-    (1) POST /budgets/<pk>/share-token/
+    (1) POST /budgets/<pk>/public-token/
     """
-    serializer_class = ShareTokenSerializer
+    serializer_class = PublicTokenSerializer
 
     def create_kwargs(self, serializer):
         return {**super().create_kwargs(serializer), **{
@@ -301,7 +301,7 @@ class BudgetShareTokenViewSet(
         return context
 
     def get_queryset(self):
-        return ShareToken.objects.filter(
+        return PublicToken.objects.filter(
             created_by=self.request.user,
             object_id=self.budget.pk,
             content_type=self.content_type
@@ -431,7 +431,7 @@ class BudgetViewSet(
                 ),
                 permissions.AND(
                     permissions.IsSafeRequestMethod,
-                    permissions.IsShared,
+                    permissions.IsPublic,
                     is_view_applicable=lambda c: c.view.action != "list"
                 ),
                 is_object_applicable=lambda c: c.obj.domain == 'budget',

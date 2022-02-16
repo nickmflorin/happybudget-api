@@ -51,7 +51,7 @@ def test_get_budget(api_client, user, create_budget):
         "domain": "budget",
         "image": None,
         "is_permissioned": False,
-        "share_token": None
+        "public_token": None
     }
 
 
@@ -77,7 +77,7 @@ def test_update_budget(api_client, user, create_budget):
         "domain": "budget",
         "image": None,
         "is_permissioned": False,
-        "share_token": None
+        "public_token": None
     }
 
 
@@ -100,7 +100,7 @@ def test_create_budget(api_client, user, models):
         "domain": "budget",
         "image": None,
         "is_permissioned": False,
-        "share_token": None
+        "public_token": None
     }
 
 
@@ -128,7 +128,7 @@ def test_derive_budget(api_client, user, template_df, staff_user, models):
         "domain": "budget",
         "image": None,
         "is_permissioned": False,
-        "share_token": None
+        "public_token": None
     }
 
 
@@ -153,7 +153,7 @@ def test_duplicate_budget(api_client, standard_product_user, create_budget,
         "domain": "budget",
         "image": None,
         "is_permissioned": False,
-        "share_token": None
+        "public_token": None
     }
 
 

@@ -129,11 +129,11 @@ class CsrfExcemptCookieSessionAuthentication(CookieSessionAuthentication):
     csrf_excempt = True
 
 
-class CsrfExcemptShareAuthentication(CsrfExcemptCookieSessionAuthentication):
+class CsrfExcemptPublicAuthentication(CsrfExcemptCookieSessionAuthentication):
     """
     An extension of :obj:`rest_framework.authentication.SessionAuthentication`
     that provides the authentication header `WWW-Authenticate` header for
-    share token authentication protocols.
+    public token authentication protocols.
     """
     user_ref = 'user'
     csrf_excempt = True
@@ -145,4 +145,4 @@ class CsrfExcemptShareAuthentication(CsrfExcemptCookieSessionAuthentication):
         DRF to return a 401 status code when authentication fails, vs. a 403
         status code.
         """
-        return settings.SHARE_TOKEN_HEADER
+        return settings.PUBLIC_TOKEN_HEADER

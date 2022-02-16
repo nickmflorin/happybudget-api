@@ -415,7 +415,7 @@ def exception_handler(exc, context):
         to manage:
 
         >>> Response [400]
-        >>>{"errors": [
+        >>> {"errors": [
         >>>   {
         >>>       "field": "username",
         >>>       "code": "invalid",
@@ -532,6 +532,7 @@ def exception_handler(exc, context):
             >>>     'Username is invalid', code='invalid')
             >>> Response [400]
             >>> {
+            >>>    "foo": "bar",
             >>>    "errors": [
             >>>        {
             >>>            "field": "username",

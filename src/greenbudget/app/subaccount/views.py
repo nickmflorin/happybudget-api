@@ -19,7 +19,7 @@ from .cache import (
     subaccount_instance_cache,
     subaccount_units_cache
 )
-from .mixins import SubAccountNestedMixin, SubAccountSharedNestedMixin
+from .mixins import SubAccountNestedMixin, SubAccountPublicNestedMixin
 from .models import SubAccount, TemplateSubAccount, SubAccountUnit
 from .permissions import (
     SubAccountProductPermission,
@@ -49,9 +49,9 @@ class SubAccountUnitViewSet(
     permission_classes = [
         permissions.OR(
             permissions.IsFullyAuthenticated(affects_after=True),
-            # Since there is no shared object here, this will simply check if
-            # there is a valid share token in the request.
-            permissions.IsShared()
+            # Since there is no public object here, this will simply check if
+            # there is a valid public token in the request.
+            permissions.IsPublic()
         )
     ]
 
@@ -64,7 +64,7 @@ class SubAccountUnitViewSet(
 class SubAccountMarkupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
-    SubAccountSharedNestedMixin,
+    SubAccountPublicNestedMixin,
     views.GenericViewSet
 ):
     """
@@ -92,7 +92,7 @@ class SubAccountMarkupViewSet(
 class SubAccountGroupViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
-    SubAccountSharedNestedMixin,
+    SubAccountPublicNestedMixin,
     views.GenericViewSet
 ):
     """
@@ -209,7 +209,7 @@ class SubAccountViewSet(
                 SubAccountProductPermission(products="__any__")
             ),
             permissions.AND(
-                permissions.IsShared(
+                permissions.IsPublic(
                     get_permissioned_obj=lambda obj: obj.budget),
                 permissions.IsSafeRequestMethod,
                 is_object_applicable=lambda c: c.obj.domain == "budget"
@@ -249,7 +249,7 @@ class SubAccountViewSet(
 class SubAccountRecursiveViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
-    SubAccountSharedNestedMixin,
+    SubAccountPublicNestedMixin,
     GenericSubAccountViewSet
 ):
     """

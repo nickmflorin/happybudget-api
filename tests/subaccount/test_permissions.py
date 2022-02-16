@@ -14,24 +14,24 @@ def test_get_subaccount_subaccounts_not_logged_in(api_client, budget_f):
     assert response.status_code == 401
 
 
-def test_get_budget_subaccount_with_share_token(api_client, create_budget,
-        create_share_token, create_budget_account, create_budget_subaccount):
+def test_get_budget_subaccount_with_public_token(api_client, create_budget,
+        create_public_token, create_budget_account, create_budget_subaccount):
     budget = create_budget()
     account = create_budget_account(parent=budget)
     subaccount = create_budget_subaccount(parent=account)
-    share_token = create_share_token(instance=budget)
-    api_client.include_share_token(share_token)
+    public_token = create_public_token(instance=budget)
+    api_client.include_public_token(public_token)
     response = api_client.get("/v1/subaccounts/%s/" % subaccount.pk)
     assert response.status_code == 200
 
 
-def test_get_template_subaccount_with_share_token(api_client, create_template,
-        create_share_token, create_template_account, create_template_subaccount):
+def test_get_template_subaccount_with_public_token(api_client, create_template,
+        create_public_token, create_template_account, create_template_subaccount):
     budget = create_template()
     account = create_template_account(parent=budget)
     subaccount = create_template_subaccount(parent=account)
-    share_token = create_share_token(instance=budget)
-    api_client.include_share_token(share_token)
+    public_token = create_public_token(instance=budget)
+    api_client.include_public_token(public_token)
     response = api_client.get("/v1/subaccounts/%s/" % subaccount.pk)
     assert response.status_code == 401
 
@@ -45,84 +45,84 @@ def test_get_another_user_subaccount(api_client, budget_f, user, admin_user):
     assert response.status_code == 403
 
 
-def test_get_shared_budget_subaccount_subaccounts(api_client, create_budget,
-        create_share_token, create_budget_account, create_budget_subaccount):
+def test_get_Public_budget_subaccount_subaccounts(api_client, create_budget,
+        create_public_token, create_budget_account, create_budget_subaccount):
     budget = create_budget()
     account = create_budget_account(parent=budget)
     subaccount = create_budget_subaccount(parent=account)
-    share_token = create_share_token(instance=budget)
-    api_client.include_share_token(share_token)
+    public_token = create_public_token(instance=budget)
+    api_client.include_public_token(public_token)
     response = api_client.get("/v1/subaccounts/%s/children/" % subaccount.pk)
     assert response.status_code == 200
 
 
-def test_get_another_shared_budget_subaccount_subaccounts(api_client,
-        create_budget, create_share_token, create_budget_account,
+def test_get_another_Public_budget_subaccount_subaccounts(api_client,
+        create_budget, create_public_token, create_budget_account,
         create_budget_subaccount):
     budget = create_budget()
     another_budget = create_budget()
     account = create_budget_account(parent=another_budget)
     subaccount = create_budget_subaccount(parent=account)
-    share_token = create_share_token(instance=budget)
-    api_client.include_share_token(share_token)
+    public_token = create_public_token(instance=budget)
+    api_client.include_public_token(public_token)
     response = api_client.get("/v1/subaccounts/%s/children/" % subaccount.pk)
     assert response.status_code == 401
 
 
-def test_get_template_subaccount_subaccounts_with_share_token(api_client,
-        create_template, create_template_account, create_share_token,
+def test_get_template_subaccount_subaccounts_with_public_token(api_client,
+        create_template, create_template_account, create_public_token,
         create_template_subaccount):
     budget = create_template()
     account = create_template_account(parent=budget)
     subaccount = create_template_subaccount(parent=account)
-    share_token = create_share_token(instance=budget)
-    api_client.include_share_token(share_token)
+    public_token = create_public_token(instance=budget)
+    api_client.include_public_token(public_token)
     response = api_client.get("/v1/subaccounts/%s/children/" % subaccount.pk)
     assert response.status_code == 401
 
 
-def test_get_shared_budget_subaccount(api_client, create_budget,
-        create_share_token, create_budget_account, create_budget_subaccount):
+def test_get_Public_budget_subaccount(api_client, create_budget,
+        create_public_token, create_budget_account, create_budget_subaccount):
     budget = create_budget()
     account = create_budget_account(parent=budget)
     subaccount = create_budget_subaccount(parent=account)
-    share_token = create_share_token(instance=budget)
-    api_client.include_share_token(share_token)
+    public_token = create_public_token(instance=budget)
+    api_client.include_public_token(public_token)
     response = api_client.get("/v1/subaccounts/%s/" % subaccount.pk)
     assert response.status_code == 200
 
 
-def test_get_another_shared_budget_account(api_client, create_budget,
-        create_share_token, create_budget_account, create_budget_subaccount):
+def test_get_another_Public_budget_account(api_client, create_budget,
+        create_public_token, create_budget_account, create_budget_subaccount):
     budget = create_budget()
     another_budget = create_budget()
     account = create_budget_account(parent=another_budget)
     subaccount = create_budget_subaccount(parent=account)
-    share_token = create_share_token(instance=budget)
-    api_client.include_share_token(share_token)
+    public_token = create_public_token(instance=budget)
+    api_client.include_public_token(public_token)
     response = api_client.get("/v1/subaccounts/%s/" % subaccount.pk)
     assert response.status_code == 401
 
 
-def test_update_shared_budget_account(api_client, create_budget,
-        create_share_token, create_budget_account, create_budget_subaccount):
+def test_update_Public_budget_account(api_client, create_budget,
+        create_public_token, create_budget_account, create_budget_subaccount):
     budget = create_budget()
     account = create_budget_account(parent=budget)
     subaccount = create_budget_subaccount(parent=account)
-    share_token = create_share_token(instance=budget)
-    api_client.include_share_token(share_token)
+    public_token = create_public_token(instance=budget)
+    api_client.include_public_token(public_token)
     response = api_client.post("/v1/subaccounts/%s/" % subaccount.pk, data={
         'identifier': 'New Identifier'
     })
     assert response.status_code == 401
 
 
-def test_create_shared_budget_subaccount(api_client, create_budget,
-        create_share_token, create_budget_account):
+def test_create_Public_budget_subaccount(api_client, create_budget,
+        create_public_token, create_budget_account):
     budget = create_budget()
     account = create_budget_account(parent=budget)
-    share_token = create_share_token(instance=budget)
-    api_client.include_share_token(share_token)
+    public_token = create_public_token(instance=budget)
+    api_client.include_public_token(public_token)
     response = api_client.post("/v1/accounts/%s/children/" % account.pk, data={
         'identifier': 'New Identifier'
     })

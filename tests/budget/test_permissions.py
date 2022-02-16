@@ -12,11 +12,11 @@ def test_get_budgets_not_logged_in(api_client):
     assert response.status_code == 401
 
 
-def test_get_budgets_with_share_token(api_client, create_budget,
-        create_share_token):
+def test_get_budgets_with_public_token(api_client, create_budget,
+        create_public_token):
     budget = create_budget()
-    share_token = create_share_token(instance=budget)
-    api_client.include_share_token(share_token)
+    public_token = create_public_token(instance=budget)
+    api_client.include_public_token(public_token)
     response = api_client.get("/v1/budgets/")
     assert response.status_code == 401
 
@@ -27,31 +27,31 @@ def test_get_budget_accounts_not_logged_in(api_client, budget_f):
     assert response.status_code == 401
 
 
-def test_get_shared_budget_accounts(api_client, create_budget,
-        create_share_token):
+def test_get_Public_budget_accounts(api_client, create_budget,
+        create_public_token):
     budget = create_budget()
-    share_token = create_share_token(instance=budget)
-    api_client.include_share_token(share_token)
+    public_token = create_public_token(instance=budget)
+    api_client.include_public_token(public_token)
     response = api_client.get("/v1/budgets/%s/children/" % budget.pk)
     assert response.status_code == 200
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_another_shared_budget_accounts(api_client, create_budget,
-        create_share_token):
+def test_get_another_Public_budget_accounts(api_client, create_budget,
+        create_public_token):
     budget = create_budget()
     another_budget = create_budget()
-    share_token = create_share_token(instance=budget)
-    api_client.include_share_token(share_token)
+    public_token = create_public_token(instance=budget)
+    api_client.include_public_token(public_token)
     response = api_client.get("/v1/budgets/%s/children/" % another_budget.pk)
     assert response.status_code == 401
 
 
-def test_get_template_accounts_with_share_token(api_client, create_template,
-        create_share_token):
+def test_get_template_accounts_with_public_token(api_client, create_template,
+        create_public_token):
     budget = create_template()
-    share_token = create_share_token(instance=budget)
-    api_client.include_share_token(share_token)
+    public_token = create_public_token(instance=budget)
+    api_client.include_public_token(public_token)
     response = api_client.get("/v1/budgets/%s/children/" % budget.pk)
     assert response.status_code == 401
 
@@ -64,10 +64,10 @@ def test_get_another_user_budget(api_client, budget_f, user, admin_user):
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_shared_budget(api_client, create_budget, create_share_token):
+def test_get_Public_budget(api_client, create_budget, create_public_token):
     budget = create_budget()
-    share_token = create_share_token(instance=budget)
-    api_client.include_share_token(share_token)
+    public_token = create_public_token(instance=budget)
+    api_client.include_public_token(public_token)
     response = api_client.get("/v1/budgets/%s/" % budget.pk)
     assert response.status_code == 200
     assert response.json() == {
@@ -85,20 +85,20 @@ def test_get_shared_budget(api_client, create_budget, create_share_token):
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_another_shared_budget(api_client, create_budget,
-        create_share_token):
+def test_get_another_Public_budget(api_client, create_budget,
+        create_public_token):
     budget = create_budget()
     another_budget = create_budget()
-    share_token = create_share_token(instance=budget)
-    api_client.include_share_token(share_token)
+    public_token = create_public_token(instance=budget)
+    api_client.include_public_token(public_token)
     response = api_client.get("/v1/budgets/%s/" % another_budget.pk)
     assert response.status_code == 401
 
 
-def test_update_shared_budget(api_client, create_budget, create_share_token):
+def test_update_Public_budget(api_client, create_budget, create_public_token):
     budget = create_budget()
-    share_token = create_share_token(instance=budget)
-    api_client.include_share_token(share_token)
+    public_token = create_public_token(instance=budget)
+    api_client.include_public_token(public_token)
     response = api_client.post("/v1/budgets/%s/" % budget.pk, data={
         'name': 'New Name'
     })
@@ -110,11 +110,11 @@ def test_create_budget_not_logged_in(api_client):
     assert response.status_code == 401
 
 
-def test_create_budget_with_share_token(api_client, create_share_token,
+def test_create_budget_with_public_token(api_client, create_public_token,
         create_budget):
     budget = create_budget()
-    share_token = create_share_token(instance=budget)
-    api_client.include_share_token(share_token)
+    public_token = create_public_token(instance=budget)
+    api_client.include_public_token(public_token)
     response = api_client.post("/v1/budgets/", data={'name': 'New Name'})
     assert response.status_code == 401
 
@@ -161,11 +161,11 @@ def test_duplicate_budget_unsubscribed(api_client, user, create_budget):
     }]}
 
 
-def test_create_shared_budget_account(api_client, create_budget,
-        create_share_token):
+def test_create_Public_budget_account(api_client, create_budget,
+        create_public_token):
     budget = create_budget()
-    share_token = create_share_token(instance=budget)
-    api_client.include_share_token(share_token)
+    public_token = create_public_token(instance=budget)
+    api_client.include_public_token(public_token)
     response = api_client.post("/v1/budgets/%s/children/" % budget.pk, data={
         'identifier': 'New Identifier'
     })

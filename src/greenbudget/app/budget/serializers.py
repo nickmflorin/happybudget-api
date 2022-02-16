@@ -1,7 +1,7 @@
 from rest_framework import serializers, exceptions
 
 from greenbudget.app.account.serializers import AccountPdfSerializer
-from greenbudget.app.authentication.serializers import ShareTokenSerializer
+from greenbudget.app.authentication.serializers import PublicTokenSerializer
 from greenbudget.app.group.serializers import GroupSerializer
 from greenbudget.app.io.fields import Base64ImageField
 from greenbudget.app.markup.serializers import MarkupSerializer
@@ -81,7 +81,7 @@ class BudgetSimpleSerializer(BaseBudgetSerializer):
 
     def to_representation(self, instance):
         # We allow unauthenticated users to retrieve information about a
-        # Budget that is associated with a ShareToken.  In this case, we cannot
+        # Budget that is associated with a PublicToken.  In this case, we cannot
         # include whether or not the Budget is permissioned, both because the
         # user is anonymous and we would not want to include that info in a
         # response.
@@ -102,12 +102,12 @@ class BudgetSerializer(BudgetSimpleSerializer):
     accumulated_fringe_contribution = serializers.FloatField(read_only=True)
     accumulated_markup_contribution = serializers.FloatField(read_only=True)
     actual = serializers.FloatField(read_only=True)
-    share_token = ShareTokenSerializer(read_only=True)
+    public_token = PublicTokenSerializer(read_only=True)
 
     class Meta:
         model = Budget
         fields = BudgetSimpleSerializer.Meta.fields \
-            + ('nominal_value', 'actual', 'share_token',
+            + ('nominal_value', 'actual', 'public_token',
                 'accumulated_markup_contribution',
                 'accumulated_fringe_contribution'
             )
@@ -115,5 +115,5 @@ class BudgetSerializer(BudgetSimpleSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
         if not self.context['user'].is_authenticated:
-            del data['share_token']
+            del data['public_token']
         return data

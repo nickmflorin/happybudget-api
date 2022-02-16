@@ -9,16 +9,16 @@ from greenbudget.app.user.serializers import UserSerializer
 
 from .backends import (
     CsrfExcemptCookieSessionAuthentication,
-    CsrfExcemptShareAuthentication
+    CsrfExcemptPublicAuthentication
 )
 from .middleware import AuthTokenCookieMiddleware
-from .models import ShareToken
+from .models import PublicToken
 from .serializers import (
     LoginSerializer, SocialLoginSerializer, VerifyEmailSerializer,
     AuthTokenValidationSerializer, RecoverPasswordSerializer,
     TokenValidationSerializer, EmailTokenValidationSerializer,
-    ResetPasswordTokenValidationSerializer, ShareTokenSerializer,
-    ShareTokenValidationSerializer)
+    ResetPasswordTokenValidationSerializer, PublicTokenSerializer,
+    PublicTokenValidationSerializer)
 from .tokens import AuthToken, AccessToken
 from .utils import parse_token_from_request, user_can_authenticate
 
@@ -27,9 +27,9 @@ def sensitive_post_parameters_m(*args):
     return method_decorator(sensitive_post_parameters(*args))
 
 
-class ShareTokenValidateView(views.GenericView):
-    serializer_class = ShareTokenValidationSerializer
-    authentication_classes = (CsrfExcemptShareAuthentication, )
+class PublicTokenValidateView(views.GenericView):
+    serializer_class = PublicTokenValidationSerializer
+    authentication_classes = (CsrfExcemptPublicAuthentication, )
     permission_classes = (permissions.AllowAny, )
 
     @sensitive_post_parameters_m('token')
@@ -192,13 +192,13 @@ class RecoverPasswordView(AbstractUnauthenticatedView):
     serializer_class = RecoverPasswordSerializer
 
 
-class ShareTokenView(
+class PublicTokenView(
     mixins.DestroyModelMixin,
     mixins.UpdateModelMixin,
     mixins.RetrieveModelMixin,
     views.GenericViewSet
 ):
-    serializer_class = ShareTokenSerializer
+    serializer_class = PublicTokenSerializer
 
     def get_queryset(self):
-        return ShareToken.objects.filter(created_by=self.request.user)
+        return PublicToken.objects.filter(created_by=self.request.user)

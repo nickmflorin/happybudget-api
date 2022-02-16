@@ -15,7 +15,7 @@ from django.db import connection
 from rest_framework.test import APIClient
 
 from greenbudget.app import cache
-from greenbudget.app.authentication.models import ShareToken
+from greenbudget.app.authentication.models import PublicToken
 from greenbudget.app.budget.models import Budget
 from greenbudget.app.fringe.models import Fringe
 from greenbudget.app.group.models import Group
@@ -120,10 +120,10 @@ def api_client(settings):
                 kwargs_with_headers.update(**kwargs)
             return super().generic(*args, **kwargs_with_headers)
 
-        def include_share_token(self, token):
+        def include_public_token(self, token):
             header_name = (
-                f"HTTP_{settings.SHARE_TOKEN_HEADER.replace('-', '_')}".upper())
-            if isinstance(token, ShareToken):
+                f"HTTP_{settings.PUBLIC_TOKEN_HEADER.replace('-', '_')}".upper())
+            if isinstance(token, PublicToken):
                 self._dynamic_headers[header_name] = str(token.private_id)
             else:
                 self._dynamic_headers[header_name] = str(token)

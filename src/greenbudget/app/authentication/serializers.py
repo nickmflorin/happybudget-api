@@ -16,14 +16,14 @@ from greenbudget.app.user.fields import EmailField
 from greenbudget.app.user.models import User
 
 from .exceptions import EmailDoesNotExist
-from .fields import ShareTokenInstanceField
-from .models import ShareToken
+from .fields import PublicTokenInstanceField
+from .models import PublicToken
 from .tokens import AuthToken, AccessToken
 from .utils import (
-    validate_password, parse_token, user_can_authenticate, parse_share_token)
+    validate_password, parse_token, user_can_authenticate, parse_public_token)
 
 
-class ShareTokenSerializer(serializers.ModelSerializer):
+class PublicTokenSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
     public_id = serializers.UUIDField(required=False, allow_null=False)
@@ -31,7 +31,7 @@ class ShareTokenSerializer(serializers.ModelSerializer):
     is_expired = serializers.BooleanField(read_only=True)
 
     class Meta:
-        model = ShareToken
+        model = PublicToken
         fields = ('id', 'created_at', 'public_id', 'expires_at', 'is_expired')
 
     def validate_expires_at(self, value):
@@ -56,9 +56,9 @@ class ShareTokenSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data, already_attempted=False):
         validator = UniqueTogetherValidator(
-            queryset=ShareToken.objects.all(),
+            queryset=PublicToken.objects.all(),
             model_fields=('object_id', 'content_type_id'),
-            message="Share token already exists for instance."
+            message="Public token already exists for instance."
         )
         try:
             validator(validated_data, self)
@@ -70,8 +70,8 @@ class ShareTokenSerializer(serializers.ModelSerializer):
                 raise e
             # Since the unique validator did not fail, this instance should
             # exist.  In the future we may need to be concerned with race
-            # conditions, in which case we should catch ShareToken.DoesNotExist.
-            violating_instance = ShareToken.objects.get(
+            # conditions, in which case we should catch PublicToken.DoesNotExist.
+            violating_instance = PublicToken.objects.get(
                 object_id=self.context['instance'].pk,
                 content_type_id=ContentType.objects.get_for_model(
                     type(self.context['instance'])),
@@ -83,7 +83,7 @@ class ShareTokenSerializer(serializers.ModelSerializer):
             # The instance causing the unique constraint error is expired, so
             # we can just delete it.  Note that this logic will not be hit as
             # often when we have an async server running for background tasks
-            # that can delete expired share tokens.
+            # that can delete expired public tokens.
             violating_instance.delete()
             # Just in case the unique constraint fails again, we want to make
             # the recursion exit to avoid infinite recursions.
@@ -92,8 +92,8 @@ class ShareTokenSerializer(serializers.ModelSerializer):
             return super().create(validated_data)
 
 
-class ShareTokenValidationSerializer(serializers.Serializer):
-    instance = ShareTokenInstanceField(
+class PublicTokenValidationSerializer(serializers.Serializer):
+    instance = PublicTokenInstanceField(
         required=True,
         allow_null=False,
         model_classes={'budget': Budget}
@@ -107,7 +107,7 @@ class ShareTokenValidationSerializer(serializers.Serializer):
     )
 
     def validate(self, attrs):
-        token = parse_share_token(
+        token = parse_public_token(
             token=attrs['token'],
             instance=attrs['instance'],
             public=True

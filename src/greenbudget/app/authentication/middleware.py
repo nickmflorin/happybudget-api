@@ -17,30 +17,31 @@ from .exceptions import InvalidToken
 from .tokens import AuthToken
 from .utils import (
     parse_token_from_request, parse_token, user_can_authenticate,
-    request_is_admin, request_is_write_method, parse_share_token)
+    request_is_admin, request_is_write_method, parse_public_token)
 
 
 logger = logging.getLogger('greenbudget')
 
 
-def get_share_token(request):
-    if not hasattr(request, '_cached_share_token'):
-        request._cached_share_token = parse_share_token(request=request)
-    return request._cached_share_token
+def get_public_token(request):
+    if not hasattr(request, '_cached_public_token'):
+        request._cached_public_token = parse_public_token(request=request)
+    return request._cached_public_token
 
 
-class ShareTokenMiddleware(MiddlewareMixin):
+class PublicTokenMiddleware(MiddlewareMixin):
     """
-    Middleware that automatically maintains a share token on the request,
+    Middleware that automatically maintains a public token on the request,
     as it is provided via the the request header defined by the settings
-    configuration `SHARE_TOKEN_HEADER`.
+    configuration `PUBLIC_TOKEN_HEADER`.
     """
 
     def process_request(self, request):
-        assert hasattr(settings, 'SHARE_TOKEN_HEADER'), \
-            'ShareTokenMiddleware requires the SHARE_TOKEN_HEADER setting ' \
+        assert hasattr(settings, 'PUBLIC_TOKEN_HEADER'), \
+            'PublicTokenMiddleware requires the PUBLIC_TOKEN_HEADER setting ' \
             'to be set.'
-        request.share_token = SimpleLazyObject(lambda: get_share_token(request))
+        request.public_token = SimpleLazyObject(
+            lambda: get_public_token(request))
 
 
 def get_session_user(request, cache_stripe_info=True):

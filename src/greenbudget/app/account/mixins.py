@@ -43,7 +43,7 @@ class AccountNestedMixin(mixins.NestedObjectViewMixin):
         }}
 
 
-class AccountSharedNestedMixin(AccountNestedMixin):
+class AccountPublicNestedMixin(AccountNestedMixin):
     account_permission_classes = [
         permissions.OR(
             permissions.AND(
@@ -51,7 +51,7 @@ class AccountSharedNestedMixin(AccountNestedMixin):
                 AccountProductPermission(products="__any__")
             ),
             permissions.AND(
-                permissions.IsShared(
+                permissions.IsPublic(
                     get_permissioned_obj=lambda obj: obj.budget),
                 permissions.IsSafeRequestMethod,
                 is_object_applicable=lambda c: c.obj.domain == 'budget',
@@ -64,7 +64,7 @@ class AccountSharedNestedMixin(AccountNestedMixin):
             permissions.IsFullyAuthenticated,
             permissions.AND(
                 IsBudgetDomain(get_nested_obj=lambda view: view.account.budget),
-                permissions.IsShared(
+                permissions.IsPublic(
                     get_nested_obj=lambda view: view.account.budget),
                 permissions.IsSafeRequestMethod,
             ),

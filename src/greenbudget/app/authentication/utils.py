@@ -1,5 +1,5 @@
 from .tokens import AuthToken
-from .models import ShareToken
+from .models import PublicToken
 import logging
 
 from django.conf import settings
@@ -13,7 +13,7 @@ from greenbudget.lib.utils import empty
 
 from .exceptions import (
     BaseTokenError, InvalidToken, ExpiredToken, NotAuthenticatedError)
-from .models import AnonymousShareToken
+from .models import AnonymousPublicToken
 
 
 logger = logging.getLogger('greenbudget')
@@ -51,35 +51,35 @@ def parse_token_from_request(request):
     return request.COOKIES.get(settings.JWT_TOKEN_COOKIE_NAME)
 
 
-def parse_share_token_from_request(request):
-    return request.headers.get(settings.SHARE_TOKEN_HEADER)
+def parse_public_token_from_request(request):
+    return request.headers.get(settings.PUBLIC_TOKEN_HEADER)
 
 
 def parse_user_id_from_token(token_obj):
     return token_obj.get(api_settings.USER_ID_CLAIM)
 
 
-def parse_share_token(token=empty, request=None, instance=None, public=False):
+def parse_public_token(token=empty, request=None, instance=None, public=False):
     assert token is not empty or request is not None, \
         "Either the request or token must be provided."
     if token is empty:
-        token = parse_share_token_from_request(request)
-        return parse_share_token(token=token, instance=instance, public=public)
+        token = parse_public_token_from_request(request)
+        return parse_public_token(token=token, instance=instance, public=public)
 
     if token is None:
-        return AnonymousShareToken()
+        return AnonymousPublicToken()
 
     kwargs = {'public_id': str(token)} if public else {'private_id': str(token)}
     try:
-        share_token = ShareToken.objects.get(**kwargs)
-    except ShareToken.DoesNotExist:
+        public_token = PublicToken.objects.get(**kwargs)
+    except PublicToken.DoesNotExist:
         raise InvalidToken()
     else:
-        if instance is not None and share_token.instance != instance:
+        if instance is not None and public_token.instance != instance:
             raise InvalidToken()
-        elif share_token.is_expired:
+        elif public_token.is_expired:
             raise ExpiredToken()
-        return share_token
+        return public_token
 
 
 def parse_token(token=empty, request=None, token_cls=None):

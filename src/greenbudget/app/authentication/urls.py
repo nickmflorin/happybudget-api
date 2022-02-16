@@ -6,25 +6,25 @@ from rest_framework import routers
 from .views import (
     LoginView, LogoutView, RecoverPasswordView, SocialLoginView,
     VerifyEmailView, AuthTokenValidateView, PasswordRecoveryTokenValidateView,
-    EmailTokenValidateView, PasswordResetTokenValidateView, ShareTokenView,
-    ShareTokenValidateView)
+    EmailTokenValidateView, PasswordResetTokenValidateView, PublicTokenView,
+    PublicTokenValidateView)
 
 
 app_name = "authentication"
 
 
-share_token_router = routers.SimpleRouter()
-share_token_router.register(
-    r'share-tokens', ShareTokenView, basename='share-token')
+public_token_router = routers.SimpleRouter()
+public_token_router.register(
+    r'public-tokens', PublicTokenView, basename='public-token')
 
 urlpatterns = [
     path('login/', csrf_exempt(LoginView.as_view()), name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('validate/', AuthTokenValidateView.as_view(), name='validate'),
     path(
-        'validate-share/',
-        ShareTokenValidateView.as_view(),
-        name='validate-share'
+        'validate-public/',
+        PublicTokenValidateView.as_view(),
+        name='validate-public'
     ),
     path(
         'validate-password-recovery-token/',
@@ -38,4 +38,4 @@ urlpatterns = [
     path('recover-password/', RecoverPasswordView.as_view()),
     path('social-login/', csrf_exempt(SocialLoginView.as_view())),
     path('verify-email/', csrf_exempt(VerifyEmailView.as_view())),
-] + share_token_router.urls
+] + public_token_router.urls
