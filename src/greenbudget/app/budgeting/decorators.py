@@ -279,7 +279,7 @@ class bulk_update_action(bulk_action):
                 children,
                 many=True
             ),
-            'data': self.render_serializer_data(
+            'parent': self.render_serializer_data(
                 self.base_serializer_cls,
                 instance=instance
             ),
@@ -306,7 +306,7 @@ class bulk_create_action(bulk_action):
                 children,
                 many=True
             ),
-            'data': self.render_serializer_data(
+            'parent': self.render_serializer_data(
                 self.base_serializer_cls,
                 instance=instance
             ),
@@ -327,8 +327,10 @@ class bulk_delete_action(bulk_action):
     def decorated(self, view, request):
         updated_instance = super().decorated(view, request)
         return self.render_response({
-            'data': self.render_serializer_data(
-                self.base_serializer_cls, instance=updated_instance)
+            'parent': self.render_serializer_data(
+                self.base_serializer_cls,
+                instance=updated_instance
+            )
         })
 
 

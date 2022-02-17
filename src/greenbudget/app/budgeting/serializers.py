@@ -29,7 +29,7 @@ class EntityPolymorphicSerializer(PolymorphicNonPolymorphicSerializer):
     }
 
 
-class BudgetParentContextSerializer(serializers.ModelSerializer):
+class AncestrySerializer(serializers.ModelSerializer):
     class Meta:
         abstract = True
 
@@ -54,7 +54,7 @@ class BudgetParentContextSerializer(serializers.ModelSerializer):
                 if isinstance(parent, (Budget, Template)):
                     return {
                         "data": data,
-                        "budget": EntityPolymorphicSerializer(
+                        "parent": EntityPolymorphicSerializer(
                             instance=parent,
                             context=self.context
                         ).data

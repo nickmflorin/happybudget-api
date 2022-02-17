@@ -212,11 +212,9 @@ def test_bulk_update_accounts(api_client, user, budget_f, create_group):
     assert accounts[1].description == "New Description 2"
     assert accounts[1].group == group
 
-    # The data in the response refers to base the entity we are updating, A.K.A.
-    # the Budget.
-    assert response.json()['data']['id'] == budget.pk
-    assert response.json()['data']['nominal_value'] == 0.0
-    assert response.json()['data']['actual'] == 0.0
+    assert response.json()['parent']['id'] == budget.pk
+    assert response.json()['parent']['nominal_value'] == 0.0
+    assert response.json()['parent']['actual'] == 0.0
 
 
 def test_bulk_update_accounts_outside_budget(api_client, user, budget_f):
@@ -282,11 +280,9 @@ def test_bulk_create_account(api_client, user, budget_f, models):
     assert response.json()['children'][1]['identifier'] == "account-b"
     assert response.json()['children'][1]['description'] == "New Description 2"
 
-    # The data in the response refers to base the entity we are updating, A.K.A.
-    # the Budget.
-    assert response.json()['data']['id'] == budget.pk
-    assert response.json()['data']['nominal_value'] == 0.0
-    assert response.json()['data']['actual'] == 0.0
+    assert response.json()['parent']['id'] == budget.pk
+    assert response.json()['parent']['nominal_value'] == 0.0
+    assert response.json()['parent']['actual'] == 0.0
 
 
 def test_bulk_delete_accounts(api_client, user, budget_f, models):
@@ -316,11 +312,9 @@ def test_bulk_delete_accounts(api_client, user, budget_f, models):
     assert response.status_code == 200
     assert models.Account.objects.count() == 0
 
-    # The data in the response refers to base the entity we are updating, A.K.A.
-    # the Budget.
-    assert response.json()['data']['id'] == budget.pk
-    assert response.json()['data']['nominal_value'] == 0.0
-    assert response.json()['data']['actual'] == 0.0
+    assert response.json()['parent']['id'] == budget.pk
+    assert response.json()['parent']['nominal_value'] == 0.0
+    assert response.json()['parent']['actual'] == 0.0
 
     budget.refresh_from_db()
     assert budget.nominal_value == 0.0

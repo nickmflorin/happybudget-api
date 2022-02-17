@@ -296,7 +296,7 @@ def test_bulk_create_contact(api_client, user, models):
     assert response.status_code == 201
     assert models.Contact.objects.count() == 2
     contacts = models.Contact.objects.all()
-    assert response.json()['data'] == [
+    assert response.json()['children'] == [
         {
             "id": contacts[0].pk,
             "type": "contact",

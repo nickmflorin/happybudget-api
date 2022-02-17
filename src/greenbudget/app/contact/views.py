@@ -103,8 +103,10 @@ class ContactViewSet(
         )
         serializer = serializer_cls(data=request.data)
         serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        return response.Response(status=status.HTTP_200_OK)
+        children = self.perform_update(serializer)
+        return response.Response({
+            'children': self.serializer_class(children, many=True).data
+        }, status=status.HTTP_200_OK)
 
     @decorators.action(detail=False, url_path="bulk-create", methods=["PATCH"])
     def bulk_create(self, request, *args, **kwargs):
@@ -123,7 +125,6 @@ class ContactViewSet(
             created_by=self.request.user,
             updated_by=self.request.user
         )
-
         return response.Response({
-            'data': self.serializer_class(children, many=True).data
+            'children': self.serializer_class(children, many=True).data
         }, status=status.HTTP_201_CREATED)

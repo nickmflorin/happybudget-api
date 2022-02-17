@@ -162,8 +162,8 @@ def test_update_markup_children(api_client, user, budget_f, create_markup,
         "children": [a.pk for a in accounts],
     }
 
-    assert response.json()["budget"]["accumulated_markup_contribution"] == 90.0
-    assert response.json()["budget"]["nominal_value"] == 60.0
+    assert response.json()["parent"]["accumulated_markup_contribution"] == 90.0
+    assert response.json()["parent"]["nominal_value"] == 60.0
 
 
 def test_update_account_markup_children(api_client, user, budget_f, models,
@@ -251,8 +251,8 @@ def test_update_account_markup_children(api_client, user, budget_f, models,
         "children": [a.pk for a in subaccounts],
     }
 
-    assert response.json()["budget"]["accumulated_markup_contribution"] == 35.0
-    assert response.json()["budget"]["nominal_value"] == 20.0
+    assert response.json()["parent"]["accumulated_markup_contribution"] == 35.0
+    assert response.json()["parent"]["nominal_value"] == 20.0
 
 
 def test_update_subaccount_markup_children(api_client, user, budget_f, models,
@@ -426,8 +426,8 @@ def test_update_account_flat_markup_rate(api_client, user, budget_f, models,
         }
     }
 
-    assert response.json()["budget"]["accumulated_markup_contribution"] == 70.0
-    assert response.json()["budget"]["nominal_value"] == 40.0
+    assert response.json()["parent"]["accumulated_markup_contribution"] == 70.0
+    assert response.json()["parent"]["nominal_value"] == 40.0
 
 
 def test_change_account_flat_markup_to_percent(api_client, user, models,
@@ -506,8 +506,8 @@ def test_change_account_flat_markup_to_percent(api_client, user, models,
         }
     }
 
-    assert response.json()["budget"]["accumulated_markup_contribution"] == 40.0
-    assert response.json()["budget"]["nominal_value"] == 40.0
+    assert response.json()["parent"]["accumulated_markup_contribution"] == 40.0
+    assert response.json()["parent"]["nominal_value"] == 40.0
 
 
 @pytest.mark.parametrize('data', [{}, {'children': []}])
@@ -628,8 +628,8 @@ def test_update_account_percent_markup_rate(api_client, user, budget_f, models,
         "children": [a.pk for a in accounts],
     }
 
-    assert response.json()["budget"]["accumulated_markup_contribution"] == 54.0
-    assert response.json()["budget"]["nominal_value"] == 40.0
+    assert response.json()["parent"]["accumulated_markup_contribution"] == 54.0
+    assert response.json()["parent"]["nominal_value"] == 40.0
 
 
 def test_change_account_percent_markup_to_flat(api_client, user, models,
@@ -709,8 +709,8 @@ def test_change_account_percent_markup_to_flat(api_client, user, models,
         },
     }
 
-    assert response.json()["budget"]["accumulated_markup_contribution"] == 50.0
-    assert response.json()["budget"]["nominal_value"] == 40.0
+    assert response.json()["parent"]["accumulated_markup_contribution"] == 50.0
+    assert response.json()["parent"]["nominal_value"] == 40.0
 
 
 def test_change_account_percent_markup_to_flat_children(api_client, user, models,

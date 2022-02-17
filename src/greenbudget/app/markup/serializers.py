@@ -5,7 +5,7 @@ from greenbudget.lib.drf.exceptions import InvalidFieldError
 from greenbudget.lib.drf.fields import ModelChoiceField
 
 from greenbudget.app.budget.models import BaseBudget
-from greenbudget.app.budgeting.serializers import BudgetParentContextSerializer
+from greenbudget.app.budgeting.serializers import AncestrySerializer
 from greenbudget.app.tabling.fields import TablePrimaryKeyRelatedField
 
 from .models import Markup
@@ -46,7 +46,7 @@ class MarkupSimpleSerializer(serializers.ModelSerializer):
         fields = ('id', 'identifier', 'description', 'type')
 
 
-class MarkupSerializer(BudgetParentContextSerializer):
+class MarkupSerializer(AncestrySerializer):
     id = serializers.IntegerField(read_only=True)
     type = serializers.CharField(read_only=True)
     identifier = serializers.CharField(

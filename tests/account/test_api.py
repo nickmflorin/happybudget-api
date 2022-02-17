@@ -145,14 +145,12 @@ def test_bulk_update_subaccounts(api_client, user, freezer, budget_f):
         ]})
     assert response.status_code == 200
 
-    # The data in the response refers to base the entity we are updating, A.K.A.
-    # the Account.
-    assert response.json()['data']['id'] == account.pk
-    assert response.json()['data']['nominal_value'] == 40.0
-    assert response.json()['data']['actual'] == 0.0
-    assert len(response.json()['data']['children']) == 2
-    assert response.json()['data']['children'][0] == subaccounts[0].pk
-    assert response.json()['data']['children'][1] == subaccounts[1].pk
+    assert response.json()['parent']['id'] == account.pk
+    assert response.json()['parent']['nominal_value'] == 40.0
+    assert response.json()['parent']['actual'] == 0.0
+    assert len(response.json()['parent']['children']) == 2
+    assert response.json()['parent']['children'][0] == subaccounts[0].pk
+    assert response.json()['parent']['children'][1] == subaccounts[1].pk
 
     assert response.json()['budget']['id'] == budget.pk
     assert response.json()['budget']['nominal_value'] == 40.0
@@ -219,19 +217,18 @@ def test_bulk_update_subaccount_fringes(api_client, user, create_fringe,
 
     assert response.status_code == 200
 
-    # The data in the response refers to base the entity we are updating, A.K.A.
-    # the Account.
-    assert response.json()['data']['id'] == account.pk
-    assert response.json()['data']['nominal_value'] == 200.0
-    assert response.json()['data']['accumulated_fringe_contribution'] == 70.0
-    assert response.json()['data']['actual'] == 0.0
-    assert len(response.json()['data']['children']) == 2
-    assert response.json()['data']['children'][0] == subaccounts[0].pk
-    assert response.json()['data']['children'][1] == subaccounts[1].pk
+    assert response.json()['parent']['id'] == account.pk
+    assert response.json()['parent']['nominal_value'] == 200.0
+    assert response.json()['parent']['accumulated_fringe_contribution'] == 70.0
+    assert response.json()['parent']['actual'] == 0.0
+    assert len(response.json()['parent']['children']) == 2
+    assert response.json()['parent']['children'][0] == subaccounts[0].pk
+    assert response.json()['parent']['children'][1] == subaccounts[1].pk
 
     assert response.json()['budget']['id'] == budget.pk
     assert response.json()['budget']['nominal_value'] == 200.0
-    assert response.json()['budget']['accumulated_fringe_contribution'] == 70.0
+    assert response.json()[
+        'budget']['accumulated_fringe_contribution'] == 70.0
 
     # Make sure the Account is updated in the database.
     account.refresh_from_db()
@@ -279,12 +276,10 @@ def test_bulk_delete_subaccounts(api_client, user, models, budget_f):
     assert response.status_code == 200
     assert models.SubAccount.objects.count() == 0
 
-    # The data in the response refers to base the entity we are updating, A.K.A.
-    # the Account.
-    assert response.json()['data']['id'] == account.pk
-    assert response.json()['data']['nominal_value'] == 0.0
-    assert response.json()['data']['actual'] == 0.0
-    assert len(response.json()['data']['children']) == 0
+    assert response.json()['parent']['id'] == account.pk
+    assert response.json()['parent']['nominal_value'] == 0.0
+    assert response.json()['parent']['actual'] == 0.0
+    assert len(response.json()['parent']['children']) == 0
 
     assert response.json()['budget']['id'] == budget.pk
     assert response.json()['budget']['nominal_value'] == 0.0
@@ -373,14 +368,12 @@ def test_bulk_create_subaccount(api_client, user, models, budget_f):
     assert response.json()['children'][1]['nominal_value'] == 20.0
     assert response.json()['children'][1]['actual'] == 0.0
 
-    # The data in the response refers to base the entity we are updating, A.K.A.
-    # the Account.
-    assert response.json()['data']['id'] == account.pk
-    assert response.json()['data']['nominal_value'] == 40.0
-    assert response.json()['data']['actual'] == 0.0
-    assert len(response.json()['data']['children']) == 2
-    assert response.json()['data']['children'][0] == subaccounts[0].pk
-    assert response.json()['data']['children'][1] == subaccounts[1].pk
+    assert response.json()['parent']['id'] == account.pk
+    assert response.json()['parent']['nominal_value'] == 40.0
+    assert response.json()['parent']['actual'] == 0.0
+    assert len(response.json()['parent']['children']) == 2
+    assert response.json()['parent']['children'][0] == subaccounts[0].pk
+    assert response.json()['parent']['children'][1] == subaccounts[1].pk
 
     assert response.json()['budget']['id'] == budget.pk
     assert response.json()['budget']['nominal_value'] == 40.0

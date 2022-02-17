@@ -98,8 +98,8 @@ def test_create_flat_markup(api_client, user, models, budget_f):
         }
     }
 
-    assert response.json()["budget"]["accumulated_markup_contribution"] == 20.0
-    assert response.json()["budget"]["nominal_value"] == 20.0
+    assert response.json()["parent"]["accumulated_markup_contribution"] == 20.0
+    assert response.json()["parent"]["nominal_value"] == 20.0
 
 
 def test_create_percent_markup(api_client, user, models, budget_f):
@@ -175,8 +175,8 @@ def test_create_percent_markup(api_client, user, models, budget_f):
         "children": [account.pk]
     }
 
-    assert response.json()["budget"]["accumulated_markup_contribution"] == 10.0
-    assert response.json()["budget"]["nominal_value"] == 20.0
+    assert response.json()["parent"]["accumulated_markup_contribution"] == 10.0
+    assert response.json()["parent"]["nominal_value"] == 20.0
 
 
 def test_create_percent_markup_invalid_child(api_client, user, models, budget_f):
@@ -285,7 +285,7 @@ def test_bulk_delete_markups(api_client, user, models, create_markup, budget_f):
     assert subaccount.nominal_value == 100.0
     assert subaccount.markup_contribution == 0.0
 
-    assert response.json()['data']['id'] == budget.pk
-    assert response.json()['data']['nominal_value'] == 100.0
-    assert response.json()['data']['accumulated_markup_contribution'] == 100.0
-    assert response.json()['data']['actual'] == 0.0
+    assert response.json()['parent']['id'] == budget.pk
+    assert response.json()['parent']['nominal_value'] == 100.0
+    assert response.json()['parent']['accumulated_markup_contribution'] == 100.0
+    assert response.json()['parent']['actual'] == 0.0

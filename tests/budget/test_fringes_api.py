@@ -111,13 +111,11 @@ def test_bulk_create_fringe(api_client, user, models, budget_f):
     assert response.json()['children'][1]['name'] == 'fringe-b'
     assert response.json()['children'][1]['rate'] == 2.2
 
-    # The data in the response refers to base the entity we are updating, A.K.A.
-    # the Budget.
-    assert response.json()['data']['id'] == budget.pk
+    assert response.json()['parent']['id'] == budget.pk
     # The Fringe(s) should not have an affect on the calculated value of the
     # Budget because they have not yet been tied to a specific SubAccount.
-    assert response.json()['data']['nominal_value'] == 200.0
-    assert response.json()['data']['actual'] == 0.0
+    assert response.json()['parent']['nominal_value'] == 200.0
+    assert response.json()['parent']['actual'] == 0.0
 
     # Make sure the actual Fringe(s) were created in the database.
     fringes = models.Fringe.objects.all()
@@ -199,12 +197,10 @@ def test_bulk_update_fringes(api_client, user, create_fringe, budget_f):
         ]})
     assert response.status_code == 200
 
-    # The data in the response refers to base the entity we are updating, A.K.A.
-    # the Budget.
-    assert response.json()['data']['id'] == budget.pk
-    assert response.json()['data']['nominal_value'] == 300.0
-    assert response.json()['data']['accumulated_fringe_contribution'] == 390.0
-    assert response.json()['data']['actual'] == 0.0
+    assert response.json()['parent']['id'] == budget.pk
+    assert response.json()['parent']['nominal_value'] == 300.0
+    assert response.json()['parent']['accumulated_fringe_contribution'] == 390.0
+    assert response.json()['parent']['actual'] == 0.0
 
     # Make sure the actual Fringe(s) were updated in the database.
     fringes[0].refresh_from_db()
@@ -304,11 +300,9 @@ def test_bulk_delete_fringes(api_client, user, create_fringe, models, budget_f):
     # Make sure the Fringe(s) were deleted in the database.
     assert models.Fringe.objects.count() == 0
 
-    # The data in the response refers to base the entity we are updating, A.K.A.
-    # the Budget.
-    assert response.json()['data']['id'] == budget.pk
-    assert response.json()['data']['nominal_value'] == 300.0
-    assert response.json()['data']['actual'] == 0.0
+    assert response.json()['parent']['id'] == budget.pk
+    assert response.json()['parent']['nominal_value'] == 300.0
+    assert response.json()['parent']['actual'] == 0.0
 
     # Make sure the actual SubAccount(s) were updated in the database.
     subaccounts[0].refresh_from_db()

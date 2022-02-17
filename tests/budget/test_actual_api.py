@@ -185,11 +185,9 @@ def test_bulk_create_actual(api_client, user, create_budget, create_markup,
     assert response.json()['children'][5]['value'] == 20.0
     assert response.json()['children'][5]['owner']['id'] == markups[1].pk
 
-    # The data in the response refers to base the entity we are updating, A.K.A.
-    # the Budget.
-    assert response.json()['data']['id'] == budget.pk
-    assert response.json()['data']['nominal_value'] == 300.0
-    assert response.json()['data']['actual'] == 310.0
+    assert response.json()['parent']['id'] == budget.pk
+    assert response.json()['parent']['nominal_value'] == 300.0
+    assert response.json()['parent']['actual'] == 310.0
 
     # Make sure the actual Actual(s) were created in the database.
     actuals = models.Actual.objects.all()
@@ -307,11 +305,9 @@ def test_bulk_update_actuals(api_client, user, create_budget, create_markup,
 
     assert response.status_code == 200
 
-    # The data in the response refers to base the entity we are updating, A.K.A.
-    # the Budget.
-    assert response.json()['data']['id'] == budget.pk
-    assert response.json()['data']['nominal_value'] == 300.0
-    assert response.json()['data']['actual'] == sum(new_values)
+    assert response.json()['parent']['id'] == budget.pk
+    assert response.json()['parent']['nominal_value'] == 300.0
+    assert response.json()['parent']['actual'] == sum(new_values)
 
     # Make sure the actual Actual(s) were updated in the database.
     for i, actual in enumerate(actuals):
@@ -431,11 +427,9 @@ def test_change_actual_owner_in_bulk_update(api_client, user, create_budget,
     subaccounts[0].refresh_from_db()
     assert subaccounts[0].actual == 30.0
 
-    # The data in the response refers to base the entity we are updating, A.K.A.
-    # the Budget.
-    assert response.json()['data']['id'] == budget.pk
-    assert response.json()['data']['nominal_value'] == 300.0
-    assert response.json()['data']['actual'] == 360.0
+    assert response.json()['parent']['id'] == budget.pk
+    assert response.json()['parent']['nominal_value'] == 300.0
+    assert response.json()['parent']['actual'] == 360.0
 
     # Make sure the actual SubAccount(s) were updated in the database.
     subaccounts[0].refresh_from_db()
@@ -555,8 +549,6 @@ def test_bulk_delete_actuals(api_client, user, create_budget, create_actual,
     assert budget.nominal_value == 300.0
     assert budget.actual == 230.0
 
-    # The data in the response refers to base the entity we are updating, A.K.A.
-    # the Budget.
-    assert response.json()['data']['id'] == budget.pk
-    assert response.json()['data']['nominal_value'] == 300.0
-    assert response.json()['data']['actual'] == 230.0
+    assert response.json()['parent']['id'] == budget.pk
+    assert response.json()['parent']['nominal_value'] == 300.0
+    assert response.json()['parent']['actual'] == 230.0

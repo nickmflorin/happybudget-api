@@ -304,14 +304,13 @@ def test_bulk_delete_account_markups(api_client, user, models, create_markup,
     assert subaccount.nominal_value == 100.0
     assert subaccount.markup_contribution == 0.0
 
-    # The data in the response refers to base the entity we are updating, A.K.A.
-    # the Account.
-    assert response.json()['data']['id'] == account.pk
-    assert response.json()['data']['nominal_value'] == 100.0
-    assert response.json()['data']['accumulated_markup_contribution'] == 100.0
-    assert response.json()['data']['actual'] == 0.0
+    assert response.json()['parent']['id'] == account.pk
+    assert response.json()['parent']['nominal_value'] == 100.0
+    assert response.json()['parent']['accumulated_markup_contribution'] == 100.0
+    assert response.json()['parent']['actual'] == 0.0
 
     assert response.json()['budget']['id'] == budget.pk
     assert response.json()['budget']['nominal_value'] == 100.0
-    assert response.json()['budget']['accumulated_markup_contribution'] == 100.0
+    assert response.json()[
+        'budget']['accumulated_markup_contribution'] == 100.0
     assert response.json()['budget']['actual'] == 0.0
