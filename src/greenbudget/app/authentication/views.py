@@ -31,6 +31,7 @@ class PublicTokenValidateView(views.GenericView):
     serializer_class = PublicTokenValidationSerializer
     authentication_classes = (CsrfExcemptPublicAuthentication, )
     permission_classes = (permissions.AllowAny, )
+    throttle_classes = []
 
     @sensitive_post_parameters_m('token')
     def dispatch(self, request, *args, **kwargs):
