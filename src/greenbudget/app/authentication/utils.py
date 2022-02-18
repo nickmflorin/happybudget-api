@@ -52,7 +52,7 @@ def parse_token_from_request(request):
 
 
 def parse_public_token_from_request(request):
-    return request.headers.get(settings.PUBLIC_TOKEN_HEADER)
+    return request.META.get(settings.PUBLIC_TOKEN_HEADER)
 
 
 def parse_user_id_from_token(token_obj):

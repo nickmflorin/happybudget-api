@@ -4,6 +4,7 @@ Default settings configurations for all environments.
 Each separate environment will import these configurations and override on a
 per-case basis.
 """
+from corsheaders.defaults import default_headers
 import datetime
 import os
 from pathlib import Path
@@ -52,7 +53,7 @@ PWD_RESET_LINK_EXPIRY_TIME_IN_HRS = 24
 GOOGLE_OAUTH_API_URL = "https://www.googleapis.com/oauth2/v3/tokeninfo/"
 
 # Public Configuration
-PUBLIC_TOKEN_HEADER = "Public-Token"
+PUBLIC_TOKEN_HEADER = "HTTP_X_PUBLICTOKEN"
 
 # Session Configuration
 SESSION_COOKIE_NAME = 'greenbudgetsessionid'
@@ -74,11 +75,15 @@ CSRF_TRUSTED_ORIGINS = [
     'https://app.greenbudget.io',
     'https://api.greenbudget.io',
 ]
+# CORS Configuration
 CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_ALLOW_ALL = False
 CORS_ORIGIN_REGEX_WHITELIST = (
     r'^(https?://)?([\w\.-]*?)\.greenbudget\.io:?[\d]*?$',
 )
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    "x-publictoken",
+]
 
 ALLOWED_HOSTS = ['api.greenbudget.io']
 

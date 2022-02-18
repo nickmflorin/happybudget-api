@@ -45,7 +45,7 @@ def test_get_another_user_subaccount(api_client, budget_f, user, admin_user):
     assert response.status_code == 403
 
 
-def test_get_Public_budget_subaccount_subaccounts(api_client, create_budget,
+def test_get_public_budget_subaccount_subaccounts(api_client, create_budget,
         create_public_token, create_budget_account, create_budget_subaccount):
     budget = create_budget()
     account = create_budget_account(parent=budget)
@@ -56,7 +56,7 @@ def test_get_Public_budget_subaccount_subaccounts(api_client, create_budget,
     assert response.status_code == 200
 
 
-def test_get_another_Public_budget_subaccount_subaccounts(api_client,
+def test_get_another_public_budget_subaccount_subaccounts(api_client,
         create_budget, create_public_token, create_budget_account,
         create_budget_subaccount):
     budget = create_budget()
@@ -81,7 +81,7 @@ def test_get_template_subaccount_subaccounts_with_public_token(api_client,
     assert response.status_code == 401
 
 
-def test_get_Public_budget_subaccount(api_client, create_budget,
+def test_get_public_budget_subaccount(api_client, create_budget,
         create_public_token, create_budget_account, create_budget_subaccount):
     budget = create_budget()
     account = create_budget_account(parent=budget)
@@ -92,7 +92,7 @@ def test_get_Public_budget_subaccount(api_client, create_budget,
     assert response.status_code == 200
 
 
-def test_get_another_Public_budget_account(api_client, create_budget,
+def test_get_another_public_budget_account(api_client, create_budget,
         create_public_token, create_budget_account, create_budget_subaccount):
     budget = create_budget()
     another_budget = create_budget()
@@ -104,7 +104,7 @@ def test_get_another_Public_budget_account(api_client, create_budget,
     assert response.status_code == 401
 
 
-def test_update_Public_budget_account(api_client, create_budget,
+def test_update_public_budget_account(api_client, create_budget,
         create_public_token, create_budget_account, create_budget_subaccount):
     budget = create_budget()
     account = create_budget_account(parent=budget)
@@ -117,7 +117,7 @@ def test_update_Public_budget_account(api_client, create_budget,
     assert response.status_code == 401
 
 
-def test_create_Public_budget_subaccount(api_client, create_budget,
+def test_create_public_budget_subaccount(api_client, create_budget,
         create_public_token, create_budget_account):
     budget = create_budget()
     account = create_budget_account(parent=budget)

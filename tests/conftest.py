@@ -122,7 +122,7 @@ def api_client(settings):
 
         def include_public_token(self, token):
             header_name = (
-                f"HTTP_{settings.PUBLIC_TOKEN_HEADER.replace('-', '_')}".upper())
+                settings.PUBLIC_TOKEN_HEADER.replace('-', '_').upper())
             if isinstance(token, PublicToken):
                 self._dynamic_headers[header_name] = str(token.private_id)
             else:
