@@ -48,10 +48,10 @@ class SubAccountUnitViewSet(
     serializer_class = SubAccountUnitSerializer
     permission_classes = [
         permissions.OR(
-            permissions.IsFullyAuthenticated(affects_after=True),
+            permissions.IsFullyAuthenticated,
             # Since there is no public object here, this will simply check if
             # there is a valid public token in the request.
-            permissions.IsPublic()
+            permissions.IsPublic
         )
     ]
 

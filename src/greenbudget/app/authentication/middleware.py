@@ -138,9 +138,9 @@ class AuthTokenCookieMiddleware(MiddlewareMixin):
         # request.
         if settings.ENVIRONMENT != Environments.TEST:
             auth.logout(request)
-        return self.delete_cookie(response)
+        return self.delete_cookie(response, **self.cookie_kwargs)
 
-    def should_persist_cookie(self, request):
+    def should_persist_cookie(self, request, response):
         """
         The JWT cookie should be persisted if the request is not coming from the
         Admin hosted site and either of the following conditions are met:
@@ -153,8 +153,8 @@ class AuthTokenCookieMiddleware(MiddlewareMixin):
         """
         is_missing_jwt = settings.JWT_TOKEN_COOKIE_NAME not in request.COOKIES
         is_validate_url = request.path == reverse('authentication:validate')
-        return not request_is_admin(request) and (
-            is_missing_jwt or request_is_write_method(request)
+        return not request_is_admin(request) and response.status_code != 401 \
+            and (is_missing_jwt or request_is_write_method(request)
             or is_validate_url)
 
     def persist_cookie(self, request, response):
@@ -225,6 +225,6 @@ class AuthTokenCookieMiddleware(MiddlewareMixin):
                     )
                     return self.force_logout(request, response)
 
-        if self.should_persist_cookie(request):
+        if self.should_persist_cookie(request, response):
             self.persist_cookie(request, response)
         return response

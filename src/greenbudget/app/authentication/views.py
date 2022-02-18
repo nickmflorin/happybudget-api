@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth import logout
 from django.utils.decorators import method_decorator
 from django.views.decorators.debug import sensitive_post_parameters
@@ -11,7 +12,6 @@ from .backends import (
     CsrfExcemptCookieSessionAuthentication,
     CsrfExcemptPublicAuthentication
 )
-from .middleware import AuthTokenCookieMiddleware
 from .models import PublicToken
 from .serializers import (
     LoginSerializer, SocialLoginSerializer, VerifyEmailSerializer,
@@ -139,7 +139,11 @@ class LogoutView(views.GenericView):
     def post(self, request, *args, **kwargs):
         logout(request)
         resp = response.Response(status=status.HTTP_201_CREATED)
-        return AuthTokenCookieMiddleware.delete_cookie(resp)
+        resp.delete_cookie(
+            settings.JWT_TOKEN_COOKIE_NAME,
+            domain=getattr(settings, 'JWT_COOKIE_DOMAIN', None) or None
+        )
+        return resp
 
 
 class AbstractUnauthenticatedView(views.GenericView):
