@@ -138,7 +138,7 @@ class AuthTokenCookieMiddleware(MiddlewareMixin):
         # request.
         if settings.ENVIRONMENT != Environments.TEST:
             auth.logout(request)
-        return self.delete_cookie(response, **self.cookie_kwargs)
+        return self.delete_cookie(response)
 
     def should_persist_cookie(self, request, response):
         """
