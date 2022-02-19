@@ -22,7 +22,6 @@ from greenbudget.app.template.models import Template
 from greenbudget.app.user.models import User
 
 from .base import CustomModelFactory
-from .lazy import Lazy
 
 
 def ConstantTimeMixin(*fields):
@@ -224,15 +223,6 @@ class AccountFactory(CustomModelFactory):
                 # pylint: disable=no-member
                 self.markups.add(markup)
 
-    @factory.post_generation
-    def children(self, create, extracted, **kwargs):
-        if not create:
-            return
-        if extracted:
-            for child in extracted:
-                assert isinstance(child, Lazy), "Child must be lazy!"
-                child.create(parent=self)
-
 
 class BudgetAccountFactory(AccountFactory):
     """
@@ -273,15 +263,6 @@ class SubAccountFactory(CustomModelFactory):
 
     class Meta:
         abstract = True
-
-    @factory.post_generation
-    def children(self, create, extracted, **kwargs):
-        if not create:
-            return
-        if extracted:
-            for child in extracted:
-                assert isinstance(child, Lazy), "Child must be lazy!"
-                child.create(parent=self)
 
     @factory.post_generation
     def markups(self, create, extracted, **kwargs):

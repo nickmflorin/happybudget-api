@@ -12,7 +12,7 @@ class PastDateTimeField(FuzzyNaiveDateTime):
     def __init__(self, *args, **kwargs):
         end_value = datetime.now()
         start_value = kwargs.pop('start_value', end_value - timedelta(
-                days=kwargs.pop('horizon', 365 * 2)))
+            days=kwargs.pop('horizon', 365 * 2)))
         if start_value >= end_value:
             raise ValueError("The start_value must be in the past.")
         super().__init__(start_value, end_value, *args, **kwargs)
