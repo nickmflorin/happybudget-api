@@ -1,5 +1,5 @@
 from greenbudget.lib.utils import empty
-from greenbudget.lib.utils.math import cumulative_product
+from greenbudget.lib.utils import cumulative_product
 
 from . import factories
 

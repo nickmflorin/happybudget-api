@@ -1,8 +1,9 @@
 import copy
-import functools
 
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
+
+from greenbudget.lib.utils import cumulative_sum
 
 from greenbudget.app import model
 from greenbudget.app.budgeting.models import (
@@ -85,11 +86,7 @@ class Account(BudgetingTreePolymorphicOrderedRowModel):
     @children_method_handler
     def accumulate_value(self, children):
         previous_value = self.accumulated_value
-        self.accumulated_value = functools.reduce(
-            lambda current, sub: current + sub.nominal_value,
-            children,
-            0
-        )
+        self.accumulated_value = cumulative_sum(children, attr='nominal_value')
         return previous_value != self.accumulated_value
 
     @children_method_handler
@@ -98,26 +95,18 @@ class Account(BudgetingTreePolymorphicOrderedRowModel):
             pk__in=to_be_deleted or []
         )
         previous_value = self.accumulate_markup_contribution
-        self.accumulated_markup_contribution = functools.reduce(
-            lambda current, sub: current + sub.markup_contribution
-            + sub.accumulated_markup_contribution,
+        self.accumulated_markup_contribution = cumulative_sum(
             children,
-            0
-        ) + functools.reduce(
-            lambda current, markup: current + (markup.rate or 0.0),
-            markups,
-            0
-        )
+            attr=['markup_contribution', 'accumulated_markup_contribution']
+        ) + cumulative_sum(markups, attr='rate', ignore_values=[None])
         return self.accumulated_markup_contribution != previous_value
 
     @children_method_handler
     def accumulate_fringe_contribution(self, children):
         previous_value = self.accumulated_fringe_contribution
-        self.accumulated_fringe_contribution = functools.reduce(
-            lambda current, sub: current + sub.fringe_contribution
-            + sub.accumulated_fringe_contribution,
+        self.accumulated_fringe_contribution = cumulative_sum(
             children,
-            0
+            attr=['fringe_contribution', 'accumulated_fringe_contribution']
         )
         return previous_value != self.accumulated_fringe_contribution
 
@@ -179,15 +168,11 @@ class BudgetAccount(Account):
         markups_to_be_deleted = kwargs.get('markups_to_be_deleted', []) or []
 
         previous_value = self.actual
-        self.actual = functools.reduce(
-            lambda current, markup: current + (markup.actual or 0),
+        self.actual = cumulative_sum(
             self.children_markups.exclude(pk__in=markups_to_be_deleted),
-            0
-        ) + functools.reduce(
-            lambda current, child: current + (child.actual or 0),
-            children,
-            0
-        )
+            attr='actual',
+        ) + cumulative_sum(children, attr='actual')
+
         if self.actual != previous_value:
             unsaved = [self]
             if kwargs.get('commit', False):

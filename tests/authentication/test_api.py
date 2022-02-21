@@ -118,4 +118,5 @@ def test_logout(user, jwt_authenticated_client, settings):
     jwt_authenticated_client.force_login(user)
     response = jwt_authenticated_client.post("/v1/auth/logout/")
     assert response.status_code == 201
-    assert settings.JWT_TOKEN_COOKIE_NAME not in response.cookies
+    assert settings.JWT_TOKEN_COOKIE_NAME in response.cookies
+    assert response.cookies[settings.JWT_TOKEN_COOKIE_NAME].value == ""

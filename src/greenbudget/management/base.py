@@ -31,10 +31,6 @@ class CustomCommandMixin(object):
             The prefix that will be displayed before the character space for
             the user provided input.
 
-            Ex.
-            --
-            >>> Value: __
-
             Default: "Value"
 
         converter: :obj:`func` (optional)
@@ -48,13 +44,7 @@ class CustomCommandMixin(object):
             return converter(value)
         return value
 
-    def query_boolean(
-        self,
-        prompt=None,
-        prefix="(Yes/No)",
-        converter=lambda ans: (
-            ans.lower().strip() == "yes" or ans.lower().strip() == "y")
-    ):
+    def query_boolean(self, prompt=None, prefix="(Yes/No)"):
         """
         Displays a prompt and then asks the user for boolean input.
 
@@ -67,16 +57,14 @@ class CustomCommandMixin(object):
             The prefix that will be displayed before the character space for
             the user provided input.
 
-            Ex.
-            --
-            >>> Value: __
-
             Default: "Value"
 
         converter: :obj:`func` (optional)
             A function that takes the provided value as an argument and converts
             it to the boolean value that is returned.
         """
+        def converter(ans):
+            return ans.lower().strip() == "yes" or ans.lower().strip() == "y"
         if prompt:
             self.prompt(prompt, style_func=self.style.SQL_TABLE)
         return self.query(prefix=prefix, converter=converter)
@@ -187,6 +175,7 @@ class CustomCommandMixin(object):
         on :obj:`management.base.BaseCommand.styles` or the string name of the
         attribute.
         """
+        style_func = style_func or self.style.SQL_TABLE
         for prompt in prompts:
             if isinstance(prompt, str):
                 self.stdout.write(

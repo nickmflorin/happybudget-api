@@ -117,7 +117,7 @@ class BaseBudgetFactory(CustomModelFactory):
     A an abstract DjangoModelFactory to referencing the polymorphic base model
     :obj:`BaseBudget`.
     """
-    name = factory.Faker('name')
+    name = factory.Sequence(lambda n: f"Budget {n}")
     created_by = factory.SubFactory(UserFactory)
 
     class Meta:

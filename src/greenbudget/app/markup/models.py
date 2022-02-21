@@ -1,4 +1,3 @@
-import functools
 import logging
 from model_utils import Choices
 
@@ -6,6 +5,8 @@ from django.db import models
 from django.contrib.contenttypes.fields import (
     GenericRelation, GenericForeignKey)
 from django.contrib.contenttypes.models import ContentType
+
+from greenbudget.lib.utils import cumulative_sum
 
 from greenbudget.app import model
 from greenbudget.app.actual.models import Actual
@@ -52,11 +53,7 @@ class Markup(BudgetingRowModel):
 
     @property
     def actual(self):
-        return functools.reduce(
-            lambda current, actual: current + (actual.value or 0),
-            self.actuals.only('value'),
-            0
-        )
+        return cumulative_sum(self.actuals.only('value'), attr='value')
 
     @property
     def child_instance_cls(self):

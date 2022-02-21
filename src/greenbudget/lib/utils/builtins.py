@@ -68,10 +68,13 @@ def get_attribute(*args, **kwargs):
 
 def get_string_formatted_kwargs(value):
     """
-    Returns the string arguments that are used to format the string.  For
-    example, in the string `Foo {bar}`, the string would be formatted as
-    .format(bar='foo').  In this case, this method will return ["bar"],
-    indicating that `bar` is the only argument needed to format the string.
+    Returns the string arguments that are used to format the string.
+
+    Example:
+    --------
+    In the string foo = "Hello {world}", the string foo would be formatted as
+    foo.format(world='bar').  In this case, this method will return ["world"],
+    indicating that `world` is the only argument needed to format the string.
     """
     formatted_kwargs = []
     current_formatted_kwarg = None
@@ -80,7 +83,8 @@ def get_string_formatted_kwargs(value):
             current_formatted_kwarg = ""
         elif char == "}":
             if current_formatted_kwarg is not None:
-                formatted_kwargs.append(current_formatted_kwarg)
+                if current_formatted_kwarg not in formatted_kwargs:
+                    formatted_kwargs.append(current_formatted_kwarg)
                 current_formatted_kwarg = None
         else:
             if current_formatted_kwarg is not None:
