@@ -38,6 +38,7 @@ class QuerySetMixin:
 
 class PrePKBulkCreateQuerySet(QuerySetMixin, models.QuerySet):
     def bulk_create(self, instances, **kwargs):
+        kwargs.setdefault('batch_size', 20)
         predetermine_pks = kwargs.pop('predetermine_pks', False)
         if predetermine_pks is False or not self.is_sqlite():
             return super().bulk_create(instances, **kwargs)
@@ -177,9 +178,8 @@ class BulkCreatePolymorphicQuerySet(QuerySetMixin, PolymorphicQuerySet):
         delattr(instantiated_instance, auto_pk_field.name)
         return instantiated_instance
 
-    def bulk_create(self, instances, batch_size=None, ignore_conflicts=False,
+    def bulk_create(self, instances, batch_size=20, ignore_conflicts=False,
             return_created_objects=False, refresh_from_db=False):
-
         assert batch_size is None or batch_size > 0
 
         if not instances:
