@@ -1,3 +1,5 @@
+from tqdm import tqdm
+
 from greenbudget.management import (
     CustomCommand, debug_only, query_and_include_user,
     query_and_include_integer, Validator)
@@ -46,6 +48,23 @@ class Command(CustomCommand):
         ),
         prefix='No. Sub Accounts'
     )
+    @query_and_include_integer(
+        param='num_fringes',
+        default=10,
+        max_value=20,
+        prompt=(
+            'Enter the number of fringes per budget you would like to '
+            'generate.'
+        ),
+        prefix='No. Fringes'
+    )
+    @query_and_include_integer(
+        param='num_contacts',
+        default=0,
+        max_value=50,
+        prompt='Enter the number of contacts you would like to generate.',
+        prefix='No. Contacts'
+    )
     @query_and_include_user(
         prompt="Provide the user the data should be generated for.",
         validators=[
@@ -61,4 +80,5 @@ class Command(CustomCommand):
     )
     def handle(self, user, **options):
         gen = generate.ApplicationDataGenerator(user, **options)
-        gen()
+        with tqdm(total=gen.num_instances) as pbar:
+            gen(pbar)

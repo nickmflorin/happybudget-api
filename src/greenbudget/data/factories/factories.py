@@ -146,7 +146,7 @@ class FringeFactory(CustomModelFactory):
     """
     created_by = factory.SubFactory(UserFactory)
     updated_by = factory.SubFactory(UserFactory)
-    name = factory.Faker('name')
+    name = factory.Sequence(lambda n: f"Fringe {n}")
     description = factory.Faker('sentence')
     cutoff = None
     rate = 1.00
@@ -208,7 +208,7 @@ class AccountFactory(CustomModelFactory):
     """
     created_by = factory.SubFactory(UserFactory)
     updated_by = factory.SubFactory(UserFactory)
-    identifier = factory.Faker('name')
+    identifier = factory.Sequence(lambda n: f"100{n}")
     description = factory.Faker('sentence')
 
     class Meta:
@@ -258,7 +258,7 @@ class SubAccountFactory(CustomModelFactory):
     """
     created_by = factory.SubFactory(UserFactory)
     updated_by = factory.SubFactory(UserFactory)
-    identifier = factory.Faker('name')
+    identifier = factory.Sequence(lambda n: f"1000-{n}")
     description = factory.Faker('sentence')
 
     class Meta:
