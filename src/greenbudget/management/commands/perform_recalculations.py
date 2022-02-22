@@ -1,6 +1,6 @@
 from django.core import management
 
-from greenbudget.management.base import CustomCommand
+from greenbudget.management import CustomCommand
 
 from greenbudget.app.subaccount.models import SubAccount
 from greenbudget.app.subaccount.signals import calculate_subaccount

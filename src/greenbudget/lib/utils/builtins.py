@@ -92,6 +92,25 @@ def get_string_formatted_kwargs(value):
     return formatted_kwargs
 
 
+def conditionally_format_string(string, **kwargs):
+    """
+    Traditionally, when you have a string with format arguments in it, calling
+    .format() on the string and not providing all of the arguments will raise
+    an exception.
+
+    Here, we loosen that constraint and will only format the string with the
+    provided arguments if they are in the string, and any formatted arguments
+    in the string that are not provided will be left as is.
+    """
+    string_formatted_args = get_string_formatted_kwargs(string)
+    for string_f_arg in [
+        a for a in string_formatted_args
+        if a in kwargs and kwargs[a] is not None
+    ]:
+        string = string.replace("{%s}" % string_f_arg, kwargs[string_f_arg])
+    return string
+
+
 def conditionally_separate_strings(strings, separator=" "):
     parts = [pt for pt in strings if pt is not None]
     assert all([isinstance(pt, str) for pt in parts])

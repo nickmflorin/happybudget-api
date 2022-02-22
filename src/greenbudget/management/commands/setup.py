@@ -1,7 +1,6 @@
 from django.core import management
 
-from greenbudget.management.base import CustomCommand
-from greenbudget.management.decorators import askable, skippable, debug_only
+from greenbudget.management import CustomCommand, askable, skippable, debug_only
 
 from greenbudget.app import cache
 
