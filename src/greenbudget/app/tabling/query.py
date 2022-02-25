@@ -3,8 +3,8 @@ from django.db import models, transaction
 
 from greenbudget.lib.utils import ensure_iterable
 from greenbudget.lib.django_utils.query import (
-    PrePKBulkCreateQuerySet,
-    BulkCreatePolymorphicQuerySet
+    QuerySet,
+    PolymorphicQuerySet
 )
 from greenbudget.lib.utils import concat
 from .utils import order_after
@@ -237,18 +237,18 @@ class OrderedRowQuerier(RowQuerier):
         return self.order_by(preserved)
 
 
-class RowQuerySet(RowQuerier, PrePKBulkCreateQuerySet):
+class RowQuerySet(RowQuerier, QuerySet):
     pass
 
 
-class OrderedRowQuerySet(OrderedRowQuerier, PrePKBulkCreateQuerySet):
+class OrderedRowQuerySet(OrderedRowQuerier, QuerySet):
     pass
 
 
-class RowPolymorphicQuerySet(RowQuerier, BulkCreatePolymorphicQuerySet):
+class RowPolymorphicQuerySet(RowQuerier, PolymorphicQuerySet):
     pass
 
 
 class OrderedRowPolymorphicQuerySet(
-        OrderedRowQuerier, BulkCreatePolymorphicQuerySet):
+        OrderedRowQuerier, PolymorphicQuerySet):
     pass

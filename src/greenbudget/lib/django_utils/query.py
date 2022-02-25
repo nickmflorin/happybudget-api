@@ -1,6 +1,6 @@
 
 from polymorphic.models import PolymorphicModel
-from polymorphic.query import PolymorphicQuerySet
+from polymorphic.query import PolymorphicQuerySet as RootPolymorphicQuerySet
 
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
@@ -36,9 +36,13 @@ class QuerySetMixin:
         return False
 
 
-class PrePKBulkCreateQuerySet(QuerySetMixin, models.QuerySet):
+class QuerySet(QuerySetMixin, models.QuerySet):
+    def bulk_update(self, *args, **kwargs):
+        kwargs.setdefault('batch_size', settings.DEFAULT_BULK_BATCH_SIZE)
+        return super().bulk_update(*args, **kwargs)
+
     def bulk_create(self, instances, **kwargs):
-        kwargs.setdefault('batch_size', 20)
+        kwargs.setdefault('batch_size', settings.DEFAULT_BULK_BATCH_SIZE)
         predetermine_pks = kwargs.pop('predetermine_pks', False)
         if predetermine_pks is False or not self.is_sqlite():
             return super().bulk_create(instances, **kwargs)
@@ -53,7 +57,7 @@ class PrePKBulkCreateQuerySet(QuerySetMixin, models.QuerySet):
         return super().bulk_create(instances, **kwargs)
 
 
-class BulkCreatePolymorphicQuerySet(QuerySetMixin, PolymorphicQuerySet):
+class PolymorphicQuerySet(QuerySetMixin, RootPolymorphicQuerySet):
     """
     Extension of :obj:`polymorphic.query.PolymorphicQuerySet` that incorporates
     Django's bulk create behavior.
@@ -68,6 +72,11 @@ class BulkCreatePolymorphicQuerySet(QuerySetMixin, PolymorphicQuerySet):
     various other types of fields or circumstances that it currently does
     not support.
     """
+
+    def bulk_update(self, *args, **kwargs):
+        kwargs.setdefault('batch_size', settings.DEFAULT_BULK_BATCH_SIZE)
+        return super().bulk_update(*args, **kwargs)
+
     @property
     def polymorphic_base(self):
         assert len(self.model.__bases__) == 1, \
@@ -178,9 +187,10 @@ class BulkCreatePolymorphicQuerySet(QuerySetMixin, PolymorphicQuerySet):
         delattr(instantiated_instance, auto_pk_field.name)
         return instantiated_instance
 
-    def bulk_create(self, instances, batch_size=20, ignore_conflicts=False,
-            return_created_objects=False, refresh_from_db=False):
-        assert batch_size is None or batch_size > 0
+    def bulk_create(self, instances, **kwargs):
+        refresh_from_db = kwargs.pop('refresh_from_db', False)
+        return_created_objects = kwargs.pop('return_created_objects', False)
+        kwargs.setdefault('batch_size', settings.DEFAULT_BULK_BATCH_SIZE)
 
         if not instances:
             return instances
@@ -245,11 +255,7 @@ class BulkCreatePolymorphicQuerySet(QuerySetMixin, PolymorphicQuerySet):
             # Since the child model is not a base model, Django's non-polymorphic
             # bulk-create will not work.  We have to use our tweaked form of
             # it for the children.
-            created_children = self._bulk_create(
-                instances=child_instances,
-                batch_size=batch_size,
-                ignore_conflicts=ignore_conflicts
-            )
+            created_children = self._bulk_create(child_instances, **kwargs)
 
             # Note that while the created children are fully represented with
             # all fields (both base and child) in the database, the children
@@ -284,12 +290,13 @@ class BulkCreatePolymorphicQuerySet(QuerySetMixin, PolymorphicQuerySet):
                 obj.pk = obj._meta.pk.get_pk_value_on_save(obj)
             obj._prepare_related_fields_for_save(operation_name='bulk_create')
 
-    def _bulk_create(self, instances, batch_size=None, ignore_conflicts=False):
+    def _bulk_create(self, instances, **kwargs):
         """
         Adapted functionality of Django's default :obj:`django.db.models.QuerySet`  # noqa
         that is tweaked to work for the Polymorphic children models.
         """
-        assert batch_size is None or batch_size > 0
+        ignore_conflicts = kwargs.pop('ignore_conflicts', False)
+        kwargs.setdefault('batch_size', settings.DEFAULT_BULK_BATCH_SIZE)
 
         if not instances:
             return instances
@@ -316,7 +323,7 @@ class BulkCreatePolymorphicQuerySet(QuerySetMixin, PolymorphicQuerySet):
                 returned_columns = self._batched_insert(
                     objs_with_pk,
                     fields,
-                    batch_size,
+                    kwargs['batch_size'],
                     ignore_conflicts=ignore_conflicts,
                 )
                 for obj_with_pk, results in zip(objs_with_pk, returned_columns):
@@ -336,7 +343,7 @@ class BulkCreatePolymorphicQuerySet(QuerySetMixin, PolymorphicQuerySet):
                 returned_columns = self._batched_insert(
                     objs_without_pk,
                     fields,
-                    batch_size,
+                    kwargs['batch_size'],
                     ignore_conflicts=ignore_conflicts,
                 )
                 if connection.features.can_return_rows_from_bulk_insert \

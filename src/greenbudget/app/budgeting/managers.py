@@ -2,15 +2,12 @@ import collections
 import datetime
 import logging
 
-from django.db import models, transaction
+from django.db import models
 
 from polymorphic.models import PolymorphicManager
 
 from greenbudget.lib.utils import ensure_iterable
-from greenbudget.lib.django_utils.query import (
-    PrePKBulkCreateQuerySet,
-    BulkCreatePolymorphicQuerySet
-)
+from greenbudget.lib.django_utils.query import QuerySet, PolymorphicQuerySet
 
 from greenbudget.app import signals
 from greenbudget.app.tabling.managers import (
@@ -33,7 +30,6 @@ class BudgetingManagerMixin:
                 instance.validate_before_save()
 
     def bulk_update(self, instances, fields, **kwargs):
-        kwargs.setdefault('batch_size', 20)
         self.validate_before_save(instances)
         return super().bulk_update(instances, fields, **kwargs)
 
@@ -421,7 +417,7 @@ class BudgetingManagerMixin:
 
 
 class BudgetingManager(BudgetingManagerMixin, models.Manager):
-    queryset_class = PrePKBulkCreateQuerySet
+    queryset_class = QuerySet
 
     def get_queryset(self):
         return self.queryset_class(self.model)
@@ -441,13 +437,9 @@ class BudgetingRowManager(
             else:
                 budgets.add(getattr(instance, 'budget').pk)
 
-        # We need to wrap this in an atomic transaction block with a select
-        # for update clause to avoid dead locks.
-        with transaction.atomic():
-            self.model.budget_cls.objects.select_for_update() \
-                .filter(pk__in=budgets) \
-                .update(updated_at=datetime.datetime.now().replace(
-                    tzinfo=datetime.timezone.utc))
+        self.model.budget_cls.objects.filter(pk__in=budgets) \
+            .update(updated_at=datetime.datetime.now().replace(
+                tzinfo=datetime.timezone.utc))
 
 
 class BudgetingOrderedRowManager(OrderedRowManagerMixin, BudgetingRowManager):
@@ -455,7 +447,7 @@ class BudgetingOrderedRowManager(OrderedRowManagerMixin, BudgetingRowManager):
 
 
 class BudgetingPolymorphicManager(BudgetingManagerMixin, PolymorphicManager):
-    queryset_class = BulkCreatePolymorphicQuerySet
+    queryset_class = PolymorphicQuerySet
 
     def get_queryset(self):
         return self.queryset_class(self.model)

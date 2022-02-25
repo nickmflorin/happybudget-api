@@ -13,6 +13,8 @@ from greenbudget.conf import Environments, config, LazySetting
 
 from .admin import *  # noqa
 from .aws import *  # noqa
+from .cache import *  # noqa
+from .db import *  # noqa
 from .jwt_rsa_fingerprint import __JWT_SIGNING_KEY, __JWT_VERIFYING_KEY
 from .logging import *  # noqa
 from .password_validators import *  # noqa
@@ -207,101 +209,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'greenbudget.wsgi.application'
-
-# NOTE: If Django is not starting because the database does not exist, we need
-# to create one with postgres.  Go into the Postgres shell (psql) and do
-# the following:
-# >>> CREATE USER greenbudget WITH PASSWORD '';
-# >>> CREATE DATABASE postgres_greenbudget WITH OWNER greenbudget ENCODING
-#     utf-8';
-DATABASE_NAME = config(
-    name='DATABASE_NAME',
-    required=[Environments.PROD, Environments.DEV],
-    default={
-        Environments.TEST: 'postgres_greenbudget',
-        Environments.LOCAL: 'postgres_greenbudget'
-    }
-)
-DATABASE_USER = config(
-    name='DATABASE_USER',
-    required=[Environments.PROD, Environments.DEV],
-    default={
-        Environments.TEST: 'greenbudget',
-        Environments.LOCAL: 'greenbudget'
-    }
-)
-DATABASE_PASSWORD = config(
-    name='DATABASE_PASSWORD',
-    required=[Environments.PROD, Environments.DEV],
-    default={
-        Environments.TEST: '',
-        Environments.LOCAL: ''
-    }
-)
-DATABASE_HOST = config(
-    name='DATABASE_HOST',
-    required=[Environments.PROD, Environments.DEV],
-    default={
-        Environments.TEST: 'localhost',
-        Environments.LOCAL: 'localhost'
-    }
-)
-DATABASE_PORT = config(
-    name='DATABASE_PORT',
-    required=[Environments.PROD, Environments.DEV],
-    default={
-        Environments.TEST: '5432',
-        Environments.LOCAL: '5432'
-    }
-)
-DATABASES = {
-    'default': {
-        'ATOMIC_REQUESTS': True,
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': DATABASE_NAME,
-        'USER': DATABASE_USER,
-        'HOST': DATABASE_HOST,
-        'PASSWORD': DATABASE_PASSWORD,
-        'PORT': DATABASE_PORT
-    },
-}
-
-ELASTICACHE_ENDPOINT = config(
-    name='ELASTICACHE_ENDPOINT',
-    required=[Environments.PROD, Environments.DEV],
-    default={
-        Environments.TEST: '',
-        Environments.LOCAL: ''
-    }
-)
-
-CACHE_ENABLED = False
-
-CACHE_LOCATION = f"redis://{ELASTICACHE_ENDPOINT}/0"
-CACHE_EXPIRY = 5 * 60 * 60
-
-# CACHES = {
-#     'default': {
-#         'BACKEND': 'django_redis.cache.RedisCache',
-#         'LOCATION': CACHE_LOCATION,
-#         'OPTIONS': {
-#             'REDIS_CLIENT_CLASS': 'rediscluster.RedisCluster',
-#             'CONNECTION_POOL_CLASS': (
-#                 'rediscluster.connection.ClusterConnectionPool'),
-#             'CONNECTION_POOL_KWARGS': {
-#                 # AWS ElastiCache has configuration commands disabled.
-#                 'skip_full_coverage_check': True
-#             }
-#         }
-#     }
-# }
-
-FIXTURES = [
-    'colors.json',
-    'tags.json',
-    'subaccountunits.json',
-    'actualtypes.json'
-]
 
 ACCEPTED_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png']
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'

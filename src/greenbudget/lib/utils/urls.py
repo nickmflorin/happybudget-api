@@ -4,8 +4,12 @@ from urllib.parse import urlsplit, parse_qsl, urlunsplit, urlencode
 from django.http import QueryDict
 
 
-def parse_ids_from_request(request):
-    ids = request.query_params.get('ids', None)
+def parse_ids_from_request(request, param='ids'):
+    """
+    Parses and validates a given set of numeric IDs from the query parameters
+    of a request.
+    """
+    ids = request.query_params.get(param, None)
     if ids is not None:
         if ids.startswith('[') and ids.endswith(']'):
             ids = ids[1:-1]
@@ -17,6 +21,9 @@ def parse_ids_from_request(request):
                 numeric_ids.append(int(id))
             except ValueError:
                 has_invalid = True
+        # Only return None if there were IDs in the request but none of them
+        # were valid.  If the included set of IDs was actually an empty list,
+        # we want to return an empty list.
         if len(numeric_ids) == 0 and has_invalid:
             return None
         return numeric_ids

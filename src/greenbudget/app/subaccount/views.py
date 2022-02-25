@@ -38,12 +38,14 @@ from .serializers import (
 @subaccount_units_cache
 class SubAccountUnitViewSet(
     mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
     views.GenericViewSet
 ):
     """
     Viewset to handle requests to the following endpoints:
 
     (1) GET /subaccounts/units/
+    (2) GET /subaccounts/units/<pk>/
     """
     serializer_class = SubAccountUnitSerializer
     permission_classes = [
