@@ -4,8 +4,33 @@ from django.db import models
 from polymorphic.models import PolymorphicModel
 
 from greenbudget.lib.utils import (
-    ensure_iterable, humanize_list, get_attribute, empty)
+    ensure_iterable, humanize_list, get_attribute, empty,
+    ImmutableAttributeMapping)
 from .utils import lexographic_midpoint, validate_order
+
+
+class TableKey(ImmutableAttributeMapping):
+    """
+    Defines the field-value pairs that uniquely identify a table subset of the
+    corresponding model instances.
+    """
+    @property
+    def fields(self):
+        # Sort the fields alphabetically for consistent resolution, hashing and
+        # comparison.
+        return sorted(list(self.keys()))
+
+    @property
+    def values(self):
+        # Make sure the values are ordered by the alphabetical order of the
+        # keys for consistent resolution, hashing and comparison.
+        return tuple([self[k] for k in self.fields])
+
+    def __eq__(self, other):
+        return set(self.values) == set(other.values)
+
+    def __hash__(self):
+        return hash(self.values)
 
 
 class RowModelMixin(models.Model):
@@ -43,28 +68,40 @@ class RowModelMixin(models.Model):
         on the model class and the values corresponding to the fields of the
         `table_pivot` provided to this method.
 
-        The values corresponding to the fields of the `table_pivot` can either
-        be provided as the model instance, a :obj:`dict` instance or a set of
-        keyword arguments.  The reason for this flexibility is that there are
-        cases when we need to retrieve the table instances before the additional
-        instance is created - in which case we can supply the values as a
-        mapping.
+        The values corresponding to the fields of the `table_pivot` can be
+        provided in the following ways:
+
+        (1) Model Instance
+            In this case, the attributes defined on the model instance
+            corresponding to the fields of the `table_pivot` will be used to
+            construct the table filter.
+
+        (2) Mapping
+            In this case, the values defined on the mapping corresponding to
+            the fields of the `table_pivot` will be used to construct the
+            table filter.  The mapping can either be provided as **kwargs,
+            an :obj:`dict` instance, or an :obj:`TableKey` instance.
+
+        The reason for this flexibility is that there are cases when we need to
+        retrieve the table instances before the additional instance is created
+        - in which case we can supply the values as a mapping or table key.
         """
-        assert (len(args) == 1 and isinstance(args[0], (cls, dict))) or kwargs, \
+        assert (len(args) == 1 and isinstance(args[0], (cls, dict, TableKey))) \
+            or kwargs, \
             "Either the current instance or the data used to create the " \
             "instance must be provided to get the table filter."
 
         if not hasattr(cls, 'table_pivot'):
             raise Exception(f"Model {cls.__name__} does not define table pivot.")
 
-        if 'table_key' in kwargs:
-            table_key = kwargs.pop('table_key')
+        if 'table_key' in kwargs or (len(args) == 1
+                and isinstance(args[0], TableKey)):
+            table_key = kwargs.pop('table_key', None)
+            if not table_key:
+                table_key = args[0]
             if len(table_key) != len(cls.table_pivot):
                 raise ValueError("Invalid table key %s provided." % table_key)
-            return models.Q(**{
-                cls.table_pivot[i]: pivot_value
-                for i, pivot_value in enumerate(table_key)
-            })
+            return models.Q(**{f: table_key[f] for f in cls.table_pivot})
 
         getter_kwargs = copy.deepcopy(kwargs)
         getter_kwargs.update(default=empty, strict=False)
@@ -103,17 +140,16 @@ class RowModelMixin(models.Model):
         getter_kwargs = copy.deepcopy(kwargs)
         getter_kwargs.update(default=empty, strict=False)
 
-        table_key = [
-            get_attribute(k, *args, **getter_kwargs)
+        table_key = {
+            k: get_attribute(k, *args, **getter_kwargs)
             for k in ensure_iterable(cls.table_pivot)
-        ]
-        missing_pivots = [k for k in table_key if k is empty]
-        if missing_pivots:
-            raise Exception(
-                "Table key cannot be constructed because pivots for fields "
-                f"{humanize_list(missing_pivots)} are not defined."
-            )
-        return tuple(table_key)
+        }
+        missing_pivots = [k for k in table_key if table_key[k] is empty]
+        assert not missing_pivots, \
+            "Table key cannot be constructed because pivots for fields " \
+            f"{humanize_list(missing_pivots)} are not defined."
+
+        return TableKey(table_key)
 
     @classmethod
     def get_table(cls, *args, **kwargs):

@@ -1,5 +1,5 @@
 import collections
-from django.db import models, transaction
+from django.db import models
 from polymorphic.models import PolymorphicManager
 
 from .query import (
@@ -14,14 +14,36 @@ class RowManagerMixin(RowQuerier):
 
 
 class OrderedRowManagerMixin(OrderedRowQuerier, RowManagerMixin):
-    @transaction.atomic
     def bulk_create(self, instances, **kwargs):
-        # We must lock the rows of the model table that correspond to the
-        # individual "tables" we are creating models for, so we do not create
-        # additional entries in those table subsets with orders that would cause
-        # a unique constraint in this method.
-        all_table_instances = self.get_all_in_tables(
-            set([obj.table_key for obj in instances])).select_for_update()
+        """
+        Extends traditional bulk create behavior by first establishing the order
+        for each instance being bulk created based on the order of the instances
+        already persisted to the DB.
+
+        Explicit Ordering
+        -----------------
+        Before an instance is created, unless it's order is already specified,
+        the order must be defaulted such that the instance represents the last
+        row in the table subset it belongs to.  We do not, and should not,
+        include the order explicitly on any instances being bulk created.
+
+        The only time that we allow the order to be explicitly provided is when
+        when we are inserting a single row into the middle of the table - which
+        does not leverage the bulk create endpoint behavior.  As such, we enforce
+        that the instances being added do not already specify an order, because
+        doing so would disrupt the logic.
+
+        Note:
+        ----
+        When we incorporate multi-user collaboration, we are going to have to
+        lock the individual table subsets such that the overall ordering of the
+        rows in the table subset is not disrupted when we are determining the
+        order of the rows being added.
+        """
+        assert not any([
+            getattr(obj, 'order') is not None for obj in instances]), \
+            "Detected instances with ordering already defined.  Explicitly " \
+            "ordering instances before a bulk create operation is prohibited."
 
         # First, we have to group all of the instances by the tables (or the
         # set of sibling instances in the same table) that they belong to.
@@ -33,35 +55,23 @@ class OrderedRowManagerMixin(OrderedRowQuerier, RowManagerMixin):
         # ordering of the new instances based on the ordering already present
         # in the set of sibling instances.
         for table_key, table_instances in instances_grouped_by_table.items():
-            # When determining what order each element should have, we not only
-            # have to look in the database for the latest order but we also
-            # have to include any potential order's that are unsaved on the
-            # instances being created.
-            orders = [
-                instance.order for instance in table_instances
-                if instance.order is not None
-            ]
+            existing_table_instances = self.get_table(table_key)
+            # When determining what order each element should have, we have to
+            # look in the database for the latest order of the instances in the
+            # table subset.
+            last_order = None
             try:
-                orders.append(all_table_instances.get_latest_in_table(
-                    table_key=table_key).order)
+                last_in_table = existing_table_instances.latest()
             except self.model.DoesNotExist:
                 pass
-            last_order = None
-            if orders:
-                last_order = sorted(orders)[-1]
+            else:
+                last_order = last_in_table.order
+
             # Order the instances that do not have a defined order in the order
             # that they are being created in.
-            instances_without_ordering = [
-                instance for instance in table_instances
-                if instance.order is None
-            ]
-            ordering = order_after(
-                len(instances_without_ordering), last_order=last_order)
-            index = 0
-            for instance in table_instances:
-                if instance.order is None:
-                    instance.order = ordering[index]
-                    index += 1
+            ordering = order_after(len(table_instances), last_order=last_order)
+            for i, instance in enumerate(table_instances):
+                instance.order = ordering[i]
 
         return super().bulk_create(instances, **kwargs)
 

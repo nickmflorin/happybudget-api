@@ -27,8 +27,11 @@ class RowQuerier:
                 table_key=table_key)
         return self.filter(qs_filter)
 
+    def get_table(self, *args, **kwargs):
+        return self.model.get_table(*args, **kwargs)
+
     def get_latest_in_table(self, *args, **kwargs):
-        return self.model.get_table(*args, **kwargs).latest()
+        return self.get_table(*args, **kwargs).latest()
 
     @classmethod
     def get_distinct_table_filters(cls, qs):

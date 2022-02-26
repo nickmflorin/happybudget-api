@@ -3,7 +3,8 @@ import collections
 from django.apps import apps
 from django.contrib.contenttypes.models import ContentType
 
-from greenbudget.lib.utils import humanize_list, ensure_iterable
+from greenbudget.lib.utils import (
+    humanize_list, ensure_iterable, ImmutableAttributeMapping)
 
 
 def import_model_at_path(*args):
@@ -108,7 +109,7 @@ def get_value_from_model_map(model_map, instance, multiple=False, strict=True):
     return None
 
 
-class ModelImportMap(collections.abc.Mapping):
+class ModelImportMap(ImmutableAttributeMapping):
     """
     A mapping class that maps keys to models (identified by the common string
     model definition for Django) such that accessing a key of the map will
@@ -116,32 +117,13 @@ class ModelImportMap(collections.abc.Mapping):
 
     The common string model defintion for Django models is "<app_label>.<model>".
     """
+    allow_caching = True
 
-    def __init__(self, *args, **kwargs):
-        self._store = dict(*args, **kwargs)
-        self._cache = {}
-
-    def __getitem__(self, k):
-        if k in self._cache:
-            return self._cache[k]
-        v = import_model_at_path(self._store[k])
-        self._cache[k] = v
-        return v
-
-    def __getattr__(self, k):
-        return self.__getitem__(k)
-
-    def __iter__(self):
-        return self._store.__iter__()
-
-    def __len__(self):
-        return self._store.__len__()
-
-    def __repr__(self):
-        return self._store.__repr__()
+    def transform_value(self, v):
+        return import_model_at_path(v)
 
 
-class ModelMap(collections.abc.Mapping):
+class ModelMap(ImmutableAttributeMapping):
     """
     A mapping class that maps models (identified by the common string model
     definition for Django) to a set of values.  Lookups of the values can
@@ -150,9 +132,6 @@ class ModelMap(collections.abc.Mapping):
     The common string model defintion for Django models is "<app_label>.<model>".
     """
 
-    def __init__(self, store):
-        self._store = store
-
     def get(self, model_type_or_instance, multiple=False, strict=True):
         return get_value_from_model_map(
             self._store,
@@ -160,18 +139,6 @@ class ModelMap(collections.abc.Mapping):
             multiple=multiple,
             strict=strict
         )
-
-    def __getitem__(self, k):
-        return self._store[k]
-
-    def __iter__(self):
-        return self._store.__iter__()
-
-    def __len__(self):
-        return self._store.__len__()
-
-    def __repr__(self):
-        return self._store.__repr__()
 
 
 def find_model_types_in_set(instance, types, strict=True, multiple=False):
