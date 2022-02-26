@@ -1,5 +1,5 @@
 from greenbudget.app.budget.managers import BaseBudgetManager
-from greenbudget.app.budget.duplication import duplicate
+from greenbudget.app.budget.duplication import Duplicator
 from greenbudget.app.tabling.query import RowQuerier, RowPolymorphicQuerySet
 
 
@@ -20,7 +20,5 @@ class TemplateManager(TemplateQuerier, BaseBudgetManager):
 
     def derive(self, template, user, **overrides):
         from greenbudget.app.budget.models import Budget
-        return duplicate(template, user,
-            destination_cls=Budget,
-            **overrides
-        )
+        duplicator = Duplicator(template, destination_cls=Budget)
+        return duplicator(user, **overrides)

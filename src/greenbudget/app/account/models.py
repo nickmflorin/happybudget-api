@@ -155,9 +155,6 @@ class BudgetAccount(Account):
 
     pdf_type = "pdf-account"
     domain = "budget"
-    budget_cls = AssociatedModel('budget', 'budget')
-    account_cls = AssociatedModel('account', 'budgetaccount')
-    subaccount_cls = AssociatedModel('subaccount', 'budgetsubaccount')
 
     class Meta(Account.Meta):
         verbose_name = "Account"
@@ -204,9 +201,6 @@ class BudgetAccount(Account):
 class TemplateAccount(Account):
     objects = TemplateAccountManager()
     domain = "template"
-    budget_cls = AssociatedModel('template', 'template')
-    account_cls = AssociatedModel('account', 'templateaccount')
-    subaccount_cls = AssociatedModel('subaccount', 'templatesubaccount')
 
     class Meta(Account.Meta):
         verbose_name = "Account"

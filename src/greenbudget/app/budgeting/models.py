@@ -4,12 +4,32 @@ from polymorphic.models import PolymorphicModel
 from django.db import models, IntegrityError
 from django.utils.functional import cached_property
 
-from greenbudget.lib.utils import ensure_iterable, empty, humanize_list
+from greenbudget.lib.utils import (
+    ensure_iterable, empty, humanize_list, get_nested_attribute)
 from greenbudget.lib.django_utils.models import (
-    import_model_at_path, get_value_from_model_map)
+    import_model_at_path, ModelImportMap, ModelMap)
 
 from greenbudget.app.tabling.models import (
     RowModel, OrderedRowModel, OrderedRowPolymorphicModel)
+
+
+TreeDomainModelMap = {
+    None: ModelImportMap(
+        budget='budget.BaseBudget',
+        account='account.Account',
+        subaccount='subaccount.SubAccount'
+    ),
+    'budget': ModelImportMap(
+        budget='budget.Budget',
+        account='account.BudgetAccount',
+        subaccount='subaccount.BudgetSubAccount'
+    ),
+    'template': ModelImportMap(
+        budget='template.Template',
+        account='account.TemplateAccount',
+        subaccount='subaccount.TemplateSubAccount'
+    )
+}
 
 
 class BudgetTree:
@@ -31,12 +51,12 @@ class BudgetTree:
         return self._subaccounts
 
     @cached_property
-    def instance_map(self):
-        return {
+    def model_map(self):
+        return ModelMap({
             'budget.BaseBudget': self._budgets,
             'account.Account': self._accounts,
             'subaccount.SubAccount': self._subaccounts
-        }
+        })
 
     def merge(self, tree):
         self._budgets.update(tree.budgets)
@@ -51,8 +71,7 @@ class BudgetTree:
     def add(self, *args):
         for instances in args:
             for instance in ensure_iterable(instances, cast=set):
-                store = get_value_from_model_map(
-                    self.instance_map, instance, strict=True)
+                store = self.model_map.get(instance, strict=True)
                 store.add(instance)
 
 
@@ -105,14 +124,22 @@ class AssociatedModel:
         if self._model_lookup == ('self', ):
             return objtype
         elif len(self._model_lookup) == 1:
-            return getattr(obj, self._model_lookup[0])
+            if self._model_lookup[0] in ('budget', 'account', 'subaccount'):
+                # The obj may be None, in which case the objtype is provided.
+                obj_type = objtype or type(obj)
+                assert hasattr(obj_type, 'domain'), \
+                    "If the model type is provided, the domain must be " \
+                    f"attributed on model {obj_type.__name__}."
+                domain = getattr(obj_type, 'domain')
+                return getattr(TreeDomainModelMap[domain], self._model_lookup[0])
+            return get_nested_attribute(obj, self._model_lookup[0])
         return import_model_at_path(*self._model_lookup)
 
 
 class BudgetingModelMixin:
-    budget_cls = AssociatedModel('budget', 'basebudget')
-    account_cls = AssociatedModel('account', 'account')
-    subaccount_cls = AssociatedModel('subaccount', 'subaccount')
+    budget_cls = AssociatedModel("budget")
+    account_cls = AssociatedModel("account")
+    subaccount_cls = AssociatedModel("subaccount")
     domain = None
 
 

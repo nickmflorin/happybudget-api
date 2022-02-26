@@ -269,9 +269,6 @@ class BudgetSubAccount(SubAccount):
     objects = BudgetSubAccountManager()
 
     DERIVING_FIELDS = SubAccount.DERIVING_FIELDS + ("contact", )
-    budget_cls = AssociatedModel('budget', 'budget')
-    account_cls = AssociatedModel('account', 'budgetaccount')
-    subaccount_cls = AssociatedModel('subaccount', 'budgetsubaccount')
 
     pdf_type = 'pdf-subaccount'
     domain = "budget"
@@ -349,9 +346,6 @@ class BudgetSubAccount(SubAccount):
 @model.model(user_field='updated_by', type='subaccount')
 class TemplateSubAccount(SubAccount):
     domain = "template"
-    budget_cls = AssociatedModel('template', 'template')
-    account_cls = AssociatedModel('account', 'templateaccount')
-    subaccount_cls = AssociatedModel('subaccount', 'templatesubaccount')
     objects = TemplateSubAccountManager()
 
     class Meta(SubAccount.Meta):

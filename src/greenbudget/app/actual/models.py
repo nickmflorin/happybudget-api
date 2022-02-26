@@ -3,8 +3,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models, IntegrityError
 
 from greenbudget.app import model
-from greenbudget.app.budgeting.models import (
-    BudgetingOrderedRowModel, AssociatedModel)
+from greenbudget.app.budgeting.models import BudgetingOrderedRowModel
 from greenbudget.app.tagging.models import Tag
 
 from .managers import ActualManager
@@ -75,9 +74,7 @@ class Actual(BudgetingOrderedRowModel):
     objects = ActualManager()
 
     table_pivot = ('budget_id', )
-    budget_cls = AssociatedModel('budget', 'budget')
-    account_cls = AssociatedModel('account', 'budgetaccount')
-    subaccount_cls = AssociatedModel('subaccount', 'budgetsubaccount')
+    domain = 'budget'
 
     class Meta:
         get_latest_by = "order"

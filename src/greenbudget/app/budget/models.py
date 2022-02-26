@@ -8,7 +8,7 @@ from greenbudget.lib.utils import cumulative_sum
 from greenbudget.app import model
 from greenbudget.app.authentication.models import PublicToken
 from greenbudget.app.budgeting.models import (
-    BudgetingTreePolymorphicModel, AssociatedModel, children_method_handler)
+    BudgetingTreePolymorphicModel, children_method_handler)
 from greenbudget.app.group.models import Group
 from greenbudget.app.markup.models import Markup
 from greenbudget.app.io.utils import upload_user_image_to
@@ -136,10 +136,6 @@ class BaseBudget(BudgetingTreePolymorphicModel):
 class Budget(BaseBudget):
     pdf_type = "pdf-budget"
     domain = "budget"
-
-    budget_cls = AssociatedModel('budget', 'budget')
-    account_cls = AssociatedModel('account', 'budgetaccount')
-    subaccount_cls = AssociatedModel('subaccount', 'budgetsubaccount')
 
     objects = BudgetManager()
     non_polymorphic = models.Manager()

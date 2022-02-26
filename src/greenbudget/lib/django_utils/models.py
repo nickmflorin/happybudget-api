@@ -108,7 +108,48 @@ def get_value_from_model_map(model_map, instance, multiple=False, strict=True):
     return None
 
 
+class ModelImportMap(collections.abc.Mapping):
+    """
+    A mapping class that maps keys to models (identified by the common string
+    model definition for Django) such that accessing a key of the map will
+    return the imported model.
+
+    The common string model defintion for Django models is "<app_label>.<model>".
+    """
+
+    def __init__(self, *args, **kwargs):
+        self._store = dict(*args, **kwargs)
+        self._cache = {}
+
+    def __getitem__(self, k):
+        if k in self._cache:
+            return self._cache[k]
+        v = import_model_at_path(self._store[k])
+        self._cache[k] = v
+        return v
+
+    def __getattr__(self, k):
+        return self.__getitem__(k)
+
+    def __iter__(self):
+        return self._store.__iter__()
+
+    def __len__(self):
+        return self._store.__len__()
+
+    def __repr__(self):
+        return self._store.__repr__()
+
+
 class ModelMap(collections.abc.Mapping):
+    """
+    A mapping class that maps models (identified by the common string model
+    definition for Django) to a set of values.  Lookups of the values can
+    then be performed by accessing the map by an instance or a class type.
+
+    The common string model defintion for Django models is "<app_label>.<model>".
+    """
+
     def __init__(self, store):
         self._store = store
 

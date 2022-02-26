@@ -3,7 +3,7 @@ from greenbudget.app import signals
 from greenbudget.app.budgeting.managers import BudgetingPolymorphicManager
 from greenbudget.app.budgeting.models import BudgetTree
 
-from .duplication import duplicate
+from .duplication import Duplicator
 
 
 class BaseBudgetManager(BudgetingPolymorphicManager):
@@ -41,7 +41,8 @@ class BaseBudgetManager(BudgetingPolymorphicManager):
         return tree
 
     def duplicate(self, budget, user, **overrides):
-        return duplicate(budget, user, **overrides)
+        duplicator = Duplicator(budget)
+        return duplicator(user, **overrides)
 
 
 class BudgetManager(BaseBudgetManager):
