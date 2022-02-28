@@ -207,3 +207,22 @@ def ensure_iterable(value, strict=False, cast=list, cast_none=True):
     elif strict:
         raise ValueError("Value %s is not an iterable." % value)
     return cast([value])
+
+
+def merge_dicts(*dicts, **kwargs):
+    """
+    Since the advent of Python3, there is now commonly available built in
+    logic that can merge dictionaries - the problem however is that it cannot
+    merge dictionaries with the same keys.
+
+    In the case that dictionaries need to be merged where keys defined for
+    latter dictionaries override those from previous dictionaries, this method
+    should be used.
+    """
+    data = {}
+    for d in dicts:
+        for k, v in d.items():
+            data[k] = v
+    if kwargs:
+        data.update(**kwargs)
+    return data

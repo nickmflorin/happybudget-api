@@ -63,13 +63,11 @@ SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_DOMAIN = ".greenbudget.io"
 SESSION_COOKIE_AGE = 60 * 60 * 24
-#: Extend the session on every request
 SESSION_SAVE_EVERY_REQUEST = True
 
 # CSRF Configuration
 CSRF_COOKIE_SECURE = True
-# Must be false so that the frontend can include as a header.
-CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_HTTPONLY = False  # So frontend can include as a header.
 CSRF_COOKIE_NAME = 'greenbudgetcsrftoken'
 CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_DOMAIN = ".greenbudget.io"
@@ -77,6 +75,7 @@ CSRF_TRUSTED_ORIGINS = [
     'https://app.greenbudget.io',
     'https://api.greenbudget.io',
 ]
+
 # CORS Configuration
 CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_ALLOW_ALL = False

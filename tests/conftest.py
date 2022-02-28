@@ -1,10 +1,12 @@
 import copy
+import functools
 from io import BytesIO
 import logging
 import mock
 from PIL import Image
 import pytest
 import requests
+import threading
 
 from django.core.cache import cache as django_cache
 from django.contrib.contenttypes.models import ContentType
@@ -304,3 +306,42 @@ def budget_f(request, budget_factories):
         yield budget_factories(request.param)
     else:
         pytest.skip("Test is not applicable for `%s` domain." % request.param)
+
+
+@pytest.fixture
+def test_concurrently():
+    """
+    Fixture that returns a decorator such that when a function is decorated
+    with the returned decorator, the function will execute `count` number of
+    times concurrently.
+    """
+    def decorator_options(count):
+        def decorator(func):
+            @functools.wraps(func)
+            def inner(*args, **kwargs):
+                exceptions = []
+
+                def call_func():
+                    try:
+                        func(*args, **kwargs)
+                    except Exception as e:
+                        exceptions.append(e)
+                        raise e
+
+                threads = []
+                for _ in range(count):
+                    threads.append(threading.Thread(target=call_func))
+                for t in threads:
+                    t.start()
+                for t in threads:
+                    t.join()
+
+                if exceptions:
+                    stringified = "\n".join([str(e) for e in exceptions])
+                    raise Exception(
+                        f"Concurrent test intercepted {len(exceptions)} "
+                        f"exceptions: {stringified}"
+                    )
+            return inner
+        return decorator
+    return decorator_options

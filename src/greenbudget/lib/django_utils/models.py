@@ -1,10 +1,39 @@
 import collections
+from polymorphic.models import PolymorphicModel
 
 from django.apps import apps
 from django.contrib.contenttypes.models import ContentType
 
 from greenbudget.lib.utils import (
     humanize_list, ensure_iterable, ImmutableAttributeMapping)
+
+
+def get_model_polymorphic_ptr_field(model_cls, strict=False):
+    """
+    Returns the field used to point a child polymorphic model to its parent.
+    """
+    if len(model_cls._meta.parents) > 1:
+        raise Exception("Multi-table inheritance not supported.")
+    elif not model_cls._meta.parents:
+        if strict:
+            raise Exception(
+                f"Model class {model_cls.__name__} does not exhibit "
+                "multi-table inheritance and has no pointer field."
+            )
+        return None
+    # Django does some weird things to prevent us from being able to access
+    # the `parents` attribute on a model's Meta class as a normal dictionary.
+    # The only thing we can do is iterate over it and treat them as tuples.
+    data = [(x, y) for x, y in model_cls._meta.parents.items()]
+    # Data will be an array of length-1 where the only element is a tuple.  That
+    # tuple will have as it's first element the parent model class, and as it's
+    # second element the field associating the parent model to the child model.
+    if not issubclass(data[0][0], PolymorphicModel):
+        if strict:
+            raise Exception(
+                f"Model class {model_cls.__name__} is not polymorphic.")
+        return None
+    return data[0][1].name
 
 
 def import_model_at_path(*args):

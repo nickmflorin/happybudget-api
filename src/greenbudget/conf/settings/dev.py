@@ -44,19 +44,21 @@ logger_boto3_session = session.Session(
     region_name=AWS_DEFAULT_REGION,
 )
 
-LOGGING["handlers"]["watchtower"] = {
-    "level": logging.INFO,
-    "class": "watchtower.CloudWatchLogHandler",
-    "log_group": "greenbudget-dev-api",
-    "stream_name": "logstream",
-    "formatter": "aws",
-    "boto3_session": logger_boto3_session
-}
+LOGGING["handlers"].update(
+    watchtower={
+        "level": logging.INFO,
+        "class": "watchtower.CloudWatchLogHandler",
+        "log_group": "greenbudget-dev-api",
+        "stream_name": "logstream",
+        "formatter": "aws",
+        "boto3_session": logger_boto3_session
+    },
+    sentry={
+        'level': logging.WARNING,
+        'class': 'raven.contrib.django.raven_compat.handlers.SentryHandler',
+    }
 
-LOGGING["handlers"]["sentry"] = {
-    'level': logging.WARNING,
-    'class': 'raven.contrib.django.raven_compat.handlers.SentryHandler',
-}
+)
 
 for logger_name in ("django", "django.request", "django.server", "greenbudget"):
     LOGGING["loggers"][logger_name]["handlers"] = LOGGING[
