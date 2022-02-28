@@ -187,16 +187,20 @@ class Config:
         default: :obj:`str`, :obj:`int`, :obj:`float` or :obj:`dict` (optional)
             The default value that should be used for the configuration
             parameter in the case that the configuration parameter is not
-            defined in the .env file.  If provided as a :obj:`dict`, the
-            default will be looked up based on the current environment.
+            defined in the .env file.
+
+            If provided as a :obj:`dict`, the default will be looked up based on
+            the current environment.
 
             Default: ""
 
         required: :obj:`boolean`, :obj:`list`, :obj:`tuple` or :obj:`dict` (optional)  # noqa
             Whether or not the configuration parameter is required.
+
             If provided as a :obj:`dict`, whether or not the parameter is
             required will be determined based on the key of the :obj:`dict`
             that is associated with the current environment.
+
             If provied as an iterable, whether or not the parameter is required
             will be determined based on whether or not the current environment
             is in the provided iterable.
