@@ -177,17 +177,21 @@ class Config:
         Reads the configuration parameter defined by `name` from the local
         .env file.  The value is then parsed and validated, and the validated,
         parsed value is returned.
+
         Parameters:
         ----------
         name: :obj:`str`
             The name of the configuration parameter to be read from the .env
             file.
+
         default: :obj:`str`, :obj:`int`, :obj:`float` or :obj:`dict` (optional)
             The default value that should be used for the configuration
             parameter in the case that the configuration parameter is not
             defined in the .env file.  If provided as a :obj:`dict`, the
             default will be looked up based on the current environment.
+
             Default: ""
+
         required: :obj:`boolean`, :obj:`list`, :obj:`tuple` or :obj:`dict` (optional)  # noqa
             Whether or not the configuration parameter is required.
             If provided as a :obj:`dict`, whether or not the parameter is
@@ -196,18 +200,25 @@ class Config:
             If provied as an iterable, whether or not the parameter is required
             will be determined based on whether or not the current environment
             is in the provided iterable.
+
             Default: False
+
         validate: :obj:`lambda` (optional)
             An additional validate method that should be used to validate the
             configuration parameter value read from the .env file.
+
             Default: None
+
         cast: :obj:`type` (optional)
             The type that the raw configuration parameter value should be cast
             to.
+
             Default: str
+
         cast_kwargs: :obj:`dict` (optional)
             If applicable, the keyword arguments that should be included in
             the call to the function defined by the `cast` argument.
+
             Default: None
         """
         if args:
@@ -305,6 +316,7 @@ class Config:
         """
         Casts the value read from the .env file to a specific type for a
         specific configuration parameter.
+
         Parameters:
         ----------
         name: :obj:`str`
