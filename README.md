@@ -183,26 +183,77 @@ isolate these parameters to our use case.
 This is not to say that you cannot use the application on the default `postgresql` parameters - you can, you just have to set
 them in the `.env` file.
 
-For developers not familiar with `postgresql`, because we do not use the default `postgresql` parameters, you might see the following
-error when starting the server locally:
+When starting Django, we may see some of the following database errors:
 
 ```bash
-django.db.utils.OperationalError: FATAL:  role "greenbudget" does not exist
+$ django.db.utils.OperationalError: connection to server at "localhost" (::1), port 5432 failed: FATAL:
+$ database "postgres_greenbudget" does not exist
 ```
 
-All this means is that we have to setup the database manually, since it is not already setup by `postgresql` by default (which
-it would be, if we were using the `postgres` database name and user).
-
-To setup the database, all we have to do is the following:
+This happens if the database has not yet been created.  We may also see the following:
 
 ```bash
-psql -d postgres  # Open the postgresql shell by connecting to the default database.
-CREATE DATABASE postgres_greenbudget;
-CREATE USER greenbudget WITH PASSWORD '';
-GRANT ALL PRIVILEGES ON DATABASE postgres_greenbudget TO greenbudget;
-ALTER USER greenbudget CREATEDB;
-ALTER DATABASE postgres_greenbudget OWNER TO greenbudget;
-\q
+$ django.db.utils.OperationalError: FATAL:  role "greenbudget" does not exist
+```
+
+This happens if the database user has not yet been created or does not have the correct privileges to access
+the configured database.
+
+Both of these errors mean is that we have to setup the database manually, since it is not already setup by `postgresql`
+by default (which it would be, if we were using the `postgres` database name and user).
+
+To setup the database, we have to follow the steps outlined below.  Note that not all of these steps are required each
+time, as some of the entities may already have been created or appropriately assigned when using a previous database
+or previously completing some of these steps.
+
+###### Connect to Default Postgres Database
+
+Since we do not know whether or not the database we are concerned with has been created yet, we connect to the default
+database `postgres` since we can still run commands for other databases from that entry point.
+
+```bash
+$ psql -d postgres
+```
+
+###### Create the Database
+
+If the database was not already created, we need to create it.
+
+```bash
+$ CREATE DATABASE <DATABASE_NAME>;
+```
+
+###### Create the Database User
+
+If the user does not already exist, we need to create one in Postgres. Note that if different databases are using
+the same user, the user may already have been created.
+
+```bash
+$ CREATE USER <DATABASE_USER> WITH PASSWORD '';
+```
+
+###### Grant Privileges to Database User
+
+If the database was just created, or the user was just created, we need to grant access to the created or existing
+database to the created or existing user.
+
+```bash
+$ GRANT ALL PRIVILEGES ON DATABASE <DATABASE_NAME> TO <DATABASE_USER>;
+```
+
+###### Assign User as Owner of Database
+
+If the database was just created, or the user was just created, we need to assign the created or existing user as the
+owner of the created or existing database.
+
+```bash
+$ ALTER DATABASE <DATABASE_NAME> OWNER TO <DATABASE_USER>;
+```
+
+###### Quit the Postgres Shell
+
+```bash
+$ \q
 ```
 
 ##### Populating the Database
