@@ -7,13 +7,14 @@ per-case basis.
 from corsheaders.defaults import default_headers
 import datetime
 import os
-from pathlib import Path
 
 from greenbudget.conf import Environments, config, LazySetting
 
 from .admin import *  # noqa
 from .aws import *  # noqa
 from .cache import *  # noqa
+from .constant import *  # noqa
+from .constant import BASE_DIR
 from .db import *  # noqa
 from .jwt_rsa_fingerprint import __JWT_SIGNING_KEY, __JWT_VERIFYING_KEY
 from .logging import *  # noqa
@@ -22,10 +23,6 @@ from .email import *  # noqa
 from .stripe import *  # noqa
 
 DEBUG = False
-
-BASE_DIR = Path(os.path.abspath(__file__)).parents[2]
-ROOT_DIR = Path(os.path.abspath(__file__)).parents[4]
-APPS_DIR = BASE_DIR / "app"
 
 # Localization Configuration
 TIME_ZONE = 'UTC'

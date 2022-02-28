@@ -1,14 +1,14 @@
 """
 Settings configuration file for test environment.
 """
-import dj_database_url
 import logging
 
 from greenbudget.conf import config, Environments
-from greenbudget.lib.utils import merge_dicts
 
-from .base import ROOT_DIR, LOGGING, REST_FRAMEWORK, DATABASES
+from .base import LOGGING, REST_FRAMEWORK
 from .base import *  # noqa
+from .db import postgres_db, sqlite_db, DATABASE_USER
+
 
 DEBUG = True
 ENVIRONMENT = Environments.TEST
@@ -40,50 +40,38 @@ del LOGGING['root']
 REST_FRAMEWORK['DEFAULT_THROTTLE_CLASSES'] = []
 REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {}
 
-# Using a postgres test database is not required and the configuration will only
-# be used when running certain tests.
-TEST_DB = config.multiple(
-    NAME={
-        'name': 'TEST_DATABASE_NAME',
-        'default': 'postgres_test_greenbudget'
-    },
-    USER={
-        'name': 'TEST_DATABASE_USER',
-        'default': 'greenbudget'
-    },
-    HOST={
-        'name': 'TEST_DATABASE_HOST',
-        'default': 'localhost'
-    },
-    PORT={
-        'name': 'TEST_DATABASE_PORT',
-        'default': 5432,
-    },
-    PASSWORD={
-        'name': 'TEST_DATABASE_PASSWORD',
-        'default': ''
-    }
+DATABASES = {'default': sqlite_db("test.sqlite3")}
+
+TEST_DATABASE_NAME = config(
+    name='TEST_DATABASE_NAME',
+    default='postgres_test_greenbudget'
+)
+TEST_DATABASE_USER = config(
+    name='TEST_DATABASE_USER',
+    default=DATABASE_USER
+)
+TEST_DATABASE_PASSWORD = config(
+    name='TEST_DATABASE_USER',
+    default=''
+)
+TEST_DATABASE_HOST = config(
+    name='TEST_DATABASE_HOST',
+    default='localhost'
+)
+TEST_DATABASE_PORT = config(
+    name='TEST_DATABASE_PORT',
+    default='5432'
 )
 
-# For the test postgres database, we want the configuration parameters to be
-# exactly the same as production except for access level configuration params.
-production_default_db = DATABASES["default"]
-
-DATABASES = {
-    'default': merge_dicts(
-        dj_database_url.parse('sqlite:///%s/test.sqlite3' % ROOT_DIR),
-        # Use atomic requests for the test database consistently with how they
-        # are used in production.
-        ATOMIC_REQUESTS=production_default_db['ATOMIC_REQUESTS']
-    ),
-    'postgres': merge_dicts(production_default_db,
-        NAME=TEST_DB.NAME,
-        USER=TEST_DB.USER,
-        HOST=TEST_DB.HOST,
-        PASSWORD=TEST_DB.PASSWORD,
-        PORT=TEST_DB.PORT
-    )
-}
+# We do not include in the set of DATABASES until it is designated to be used
+# by specific tests.
+TEST_POSTGRES_DB = postgres_db(
+    NAME=TEST_DATABASE_NAME,
+    USER=TEST_DATABASE_USER,
+    HOST=TEST_DATABASE_HOST,
+    PASSWORD=TEST_DATABASE_PASSWORD,
+    PORT=TEST_DATABASE_PORT
+)
 
 # The cache should always be disabled by default, but overridden on a test by
 # test basis.

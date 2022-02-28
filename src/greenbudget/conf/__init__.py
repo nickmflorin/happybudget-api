@@ -136,13 +136,6 @@ class ConfigOptions:
         return cls(**option_kwargs), other_kwargs
 
 
-class MultipleConfig:
-    def __init__(self, *args, **kwargs):
-        data = dict(*args, **kwargs)
-        for k, v in data.items():
-            setattr(self, k, v)
-
-
 class Config:
     """
     Manages the loading of configuration parameters from a shell environment or
@@ -210,19 +203,16 @@ class Config:
         validate: :obj:`lambda` (optional)
             An additional validate method that should be used to validate the
             configuration parameter value read from the .env file.
-
             Default: None
 
         cast: :obj:`type` (optional)
             The type that the raw configuration parameter value should be cast
             to.
-
             Default: str
 
         cast_kwargs: :obj:`dict` (optional)
             If applicable, the keyword arguments that should be included in
             the call to the function defined by the `cast` argument.
-
             Default: None
         """
         if args:
@@ -264,34 +254,6 @@ class Config:
                 raise ConfigRequiredError(name)
 
         return self._values[name]
-
-    def multiple(self, *args, **kwargs):
-        """
-        Reads multiple configuration parameters, defined by the keys of
-        the providing mapping, from the local .env file.  Each parameter
-        and its associated value is then parsed and validated, and an object
-        containing the parameter names as attributes is returned.
-        """
-        # Separate out the top level options that will apply to all parameters
-        # being read from the mapping of parameters to individual parameter
-        # level options.
-        options, mapping = ConfigOptions.pluck(*args, **kwargs)
-
-        multiple_configuration = {}
-        for k, v in mapping.items():
-            # Merge the top level options with the options provided for just
-            # the single configuration param.
-            if v is not None and not isinstance(v, dict):
-                raise ConfigError(
-                    "A mapping must be provided for each parameter.")
-            name = k
-            if v is not None:
-                name = v.pop('name', k)
-                cloned = options.clone(v)
-            else:
-                cloned = options.clone()
-            multiple_configuration[k] = self.__call__(name, cloned)
-        return MultipleConfig(**multiple_configuration)
 
     def validate(self, name, value, validator):
         """
