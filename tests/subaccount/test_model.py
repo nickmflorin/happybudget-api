@@ -31,9 +31,7 @@ def test_bulk_create_subaccount(user, budget_f, models):
         )
     ]
     created_subaccounts = budget_f.subaccount_cls.objects.bulk_create(
-        subaccounts,
-        return_created_objects=True
-    )
+        subaccounts)
 
     assert [b.pk for b in created_subaccounts] == [1, 2, 3]
 

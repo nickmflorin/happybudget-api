@@ -10,6 +10,7 @@ from django.db import models
 from greenbudget.conf import Environments
 from greenbudget.lib.utils import ensure_iterable
 
+from .constants import ActionName
 from .signals.signals import field_changed, fields_changed, post_create_by_user
 
 
@@ -414,7 +415,7 @@ class model:
         # Track that the model was decorated with this class for purposes of
         # model inheritance and/or prevention of model inheritance.
         setattr(cls, '__decorated_for_signals__', self)
-
+        setattr(cls, 'actions', ActionName)
         return cls
 
     def get_user(self, instance):

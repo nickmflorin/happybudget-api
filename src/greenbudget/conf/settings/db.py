@@ -30,6 +30,7 @@ def db(id, *args, **kwargs):
     default_data = {
         'ATOMIC_REQUESTS': ATOMIC_REQUESTS,
         'ENGINE': config.engine,
+        'CONN_MAX_AGE': CONN_MAX_AGE
     }
     default_data.update(dict(*args, **kwargs))
     return default_data
@@ -48,6 +49,7 @@ def sqlite_db(filename):
 
 DEFAULT_BULK_BATCH_SIZE = 20
 ATOMIC_REQUESTS = True
+CONN_MAX_AGE = 500
 
 FIXTURES = [
     'colors.json',

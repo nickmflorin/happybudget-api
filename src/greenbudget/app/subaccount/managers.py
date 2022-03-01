@@ -21,6 +21,9 @@ from .cache import (
 )
 
 
+MAX_UNIQUE_CONSTRAINT_RECURSIONS = 1
+
+
 class SubAccountQuerier(OrderedRowQuerier):
 
     def filter_by_parent(self, parent):
@@ -117,8 +120,15 @@ class SubAccountManager(
         :obj:`SubAccount` level of the tree in isolation.
         """
         grouped = collections.defaultdict(list)
-        for instance in ensure_iterable(instances, cast=set):
-            grouped[instance.nested_level].append(instance)
+        # We cannot cast the iterable as a set because the models may or may
+        # not have been saved yet, and if they haven't been saved they do not
+        # have a PK - which means they are not hashable, so we have to assume
+        # the instances provided to this method are unique in that case.
+        for instance in ensure_iterable(instances, cast=list):
+            if (hasattr(instance, 'pk')
+                    and instance not in grouped[instance.nested_level]) \
+                    or not hasattr(instance, 'pk'):
+                grouped[instance.nested_level].append(instance)
         return sorted(
             list(grouped.items()), key=lambda tup: tup[0], reverse=reverse)
 
@@ -139,30 +149,50 @@ class SubAccountManager(
             obj.delete()
 
         self.mark_budgets_updated(budgets)
-        self.bulk_calculate_all([obj.parent for obj in instances])
+        self.bulk_calculate_all([
+            obj.parent for obj in
+            [i for i in instances
+            if i.will_change_parent_estimation(i.actions.DELETE)]
+        ])
         self.bulk_delete_empty_groups(groups)
 
     @signals.disable()
     def bulk_add(self, instances):
-        # It is important to perform the bulk create first, because we need
-        # the primary keys for the instances to be hashable.
         created = self.bulk_create(instances, return_created_objects=True)
+
         self.mark_budgets_updated(created)
         budget_actuals_owners_cache.invalidate(created)
-
         parents = set([p.parent for p in created])
         invalidate_parent_children_cache(parents)
         invalidate_parent_instance_cache(parents)
         invalidate_parent_groups_cache(parents)
 
-        self.bulk_calculate(created)
+        # When creating SubAccount(s), the only way that they have an estimated
+        # value and affect the parent's estimated value will be if the rate and
+        # quantity field are non-null.  This is because a SubAccount cannot be
+        # assigned children, markups or fringes until after it is created.
+        # Furthermore, the SubAccount will only have an actual value and affect
+        # the parent's actual value if the SubAccount has been assigned Actual
+        # instances, which cannot be done until after the SubAccount is created.
+        self.bulk_calculate([
+            i for i in created
+            if i.will_change_parent_estimation(i.actions.CREATE)
+        ])
         return created
 
     @signals.disable()
     def bulk_save(self, instances, update_fields):
         instances = ensure_iterable(instances)
-
-        tree = self.bulk_calculate(instances, commit=False)
+        tree = self.bulk_calculate(
+            instances,
+            commit=False,
+            # When we reestimate a SubAccount, the estimation is only concerned
+            # with looking at the children of the SubAccount, but if the
+            # SubAccount has no children the estimated value will change the
+            # parent if the multiplier, quantity or rate has changed.
+            extra_conditional=lambda obj: obj.will_change_parent_estimation(
+                obj.actions.UPDATE)
+        )
         instances = tree.subaccounts.union(instances)
         subaccount_instance_cache.invalidate(instances)
 
@@ -188,6 +218,24 @@ class SubAccountManager(
     def bulk_calculate(self, *args, **kwargs):
         return self.bulk_estimate(*args, **kwargs)
 
+    def _evaluate_conditionals(self, conditionals, obj):
+        def evaluate(conditional):
+            assert conditional is None or isinstance(conditional, bool) \
+                or hasattr(conditional, '__call__'), \
+                f"Invalid conditional {conditional}, must be a boolean, None " \
+                "or a callable."
+            if hasattr(conditional, '__call__'):
+                return conditional(obj)
+            return conditional
+
+        # A None value for the result of a conditional means that the conditional
+        # is not applicable and should not be included.
+        conditionals = [
+            c for c in [evaluate(ci) for ci in conditionals]
+            if c is not None
+        ]
+        return any(conditionals)
+
     def _subaccounts_recursion(self, tree, method_name, **kwargs):
         extra_conditional = kwargs.pop('extra_conditional', None)
         pass_up_kwargs = dict(**kwargs, **{'commit': False, 'trickle': False})
@@ -205,15 +253,11 @@ class SubAccountManager(
                         unsaved_children=unsaved.get(obj.pk),
                         **pass_up_kwargs
                     )
-                    conditional = altered
-                    if extra_conditional:
-                        conditional = conditional or extra_conditional(obj)
 
-                    if conditional or obj.was_just_added():
+                    if self._evaluate_conditionals(
+                            [altered, extra_conditional], obj):
                         tree.add(obj.parent)
-
-                        if conditional:
-                            altered_subaccounts.append(obj)
+                        altered_subaccounts.append(obj)
 
                         # This is why this method has to be recursive - when
                         # reestimating the SubAccount(s) at a given level, it
@@ -287,10 +331,6 @@ class SubAccountManager(
         tree = self.perform_bulk_routine(
             instances=instances,
             method_name='estimate',
-            # The raw_value of the SubAccount is not calculated in the estimate
-            # method, but does affect the nominal_value and will affect the
-            # estimated values of parents.
-            extra_conditional=lambda obj: obj.raw_value_changed,
             **kwargs
         )
         if commit:
@@ -309,11 +349,9 @@ class BudgetSubAccountManager(SubAccountManager):
     @signals.disable()
     def bulk_calculate(self, instances, **kwargs):
         commit = kwargs.pop('commit', True)
-
         tree = super().bulk_calculate(instances, commit=False, **kwargs)
         actualized_tree = self.bulk_actualize(instances, commit=False, **kwargs)
         tree.merge(actualized_tree)
-
         if commit:
             self.bulk_update_post_calc(tree.subaccounts)
             self.model.account_cls.objects.bulk_update_post_calc(tree.accounts)

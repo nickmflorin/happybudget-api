@@ -193,6 +193,9 @@ class OrderedRowModelMixin(RowModelMixin):
             self.order = lexographic_midpoint(lower=last_in_table.order)
 
     def validate_before_save(self):
+        # Note: This should never be triggered during bulk create operations,
+        # as the order should be defined in the manager logic before the
+        # pre-save validation methods are called on the instances.
         if self.order is None:
             self.order_at_bottom()
         validate_order(self.order)

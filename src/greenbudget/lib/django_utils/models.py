@@ -1,11 +1,38 @@
 import collections
 from polymorphic.models import PolymorphicModel
+import re
 
 from django.apps import apps
 from django.contrib.contenttypes.models import ContentType
+from django.db import IntegrityError
 
 from greenbudget.lib.utils import (
     humanize_list, ensure_iterable, ImmutableAttributeMapping)
+
+
+def error_is_unique_constraint(err, field):
+    """
+    Returns whether or not a caught exception is an error related to a unique
+    constraint validation failure for the provided field.
+
+    This is a rather sensitive piece of logic, as changes to the error message
+    of the IntegrityError can lead inaccurate results.  We should investigate
+    a better way to do this.
+    """
+    if not isinstance(err, IntegrityError):
+        return False
+    regex = re.compile(
+        "(?<=duplicatekeyvalueviolatesuniqueconstraint)"
+        "(.*?)(?<=detail:key)(.*?)(?=alreadyexists.)"
+    )
+    result = re.search(regex, str(err).replace("\n", "").replace("\t", "")
+        .replace(" ", "").lower())
+    # The second group in the result (if it is not None) will be the tuple
+    # of fields in the unique constraint and the violating values:
+    # >>> '(content_type_id,object_id,"order")=(26,1621,n)'
+    if result and field in result.group(2):
+        return True
+    return False
 
 
 def get_model_polymorphic_ptr_field(model_cls, strict=False):

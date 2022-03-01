@@ -83,15 +83,17 @@ def invalidate_caches_on_markup_changes(instance, action, reverse, **kwargs):
 @dispatch.receiver(signals.post_save, sender=BudgetSubAccount)
 @dispatch.receiver(signals.post_save, sender=TemplateSubAccount)
 def subaccount_saved(instance, **kwargs):
-    CALCULATING_FIELDS = ('rate', 'quantity', 'multiplier')
-
     old_parent, new_parent = generic_fk_instance_change(instance)
 
     instances_to_reestimate = []
     instances_to_recalculate = []
 
-    if instance.was_just_added() \
-            or instance.fields_have_changed(*CALCULATING_FIELDS):
+    action = {
+        True: instance.actions.CREATE,
+        False: instance.actions.UPDATE
+    }[kwargs['created']]
+
+    if instance.will_change_parent_estimation(action):
         instances_to_reestimate.append(instance)
 
     if old_parent != new_parent:
@@ -127,7 +129,6 @@ def subaccount_saved(instance, **kwargs):
 def subaccount_to_delete(instance, **kwargs):
     subaccount_instance_cache.invalidate(instance)
     invalidate_parent_groups_cache(instance.parent)
-
     if instance.domain == 'budget':
         budget_actuals_owners_cache.invalidate(instance.budget)
     instance.parent.calculate(

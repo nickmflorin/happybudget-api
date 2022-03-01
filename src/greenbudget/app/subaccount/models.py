@@ -131,10 +131,6 @@ class SubAccount(BudgetingTreePolymorphicOrderedRowModel):
         return 0.0
 
     @property
-    def raw_value_changed(self):
-        return self.fields_have_changed('multiplier', 'quantity', 'rate')
-
-    @property
     def nominal_value(self):
         if self.children.count() == 0:
             return self.raw_value
@@ -144,6 +140,32 @@ class SubAccount(BudgetingTreePolymorphicOrderedRowModel):
     def realized_value(self):
         return self.nominal_value + self.accumulated_fringe_contribution \
             + self.accumulated_markup_contribution
+
+    def will_change_parent_estimation(self, action):
+        """
+        Returns whether or not the :obj:`SubAccount` instance will change the
+        estimated values of it's parent after it is updated, created or deleted.
+        """
+        self.actions.validate(action)
+        if action == self.actions.CREATE:
+            # When creating :obj:`SubAccount` instance(s), the only way that
+            # they have an estimated value and affect the parent's estimated
+            # value will be if the rate and quantity field are non-null.  This
+            # is because a :obj:`SubAccount` cannot be assigned children,
+            return self.rate not in (None, 0.0) \
+                and self.quantity not in (None, 0.0)
+        elif action == self.actions.DELETE:
+            if self.children.count() != 0:
+                return any([metric != 0.0 for metric in [
+                    self.fringe_contribution,
+                    self.accumulated_fringe_contribution,
+                    self.markup_contribution,
+                    self.accumulated_markup_contribution,
+                    self.accumulated_value
+                ]])
+            return self.raw_value != 0.0
+        else:
+            return self.fields_have_changed('multiplier', 'quantity', 'rate')
 
     @children_method_handler
     def accumulate_value(self, children):

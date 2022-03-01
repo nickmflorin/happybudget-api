@@ -1,23 +1,5 @@
 import collections
 
-from .builtins import ensure_iterable
-
-
-class ImmutableSequence(collections.abc.Sequence):
-    """
-    An immutable sequence class that can be extended to behave like an iterable
-    but implement additional functionality.
-    """
-
-    def __init__(self, data):
-        self._store = ensure_iterable(data, cast=list)
-
-    def __len__(self):
-        return len(self._store)
-
-    def __getitem__(self, index):
-        return self._store.__getitem__(index)
-
 
 class ImmutableAttributeMapping(collections.abc.Mapping):
     """

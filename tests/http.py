@@ -4,6 +4,7 @@ import mock
 import pytest
 import requests
 import threading
+import time
 
 from django.core.cache import cache as django_cache
 from django.db import connection, connections
@@ -85,27 +86,34 @@ def test_concurrently():
     with the returned decorator, the function will execute `count` number of
     times concurrently.
     """
-    def inner(count):
+    def inner(count, sleep=None):
         def decorator(func):
             @functools.wraps(func)
             def inner(*args, **kwargs):
                 exceptions = []
+                results = [None for _ in range(count)]
 
-                def call_func():
+                def call_func(i):
                     try:
-                        func(*args, **kwargs)
+                        result = func(*args, **kwargs)
                     except Exception as e:
                         exceptions.append(e)
                         raise e
+                    else:
+                        results[i] = result
 
                 threads = []
-                for _ in range(count):
-                    threads.append(threading.Thread(target=call_func))
+                for i in range(count):
+                    threads.append(threading.Thread(
+                        target=call_func, args=(i, )))
                 for t in threads:
                     t.start()
+                    if sleep:
+                        time.sleep(sleep)
                 for t in threads:
                     t.join()
 
+                # TODO: We may need to remove this at some point.
                 connections.close_all()
 
                 if exceptions:
@@ -114,6 +122,7 @@ def test_concurrently():
                         f"Concurrent test intercepted {len(exceptions)} "
                         f"exceptions: {stringified}"
                     )
+                return results
             return inner
         return decorator
     return inner

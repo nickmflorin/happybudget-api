@@ -15,10 +15,8 @@ def test_bulk_create_account(user, budget_f):
             updated_by=user
         )
     ]
-    created = account_cls.objects.bulk_create(
-        instances,
-        return_created_objects=True
-    )
+    created = account_cls.objects.bulk_create(instances)
+
     assert [b.pk for b in created] == [1, 2]
     assert [b.identifier for b in created] == ["Account 1", "Account 2"]
     assert all([b.budget == budget] for b in created)

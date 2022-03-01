@@ -13,6 +13,7 @@ from greenbudget.lib.drf.bulk_serializers import (
     create_bulk_update_serializer,
     create_bulk_delete_serializer
 )
+from greenbudget.app.constants import ActionName
 from greenbudget.app.budget.serializers import BudgetSerializer
 
 
@@ -49,7 +50,7 @@ class BaseBulkAction:
 
 
 class BulkDeleteAction(BaseBulkAction):
-    action_names = ["delete"]
+    action_names = [ActionName.DELETE]
 
     def __init__(self, url_path: str, child_cls: type, **kwargs):
         super().__init__(
@@ -66,7 +67,7 @@ class BulkDeleteAction(BaseBulkAction):
 
 
 class BulkCreateAction(BaseBulkAction):
-    action_names = ["create"]
+    action_names = [ActionName.CREATE]
 
     def __init__(self, url_path, child_serializer_cls, **kwargs):
         super().__init__(
@@ -84,7 +85,7 @@ class BulkCreateAction(BaseBulkAction):
 
 
 class BulkUpdateAction(BaseBulkAction):
-    action_names = ["update"]
+    action_names = [ActionName.UPDATE]
 
     def __init__(self, url_path, child_serializer_cls, **kwargs):
         super().__init__(
@@ -102,7 +103,7 @@ class BulkUpdateAction(BaseBulkAction):
 
 
 class BulkAction(BaseBulkAction):
-    action_names = ["delete", "create", "update"]
+    action_names = ActionName.__all__
 
     def __init__(self, url_path, child_cls, child_serializer_cls, **kwargs):
         super().__init__(
@@ -430,7 +431,7 @@ class bulk_registration:
 
 
 class register_bulk_updating(bulk_registration):
-    action_name = "update"
+    action_name = ActionName.UPDATE
     exclude_params = ('')
 
     def decorate(self, *args, **kwargs):
@@ -438,14 +439,14 @@ class register_bulk_updating(bulk_registration):
 
 
 class register_bulk_creating(bulk_registration):
-    action_name = "create"
+    action_name = ActionName.CREATE
 
     def decorate(self, *args, **kwargs):
         return bulk_create_action(*args, **kwargs)
 
 
 class register_bulk_deleting(bulk_registration):
-    action_name = "delete"
+    action_name = ActionName.DELETE
 
     def decorate(self, *args, **kwargs):
         return bulk_delete_action(*args, **kwargs)
