@@ -10,6 +10,8 @@ from django.contrib.contenttypes.models import ContentType
 import pytest
 
 from greenbudget.data import factories
+from greenbudget.app.budget.models import Budget
+from greenbudget.app.template.models import Template
 
 
 def domain_fixture(**contextuals):
@@ -556,3 +558,64 @@ def models(db):
             for model in django.apps.apps.get_models():
                 setattr(self, model.__name__, model)
     return Models()
+
+
+CONTEXT_BUDGETS = {
+    'budget': Budget,
+    'template': Template
+}
+
+
+@pytest.fixture
+def budget_factories(create_domain_budget, create_account, create_subaccount):
+    class BudgetFactories:
+        def __init__(self, domain):
+            self.domain = domain
+            self.budget_cls = CONTEXT_BUDGETS[self.domain]
+
+        @property
+        def account_cls(self):
+            return self.budget_cls.account_cls
+
+        @property
+        def subaccount_cls(self):
+            return self.budget_cls.subaccount_cls
+
+        def create_budget(self, *args, **kwargs):
+            kwargs.setdefault('domain', self.domain)
+            return create_domain_budget(*args, **kwargs)
+
+        def create_account(self, *args, **kwargs):
+            kwargs.setdefault('domain', self.domain)
+            return create_account(*args, **kwargs)
+
+        def create_subaccount(self, *args, **kwargs):
+            kwargs.setdefault('domain', self.domain)
+            return create_subaccount(*args, **kwargs)
+
+    def inner(param):
+        return BudgetFactories(param)
+    return inner
+
+
+@pytest.fixture
+def budget_df(budget_factories):
+    yield budget_factories("budget")
+
+
+@pytest.fixture
+def template_df(budget_factories):
+    yield budget_factories("template")
+
+
+@pytest.fixture(params=["budget", "template"])
+def budget_f(request, budget_factories):
+    markers = request.node.own_markers
+    marker_names = [m.name for m in markers]
+    if 'budget' not in marker_names and 'template' not in marker_names:
+        marker_names = marker_names + ['budget', 'template']
+
+    if request.param in marker_names:
+        yield budget_factories(request.param)
+    else:
+        pytest.skip("Test is not applicable for `%s` domain." % request.param)

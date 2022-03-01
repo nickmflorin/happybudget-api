@@ -40,15 +40,13 @@ del LOGGING['root']
 REST_FRAMEWORK['DEFAULT_THROTTLE_CLASSES'] = []
 REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {}
 
-DATABASES = {'default': sqlite_db("test.sqlite3")}
-
 TEST_DATABASE_NAME = config(
     name='TEST_DATABASE_NAME',
     default='postgres_test_greenbudget'
 )
 TEST_DATABASE_USER = config(
     name='TEST_DATABASE_USER',
-    default=DATABASE_USER
+    default=f'test_{DATABASE_USER}'
 )
 TEST_DATABASE_PASSWORD = config(
     name='TEST_DATABASE_USER',
@@ -69,9 +67,11 @@ TEST_POSTGRES_DB = postgres_db(
     NAME=TEST_DATABASE_NAME,
     USER=TEST_DATABASE_USER,
     HOST=TEST_DATABASE_HOST,
-    PASSWORD=TEST_DATABASE_PASSWORD,
+    PASSWORD="",
     PORT=TEST_DATABASE_PORT
 )
+
+DATABASES = {'default': sqlite_db("test.sqlite3")}
 
 # The cache should always be disabled by default, but overridden on a test by
 # test basis.

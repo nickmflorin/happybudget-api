@@ -1,95 +1,160 @@
-import copy
-import functools
-from io import BytesIO
 import logging
-import mock
-from PIL import Image
 import pytest
-import requests
-import threading
 
-from django.core.cache import cache as django_cache
-from django.contrib.contenttypes.models import ContentType
-from django.core.files.uploadedfile import SimpleUploadedFile
-from django.core.files.images import ImageFile
-from django.db import connection
+from django.conf import settings
+from django.db import connections
 
-from rest_framework.test import APIClient
+from pytest_django.fixtures import _disable_native_migrations
 
-from greenbudget.app import cache
-from greenbudget.app.authentication.models import PublicToken
-from greenbudget.app.budget.models import Budget
-from greenbudget.app.fringe.models import Fringe
-from greenbudget.app.group.models import Group
-from greenbudget.app.tagging.models import Color
-from greenbudget.app.template.models import Template
-from greenbudget.app.user.models import User
-
-from .fixtures import *  # noqa
-from .stripe_fixtures import *  # noqa
+from .factories import *  # noqa
+from .http import *  # noqa
+from .models import *  # noqa
+from .static import *  # noqa
+from .stripe import *  # noqa
 
 
-VALID_CACHE_BACKEND = 'django.core.cache.backends.db.DatabaseCache'
-
-
-@pytest.fixture(autouse=True)
-def validate_cache():
-    return cache.is_engine(
-        engine=VALID_CACHE_BACKEND,
-        strict=True
+def pytest_addoption(parser):
+    parser.addoption(
+        "--postgresdb",
+        action="store_true",
+        help="Run tests that require a postgres database.",
     )
 
 
-@pytest.fixture(autouse=True)
-def mock_cache_pattern_deletion(settings, monkeypatch):
-    cache.is_engine(engine=VALID_CACHE_BACKEND, strict=True)
-    cache_table = settings.CACHES['default']['LOCATION']
-    original_invalidate = cache.endpoint_cache._invalidate
-
-    def mock_invalidate(instance, key):
-        if key.key.endswith('*'):
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    "DELETE FROM %s WHERE cache_key LIKE '%s'"
-                    % (cache_table,
-                        django_cache.make_key(key.key.replace('*', '%')))
-                )
-            return
-        original_invalidate(instance, key)
-
-    monkeypatch.setattr(cache.endpoint_cache, '_invalidate', mock_invalidate)
-
-
-@pytest.fixture
-def establish_cache_user():
-    mock_request = mock.MagicMock()
-
-    def establish(user):
-        mock_request.user = user
-        cache.endpoint_cache.thread.request = mock_request
-    return establish
-
-
-@pytest.fixture(autouse=True)
-def no_requests(monkeypatch):
+def pytest_runtest_setup(item):
     """
-    Prevent any requests from actually executing.
+    Instructs the testing suite to skip a test if tests are being run with the
+    `--postgresdb` flag and the test is not marked with
+    `@pytest.mark.postgresdb`.  Conversely, instructs the testing suite to skip
+    a test if the test is marked with `@pytest.mark.postgresdb` and the tests
+    are not being run with the `--postgresdb` flag.
+
+    Note:
+    ----
+    This is a hook that is automatically recognized and called by pytest before
+    each individual test runs.  Changing it's name will cause it not to be
+    recognized.
     """
-    original_session_request = requests.sessions.Session.request
+    postgres_db_flagged = item.config.getoption("--postgresdb")
+    postgres_marks = [mark for mark in item.iter_markers(name="postgresdb")]
+    if postgres_marks and not postgres_db_flagged:
+        pytest.skip("Test requires postgres database.")
+    elif postgres_db_flagged and not postgres_marks:
+        pytest.skip("Test only runs on postgres database.")
 
-    def failing_request(*args, **kwargs):
-        # The responses package is used for mocking responses down the the most
-        # granular level.  If this package is enabled, we do not want to raise
-        # an Exception because the mocking itself prevents the HTTP request.
-        if requests.adapters.HTTPAdapter.send.__qualname__.startswith(
-                'RequestsMock'):
-            return original_session_request(*args, **kwargs)
-        else:
-            raise Exception("No network access allowed in tests")
 
-    monkeypatch.setattr('requests.sessions.Session.request', failing_request)
-    monkeypatch.setattr(
-        'requests.sessions.HTTPAdapter.send', failing_request)
+@pytest.fixture(scope='session')
+def django_db_setup(
+    request,
+    django_test_environment: None,
+    django_db_blocker,
+    django_db_use_migrations: bool,
+    django_db_keepdb: bool,
+    django_db_createdb: bool,
+    django_db_modify_db_settings: None,
+    pytestconfig
+) -> None:
+    """
+    Top-level fixture called by `pytest_django` that prepares the test databases
+    for use before the tests begin.
+
+    We only want to override the default behavior of this fixture in the case
+    that the tests are run with the `--postgresdb` flag, in which case we want
+    to dynamically swap out the sqlite database for a postgres database.
+
+    Note:
+    ----
+    Unforunately, since the original
+    :obj:`pytest_django.fixtures.django_db_setup` method is a pytest fixture,
+    we cannot call it directly - which means we have to reimplement the entire
+    thing, just injecting our custom logic where applicable.
+
+    Note:
+    ----
+    The tear down logic here, in the Postgres case, does not seem to be actually
+    removing the test database entirely.  This has not been problematic however,
+    as data isn't actually persisting to the test database in the tests (due to
+    internal mechanics of Django).
+
+    We may want to investigate why the database is not deleting and/or make it
+    such that the `--postgresdb` flag implies that the database should be kept
+    between tests (`--keepdb` flag).
+    """
+    from django.test.utils import setup_databases, teardown_databases
+
+    def before_postgres_db_setup():
+        """
+        Triggers Django's connections manager to reprovision the database
+        connection using the altered settings in this fixture.
+
+        At the time that this fixture is called, Django will have already
+        established the database connection and configured the connection
+        objects with the settings defined in `greenbudget.conf.settings.test`
+        before we have a chance to alter the database configuration here. This
+        means that after we alter the database configuration here, we must
+        reestablish those related connections so the database setup and teardown
+        methods function properly.
+        """
+        connections["default"] = connections.create_connection("default")
+
+    # If the tests are being run with the `--postgresdb` flag, we want to swap
+    # out the default `sqlite` database in settings for the test Postgres DB.
+    postgresdb = pytestconfig.getoption('postgresdb')
+    if postgresdb:
+        if not hasattr(settings, 'TEST_POSTGRES_DB'):
+            raise Exception("Postgres database not configured in settings.")
+
+        # Set the test Postgres database as the default database.
+        settings.DATABASES["default"] = settings.TEST_POSTGRES_DB
+
+        # By default, Django will prefix our test database with "test_" which
+        # makes things very confusing.  To avoid this, we define the `TEST`
+        # sub-dictionary and explicitly set the test database name.
+        settings.DATABASES["default"].update(TEST={
+            "NAME": settings.TEST_POSTGRES_DB["NAME"]
+        })
+
+    # The logic below is implemented exactly the same way as the default
+    # `pytest_django.fixtures.django_db_setup` fixture, except for the 1
+    # conditional block that reprovisions the connections in the case that the
+    # database settings changed when running tests with the `--postgresdb` flag.
+    setup_databases_args = {}
+
+    if not django_db_use_migrations:
+        _disable_native_migrations()
+
+    if django_db_keepdb and not django_db_createdb:
+        setup_databases_args["keepdb"] = True
+
+    with django_db_blocker.unblock():
+        # Reprovision database connections based on the altered database settings
+        # when running tests with the `--postgresdb` flag.
+        if postgresdb:
+            before_postgres_db_setup()
+
+        db_cfg = setup_databases(
+            verbosity=request.config.option.verbose,
+            interactive=False,
+            **setup_databases_args
+        )
+
+        # Run the actual test.
+        yield
+
+        def teardown_database() -> None:
+            with django_db_blocker.unblock():
+                try:
+                    teardown_databases(
+                        db_cfg, verbosity=request.config.option.verbose)
+                except Exception as exc:
+                    request.node.warn(
+                        pytest.PytestWarning(
+                            "Error when trying to teardown test databases: %r"
+                            % exc
+                        )
+                    )
+        if not django_db_keepdb:
+            request.addfinalizer(teardown_database)
 
 
 @pytest.fixture(autouse=True)
@@ -101,247 +166,3 @@ def disable_logging(caplog):
     caplog.set_level(logging.CRITICAL, logger="faker.factory")
     caplog.set_level(logging.CRITICAL, logger="factory-boy")
     caplog.set_level(logging.INFO, logger="greenbudget")
-
-
-@pytest.fixture
-def api_client(settings):
-    class GreenbudgetApiClient(APIClient):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-            self._dynamic_headers = {}
-
-        def force_login(self, user, **kwargs):
-            self.force_authenticate(user)
-            super().force_login(user, **kwargs)
-
-        def generic(self, *args, **kwargs):
-            kwargs_with_headers = copy.deepcopy(self._dynamic_headers)
-            if self._dynamic_headers:
-                # Headers provided on request should always override those set
-                # dynamically on the client.
-                kwargs_with_headers.update(**kwargs)
-            return super().generic(*args, **kwargs_with_headers)
-
-        def include_public_token(self, token):
-            header_name = (
-                settings.PUBLIC_TOKEN_HEADER.replace('-', '_').upper())
-            if isinstance(token, PublicToken):
-                self._dynamic_headers[header_name] = str(token.private_id)
-            else:
-                self._dynamic_headers[header_name] = str(token)
-
-    return GreenbudgetApiClient()
-
-
-@pytest.fixture(autouse=True)
-def temp_media_root(tmpdir, settings):
-    settings.MEDIA_ROOT = tmpdir
-
-
-@pytest.fixture
-def test_image():
-    image = BytesIO()
-    Image.new('RGB', (100, 100)).save(image, 'jpeg')
-    image.seek(0)
-    return image
-
-
-@pytest.fixture
-def test_image_file(tmp_path):
-    def inner(name, ext):
-        file_obj = BytesIO()
-        filename = tmp_path / name
-        image = Image.new('RGB', (100, 100))
-        image.save(file_obj, ext)
-        file_obj.seek(0)
-
-        # We have to actually save the File Object to the specified directory.
-        with open(str(filename), 'wb') as out:
-            out.write(file_obj.read())
-
-        return ImageFile(file_obj, name=str(filename))
-    return inner
-
-
-@pytest.fixture
-def test_uploaded_file(test_image):
-    def inner(name):
-        return SimpleUploadedFile(name, test_image.getvalue())
-    return inner
-
-
-@pytest.fixture
-def user_password():
-    return 'hoopla@H9_145'
-
-
-@pytest.fixture
-def user(db, user_password):
-    user = User.objects.create(
-        email="test+user@gmail.com",
-        first_name="Test",
-        last_name="User",
-        is_active=True,
-        is_staff=False,
-        is_superuser=False,
-        is_verified=True,
-        is_first_time=False
-    )
-    user.set_password(user_password)
-    user.save()
-    return user
-
-
-@pytest.fixture
-def admin_user(db, user_password):
-    user = User.objects.create(
-        email="admin+user@gmail.com",
-        first_name="Admin",
-        last_name="User",
-        is_active=True,
-        is_staff=False,
-        is_verified=True,
-        is_superuser=False,
-        is_first_time=False
-    )
-    user.set_password(user_password)
-    user.save()
-    return user
-
-
-@pytest.fixture
-def staff_user(db, user_password):
-    user = User.objects.create(
-        email="staff+user@gmail.com",
-        first_name="Staff",
-        last_name="User",
-        is_active=True,
-        is_staff=True,
-        is_superuser=False,
-        is_verified=True,
-        is_first_time=False
-    )
-    user.set_password(user_password)
-    user.save()
-    return user
-
-
-@pytest.fixture
-def login_user(api_client, user):
-    api_client.force_login(user)
-
-
-@pytest.fixture(autouse=True)
-def colors(db):
-    color_list = ['#a1887f', '#EFEFEF']
-    content_types = [
-        ContentType.objects.get_for_model(m) for m in [Group, Fringe]
-    ]
-    colors = []
-    for i, code in enumerate(color_list):
-        color_obj = Color.objects.create(code=code, name="Test Color %s" % i)
-        color_obj.content_types.set(content_types)
-        color_obj.save()
-        colors.append(color_obj)
-    yield colors
-
-
-CONTEXT_BUDGETS = {
-    'budget': Budget,
-    'template': Template
-}
-
-
-@pytest.fixture
-def budget_factories(create_domain_budget, create_account, create_subaccount):
-
-    class BudgetFactories:
-        def __init__(self, domain):
-            self.domain = domain
-            self.budget_cls = CONTEXT_BUDGETS[self.domain]
-
-        @property
-        def account_cls(self):
-            return self.budget_cls.account_cls
-
-        @property
-        def subaccount_cls(self):
-            return self.budget_cls.subaccount_cls
-
-        def create_budget(self, *args, **kwargs):
-            kwargs.setdefault('domain', self.domain)
-            return create_domain_budget(*args, **kwargs)
-
-        def create_account(self, *args, **kwargs):
-            kwargs.setdefault('domain', self.domain)
-            return create_account(*args, **kwargs)
-
-        def create_subaccount(self, *args, **kwargs):
-            kwargs.setdefault('domain', self.domain)
-            return create_subaccount(*args, **kwargs)
-
-    def inner(param):
-        return BudgetFactories(param)
-    return inner
-
-
-@pytest.fixture
-def budget_df(budget_factories):
-    yield budget_factories("budget")
-
-
-@pytest.fixture
-def template_df(budget_factories):
-    yield budget_factories("template")
-
-
-@pytest.fixture(params=["budget", "template"])
-def budget_f(request, budget_factories):
-    markers = request.node.own_markers
-    marker_names = [m.name for m in markers]
-    if 'budget' not in marker_names and 'template' not in marker_names:
-        marker_names = marker_names + ['budget', 'template']
-
-    if request.param in marker_names:
-        yield budget_factories(request.param)
-    else:
-        pytest.skip("Test is not applicable for `%s` domain." % request.param)
-
-
-@pytest.fixture
-def test_concurrently():
-    """
-    Fixture that returns a decorator such that when a function is decorated
-    with the returned decorator, the function will execute `count` number of
-    times concurrently.
-    """
-    def decorator_options(count):
-        def decorator(func):
-            @functools.wraps(func)
-            def inner(*args, **kwargs):
-                exceptions = []
-
-                def call_func():
-                    try:
-                        func(*args, **kwargs)
-                    except Exception as e:
-                        exceptions.append(e)
-                        raise e
-
-                threads = []
-                for _ in range(count):
-                    threads.append(threading.Thread(target=call_func))
-                for t in threads:
-                    t.start()
-                for t in threads:
-                    t.join()
-
-                if exceptions:
-                    stringified = "\n".join([str(e) for e in exceptions])
-                    raise Exception(
-                        f"Concurrent test intercepted {len(exceptions)} "
-                        f"exceptions: {stringified}"
-                    )
-            return inner
-        return decorator
-    return decorator_options
