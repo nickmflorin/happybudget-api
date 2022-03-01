@@ -3,7 +3,6 @@ import functools
 from io import BytesIO
 from PIL import Image
 
-import django.apps
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib.contenttypes.models import ContentType
 
@@ -549,15 +548,6 @@ def create_header_template(user):
         kwargs.setdefault('created_by', user)
         return factories.HeaderTemplateFactory(*args, **kwargs)
     return inner
-
-
-@pytest.fixture
-def models(db):
-    class Models:
-        def __init__(self):
-            for model in django.apps.apps.get_models():
-                setattr(self, model.__name__, model)
-    return Models()
 
 
 CONTEXT_BUDGETS = {

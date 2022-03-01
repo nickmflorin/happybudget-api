@@ -1,11 +1,21 @@
 import pytest
 
+import django.apps
 from django.contrib.contenttypes.models import ContentType
 
 from greenbudget.app.fringe.models import Fringe
 from greenbudget.app.group.models import Group
 from greenbudget.app.tagging.models import Color
 from greenbudget.app.user.models import User
+
+
+@pytest.fixture
+def models(db):
+    class Models:
+        def __init__(self):
+            for model in django.apps.apps.get_models():
+                setattr(self, model.__name__, model)
+    return Models()
 
 
 @pytest.fixture
