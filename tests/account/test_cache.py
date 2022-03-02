@@ -1,5 +1,5 @@
+import pytest
 from django.test import override_settings
-from tests import need_to_write
 
 
 @override_settings(CACHE_ENABLED=True)
@@ -569,25 +569,25 @@ def test_caches_invalidated_on_bulk_delete_fringes(api_client, user, budget_f,
     assert detail_response.json()['accumulated_fringe_contribution'] == 60.0
 
 
-@need_to_write
+@pytest.mark.needtowrite
 @override_settings(CACHE_ENABLED=True)
 def test_caches_invalidated_on_delete_markup():
     pass
 
 
-@need_to_write
+@pytest.mark.needtowrite
 @override_settings(CACHE_ENABLED=True)
 def test_caches_invalidated_on_bulk_delete_markups():
     pass
 
 
-@need_to_write
+@pytest.mark.needtowrite
 @override_settings(CACHE_ENABLED=True)
 def test_caches_invalidated_on_create_markup():
     pass
 
 
-@need_to_write
+@pytest.mark.needtowrite
 @override_settings(CACHE_ENABLED=True)
 def test_caches_invalidated_on_update_markup():
     pass

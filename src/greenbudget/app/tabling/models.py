@@ -26,6 +26,10 @@ class TableKey(ImmutableAttributeMapping):
         # keys for consistent resolution, hashing and comparison.
         return tuple([self[k] for k in self.fields])
 
+    @property
+    def filter(self):
+        return models.Q(**self.data)
+
     def __eq__(self, other):
         return set(self.values) == set(other.values)
 

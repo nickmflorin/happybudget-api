@@ -191,6 +191,27 @@ class BudgetingTreePolymorphicOrderedRowModel(
         OrderedRowPolymorphicModel, BudgetingTreeModelMixin):
     identifier = models.CharField(null=True, max_length=128, blank=True)
     description = models.CharField(null=True, max_length=128, blank=True)
+    actual = models.FloatField(default=0.0, blank=True)
+    # The nominal values accumulated from all children.
+    accumulated_value = models.FloatField(default=0.0)
+    # The fringe contributions accumulated from all children.
+    accumulated_fringe_contribution = models.FloatField(default=0.0)
+    # The contribution of the markups associated with the instance to the
+    # instance's estimated value.
+    markup_contribution = models.FloatField(default=0.0)
+    # The markup contributions accumulated from all children.
+    accumulated_markup_contribution = models.FloatField(default=0.0)
+
+    markups = models.ManyToManyField(
+        to='markup.Markup',
+        related_name='%(class)ss'
+    )
+    group = models.ForeignKey(
+        to='group.Group',
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name='%(class)ss'
+    )
 
     class Meta:
         abstract = True

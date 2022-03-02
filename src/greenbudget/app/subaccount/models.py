@@ -65,18 +65,7 @@ class SubAccount(BudgetingTreePolymorphicOrderedRowModel):
     quantity = models.FloatField(null=True, blank=True)
     rate = models.FloatField(null=True, blank=True)
     multiplier = models.IntegerField(null=True, blank=True)
-    actual = models.FloatField(default=0.0, blank=True)
-
-    ESTIMATED_FIELDS = ESTIMATED_FIELDS
-    CALCULATED_FIELDS = CALCULATED_FIELDS
-    VALID_PARENTS = ['account_cls', 'subaccount_cls']
-
-    # The sum of the nominal values of all of the children.
-    accumulated_value = models.FloatField(default=0.0)
     fringe_contribution = models.FloatField(default=0.0)
-    accumulated_fringe_contribution = models.FloatField(default=0.0)
-    markup_contribution = models.FloatField(default=0.0)
-    accumulated_markup_contribution = models.FloatField(default=0.0)
     unit = models.ForeignKey(
         to='subaccount.SubAccountUnit',
         on_delete=models.SET_NULL,
@@ -95,16 +84,6 @@ class SubAccount(BudgetingTreePolymorphicOrderedRowModel):
     object_id = models.PositiveIntegerField(db_index=True)
     parent = GenericForeignKey('content_type', 'object_id')
     children = GenericRelation('self')
-    markups = models.ManyToManyField(
-        to='markup.Markup',
-        related_name='subaccounts'
-    )
-    group = models.ForeignKey(
-        to='group.Group',
-        null=True,
-        on_delete=models.SET_NULL,
-        related_name='subaccounts'
-    )
     groups = GenericRelation(Group)
     actuals = GenericRelation(Actual)
     children_markups = GenericRelation(Markup)
@@ -115,6 +94,9 @@ class SubAccount(BudgetingTreePolymorphicOrderedRowModel):
     table_pivot = ('content_type_id', 'object_id')
     child_instance_cls = AssociatedModel('self')
     DERIVING_FIELDS = ("quantity", "rate", "multiplier", "unit")
+    ESTIMATED_FIELDS = ESTIMATED_FIELDS
+    CALCULATED_FIELDS = CALCULATED_FIELDS
+    VALID_PARENTS = ['account_cls', 'subaccount_cls']
 
     class Meta:
         get_latest_by = "order"

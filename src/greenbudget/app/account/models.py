@@ -41,22 +41,6 @@ class Account(BudgetingTreePolymorphicOrderedRowModel):
     CALCULATED_FIELDS = CALCULATED_FIELDS
     VALID_PARENTS = ['budget_cls']
 
-    actual = models.FloatField(default=0.0)
-    accumulated_value = models.FloatField(default=0.0)
-    accumulated_fringe_contribution = models.FloatField(default=0.0)
-    markup_contribution = models.FloatField(default=0.0)
-    accumulated_markup_contribution = models.FloatField(default=0.0)
-
-    markups = models.ManyToManyField(
-        to='markup.Markup',
-        related_name='accounts'
-    )
-    group = models.ForeignKey(
-        to='group.Group',
-        null=True,
-        on_delete=models.SET_NULL,
-        related_name='accounts'
-    )
     groups = GenericRelation(Group)
     children = GenericRelation(SubAccount)
     children_markups = GenericRelation(Markup)

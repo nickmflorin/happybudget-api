@@ -37,7 +37,11 @@ def pytest_runtest_setup(item):
     """
     postgres_db_flagged = item.config.getoption("--postgresdb")
     postgres_marks = [mark for mark in item.iter_markers(name="postgresdb")]
-    if postgres_marks and not postgres_db_flagged:
+    need_to_write_marks = [
+        mark for mark in item.iter_markers(name="needdtowrite")]
+    if need_to_write_marks:
+        pytest.skip(f"Test {item.original_name} needs to be written.")
+    elif postgres_marks and not postgres_db_flagged:
         pytest.skip("Test requires postgres database.")
     elif postgres_db_flagged and not postgres_marks:
         pytest.skip("Test only runs on postgres database.")
