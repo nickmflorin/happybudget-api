@@ -192,7 +192,12 @@ class Signal(dispatch.Signal):
         disconnected.
         """
         disconnected_receivers = []
-        for lookup_key, receiver in self.receivers:
+        # The list of receivers `self.receivers` is mutated inside of the
+        # disconnect method, so we must operate on a copied version otherwise
+        # the indicies in the disconnect method will not align with the
+        # appropriate signal to disconnect.
+        receivers = self.receivers[:]
+        for lookup_key, receiver in receivers:
             kwargs = self._connected_receiver_kwargs[lookup_key]
 
             receiver = receiver
