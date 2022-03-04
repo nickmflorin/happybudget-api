@@ -21,10 +21,12 @@ def humanize_list(value, callback=six.text_type, conjunction='and',
         return ""
     elif num == 1:
         return callback(value[0])
-    s = u", ".join(map(callback, value[:num - 1]))
-    if len(value) >= 3 and oxford_comma is True:
-        s += ","
-    return "%s %s %s" % (s, conjunction, callback(value[num - 1]))
+    if conjunction:
+        s = u", ".join(map(callback, value[:num - 1]))
+        if len(value) >= 3 and oxford_comma is True:
+            s += ","
+        return "%s %s %s" % (s, conjunction, callback(value[num - 1]))
+    return u", ".join(map(callback, value[:num]))
 
 
 def get_nested_attribute(obj, attr):
