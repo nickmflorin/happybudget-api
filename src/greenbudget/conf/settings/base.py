@@ -7,6 +7,7 @@ per-case basis.
 from corsheaders.defaults import default_headers
 import datetime
 import os
+import plaid
 
 from greenbudget.conf import Environments, config, LazySetting
 
@@ -256,3 +257,18 @@ REST_FRAMEWORK = {
         'user': '120/minute'
     }
 }
+
+# Plaid Configurations
+PLAID_ENVIRONMENT = plaid.Environment.Production
+PLAID_CLIENT_NAME = 'GreenBudget\'s Finance App'
+
+PLAID_CLIENT_ID = config(
+    name='PLAID_CLIENT_ID',
+    required=[Environments.PROD, Environments.DEV, Environments.LOCAL],
+    default={Environments.TEST: ''}
+)
+PLAID_CLIENT_SECRET = config(
+    name='PLAID_CLIENT_SECRET',
+    required=[Environments.PROD, Environments.DEV, Environments.LOCAL],
+    default={Environments.TEST: ''}
+)

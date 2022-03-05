@@ -5,6 +5,7 @@ from greenbudget.app.account.cache import account_instance_cache
 from greenbudget.app.budget.cache import (
     budget_instance_cache, budget_actuals_cache, budget_children_cache)
 from greenbudget.app.budgeting.managers import BudgetingOrderedRowManager
+from greenbudget.app.integrations.plaid import client
 from greenbudget.app.subaccount.cache import (
     subaccount_instance_cache, invalidate_parent_children_cache)
 
@@ -57,6 +58,27 @@ class ActualManager(BudgetingOrderedRowManager):
 
         self.mark_budgets_updated(instances)
         self.bulk_actualize_all(owners_to_reactualize)
+
+    def bulk_import(self, source, *args, **kwargs):
+        imports = {self.model.IMPORT_SOURCES.plaid: 'import_plaid_transactions'}
+        if source not in imports:
+            raise ValueError(f"Invalid source {source} provided.")
+        return getattr(self, imports[source])(*args, **kwargs)
+
+    def import_plaid_transactions(self, public_token, start_date, end_date,
+            **kwargs):
+        raise_exception = kwargs.pop('raise_exception', False)
+        transactions = client.fetch_transactions(
+            user=kwargs['created_by'],
+            public_token=public_token,
+            start_date=start_date,
+            end_date=end_date,
+            raise_exception=raise_exception
+        )
+        return self.bulk_add([
+            self.model.from_plaid_transaction(t, **kwargs)
+            for t in transactions
+        ])
 
     def get_owners_to_reactualize(self, obj):
         owners_to_reactualize = set([])

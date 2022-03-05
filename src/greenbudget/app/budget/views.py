@@ -41,7 +41,8 @@ from .permissions import MultipleBudgetPermission, BudgetOwnershipPermission
 from .serializers import (
     BudgetSerializer,
     BudgetSimpleSerializer,
-    BudgetPdfSerializer
+    BudgetPdfSerializer,
+    BulkImportBudgetActualsSerializer
 )
 
 
@@ -416,6 +417,7 @@ class BudgetViewSet(
     (15) PATCH /budgets/<pk>/bulk-delete-markups/
     (16) GET /budgets/<pk>/pdf/
     (17) POST /budgets/<pk>/duplicate/
+    (18) PATCH /budgets/<pk>/bulk-import-actuals/
     """
     permission_classes = [
         permissions.AND(
@@ -471,3 +473,24 @@ class BudgetViewSet(
             ).data,
             status=status.HTTP_201_CREATED
         )
+
+    @decorators.action(
+        detail=True,
+        methods=["PATCH"],
+        url_path='bulk-import-actuals'
+    )
+    def bulk_import_actuals(self, request, *args, **kwargs):
+        serializer = BulkImportBudgetActualsSerializer(
+            instance=self.instance,
+            data=request.data,
+            context=self.get_serializer_context()
+        )
+        serializer.is_valid(raise_exception=True)
+        budget, actuals = serializer.save()
+        return response.Response({
+            'parent': BudgetSerializer(
+                budget,
+                context=self.get_serializer_context()
+            ).data,
+            'children': ActualSerializer(actuals, many=True).data
+        }, status=status.HTTP_200_OK)

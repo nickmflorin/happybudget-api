@@ -2,6 +2,7 @@
 Settings configuration file for development environment.
 """
 from boto3 import session
+import plaid
 
 from greenbudget.conf import Environments, config
 
@@ -47,3 +48,6 @@ logger_boto3_session = session.Session(
 
 attach_aws_logger(LOGGING, logger_boto3_session)
 attach_sentry_logger(LOGGING)
+
+# Plaid Configurations
+PLAID_ENVIRONMENT = plaid.Environment.Development

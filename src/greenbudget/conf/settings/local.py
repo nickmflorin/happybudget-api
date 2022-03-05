@@ -1,6 +1,8 @@
 """
 Settings configuration file for local environment.
 """
+import plaid
+
 from greenbudget.conf import Environments
 
 from .base import *  # noqa
@@ -54,3 +56,6 @@ CACHES = {
 }
 
 CACHE_ENABLED = False
+
+# Plaid Configurations
+PLAID_ENVIRONMENT = plaid.Environment.Sandbox

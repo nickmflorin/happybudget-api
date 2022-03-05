@@ -1,3 +1,6 @@
+import datetime
+from model_utils import Choices
+
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models, IntegrityError
@@ -73,6 +76,8 @@ class Actual(BudgetingOrderedRowModel):
     owner = GenericForeignKey('content_type', 'object_id')
     objects = ActualManager()
 
+    IMPORT_SOURCES = Choices((0, "plaid", "Plaid"), )
+
     table_pivot = ('budget_id', )
     domain = 'budget'
 
@@ -102,3 +107,13 @@ class Actual(BudgetingOrderedRowModel):
                     "created by another user."
                 )
         super().validate_before_save()
+
+    @classmethod
+    def from_plaid_transaction(cls, transaction, **kwargs):
+        return cls(
+            name=transaction['name'],
+            notes=(', '.join(transaction['category'])),
+            date=datetime.datetime.fromisoformat(str(transaction['date'])),
+            value=transaction['amount'],
+            **kwargs
+        )

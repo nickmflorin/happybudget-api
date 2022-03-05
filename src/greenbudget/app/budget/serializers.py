@@ -2,11 +2,13 @@ from rest_framework import serializers
 
 from greenbudget.app import exceptions
 from greenbudget.app.account.serializers import AccountPdfSerializer
+from greenbudget.app.actual.models import Actual
 from greenbudget.app.authentication.serializers import PublicTokenSerializer
 from greenbudget.app.group.serializers import GroupSerializer
 from greenbudget.app.io.fields import Base64ImageField
 from greenbudget.app.markup.serializers import MarkupSerializer
 from greenbudget.app.template.models import Template
+from greenbudget.app.user.fields import UserTimezoneAwareDateField
 
 from .models import BaseBudget, Budget
 
@@ -121,3 +123,42 @@ class BudgetSerializer(BudgetSimpleSerializer):
         if not self.context['user'].is_authenticated:
             del data['public_token']
         return data
+
+
+class BulkImportBudgetActualsSerializer(serializers.ModelSerializer):
+    start_date = UserTimezoneAwareDateField(allow_null=False, required=True)
+    end_date = UserTimezoneAwareDateField(
+        allow_null=False,
+        required=False,
+        default_today=True
+    )
+    source = serializers.ChoiceField(choices=Actual.IMPORT_SOURCES)
+    public_token = serializers.CharField(
+        required=True,
+        allow_null=False,
+        allow_blank=False
+    )
+
+    class Meta:
+        model = Budget
+        fields = ('start_date', 'end_date', 'source', 'public_token')
+
+    def validate(self, attrs):
+        # Since the end_date can default to today, it is more appropriate to
+        # raise the exception relevant to the `start_date` field, since that
+        # will always be provided by the user.
+        if attrs['start_date'] >= attrs['end_date']:
+            raise exceptions.InvalidFieldError('start_date', message=(
+                "The start date must be in the past and before the end date."))
+        return attrs
+
+    def update(self, budget, validated_data):
+        actuals = Actual.objects.bulk_import(
+            created_by=self.context['user'],
+            updated_by=self.context['user'],
+            budget=budget,
+            raise_exception=True,
+            **validated_data
+        )
+        budget.refresh_from_db()
+        return budget, actuals

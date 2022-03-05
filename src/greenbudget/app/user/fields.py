@@ -61,7 +61,7 @@ class UserTimezoneAwareDateField(
     def __init__(self, *args, **kwargs):
         default_today = kwargs.pop('default_today', False)
         if default_today is True:
-            kwargs['default'] = UserDateTimeFieldDefault
+            kwargs['default'] = UserDateFieldDefault()
         super().__init__(*args, **kwargs)
 
     def to_internal_value(self, obj):
@@ -87,7 +87,7 @@ class UserTimezoneAwareDateTimeField(
     def __init__(self, *args, **kwargs):
         default_today = kwargs.pop('default_now', False)
         if default_today is True:
-            kwargs['default'] = UserDateFieldDefault
+            kwargs['default'] = UserDateTimeFieldDefault()
         super().__init__(*args, **kwargs)
 
 
