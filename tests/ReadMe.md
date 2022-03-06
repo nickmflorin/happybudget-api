@@ -1,7 +1,8 @@
 # Testing
 
-Integrating a comprehensive testing suite is crucial for developing a robust and stable REST API.  This documentation
-provides some background on the frameworks that our testing suite relies on in addition to some background on our specific
+Integrating a comprehensive testing suite is crucial for developing a robust and
+stable REST API. This documentation provides some background on the frameworks
+that our testing suite relies on in addition to some background on our specific
 implementation of these frameworks.
 
 ## Testing Principles
@@ -14,25 +15,60 @@ Our testing suite abides by the following core principles:
 
 ### Coverage Principle
 
-The Coverage Principle generally states that every consumer facing behavior of the API must have test coverage, without
-exception. The way in which we go about covering those implementations with tests may vary, but there should not be
+The Coverage Principle generally states that every consumer facing behavior of
+the API must have test coverage, without exception. The way in which we go about
+covering those implementations with tests may vary, but there should not be
 any exposed logic that does not have at least one test written for it.
 
 ### Endpoint Principle
 
-The Endpoint Principle is a more specific form of the Coverage Principle.  The Endpoint Principle states that every
-single endpoint that the API supports must have at least 1 end-to-end test written for it.  This means that there must
-be at least 1 test that sends an API request to the endpoint and validates that the response is as expected.
+The Endpoint Principle is a more specific form of the Coverage Principle. The
+Endpoint Principle states that every single endpoint that the API supports must
+have at least 1 end-to-end test written for it. This means that there must be
+at least 1 test that sends an API request to the endpoint and validates that the
+response is as expected.
 
-The majority of test coverage comes from the extensive use of end-to-end testing of every single endpoint in the application.
-Since the entrypoint of every single consumer facing behavior is a request to one of the endpoints our API supports, this
-is a great way to ensure comprehensive test coverage across the API.
+The majority of test coverage comes from the extensive use of end-to-end testing
+of every single endpoint in the application. Since the entrypoint of every single
+consumer facing behavior is a request to one of the endpoints our API supports,
+this is a great way to ensure comprehensive test coverage across the API.
+
+#### Example
+
+In this example, we test the behavior of the endpoint responsible for retrieving
+information about a specific Fringe at `/v1/fringes/<pk>/`:
+
+```python
+def test_get_fringe(api_client, user, budget_f, create_fringe, models):
+    api_client.force_login(user)
+    budget = budget_f.create_budget()
+    fringe = create_fringe(budget=budget)
+    response = api_client.get("/v1/fringes/%s/" % fringe.pk)
+    assert response.status_code == 200
+    assert response.json() == {
+        "id": fringe.pk,
+        "type": "fringe",
+        "name": fringe.name,
+        "description": fringe.description,
+        "rate": fringe.rate,
+        "cutoff": fringe.cutoff,
+        "color": None,
+        "order": "n",
+        "unit": {
+            "id": fringe.unit,
+            "name": models.Fringe.UNITS[fringe.unit]
+        },
+    }
+
+```
 
 ### Abstraction Principle
 
-The Abstraction Principle states that tests should contain minimal to no abstraction.  The exceptions to this rule are mostly
-concerned with the processes for generating test data that tests can use - where abstraction is acceptable if it makes sense.
-However, abstraction around assertions of test results should be avoided at all costs.
+The Abstraction Principle states that tests should contain minimal to no
+abstraction. The exceptions to this rule are mostly concerned with the processes
+for generating test data that tests can use - where abstraction is acceptable if
+it makes sense. However, abstraction around assertions of test results should be
+avoided at all costs.
 
 The reasons for this are as follows:
 
@@ -58,7 +94,8 @@ def test_get_document(api_client, assert_response_ok):
     assert_response_ok(response)
 ```
 
-Tests should be as transparent and clear as possible so that they can be easily diagnosed and fixed.
+Tests should be as transparent and clear as possible so that they can be easily
+diagnosed and fixed.
 
 ## Frameworks
 
@@ -70,21 +107,35 @@ Our testing suite is a combination of the following frameworks:
 
 ### Pytest
 
-We use the [pytest](https://docs.pytest.org/en/latest/contents.html#toc) framework to develop a comprehensive testing suite across
-our API.  [pytest](https://docs.pytest.org/en/latest/contents.html#toc) takes a functional approach to testing, and incorporates
-an innovative concept called "fixtures" that enable common testing resources to be shared across tests.
+We use the [pytest](https://docs.pytest.org/en/latest/contents.html#toc)
+framework to develop a comprehensive testing suite across our API.
+[pytest](https://docs.pytest.org/en/latest/contents.html#toc) takes a functional
+approach to testing, and incorporates an innovative concept called "fixtures"
+that enable common testing resources to be shared across tests.
 
 #### Fixtures
 
-The core concept that [pytest](https://docs.pytest.org/en/latest/contents.html#toc) provides is the notion of [fixtures](https://docs.pytest.org/en/latest/fixture.html) (not to be confused with Django fixtures, which are used to populate the
-database from JSON files).  [Fixtures](https://docs.pytest.org/en/latest/fixture.html) are a set of resources that are setup
-by the testing framework before a test starts and torn down after the test ends.
+The core concept that [pytest](https://docs.pytest.org/en/latest/contents.html#toc)
+provides is the notion of [fixtures](https://docs.pytest.org/en/latest/fixture.html)
+(not to be confused with Django fixtures, which are used to populate the database
+from JSON files). [Fixtures](https://docs.pytest.org/en/latest/fixture.html) are
+a set of resources that are setup by the testing framework before a test starts
+and torn down after the test ends.
 
-[Fixtures](https://docs.pytest.org/en/latest/fixture.html) are automatically loaded into memory by [pytest](https://docs.pytest.org/en/latest/contents.html#toc) when tests are run.  [pytest](https://docs.pytest.org/en/latest/contents.html#toc) will scan the root directory that the tests are located in for
-any files (at the root or in any sub-directory) named `conftest.py`.  Any fixture in any `conftest.py` file is then loaded into memory and available
-as a resource for all tests in the suite.
+[Fixtures](https://docs.pytest.org/en/latest/fixture.html) are automatically
+loaded into memory by [pytest](https://docs.pytest.org/en/latest/contents.html#toc)
+when tests are run. [pytest](https://docs.pytest.org/en/latest/contents.html#toc)
+will scan the root directory that the tests are located in for any files (at the
+root or in any sub-directory) named `conftest.py`. Any fixture in any
+`conftest.py` file is then loaded into memory and available as a resource for
+all tests in the suite.
 
 ##### Example
+
+In this example, we create a `my_user` fixture and a `my_resource` fixture
+that are accessible as resources for all tests. The `my_resource` fixture
+opens `SomeResource`, runs the test with the yielded `resource` and then
+closes the `resource` after the test completes.
 
 ```python
 # tests/conftest.py
@@ -102,6 +153,10 @@ def my_resource(my_user):
     resource.close()
 ```
 
+Here, the test `test_resource` accesses the fixture `my_resource`. Once the
+test finishes, the `SomeResource` instance associated with the `my_resource`
+fixture is closed.
+
 ```python
 # tests/test_user.py
 
@@ -112,8 +167,11 @@ def test_resource(my_resource):
 
 ##### Useful Fixtures
 
-[pytest](https://docs.pytest.org/en/latest/contents.html#toc) comes with some fixtures out of the box.  Additionally, `pytest-django`
-adds some useful fixtures as well.  Some notable/useful fixtures include:
+[pytest](https://docs.pytest.org/en/latest/contents.html#toc) comes with some
+fixtures out of the box. Additionally, `pytest-django` (which is documented in
+the next section) adds some useful fixtures as well.
+
+Some notable/useful fixtures include:
 
 - `capsys`: Captures stdout/stderr output
 - `tmp_path`: Returns a created temporary path unique to the test invocation
@@ -126,22 +184,24 @@ adds some useful fixtures as well.  Some notable/useful fixtures include:
   any changes made to the settings (modifications, additions and deletions)
 - [All default fixtures](https://docs.pytest.org/en/latest/reference.html#fixtures)
 
-
 #### Running Tests
 
-In order to run the entire test suite, simply run the following bash command from the root of the repository:
+In order to run the entire test suite, simply run the following bash command
+from the root of the repository:
 
 ```bash
 $ pytest ./tests
 ```
 
-This command will look inside the `tests` directory and recursively look for any Python file that whose name
-is formatted as `test_*.py` or `*_test.py`.  For each of those files, it will run every test in the file.
+This command will look inside the `tests` directory and recursively look for any
+Python file that whose name is formatted as `test_*.py` or `*_test.py`. For each
+of those files, it will run every test in the file.
 
 ##### Running Subsets of Tests
 
-[pytest](https://docs.pytest.org/en/latest/contents.html#toc) provides the ability to run specific tests or subsets of
-the testing suite from the command line.
+[pytest](https://docs.pytest.org/en/latest/contents.html#toc) provides the
+ability to run specific tests or subsets of the testing suite from the command
+line.
 
 ###### Running all tests within a specific file:
 
@@ -169,9 +229,10 @@ $ pytest tests/test_tests.py::TestClass::test_my_method
 
 #### Parameterizing Tests
 
-[pytest](https://docs.pytest.org/en/latest/contents.html#toc) allows us to parameterize the execution of tests by
-decorating test functions with parameterized inputs with a list of `(input, output)` tuples.  Each iteration over the parameterized
-inputs counts as a discrete test.
+[pytest](https://docs.pytest.org/en/latest/contents.html#toc) allows us to
+parameterize the execution of tests by decorating test functions with
+parameterized inputs with a list of `(input, output)` tuples. Each iteration over
+the parameterized inputs counts as a discrete test.
 
 ##### Example
 
@@ -200,7 +261,7 @@ When the previous test code is run, `pytest` will actually run 8 discrete tests.
 #### Asserting That an Exception was Raised
 
 There are some cases where you might want to assert that an `Exception` was
-raised.  This can be done as follows:
+raised. This can be done as follows:
 
 ```python
 import pytest
@@ -212,8 +273,7 @@ def test_expected_error():
 #### Skipping a Test
 
 There are some cases where you might want to temporarily skip a test but leave
-the code in place.  This can be done as follows:
-
+the code in place. This can be done as follows:
 
 ```python
 @pytest.mark.skip(reason="no way of currently testing this")
@@ -244,8 +304,9 @@ def test_function(condition):
 
 ### pytest-django
 
-`pytest-django` is a package that allows `pytest` to seamlessly integrate with Django.  The package provides many useful
-fixtures and marks that allow your tests to interact with the database and other Django core functionality.
+`pytest-django` is a package that allows `pytest` to seamlessly integrate with
+Django. The package provides many useful fixtures and marks that allow your
+tests to interact with the database and other Django core functionality.
 
 #### Database Access
 
@@ -254,7 +315,8 @@ By default your tests will fail if they try to access the database.
 Only if you explicitly request database access will this be allowed.
 This encourages you to keep database-needing tests to a minimum which is a best
 practice since next-to-no business logic should be requiring the database.
-Moreover it makes it very clear what code uses the database and catches any mistakes.
+Moreover it makes it very clear what code uses the database and catches any
+mistakes.
 
 You can use pytest marks to tell `pytest-django` to allow database access:
 
@@ -266,3 +328,28 @@ def test_user():
     u = User.objects.create_superuser('user', 'user@email.com', 'password')
     assert u.is_superuser
 ```
+
+Additionally, including the `db` fixture will also tell `pytest-django` to allow
+database access:
+
+```python
+@pytest.fixture
+def user(db, user_password):
+    user = User.objects.create(
+        email="test+user@gmail.com",
+        first_name="Test",
+        last_name="User",
+        is_active=True,
+        is_staff=False,
+        is_superuser=False,
+        is_verified=True,
+        is_first_time=False
+    )
+    user.set_password(user_password)
+    user.save()
+    return user
+```
+
+Note that all of our factory fixtures use the `db` fixture by default, so when
+creating data from factories we do not need to include the `db` fixture in
+the specific test.
