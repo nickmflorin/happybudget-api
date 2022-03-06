@@ -460,9 +460,9 @@ class BudgetingRowManager(
         :obj:`Budget` or :obj:`Template` are bulk updated or bulk created, only
         when they are created or updated one instance at a time.  Furthermore,
         there are times when we are changing relational fields of a :obj:`Budget`
-        or :obj:`Template` and want to denote the :obj:`Budget` or :obj:`Template`
-        as having been updated, but do not actually save the :obj:`Budget` or
-        :obj:`Template` itself.
+        or :obj:`Template` and want to denote the :obj:`Budget` or
+        :obj:`Template` as having been updated, but do not actually save the
+        :obj:`Budget` or :obj:`Template` itself.
 
         This method is meant to account for the above (2) cases by manually
         updating the `updated_at` fields of the provided :obj:`Budget` or
