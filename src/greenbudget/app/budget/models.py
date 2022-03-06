@@ -175,11 +175,7 @@ class Budget(BaseBudget):
         commit = kwargs.pop('commit', False)
 
         alteration_kwargs = copy.deepcopy(kwargs)
-        alteration_kwargs.update(
-            trickle=False,
-            commit=False,
-            children=children
-        )
+        alteration_kwargs.update(commit=False, children=children)
         alterations = [
             super().calculate(**alteration_kwargs),
             self.actualize(**alteration_kwargs)
