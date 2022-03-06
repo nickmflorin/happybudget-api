@@ -350,6 +350,11 @@ def user(db, user_password):
     return user
 ```
 
-Note that all of our factory fixtures use the `db` fixture by default, so when
-creating data from factories we do not need to include the `db` fixture in
-the specific test.
+> Note that all of our factory fixtures use the `db` fixture by default, so when
+> creating data from factories we do not need to include the `db` fixture in
+> the specific test.
+
+## Test Suite
+
+This section discusses the frameworks that we built around `pytest` and
+`pytest-django` to more specifically accomodate our use cases.
