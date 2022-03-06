@@ -77,7 +77,7 @@ an innovative concept called "fixtures" that enable common testing resources to 
 #### Fixtures
 
 The core concept that [pytest](https://docs.pytest.org/en/latest/contents.html#toc) provides is the notion of [fixtures](https://docs.pytest.org/en/latest/fixture.html) (not to be confused with Django fixtures, which are used to populate the
-database from JSON files).  [fixtures](https://docs.pytest.org/en/latest/fixture.html) are a set of resources that are setup
+database from JSON files).  [Fixtures](https://docs.pytest.org/en/latest/fixture.html) are a set of resources that are setup
 by the testing framework before a test starts and torn down after the test ends.
 
 [Fixtures](https://docs.pytest.org/en/latest/fixture.html) are automatically loaded into memory by [pytest](https://docs.pytest.org/en/latest/contents.html#toc) when tests are run.  [pytest](https://docs.pytest.org/en/latest/contents.html#toc) will scan the root directory that the tests are located in for
