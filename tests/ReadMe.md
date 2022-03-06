@@ -247,7 +247,7 @@ def test_function(condition):
 `pytest-django` is a package that allows `pytest` to seamlessly integrate with Django.  The package provides many useful
 fixtures and marks that allow your tests to interact with the database and other Django core functionality.
 
-### Database Access
+#### Database Access
 
 `pytest-django` takes a conservative approach to enabling database access.
 By default your tests will fail if they try to access the database.
