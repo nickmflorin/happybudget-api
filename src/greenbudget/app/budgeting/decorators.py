@@ -25,6 +25,11 @@ class ActionContext:
 
 
 class BaseBulkAction:
+    """
+    Abstract base class for the configuration of a bulk operation, whether it
+    be the configuration of bulk create behavior, bulk delete beahvior or bulk
+    update behavior.
+    """
     def __init__(self, url_path: str, filter_qs: Any = None,
             name: Any = None, entity: Any = None):
         self._url_path = url_path
@@ -50,6 +55,9 @@ class BaseBulkAction:
 
 
 class BulkDeleteAction(BaseBulkAction):
+    """
+    Configuration for bulk delete behavior.
+    """
     action_names = [ActionName.DELETE]
 
     def __init__(self, url_path: str, child_cls: type, **kwargs):
@@ -67,6 +75,9 @@ class BulkDeleteAction(BaseBulkAction):
 
 
 class BulkCreateAction(BaseBulkAction):
+    """
+    Configuration for bulk create behavior.
+    """
     action_names = [ActionName.CREATE]
 
     def __init__(self, url_path, child_serializer_cls, **kwargs):
@@ -85,6 +96,9 @@ class BulkCreateAction(BaseBulkAction):
 
 
 class BulkUpdateAction(BaseBulkAction):
+    """
+    Configuration for bulk update behavior.
+    """
     action_names = [ActionName.UPDATE]
 
     def __init__(self, url_path, child_serializer_cls, **kwargs):
@@ -103,6 +117,9 @@ class BulkUpdateAction(BaseBulkAction):
 
 
 class BulkAction(BaseBulkAction):
+    """
+    Configuration for multiple bulk behaviors.
+    """
     action_names = ActionName.__all__
 
     def __init__(self, url_path, child_cls, child_serializer_cls, **kwargs):
@@ -118,6 +135,71 @@ class BulkAction(BaseBulkAction):
 
 
 class bulk_action:
+    """
+    Abstract base class for decorators that decorate a method on the view
+    for bulk update, bulk create and bulk delete implementations.
+
+    The decorator wraps :obj:`rest_framework.decorators.action` such that an
+    endpoint is registered on the view class to handle the bulk update, bulk
+    create or bulk delete behavior.
+
+    Parameters:
+    ----------
+    For the following parameters, we reference "callback" as a function type that
+    takes the :obj:`ActionContext` for the given action as it's first and only
+    argument and returns the relevant value.
+
+    action: :obj:`BaseBulkAction`
+        The :obj:`BaseBulkAction` configuration for the bulk implementation that
+        the decorator is implementing.
+
+    base_cls: :obj:`type` or "callback"
+        The Django model class that the children are being updated, created or
+        deleted relative to.
+
+    get_budget: :obj:`lambda`
+        A callback that takes the instance associated with the `base_cls` model
+        and returns the relevant :obj:`Budget` or :obj:`Template` instance
+        relevant to the specific view.
+
+        If the `base_cls` is :obj:`Budget` or :obj:`Template`, the callback
+        simply returns the identity.
+
+    include_budget_in_response: :obj:`bool` (optional)
+        Whether or not the :obj:`Budget` or :obj:`Template` should be serialized
+        in the response rendered after the bulk update, bulk create or bulk
+        delete operation.
+
+        Default: True
+
+    budget_serializer: :obj:`type` or "callback" (optional)
+        Either a serializer class or a callback returning the serializer class
+        that should be used to serialize the :obj:`Budget` or :obj:`Template`
+        in the response in the case that `include_budget_in_response` is True.
+
+        Default: BudgetSerializer
+
+    Private Parameters:
+    ------------------
+    These parameters are exposed for purposes of usage of this class as an
+    abstract base class and are not exposed to outside implementations of any
+    of the extensions of this base class.
+
+    perform_save: :obj:`lambda` (optional)
+        A callback that takes the serializer as it's first argument and the
+        :obj:`ActionContext` as it's second argument.  The callback can be used
+        in place of the traditional `serializer.save` method in the case that
+        additional parameters are required for the `serializer.save` method.
+
+        The `perform_save` method is chosen by the individual extensions of this
+        abstract base class based on the type of bulk operation being performed.
+
+        Default: None
+
+    **kwargs
+        Additional keyword arguments that can be provided to the root
+        :obj:`rest_framework.decorators.action` decorator.
+    """
     def __init__(self, action, base_cls, get_budget, **kwargs):
         self._action = action
         self._base_cls = base_cls
@@ -224,7 +306,8 @@ class bulk_action:
 
     def decorated(self, view, request):
         instance = view.get_object()
-        self.context = ActionContext(instance=instance, view=view, request=request)  # noqa
+        self.context = ActionContext(
+            instance=instance, view=view, request=request)
         serializer_cls = self.get_serializer_class()
         serializer = serializer_cls(
             instance=instance,
@@ -252,6 +335,10 @@ class bulk_action:
 
 
 class bulk_update_action(bulk_action):
+    """
+    Decorates a method on the view class such that it supports bulk update
+    behavior.
+    """
     def __init__(self, action, *args, **kwargs):
         kwargs.setdefault('perform_save', action.perform_update)
         super().__init__(action, *args, **kwargs)
@@ -288,6 +375,10 @@ class bulk_update_action(bulk_action):
 
 
 class bulk_create_action(bulk_action):
+    """
+    Decorates a method on the view class such that it supports bulk create
+    behavior.
+    """
     def __init__(self, action, *args, **kwargs):
         kwargs.setdefault('perform_save', action.perform_create)
         super().__init__(action, *args, **kwargs)
@@ -315,6 +406,10 @@ class bulk_create_action(bulk_action):
 
 
 class bulk_delete_action(bulk_action):
+    """
+    Decorates a method on the view class such that it supports bulk delete
+    behavior.
+    """
     def __init__(self, action, *args, **kwargs):
         kwargs.setdefault('perform_destroy', action.perform_destroy)
         super().__init__(action, **kwargs)
@@ -327,15 +422,21 @@ class bulk_delete_action(bulk_action):
 
     def decorated(self, view, request):
         updated_instance = super().decorated(view, request)
-        return self.render_response({
-            'parent': self.render_serializer_data(
-                self.base_serializer_cls,
-                instance=updated_instance
-            )
-        })
+        return self.render_response({'parent': self.render_serializer_data(
+            self.base_serializer_cls,
+            instance=updated_instance
+        )})
 
 
 class bulk_registration:
+    """
+    Abstract base class for implementations of bulk create, bulk update and bulk
+    delete registration behaviors on a view.
+
+    The implementation decorates a view class and attributes the view class with
+    a series of methods that are decorated such that they expose endpoints on
+    the view to handle bulk update, bulk create and/or bulk delete behavior.
+    """
     def __init__(self, base_cls, get_budget, **kwargs):
         self._base_cls = base_cls
         self._get_budget = get_budget
@@ -414,11 +515,6 @@ class bulk_registration:
             budget_serializer=self._budget_serializer,
             include_budget_in_response=self._include_budget_in_response
         )
-        @decorators.action(
-            detail=True,
-            methods=["PATCH"],
-            url_path=action.url_path(self)
-        )
         def func(*args, **kwargs):
             pass
 
@@ -431,6 +527,12 @@ class bulk_registration:
 
 
 class register_bulk_updating(bulk_registration):
+    """
+    Registers a view with methods wrapped by
+    :obj:`rest_framework.decorators.action` that create endpoints based on the
+    provided configuration to support bulk update behavior of a series of
+    model instances.
+    """
     action_name = ActionName.UPDATE
     exclude_params = ('')
 
@@ -439,6 +541,12 @@ class register_bulk_updating(bulk_registration):
 
 
 class register_bulk_creating(bulk_registration):
+    """
+    Registers a view with methods wrapped by
+    :obj:`rest_framework.decorators.action` that create endpoints based on the
+    provided configuration to support bulk create behavior of a series of
+    model instances.
+    """
     action_name = ActionName.CREATE
 
     def decorate(self, *args, **kwargs):
@@ -446,6 +554,12 @@ class register_bulk_creating(bulk_registration):
 
 
 class register_bulk_deleting(bulk_registration):
+    """
+    Registers a view with methods wrapped by
+    :obj:`rest_framework.decorators.action` that create endpoints based on the
+    provided configuration to support bulk delete behavior of a series of
+    model instances.
+    """
     action_name = ActionName.DELETE
 
     def decorate(self, *args, **kwargs):
@@ -453,6 +567,12 @@ class register_bulk_deleting(bulk_registration):
 
 
 class register_bulk_operations:
+    """
+    Registers a view with methods wrapped by
+    :obj:`rest_framework.decorators.action` that create endpoints based on the
+    provided configuration to support bulk update, bulk create and/or bulk
+    delete behavior of a series of model instances.
+    """
     registrations = [
         register_bulk_updating,
         register_bulk_creating,

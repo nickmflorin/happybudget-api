@@ -57,12 +57,28 @@ class BudgetingManagerMixin:
 
     def bulk_update_post_act(self, instances, **kwargs):
         if instances:
-            return self.bulk_update(
-                instances, fields=['actual'], **kwargs)
+            return self.bulk_update(instances, fields=['actual'], **kwargs)
         return None
 
     @signals.disable()
     def bulk_delete_empty_groups(self, groups):
+        """
+        Deletes provided :obj:`Group` instances that no longer have any children
+        as a result of a change in assignment.
+
+        When the :obj:`Group` that is optionally assigned to an :obj:`Account`
+        or :obj:`SubAccount` changes, if the :obj:`Account` or :obj:`SubAccount`
+        was previously assigned a :obj:`Group` that :obj:`Group` effectively
+        loses a child.  If the :obj:`Group` loses a child in this manner, there
+        is the possibility that the :obj:`Group` no longer has children - if that
+        :obj:`Account` or :obj:`SubAccount` was previously it's only child, and
+        thus should be deleted.
+
+        This behavior is encapsulated by the
+        :obj:`greenbudget.app.group.signals.delete_empty_group` signal receiver,
+        but this method is meant to be used in the case of bulk operations which
+        do not fire signals.
+        """
         from greenbudget.app.group.models import Group
         groups_to_delete = set([])
         for group in groups:
@@ -95,6 +111,12 @@ class BudgetingManagerMixin:
                 pass
 
     def group_by_parents(self, instances):
+        """
+        Groups the provided instances by their parent, returning an
+        :obj:`collections.defaultdict` instance indexed by the primary keys
+        of the distinct parents and valued by the list of instances in the
+        provided set that have that distinct parent.
+        """
         grouped = collections.defaultdict(list)
         for obj in instances:
             grouped[obj.parent.pk].append(obj)
@@ -428,6 +450,24 @@ class BudgetingRowManager(
     queryset_class = RowQuerySet
 
     def mark_budgets_updated(self, instances):
+        """
+        Marks the series of :obj:`Budget` or :obj:`Template` instances,
+        provided as either the instance itself or an instance that has a
+        `budget` field pointing to :obj:`BaseBudget`.
+
+        The `auto_now` attribute of the `updated_at` field for a :obj:`Budget`
+        or :obj:`Template` does not automatically update when instances of
+        :obj:`Budget` or :obj:`Template` are bulk updated or bulk created, only
+        when they are created or updated one instance at a time.  Furthermore,
+        there are times when we are changing relational fields of a :obj:`Budget`
+        or :obj:`Template` and want to denote the :obj:`Budget` or :obj:`Template`
+        as having been updated, but do not actually save the :obj:`Budget` or
+        :obj:`Template` itself.
+
+        This method is meant to account for the above (2) cases by manually
+        updating the `updated_at` fields of the provided :obj:`Budget` or
+        :obj:`Template` instances.
+        """
         from greenbudget.app.budget.models import BaseBudget
 
         budgets = set([])
