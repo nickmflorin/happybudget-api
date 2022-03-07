@@ -5,6 +5,22 @@ stable REST API. This documentation provides some background on the frameworks
 that our testing suite relies on in addition to some background on our specific
 implementation of these frameworks.
 
+## Environment
+
+Our testing suite has it's own dedicated environment in which to operate.
+
+Environment
+: `test`
+
+Settings Module
+: `greenbudget.conf.settings.test`
+
+File Storage
+: Temporary File Storage
+
+Database
+: Transactional SQLite3 File
+
 ## Testing Principles
 
 Our testing suite abides by the following core principles:
@@ -311,12 +327,8 @@ tests to interact with the database and other Django core functionality.
 #### Database Access
 
 `pytest-django` takes a conservative approach to enabling database access.
-By default your tests will fail if they try to access the database.
-Only if you explicitly request database access will this be allowed.
-This encourages you to keep database-needing tests to a minimum which is a best
-practice since next-to-no business logic should be requiring the database.
-Moreover it makes it very clear what code uses the database and catches any
-mistakes.
+By default your tests will fail if they try to access the database. Only if you
+explicitly request database access will this be allowed.
 
 You can use pytest marks to tell `pytest-django` to allow database access:
 
@@ -335,16 +347,7 @@ database access:
 ```python
 @pytest.fixture
 def user(db, user_password):
-    user = User.objects.create(
-        email="test+user@gmail.com",
-        first_name="Test",
-        last_name="User",
-        is_active=True,
-        is_staff=False,
-        is_superuser=False,
-        is_verified=True,
-        is_first_time=False
-    )
+    user = User.objects.create(...)
     user.set_password(user_password)
     user.save()
     return user
@@ -356,5 +359,327 @@ def user(db, user_password):
 
 ## Test Suite
 
-This section discusses the frameworks that we built around `pytest` and
+This section discusses the frameworks that have been built around `pytest` and
 `pytest-django` to more specifically accomodate our use cases.
+
+### Data Generation
+
+All tests rely on a source of test data to allow the logic in the application
+to be tested in as close to a production environment as possible. There are
+many different approaches for providing a testing suite with test data, varying
+from using an entirely separate database with preloaded data to generating the
+data on the fly on a test-by-test basis.
+
+Our testing suite uses the approach of creating data entities are they are
+needed by each individual test, and removing them after the test completes. The
+primary motivation for this approach was to ensure that tests are entirely
+independent of one another, and each test can alter the database as it sees fit
+without disrupting other tests in the testing suite.
+
+#### Factories
+
+In order to allow each test to generate data that it needs to run the test, we
+use "factories" that are then exposed as fixtures for each test.
+
+A factory is a partial implementation of a Django model that instructs the
+testing suite how to create instances of the model with dummy data.
+
+##### Example
+
+For example, the following factory is used to generate instances of the `Fringe`
+model. All static properties on the factory class instruct the framework how
+to randomly or deterministically generate data for that field of the model -
+unless the field value is explicitly provided to the factory.
+
+```python
+class FringeFactory(CustomModelFactory):
+    created_by = factory.SubFactory(UserFactory)
+    updated_by = factory.SubFactory(UserFactory)
+    name = factory.Sequence(lambda n: f"Fringe {n}")
+    description = factory.Faker('sentence')
+    cutoff = None
+    rate = 1.00
+    unit = Fringe.UNITS.percent
+
+    class Meta:
+        model = Fringe
+```
+
+In the above, for example, unless we explicitly provide the `description` field
+to `FringeFactory` the `FringeFactory` will create a `Fringe` instance with
+a randomly generated sentence as the `description`.
+
+The factory can then be used as follows:
+
+```python
+def test_fringe(user):
+    test_fringe = FringeFactory(created_by=user, updated_by=user, rate=20.0)
+    assert fringe.rate == 20.0
+```
+
+Implementing a factory framework for all of our models allows our tests to
+quickly and conveniently create test data that it requires without having to
+worry about providing every individual field that may not be relevant to test
+at hand.
+
+#### Factory Fixtures
+
+As previously stated, all factories are exposed in our tests as fixtures. These
+fixtures, which are all functions that eventually call the factory, wrap the
+logic that each factory provides such that other business logic can be
+incorporated via features of the
+[pytest](https://docs.pytest.org/en/latest/contents.html#toc) ecosystem.
+
+##### Example
+
+For example, here we specify a `create_user` fixture that allows each test to
+dynamically create a random user:
+
+```python
+@pytest.fixture
+def create_user(db):
+    def inner(*args, **kwargs):
+        return factories.UserFactory(*args, **kwargs)
+    return inner
+```
+
+There are several common patterns that our factories fixtures implement that
+provide additional behavior that simple usage of factory classes in the tests
+would not provide alone.
+
+##### Ownership
+
+Many of our models are designated ownership by the field `created_by`.
+Additionally, many of our models also track the user that last updated the
+model instance via the `updated_by` field. These fields are always required
+when creating a model instance if it is attributed with those fields.
+
+Wrapping our factories in fixtures instead of using them outside of a fixture
+scope gives us the convenience of not having to manually provide the
+`created_by` and/or `updated_by` fields for many models that are attributed with
+these fields. The factory fixtures will, by default, use the `User` returned
+from the default `user` fixture to dictate ownership of the model instance:
+
+```python
+# tests/factories.py
+
+@pytest.fixture
+def create_budget(user):
+    def inner(*args, **kwargs):
+        kwargs.setdefault('created_by', user)
+        return factories.BudgetFactory(*args, **kwargs)
+    return inner
+```
+
+```python
+# tests/budget/test_api.py
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_get_budget(api_client, user, create_budget):
+    budget = create_budget()
+    api_client.force_login(user)
+    response = api_client.get("/v1/budgets/%s/" % budget.pk)
+    assert response.status_code == 200
+    assert response.json() == {...}
+```
+
+If we were to use the `factories.BudgetFactory` outside the scope of a
+fixture, we would have to explicitly define the `created_by` field each time.
+
+##### Multiple Creation
+
+There are many cases in our tests where we want to be able to quickly create
+several instances of a model, not just one. In most cases, our factory fixtures
+support this via the `allow_multiple` decorator.
+
+This decorator allows a factory fixture to include a `count` parameter, that
+indicates the number of instances that should be created. In this case, a
+list of instances is returned instead of just the one instance.
+
+When attributes are included to the factory fixture and the `count` parameter
+is used, those attributes are applied to all created instances.
+
+```python
+def test_get_accounts(api_client, user, budget_f):
+    budget = budget_f.create_budget()
+    accounts = budget_f.create_account(parent=budget, count=2)
+    api_client.force_login(user)
+    response = api_client.get("/v1/budgets/%s/children/" % budget.pk)
+    assert response.status_code == 200
+    assert response.json()['count'] == 2
+    assert response.json()['data'] == [...]
+```
+
+Here, we created 2 different `Account` instances, each with the same `parent`.
+
+If the intention is to specify an attribute for each of the instances, the
+attribute can be included as an iterable of attributes - where the iterable has
+a length equal to `count`. The attributes from the iterable will be mapped to
+each instance being created:
+
+```python
+def test_get_accounts(api_client, user, budget_f):
+    budget = budget_f.create_budget()
+    accounts = budget_f.create_account(
+        parent=budget,
+        count=2,
+        identifier=["0001", "0002"]
+    )
+    api_client.force_login(user)
+    response = api_client.get("/v1/budgets/%s/children/" % budget.pk)
+    assert response.status_code == 200
+    assert response.json()['count'] == 2
+    assert response.json()['data'][0]['identifier'] == '0001'
+    assert response.json()['data'][1]['identifier'] == '0002'
+```
+
+#### Budgeting
+
+In the code for this application, "Budgeting" refers to the models that make
+up the core "tree" of a `Budget` or `Template`. That is, "Budgeting" refers
+to extensions of `BaseBudget`, `Account` and `SubAccount`.
+
+The "domain" of a budget "tree" refers to whether or not the tree is based on
+a `Budget` or a `Template` instance. The models that make up the ancestry
+"tree" of the budget are dictated by what the model is at the top of the tree
+(the `Budget` or a `Template`).
+
+| Domain or Base | BudgetModel  |   Account Model   |  Sub Account Model   |
+| :------------: | :----------: | :---------------: | :------------------: |
+|      base      | `BaseBudget` |     `Account`     |     `SubAccount`     |
+|     budget     |   `Budget`   |  `BudgetAccount`  |  `BudgetSubAccount`  |
+|    template    |  `Template`  | `TemplateAccount` | `TemplateSubAccount` |
+
+Instead of exposing fixtures for all budgeting related models of each domain,
+we simply expose them as an object that exposes methods to create the budgeting
+models for the appropriate domain.
+
+The two factory objects are exposed as the following fixtures:
+
+1. `budget_df`: Read as "Budget Domain Factory". Exposes methods to create budgeting related models for the "budget" domain.
+2. `template_df`: Read as "Template Domain Factory". Exposes methods to create budgeting related models for the "template" domain.
+
+Each of these factory objects exposes the following methods:
+
+1. `create_budget`: Creates a `Budget` or `Template`, depending on the factory object.
+2. `create_account`: Creates a `BudgetAccount` or a `TemplateAccount`, depending on the factory object.
+3. `create_subaccount`: Creates a `BudgetSubAccount` or a `TemplateSubAccount`, depending on the factory object.
+
+##### Example
+
+In this example, we are testing whether or not a `Budget`'s actual value is
+recalculated after it's child `BudgetAccount` is deleted. Since actuals are
+only applicable for the "budget" domain, we use the `budget_df` fixture:
+
+```python
+# tests/account/test_signals.py
+
+def test_delete_account_reactualizes(budget_df, create_actual):
+    budget = budget_df.create_budget()
+    account = budget_df.create_account(parent=budget)
+    parent_subaccount = budget_df.create_subaccount(parent=account)
+    subaccount = budget_df.create_subaccount(
+        parent=parent_subaccount,
+        rate=1,
+        multiplier=5,
+        quantity=10,
+    )
+    create_actual(owner=subaccount, budget=budget, value=100.0)
+
+    assert budget.actual == 100.0
+    assert account.actual == 100.0
+    assert parent_subaccount.actual == 100.0
+    assert subaccount.actual == 100.0
+
+    account.delete()
+
+    assert budget.actual == 0.0
+```
+
+Up until this point, the usage of `budget_df` and `template_df` has been purely
+for convenience purposes - as it saves us the time of having to use the
+budget, account and sub account factory fixtures for the specific domain we
+are interested in.
+
+However, there is one very powerful implementation that is derived from this: the
+`budget_f` fixture.
+
+When used by a test, the `budget_f` fixture will automatically cause the test
+to run 2 times, once for each domain. That is, it will run the entire test
+where all budgeting related models are created for the "budget" domain, and also
+run the entire test where all budgeting related models are created for the "template"
+domain. Using the `budget_f` fixtures in our test gives us very, very exhaustive
+test coverage.
+
+##### Example
+
+In this example, we use the `budget_f` fixture to test the
+`/v1/budgets/<pk>/children/` endpoint in the case that the budget is both a
+`Budget` **and** a `Template`:
+
+```python
+# tests/budget/test_account_api.py
+
+def test_get_accounts(api_client, user, budget_f):
+    budget = budget_f.create_budget()
+    accounts = budget_f.create_account(parent=budget, count=2)
+    api_client.force_login(user)
+    response = api_client.get("/v1/budgets/%s/children/" % budget.pk)
+    assert response.status_code == 200
+    assert response.json()['count'] == 2
+    assert response.json()['data'] == [...]
+```
+
+This test will generate 2 different discrete tests, one for each domain.
+
+##### Marks
+
+Usage of the `budget_f` factory object inspired two different
+[pytest](https://docs.pytest.org/en/latest/contents.html#toc) marks for
+debugging purposes. These are `pytest.mark.budget` and `pytest.mark.template`.
+When these marks are used, they will restrict the test method to a specific
+domain regardless of the usage of the `budget_f` factory object.
+
+###### Example
+
+In this example, we decorate the test method that uses the `budget_f` fixture
+with `pytest.mark.budget` - which means it will only run for the budget domain.
+
+```python
+# tests/budget/test_account_api.py
+
+@pytest.mark.budget
+def test_get_accounts(api_client, user, budget_f):
+    budget = budget_f.create_budget()
+    accounts = budget_f.create_account(parent=budget, count=2)
+    api_client.force_login(user)
+    response = api_client.get("/v1/budgets/%s/children/" % budget.pk)
+    assert response.status_code == 200
+    assert response.json()['count'] == 2
+    assert response.json()['data'] == [...]
+```
+
+These marks should only be used for debugging purposes, when we want to quickly
+restrict the domain of the test such that we can diagnose a test failure more
+easily.
+
+### Database Control
+
+This section is not written yet but will describe how we can now optionally
+run certain tests in a Postgres environment.
+
+### Marks
+
+[pytest](https://docs.pytest.org/en/latest/contents.html#toc) marks are used to
+control how a test is run by "tagging" the test method in a way that we can
+manipulate it's behavior in certain fixtures that
+[pytest](https://docs.pytest.org/en/latest/contents.html#toc) reserves for this
+purpose.
+
+Our testing suite incorporates the following custom marks that we can use for
+debugging and/or notification purposes:
+
+1. `pytest.mark.budget`: Instructs the test to only run for the "budget" domain.
+2. `pytest.mark.template`: Instructs the test to only run for the "template" domain.
+3. `pytest.mark.needtowrite`: Instructs `pytest` to skip the test and issue a warning that the test needs to be written.
+4. `pytest.mark.postgresdb`: Instructs `pytest` that this test will use a Postgres database and should be skipped unless that is the database in use.

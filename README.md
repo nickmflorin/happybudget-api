@@ -7,7 +7,7 @@ in both production and local environments. For other documentation regarding
 the operation and development of this project, refer to the following list:
 
 1. [Testing](https://github.com/Saturation-IO/greenbudget-api/blob/develop/tests/ReadMe.md)
-2. [Standards & Practices](https://github.com/Saturation-IO/greenbudget-api/blob/develop/Standards.md)
+2. [Standards & Conventions](https://github.com/Saturation-IO/greenbudget-api/blob/develop/Standards.md)
 
 ### System Requirements
 
