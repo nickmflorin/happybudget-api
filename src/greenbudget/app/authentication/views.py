@@ -19,8 +19,7 @@ from .serializers import (
     TokenValidationSerializer, EmailTokenValidationSerializer,
     ResetPasswordTokenValidationSerializer, PublicTokenSerializer,
     PublicTokenValidationSerializer)
-from .tokens import AuthToken, AccessToken
-from .utils import parse_token_from_request, user_can_authenticate
+from .tokens import AccessToken
 
 
 def sensitive_post_parameters_m(*args):
@@ -47,37 +46,27 @@ class PublicTokenValidateView(views.GenericView):
         )
 
 
-class TokenValidateView(views.GenericView):
-    serializer_class = TokenValidationSerializer
+class AbstractTokenValidateView(views.GenericView):
     token_user_permission_classes = [
         permissions.IsAuthenticated,
         permissions.IsActive,
         permissions.IsVerified
     ]
 
-    @property
-    def token_cls(self):
-        raise NotImplementedError()
-
-    @sensitive_post_parameters_m('token')
-    def dispatch(self, request, *args, **kwargs):
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_serializer(self, request, *args, **kwargs):
-        serializer_kwargs = {
-            'token_cls': self.token_cls,
+    def get_serializer_kwargs(self, request):
+        return {
             'context': {'request': request},
             'token_user_permission_classes': self.token_user_permission_classes
         }
+
+    def get_serializer(self, request, *args, **kwargs):
+        serializer_kwargs = self.get_serializer_kwargs(request)
         # Only include arguments passed to the view into the serializer if
         # they were actually provided.
         serializer_kwargs = dict(
             (k, v) for k, v in serializer_kwargs.items() if v is not None)
-        attrs = request.data
-        if getattr(self, 'token_location', None) == 'cookies':
-            attrs.update(token=parse_token_from_request(request))
-
-        serializer = self.serializer_class(**serializer_kwargs, data=attrs)
+        serializer = self.serializer_class(
+            data=request.data, **serializer_kwargs)
         serializer.is_valid(raise_exception=True)
         return serializer
 
@@ -90,11 +79,25 @@ class TokenValidateView(views.GenericView):
         )
 
 
-class AuthTokenValidateView(TokenValidateView):
-    token_location = 'cookies'
+
+class AuthTokenValidateView(AbstractTokenValidateView):
     authentication_classes = (CsrfExcemptCookieSessionAuthentication, )
-    token_cls = AuthToken
     serializer_class = AuthTokenValidationSerializer
+
+
+
+class TokenValidateView(AbstractTokenValidateView):
+    serializer_class = TokenValidationSerializer
+
+    @property
+    def token_cls(self):
+        raise NotImplementedError()
+
+    def get_serializer_kwargs(self, request):
+        return dict(
+            **super().get_serializer_kwargs(request),
+            **{'token_cls': self.token_cls}
+        )
 
 
 class PasswordRecoveryTokenValidateView(TokenValidateView):
@@ -113,12 +116,6 @@ class EmailTokenValidateView(TokenValidateView):
         permissions.IsActive
     ]
 
-    def validate_user(self, user):
-        return user_can_authenticate(
-            user=user,
-            permissions=self.token_user_permission_classes
-        )
-
 
 class PasswordResetTokenValidateView(TokenValidateView):
     serializer_class = ResetPasswordTokenValidationSerializer
@@ -126,11 +123,6 @@ class PasswordResetTokenValidateView(TokenValidateView):
     permission_classes = (permissions.IsAnonymous, )
     authentication_classes = ()
 
-    def validate_user(self, user):
-        return user_can_authenticate(
-            user=user,
-            permissions=[permissions.IsAuthenticated, permissions.IsActive]
-        )
 
 
 class LogoutView(views.GenericView):

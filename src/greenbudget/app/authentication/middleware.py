@@ -1,4 +1,5 @@
 import logging
+import json
 
 from django.conf import settings
 from django.contrib import auth
@@ -44,24 +45,48 @@ class PublicTokenMiddleware(MiddlewareMixin):
             lambda: get_public_token(request))
 
 
+
+def force_reload_from_stripe(request):
+    """
+    Returns whether or not the request to the auth token validation endpoint
+    indicates that the user's data from Stripe should be reloaded from Stripe's
+    API.
+
+    This has to be checked in the middleware before the request is processed
+    by the serializers, because the cached values from Stripe's API stored in
+    the JWT token need to be attributed to the user on the request object.
+    """
+    is_validate_url = request.path == reverse('authentication:validate')
+    if is_validate_url:
+        try:
+            body = json.loads(request.body)
+        except json.decoder.JSONDecodeError:
+            return False
+        return body.get('force_reload_from_stripe', False)
+    return False
+
+
 def get_session_user(request, cache_stripe_info=True):
     if not hasattr(request, '_cached_user'):
         session_user = auth.get_user(request)
         if user_can_authenticate(session_user, raise_exception=False) \
                 and session_user.stripe_id is not None \
                 and cache_stripe_info:
+
             raw_token = parse_token_from_request(request)
-            # Store the cached cookie user for subsequent middlewares so we
-            # can avoid parsing the token multiple times (since it involves
-            # a DB query).
             token_user, token_obj = parse_token(raw_token)
-            # Use the JWT token to prepopulate billing related values on the
-            # user to avoid unnecessary requests to Stripe's API.
-            session_user.cache_stripe_from_token(token_obj)
-            # We want to also prepopulate billing related values on the token
-            # user so that the JWT authentication token validation view does
-            # not make repetitive requests to Stripe's API.
-            token_user.cache_stripe_from_token(token_obj)
+
+            # Unless the request indicates to force reload the data from Stripe's
+            # API, use the billing related values from Stripe in the JWT token
+            # to attribute the user.
+            if not force_reload_from_stripe(request):
+                # Use the JWT token to prepopulate billing related values on the
+                # user to avoid unnecessary requests to Stripe's API.
+                session_user.cache_stripe_from_token(token_obj)
+                # We want to also prepopulate billing related values on the token
+                # user so that the JWT authentication token validation view does
+                # not make repetitive requests to Stripe's API.
+                token_user.cache_stripe_from_token(token_obj)
             # Store the cached cookie user for subsequent middlewares so we
             # can avoid parsing the token multiple times (since it involves
             # a DB query).
@@ -104,7 +129,8 @@ def get_cookie_user(request):
                     # We want to also prepopulate billing related values on the
                     # token user so that the JWT authentication token validation
                     # view does not make repetitive requests to Stripe's API.
-                    token_user.cache_stripe_from_token(token_obj)
+                    if not force_reload_from_stripe(request):
+                        token_user.cache_stripe_from_token(token_obj)
                     request._cached_cookie_user = token_user
     return request._cached_cookie_user
 

@@ -118,7 +118,28 @@ class PublicTokenValidationSerializer(serializers.Serializer):
         return validated_data["token"]
 
 
-class TokenValidationSerializer(serializers.Serializer):
+class AbstractTokenValidationSerializer(serializers.Serializer):
+    def __init__(self, *args, **kwargs):
+        self.token_user_permission_classes = kwargs.pop(
+            'token_user_permission_classes')
+        super().__init__(*args, **kwargs)
+
+    def get_user(self, attrs):
+        raise NotImplementedError()
+
+    def validate(self, attrs):
+        user = self.get_user(attrs)
+        user = user_can_authenticate(
+            user=user,
+            permissions=self.token_user_permission_classes,
+        )
+        return {"user": user}
+
+    def create(self, validated_data):
+        return validated_data["user"]
+
+
+class TokenValidationSerializer(AbstractTokenValidationSerializer):
     token = serializers.CharField(
         required=False,
         allow_null=True,
@@ -128,47 +149,19 @@ class TokenValidationSerializer(serializers.Serializer):
     def __init__(self, *args, **kwargs):
         default_token_cls = getattr(self, 'token_cls', AuthToken)
         self.token_cls = kwargs.pop('token_cls', default_token_cls)
-        self.token_user_permission_classes = kwargs.pop(
-            'token_user_permission_classes')
         super().__init__(*args, **kwargs)
 
-    def validate(self, attrs):
-        user, token_obj = parse_token(
+    def get_user(self, attrs):
+        user, _ = parse_token(
             token=attrs.pop('token', None),
             token_cls=self.token_cls
         )
-        user = user_can_authenticate(
-            user=user,
-            permissions=self.token_user_permission_classes,
-        )
-        attrs.update(user=user, token=token_obj)
-        return attrs
-
-    def create(self, validated_data):
-        return validated_data["user"]
-
-
-class AuthTokenValidationSerializer(TokenValidationSerializer):
-    token_cls = AuthToken
-    force_reload_from_stripe = serializers.BooleanField(default=False)
-
-    def create(self, validated_data):
-        user = super().create(validated_data)
-        user = user_can_authenticate(
-            user=user,
-            permissions=self.token_user_permission_classes,
-        )
-        # If the request indicates to force reload the data from Stripe, we
-        # clear the cache so that when the properties are accessed by the
-        # UserSerializer, they are reloaded from Stripe's API.
-        if validated_data['force_reload_from_stripe']:
-            user.flush_stripe_cache()
-        # If the request did not indicate to force reload the data from Stripe,
-        # we want to update any values that are not already cached with values
-        # cached in the JWT token.
-        else:
-            user.cache_stripe_from_token(validated_data['token'])
         return user
+
+
+class AuthTokenValidationSerializer(AbstractTokenValidationSerializer):
+    def get_user(self, attrs):
+        return self.context['request'].cookie_user
 
 
 class EmailTokenValidationSerializer(TokenValidationSerializer):
