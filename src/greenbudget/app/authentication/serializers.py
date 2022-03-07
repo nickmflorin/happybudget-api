@@ -57,7 +57,7 @@ class PublicTokenSerializer(serializers.ModelSerializer):
     def create(self, validated_data, already_attempted=False):
         validator = UniqueTogetherValidator(
             queryset=PublicToken.objects.all(),
-            model_fields=('object_id', 'content_type_id'),
+            model_fields=('object_id', 'content_type'),
             message="Public token already exists for instance."
         )
         try:

@@ -1,6 +1,35 @@
 from rest_framework import serializers, validators, exceptions
+from rest_framework.validators import qs_filter
 
 from greenbudget.lib.utils import ensure_iterable, humanize_list
+
+
+class ValidatorAttrs:
+    def __init__(self):
+        self._serializer = {}
+        self._model = {}
+        self._context = {}
+        self._all = {}
+
+    @property
+    def serializer(self):
+        return self._serializer
+
+    @property
+    def model(self):
+        return self._model
+
+    @property
+    def context(self):
+        return self._context
+
+    @property
+    def all(self):
+        return self._all
+
+    def add(self, designation, k, v):
+        getattr(self, designation)[k] = v
+        self._all[k] = v
 
 
 class UniqueTogetherValidator(serializers.UniqueTogetherValidator):
@@ -39,17 +68,15 @@ class UniqueTogetherValidator(serializers.UniqueTogetherValidator):
         super().__init__(queryset, fields or (), message=message)
 
     def __call__(self, data, serializer):
-        attrs = {
-            'context': {},
-            'model': {},
-            'serializer': {}
-        }
+        attrs = ValidatorAttrs()
 
         for k, v in data.items():
             if k in serializer.fields:
-                attrs['serializer'][k] = v
-            else:
-                attrs['model'][k] = v
+                if k in self.fields:
+                    source = serializer.fields[k].source
+                    attrs.add("serializer", source, v)
+            elif k in self.model_fields:
+                attrs.add("model", k, v)
 
         for field in self.context_fields:
             assert isinstance(field, (tuple, str)), \
@@ -61,24 +88,24 @@ class UniqueTogetherValidator(serializers.UniqueTogetherValidator):
                 # that the values are already in the set of attributes provided
                 # to the method - in which case, we do not want to override them.
                 if field not in attrs:
-                    attrs['context'][field] = getattr(serializer.context, field)
+                    attrs.add("context", field,
+                        getattr(serializer.context, field))
             else:
                 assert len(field) == 2 and isinstance(field[0], str) \
                     and hasattr(field[1], '__call__'), \
                     "When defined as a tuple, the context field must be " \
                     "defined as (field, callback)."
                 if field[0] not in attrs:
-                    attrs['context'][field[0]] = field[1](serializer.context)
+                    attrs.add("context", field[0], field[1](serializer.context))
 
-        self.enforce_required_fields(attrs['serializer'], serializer)
-        qs = self.filter_queryset(data, self.queryset, serializer)
-        qs = self.exclude_current_instance(data, qs, serializer.instance)
+        self.enforce_required_fields(attrs.serializer, serializer)
+        qs = self.filter_queryset(attrs.all, self.queryset)
+        qs = self.exclude_current_instance(qs, serializer.instance)
 
         # Ignore validation if any field is None
         checked_values = [
             v for k, v in data.items()
-            if k in attrs['context'] or k in attrs['serializer']
-            or k in attrs['model']
+            if k in attrs.all
         ]
         if None not in checked_values and validators.qs_exists(qs):
             # Note: In the case that there are fields in the context or not
@@ -96,3 +123,11 @@ class UniqueTogetherValidator(serializers.UniqueTogetherValidator):
                     "unique set."
                 )
             raise exceptions.ValidationError(message, code='unique')
+
+    def filter_queryset(self, attrs, queryset):
+        return qs_filter(queryset, **attrs)
+
+    def exclude_current_instance(self, queryset, instance):
+        if instance is not None:
+            return queryset.exclude(pk=instance.pk)
+        return queryset

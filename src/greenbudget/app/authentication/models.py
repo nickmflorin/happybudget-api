@@ -26,8 +26,7 @@ class PublicToken(models.Model):
     content_type = models.ForeignKey(
         to=ContentType,
         on_delete=models.CASCADE,
-        limit_choices_to=models.Q(app_label='account', model='Account')
-        | models.Q(app_label='subaccount', model='SubAccount')
+        limit_choices_to=models.Q(app_label='budget', model='Budget')
     )
     expires_at = models.DateTimeField(null=True)
     object_id = models.PositiveIntegerField(db_index=True)

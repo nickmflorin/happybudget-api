@@ -33,8 +33,15 @@ def test_get_budget_with_public_token(api_client, user, create_budget,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_budget_public_token(api_client, user, create_budget, models):
+def test_create_budget_public_token(api_client, user, create_budget, models,
+        create_public_token):
     budget = create_budget()
+
+    # Create another public token so for another budget to make sure we can
+    # share multiple budgets without unique validation errors.
+    another_budget = create_budget()
+    create_public_token(instance=another_budget)
+
     api_client.force_login(user)
     response = api_client.post("/v1/budgets/%s/public-token/" % budget.pk, data={
         'expires_at': '2021-01-01',
@@ -50,6 +57,7 @@ def test_create_budget_public_token(api_client, user, create_budget, models):
         'expires_at': '2021-01-01 00:00:00',
         'is_expired': False
     }
+
 
 
 @pytest.mark.freeze_time('2020-01-01')
