@@ -26,7 +26,7 @@ from .utils import (
 class PublicTokenSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
-    public_id = serializers.UUIDField(required=False, allow_null=False)
+    public_id = serializers.UUIDField(read_only=True)
     expires_at = serializers.DateTimeField(required=False, allow_null=True)
     is_expired = serializers.BooleanField(read_only=True)
 

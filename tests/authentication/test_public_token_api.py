@@ -51,21 +51,3 @@ def test_update_budget_public_token_expiry(api_client, user, create_budget,
         'is_expired': False
     }
 
-
-@pytest.mark.freeze_time('2020-01-01')
-def test_update_budget_public_token_public_id(api_client, user, create_budget,
-        create_public_token):
-    budget = create_budget()
-    public_token = create_public_token(instance=budget)
-    api_client.force_login(user)
-    response = api_client.patch(
-        "/v1/auth/public-tokens/%s/" % public_token.pk,
-        data={'public_id': str(uuid.uuid4())}
-    )
-    assert response.status_code == 400
-    assert response.json() == {'errors': [{
-        'message': 'This field cannot be updated.',
-        'code': 'invalid',
-        'error_type': 'field',
-        'field': 'public_id'
-    }]}
