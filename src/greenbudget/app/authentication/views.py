@@ -79,11 +79,9 @@ class AbstractTokenValidateView(views.GenericView):
         )
 
 
-
 class AuthTokenValidateView(AbstractTokenValidateView):
     authentication_classes = (CsrfExcemptCookieSessionAuthentication, )
     serializer_class = AuthTokenValidationSerializer
-
 
 
 class TokenValidateView(AbstractTokenValidateView):
@@ -122,7 +120,6 @@ class PasswordResetTokenValidateView(TokenValidateView):
     token_cls = AccessToken
     permission_classes = (permissions.IsAnonymous, )
     authentication_classes = ()
-
 
 
 class LogoutView(views.GenericView):

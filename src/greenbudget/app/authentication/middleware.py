@@ -45,7 +45,6 @@ class PublicTokenMiddleware(MiddlewareMixin):
             lambda: get_public_token(request))
 
 
-
 def force_reload_from_stripe(request):
     """
     Returns whether or not the request to the auth token validation endpoint
