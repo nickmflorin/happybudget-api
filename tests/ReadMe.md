@@ -9,16 +9,16 @@ implementation of these frameworks.
 
 Our testing suite has it's own dedicated environment in which to operate.
 
-Environment
+**Environment**
 : `test`
 
-Settings Module
+**Settings Module**
 : `greenbudget.conf.settings.test`
 
-File Storage
+**File Storage**
 : Temporary File Storage
 
-Database
+**Database**
 : Transactional SQLite3 File
 
 ## Testing Principles
