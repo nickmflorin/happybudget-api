@@ -242,10 +242,10 @@ see the error before we deploy the application to a production instance - saving
 us from the embarrassment that would come with a large number of users not
 being able to access parts of the application.
 
-> > > There are some exceptions to this rule that we apply consistently throughout
-> > > the application code, but those imports are from files that are very static
-> > > and unlikely to change - which makes less specific imports from it
-> > > more dangerous.
+> There are some exceptions to this rule that we apply consistently throughout
+> the application code, but those imports are from files that are very static
+> and unlikely to change - which makes less specific imports from it
+> more dangerous.
 
 ```python
 from greenbudget.app import signals, views
