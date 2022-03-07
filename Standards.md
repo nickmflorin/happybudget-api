@@ -355,19 +355,19 @@ The general rule of thumb that can be used to determine how to write the call
 or instantiation is as follows:
 
 1. Writing on 1 Line Exceeds 80 Character Limit
-   a. The number of arguments is greater than or equal to 3.
-   i. Use one line per argument.
-   b. The number of arguments is two or less.
-   i. Write line up to 80 character limit is reached and then indent new line one time for continuation.
-   c. An argument is a dictionary.
-   i. Dictionary can be parsed into multiple lines.
+  - The number of arguments is greater than or equal to 3.
+    - Use one line per argument.
+  - The number of arguments is two or less.
+    - Write line up to 80 character limit is reached and then indent new line one time for continuation.
+  - An argument is a dictionary.
+    - Dictionary can be parsed into multiple lines.
 2. Writing on 1 Line Does Not Exceed 80 Character Limit
-   a. The number of arguments is greater than or equal to 3.
-   i. Acceptable to write one line per argument if the arguments are keyword arguments.
-   b. The number of arguments is two or less.
-   i. Always write on a single line.
-   c. An argument is a dictionary
-   i. Write on a single line (which should not exceed 80 character limit) unless number of dictionary keys exceeds 2, in which case it is acceptable to write on multiple lines.
+  - The number of arguments is greater than or equal to 3.
+    - Acceptable to write one line per argument if the arguments are keyword arguments.
+  - The number of arguments is two or less.
+    - Always write on a single line.
+  - An argument is a dictionary
+    - Write on a single line (which should not exceed 80 character limit) unless number of dictionary keys exceeds 2, in which case it is acceptable to write on multiple lines.
 
 Some examples of styles that abide by these guidelines are as follows:
 
