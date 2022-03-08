@@ -400,7 +400,42 @@ debugging and/or notification purposes:
 
 ### API Requests
 
-This section needs to be written.
+Django REST Framework exposes a client `rest_framework.test.APIClient` (which
+is just a lightweight wrapper around Django's `django.test.client.Client`
+tailored towards the `rest_framework` package) that can be used to make API
+requests in tests.
+
+Our test suite wraps `rest_framework.test.APIClient` very minimally in order to
+provide some additional behavior, and exposes the client as a
+[pytest](https://docs.pytest.org/en/latest/contents.html#toc) fixture,
+`api_client`.
+
+> Note: Django REST Framework's test client, `rest_framework.test.APIClient`
+> will automatically bypass CSRF checks.
+
+#### Logging User In
+
+To log the user in before making an API request in a test, simply use the
+`force_login` method:
+
+```python
+def test_get_account(api_client, user, budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    api_client.force_login(user)
+    ...
+```
+
+#### Submitting a Request
+
+To submit an HTTP request in a test, simply call the appropriate `get`, `post`,
+`patch`, `delete` or `put` method on the test client:
+
+```python
+def test_get_account(api_client, user, budget_f):
+    ...
+    response = api_client.get("/v1/accounts/%s/" % account.pk)
+```
 
 ### Data Generation
 
