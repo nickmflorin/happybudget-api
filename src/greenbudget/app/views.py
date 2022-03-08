@@ -486,7 +486,7 @@ def exception_handler(exc, context):
         the error type, the error type is inferred based on the error class that
         was raised in this view.
 
-        >>> class CheckoutError(exceptions.ParseError):
+        >>> class CheckoutError(exceptions.BadRequest):
         >>>     error_type = 'billing'
         >>>     default_code = BillingErrorCodes.CHECKOUT_ERROR
         >>>     default_detail = _("There was a error during checkout.")

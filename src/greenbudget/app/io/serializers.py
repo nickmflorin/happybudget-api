@@ -4,7 +4,9 @@ import os
 
 from django.core.files.storage import get_storage_class
 
-from rest_framework import serializers, exceptions
+from rest_framework import serializers
+
+from greenbudget.app import exceptions
 
 from .exceptions import FileError
 from .fields import ImageField

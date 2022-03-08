@@ -5,11 +5,12 @@ We use these exceptions to distinguish these cases in our own JWT serializers
 and views
 """
 from django.utils.translation import gettext_lazy as _
-from rest_framework import exceptions, status
+from rest_framework import status
+from rest_framework.exceptions import NotAuthenticated
 
 from rest_framework_simplejwt.exceptions import TokenError as BaseTokenError
 
-from greenbudget.lib.drf.exceptions import InvalidFieldError
+from greenbudget.app import exceptions
 
 
 class NotAuthenticatedErrorCodes(object):
@@ -28,7 +29,7 @@ class TokenError(BaseTokenError):
         super().__init__()
 
 
-class NotAuthenticatedError(exceptions.NotAuthenticated):
+class NotAuthenticatedError(NotAuthenticated):
     default_detail = _("User is not authenticated.")
     default_code = NotAuthenticatedErrorCodes.ACCOUNT_NOT_AUTHENTICATED
     status_code = status.HTTP_401_UNAUTHORIZED
@@ -37,7 +38,7 @@ class NotAuthenticatedError(exceptions.NotAuthenticated):
         user_id = kwargs.pop('user_id', None)
         if user_id is not None:
             setattr(self, 'user_id', user_id)
-        exceptions.NotAuthenticated.__init__(self, *args, **kwargs)
+        NotAuthenticated.__init__(self, *args, **kwargs)
 
 
 class InvalidToken(NotAuthenticatedError):
@@ -90,13 +91,13 @@ class AuthErrorCodes(object):
     EMAIL_ERROR = "email_error"
 
 
-class EmailDoesNotExist(InvalidFieldError):
+class EmailDoesNotExist(exceptions.InvalidFieldError):
     default_detail = _(
         "The provided username does not exist in our system.")
     default_code = AuthErrorCodes.EMAIL_DOES_NOT_EXIST
 
 
-class InvalidCredentialsError(InvalidFieldError):
+class InvalidCredentialsError(exceptions.InvalidFieldError):
     default_detail = _("The provided password is invalid.")
     default_code = AuthErrorCodes.INVALID_CREDENTIALS
 
@@ -113,6 +114,6 @@ class InvalidSocialProvider(exceptions.AuthenticationFailed):
     default_code = AuthErrorCodes.INVALID_SOCIAL_PROVIDER
 
 
-class EmailError(exceptions.ParseError):
+class EmailError(exceptions.BadRequest):
     default_detail = _("There was a problem sending the email.")
     default_code = AuthErrorCodes.EMAIL_ERROR

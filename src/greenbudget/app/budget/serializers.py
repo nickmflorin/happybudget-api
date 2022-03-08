@@ -1,5 +1,6 @@
-from rest_framework import serializers, exceptions
+from rest_framework import serializers
 
+from greenbudget.app import exceptions
 from greenbudget.app.account.serializers import AccountPdfSerializer
 from greenbudget.app.authentication.serializers import PublicTokenSerializer
 from greenbudget.app.group.serializers import GroupSerializer

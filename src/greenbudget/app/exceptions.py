@@ -1,4 +1,5 @@
-from rest_framework import exceptions
+from rest_framework import exceptions, status
+from rest_framework.exceptions import AuthenticationFailed  # noqa
 from django.utils.translation import gettext_lazy as _
 
 from greenbudget.lib.utils import ensure_iterable, get_string_formatted_kwargs
@@ -11,7 +12,17 @@ def _consolidate_field_errors(fields, message):
     return error
 
 
-class CommonErrorCodes(object):
+class BadRequestErrorCodes(object):
+    BAD_REQUEST = "bad_request"
+
+
+class BadRequest(exceptions.ParseError):
+    default_code = BadRequestErrorCodes.BAD_REQUEST
+    default_detail = _("Bad request.")
+    status_code = status.HTTP_400_BAD_REQUEST
+
+
+class FieldErrorCodes(object):
     REQUIRED = "required"
     INVALID = "invalid"
 
@@ -107,7 +118,7 @@ class RequiredFieldError(ValidationError):
     to do so in the standard/consistent way that DRF does.  That is when this
     `obj:RequiredFieldError` can be used.
     """
-    default_code = CommonErrorCodes.REQUIRED
+    default_code = FieldErrorCodes.REQUIRED
     default_detail = "This field is required."
 
 
@@ -127,5 +138,5 @@ class InvalidFieldError(ValidationError):
     to do so in the standard/consistent way that DRF does.  That is when this
     `obj:RequiredFieldError` can be used.
     """
-    default_code = CommonErrorCodes.INVALID
+    default_code = FieldErrorCodes.INVALID
     default_detail = "This field is invalid."

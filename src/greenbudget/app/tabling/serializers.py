@@ -2,8 +2,8 @@ from copy import deepcopy
 
 from django.db import transaction
 
-from greenbudget.lib.drf.exceptions import InvalidFieldError
 from greenbudget.lib.drf.serializers import LazyContext
+from greenbudget.app import exceptions
 
 from .fields import TablePrimaryKeyRelatedField
 from .utils import lexographic_midpoint
@@ -122,7 +122,7 @@ class row_order_serializer:
             if 'previous' in validated_data:
                 previous = validated_data.pop('previous')
                 if previous == instance:
-                    raise InvalidFieldError('previous', message=(
+                    raise exceptions.InvalidFieldError('previous', message=(
                         'Previous instance cannot be the instance being '
                         'updated.'
                     ))

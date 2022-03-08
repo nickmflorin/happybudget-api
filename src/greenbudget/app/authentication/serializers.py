@@ -3,16 +3,18 @@ import datetime
 from django.contrib.auth import authenticate, login, get_user_model
 from django.contrib.contenttypes.models import ContentType
 
-from rest_framework import serializers, exceptions
+from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
-from greenbudget.lib.drf.exceptions import InvalidFieldError
 from greenbudget.lib.drf.validators import UniqueTogetherValidator
+
+from greenbudget.app import exceptions
+from greenbudget.app.budget.models import Budget
+from greenbudget.app.user.fields import EmailField
 from greenbudget.app.user.mail import (
     send_email_confirmation_email,
     send_password_recovery_email
 )
-from greenbudget.app.budget.models import Budget
-from greenbudget.app.user.fields import EmailField
 from greenbudget.app.user.models import User
 
 from .exceptions import EmailDoesNotExist
@@ -42,7 +44,7 @@ class PublicTokenSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         if 'public_id' in attrs and self.context['request'].method != 'POST':
-            raise InvalidFieldError(
+            raise exceptions.InvalidFieldError(
                 'public_id', message='This field cannot be updated.')
         return attrs
 
@@ -62,7 +64,7 @@ class PublicTokenSerializer(serializers.ModelSerializer):
         )
         try:
             validator(validated_data, self)
-        except exceptions.ValidationError as e:
+        except ValidationError as e:
             # Raise the exception if we already attempted the removal of the
             # instance violating the unique constraint, otherwise, we can end
             # up with an infinite recursion.

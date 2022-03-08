@@ -1,9 +1,9 @@
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers
 
-from greenbudget.lib.drf.exceptions import InvalidFieldError
 from greenbudget.lib.drf.fields import ModelChoiceField
 
+from greenbudget.app import exceptions
 from greenbudget.app.budget.models import BaseBudget
 from greenbudget.app.budgeting.serializers import AncestrySerializer
 from greenbudget.app.tabling.fields import TablePrimaryKeyRelatedField
@@ -101,7 +101,7 @@ class MarkupSerializer(AncestrySerializer):
             # because the signals will take care of removing them.
             children = attrs.pop('children', [])
             if len(children) != 0:
-                raise InvalidFieldError('children', message=(
+                raise exceptions.InvalidFieldError('children', message=(
                     'A markup with unit `flat` cannot have children.'))
             return attrs
         else:
@@ -109,7 +109,7 @@ class MarkupSerializer(AncestrySerializer):
             # children must be in the payload and must be non-empty.
             if self.instance is None:
                 if 'children' not in attrs or len(attrs['children']) == 0:
-                    raise InvalidFieldError('children', message=(
+                    raise exceptions.InvalidFieldError('children', message=(
                         'A markup with unit `percent` must have at least 1 '
                         'child.'
                     ))
@@ -120,7 +120,7 @@ class MarkupSerializer(AncestrySerializer):
                 children = attrs.get(
                     'children', getattr(self.instance, 'children'))
                 if len(children) == 0 and unit == Markup.UNITS.percent:
-                    raise InvalidFieldError('children', message=(
+                    raise exceptions.InvalidFieldError('children', message=(
                         'A markup with unit `percent` must have at least 1 '
                         'child.'
                     ))

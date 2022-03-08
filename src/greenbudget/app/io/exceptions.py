@@ -1,5 +1,5 @@
 from django.utils.translation import gettext_lazy as _
-from greenbudget.lib.drf.exceptions import ValidationError
+from greenbudget.app import exceptions
 
 
 class IOErrorCodes:
@@ -7,7 +7,7 @@ class IOErrorCodes:
     INVALID_FILE_EXTENSION = "invalid_file_extension"
 
 
-class FileError(ValidationError):
+class FileError(exceptions.ValidationError):
     pass
 
 

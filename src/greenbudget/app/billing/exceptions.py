@@ -1,8 +1,7 @@
 from django.utils.translation import gettext_lazy as _
-from rest_framework import exceptions
 
 from greenbudget.lib.utils import ensure_iterable
-from greenbudget.app.permissions import PermissionError, PermissionErrorCodes
+from greenbudget.app import permissions, exceptions
 
 from .mixins import ProductPermissionIdMixin
 
@@ -22,7 +21,7 @@ class BillingErrorCodes:
     CHECKOUT_SESSION_INACTIVE = "checkout_session_inactive"
 
 
-class CheckoutError(exceptions.ParseError):
+class CheckoutError(exceptions.BadRequest):
     error_type = 'billing'
     default_code = BillingErrorCodes.CHECKOUT_ERROR
     default_detail = _("There was a error during checkout.")
@@ -33,15 +32,16 @@ class CheckoutSessionInactiveError(CheckoutError):
     default_detail = _("There is not an active checkout session.")
 
 
-class StripeBadRequest(exceptions.ParseError):
+class StripeBadRequest(exceptions.BadRequest):
     error_type = 'billing'
     default_code = BillingErrorCodes.STRIPE_REQUEST_ERROR
     default_detail = _("There was a Stripe error.")
 
 
-class ProductPermissionError(ProductPermissionIdMixin, PermissionError):
+class ProductPermissionError(
+        ProductPermissionIdMixin, permissions.PermissionError):
     default_detail = _("The account is not subscribed to the correct product.")
-    default_code = PermissionErrorCodes.PRODUCT_PERMISSION_ERROR
+    default_code = permissions.PermissionErrorCodes.PRODUCT_PERMISSION_ERROR
 
     def __init__(self, *args, **kwargs):
         self.products = kwargs.pop('products', '__any__')
@@ -50,4 +50,4 @@ class ProductPermissionError(ProductPermissionIdMixin, PermissionError):
 
         permission_id = kwargs.pop('permission_id', None)
         ProductPermissionIdMixin.__init__(self, permission_id=permission_id)
-        PermissionError.__init__(self, *args, **kwargs)
+        permissions.PermissionError.__init__(self, *args, **kwargs)
