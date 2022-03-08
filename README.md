@@ -8,6 +8,7 @@ the operation and development of this project, refer to the following list:
 
 1. [Testing](https://github.com/Saturation-IO/greenbudget-api/blob/develop/tests/ReadMe.md)
 2. [Standards & Conventions](https://github.com/Saturation-IO/greenbudget-api/blob/develop/Standards.md)
+3. [Configuration](https://github.com/Saturation-IO/greenbudget-api/blob/develop/src/greenbudget/conf/ReadMe.md)
 
 ### System Requirements
 
