@@ -75,8 +75,19 @@ def test_get_fringe(api_client, user, budget_f, create_fringe, models):
             "name": models.Fringe.UNITS[fringe.unit]
         },
     }
-
 ```
+
+Our endpoint tests follow this pattern, in the sense that we typically try to
+test the entire output of the API call. The exceptions to this are when we
+are testing other behaviors of an endpoint (like error handling) and the full
+output of the successful API response (**200**, **201** or **204** status codes)
+has already been tested in a separate test.
+
+> Note that before we make an assertion about the response JSON, we make an
+> assertion about the response status code. This is because if the response
+> were not a **200** response, the test failure is easier to diagnose when the
+> assertion for the response status code fails vs. a failure of the assertion
+> regarding the response JSON.
 
 ### Abstraction Principle
 
@@ -415,7 +426,16 @@ The factory can then be used as follows:
 def test_fringe(user):
     test_fringe = FringeFactory(created_by=user, updated_by=user, rate=20.0)
     assert fringe.rate == 20.0
+    assert fringe.name == "Fringe 1"
+    assert fringe.cutoff is None
+    assert fringe.unit == Fringe.UNITS.percent
 ```
+
+> Note that factory.SubFactory will use a factory to randomly generate the field
+> if that field is a `ForeignKey` pointing to a Django model. In this case,
+> unless the `created_by` and/or `updated_by` fields are provided explicitly,
+> the `FringeFactory` will randomly generated a `User` with the `UserFactory`
+> and assign it to those fields.
 
 Implementing a factory framework for all of our models allows our tests to
 quickly and conveniently create test data that it requires without having to
@@ -429,6 +449,13 @@ fixtures, which are all functions that eventually call the factory, wrap the
 logic that each factory provides such that other business logic can be
 incorporated via features of the
 [pytest](https://docs.pytest.org/en/latest/contents.html#toc) ecosystem.
+
+This means that in our tests, we do not directly import the factory classes
+themselves. Instead, we use [pytest](https://docs.pytest.org/en/latest/contents.html#toc)
+fixtures that we have created that wrap the factory class such that it can be
+used as a [pytest](https://docs.pytest.org/en/latest/contents.html#toc) fixture
+and has access to the resources of the [pytest](https://docs.pytest.org/en/latest/contents.html#toc)
+ecosystem.
 
 ##### Example
 
@@ -445,9 +472,12 @@ def create_user(db):
 
 There are several common patterns that our factories fixtures implement that
 provide additional behavior that simple usage of factory classes in the tests
-would not provide alone.
+would not provide alone. Some of these are:
 
-##### Ownership
+1. Establishing Ownership
+2. Enabling Multiple Creation
+
+##### Establishing Ownership
 
 Many of our models are designated ownership by the field `created_by`.
 Additionally, many of our models also track the user that last updated the
@@ -486,7 +516,7 @@ def test_get_budget(api_client, user, create_budget):
 If we were to use the `factories.BudgetFactory` outside the scope of a
 fixture, we would have to explicitly define the `created_by` field each time.
 
-##### Multiple Creation
+##### Enabling Multiple Creation
 
 There are many cases in our tests where we want to be able to quickly create
 several instances of a model, not just one. In most cases, our factory fixtures
@@ -537,7 +567,9 @@ def test_get_accounts(api_client, user, budget_f):
 
 In the code for this application, "Budgeting" refers to the models that make
 up the core "tree" of a `Budget` or `Template`. That is, "Budgeting" refers
-to extensions of `BaseBudget`, `Account` and `SubAccount`.
+to extensions of `BaseBudget`, `Account` and `SubAccount`. The budget "tree"
+refers to the nested parent-child relationships between the extensions of
+`BaseBudget`, `Account` and `SubAccount`.
 
 The "domain" of a budget "tree" refers to whether or not the tree is based on
 a `Budget` or a `Template` instance. The models that make up the ancestry
@@ -585,24 +617,22 @@ def test_delete_account_reactualizes(budget_df, create_actual):
         quantity=10,
     )
     create_actual(owner=subaccount, budget=budget, value=100.0)
-
-    assert budget.actual == 100.0
-    assert account.actual == 100.0
-    assert parent_subaccount.actual == 100.0
-    assert subaccount.actual == 100.0
-
     account.delete()
-
     assert budget.actual == 0.0
 ```
 
+In this example, the root of the "budget" tree is the `budget`. The `budget`
+instance than has the `account` as a child, the `account` has the
+`parent_subaccount` as a child and the `parent_subaccount` has the `subaccount`
+as a child. These relationships comprise the budget "tree".
+
 Up until this point, the usage of `budget_df` and `template_df` has been purely
 for convenience purposes - as it saves us the time of having to use the
-budget, account and sub account factory fixtures for the specific domain we
-are interested in.
+`BaseBudget`, `Account` and `SubAccount` factory fixtures for the specific
+domain we are interested in.
 
-However, there is one very powerful implementation that is derived from this: the
-`budget_f` fixture.
+However, there is one very powerful implementation that is derived from this:
+the `budget_f` fixture.
 
 When used by a test, the `budget_f` fixture will automatically cause the test
 to run 2 times, once for each domain. That is, it will run the entire test
@@ -664,6 +694,18 @@ restrict the domain of the test such that we can diagnose a test failure more
 easily.
 
 ### Database Control
+
+Our testing framework relies on the concept of "transactional testing". What this
+means is that each test is run with an entirely fresh state of the database.
+This is very important because it ensures that tests are completely independent
+of one another, and updating the database in one test does not affect the behavior
+of a subsequent test.
+
+By default, our testing framework relies on an `sqlite` database. The reasons
+for this are as follows:
+
+1. `sqlite` databases make it easy and **fast** to quickly setup and tear down
+   the database
 
 This section is not written yet but will describe how we can now optionally
 run certain tests in a Postgres environment.
