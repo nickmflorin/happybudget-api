@@ -1,5 +1,40 @@
+import copy
 import logging
 import sys
+
+
+AWS_HANDLER = {
+    "level": logging.INFO,
+    "class": "watchtower.CloudWatchLogHandler",
+    "log_group": "greenbudget-dev-api",
+    "stream_name": "logstream",
+    "formatter": "aws",
+}
+
+SENTRY_HANDLER = {
+    'level': logging.WARNING,
+    'class': 'raven.contrib.django.raven_compat.handlers.SentryHandler',
+}
+
+# Loggers that will issue their logs to AWS Cloudwatch.
+AWS_LOGGERS = ("django", "django.request", "django.server", "greenbudget")
+# Loggers that will issue their logs with level greater than or equal to warning
+# to Sentry.
+SENTRY_LOGGERS = ("root", "greenbudget")
+
+
+def attach_aws_logger(config, boto3_session):
+    handler = copy.deepcopy(AWS_HANDLER)
+    handler['boto3_session'] = boto3_session
+    config["handlers"].update(watchtower=handler)
+    for logger_name in AWS_LOGGERS:
+        config["loggers"][logger_name]["handlers"] += ["watchtower"]
+
+
+def attach_sentry_logger(config):
+    config["handers"].update(sentry=SENTRY_HANDLER)
+    for logger_name in AWS_LOGGERS:
+        config["loggers"][logger_name]["handlers"] += ["sentry"]
 
 
 LOGGING = {
