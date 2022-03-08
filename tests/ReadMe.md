@@ -99,10 +99,13 @@ avoided at all costs.
 
 The reasons for this are as follows:
 
-1. Test abstraction makes it more difficult to diagnose failures, especially in remote environments, when tests fail.
+1. Test abstraction makes it more difficult to diagnose failures, especially in
+   remote environments, when tests fail.
 2. We do not want to have to write tests for our tests.
-3. Abstraction can confuse [pytest](https://docs.pytest.org/en/latest/contents.html#toc)'s ability to provide useful diagnostic information when tests fail.
-4. Abstraction makes it more difficult to locate the specific assertion that caused a test to fail.
+3. Abstraction can confuse [pytest](https://docs.pytest.org/en/latest/contents.html#toc)'s
+   ability to provide useful diagnostic information when tests fail.
+4. Abstraction makes it more difficult to locate the specific assertion that
+   caused a test to fail.
 
 #### Example
 
@@ -128,9 +131,13 @@ diagnosed and fixed.
 
 Our testing suite is a combination of the following frameworks:
 
-1. [pytest](https://docs.pytest.org/en/latest/contents.html#toc): Provides the framework for creating and executing tests.
-2. [pytest-django](https://pytest-django.readthedocs.io/en/latest/): Provides an integration for `pytest` with `Django`.
-3. [coverage](https://coverage.readthedocs.io/en/v4.5.x/): Provides the framework for reporting on the project's test coverage and web integrations for viewing the test coverage of the project.
+1. [pytest](https://docs.pytest.org/en/latest/contents.html#toc): Provides the
+   framework for creating and executing tests.
+2. [pytest-django](https://pytest-django.readthedocs.io/en/latest/): Provides an
+   integration for `pytest` with `Django`.
+3. [coverage](https://coverage.readthedocs.io/en/v4.5.x/): Provides the framework
+   for reporting on the project's test coverage and web integrations for viewing
+   the test coverage of the project.
 
 ### Pytest
 
@@ -373,6 +380,28 @@ def user(db, user_password):
 This section discusses the frameworks that have been built around `pytest` and
 `pytest-django` to more specifically accomodate our use cases.
 
+### Marks
+
+[pytest](https://docs.pytest.org/en/latest/contents.html#toc) marks are used to
+control how a test is run by "tagging" the test method in a way that we can
+manipulate it's behavior in certain fixtures that
+[pytest](https://docs.pytest.org/en/latest/contents.html#toc) reserves for this
+purpose.
+
+Our testing suite incorporates the following custom marks that we can use for
+debugging and/or notification purposes:
+
+1. `pytest.mark.budget`: Instructs the test to only run for the "budget" domain.
+2. `pytest.mark.template`: Instructs the test to only run for the "template" domain.
+3. `pytest.mark.needtowrite`: Instructs `pytest` to skip the test and issue a
+   warning that the test needs to be written.
+4. `pytest.mark.postgresdb`: Instructs `pytest` that this test will use a
+   Postgres database and should be skipped unless that is the database in use.
+
+### API Requests
+
+This section needs to be written.
+
 ### Data Generation
 
 All tests rely on a source of test data to allow the logic in the application
@@ -454,8 +483,8 @@ This means that in our tests, we do not directly import the factory classes
 themselves. Instead, we use [pytest](https://docs.pytest.org/en/latest/contents.html#toc)
 fixtures that we have created that wrap the factory class such that it can be
 used as a [pytest](https://docs.pytest.org/en/latest/contents.html#toc) fixture
-and has access to the resources of the [pytest](https://docs.pytest.org/en/latest/contents.html#toc)
-ecosystem.
+and has access to the resources of the
+[pytest](https://docs.pytest.org/en/latest/contents.html#toc) ecosystem.
 
 ##### Example
 
@@ -588,14 +617,19 @@ models for the appropriate domain.
 
 The two factory objects are exposed as the following fixtures:
 
-1. `budget_df`: Read as "Budget Domain Factory". Exposes methods to create budgeting related models for the "budget" domain.
-2. `template_df`: Read as "Template Domain Factory". Exposes methods to create budgeting related models for the "template" domain.
+1. `budget_df`: Read as "Budget Domain Factory". Exposes methods to create
+   budgeting related models for the "budget" domain.
+2. `template_df`: Read as "Template Domain Factory". Exposes methods to create
+   budgeting related models for the "template" domain.
 
 Each of these factory objects exposes the following methods:
 
-1. `create_budget`: Creates a `Budget` or `Template`, depending on the factory object.
-2. `create_account`: Creates a `BudgetAccount` or a `TemplateAccount`, depending on the factory object.
-3. `create_subaccount`: Creates a `BudgetSubAccount` or a `TemplateSubAccount`, depending on the factory object.
+1. `create_budget`: Creates a `Budget` or `Template`, depending on the factory
+   object.
+2. `create_account`: Creates a `BudgetAccount` or a `TemplateAccount`, depending
+   on the factory object.
+3. `create_subaccount`: Creates a `BudgetSubAccount` or a `TemplateSubAccount`,
+   depending on the factory object.
 
 ##### Example
 
@@ -637,9 +671,9 @@ the `budget_f` fixture.
 When used by a test, the `budget_f` fixture will automatically cause the test
 to run 2 times, once for each domain. That is, it will run the entire test
 where all budgeting related models are created for the "budget" domain, and also
-run the entire test where all budgeting related models are created for the "template"
-domain. Using the `budget_f` fixtures in our test gives us very, very exhaustive
-test coverage.
+run the entire test where all budgeting related models are created for the
+"template" domain. Using the `budget_f` fixtures in our test gives us very, very
+exhaustive test coverage.
 
 ##### Example
 
@@ -705,23 +739,63 @@ By default, our testing framework relies on an `sqlite` database. The reasons
 for this are as follows:
 
 1. `sqlite` databases make it easy and **fast** to quickly setup and tear down
-   the database
+   the database for each test, allowing us to use transactional tests while at
+   the same time allowing the tests to run very fast.
+2. `sqlite` requires less setup and configuration than a Postgres database.
+3. `sqlite` does not require us to have a process dedicated to the Postgres
+   database running in the background.
 
-This section is not written yet but will describe how we can now optionally
-run certain tests in a Postgres environment.
+There are however cases where we may want to run specific tests with a Postgres
+database. There are some not so subtle differences between a Postgres and
+`sqlite` database that may factor into our tests, particularly as it relates to
+concurrent requests. Fortunately, our testing framework allows for this
+behavior.
 
-### Marks
+#### Marks
 
-[pytest](https://docs.pytest.org/en/latest/contents.html#toc) marks are used to
-control how a test is run by "tagging" the test method in a way that we can
-manipulate it's behavior in certain fixtures that
-[pytest](https://docs.pytest.org/en/latest/contents.html#toc) reserves for this
-purpose.
+In order to run a test using a Postgres database, we have a dedicated
+[pytest](https://docs.pytest.org/en/latest/contents.html#toc) mark that informs
+our testing suite that the test being run should use a Postgres database.
 
-Our testing suite incorporates the following custom marks that we can use for
-debugging and/or notification purposes:
+This mark, `pytest.mark.postgresdb` must be used in conjunction with the
+[pytest-django](https://pytest-django.readthedocs.io/en/latest/) mark,
+`@pytest.mark.django_db(transaction=True)` so that the testing suite properly
+uses the Postgres database and treats the database in a transactional test
+context.
 
-1. `pytest.mark.budget`: Instructs the test to only run for the "budget" domain.
-2. `pytest.mark.template`: Instructs the test to only run for the "template" domain.
-3. `pytest.mark.needtowrite`: Instructs `pytest` to skip the test and issue a warning that the test needs to be written.
-4. `pytest.mark.postgresdb`: Instructs `pytest` that this test will use a Postgres database and should be skipped unless that is the database in use.
+##### Example
+
+```python
+@pytest.mark.postgresdb
+@pytest.mark.django_db(transaction=True)
+def test_bulk_create_subaccount_subaccounts_concurrently():
+    ...
+```
+
+#### Running Tests
+
+By default, when running tests all of the tests that are marked with
+`@pytest.mark.postgresdb` will be skipped. This is because the tests using
+a Postgres database must be run completely separately from the tests using the
+`sqlite` database.
+
+In order to run a test that is marked with `@pytest.mark.postgresdb`, we have
+to run the tests from the command line with the `--postgresdb` flag.
+
+###### Example
+
+```bash
+$ pytest ./tests/subaccount/test_concurrency.py --postgresdb
+```
+
+When the `--postgresdb` flag is used, all tests that are not marked with
+`@pytest.mark.postgresdb` will be skipped, and only the tests that do include
+this mark will be run.
+
+> Note: Postgres is tricky to operate in a transactional test context because
+> many times the connections and databases are not fully closed out and deleted
+> at the end of a test. For this reason, running tests using a Postgres database
+> often times requires manual setup and maintenance from the user running the
+> tests in order to properly run in a transactional test context. This often
+> times requires restarting the Postgres server, or ignoring the fact that the
+> database may already exist when the test starts.
