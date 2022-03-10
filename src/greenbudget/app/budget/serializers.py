@@ -115,6 +115,9 @@ class BudgetSerializer(BudgetSimpleSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
+        assert 'user' in self.context, \
+            "The context must be provided to this serializer when serializing " \
+            "instances."
         if not self.context['user'].is_authenticated:
             del data['public_token']
         return data
