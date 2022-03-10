@@ -43,7 +43,7 @@ class NotAuthenticatedError(NotAuthenticated):
 
 class InvalidToken(NotAuthenticatedError):
     """
-    A DRF AuthenticationFailed exception used by views when a token is provided
+    A DRF NotAuthenticatedError exception used by views when a token is provided
     in the request but is invalid.
     """
     default_detail = _('Token is invalid.')
@@ -61,7 +61,7 @@ class InvalidToken(NotAuthenticatedError):
 
 class ExpiredToken(InvalidToken):
     """
-    A DRF AuthenticationFailed exception used by views when a token is
+    A DRF NotAuthenticatedError exception used by views when a token is
     expired.
     """
     default_detail = _('Token is expired.')
