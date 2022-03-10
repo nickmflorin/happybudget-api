@@ -39,7 +39,8 @@ class PublicTokenSerializer(serializers.ModelSerializer):
     def validate_expires_at(self, value):
         tz = self.context['user'].timezone or datetime.timezone.utc
         if value <= datetime.datetime.now().replace(tzinfo=tz):
-            raise exceptions.ValidationError("Value must be in the future.")
+            raise exceptions.ValidationError(
+                message="Value must be in the future.")
         return value
 
     def validate(self, attrs):
@@ -172,7 +173,8 @@ class EmailTokenValidationSerializer(TokenValidationSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
         if data["user"].is_verified:
-            raise exceptions.ValidationError("User is already verified.")
+            raise exceptions.ValidationError(
+                message="User is already verified.")
         return data
 
     def create(self, validated_data):

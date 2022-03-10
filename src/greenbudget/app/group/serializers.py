@@ -45,7 +45,7 @@ class GroupSerializer(serializers.ModelSerializer):
     def validate_children(self, children):
         if len(children) == 0:
             raise exceptions.ValidationError(
-                "A group must have at least 1 child.")
+                message="A group must have at least 1 child.")
         return children
 
     def create(self, validated_data, **kwargs):

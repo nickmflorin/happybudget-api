@@ -101,7 +101,7 @@ class UploadAttachmentsSerializer(serializers.Serializer):
     def validate(self, attrs):
         if 'file' not in attrs and 'files' not in attrs:
             raise exceptions.ValidationError(
-                "Either `file` or `files` parameters must be specified.")
+                message="Either `file` or `files` parameters must be specified.")
         files = attrs.pop('files', None)
         if files is None:
             files = [attrs.pop('file')]

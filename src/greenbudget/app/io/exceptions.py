@@ -1,5 +1,5 @@
 from django.utils.translation import gettext_lazy as _
-from greenbudget.app import exceptions
+from rest_framework import exceptions
 
 
 class IOErrorCodes:

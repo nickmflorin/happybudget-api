@@ -112,10 +112,10 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
     def validate(self, attrs):
         if self.instance is not None and self.instance.children.count() != 0:
             if any([field in attrs for field in self.instance.DERIVING_FIELDS]):
-                raise exceptions.ValidationError(
+                raise exceptions.ValidationError(message=(
                     "Field can only be updated when the sub account is not "
                     "derived."
-                )
+                ))
         return super().validate(attrs)
 
 

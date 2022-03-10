@@ -77,7 +77,7 @@ class BudgetSimpleSerializer(BaseBudgetSerializer):
             if not template.created_by.is_staff \
                     and template.created_by != request.user:
                 raise exceptions.ValidationError(
-                    "Do not have permission to use template.")
+                    message="Do not have permission to use template.")
         return template
 
     def to_representation(self, instance):
