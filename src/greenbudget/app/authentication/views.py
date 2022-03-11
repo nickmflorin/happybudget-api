@@ -82,6 +82,7 @@ class AbstractTokenValidateView(views.GenericView):
 class AuthTokenValidateView(AbstractTokenValidateView):
     authentication_classes = (CsrfExcemptCookieSessionAuthentication, )
     serializer_class = AuthTokenValidationSerializer
+    throttle_classes = []
 
 
 class TokenValidateView(AbstractTokenValidateView):
