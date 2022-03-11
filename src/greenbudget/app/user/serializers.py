@@ -30,7 +30,7 @@ class ChangePasswordSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         request = self.context['request']
         if not request.user.check_password(attrs['password']):
-            raise InvalidCredentialsError('password')
+            raise InvalidCredentialsError(field='password')
         return attrs
 
     def update(self, instance, validated_data):

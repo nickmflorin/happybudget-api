@@ -55,14 +55,14 @@ class ModelAuthentication(ModelBackend):
                 # DRF exception as it will not render in the response, it will
                 # just be a 500 error.
                 if not is_admin:
-                    raise EmailDoesNotExist('email')
+                    raise EmailDoesNotExist(field='email')
                 return None
             if not user.check_password(password):
                 # If we are coming from the Admin, we do not want to raise a
                 # DRF exception as it will not render in the response, it will
                 # just be a 500 error.
                 if not is_admin:
-                    raise InvalidCredentialsError("password")
+                    raise InvalidCredentialsError(field="password")
                 return None
             return user_can_authenticate(user, raise_exception=not is_admin)
         return None

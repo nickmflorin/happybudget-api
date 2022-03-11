@@ -37,17 +37,11 @@ class PublicTokenSerializer(serializers.ModelSerializer):
         fields = ('id', 'created_at', 'public_id', 'expires_at', 'is_expired')
 
     def validate_expires_at(self, value):
-        tz = self.context['user'].timezone or datetime.timezone.utc
-        if value <= datetime.datetime.now().replace(tzinfo=tz):
-            raise exceptions.ValidationError(
-                message="Value must be in the future.")
+        if value is not None:
+            tz = self.context['user'].timezone or datetime.timezone.utc
+            if value <= datetime.datetime.now().replace(tzinfo=tz):
+                raise exceptions.ValidationError("Value must be in the future.")
         return value
-
-    def validate(self, attrs):
-        if 'public_id' in attrs and self.context['request'].method != 'POST':
-            raise exceptions.InvalidFieldError(
-                'public_id', message='This field cannot be updated.')
-        return attrs
 
     def update(self, instance, validated_data):
         instance = super().update(instance, validated_data)
@@ -173,8 +167,7 @@ class EmailTokenValidationSerializer(TokenValidationSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
         if data["user"].is_verified:
-            raise exceptions.ValidationError(
-                message="User is already verified.")
+            raise exceptions.ValidationError("User is already verified.")
         return data
 
     def create(self, validated_data):

@@ -30,9 +30,9 @@ class FieldErrorCodes(object):
 class ValidationError(exceptions.ValidationError):
     """
     An extension of DRF's :obj:`rest_framework.exceptions.ValidationError` that
-    allows us to more flexibly indicate the internal type of the ValidationError
-    (global or field) and the specific fields that caused the ValidationError
-    outside of the context of a `validate_x` method on the serializer.
+    provides the following implementations:
+
+    (1) Control of Field Level Validation
 
     By default, Django REST Framework will indicate that the ValidationError
     was raised in regard to a specific field when that ValidationError is
@@ -50,26 +50,88 @@ class ValidationError(exceptions.ValidationError):
     >>> {"field":
     >>>     [{"message": "Invalid field.", "code": "invalid"}]
 
-    However, sometimes we manually want to indicate the same error, outside
-    the context of a field level validation method on the serializer, but want
-    to do so in the standard/consistent way that DRF does.
+    However, there are cases where we want to indicate that the ValidationError
+    pertained to a specific field even when raised outside of a serializer's
+    field level validation method.
 
-    Additionally, this extension allows an additional property,
-    `default_info_detail`, to be specified on the Exception class as a string
-    with formatting keyword arguments.  If all of the formatting keyword
-    arguments are present in the arguments supplied to the Exception on
-    __init__, the detail message will render as that string formatted with
-    the provided arguments.
+    This extension allows us to treat a
+    :obj:`rest_framework.exceptions.ValidationError` as a validation error that
+    pertains to a specific field, even when raised outside of a serializer's
+    `validate_<field>` validation method, by including the `field` argument
+    on initialization.
+
+    (2) String Formatted Messages
+
+    This extension allows subclasses to define an additional property,
+    `default_info_detail`, to be defined on the class statically.  This
+    property is a string that can have string formatted keyword arguments:
+
+    >>> class MyCustomValidationError(ValidationError):
+    >>>     default_info_detail = (
+    >>>         "The field {field} is invalid because it has type {type}.")
+
+    If all of the formatting keyword arguments are present in the arguments
+    supplied to the exception on initialization, the exception will take on
+    the message indicated by `default_info_detail` with the argument plugged
+    into the string.
+
+    >>> raise MyCustomValidationError(field='foo', type='int')
+    >>> {"field": [{
+    >>>     "message": "The field foo is invalid because it has type int.",
+    >>>     "code": "invalid"
+    >>> }]
+
+    The exception class can be initialized in the following ways:
+
+    - If the `field` keyword argument is supplied, the first argument will be
+      the detail message.
+
+      >>> MyCustomValidationError("This is a message.", field="foo")
+
+      - The field argument can be provided as a single field or an iterable of
+        fields:
+
+        >>> MyCustomValidationError("This is a message.", field=("foo", "bar"))
+        >>> MyCustomValidationError("This is a message.", field=["foo", "bar"])
+
+      - If no message argument is supplied, the default detail message will be
+        used.
+
+        >>> MyCustomValidationError(field="foo")
+        >>> MyCustomValidationError(field=["foo", "bar"])
+
+    - If the `message` keyword argument is supplied, the arguments supplied
+      will be treated as the fields:
+
+      >>> MyCustomValidationError("foo", "bar", message="This is a message.")
+      >>> MyCustomValidationError(["foo", "bar"], message="This is a message.")
     """
+    default_code = FieldErrorCodes.INVALID
 
     def __init__(self, *args, **kwargs):
-        data = _(kwargs.pop("message", self.default_detail))
 
-        fields = ensure_iterable(kwargs.pop('field', None))
-        if args:
-            fields = ensure_iterable(args[0])
-            if len(args) > 1:
-                fields = list(args)
+        fields = None
+        message = self.default_detail
+        if 'message' in kwargs:
+            message = kwargs.pop('message')
+            if args:
+                fields = ensure_iterable(args[0])
+                if len(args) > 1:
+                    fields = list(args)
+        elif 'field' in kwargs:
+            fields = ensure_iterable(kwargs.pop('field'))
+            if args:
+                message = args[0]
+                if not isinstance(message, str):
+                    raise Exception(
+                        f"Improper initialization of {self.__class__.__name__}.")
+        elif args:
+            message = args[0]
+            if not isinstance(message, str):
+                raise Exception(
+                    f"Improper initialization of {self.__class__.__name__}.")
+
+        data = _(message)
 
         if not hasattr(self, 'error_type'):
             self.error_type = 'field' if fields else 'global'
