@@ -131,11 +131,15 @@ def subaccount_to_delete(instance, **kwargs):
     invalidate_parent_groups_cache(instance.parent)
     if instance.domain == 'budget':
         budget_actuals_owners_cache.invalidate(instance.budget)
-    instance.parent.calculate(
-        commit=True,
-        trickle=True,
-        children_to_delete=[instance.pk]
-    )
+
+    # If the SubAccount is being deleted as a part of a CASCADE delete from any
+    # of it's parents, do not recalculate the parent as it will be deleted.
+    if not any([a.is_deleting for a in instance.ancestors]):
+        instance.parent.calculate(
+            commit=True,
+            trickle=True,
+            children_to_delete=[instance.pk]
+        )
 
 
 @dispatch.receiver(signals.post_delete, sender=SubAccountUnit)

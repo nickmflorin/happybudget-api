@@ -21,4 +21,7 @@ def account_saved(instance, **kwargs):
 def account_to_delete(instance, **kwargs):
     account_instance_cache.invalidate(instance)
     budget_groups_cache.invalidate(instance.parent)
-    instance.parent.calculate(commit=True, children_to_delete=[instance.pk])
+    # If the Account is being deleted as a part of a CASCADE delete from the
+    # Budget deleting, do not recalculate the Budget.
+    if not instance.parent.is_deleting:
+        instance.parent.calculate(commit=True, children_to_delete=[instance.pk])

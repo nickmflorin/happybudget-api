@@ -36,6 +36,7 @@ class Account(BudgetingTreePolymorphicOrderedRowModel):
         on_delete=models.CASCADE,
         related_name='children'
     )
+    is_deleting = models.BooleanField(default=False)
 
     ESTIMATED_FIELDS = ESTIMATED_FIELDS
     CALCULATED_FIELDS = CALCULATED_FIELDS

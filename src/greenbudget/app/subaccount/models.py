@@ -81,6 +81,8 @@ class SubAccount(BudgetingTreePolymorphicOrderedRowModel):
         limit_choices_to=models.Q(app_label='account', model='Account')
         | models.Q(app_label='subaccount', model='SubAccount')
     )
+    is_deleting = models.BooleanField(default=False)
+
     object_id = models.PositiveIntegerField(db_index=True)
     parent = GenericForeignKey('content_type', 'object_id')
     children = GenericRelation('self')

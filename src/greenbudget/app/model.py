@@ -5,16 +5,126 @@ import threading
 
 import django
 from django.conf import settings
+from django.core.exceptions import FieldDoesNotExist
 from django.db import models
 
 from greenbudget.conf import Environments
 from greenbudget.lib.utils import ensure_iterable
 
 from .constants import ActionName
+from .signals.signal import disable
 from .signals.signals import field_changed, fields_changed, post_create_by_user
 
 
 logger = logging.getLogger('greenbudget')
+
+
+class model_is_deleting(disable):
+    """
+    Context manager that manages the deleting state of a model instance while
+    in the process of being deleted, and optionally suppresses signal behavior
+    during the delete process if told to do so.
+
+    Context:
+    -------
+    Many of the signals in this application perform certain behavior when
+    a model is about to be deleted.  This behavior usually performs actions
+    on a model instance that is related to the instance being deleted via a
+    relational field.  However, many of these relationships define CASCADE
+    deletes - which means that when one instance is deleted, the other one will
+    be as well.
+
+    If instance B is being deleted via a CASCADE delete due to instance A
+    being deleted, we do not want to perform logic in the pre_delete signal
+    for instance B that updates instance A (because it is also being deleted).
+
+    Unfortunately, there is no way to tell in a signal whether or not the delete
+    is happening due to a CASCADE delete or a direct deletion of the model
+    instance itself.  For this reason, we expose flags on certain models that
+    indicate whether or not the model is in the process of being deleted from
+    a direct delete of the model instance.
+
+    This context manager manages the flagging of the model being deleted via a
+    direct delete such that signal receivers for relational models that are
+    being CASCADE deleted understand that they are not being deleted directly,
+    but rather as a CASCADE action from a related field.
+
+    Parameters:
+    ----------
+    instance: :obj:`django.db.models.Model`
+        The model instance that is being deleted.
+
+    field_name: :obj:`str` (optional)
+        The field name that is used on the model instance to indicate deleting
+        state.
+
+        Default: "is_deleting"
+
+    disable_signals: :obj:`list` or :obj:`tuple` or :obj:`bool` (optional)
+        If it is desired that signals are suppressed inside the delete context,
+        this argument can be supplied as a boolean or an iterable of signals
+        to suppress.
+
+        - If provided as `True`, all signals will be suppressed inside the
+          context.
+        - If provided as an iterable, the signals identified inside the iterable
+          will be suppressed inside the context.
+        - If not provided, signals will not be suppressed inside the context.
+
+        Default: None
+    """
+
+    def __init__(self, instance, **kwargs):
+        self._instance = instance
+        self._field_name = kwargs.pop('field_name', 'is_deleting')
+
+        self._disable_signals = False
+        # If `disable_signals` is provided as an iterable of signals,
+        # initialize the disable context manager with those signals. Otherwise,
+        # initialize the disable context manager with no signals.
+        disable_signals = kwargs.pop('disable_signals', None)
+        if disable_signals and not isinstance(disable_signals, bool):
+            super().__init__(signals=disable_signals)
+            self._disable_signals = True
+        elif disable_signals is not None:
+            assert isinstance(disable_signals, bool), \
+                "The `disable_signals` parameter must either be an iterable " \
+                "of signals or a boolean."
+            self._disable_signals = disable_signals
+
+        # If the model does not have the field that is used to indicate deleting
+        # state, flag the context manager as not having valid context so that
+        # entering and exiting the context manager does not update the field
+        # indicating deleting state on the model instance.
+        self._valid_context = True
+        try:
+            self._instance._meta.get_field(self._field_name)
+        except FieldDoesNotExist:
+            self._valid_context = False
+
+    def __enter__(self):
+        # Only enter the context for disabling the signals if the context
+        # manager was instructed to perform signal suppression on initialization.
+        if self._disable_signals:
+            super().__enter__()
+        if self._valid_context:
+            setattr(self._instance, self._field_name, True)
+            self._instance.save(update_fields=[self._field_name])
+        return self
+
+    def __exit__(self, *exc):
+        # Only enter the context for disabling the signals if the context
+        # manager was instructed to perform signal suppression on initialization.
+        if self._disable_signals:
+            super().__exit__()
+        if self._valid_context:
+            # It is often the case that the model will already be deleted by
+            # the time the context exits, in which case it will not have a PK.
+            if self._instance.pk is not None \
+                    and getattr(self._instance, self._field_name) is True:
+                setattr(self._instance, self._field_name, False)
+                self._instance.save(update_fields=[self._field_name])
+        return False
 
 
 FieldChange = collections.namedtuple(
@@ -22,6 +132,11 @@ FieldChange = collections.namedtuple(
 
 
 class FieldChanges(collections.abc.Sequence):
+    """
+    An iterable that contains the :obj:`FieldChange` instances associated with
+    a model instance.
+    """
+
     def __init__(self, changes):
         self.changes = changes
         assert len([change.field for change in changes]) \
@@ -84,7 +199,10 @@ DISALLOWED_FIELDS = [models.fields.AutoField, models.ManyToManyField]
 FIELDS_NOT_STORED_IN_MODEL_MEMORY = [models.ForeignKey, models.OneToOneField]
 
 
-def field_is_supported(field):
+def field_tracking_is_supported(field):
+    """
+    Returns whether or not the provided field is supported for field tracking.
+    """
     for attr_set in DISALLOWED_ATTRIBUTES:
         if getattr(field, attr_set[0], None) is attr_set[1]:
             return False
@@ -106,9 +224,23 @@ class model:
     """
     A common decorator for all of our application's :obj:`django.db.models.Model`
     instances.  All :obj:`django.db.models.Model` instances that have connected
-    signals should be decorated with this class.  This class decorator provides
-    signal processing behavior and field tracking behavior that is necessary
-    for the application models to work together.
+    signals should be decorated with this class.
+
+    This class decorator provides the following implementations:
+
+    (1) Signal Processing Behavior
+        Connection to and communication with central application signals are
+        managed for model instances that are decorated with this class.
+
+    (2) Field Tracking Behavior
+        Model classes decorated with this decorator can access tracking
+        information about how fields on a given instance have changed since the
+        last time the instance was saved.
+
+    (3) Deletion Context
+        Model classes that are decorated with this decorator can automatically
+        indicate deleting states when the model is in the process of being
+        deleted.
 
     There are some major caveats to it's usage:
 
@@ -185,7 +317,7 @@ class model:
 
     def validate_field(self, cls, field):
         field_instance = self.get_field_instance(cls, field)
-        if not field_is_supported(field_instance):
+        if not field_tracking_is_supported(field_instance):
             raise FieldCannotBeTrackedError(field, cls)
 
     def tracked_fields(self, cls):
@@ -194,7 +326,7 @@ class model:
             unsupported_fields = []
             for field_obj in cls._meta.fields:
                 if field_obj.name not in self._exclude_fields:
-                    if field_is_supported(field_obj):
+                    if field_tracking_is_supported(field_obj):
                         tracked_fields.append(field_obj.name)
                     else:
                         unsupported_fields.append(field_obj.name)
@@ -249,18 +381,35 @@ class model:
             return instance.__data
 
         def has_changes(instance):
+            """
+            Returns whether or not the current instance has changed since it's
+            last save.
+            """
             return len(instance.changed_fields) != 0
 
         def field_has_changed(instance, k):
+            """
+            Returns whether or not the provided field has changed on the instance
+            since the last time the instance was saved.
+            """
             if field_stored_in_local_memory(k):
                 return previous_value(instance, k) != getattr(instance, k)
             return previous_value(instance, k) != getattr(instance, '%s_id' % k)
 
         def fields_have_changed(instance, *fields):
+            """
+            Returns whether or not any of the provided fields on the instance
+            have changed since the last time the instance was saved.
+            """
             return any([f in instance.changed_fields for f in fields])
 
         @property
         def changed_fields(instance):
+            """
+            Returns a mapping of field names to :obj:`FieldChange` instances
+            for the fields on the instance that have changed since the last time
+            the instance was saved.
+            """
             changed = {}
             for k in instance.__tracked_fields:
                 if field_has_changed(instance, k):
@@ -273,6 +422,11 @@ class model:
             return changed
 
         def field_stored_in_local_memory(field):
+            """
+            Returns whether or not the lookup of the provided field attribute on
+            the model instance will use a potentially cached value.  Only
+            applicable for certain relational fields.
+            """
             if not isinstance(field, models.Field):
                 field = self.get_field_instance(cls, field)
             return type(field) not in FIELDS_NOT_STORED_IN_MODEL_MEMORY
@@ -330,6 +484,43 @@ class model:
 
         def store(instance):
             instance.__data = get_field_data(instance)
+
+        def deleting(instance, **kwargs):
+            """
+            Returns a context manager that will flag the instance as being in
+            the midst of the deleting process and optionally suppress signals
+            while in the context.
+            """
+            deleting_field_name = getattr(
+                instance, 'deleting_field_name', 'is_deleting')
+            kwargs.setdefault('field_name', deleting_field_name)
+            return model_is_deleting(instance, **kwargs)
+
+        def delete(instance, *args, **kwargs):
+            """
+            Overrides the :obj:`django.db.models.Model` delete behavior such
+            that the delete is performed inside the :obj:`model_is_deleting`
+            context manager.
+
+            This has (2) implications:
+
+            (1) The `delete` method can be provided with a `disable_signals`
+                argument that can be used to disable signals while the delete
+                is performed.
+
+            (2) Inside the context of the `delete` method, if the instance has
+                a field that is used to indicate deleting state that field will
+                be flagged such that signals can differentiate between delete
+                behavior from CASCADE deletes and non-CASCADE deletes.
+            """
+            deleting_kwargs = {
+                'disable_signals': kwargs.pop('disable_signals', None)
+            }
+            if 'field_name' in kwargs:
+                deleting_kwargs.update(field_name=kwargs.pop('field_name'))
+
+            with instance.deleting(**deleting_kwargs):
+                delete._original(instance, *args, **kwargs)
 
         def save(instance, *args, **kwargs):
             """
@@ -406,16 +597,25 @@ class model:
         cls.previous_value = previous_value
         cls.has_changes = has_changes
         cls.raise_if_field_not_tracked = raise_if_field_not_tracked
+        cls.deleting = deleting
+
+        # Expose the :obj:`ActionName`` class on the model class for utility
+        # purposes.
+        setattr(cls, 'actions', ActionName)
 
         # Replace the model save method with the overridden one, but keep track
         # of the original save method so it can be reapplied.
         save._original = cls.save
         cls.save = save
 
+        # Replace the model delete method with the overridden one, but keep track
+        # of the original delete method so it can be reapplied.
+        delete._original = cls.delete
+        cls.delete = delete
+
         # Track that the model was decorated with this class for purposes of
         # model inheritance and/or prevention of model inheritance.
         setattr(cls, '__decorated_for_signals__', self)
-        setattr(cls, 'actions', ActionName)
         return cls
 
     def get_user(self, instance):

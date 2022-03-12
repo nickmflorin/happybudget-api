@@ -52,6 +52,8 @@ class BaseBudget(BudgetingTreePolymorphicModel):
     accumulated_fringe_contribution = models.FloatField(default=0.0)
     accumulated_markup_contribution = models.FloatField(default=0.0)
 
+    is_deleting = models.BooleanField(default=False)
+
     groups = GenericRelation(Group)
     children_markups = GenericRelation(Markup)
     public_tokens = GenericRelation(PublicToken)

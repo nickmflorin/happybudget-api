@@ -39,8 +39,8 @@ def update_budget_updated_at(instance, **kwargs):
         budget.mark_updated()
 
 
-@dispatch.receiver(signals.post_delete, sender=Budget)
-@dispatch.receiver(signals.post_delete, sender=Template)
+@dispatch.receiver(signals.pre_delete, sender=Budget)
+@dispatch.receiver(signals.pre_delete, sender=Template)
 def budget_to_be_deleted(instance, **kwargs):
     instance.image.delete(False)
     budget_instance_cache.invalidate(instance)

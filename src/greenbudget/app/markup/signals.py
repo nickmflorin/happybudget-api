@@ -168,12 +168,15 @@ def markups_changed(instance, reverse, action, model, pk_set, **kwargs):
 def markup_to_delete(instance, **kwargs):
     Markup.objects.invalidate_related_caches(instance)
 
-    to_reestimate = set([instance.parent])
-    to_reestimate.update(set(
-        list(instance.accounts.all()) + list(instance.subaccounts.all())))
-    Markup.objects.bulk_estimate_all(
-        to_reestimate, markups_to_be_deleted=[instance.pk])
+    # If the Markup is being deleted as a part of a CASCADE delete from it's
+    # parent, do not reestimate related objects as they will be being deleted.
+    if not instance.parent.is_deleting:
+        to_reestimate = set([instance.parent])
+        to_reestimate.update(set(
+            list(instance.accounts.all()) + list(instance.subaccounts.all())))
+        Markup.objects.bulk_estimate_all(
+            to_reestimate, markups_to_be_deleted=[instance.pk])
 
-    if instance.parent.domain == 'budget':
-        Markup.objects.bulk_actualize_all(
-            instance.parent, markups_to_be_deleted=[instance.pk])
+        if instance.parent.domain == 'budget':
+            Markup.objects.bulk_actualize_all(
+                instance.parent, markups_to_be_deleted=[instance.pk])
