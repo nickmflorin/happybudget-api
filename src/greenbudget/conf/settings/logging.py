@@ -32,7 +32,7 @@ def attach_aws_logger(config, boto3_session):
 
 
 def attach_sentry_logger(config):
-    config["handers"].update(sentry=SENTRY_HANDLER)
+    config["handlers"].update(sentry=SENTRY_HANDLER)
     for logger_name in AWS_LOGGERS:
         config["loggers"][logger_name]["handlers"] += ["sentry"]
 
