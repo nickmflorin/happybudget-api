@@ -52,6 +52,9 @@ class PublicTokenSerializer(serializers.ModelSerializer):
         return instance
 
     def create(self, validated_data, already_attempted=False):
+        assert 'instance' in self.context, \
+            "The instance is required in context when using this serializer."
+
         validator = UniqueTogetherValidator(
             queryset=PublicToken.objects.all(),
             model_fields=('object_id', 'content_type'),
@@ -60,31 +63,35 @@ class PublicTokenSerializer(serializers.ModelSerializer):
         try:
             validator(validated_data, self)
         except ValidationError as e:
-            # Raise the exception if we already attempted the removal of the
-            # instance violating the unique constraint, otherwise, we can end
-            # up with an infinite recursion.
-            if 'unique' in [d.code for d in e.detail] or already_attempted:
+            if 'unique' in [d.code for d in e.detail]:
+                # Raise the exception if we already attempted the removal of the
+                # instance violating the unique constraint, otherwise, we can
+                # end up with an infinite recursion.
+                if already_attempted:
+                    raise e
+                # Since the unique validator failed, this instance should
+                # exist.  In the future we may need to be concerned with race
+                # conditions, in which case we should catch
+                # PublicToken.DoesNotExist.
+                violating_instance = PublicToken.objects.get(
+                    object_id=self.context['instance'].pk,
+                    content_type_id=ContentType.objects.get_for_model(
+                        type(self.context['instance'])),
+                )
+                # If the instance that is causing the unique validation error is
+                # still active, we want to persist the error.
+                if not violating_instance.is_expired:
+                    raise e
+                # The instance causing the unique constraint error is expired,
+                # so we can just delete it.  Note that this logic will not be
+                # hit as often when we have an async server running for
+                # background tasks that can delete expired public tokens.
+                violating_instance.delete()
+                # Just in case the unique constraint fails again, we want to
+                # make the recursion exit to avoid infinite recursions.
+                return self.create(validated_data, already_attempted=True)
+            else:
                 raise e
-            # Since the unique validator did not fail, this instance should
-            # exist.  In the future we may need to be concerned with race
-            # conditions, in which case we should catch PublicToken.DoesNotExist.
-            violating_instance = PublicToken.objects.get(
-                object_id=self.context['instance'].pk,
-                content_type_id=ContentType.objects.get_for_model(
-                    type(self.context['instance'])),
-            )
-            # If the instance that is causing the unique validation error is
-            # still active, we want to persist the error.
-            if not violating_instance.is_expired:
-                raise e
-            # The instance causing the unique constraint error is expired, so
-            # we can just delete it.  Note that this logic will not be hit as
-            # often when we have an async server running for background tasks
-            # that can delete expired public tokens.
-            violating_instance.delete()
-            # Just in case the unique constraint fails again, we want to make
-            # the recursion exit to avoid infinite recursions.
-            return self.create(validated_data, already_attempted=True)
         else:
             return super().create(validated_data)
 
