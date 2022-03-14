@@ -357,14 +357,52 @@ def test_update_template_subaccount(api_client, user, template_df):
     assert subaccount.rate == 1.5
 
 
-def test_create_subaccount(api_client, user, budget_f):
+def test_update_subaccount_with_rate_quantity_defaults(api_client, user,
+        budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccount = budget_f.create_subaccount(
         parent=account,
-        description="Original Description",
-        identifier="Original identifier"
+        quantity=None,
+        rate=None
     )
+    api_client.force_login(user)
+    response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk, data={
+        "rate": 1.5
+    })
+    assert response.status_code == 200
+    assert response.json()['quantity'] == 1.0
+    assert response.json()['nominal_value'] == 1.5
+    subaccount.refresh_from_db()
+    assert subaccount.quantity == 1.0
+    assert subaccount.nominal_value == 1.5
+
+
+def test_update_subaccount_with_rate_quantity_doesnt_default(api_client, user,
+        budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    subaccount = budget_f.create_subaccount(
+        parent=account,
+        quantity=10.0,
+        rate=None
+    )
+    api_client.force_login(user)
+    response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk, data={
+        "rate": 1.5
+    })
+    assert response.status_code == 200
+    assert response.json()['quantity'] == 10.0
+    assert response.json()['nominal_value'] == 15
+    subaccount.refresh_from_db()
+    assert subaccount.quantity == 10.0
+    assert subaccount.nominal_value == 15
+
+
+def test_create_subaccount(api_client, user, budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    subaccount = budget_f.create_subaccount(parent=account)
     api_client.force_login(user)
     response = api_client.post(
         "/v1/subaccounts/%s/children/" % subaccount.pk,
@@ -441,6 +479,52 @@ def test_create_subaccount(api_client, user, budget_f):
     assert child.identifier == "New identifier"
     assert child.quantity == 10.0
     assert child.rate == 1.5
+
+
+def test_create_subaccount_with_rate_quantity_defaults(api_client, user,
+        budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    subaccount = budget_f.create_subaccount(parent=account)
+    api_client.force_login(user)
+    response = api_client.post(
+        "/v1/subaccounts/%s/children/" % subaccount.pk,
+        data={"rate": 1.5}
+    )
+    assert response.status_code == 201
+    assert response.json()['quantity'] == 1.0
+    assert response.json()['nominal_value'] == 1.5
+
+    subaccount.refresh_from_db()
+    assert subaccount.children.count() == 1
+    child = subaccount.children.first()
+    assert child.quantity == 1.0
+    assert child.nominal_value == 1.5
+
+
+def test_create_subaccount_with_rate_quantity_doesnt_default(api_client, user,
+        budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    subaccount = budget_f.create_subaccount(parent=account)
+    api_client.force_login(user)
+    response = api_client.post(
+        "/v1/subaccounts/%s/children/" % subaccount.pk,
+        data={
+            "description": "New Description",
+            "identifier": "New identifier",
+            "rate": 1.5,
+            "quantity": 10.0
+        })
+    assert response.status_code == 201
+    assert response.json()['quantity'] == 10.0
+    assert response.json()['nominal_value'] == 15.0
+
+    subaccount.refresh_from_db()
+    assert subaccount.children.count() == 1
+    child = subaccount.children.first()
+    assert child.quantity == 10.0
+    assert child.nominal_value == 15.0
 
 
 def test_update_subaccount_fringes(api_client, user, budget_f, create_fringe):
