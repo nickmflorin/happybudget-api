@@ -125,6 +125,99 @@ def test_create_subaccount_percent_markup(api_client, user, models, budget_f):
     assert response.json()["budget"]["nominal_value"] == 20.0
 
 
+def test_create_subaccount_percent_markup_without_rate(api_client, user, models,
+        budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    subaccount = budget_f.create_subaccount(parent=account)
+    subaccounts = budget_f.create_subaccount(
+        parent=subaccount,
+        quantity=1,
+        rate=10,
+        count=2
+    )
+    # Make sure all data is properly calculated before API request to avoid
+    # confusion in source of potential errors.
+    subaccounts[0].refresh_from_db()
+    assert subaccounts[0].nominal_value == 10.0
+    assert subaccounts[0].markup_contribution == 0.0
+
+    subaccounts[1].refresh_from_db()
+    assert subaccounts[1].nominal_value == 10.0
+    assert subaccounts[1].markup_contribution == 0.0
+
+    subaccount.refresh_from_db()
+    assert subaccount.nominal_value == 20.0
+    assert subaccount.markup_contribution == 0.0
+
+    account.refresh_from_db()
+    assert account.nominal_value == 20.0
+    assert account.accumulated_markup_contribution == 0.0
+
+    budget.refresh_from_db()
+    assert budget.nominal_value == 20.0
+    assert budget.accumulated_markup_contribution == 0.0
+
+    api_client.force_login(user)
+    response = api_client.post(
+        "/v1/subaccounts/%s/markups/" % account.pk,
+        data={
+            'identifier': 'Markup Identifier',
+            'unit': models.Markup.UNITS.percent,
+            'children': [s.pk for s in subaccounts],
+        })
+    assert response.status_code == 201
+
+    subaccounts[0].refresh_from_db()
+    assert subaccounts[0].nominal_value == 10.0
+    assert subaccounts[0].markup_contribution == 0.0
+
+    subaccounts[1].refresh_from_db()
+    assert subaccounts[1].nominal_value == 10.0
+    assert subaccounts[1].markup_contribution == 0.0
+
+    subaccount.refresh_from_db()
+    assert subaccount.nominal_value == 20.0
+    assert subaccount.markup_contribution == 0.0
+
+    account.refresh_from_db()
+    assert account.nominal_value == 20.0
+    assert account.accumulated_markup_contribution == 0.0
+
+    budget.refresh_from_db()
+    assert budget.nominal_value == 20.0
+    assert budget.accumulated_markup_contribution == 0.0
+
+    markup = models.Markup.objects.first()
+    assert markup is not None
+    assert markup.identifier == "Markup Identifier"
+    assert markup.children.count() == 2
+    assert markup.children.all()[0] == subaccounts[0]
+    assert markup.children.all()[1] == subaccounts[1]
+    assert markup.parent == subaccount
+
+    assert response.json()["data"] == {
+        "id": markup.pk,
+        "type": "markup",
+        "identifier": markup.identifier,
+        "description": markup.description,
+        "rate": None,
+        "actual": 0.0,
+        "unit": {
+            "id": markup.unit,
+            "name": models.Markup.UNITS[markup.unit]
+        },
+        "children": [s.pk for s in subaccounts]
+    }
+
+    assert response.json()["parent"]["accumulated_markup_contribution"] == 0.0
+    assert response.json()["parent"]["nominal_value"] == 20.0
+    assert response.json()["parent"]["type"] == "subaccount"
+
+    assert response.json()["budget"]["accumulated_markup_contribution"] == 0.0
+    assert response.json()["budget"]["nominal_value"] == 20.0
+
+
 def test_create_subaccount_flat_markup(api_client, user, models, budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
@@ -211,6 +304,95 @@ def test_create_subaccount_flat_markup(api_client, user, models, budget_f):
     assert response.json()["parent"]["type"] == "subaccount"
 
     assert response.json()["budget"]["accumulated_markup_contribution"] == 20.0
+    assert response.json()["budget"]["nominal_value"] == 20.0
+
+
+def test_create_subaccount_flat_markup_without_rate(api_client, user, models,
+        budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    subaccount = budget_f.create_subaccount(parent=account)
+    subaccounts = budget_f.create_subaccount(
+        parent=subaccount,
+        quantity=1,
+        rate=10,
+        count=2
+    )
+    # Make sure all data is properly calculated before API request to avoid
+    # confusion in source of potential errors.
+    subaccounts[0].refresh_from_db()
+    assert subaccounts[0].nominal_value == 10.0
+    assert subaccounts[0].markup_contribution == 0.0
+
+    subaccounts[1].refresh_from_db()
+    assert subaccounts[1].nominal_value == 10.0
+    assert subaccounts[1].markup_contribution == 0.0
+
+    subaccount.refresh_from_db()
+    assert subaccount.nominal_value == 20.0
+    assert subaccount.markup_contribution == 0.0
+
+    account.refresh_from_db()
+    assert account.nominal_value == 20.0
+    assert account.accumulated_markup_contribution == 0.0
+
+    budget.refresh_from_db()
+    assert budget.nominal_value == 20.0
+    assert budget.accumulated_markup_contribution == 0.0
+
+    api_client.force_login(user)
+    response = api_client.post(
+        "/v1/subaccounts/%s/markups/" % account.pk,
+        data={
+            'identifier': 'Markup Identifier',
+            'unit': models.Markup.UNITS.flat
+        })
+    assert response.status_code == 201
+
+    subaccounts[0].refresh_from_db()
+    assert subaccounts[0].nominal_value == 10.0
+    assert subaccounts[0].markup_contribution == 0.0
+
+    subaccounts[1].refresh_from_db()
+    assert subaccounts[1].nominal_value == 10.0
+    assert subaccounts[1].markup_contribution == 0.0
+
+    subaccount.refresh_from_db()
+    assert subaccount.nominal_value == 20.0
+    assert subaccount.markup_contribution == 0.0
+
+    account.refresh_from_db()
+    assert account.nominal_value == 20.0
+    assert account.accumulated_markup_contribution == 0.0
+
+    budget.refresh_from_db()
+    assert budget.nominal_value == 20.0
+    assert budget.accumulated_markup_contribution == 0.0
+
+    markup = models.Markup.objects.first()
+    assert markup is not None
+    assert markup.identifier == "Markup Identifier"
+    assert markup.children.count() == 0
+    assert markup.parent == subaccount
+
+    assert response.json()["data"] == {
+        "id": markup.pk,
+        "type": "markup",
+        "identifier": markup.identifier,
+        "description": markup.description,
+        "rate": None,
+        "actual": 0.0,
+        "unit": {
+            "id": markup.unit,
+            "name": models.Markup.UNITS[markup.unit]
+        },
+    }
+
+    assert response.json()["parent"]["accumulated_markup_contribution"] == 0.0
+    assert response.json()["parent"]["nominal_value"] == 20.0
+    assert response.json()["parent"]["type"] == "subaccount"
+
+    assert response.json()["budget"]["accumulated_markup_contribution"] == 0.0
     assert response.json()["budget"]["nominal_value"] == 20.0
 
 

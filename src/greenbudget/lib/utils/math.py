@@ -21,7 +21,11 @@ def cumulative_operation(operation, *values, **kwargs):
         # the cumulative amount.
         array = concat([[getattr(vi, ai) for ai in attr] for vi in array])
 
-    ignore_values = ensure_iterable(kwargs.pop('ignore_values', []))
+    ignore_values = kwargs.pop('ignore_values', [])
+    if ignore_values is None:
+        ignore_values = [None]
+    else:
+        ignore_values = ensure_iterable(ignore_values)
     array = [vi for vi in array if vi not in ignore_values]
 
     assert not ('initial_value' not in kwargs and len(array) == 0), \

@@ -71,7 +71,7 @@ class MarkupSerializer(AncestrySerializer):
     children = TablePrimaryKeyRelatedField(
         table_filter=markup_table_filter,
         many=True,
-        required=True,
+        required=False,
         table_instance_cls=lambda c: c.parent.child_instance_cls,
     )
 
