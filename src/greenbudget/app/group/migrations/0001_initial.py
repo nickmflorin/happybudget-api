@@ -1,6 +1,4 @@
-from django.conf import settings
 from django.db import migrations, models
-import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
@@ -8,7 +6,6 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
@@ -19,8 +16,7 @@ class Migration(migrations.Migration):
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('name', models.CharField(max_length=128)),
-                ('created_by', models.ForeignKey(editable=False, on_delete=django.db.models.deletion.CASCADE, related_name='created_groups_new', to=settings.AUTH_USER_MODEL)),
-                ('updated_by', models.ForeignKey(editable=False, on_delete=django.db.models.deletion.CASCADE, related_name='updated_groups_new', to=settings.AUTH_USER_MODEL)),
+                ('object_id', models.PositiveIntegerField(db_index=True)),
             ],
             options={
                 'verbose_name': 'Group',
@@ -28,5 +24,31 @@ class Migration(migrations.Migration):
                 'ordering': ('created_at',),
                 'get_latest_by': 'created_at',
             },
+        ),
+        migrations.CreateModel(
+            name='BudgetGroup',
+            fields=[
+            ],
+            options={
+                'verbose_name': 'Group',
+                'verbose_name_plural': 'Groups',
+                'proxy': True,
+                'indexes': [],
+                'constraints': [],
+            },
+            bases=('group.group',),
+        ),
+        migrations.CreateModel(
+            name='TemplateGroup',
+            fields=[
+            ],
+            options={
+                'verbose_name': 'Group',
+                'verbose_name_plural': 'Groups',
+                'proxy': True,
+                'indexes': [],
+                'constraints': [],
+            },
+            bases=('group.group',),
         ),
     ]

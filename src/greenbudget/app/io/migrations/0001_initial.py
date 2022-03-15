@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.db import migrations, models
 import django.db.models.deletion
 import greenbudget.app.io.models
@@ -9,7 +8,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+        ('user', '0001_initial'),
     ]
 
     operations = [
@@ -20,7 +19,7 @@ class Migration(migrations.Migration):
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('file', models.FileField(upload_to=greenbudget.app.io.models.upload_attachment_to)),
-                ('created_by', models.ForeignKey(editable=False, on_delete=django.db.models.deletion.CASCADE, related_name='attachments', to=settings.AUTH_USER_MODEL)),
+                ('created_by', models.ForeignKey(editable=False, on_delete=django.db.models.deletion.CASCADE, related_name='attachments', to='user.user')),
             ],
             options={
                 'verbose_name': 'Attachment',

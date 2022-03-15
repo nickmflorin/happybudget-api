@@ -22,7 +22,6 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Template',
                 'verbose_name_plural': 'Templates',
                 'abstract': False,
-                'base_manager_name': 'objects',
             },
             bases=('budget.basebudget',),
         ),
