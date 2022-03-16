@@ -329,7 +329,8 @@ class BudgetSubAccount(SubAccount):
             attr='actual',
         ) + cumulative_sum(
             self.actuals.exclude(pk__in=actuals_to_be_deleted),
-            attr='value'
+            attr='value',
+            ignore_values=None
         )
         if previous_value != self.actual:
             unsaved = [self]
