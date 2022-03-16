@@ -1,5 +1,7 @@
 from django.contrib.contenttypes.models import ContentType
-from rest_framework import serializers, exceptions
+from rest_framework import serializers
+
+from greenbudget.app import exceptions
 
 from greenbudget.app.budget.models import BaseBudget
 from greenbudget.app.tabling.fields import TablePrimaryKeyRelatedField
