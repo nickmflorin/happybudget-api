@@ -5,6 +5,8 @@ from django.db import transaction
 from greenbudget.lib.utils import empty
 from greenbudget.lib.utils import cumulative_sum
 
+from greenbudget.app import model
+
 from greenbudget.app.account.models import BudgetAccount
 from greenbudget.app.budget.models import Budget
 from greenbudget.app.fringe.models import Fringe
@@ -263,6 +265,8 @@ class ApplicationDataGenerator(ApplicationDataGeneratorConfig):
 
     @transaction.atomic
     def __call__(self, pbar=None):
+        setattr(model.model.thread, 'user', self.user)
+
         self.precheck()
         self._progress = 0
 
