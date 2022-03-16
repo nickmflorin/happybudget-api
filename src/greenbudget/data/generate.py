@@ -1,6 +1,5 @@
 import random
 
-from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 
 from greenbudget.lib.utils import empty
@@ -16,16 +15,20 @@ from . import factories
 
 
 class ConfigurationError(Exception):
+    pass
+
+
+class ConfigurationParameterError(Exception):
     def __init__(self, config):
         self._config = config
 
 
-class ConfigurationInvalidError(ConfigurationError):
+class ConfigurationInvalidError(ConfigurationParameterError):
     def __str__(self):
         return f"The configuration for {self._config.attr} is invalid."
 
 
-class ConfigurationMissingError(ConfigurationError):
+class ConfigurationMissingError(ConfigurationParameterError):
     def __str__(self):
         return f"The configuration for {self._config.attr} is required."
 
@@ -60,13 +63,17 @@ class Configuration:
         return self._required
 
 
-ApplicationDataGeneratorConfig = [
+ApplicationDataGeneratorConfigParams = [
     Configuration(attr='num_budgets', required=False, default=1),
     Configuration(attr='num_accounts', required=False, default=10),
     Configuration(attr='num_subaccounts', required=False, default=10),
     Configuration(attr='num_details', required=False, default=10),
     Configuration(attr='num_contacts', required=False, default=0),
-    Configuration(attr='num_fringes', required=False, default=10)
+    Configuration(attr='num_fringes', required=False, default=10),
+    Configuration(attr='user', required=False, default=None),
+    Configuration(attr='pbar', required=False, default=None),
+    Configuration(attr='cmd', required=False, default=None),
+    Configuration(attr='dry_run', required=False, default=False),
 ]
 
 
@@ -144,14 +151,38 @@ def select_random_model_choice(model_cls, attr, **kwargs):
     return None
 
 
-class ApplicationDataGenerator:
-    def __init__(self, user, **config):
-        self._user = user
-        self._progress_bar = None
+class ApplicationDataGeneratorConfig:
+
+    def __init__(self, **config):
         self._progress = 0
-        self._on_warning = config.pop('on_warning', None)
-        for c in ApplicationDataGeneratorConfig:
+        for c in ApplicationDataGeneratorConfigParams:
             setattr(self, f'_{c.attr}', c.pluck(**config))
+
+    @property
+    def __dict__(self):
+        data = {}
+        for c in ApplicationDataGeneratorConfigParams:
+            data[c.attr] = getattr(self, f'_{c.attr}')
+        return data
+
+    @property
+    def pbar(self):
+        return self._pbar
+
+    @property
+    def user(self):
+        if self._user is None:
+            raise ConfigurationError(
+                "The generator was not configured with a user.")
+        return self._user
+
+    @property
+    def cmd(self):
+        return self._cmd
+
+    @property
+    def dry_run(self):
+        return self._dry_run
 
     @property
     def num_budgets(self):
@@ -188,6 +219,17 @@ class ApplicationDataGenerator:
             self.num_fringes
         ])
 
+
+class ApplicationDataGenerator(ApplicationDataGeneratorConfig):
+    def __init__(self, **config):
+        explicit_config = config.pop('config', None)
+        if explicit_config:
+            init_data = explicit_config.__dict__
+            init_data.update(**config)
+            super().__init__(**init_data)
+        else:
+            super().__init__(**config)
+
     def warn(self, msg):
         if self._on_warning is not None:
             self._on_warning(msg)
@@ -198,20 +240,35 @@ class ApplicationDataGenerator:
         factory = factories.registry.get(model_cls)
         for user_field in USER_FIELDS:
             if hasattr(model_cls, user_field) and user_field not in kwargs:
-                kwargs[user_field] = self._user
-        instance = factory(**kwargs)
+                kwargs[user_field] = self.user
+        # If running a `dry_run`, only instantiate the instance - do not save
+        # it to the database.
+        if self.dry_run:
+            instance = factory.build(**kwargs)
+        else:
+            instance = factory(**kwargs)
         self.increment_progress()
         return instance
 
     def increment_progress(self):
         self._progress += 1
-        self._progress_bar.update(self._progress)
+        if self.pbar is not None:
+            self.pbar.update(self._progress)
+
+    def message(self, data):
+        if self.pbar is not None:
+            self.pbar.set_description(data)
+        elif self.cmd is not None:
+            self.cmd.info(data)
 
     @transaction.atomic
-    def __call__(self, progress_bar=None):
+    def __call__(self, pbar=None):
         self.precheck()
         self._progress = 0
-        self._progress_bar = progress_bar
+
+        if pbar is not None:
+            self._pbar = pbar
+
         for bi in range(self._num_budgets):
             self.create_budget(bi)
 
@@ -256,15 +313,17 @@ class ApplicationDataGenerator:
             self.create_subaccount(account, j, fringes)
 
     def _create_subaccount(self, parent, fringes, **kwargs):
-        subaccount = self.create(BudgetSubAccount,
-            object_id=parent.pk,
-            content_type_id=ContentType.objects.get_for_model(type(parent)).id,
-            **kwargs
-        )
+        subaccount = self.create(BudgetSubAccount, parent=parent, **kwargs)
         fringes_for_subaccount = select_random_set(
             fringes, allow_null=False, min_count=0, max_count=4)
         for f in fringes_for_subaccount:
-            subaccount.fringes.add(f)
+            if self.dry_run:
+                self.message(
+                    "Ignoring fringe: M2M fields cannot be saved in dry run "
+                    "mode"
+                )
+            else:
+                subaccount.fringes.add(f)
         return subaccount
 
     def create_subaccount(self, account, i, fringes):
@@ -275,7 +334,7 @@ class ApplicationDataGenerator:
             description=f"{account.description[:-1]}{i} Description",
         )
         for j in range(self._num_details):
-            self.create_detail(subaccount, j)
+            self.create_detail(subaccount, j, fringes)
 
     def create_detail(self, subaccount, i, fringes):
         return self._create_subaccount(
