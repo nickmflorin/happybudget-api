@@ -128,7 +128,7 @@ class SubAccount(BudgetingTreePolymorphicOrderedRowModel):
     @property
     def raw_value(self):
         multiplier = self.multiplier or 1.0
-        quantity = self.quantity or 1.0
+        quantity = self.quantity if self.quantity is not None else 1.0
         if self.rate is not None:
             return float(quantity) * float(self.rate) * float(multiplier)
         return 0.0

@@ -44,10 +44,7 @@ class Fringe(BudgetingOrderedRowModel):
         unique_together = (('budget', 'order'))
 
     def __str__(self):
-        return "<{cls} name={name}>".format(
-            cls=self.__class__.__name__,
-            name=self.name
-        )
+        return self.name
 
     def validate_before_save(self):
         super().validate_before_save()

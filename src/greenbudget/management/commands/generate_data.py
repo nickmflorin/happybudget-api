@@ -10,6 +10,13 @@ from greenbudget.data import generate
 
 @debug_only
 class Command(CustomCommand):
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--dry-run',
+            action='store_true',
+            help='Instantiate the models but do not persist them to database.',
+        )
+
     @cache.disable()
     @query_and_include_integer(
         param='num_budgets',
@@ -79,6 +86,14 @@ class Command(CustomCommand):
         ]
     )
     def handle(self, user, **options):
-        gen = generate.ApplicationDataGenerator(user, **options)
-        with tqdm(total=gen.num_instances) as pbar:
-            gen(pbar)
+        config = generate.ApplicationDataGeneratorConfig(
+            user=user,
+            cmd=self,
+            **options
+        )
+        with tqdm(total=config.num_instances) as pbar:
+            generator = generate.ApplicationDataGenerator(
+                pbar=pbar,
+                config=config
+            )
+            generator()

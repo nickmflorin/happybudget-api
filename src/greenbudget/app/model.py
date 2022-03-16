@@ -619,15 +619,25 @@ class model:
         return cls
 
     def get_user(self, instance):
-        try:
-            user = self.thread.request.user
-        except AttributeError:
-            user = None
-            if self._user_field is not None:
-                if not hasattr(instance, self._user_field):
-                    raise FieldDoesNotExistError(self._user_field, instance)
-                user = getattr(instance, self._user_field)
-            if user is None:
+        # Allow the user to either be set directly on the thread or via the
+        # request.  There are cases (like management commands) where we do not
+        # have access to the request, but can set the user on the thread
+        # explicitly.
+        request = getattr(self.thread, 'request', None)
+        if request is not None:
+            user = request.user
+        else:
+            user = getattr(self.thread, 'user', None)
+
+        def validate_and_return_user(usr):
+            # Really, we should be authenticating the user in tests.
+            # But since we don't always do that, this is a PATCH for
+            # now.
+            if usr is not None and (not user.is_authenticated
+                    or not user.is_verified) \
+                    and settings.ENVIRONMENT != Environments.TEST:
+                raise Exception("The user should be authenticated!")
+            elif usr is None:
                 if 'greenbudget.app.middleware.ModelRequestMiddleware' \
                         not in settings.MIDDLEWARE:
                     logger.warning(
@@ -636,12 +646,14 @@ class model:
                     )
                 elif settings.ENVIRONMENT != Environments.TEST:
                     logger.warning(
-                        "The user cannot be inferred from the model save.")
-            return user
-        else:
-            if not user.is_authenticated or not user.is_verified:
-                # Really, we should be authenticating the user in tests.  But
-                # since we don't always do that, this is a PATCH for now.
-                if settings.ENVIRONMENT != Environments.TEST:
-                    raise Exception("The user should be authenticated!")
-            return user
+                        "The user cannot be inferred from the model save for "
+                        "model %s." % instance.__class__.__name__
+                    )
+            return usr
+
+        if user is None:
+            if self._user_field is not None:
+                if not hasattr(instance, self._user_field):
+                    raise FieldDoesNotExistError(self._user_field, instance)
+                user = getattr(instance, self._user_field)
+        return validate_and_return_user(user)
