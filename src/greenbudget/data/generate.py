@@ -315,6 +315,7 @@ class ApplicationDataGenerator(ApplicationDataGeneratorConfig):
         )
         for j in range(self._num_subaccounts):
             self.create_subaccount(account, j, fringes)
+        return account
 
     def _create_subaccount(self, parent, fringes, **kwargs):
         subaccount = self.create(BudgetSubAccount, parent=parent, **kwargs)
@@ -339,6 +340,7 @@ class ApplicationDataGenerator(ApplicationDataGeneratorConfig):
         )
         for j in range(self._num_details):
             self.create_detail(subaccount, j, fringes)
+        return subaccount
 
     def create_detail(self, subaccount, i, fringes):
         return self._create_subaccount(
