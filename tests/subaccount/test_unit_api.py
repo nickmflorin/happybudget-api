@@ -42,7 +42,8 @@ def test_units_cached(api_client, user, units):
 
 
 @override_settings(CACHE_ENABLED=True)
-def test_cache_invalidated_on_save(api_client, user, create_subaccount_unit):
+def test_cache_invalidated_on_save(api_client, user, create_subaccount_unit,
+        units):
     api_client.force_login(user)
     response = api_client.get("/v1/subaccounts/units/")
     assert response.status_code == 200

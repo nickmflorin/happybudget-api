@@ -1,3 +1,4 @@
+import copy
 import importlib
 import six
 
@@ -9,6 +10,60 @@ class empty:
     It is required because `None` may be a valid input or output value.
     """
     pass
+
+
+class DynamicArgumentException(Exception):
+    """
+    An abstract exception class that will dynamically inject provided arguments
+    into the exception message if they are present as string formatted arguments.
+
+    Extensions of the :obj:`DynamicArgumentException` class can be configured
+    with default messages such that messages are only used on initialization
+    if they are provided.
+
+    >>> class MyException(DynamicArgumentException):
+    >>>     default_message = "The fox jumped over the {obj}."
+    >>>
+    >>> exc = MyException(obj='log')
+    >>> str(exc)
+    >>> "The fox jumped over the log."
+    >>>
+    >>> exc = MyException("The dog is in a {mood} mood.", mood='happy')
+    >>> str(exc)
+    >>> "The dog is in a happy mood."
+    """
+
+    def __init__(self, *args, **kwargs):
+        assert len(args) == 1 or 'message' in kwargs \
+            or hasattr(self, 'default_message'), \
+            f"Improper usage of {self.__class__.__name__}.  The message must " \
+            "be defined statically on the class or provided on initialization."
+
+        self._message = getattr(self, 'default_message', None)
+        if 'message' in kwargs or len(args) != 0:
+            self._message = kwargs.pop('message', None)
+            if len(args) == 1:
+                self._message = args[0]
+
+        self._kwargs = kwargs
+
+    @property
+    def message(self):
+        format_kwargs = copy.deepcopy(self._kwargs)
+        formatters = getattr(self, 'formatters', {})
+        assert isinstance(formatters, dict), \
+            f"The formatters on the {self.__class__.__name__} class must be " \
+            f"of type {type(dict)}."
+
+        for k, v in format_kwargs.items():
+            if k in self.formatters:
+                assert hasattr(self.formatters[k], '__call__'), \
+                    "Each formatter must be a callable."
+                format_kwargs[k] = self.formatters[k](v)
+        return conditionally_format_string(self._message, **format_kwargs)
+
+    def __str__(self):
+        return self.message
 
 
 def humanize_list(value, callback=six.text_type, conjunction='and',
