@@ -21,6 +21,8 @@ class DynamicArgumentException(Exception):
     with default messages such that messages are only used on initialization
     if they are provided.
 
+    Usage:
+    -----
     >>> class MyException(DynamicArgumentException):
     >>>     default_message = "The fox jumped over the {obj}."
     >>>
@@ -169,6 +171,16 @@ def conditionally_format_string(string, **kwargs):
 
 
 def conditionally_separate_strings(strings, separator=" "):
+    """
+    Returns a string that is generated from joining the provided strings with
+    the provided separator, filtering out values of None from the provided
+    strings.
+
+    Usage:
+    -----
+    >>> conditionally_separate_strings(["foo", "bar", None])
+    >>> "foo bar"
+    """
     parts = [pt for pt in strings if pt is not None]
     assert all([isinstance(pt, str) for pt in parts])
     if len(parts) == 0:
@@ -179,6 +191,9 @@ def conditionally_separate_strings(strings, separator=" "):
 
 
 def import_at_module_path(module_path):
+    """
+    Imports the class or function at the provided module path.
+    """
     module_name = ".".join(module_path.split(".")[:-1])
     class_name = module_path.split(".")[-1]
     module = importlib.import_module(module_name)
