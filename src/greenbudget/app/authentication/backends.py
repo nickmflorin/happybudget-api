@@ -5,7 +5,7 @@ from django.contrib.auth.backends import ModelBackend
 from rest_framework import authentication
 
 from .exceptions import InvalidCredentialsError, EmailDoesNotExist
-from .utils import user_can_authenticate
+from .utils import user_can_authenticate, request_is_admin
 
 
 class SocialModelAuthentication(ModelBackend):
@@ -46,7 +46,6 @@ class ModelAuthentication(ModelBackend):
         # When logging in from the Django Admin, it will pass the value in as
         # the username.
         email = email or username
-        is_admin = '/admin/' in request.path
         if email is not None and password is not None:
             try:
                 user = get_user_model().objects.get(email=email)
@@ -54,17 +53,18 @@ class ModelAuthentication(ModelBackend):
                 # If we are coming from the Admin, we do not want to raise a
                 # DRF exception as it will not render in the response, it will
                 # just be a 500 error.
-                if not is_admin:
+                if not request_is_admin(request):
                     raise EmailDoesNotExist(field='email')
                 return None
             if not user.check_password(password):
                 # If we are coming from the Admin, we do not want to raise a
                 # DRF exception as it will not render in the response, it will
                 # just be a 500 error.
-                if not is_admin:
+                if not request_is_admin(request):
                     raise InvalidCredentialsError(field="password")
                 return None
-            return user_can_authenticate(user, raise_exception=not is_admin)
+            return user_can_authenticate(
+                user, raise_exception=not request_is_admin(request))
         return None
 
 
