@@ -56,10 +56,10 @@ class DynamicArgumentException(Exception):
             f"of type {type(dict)}."
 
         for k, v in format_kwargs.items():
-            if k in self.formatters:
-                assert hasattr(self.formatters[k], '__call__'), \
+            if k in formatters:
+                assert hasattr(formatters[k], '__call__'), \
                     "Each formatter must be a callable."
-                format_kwargs[k] = self.formatters[k](v)
+                format_kwargs[k] = formatters[k](v)
         return conditionally_format_string(self._message, **format_kwargs)
 
     def __str__(self):
