@@ -183,15 +183,16 @@ class SubAccountManager(
     @signals.disable()
     def bulk_save(self, instances, update_fields):
         instances = ensure_iterable(instances)
+        # The estimation is only concerned with looking at the children of the
+        # SubAccount, and when we are bulk updating SubAccount(s) we cannot
+        # alter the children since it is a reverse FK field.  Furthermore, the
+        # actual value cannot change via a bulk update, so the only way that
+        # the instance is recalculated is if the SubAccount has no children and
+        # the rate, quantity or multiplier field has changed.
         tree = self.bulk_calculate(
-            instances,
+            [i for i in instances if i.will_change_parent_estimation(
+                i.actions.UPDATE)],
             commit=False,
-            # When we reestimate a SubAccount, the estimation is only concerned
-            # with looking at the children of the SubAccount, but if the
-            # SubAccount has no children the estimated value will change the
-            # parent if the multiplier, quantity or rate has changed.
-            extra_conditional=lambda obj: obj.will_change_parent_estimation(
-                obj.actions.UPDATE)
         )
         instances = tree.subaccounts.union(instances)
         subaccount_instance_cache.invalidate(instances)
@@ -200,9 +201,6 @@ class SubAccountManager(
         invalidate_parent_groups_cache(parents)
 
         groups = [obj.group for obj in instances if obj.group is not None]
-
-        for obj in [i for i in instances if i.children.count() != 0]:
-            obj.clear_deriving_fields(commit=False)
 
         self.bulk_update(
             instances,
@@ -218,26 +216,7 @@ class SubAccountManager(
     def bulk_calculate(self, *args, **kwargs):
         return self.bulk_estimate(*args, **kwargs)
 
-    def _evaluate_conditionals(self, conditionals, obj):
-        def evaluate(conditional):
-            assert conditional is None or isinstance(conditional, bool) \
-                or hasattr(conditional, '__call__'), \
-                f"Invalid conditional {conditional}, must be a boolean, None " \
-                "or a callable."
-            if hasattr(conditional, '__call__'):
-                return conditional(obj)
-            return conditional
-
-        # A None value for the result of a conditional means that the conditional
-        # is not applicable and should not be included.
-        conditionals = [
-            c for c in [evaluate(ci) for ci in conditionals]
-            if c is not None
-        ]
-        return any(conditionals)
-
     def _subaccounts_recursion(self, tree, method_name, **kwargs):
-        extra_conditional = kwargs.pop('extra_conditional', None)
         pass_up_kwargs = dict(**kwargs, **{'commit': False, 'trickle': False})
 
         def recursion(subaccounts, unsaved=None):
@@ -254,8 +233,7 @@ class SubAccountManager(
                         **pass_up_kwargs
                     )
 
-                    if self._evaluate_conditionals(
-                            [altered, extra_conditional], obj):
+                    if altered:
                         tree.add(obj.parent)
                         altered_subaccounts.append(obj)
 
@@ -284,17 +262,13 @@ class SubAccountManager(
     def perform_bulk_routine(self, instances, method_name, **kwargs):
         instances = ensure_iterable(instances)
         unsaved = kwargs.pop('unsaved_children', {}) or {}
-        extra_conditional = kwargs.pop('extra_conditional', None)
 
         tree = BudgetTree()
 
         pass_up_kwargs = dict(**kwargs, **{'commit': False, 'trickle': False})
         recursive_method = self._subaccounts_recursion(
-            tree,
-            method_name,
-            extra_conditional=extra_conditional,
-            **kwargs
-        )
+            tree, method_name, **kwargs)
+
         # Continue to work our way up the SubAccount levels of the budget
         # ancestry tree until we reach the Account level - at which point the
         # filtration will be empty.

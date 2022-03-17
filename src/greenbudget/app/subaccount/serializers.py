@@ -1,5 +1,5 @@
 from django.contrib.contenttypes.models import ContentType
-from rest_framework import serializers, exceptions
+from rest_framework import serializers
 
 from greenbudget.app.budgeting.serializers import EntityAncestorSerializer
 from greenbudget.app.contact.models import Contact
@@ -110,12 +110,6 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
         )
 
     def validate(self, attrs):
-        if self.instance is not None and self.instance.children.count() != 0:
-            if any([field in attrs for field in self.instance.DERIVING_FIELDS]):
-                raise exceptions.ValidationError(
-                    "Field can only be updated when the sub account is not "
-                    "derived."
-                )
         if 'rate' in attrs and 'quantity' not in attrs:
             # On a PATCH request to update the SubAccount, we automatically
             # assign quantity = 1.0 if the rate is being assigned but the

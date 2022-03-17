@@ -100,13 +100,6 @@ def subaccount_saved(instance, **kwargs):
         assert isinstance(old_parent, (SubAccount, Account))
         assert isinstance(new_parent, (SubAccount, Account))
 
-        # If a SubAccount has children SubAccount(s), the fields used to
-        # derive calculated values are no longer used since the calculated
-        # values are derived from the children, not the attributes on that
-        # SubAccount.
-        if isinstance(new_parent, SubAccount):
-            new_parent.clear_deriving_fields(commit=False)
-
         instances_to_recalculate.extend([old_parent, new_parent])
         instances_to_reestimate = []
 

@@ -542,7 +542,7 @@ def test_update_subaccount_fringes(api_client, user, budget_f, create_fringe):
     assert subaccount.fringes.count() == 2
 
 
-def test_get_subaccount_subaccounts(api_client, user, budget_df):
+def test_get_children(api_client, user, budget_df):
     budget = budget_df.create_budget()
     account = budget_df.create_account(parent=budget)
     parent = budget_df.create_subaccount(parent=account)
@@ -611,7 +611,7 @@ def test_get_subaccount_subaccounts(api_client, user, budget_df):
     ]
 
 
-def test_get_template_subaccount_subaccounts(api_client, user, template_df):
+def test_get_template_children(api_client, user, template_df):
     budget = template_df.create_budget()
     account = template_df.create_account(parent=budget)
     parent = template_df.create_subaccount(parent=account)
@@ -676,7 +676,7 @@ def test_get_template_subaccount_subaccounts(api_client, user, template_df):
     ]
 
 
-def test_get_subaccount_subaccounts_ordered_by_group(api_client, user, budget_f,
+def test_get_children_ordered_by_group(api_client, user, budget_f,
         create_group):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
@@ -735,7 +735,7 @@ def test_remove_subaccount_from_group(api_client, user, budget_f, models,
     assert models.Group.objects.first() is None
 
 
-def test_bulk_update_subaccount_subaccounts(api_client, user, freezer, budget_f):
+def test_bulk_update_children(api_client, user, freezer, budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccount = budget_f.create_subaccount(parent=account)
@@ -810,8 +810,7 @@ def test_bulk_update_subaccount_subaccounts(api_client, user, freezer, budget_f)
     assert budget.actual == 0.0
 
 
-def test_bulk_update_subaccount_subaccounts_fringes(api_client, user, budget_f,
-        create_fringe):
+def test_bulk_update_children_fringes(api_client, user, budget_f, create_fringe):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccount = budget_f.create_subaccount(parent=account)
@@ -894,7 +893,7 @@ def test_bulk_update_subaccount_subaccounts_fringes(api_client, user, budget_f,
     assert budget.accumulated_fringe_contribution == 70.0
 
 
-def test_bulk_delete_subaccount_subaccounts(api_client, user, budget_f, models):
+def test_bulk_delete_children(api_client, user, budget_f, models):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccount = budget_f.create_subaccount(parent=account)
@@ -945,8 +944,8 @@ def test_bulk_delete_subaccount_subaccounts(api_client, user, budget_f, models):
     assert budget.nominal_value == 0.0
 
 
-def test_bulk_update_subaccount_subaccounts_budget_updated_once(api_client,
-        user, budget_f, monkeypatch):
+def test_bulk_update_children_budget_updated_once(api_client, user, budget_f,
+        monkeypatch):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccount = budget_f.create_subaccount(parent=account)
@@ -982,10 +981,19 @@ def test_bulk_update_subaccount_subaccounts_budget_updated_once(api_client,
     assert len(calls) == 1
 
 
-def test_bulk_create_subaccount_subaccounts(api_client, user, budget_f, models):
+def test_bulk_create_children(api_client, user, budget_f, models, create_fringe):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
-    subaccount = budget_f.create_subaccount(parent=account)
+    subaccount = budget_f.create_subaccount(parent=account, rate=100)
+    fringes = [
+        create_fringe(budget=budget, rate=0.5),
+        create_fringe(budget=budget, rate=0.2)
+    ]
+    subaccount.fringes.set(fringes)
+    subaccount.refresh_from_db()
+    # Make sure the fringe contribution is non-zero before the children are
+    # created.
+    assert subaccount.fringe_contribution == 70.0
 
     api_client.force_login(user)
     response = api_client.patch(
@@ -1019,6 +1027,7 @@ def test_bulk_create_subaccount_subaccounts(api_client, user, budget_f, models):
     assert response.json()['parent']['id'] == subaccount.pk
     assert response.json()['parent']['nominal_value'] == 40.0
     assert response.json()['parent']['actual'] == 0.0
+    assert response.json()['parent']['fringe_contribution'] == 0.0
     assert len(response.json()['parent']['children']) == 2
     assert response.json()['parent']['children'][0] == subaccounts[0].pk
     assert response.json()['parent']['children'][1] == subaccounts[1].pk
@@ -1042,6 +1051,9 @@ def test_bulk_create_subaccount_subaccounts(api_client, user, budget_f, models):
     subaccount.refresh_from_db()
     assert subaccount.nominal_value == 40.0
     assert subaccount.actual == 0.0
+    # When creating a child SubAccount, the original SubAccount parent should
+    # not have a fringe contribution anymore.
+    assert subaccount.fringe_contribution == 0.0
 
     # Make sure the Account is updated in the database.
     account.refresh_from_db()
