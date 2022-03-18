@@ -125,6 +125,12 @@ class User(AbstractUser):
             self.last_name = social_user.last_name
 
     def cache_stripe_from_token(self, token_obj):
+        """
+        Uses the Stripe information embedded in the provided token to cache
+        the Stripe data on the :obj:`StripeCustomer` associated with the
+        :obj:`User` such that subsequent attempts to access Stripe data for
+        the :obj:`User` do not perform an HTTP request to Stripe's API.
+        """
         if parse_user_id_from_token(token_obj) != self.id:
             raise Exception(
                 "The provided token is not associated with this user.")
@@ -138,10 +144,25 @@ class User(AbstractUser):
             )
 
     def flush_stripe_cache(self):
+        """
+        Flushes the Stripe data on the :obj:`StripeCustomer` associated with the
+        :obj:`User` such that subsequent attempts to access Stripe data for the
+        :obj:`User` perform an HTTP request to Stripe's API.
+        """
         if self.stripe_customer is not None:
             self.stripe_customer.flush_cache()
 
     def update_or_create_stripe_customer(self, metadata=None):
+        """
+        Updates or creates the Stripe customer data associated with the
+        :obj:`User`.
+
+        Note:
+        ----
+        This method is currently not used, but is left here for future use case
+        as we are going to eventually rely less on the automated aspects of
+        Stripe's payment processing system.
+        """
         customer_kwargs = {
             'name': self.full_name,
             'email': self.email,
@@ -164,12 +185,25 @@ class User(AbstractUser):
         return self.stripe_customer
 
     def get_or_create_stripe_customer(self, metadata=None):
+        """
+        Retrieves or creates the Stripe customer data associated with the
+        :obj:`User`.
+
+        Note:
+        ----
+        This method is currently not used, but is left here for future use case
+        as we are going to eventually rely less on the automated aspects of
+        Stripe's payment processing system.
+        """
         if self.stripe_id is None:
             return self.update_or_create_stripe_customer(metadata=metadata)
         return self.stripe_customer
 
     @property
     def stripe_customer(self):
+        """
+        Returns the :obj:`StripeCustomer` associated with the :obj:`User`.
+        """
         if not hasattr(self, '_stripe_customer') and self.stripe_id:
             self._stripe_customer = StripeCustomer(self)
         return getattr(self, '_stripe_customer', None)

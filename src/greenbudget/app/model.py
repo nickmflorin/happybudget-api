@@ -9,7 +9,8 @@ from django.core.exceptions import FieldDoesNotExist
 from django.db import models
 
 from greenbudget.conf import Environments
-from greenbudget.lib.utils import ensure_iterable
+from greenbudget.lib.utils import (
+    ensure_iterable, humanize_list, DynamicArgumentException)
 
 from .constants import ActionName
 from .signals.signal import disable
@@ -153,21 +154,10 @@ class FieldChanges(collections.abc.Sequence):
             yield change
 
 
-class ModelException(Exception):
-    def __init__(self, model):
-        self.model = model if isinstance(model, type) else model.__class__
-
-    def __str__(self):
-        return self.data.format(model=self.model.__name__)
-
-
-class ModelFieldException(ModelException):
-    def __init__(self, field, model):
-        super().__init__(model)
-        self._field = field
-
-    def __str__(self):
-        return self.data.format(field=self._field, model=self.model.__name__)
+class ModelException(DynamicArgumentException):
+    formatters = {
+        'model': lambda m: m if isinstance(m, type) else m.__class__
+    }
 
 
 class CallableParameterException(Exception):
@@ -182,16 +172,16 @@ class CallableParameterException(Exception):
         )
 
 
-class FieldDoesNotExistError(ModelFieldException):
-    data = "Field {field} does not exist on model {model}."
+class FieldDoesNotExistError(ModelException):
+    default_message = "Field {field} does not exist on model {model}."
 
 
-class FieldCannotBeTrackedError(ModelFieldException):
-    data = "Field {field} cannot be tracked for model {model}."
+class FieldCannotBeTrackedError(ModelException):
+    default_message = "Field {field} cannot be tracked for model {model}."
 
 
-class FieldNotTrackedError(ModelFieldException):
-    data = "Field {field} is not tracked for model {model}."
+class FieldNotTrackedError(ModelException):
+    default_message = "Field {field} is not tracked for model {model}."
 
 
 DISALLOWED_ATTRIBUTES = [('editable', False), ('primary_key', True)]
@@ -309,37 +299,61 @@ class model:
         self._user_field = kwargs.pop('user_field', None)
         self._track_user = kwargs.pop('track_user', True)
 
+    def type(self, cls):
+        # pragma: no cover
+        if self._type is None:
+            raise ModelException(model=cls, message=(
+                "The model decorator for {model} must include the `type` "
+                "parameter."
+            ))
+        return self._type
+
     def get_field_instance(self, cls, field_name):
         try:
             return cls._meta.get_field(field_name)
         except django.core.exceptions.FieldDoesNotExist:
+            # pragma: no cover
             raise FieldDoesNotExistError(field_name, cls)
 
     def validate_field(self, cls, field):
         field_instance = self.get_field_instance(cls, field)
+        # pragma: no cover
         if not field_tracking_is_supported(field_instance):
-            raise FieldCannotBeTrackedError(field, cls)
+            raise FieldCannotBeTrackedError(field=field, model=cls)
+
+    def get_supported_tracking_fields(self, cls):
+        """
+        Returns the names of the :obj:`django.db.models.Field` instances on the
+        provide :obj:`django.db.model` class that are capable of being tracked
+        and not explicitly excluded.
+        """
+        trackable_fields = []
+        unsupported_fields = []
+        for field_obj in [
+            f for f in cls._meta.fields
+            if f.name not in self._exclude_fields
+        ]:
+            if field_tracking_is_supported(field_obj):
+                trackable_fields.append(field_obj.name)
+            else:
+                unsupported_fields.append(field_obj.name)
+        if unsupported_fields:
+            unsupported = humanize_list(unsupported_fields)
+            logger.debug(
+                f"Field(s) {unsupported} for model {cls.__name__} cannot be "
+                "tracked as they are not supported."
+            )
+        return trackable_fields
 
     def tracked_fields(self, cls):
+        """
+        Returns either the names of the :obj:`django.db.models.Field` instances
+        on the provide :obj:`django.db.model` class that are capable of being
+        tracked in the case that `track_all_fields` is `True` otherwise returns
+        the fields explicitly included via the `track_fields` parameter.
+        """
         if self._track_all_fields:
-            tracked_fields = []
-            unsupported_fields = []
-            for field_obj in cls._meta.fields:
-                if field_obj.name not in self._exclude_fields:
-                    if field_tracking_is_supported(field_obj):
-                        tracked_fields.append(field_obj.name)
-                    else:
-                        unsupported_fields.append(field_obj.name)
-
-            if unsupported_fields:
-                logger.debug(
-                    "Field(s) {fields} for model {model} cannot be tracked as "
-                    "they are not supported.".format(
-                        model=cls.__name__,
-                        fields=", ".join(unsupported_fields)
-                    )
-                )
-            return tracked_fields
+            return self.get_supported_tracking_fields(cls)
         else:
             for field in self._track_fields:
                 if field not in self._exclude_fields:
@@ -347,17 +361,15 @@ class model:
             return deepcopy(self._track_fields)
 
     def __call__(self, cls):
-        assert self._type is not None, \
-            f"The model decorator for {cls.__name__}  must include the model " \
-            "type."
-        cls.type = self._type
+        cls.type = self.type(cls)
 
+        # pragma: no cover
         if hasattr(cls, '__decorated_for_signals__'):
-            raise Exception(
+            raise ModelException(model=cls, message=(
                 "Multi-table inheritance of %s not supported, base class "
-                "%s has parent that is also decorated with %s."
-                % (self.__class__.__name__, cls.__name__, self.__class__.__name__)  # noqa
-            )
+                "{model} has parent that is also decorated with %s."
+                % (self.__class__.__name__, self.__class__.__name__)  # noqa
+            ))
 
         # Contains a local copy of the previous values of the fields.
         cls.__data = {}
@@ -367,8 +379,9 @@ class model:
 
         def raise_if_field_not_tracked(instance, field):
             self.validate_field(cls, field)
+            # pragma: no cover
             if field not in instance.__tracked_fields:
-                raise FieldNotTrackedError(field, instance)
+                raise FieldNotTrackedError(field=field, model=instance)
 
         def was_just_added(instance):
             return getattr(instance, '__just_added', False)
@@ -633,17 +646,20 @@ class model:
             # Really, we should be authenticating the user in tests.
             # But since we don't always do that, this is a PATCH for
             # now.
+            # pragma: no cover
             if usr is not None and (not user.is_authenticated
                     or not user.is_verified) \
                     and settings.ENVIRONMENT != Environments.TEST:
                 raise Exception("The user should be authenticated!")
             elif usr is None:
+                # pragma: no cover
                 if 'greenbudget.app.middleware.ModelRequestMiddleware' \
                         not in settings.MIDDLEWARE:
                     logger.warning(
                         "The user cannot be inferred for the model save "
                         "because the appropriate middleware is not installed."
                     )
+                # pragma: no cover
                 elif settings.ENVIRONMENT != Environments.TEST:
                     logger.warning(
                         "The user cannot be inferred from the model save for "
@@ -653,7 +669,11 @@ class model:
 
         if user is None:
             if self._user_field is not None:
+                # pragma: no cover
                 if not hasattr(instance, self._user_field):
-                    raise FieldDoesNotExistError(self._user_field, instance)
+                    raise FieldDoesNotExistError(
+                        field=self._user_field,
+                        model=instance
+                    )
                 user = getattr(instance, self._user_field)
         return validate_and_return_user(user)

@@ -11,10 +11,11 @@ from .exceptions import PermissionError
 def with_raise_exception(func):
     """
     Allows the permission methods on a permission class to be called with a
-    `raise_exception` boolean flag, that will either force a PermissionError
-    to be raised specific to that permission class or will forcefully suppress
-    the PermissionError for that permission class, returning the string message
-    associated with the PermissionError that would have otherwise be raised.
+    `raise_exception` boolean flag, that will either force a
+    :obj:`PermissionError` to be raised specific to that permission class or
+    will forcefully suppress the :obj:`PermissionError` for that permission
+    class, returning the string message associated with the
+    :obj:`PermissionError` that would have otherwise be raised.
     """
     @functools.wraps(func)
     def decorated(instance, *args, **kwargs):
@@ -274,28 +275,66 @@ class BasePermission(metaclass=BasePermissionMetaclass):
         return self.__class__(*self._args, **kw)
 
     def is_prioritized(self, context):
-        if self._priority is not None:
-            if hasattr(self._priority, '__call__'):
-                return self._priority(context)
-            return self._priority
+        """
+        Returns whether or not the permission is prioritized for the given
+        permission context, :obj:`ObjectContext` or :obj:`ViewContext`.
+
+        When a permission is prioritized, it will be used for determining the
+        specific information raised in the :obj:`PermissionError` when it fails
+        along with other permissions in a given :obj:`Operator`.
+        """
+        if self.priority is not None:
+            if hasattr(self.priority, '__call__'):
+                return self.priority(context)
+            return self.priority
         return False
 
     def is_object_applicable(self, context):
+        """
+        Returns whether or not the permission is applicable for the given
+        permission object context, :obj:`ObjectContext`.
+
+        If the permission is not applicable for the given context, it will be
+        excluded from the evaluation - instead of contributing a truthy value
+        to the overall permission evaluation.
+        """
         if isinstance(self._is_object_applicable, bool):
             return self._is_object_applicable
         return self._is_object_applicable(context)
 
     def is_view_applicable(self, context):
+        """
+        Returns whether or not the permission is applicable for the given
+        permission view context, :obj:`ViewContext`.
+
+        If the permission is not applicable for the given context, it will be
+        excluded from the evaluation - instead of contributing a truthy value
+        to the overall permission evaluation.
+        """
         if isinstance(self._is_view_applicable, bool):
             return self._is_view_applicable
         return self._is_view_applicable(context)
 
     @property
     def exception_kwargs(self):
+        """
+        Can be overridden by extensions of the :obj:`BasePermission` class
+        such that the returned arguments are provided to the raised
+        :obj:`PermissionError` when the permission fails.
+        """
         return {}
 
     @property
     def affects_after(self):
+        """
+        Returns whether or not an instance of  :obj:`BasePermission` extension
+        affects other instances of :obj:`BasePermission` that occur after it
+        in an :obj:`Operator`.
+
+        If the permission affects permissions after it when used in an
+        :obj:`Operator` and it fails, the permissions after it will not be
+        evaluated.
+        """
         return self._affects_after
 
     @property

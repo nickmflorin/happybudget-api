@@ -1,16 +1,7 @@
-import pytest
 from django.test import override_settings
 import mock
 
 from greenbudget.app.subaccount.views import SubAccountUnitViewSet
-
-
-@pytest.fixture
-def units(create_subaccount_unit):
-    return [
-        create_subaccount_unit(title='Days'),
-        create_subaccount_unit(title='Weeks')
-    ]
 
 
 def test_unit_properly_serializes(api_client, user, units):

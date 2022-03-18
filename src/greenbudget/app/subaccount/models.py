@@ -8,7 +8,7 @@ from django.utils.functional import cached_property
 
 from greenbudget.lib.utils import cumulative_sum
 
-from greenbudget.app import model, signals
+from greenbudget.app import model
 from greenbudget.app.actual.models import Actual
 from greenbudget.app.budgeting.models import (
     BudgetingTreePolymorphicOrderedRowModel, AssociatedModel,
@@ -95,7 +95,6 @@ class SubAccount(BudgetingTreePolymorphicOrderedRowModel):
 
     table_pivot = ('content_type_id', 'object_id')
     child_instance_cls = AssociatedModel('self')
-    DERIVING_FIELDS = ("quantity", "rate", "multiplier", "unit")
     ESTIMATED_FIELDS = ESTIMATED_FIELDS
     CALCULATED_FIELDS = CALCULATED_FIELDS
     VALID_PARENTS = ['account_cls', 'subaccount_cls']
@@ -168,7 +167,8 @@ class SubAccount(BudgetingTreePolymorphicOrderedRowModel):
                 ]])
             return self.raw_value != 0.0
         else:
-            return self.fields_have_changed('multiplier', 'quantity', 'rate')
+            return self.children.count() == 0 \
+                and self.fields_have_changed('multiplier', 'quantity', 'rate')
 
     @children_method_handler
     def accumulate_value(self, children):
@@ -197,12 +197,17 @@ class SubAccount(BudgetingTreePolymorphicOrderedRowModel):
         )
         return previous_value != self.accumulate_fringe_contribution
 
-    def establish_fringe_contribution(self, to_be_deleted=None):
+    def establish_fringe_contribution(self, children, to_be_deleted=None):
         previous_value = self.fringe_contribution
-        self.fringe_contribution = contribution_from_fringes(
-            value=self.realized_value,
-            fringes=self.fringes.exclude(pk__in=to_be_deleted or [])
-        )
+        # When a SubAccount has children, the Fringes do not count towards that
+        # specific SubAccount anymore.
+        if len(children) == 0:
+            self.fringe_contribution = contribution_from_fringes(
+                value=self.realized_value,
+                fringes=self.fringes.exclude(pk__in=to_be_deleted or [])
+            )
+        else:
+            self.fringe_contribution = 0.0
         return previous_value != self.fringe_contribution
 
     def establish_markup_contribution(self, to_be_deleted=None):
@@ -216,16 +221,6 @@ class SubAccount(BudgetingTreePolymorphicOrderedRowModel):
     def calculate(self, *args, **kwargs):
         return self.estimate(*args, **kwargs)
 
-    @signals.disable()
-    def clear_deriving_fields(self, commit=True):
-        for field in self.DERIVING_FIELDS:
-            setattr(self, field, None)
-        # M2M fields must be updated immediately, regardless of whether or not
-        # we are committing.
-        self.fringes.set([])
-        if commit:
-            self.save(update_fields=self.DERIVING_FIELDS)
-
     @children_method_handler
     def estimate(self, children, **kwargs):
         markups_to_be_deleted = kwargs.get('markups_to_be_deleted', [])
@@ -236,14 +231,11 @@ class SubAccount(BudgetingTreePolymorphicOrderedRowModel):
                 children,
                 to_be_deleted=markups_to_be_deleted
             ),
-            # Because Fringes are a M2M field on the instance, the instance
-            # needs to be saved before it can be used.
             self.establish_fringe_contribution(
+                children,
                 to_be_deleted=kwargs.pop('fringes_to_be_deleted', [])
             ),
             # Markups are applied after the Fringes are applied to the value.
-            # Because Markups are a M2M field on the instance, the instance
-            # needs to be saved before it can be used.
             self.establish_markup_contribution(
                 to_be_deleted=markups_to_be_deleted
             )
@@ -275,8 +267,6 @@ class BudgetSubAccount(SubAccount):
     )
     objects = BudgetSubAccountManager()
 
-    DERIVING_FIELDS = SubAccount.DERIVING_FIELDS + ("contact", )
-
     pdf_type = 'pdf-subaccount'
     domain = "budget"
 
@@ -292,15 +282,6 @@ class BudgetSubAccount(SubAccount):
                 "Cannot assign a contact created by one user to a sub account "
                 "created by another user."
             )
-
-    @signals.disable()
-    def clear_deriving_fields(self, commit=True):
-        super().clear_deriving_fields(commit=False)
-        for field in self.DERIVING_FIELDS:
-            setattr(self, field, None)
-        self.attachments.set([])
-        if commit:
-            self.save(update_fields=self.DERIVING_FIELDS)
 
     @children_method_handler
     def calculate(self, children, **kwargs):

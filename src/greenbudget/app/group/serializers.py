@@ -32,7 +32,11 @@ class GroupSerializer(serializers.ModelSerializer):
         allow_blank=False,
         allow_null=False
     )
-    color = ColorField(content_type_model=Group, required=False)
+    color = ColorField(
+        content_type_model=Group,
+        required=False,
+        allow_null=True,
+    )
     children = TablePrimaryKeyRelatedField(
         table_filter=group_table_filter,
         many=True,

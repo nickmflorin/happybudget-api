@@ -1,3 +1,4 @@
+import copy
 import importlib
 import six
 
@@ -9,6 +10,62 @@ class empty:
     It is required because `None` may be a valid input or output value.
     """
     pass
+
+
+class DynamicArgumentException(Exception):
+    """
+    An abstract exception class that will dynamically inject provided arguments
+    into the exception message if they are present as string formatted arguments.
+
+    Extensions of the :obj:`DynamicArgumentException` class can be configured
+    with default messages such that messages are only used on initialization
+    if they are provided.
+
+    Usage:
+    -----
+    >>> class MyException(DynamicArgumentException):
+    >>>     default_message = "The fox jumped over the {obj}."
+    >>>
+    >>> exc = MyException(obj='log')
+    >>> str(exc)
+    >>> "The fox jumped over the log."
+    >>>
+    >>> exc = MyException("The dog is in a {mood} mood.", mood='happy')
+    >>> str(exc)
+    >>> "The dog is in a happy mood."
+    """
+
+    def __init__(self, *args, **kwargs):
+        assert len(args) == 1 or 'message' in kwargs \
+            or hasattr(self, 'default_message'), \
+            f"Improper usage of {self.__class__.__name__}.  The message must " \
+            "be defined statically on the class or provided on initialization."
+
+        self._message = getattr(self, 'default_message', None)
+        if 'message' in kwargs or len(args) != 0:
+            self._message = kwargs.pop('message', None)
+            if len(args) == 1:
+                self._message = args[0]
+
+        self._kwargs = kwargs
+
+    @property
+    def message(self):
+        format_kwargs = copy.deepcopy(self._kwargs)
+        formatters = getattr(self, 'formatters', {})
+        assert isinstance(formatters, dict), \
+            f"The formatters on the {self.__class__.__name__} class must be " \
+            f"of type {type(dict)}."
+
+        for k, v in format_kwargs.items():
+            if k in formatters:
+                assert hasattr(formatters[k], '__call__'), \
+                    "Each formatter must be a callable."
+                format_kwargs[k] = formatters[k](v)
+        return conditionally_format_string(self._message, **format_kwargs)
+
+    def __str__(self):
+        return self.message
 
 
 def humanize_list(value, callback=six.text_type, conjunction='and',
@@ -114,6 +171,16 @@ def conditionally_format_string(string, **kwargs):
 
 
 def conditionally_separate_strings(strings, separator=" "):
+    """
+    Returns a string that is generated from joining the provided strings with
+    the provided separator, filtering out values of None from the provided
+    strings.
+
+    Usage:
+    -----
+    >>> conditionally_separate_strings(["foo", "bar", None])
+    >>> "foo bar"
+    """
     parts = [pt for pt in strings if pt is not None]
     assert all([isinstance(pt, str) for pt in parts])
     if len(parts) == 0:
@@ -124,6 +191,9 @@ def conditionally_separate_strings(strings, separator=" "):
 
 
 def import_at_module_path(module_path):
+    """
+    Imports the class or function at the provided module path.
+    """
     module_name = ".".join(module_path.split(".")[:-1])
     class_name = module_path.split(".")[-1]
     module = importlib.import_module(module_name)
