@@ -4,9 +4,6 @@ Settings configuration file for local environment.
 from greenbudget.conf import Environments
 
 from .base import *  # noqa
-from .base import LOGGING
-
-from .logging import attach_sentry_logger
 
 DEBUG = True
 EMAIL_ENABLED = True
@@ -57,6 +54,3 @@ CACHES = {
 }
 
 CACHE_ENABLED = False
-
-# attach_aws_logger(LOGGING, logger_boto3_session)
-attach_sentry_logger(LOGGING)
