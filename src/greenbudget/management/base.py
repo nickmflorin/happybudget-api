@@ -1,5 +1,6 @@
-import six
 from django.core import management
+
+from .query import BooleanQuery
 
 
 class CustomCommandMixin(object):
@@ -18,148 +19,9 @@ class CustomCommandMixin(object):
     def success(self, value):
         self.prompt(value, style_func=self.style.SUCCESS)
 
-    def query(self, prompt=None, prefix="Value", converter=None):
-        """
-        Displays a prompt and then asks the user for generic input.
-
-        Parameters:
-        ----------
-        prompt: :obj:`str`  (optional)
-            The prompt to display to the user before asking for the input.
-
-        prefix: :obj:`str` (optional)
-            The prefix that will be displayed before the character space for
-            the user provided input.
-
-            Default: "Value"
-
-        converter: :obj:`func` (optional)
-            A function that takes the provided value as an argument and converts
-            it to the boolean value that is returned.
-        """
-        if prompt:
-            self.prompt(prompt, style_func=self.style.SQL_TABLE)
-        value = input("%s: " % prefix)
-        if converter:
-            return converter(value)
-        return value
-
-    def query_boolean(self, prompt=None, prefix="(Yes/No)"):
-        """
-        Displays a prompt and then asks the user for boolean input.
-
-        Parameters:
-        ----------
-        prompt: :obj:`str`  (optional)
-            The prompt to display to the user before asking for the input.
-
-        prefix: :obj:`str` (optional)
-            The prefix that will be displayed before the character space for
-            the user provided input.
-
-            Default: "Value"
-
-        converter: :obj:`func` (optional)
-            A function that takes the provided value as an argument and converts
-            it to the boolean value that is returned.
-        """
-        def converter(ans):
-            return ans.lower().strip() == "yes" or ans.lower().strip() == "y"
-        if prompt:
-            self.prompt(prompt, style_func=self.style.SQL_TABLE)
-        return self.query(prefix=prefix, converter=converter)
-
-    def query_until(self,
-        prompt=None,
-        is_valid=None,
-        prefix="Value",
-        invalid_prompt="Invalid value, try again.",
-        converter=lambda value: value,
-    ):
-        """
-        Displays a prompt and then asks the user for input until the provided
-        input is valid.
-
-        Parameters:
-        ----------
-        prompt: :obj:`str`  (optional)
-            The prompt to display to the user before asking for the input.
-
-        prefix: :obj:`str` (optional)
-            The prefix that will be displayed before the character space for
-            the user provided input.
-
-            Ex.
-            --
-            >>> Value: __
-
-            Default: "Value"
-
-        invalid_prompt: :obj:`str` (optional)
-            The prompt to display to the user in the event that the input is
-            not valid.
-
-            Default: "Invalid value, try again."
-
-        is_valid: :obj:`func` (optional)
-            A function that takes the provided value as an argument and returns
-            whether or not the user provided value is valid.  If provided, the
-            user will be continually asked to provide the input until the input
-            is valid.
-
-        converter: :obj:`func` (optional)
-            A function that takes the provided value as an argument and converts
-            it to the value that should be returned from the method.
-        """
-        if prompt:
-            self.prompt(prompt, style_func=self.style.SQL_TABLE)
-        while True:
-            value = self.query(prefix=prefix)
-            if is_valid is None or is_valid(value):
-                return converter(value)
-            else:
-                self.prompt(invalid_prompt)
-
-    def query_options(self, options, prompt=None, option_display=None,
-            **kwargs):
-        """
-        Displays a prompt to the user and then a series of options, asking
-        the user for a selection from those options.  The user will be
-        continually asked to select from the options until a valid selection
-        is chosen.
-        """
-        if prompt:
-            self.prompt(prompt, style_func=self.style.SQL_TABLE)
-        self.prompt_options(options, option_display=option_display)
-        return self.query_until(**kwargs)
-
-    def prompt_options(self, options, prompt=None, option_display=None):
-        """
-        Displays a series of options to the user.
-        """
-        def display_option(option):
-            if option_display is not None:
-                if isinstance(option_display, str):
-                    if isinstance(option, dict):
-                        try:
-                            return option[option_display]
-                        except KeyError:
-                            return option
-                    else:
-                        return getattr(option, option_display, option)
-                elif six.callable(option_display):
-                    return option_display(option)
-                else:
-                    raise ValueError(
-                        "The option_display must either be a callable or a "
-                        "string key/attribute."
-                    )
-            return option
-
-        self.stdout.write("\n".join([
-            "(%s) %s" % (i + 1, display_option(option))
-            for i, option in enumerate(options)
-        ]))
+    def query_boolean(self, prompt, **kwargs):
+        query = BooleanQuery(self, prompt=prompt, **kwargs)
+        return query()
 
     def _get_style_func(self, style_func):
         if isinstance(style_func, str):

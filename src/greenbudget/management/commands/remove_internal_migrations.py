@@ -18,7 +18,7 @@ class Command(CustomCommand):
         num = qs.count()
         if num:
             self.info(f"Found {qs.count()} migrations.")
-            ans = self.query_boolean("Remove?", prefix=('y/n'))
+            ans = self.query_boolean("Remove?")
             if ans:
                 qs.delete()
                 self.success(f"Successfully deleted {num} migrations.")

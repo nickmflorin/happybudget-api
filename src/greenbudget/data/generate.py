@@ -72,6 +72,8 @@ ApplicationDataGeneratorConfigParams = [
     Configuration(attr='num_details', required=False, default=10),
     Configuration(attr='num_contacts', required=False, default=0),
     Configuration(attr='num_fringes', required=False, default=10),
+    Configuration(attr='max_num_groups', required=False, default=3),
+    Configuration(attr='include_groups', required=False, default=True),
     Configuration(attr='user', required=False, default=None),
     Configuration(attr='pbar', required=False, default=None),
     Configuration(attr='cmd', required=False, default=None),

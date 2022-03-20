@@ -1,123 +1,56 @@
 import functools
 
-from greenbudget.lib.utils import (
-    ensure_iterable, empty, conditionally_format_string)
+from greenbudget.lib.utils import ensure_iterable, empty
 from greenbudget.app.user.models import User
 
-
-class ValidationMessageMixin:
-    default_message = 'Invalid value'
-
-    def __init__(self, message=None):
-        self._message = message
-
-    def get_message(self, value, message=None, **kwargs):
-        msg = message or self._message or self.default_message
-        if hasattr(msg, '__call__'):
-            return msg(value)
-        return conditionally_format_string(msg, value=value, **kwargs)
+from .validators import (
+    ValidationFailed, Validator, IntegerValidator, ModelExistsValidator,
+    BooleanValidator)
 
 
-class ValidationFailed(Exception, ValidationMessageMixin):
-    def __init__(self, value, message=None):
-        Exception.__init__(self)
-        self._value = value
-        ValidationMessageMixin.__init__(self, message)
+class IncludedQuery:
+    def __init__(self, query_cls, param, **kwargs):
+        self._query_cls = query_cls
+        self._param = param
+        self._kwargs = kwargs
 
-    @property
-    def message(self):
-        return self.get_message()
-
-    def __str__(self):
-        return self.message
-
-    def get_message(self, **kwargs):
-        return super().get_message(self._value, **kwargs)
-
-
-class Validator(ValidationMessageMixin):
-    def __init__(self, *args, **kwargs):
-        self._func = kwargs.pop('func', None)
-        self._test = 5
-        if self._func is None and len(args) != 0 \
-                and hasattr(args[0], '__call__'):
-            self._func = args[0]
-        super().__init__(**kwargs)
-
-    def validate(self, value):
-        return value
-
-    def __call__(self, value):
-        if self._func is not None:
-            result = self._func(value)
-        else:
-            result = self.validate(value)
-        if result is None or result is True:
-            return value
-        elif result is False:
-            self.fail(value)
-        return result
-
-    def fail(self, value, **kwargs):
-        msg = self.get_message(value, **kwargs)
-        raise ValidationFailed(value, msg)
-
-
-class IntegerValidator(Validator):
-    def validate(self, value):
-        try:
-            return int(value)
-        except ValueError:
-            self.fail(f"Value {value} is not a valid integer.")
-
-
-class ModelExistsValidator(Validator):
-    default_message = "{model_cls} does not exist."
-
-    def __init__(self, model_cls, attr, **kwargs):
-        super().__init__(**kwargs)
-        self._attr = attr
-        self._model_cls = model_cls
-
-    @property
-    def model_cls(self):
-        return self._model_cls
-
-    @property
-    def attr(self):
-        return self._attr
-
-    def validate(self, value):
-        kwargs = {self.attr: value}
-        try:
-            return self.model_cls.objects.get(**kwargs)
-        except self.model_cls.DoesNotExist:
-            self.fail(value, model_cls=self._model_cls.__name__)
+    def __call__(self, func):
+        @functools.wraps(func)
+        def inner(command, *a, **kw):
+            query_instance = self._query_cls(command=command, **self._kwargs)
+            return query_instance.call_included_fn(
+                func, command, self._param, self._kwargs, *a, **kw)
+        return inner
 
 
 class Query:
     default_validators = []
 
-    def __init__(self, command, **kwargs):
-        self.command = command
+    def __init__(self, **kwargs):
+        self._command = kwargs.pop('command', None)
         self._prompt = kwargs.pop('prompt', None)
         self._prefix = kwargs.pop('prefix', None)
         self._default = kwargs.pop('default', empty)
         self._required = kwargs.pop('required', empty)
         self._validators = ensure_iterable(kwargs.pop('validators', None))
-        if hasattr(self, 'default_validators'):
-            self._validators += getattr(self, 'default_validators')
 
-    def __call__(self):
+    def __call__(self, command=None):
+        if command is not None:
+            self._command = command
+
         if self._prompt:
             self.command.prompt(self._prompt)
         try:
             while True:
                 try:
-                    value = self.get_value()
+                    value, was_defaulted = self.get_value()
                 except ValidationFailed as e:
                     self.notify_failure(e)
                 else:
+                    # This assumes that the default value provided would pass
+                    # validation.
+                    if was_defaulted:
+                        return value
                     try:
                         vs = self.perform_validation(value)
                     except ValidationFailed as e:
@@ -128,8 +61,17 @@ class Query:
             pass
 
     @property
+    def command(self):
+        if self._command is None:
+            raise Exception(
+                "Query cannot be performed until attributed to a command.")
+        return self._command
+
+    @property
     def prefix(self):
-        return self._prefix or "Value"
+        if self._prefix is None:
+            return getattr(self, 'default_prefix', "Value")
+        return self._prefix
 
     @property
     def full_prefix(self):
@@ -156,9 +98,9 @@ class Query:
                 raise ValidationFailed(
                     raw_value, message="This value is required.")
             elif self.default is empty:
-                return None
-            return self.default
-        return raw_value
+                return None, False
+            return self.default, True
+        return raw_value, False
 
     def notify_failure(self, data):
         message = data.message
@@ -194,6 +136,84 @@ class Query:
                     f"{Validator}."
                 )
         return vs
+
+    def call_included_fn(self, func, command, param, *a, **kw):
+        value = self.__call__()
+        kw.update(**{param: value})
+        return func(command, *a, **kw)
+
+    # @classmethod
+    # def decorate_included_fn(cls, func, param, **kwargs):
+    #     @functools.wraps(func)
+    #     def inner(command, *a, **kw):
+    #         query_instance = cls(command, **kwargs)
+    #         return query_instance.call_included_fn(
+    #             func, command, param, kwargs, *a, **kw)
+    #     return inner
+
+    @classmethod
+    def include(cls, param, **kwargs):
+        return IncludedQuery(cls, param, **kwargs)
+
+
+class BooleanQuery(Query):
+    default_validators = [BooleanValidator()]
+    default_prefix = "(Yes/No)"
+
+    def __init__(self, *args, **kwargs):
+        self._query_on_confirm = kwargs.pop('query_on_confirm', None)
+        super().__init__(*args, **kwargs)
+
+    def __call__(self, *args, **kwargs):
+        value = super().__call__(*args, **kwargs)
+        if value is True and self.query_on_confirm is not None:
+            confirmed_value = self.query_on_confirm()
+            return [value, confirmed_value]
+        return value
+
+    @property
+    def query_on_confirm(self):
+        # TODO: Make sure confirmation queries are not double nested because the
+        # code does not support it at this point in time.
+        if self._query_on_confirm is not None:
+            # if not hasattr(self._query_on_confirm, '__iter__') \
+            #         or len(self._query_on_confirm) != 2:
+            #     raise Exception(
+            #         "The query to perform on confirmation must be specified "
+            #         "as a length-2 iterable, where the first element is the "
+            #         "parameter name and the second element is the query "
+            #         "instance to include."
+            #     )
+            return self._query_on_confirm
+        return None
+
+    # def call_included_fn(self, func, command, param, kwargs, *a, **kw):
+    #     query_on_confirm_param = kwargs.pop('query_on_confirm_param', None)
+
+    #     value = self.__call__()
+    #     import ipdb
+    #     ipdb.set_trace()
+    #     # Since (at least at this point) we do not have the mechanisms
+    #     # to support a user inputing an entire list, it is safe to
+    #     # assume that if the value is a list it is from the confirmation.
+    #     if isinstance(value, list):
+    #         assert query_on_confirm_param is not None
+    #         kw.update(**{
+    #             param: value[0],
+    #             query_on_confirm_param: value[1]
+    #         })
+    #     else:
+    #         kw.update(**{param: value})
+
+    #     return func(command, *a, **kw)
+
+    # @classmethod
+    # def include(cls, param, **kwargs):
+    #     if 'query_on_confirm' in kwargs:
+    #         assert 'query_on_confirm_param' in kwargs, \
+    #             "If performing additional queries on confirmation, the " \
+    #             "`query_on_confirm_param` argument must be provided."
+    #     return super(BooleanQuery, cls).include(param, **kwargs)
 
 
 class IntegerQuery(Query):
@@ -248,27 +268,6 @@ class UserQuery(ModelQuery):
     default_attr = 'email'
     model_cls = User
 
-
-def query_and_include(param, **kwargs):
-    query_cls = kwargs.pop('query_cls', Query)
-
-    def decorator(func):
-        @functools.wraps(func)
-        def inner(command, *a, **kw):
-            query_instance = query_cls(command, **kwargs)
-            value = query_instance()
-            kw.update(**{param: value})
-            return func(command, *a, **kw)
-        return inner
-    return decorator
-
-
-def query_and_include_integer(param, **kwargs):
-    kwargs.setdefault('query_cls', IntegerQuery)
-    return query_and_include(param, **kwargs)
-
-
-def query_and_include_user(**kwargs):
-    kwargs.setdefault('query_cls', UserQuery)
-    param = kwargs.pop('param', 'user')
-    return query_and_include(param, **kwargs)
+    @classmethod
+    def include(cls, param='user', **kwargs):
+        return super(UserQuery, cls).include(param, **kwargs)

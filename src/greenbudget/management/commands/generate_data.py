@@ -1,11 +1,11 @@
 from tqdm import tqdm
 
 from greenbudget.management import (
-    CustomCommand, debug_only, query_and_include_user,
-    query_and_include_integer, Validator)
+    CustomCommand, debug_only, UserQuery, IntegerQuery, Validator)
 
 from greenbudget.app import cache
 from greenbudget.data import generate
+from greenbudget.management.query import BooleanQuery
 
 
 @debug_only
@@ -18,14 +18,14 @@ class Command(CustomCommand):
         )
 
     @cache.disable()
-    @query_and_include_integer(
+    @IntegerQuery.include(
         param='num_budgets',
         default=1,
         max_value=5,
         prompt='Enter the number of budgets you would like to generate.',
         prefix='No. Budgets'
     )
-    @query_and_include_integer(
+    @IntegerQuery.include(
         param='num_accounts',
         default=10,
         max_value=20,
@@ -35,7 +35,7 @@ class Command(CustomCommand):
         ),
         prefix='No. Accounts'
     )
-    @query_and_include_integer(
+    @IntegerQuery.include(
         param='num_subaccounts',
         default=10,
         max_value=20,
@@ -45,7 +45,7 @@ class Command(CustomCommand):
         ),
         prefix='No. Sub Accounts'
     )
-    @query_and_include_integer(
+    @IntegerQuery.include(
         param='num_details',
         default=10,
         max_value=20,
@@ -55,7 +55,7 @@ class Command(CustomCommand):
         ),
         prefix='No. Sub Accounts'
     )
-    @query_and_include_integer(
+    @IntegerQuery.include(
         param='num_fringes',
         default=10,
         max_value=20,
@@ -65,14 +65,25 @@ class Command(CustomCommand):
         ),
         prefix='No. Fringes'
     )
-    @query_and_include_integer(
+    @IntegerQuery.include(
         param='num_contacts',
         default=0,
         max_value=50,
         prompt='Enter the number of contacts you would like to generate.',
         prefix='No. Contacts'
     )
-    @query_and_include_user(
+    @BooleanQuery.include(
+        param="include_groups",
+        default=False,
+        prompt='Would you like to generate groups?',
+        query_on_confirm=IntegerQuery.include(
+            param='num_groups',
+            default=3,
+            max_value=8,
+            prompt='Enter the number of groups per table you would like to generate.'  # noqa
+        )
+    )
+    @UserQuery.include(
         prompt="Provide the user the data should be generated for.",
         validators=[
             Validator(
