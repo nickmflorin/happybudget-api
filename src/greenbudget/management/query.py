@@ -50,8 +50,9 @@ class IncludedQuery:
         return data
 
 
-class Query:
+class BaseQuery:
     default_validators = []
+    Validator = Validator
 
     def __init__(self, **kwargs):
         self._command = kwargs.pop('command', None)
@@ -169,13 +170,13 @@ class Query:
         return IncludedQuery(cls, param, **kwargs)
 
 
-class BooleanQuery(Query):
+class BooleanQuery(BaseQuery):
     confirmation_value = True
     default_validators = [BooleanValidator()]
     default_prefix = "(Yes/No)"
 
 
-class IntegerQuery(Query):
+class IntegerQuery(BaseQuery):
     default_validators = [IntegerValidator()]
 
     def __init__(self, *args, **kwargs):
@@ -194,7 +195,7 @@ class IntegerQuery(Query):
         return vs
 
 
-class ModelQuery(Query):
+class ModelQuery(BaseQuery):
     default_attr = 'pk'
     does_not_exist_message = "{model_cls} does not exist."
 
@@ -230,3 +231,11 @@ class UserQuery(ModelQuery):
     @classmethod
     def include(cls, param='user', **kwargs):
         return super(UserQuery, cls).include(param, **kwargs)
+
+
+class Query:
+    Validator = Validator
+    User = UserQuery
+    Model = ModelQuery
+    Boolean = BooleanQuery
+    Integer = IntegerQuery

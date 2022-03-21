@@ -1,6 +1,6 @@
 from django.core import management
 
-from .query import BooleanQuery
+from .query import Query
 
 
 class CustomCommandMixin(object):
@@ -20,7 +20,7 @@ class CustomCommandMixin(object):
         self.prompt(value, style_func=self.style.SUCCESS)
 
     def query_boolean(self, prompt, **kwargs):
-        query = BooleanQuery(self, prompt=prompt, **kwargs)
+        query = Query.Boolean(self, prompt=prompt, **kwargs)
         return query()
 
     def _get_style_func(self, style_func):

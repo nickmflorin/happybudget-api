@@ -1,11 +1,9 @@
 from tqdm import tqdm
 
-from greenbudget.management import (
-    CustomCommand, debug_only, UserQuery, IntegerQuery, Validator)
+from greenbudget.management import CustomCommand, debug_only, Query
 
 from greenbudget.app import cache
 from greenbudget.data import generate
-from greenbudget.management.query import BooleanQuery
 
 
 @debug_only
@@ -18,14 +16,14 @@ class Command(CustomCommand):
         )
 
     @cache.disable()
-    @IntegerQuery.include(
+    @Query.Integer.include(
         param='num_budgets',
         default=1,
         max_value=5,
         prompt='Enter the number of budgets you would like to generate.',
         prefix='No. Budgets'
     )
-    @IntegerQuery.include(
+    @Query.Integer.include(
         param='num_accounts',
         default=10,
         max_value=20,
@@ -35,7 +33,7 @@ class Command(CustomCommand):
         ),
         prefix='No. Accounts'
     )
-    @IntegerQuery.include(
+    @Query.Integer.include(
         param='num_subaccounts',
         default=10,
         max_value=20,
@@ -45,7 +43,7 @@ class Command(CustomCommand):
         ),
         prefix='No. Sub Accounts'
     )
-    @IntegerQuery.include(
+    @Query.Integer.include(
         param='num_details',
         default=10,
         max_value=20,
@@ -55,11 +53,11 @@ class Command(CustomCommand):
         ),
         prefix='No. Sub Accounts'
     )
-    @BooleanQuery.include(
+    @Query.Boolean.include(
         param="include_fringes",
         default=False,
         prompt='Would you like to generate fringes?',
-        query_on_confirm=IntegerQuery.include(
+        query_on_confirm=Query.Integer.include(
             param='num_fringes',
             default=10,
             max_value=20,
@@ -70,11 +68,11 @@ class Command(CustomCommand):
             prefix='No. Fringes'
         )
     )
-    @BooleanQuery.include(
+    @Query.Boolean.include(
         param="include_contacts",
         default=False,
         prompt='Would you like to generate contacts?',
-        query_on_confirm=IntegerQuery.include(
+        query_on_confirm=Query.Integer.include(
             param='num_contacts',
             default=10,
             max_value=50,
@@ -82,11 +80,11 @@ class Command(CustomCommand):
             prefix='No. Contacts'
         )
     )
-    @BooleanQuery.include(
+    @Query.Boolean.include(
         param="include_groups",
         default=False,
         prompt='Would you like to generate groups?',
-        query_on_confirm=IntegerQuery.include(
+        query_on_confirm=Query.Integer.include(
             param='num_groups',
             default=3,
             max_value=8,
@@ -94,14 +92,14 @@ class Command(CustomCommand):
             prompt='Enter the number of groups per table you would like to generate.'  # noqa
         )
     )
-    @UserQuery.include(
+    @Query.User.include(
         prompt="Provide the user the data should be generated for.",
         validators=[
-            Validator(
+            Query.User.Validator(
                 lambda user: user.is_superuser,
                 message="User must be a superuser."
             ),
-            Validator(
+            Query.User.Validator(
                 lambda user: user.is_staff,
                 message="User must be a staff user."
             )
