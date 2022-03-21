@@ -10,6 +10,7 @@ from greenbudget.app import model
 from greenbudget.app.account.models import BudgetAccount
 from greenbudget.app.budget.models import Budget
 from greenbudget.app.fringe.models import Fringe
+from greenbudget.app.group.models import Group
 from greenbudget.app.tagging.models import Color
 from greenbudget.app.subaccount.models import BudgetSubAccount, SubAccountUnit
 
@@ -70,9 +71,11 @@ ApplicationDataGeneratorConfigParams = [
     Configuration(attr='num_accounts', required=False, default=10),
     Configuration(attr='num_subaccounts', required=False, default=10),
     Configuration(attr='num_details', required=False, default=10),
+    Configuration(attr='include_contacts', required=False, default=True),
     Configuration(attr='num_contacts', required=False, default=0),
+    Configuration(attr='include_fringes', required=False, default=True),
     Configuration(attr='num_fringes', required=False, default=10),
-    Configuration(attr='max_num_groups', required=False, default=3),
+    Configuration(attr='num_groups', required=False, default=3),
     Configuration(attr='include_groups', required=False, default=True),
     Configuration(attr='user', required=False, default=None),
     Configuration(attr='pbar', required=False, default=None),
@@ -194,11 +197,21 @@ class ApplicationDataGeneratorConfig:
 
     @property
     def num_contacts(self):
-        return self._num_contacts
+        if self._include_contacts:
+            return self._num_contacts
+        return 0
+
+    @property
+    def num_groups(self):
+        if self._include_groups:
+            return self._num_groups
+        return 0
 
     @property
     def num_fringes(self):
-        return self._num_fringes * self.num_budgets
+        if self._include_fringes:
+            return self._num_fringes * self.num_budgets
+        return 0
 
     @property
     def num_accounts(self):
@@ -221,6 +234,11 @@ class ApplicationDataGeneratorConfig:
             self.num_details,
             self.num_contacts,
             self.num_fringes
+        ]) + cumulative_sum([
+            self.num_budgets * self.num_groups,
+            self.num_accounts * self.num_groups,
+            self.num_subaccounts * self.num_groups,
+            self.num_details * self.num_groups,
         ])
 
 
@@ -235,10 +253,7 @@ class ApplicationDataGenerator(ApplicationDataGeneratorConfig):
             super().__init__(**config)
 
     def warn(self, msg):
-        if self._on_warning is not None:
-            self._on_warning(msg)
-        else:
-            print(msg)
+        self.cmd.warn(msg)
 
     def create(self, model_cls, **kwargs):
         factory = factories.registry.get(model_cls)
@@ -267,9 +282,23 @@ class ApplicationDataGenerator(ApplicationDataGeneratorConfig):
 
     @transaction.atomic
     def __call__(self, pbar=None):
+        # Set the user on the model decorator so that we do not get warnings
+        # about not being able to infer the user from the model save outside of
+        # the request context.
         setattr(model.model.thread, 'user', self.user)
 
         self.precheck()
+
+        self.group_colors = Color.objects.filter(
+            content_types__model='group',
+            content_types__app_label='group'
+        ).all()
+
+        self.fringe_colors = Color.objects.filter(
+            content_types__model='fringe',
+            content_types__app_label='fringe'
+        ).all()
+
         self._progress = 0
 
         if pbar is not None:
@@ -293,30 +322,37 @@ class ApplicationDataGenerator(ApplicationDataGeneratorConfig):
     def create_budget(self, i):
         budget = self.create(Budget, name=f"Budget {i + 1}")
         fringes = self.create_fringes(budget)
+
+        groups = self.create_groups(parent=budget)
         for j in range(self._num_accounts):
-            self.create_account(budget, j, fringes)
+            self.create_account(budget, j, fringes, groups)
+
+    def create_groups(self, parent):
+        return [self.create(Group,
+            name=f"Group {i + 1}",
+            color=select_random(self.group_colors, allow_null=True),
+            parent=parent
+        ) for i in range(self.num_groups)]
 
     def create_fringes(self, budget):
-        colors = Color.objects.filter(
-            content_types__model='fringe',
-            content_types__app_label='fringe'
-        ).all()
         return [self.create(Fringe,
-            color=select_random(colors, allow_null=True),
+            color=select_random(self.fringe_colors, allow_null=True),
             name=f"Fringe {i + 1}",
             budget=budget,
             unit=select_random_model_choice(
                 Fringe, 'UNITS', allow_null=True, null_frequency=0.3)
         ) for i in range(self._num_fringes)]
 
-    def create_account(self, budget, i, fringes):
+    def create_account(self, budget, i, fringes, groups):
         account = self.create(BudgetAccount,
             identifier=f"{i}000",
             description=f"{i}000 Description",
-            parent=budget
+            parent=budget,
+            group=select_random(groups, null_frequency=0.5, allow_null=True)
         )
+        sub_groups = self.create_groups(parent=account)
         for j in range(self._num_subaccounts):
-            self.create_subaccount(account, j, fringes)
+            self.create_subaccount(account, j, fringes, sub_groups)
         return account
 
     def _create_subaccount(self, parent, fringes, **kwargs):
@@ -333,21 +369,24 @@ class ApplicationDataGenerator(ApplicationDataGeneratorConfig):
                 subaccount.fringes.add(f)
         return subaccount
 
-    def create_subaccount(self, account, i, fringes):
+    def create_subaccount(self, account, i, fringes, groups):
         subaccount = self._create_subaccount(
             parent=account,
             fringes=fringes,
             identifier=f"{account.description[:-1]}{i}",
             description=f"{account.description[:-1]}{i} Description",
+            group=select_random(groups, null_frequency=0.5, allow_null=True)
         )
+        detail_groups = self.create_groups(parent=subaccount)
         for j in range(self._num_details):
-            self.create_detail(subaccount, j, fringes)
+            self.create_detail(subaccount, j, fringes, detail_groups)
         return subaccount
 
-    def create_detail(self, subaccount, i, fringes):
+    def create_detail(self, subaccount, i, fringes, groups):
         return self._create_subaccount(
             parent=subaccount,
             fringes=fringes,
             identifier=f"{subaccount.description}-{i + 1}",
             description=f"{subaccount.description}-{i + 1} Description",
+            group=select_random(groups, null_frequency=0.5, allow_null=True)
         )

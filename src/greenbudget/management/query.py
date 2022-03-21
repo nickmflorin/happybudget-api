@@ -18,6 +18,7 @@ class IncludedQuery:
         self._query_cls = query_cls
         self._param = param
         self._query_on_confirm = kwargs.pop('query_on_confirm', None)
+        self._unconfirmed_value = kwargs.pop('unconfirmed_value', empty)
         if self._query_on_confirm is not None \
                 and not hasattr(query_cls, 'confirmation_value'):
             raise Exception(
@@ -41,6 +42,11 @@ class IncludedQuery:
             assert hasattr(self._query_cls, 'confirmation_value')
             if value == self._query_cls.confirmation_value:
                 data.update(self._query_on_confirm.get_query_data(command))
+            elif self._query_on_confirm._unconfirmed_value is not empty:
+                data.update(**{
+                    self._query_on_confirm._param:
+                    self._query_on_confirm._unconfirmed_value
+                })
         return data
 
 

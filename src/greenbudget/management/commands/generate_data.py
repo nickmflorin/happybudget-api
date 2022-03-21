@@ -55,22 +55,32 @@ class Command(CustomCommand):
         ),
         prefix='No. Sub Accounts'
     )
-    @IntegerQuery.include(
-        param='num_fringes',
-        default=10,
-        max_value=20,
-        prompt=(
-            'Enter the number of fringes per budget you would like to '
-            'generate.'
-        ),
-        prefix='No. Fringes'
+    @BooleanQuery.include(
+        param="include_fringes",
+        default=False,
+        prompt='Would you like to generate fringes?',
+        query_on_confirm=IntegerQuery.include(
+            param='num_fringes',
+            default=10,
+            max_value=20,
+            prompt=(
+                'Enter the number of fringes per budget you would like to '
+                'generate.'
+            ),
+            prefix='No. Fringes'
+        )
     )
-    @IntegerQuery.include(
-        param='num_contacts',
-        default=0,
-        max_value=50,
-        prompt='Enter the number of contacts you would like to generate.',
-        prefix='No. Contacts'
+    @BooleanQuery.include(
+        param="include_contacts",
+        default=False,
+        prompt='Would you like to generate contacts?',
+        query_on_confirm=IntegerQuery.include(
+            param='num_contacts',
+            default=10,
+            max_value=50,
+            prompt='Enter the number of contacts you would like to generate.',
+            prefix='No. Contacts'
+        )
     )
     @BooleanQuery.include(
         param="include_groups",
@@ -80,6 +90,7 @@ class Command(CustomCommand):
             param='num_groups',
             default=3,
             max_value=8,
+            unconfirmed_value=None,
             prompt='Enter the number of groups per table you would like to generate.'  # noqa
         )
     )
