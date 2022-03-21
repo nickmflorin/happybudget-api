@@ -363,6 +363,55 @@ Congratulations! You are now ready to run the application.
 
 ## Development
 
+### Workflow
+
+Developers should be free to use whatever workflow works best for them, and the
+IDE they use is an important aspect of that workflow.
+
+#### IDE
+
+While it is not required that a developer use
+[VSCode](https://code.visualstudio.com/), it is strongly, strongly recommended
+that they do.  Usage of [VSCode](https://code.visualstudio.com/) will mean that
+the setup for the team's code environment will more seamlessly integrate into
+your workflow.
+
+If [VSCode](https://code.visualstudio.com/) is not the ideal IDE for you, that
+is fine - but it is your responsibility to make sure that the IDE of your
+choosing is properly setup for the team's code environment, which primary relates
+to (but is not limited to) linting.
+
+##### Extensions
+
+If using [VSCode](https://code.visualstudio.com/), please make sure to
+install the `"ms-python.vscode-pylance"` and `"ms-python.python"` extensions
+from the [VSCode](https://code.visualstudio.com/) marketplace.
+
+##### `settings.json`
+
+For [VSCode](https://code.visualstudio.com/) to function properly with the
+code environment configuration remote to this repository, you should add the
+following configurations to your `settings.json` file:
+
+```json
+{
+	"python.linting.flake8Enabled": true,
+	"python.linting.pylintEnabled": true,
+	"python.linting.pylintArgs": [
+		"--load-plugins=pylint_django",
+		"--errors-only"
+	],
+	"python.linting.flake8CategorySeverity.W": "Error",
+	"python.linting.pycodestyleEnabled": true,
+	"workbench.tree.indent": 22,
+	"editor.rulers": [
+		80,
+		100
+	],
+	"python.languageServer": "Pylance"
+}
+```
+
 ### Running Locally
 
 To run the application locally, simply activate the virtual environment and
