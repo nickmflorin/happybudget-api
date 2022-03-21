@@ -83,8 +83,8 @@ class PlaidClient(plaid_api.PlaidApi):
     @raise_in_api_context("There was an error creating the link token.")
     def create_link_token(self, user):
         """
-        This first token needed in for part of the Plaid flow.
-        Sequence: Link Token -> Public Token -> Access Token
+        Creates a link token for the given :obj:`User`.  The link token is
+        used to open the Plaid Connect modal in the FE.
         """
         request = link_token_create_request.LinkTokenCreateRequest(
             client_name=settings.PLAID_CLIENT_NAME,
