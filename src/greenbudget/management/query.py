@@ -9,18 +9,39 @@ from .validators import (
 
 
 class IncludedQuery:
+    """
+    A decorator that will include the query information for the provided
+    subclass of :obj:`Query` in the function call arguments.
+    """
+
     def __init__(self, query_cls, param, **kwargs):
         self._query_cls = query_cls
         self._param = param
+        self._query_on_confirm = kwargs.pop('query_on_confirm', None)
+        if self._query_on_confirm is not None \
+                and not hasattr(query_cls, 'confirmation_value'):
+            raise Exception(
+                "Query class {query_cls.__name__} does not support query on "
+                "confirmation."
+            )
         self._kwargs = kwargs
 
     def __call__(self, func):
         @functools.wraps(func)
         def inner(command, *a, **kw):
-            query_instance = self._query_cls(command=command, **self._kwargs)
-            return query_instance.call_included_fn(
-                func, command, self._param, self._kwargs, *a, **kw)
+            kw.update(**self.get_query_data(command))
+            return func(command, *a, **kw)
         return inner
+
+    def get_query_data(self, command):
+        query_instance = self._query_cls(command=command, **self._kwargs)
+        value = query_instance.__call__()
+        data = {self._param: value}
+        if self._query_on_confirm is not None:
+            assert hasattr(self._query_cls, 'confirmation_value')
+            if value == self._query_cls.confirmation_value:
+                data.update(self._query_on_confirm.get_query_data(command))
+        return data
 
 
 class Query:
@@ -137,83 +158,15 @@ class Query:
                 )
         return vs
 
-    def call_included_fn(self, func, command, param, *a, **kw):
-        value = self.__call__()
-        kw.update(**{param: value})
-        return func(command, *a, **kw)
-
-    # @classmethod
-    # def decorate_included_fn(cls, func, param, **kwargs):
-    #     @functools.wraps(func)
-    #     def inner(command, *a, **kw):
-    #         query_instance = cls(command, **kwargs)
-    #         return query_instance.call_included_fn(
-    #             func, command, param, kwargs, *a, **kw)
-    #     return inner
-
     @classmethod
     def include(cls, param, **kwargs):
         return IncludedQuery(cls, param, **kwargs)
 
 
 class BooleanQuery(Query):
+    confirmation_value = True
     default_validators = [BooleanValidator()]
     default_prefix = "(Yes/No)"
-
-    def __init__(self, *args, **kwargs):
-        self._query_on_confirm = kwargs.pop('query_on_confirm', None)
-        super().__init__(*args, **kwargs)
-
-    def __call__(self, *args, **kwargs):
-        value = super().__call__(*args, **kwargs)
-        if value is True and self.query_on_confirm is not None:
-            confirmed_value = self.query_on_confirm()
-            return [value, confirmed_value]
-        return value
-
-    @property
-    def query_on_confirm(self):
-        # TODO: Make sure confirmation queries are not double nested because the
-        # code does not support it at this point in time.
-        if self._query_on_confirm is not None:
-            # if not hasattr(self._query_on_confirm, '__iter__') \
-            #         or len(self._query_on_confirm) != 2:
-            #     raise Exception(
-            #         "The query to perform on confirmation must be specified "
-            #         "as a length-2 iterable, where the first element is the "
-            #         "parameter name and the second element is the query "
-            #         "instance to include."
-            #     )
-            return self._query_on_confirm
-        return None
-
-    # def call_included_fn(self, func, command, param, kwargs, *a, **kw):
-    #     query_on_confirm_param = kwargs.pop('query_on_confirm_param', None)
-
-    #     value = self.__call__()
-    #     import ipdb
-    #     ipdb.set_trace()
-    #     # Since (at least at this point) we do not have the mechanisms
-    #     # to support a user inputing an entire list, it is safe to
-    #     # assume that if the value is a list it is from the confirmation.
-    #     if isinstance(value, list):
-    #         assert query_on_confirm_param is not None
-    #         kw.update(**{
-    #             param: value[0],
-    #             query_on_confirm_param: value[1]
-    #         })
-    #     else:
-    #         kw.update(**{param: value})
-
-    #     return func(command, *a, **kw)
-
-    # @classmethod
-    # def include(cls, param, **kwargs):
-    #     if 'query_on_confirm' in kwargs:
-    #         assert 'query_on_confirm_param' in kwargs, \
-    #             "If performing additional queries on confirmation, the " \
-    #             "`query_on_confirm_param` argument must be provided."
-    #     return super(BooleanQuery, cls).include(param, **kwargs)
 
 
 class IntegerQuery(Query):
