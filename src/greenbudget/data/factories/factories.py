@@ -363,8 +363,8 @@ class ContactFactory(CustomModelFactory):
     contact_type = Contact.TYPES.vendor
     phone_number = "15555555555"
     rate = 100
-    city = "New York"
-    company = "GE"
+    city = factory.Faker('city')
+    company = factory.Faker('company')
     position = None
 
     class Meta:
