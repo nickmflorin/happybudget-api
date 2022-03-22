@@ -111,7 +111,7 @@ class Actual(BudgetingOrderedRowModel):
     @classmethod
     def from_plaid_transaction(cls, transaction, **kwargs):
         return cls(
-            name=transaction['name'],
+            name=transaction['name'][:50],
             notes=(', '.join(transaction['category'])),
             date=datetime.datetime.fromisoformat(str(transaction['date'])),
             value=transaction['amount'],
