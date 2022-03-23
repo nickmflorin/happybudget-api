@@ -194,6 +194,7 @@ class SubAccountManager(
                 i.actions.UPDATE)],
             commit=False,
         )
+
         instances = tree.subaccounts.union(instances)
         subaccount_instance_cache.invalidate(instances)
 

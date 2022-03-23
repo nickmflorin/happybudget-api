@@ -984,7 +984,8 @@ def test_bulk_update_children_budget_updated_once(api_client, user, budget_f,
 def test_bulk_create_children(api_client, user, budget_f, models, create_fringe):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
-    subaccount = budget_f.create_subaccount(parent=account, rate=100)
+    subaccount = budget_f.create_subaccount(
+        parent=account, rate=100, quantity=1)
     fringes = [
         create_fringe(budget=budget, rate=0.5),
         create_fringe(budget=budget, rate=0.2)
