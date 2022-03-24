@@ -53,7 +53,7 @@ class Contact(OrderedRowModel):
         unique_together = (('created_by', 'order'))
 
     def __str__(self):
-        return self.email
+        return self.email or self.full_name or ""
 
     @property
     def full_name(self):

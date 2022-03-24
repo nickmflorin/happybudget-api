@@ -93,6 +93,11 @@ def get_user_fields(model_cls):
     ]
 
 
+RATES = [float(i) for i in range(20, 1000)]
+QUANTITIES = [float(i) for i in range(1, 20)]
+MULTIPLIERS = [float(i) for i in range(1, 10)]
+
+
 class ApplicationDataGeneratorConfig:
 
     def __init__(self, **config):
@@ -191,6 +196,7 @@ class ApplicationDataGenerator(ApplicationDataGeneratorConfig):
         self.cmd.warn(msg)
 
     def create(self, model_cls, **kwargs):
+        build = kwargs.pop('build', False)
         factory = factories.registry.get(model_cls)
 
         for user_field in get_user_fields(model_cls):
@@ -198,7 +204,7 @@ class ApplicationDataGenerator(ApplicationDataGeneratorConfig):
                 kwargs[user_field] = self.user
         # If running a `dry_run`, only instantiate the instance - do not save
         # it to the database.
-        if self.dry_run:
+        if self.dry_run or build:
             instance = factory.build(**kwargs)
         else:
             instance = factory(**kwargs)
@@ -240,8 +246,9 @@ class ApplicationDataGenerator(ApplicationDataGeneratorConfig):
         if pbar is not None:
             self._pbar = pbar
 
+        contacts = self.create_contacts()
         for bi in range(self._num_budgets):
-            self.create_budget(bi)
+            self.create_budget(bi, contacts)
 
     def precheck(self):
         if Color.objects.count() == 0:
@@ -255,17 +262,20 @@ class ApplicationDataGenerator(ApplicationDataGeneratorConfig):
                 "the application fixtures?"
             )
 
-    def create_budget(self, i):
+    def create_budget(self, i, contacts):
         budget = self.create(Budget, name=f"Budget {i + 1}")
         fringes = self.create_fringes(budget)
-        contacts = self.create_contacts()
 
         groups = self.create_groups(parent=budget)
         for j in range(self._num_accounts):
             self.create_account(budget, j, fringes, groups, contacts)
 
     def create_contacts(self):
-        return [self.create(Contact) for i in range(self.num_contacts)]
+        contacts = [
+            self.create(Contact, build=True)
+            for i in range(self.num_contacts)
+        ]
+        return Contact.objects.bulk_add(contacts)
 
     def create_groups(self, parent):
         return [self.create(Group,
@@ -296,6 +306,13 @@ class ApplicationDataGenerator(ApplicationDataGeneratorConfig):
         return account
 
     def _create_subaccount(self, parent, fringes, **kwargs):
+        kwargs.setdefault('rate', select_random(
+            RATES, null_frequency=0.2, allow_null=True))
+        kwargs.setdefault('quantity', select_random(
+            QUANTITIES, null_frequency=0.2, allow_null=True))
+        kwargs.setdefault('multiplier', select_random(
+            MULTIPLIERS, null_frequency=0.6, allow_null=True))
+
         subaccount = self.create(BudgetSubAccount, parent=parent, **kwargs)
         fringes_for_subaccount = select_random_set(
             fringes, allow_null=False, min_count=0, max_count=4)
