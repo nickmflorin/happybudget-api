@@ -685,6 +685,7 @@ def test_get_children_ordered_by_group(api_client, user, budget_f,
         create_group(parent=subaccount),
         create_group(parent=subaccount)
     ]
+    # pylint: disable=expression-not-assigned
     [
         budget_f.create_subaccount(
             parent=subaccount,

@@ -54,7 +54,7 @@ class TemplateSerializer(TemplateSimpleSerializer):
         else:
             is_community = attrs.get("community", self.instance.community)
             if not request.user.is_staff and is_community:
-                raise permissions.PermissionError(
+                raise permissions.PermissionErr(
                     "Only staff users can modify community templates.")
             elif 'hidden' in attrs:
                 if not is_community:

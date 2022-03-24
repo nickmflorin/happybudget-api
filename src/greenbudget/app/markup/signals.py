@@ -157,6 +157,7 @@ def markups_changed(instance, reverse, action, model, pk_set, **kwargs):
         #     wise the Markup will not appear in the correct place in the Budget.
         # (2) The Markup is of UNIT type PERCENT - because only PERCENT UNIT
         #     Markup(s) are applicable for children.
+        # pylint: disable=expression-not-assigned
         [validate_unit(markup) for markup in markups]
         if reverse:
             [validate_parent(instance, child) for child in children]

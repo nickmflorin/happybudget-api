@@ -16,7 +16,6 @@ class cached_stripe_property(cached_property):
     us to denote that a given property on :obj:`StripeCustomer` is related to
     data from Stripe's API and should be cleared when a reload is warranted.
     """
-    pass
 
 
 class token_cached_stripe_property(cached_stripe_property):
@@ -32,7 +31,6 @@ class token_cached_stripe_property(cached_stripe_property):
     This method descriptor can only be used for properties that return values
     that can be safely serialized.
     """
-    pass
 
 
 class StripeCustomer:
@@ -166,11 +164,9 @@ class StripeCustomer:
 
     @property
     def subscription_items(self):
+        # pylint: disable=unsubscriptable-object
         if self.subscription:
-            return [
-                obj
-                for obj in self.subscription['items'].data
-            ]
+            return self.subscription['items'].data
         return []
 
     @property
@@ -208,6 +204,7 @@ class StripeCustomer:
         """
         if self.subscription:
             return self.subscription.status
+        return None
 
     @token_cached_stripe_property
     def billing_status(self):
@@ -244,6 +241,7 @@ class StripeCustomer:
             # Right now, we are only supporting card payment methods.
             type='card'
         )
+        # pylint: disable=expression-not-assigned
         [setattr(pm, 'is_default', False) for pm in payment_methods]
         if len(payment_methods) != 0:
             if not self.data.invoice_settings.default_payment_method:
@@ -251,7 +249,8 @@ class StripeCustomer:
             else:
                 default_payment_method = next((
                     pm for pm in payment_methods
-                    if pm.id == self.data.invoice_settings.default_payment_method  # noqa
+                    if pm.id == self.data
+                        .invoice_settings.default_payment_method
                 ), None)
                 if default_payment_method is None:
                     raise Exception(
@@ -265,17 +264,20 @@ class StripeCustomer:
 
     @property
     def default_payment_method(self):
+        # pylint: disable=not-an-iterable
         return next((pm for pm in self.payment_methods if pm.is_default is True))
 
     @token_cached_stripe_property
     def stripe_product_id(self):
         if self.plan:
             return self.plan.product
+        return None
 
     @token_cached_stripe_property
     def product_id(self):
         if self.stripe_product_id:
             return get_product_internal_id(self.stripe_product_id)
+        return None
 
     product_id.token_key = 'product_id'
 

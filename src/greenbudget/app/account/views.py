@@ -169,7 +169,8 @@ class GenericAccountViewSet(views.GenericViewSet):
         BulkAction(
             url_path='bulk-{action_name}-children',
             child_cls=lambda context: context.view.child_instance_cls,
-            child_serializer_cls=lambda context: context.view.child_serializer_cls,  # noqa
+            child_serializer_cls=lambda context:
+                context.view.child_serializer_cls,
             filter_qs=lambda context: models.Q(
                 object_id=context.instance.pk,
                 content_type=ContentType.objects.get_for_model(

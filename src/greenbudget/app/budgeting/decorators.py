@@ -319,7 +319,7 @@ class bulk_action:
         data = self.perform_save(serializer)
         return data
 
-    def render_response(self, data, status=status.HTTP_200_OK):
+    def render_response(self, data, **kwargs):
         if self._include_budget_in_response is True:
             budget = self._get_budget(self.context.instance)
             budget.refresh_from_db()
@@ -327,7 +327,8 @@ class bulk_action:
                 self.budget_serializer,
                 instance=budget,
             )
-        return response.Response(data, status=status)
+        kwargs.setdefault('status', status.HTTP_200_OK)
+        return response.Response(data, **kwargs)
 
     def render_serializer_data(self, serializer_cls, *args, **kwargs):
         kwargs['context'] = self.context.view.get_serializer_context()

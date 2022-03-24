@@ -17,6 +17,7 @@ logger = logging.getLogger('greenbudget')
 
 
 def get_social_google_user(token):
+    # pylint: disable=import-outside-toplevel
     from .models import SocialUser
     url = add_query_params_to_url(
         settings.GOOGLE_OAUTH_API_URL, id_token=token)
@@ -24,13 +25,13 @@ def get_social_google_user(token):
         response = requests.get(url)
     except requests.RequestException as e:
         logger.error("Network Error Validating Google Token: %s" % e)
-        raise InvalidSocialToken()
+        raise InvalidSocialToken() from e
     else:
         try:
             response.raise_for_status()
         except requests.exceptions.HTTPError as e:
             logger.error("HTTP Error Validating Google Token: %s" % e)
-            raise InvalidSocialToken()
+            raise InvalidSocialToken() from e
         else:
             data = response.json()
             return SocialUser(
@@ -45,7 +46,7 @@ SOCIAL_USER_LOOKUPS = {
 }
 
 
-class UserQuerier(object):
+class UserQuerier:
     def active(self):
         return self.filter(is_active=True)
 
@@ -98,14 +99,14 @@ class UserManager(UserQuerier, DjangoUserManager):
     def get_social_user(self, token, provider):
         try:
             return SOCIAL_USER_LOOKUPS[provider](token)
-        except KeyError:
-            raise InvalidSocialProvider()
+        except KeyError as e:
+            raise InvalidSocialProvider() from e
 
     def get_from_google_token(self, token_id):
         try:
             google_user = self.get_social_user(token_id, "google")
-        except InvalidSocialToken:
-            raise self.model.DoesNotExist()
+        except InvalidSocialToken as e:
+            raise self.model.DoesNotExist() from e
         else:
             user = self.get(email=google_user.email)
             user.sync_with_social_provider(social_user=google_user)

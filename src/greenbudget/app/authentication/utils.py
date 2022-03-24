@@ -1,5 +1,3 @@
-from .tokens import AuthToken
-from .models import PublicToken
 import logging
 
 from django.conf import settings
@@ -13,8 +11,8 @@ from greenbudget.lib.utils import empty
 
 from .exceptions import (
     BaseTokenError, InvalidToken, ExpiredToken, NotAuthenticatedError)
-from .models import AnonymousPublicToken
-
+from .models import AnonymousPublicToken, PublicToken
+from .tokens import AuthToken
 
 logger = logging.getLogger('greenbudget')
 
@@ -31,10 +29,11 @@ def request_is_admin(request):
     return '/admin/' in request.path
 
 
-def user_can_authenticate(user, raise_exception=True, permissions=None):
+def user_can_authenticate(user, raise_exception=True, pms=None):
+    # pylint: disable=import-outside-toplevel
     from greenbudget.app.permissions import check_user_permissions
     try:
-        check_user_permissions(user, permissions=permissions)
+        check_user_permissions(user, permissions=pms)
     except NotAuthenticatedError as e:
         if raise_exception:
             raise e
@@ -72,8 +71,8 @@ def parse_public_token(token=empty, request=None, instance=None, public=False):
     kwargs = {'public_id': str(token)} if public else {'private_id': str(token)}
     try:
         public_token = PublicToken.objects.get(**kwargs)
-    except PublicToken.DoesNotExist:
-        raise InvalidToken()
+    except PublicToken.DoesNotExist as e:
+        raise InvalidToken() from e
     else:
         if instance is not None and public_token.instance != instance:
             raise InvalidToken()
@@ -98,8 +97,8 @@ def parse_token(token=empty, request=None, token_cls=None):
     token_cls = token_cls or AuthToken
     try:
         token_obj = token_cls(token, verify=False)
-    except BaseTokenError:
-        raise InvalidToken()
+    except BaseTokenError as e:
+        raise InvalidToken() from e
 
     # We need to parse and verify the user ID associated with the token in order
     # to include that information in the TokenExpiredError exception which
@@ -107,10 +106,10 @@ def parse_token(token=empty, request=None, token_cls=None):
     user_id = parse_user_id_from_token(token_obj)
     try:
         user = get_user_model().objects.get(pk=user_id)
-    except get_user_model().DoesNotExist:
+    except get_user_model().DoesNotExist as e:
         # This is an edge case where an old JWT might be stashed in the browser
         # but the user may have been deleted.
-        raise InvalidToken()
+        raise InvalidToken() from e
 
     exp_claim = api_settings.SLIDING_TOKEN_REFRESH_EXP_CLAIM \
         if token_cls is AuthToken else "exp"

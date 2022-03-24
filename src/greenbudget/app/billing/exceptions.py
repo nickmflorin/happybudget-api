@@ -39,7 +39,7 @@ class StripeBadRequest(exceptions.BadRequest):
 
 
 class ProductPermissionError(
-        ProductPermissionIdMixin, permissions.PermissionError):
+        ProductPermissionIdMixin, permissions.PermissionErr):
     default_detail = _("The account is not subscribed to the correct product.")
     default_code = permissions.PermissionErrorCodes.PRODUCT_PERMISSION_ERROR
 
@@ -50,4 +50,4 @@ class ProductPermissionError(
 
         permission_id = kwargs.pop('permission_id', None)
         ProductPermissionIdMixin.__init__(self, permission_id=permission_id)
-        permissions.PermissionError.__init__(self, *args, **kwargs)
+        permissions.PermissionErr.__init__(self, *args, **kwargs)

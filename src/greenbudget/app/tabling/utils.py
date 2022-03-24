@@ -227,7 +227,7 @@ def validate_result(func):
     @functools.wraps(func)
     def decorator(lower=None, upper=None):
         result = func(lower=lower, upper=upper)
-        if result == lower or result == upper:
+        if result in (lower, upper):
             raise InconsistentOrderingError(
                 lower,
                 upper,
@@ -358,7 +358,7 @@ def lexographic_midpoint(lower=None, upper=None):
                 a=string_a,
                 b=string_b,
                 message=e.message
-            )
+            ) from e
 
         # This can happen if B ends with all a's and b's, thus the string will
         # continue to pluck off the last element until there are none left.
@@ -383,7 +383,7 @@ def lexographic_midpoint(lower=None, upper=None):
                     a=string_a,
                     b=string_b,
                     message=e.message
-                )
+                ) from e
 
         # This will happen in the case of A = abh, B = abit because the bounds
         # will be [h, i] and h is at the end of A.  In this case, we add the
@@ -405,7 +405,7 @@ def lexographic_midpoint(lower=None, upper=None):
                     a=string_a,
                     b=string_b,
                     message=e.message
-                )
+                ) from e
 
         if string_a.endswith('z'):
             return string_a + get_midpoint("z", lower="a")
@@ -429,7 +429,7 @@ def lexographic_midpoint(lower=None, upper=None):
                     a=string_a,
                     b=string_b,
                     message=e.message
-                )
+                ) from e
 
         bounds.base = bounds.base + bounds.bounds[0]
         return add_and_return(bounds)

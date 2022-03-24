@@ -20,14 +20,14 @@ if JWT_RSA_FINGERPRINT_FILENAME:
         # Use double underscores to prevent Django from storing the value in
         # settings for security reasons.
         __JWT_VERIFYING_KEY = open("%s.pub" % JWT_RSA_FINGERPRINT_PATH).read()
-    except FileNotFoundError:
+    except FileNotFoundError as e:
         raise ConfigInvalidError(
             config_name='JWT_RSA_FINGERPRINT_FILENAME',
             message=(
                 "The provided RSA public key %s.pub does not exist."
                 % JWT_RSA_FINGERPRINT_PATH
             )
-        )
+        ) from e
     else:
         if not __JWT_VERIFYING_KEY.startswith('ssh-rsa'):
             raise ConfigInvalidError(
@@ -41,14 +41,14 @@ if JWT_RSA_FINGERPRINT_FILENAME:
         # Use double underscores to prevent Django from storing the value in
         # settings for security reasons.
         __JWT_SIGNING_KEY = open(str(JWT_RSA_FINGERPRINT_PATH)).read()
-    except FileNotFoundError:
+    except FileNotFoundError as e:
         raise ConfigInvalidError(
             config_name='JWT_RSA_FINGERPRINT_FILENAME',
             message=(
                 "The provided RSA private key %s does not exist."
                 % JWT_RSA_FINGERPRINT_PATH
             )
-        )
+        ) from e
     else:
         # We cannot validate every aspect of the private key, but this is a
         # simple catch to prevent us from starting the application and hitting

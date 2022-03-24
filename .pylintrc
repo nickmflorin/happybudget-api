@@ -52,8 +52,44 @@ confidence=
 # --enable=similarities". If you want to run only the classes checker, but have
 # no Warning level messages displayed, use "--disable=all --enable=classes
 # --disable=W".
-
 disable=
+  no-member,
+  missing-module-docstring,
+  unused-variable,
+  unused-argument,
+  missing-class-docstring,
+  missing-function-docstring,
+  unused-wildcard-import,
+  wildcard-import,
+  invalid-name,
+  super-init-not-called,
+  protected-access,
+  no-else-return,
+  unidiomatic-typecheck,
+  no-self-use,
+  fixme,
+  too-many-ancestors,
+  comparison-with-callable,
+  arguments-differ,
+  consider-using-set-comprehension,
+  undefined-loop-variable,
+  logging-not-lazy,
+  consider-using-enumerate,
+  too-many-arguments,
+  abstract-method,
+  no-else-raise,
+  using-constant-test,
+  cyclic-import,
+  unnecessary-lambda,
+  too-many-instance-attributes,
+  too-few-public-methods,
+  logging-fstring-interpolation,
+  consider-merging-isinstance,
+  too-many-branches,
+  too-many-return-statements,
+  too-many-statements,
+  too-many-locals,
+  attribute-defined-outside-init
 
 
 [REPORTS]
@@ -193,10 +229,10 @@ expected-line-ending-format=
 ignore-long-lines=^\s*(# )?<?https?://\S+>?$
 
 # Maximum number of characters on a single line.
-max-line-length=80
+max-line-length=81
 
 # Maximum number of lines in a module.
-max-module-lines=1000
+max-module-lines=4000
 
 # Allow the body of a class to be on the same line as the declaration if body
 # contains single statement.
@@ -219,7 +255,7 @@ ignore-docstrings=yes
 ignore-imports=no
 
 # Minimum lines number of a similarity.
-min-similarity-lines=4
+min-similarity-lines=100
 
 
 [BASIC]
@@ -309,7 +345,7 @@ check-str-concat-over-line-jumps=no
 allow-any-import-level=
 
 # Allow wildcard imports from modules that define __all__.
-allow-wildcard-with-all=no
+allow-wildcard-with-all=yes
 
 # Analyse import fallback blocks. This can be used to support both Python 2 and
 # 3 compatible code, which means that the block might have code that exists
@@ -344,39 +380,6 @@ valid-classmethod-first-arg=cls
 
 # List of valid names for the first argument in a metaclass class method.
 valid-metaclass-classmethod-first-arg=cls
-
-
-[DESIGN]
-
-# Maximum number of arguments for function / method.
-max-args=5
-
-# Maximum number of attributes for a class (see R0902).
-max-attributes=7
-
-# Maximum number of boolean expressions in an if statement (see R0916).
-max-bool-expr=5
-
-# Maximum number of branch for function / method body.
-max-branches=12
-
-# Maximum number of locals for function / method body.
-max-locals=15
-
-# Maximum number of parents for a class (see R0901).
-max-parents=7
-
-# Maximum number of public methods for a class (see R0904).
-max-public-methods=20
-
-# Maximum number of return / yield for function / method body.
-max-returns=6
-
-# Maximum number of statements in function / method body.
-max-statements=50
-
-# Minimum number of public methods for a class (see R0903).
-min-public-methods=2
 
 
 [EXCEPTIONS]

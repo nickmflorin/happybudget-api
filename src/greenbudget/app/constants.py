@@ -18,6 +18,6 @@ class ActionName:
     Invalid = InvalidAction
 
     @classmethod
-    def validate(self, value):
-        if value not in self.__all__:
+    def validate(cls, value):
+        if value not in cls.__all__:
             raise InvalidAction(value)

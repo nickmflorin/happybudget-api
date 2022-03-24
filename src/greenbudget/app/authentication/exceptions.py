@@ -13,7 +13,7 @@ from rest_framework_simplejwt.exceptions import TokenError as BaseTokenError
 from greenbudget.app import exceptions
 
 
-class NotAuthenticatedErrorCodes(object):
+class NotAuthenticatedErrorCodes:
     ACCOUNT_DISABLED = "account_disabled"
     ACCOUNT_NOT_AUTHENTICATED = "account_not_authenticated"
     ACCOUNT_NOT_VERIFIED = "account_not_verified"
@@ -83,7 +83,7 @@ class AccountNotOnWaitlist(NotAuthenticatedError):
     default_code = NotAuthenticatedErrorCodes.ACCOUNT_NOT_ON_WAITLIST
 
 
-class AuthErrorCodes(object):
+class AuthErrorCodes:
     INVALID_CREDENTIALS = "invalid_credentials"
     EMAIL_DOES_NOT_EXIST = "email_does_not_exist"
     INVALID_SOCIAL_TOKEN = "invalid_social_token"

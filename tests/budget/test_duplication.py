@@ -1,3 +1,4 @@
+# pylint: disable=redefined-outer-name
 import pytest
 
 
@@ -286,7 +287,8 @@ def make_assertions():
                 assert_subaccount(original_subaccount,
                                   subaccount, parent=account)
 
-                original_child_subs = data['child_subaccounts'][original_subaccount.pk]  # noqa
+                original_child_subs = data['child_subaccounts'][
+                    original_subaccount.pk]
                 assert subaccount.children.count() == len(original_child_subs)
 
                 for k, child_subaccount in enumerate(subaccount.children.all()):

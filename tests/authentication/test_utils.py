@@ -1,6 +1,7 @@
 from datetime import datetime
-from django.contrib.auth.models import AnonymousUser
 from unittest import mock
+
+from django.contrib.auth.models import AnonymousUser
 
 import pytest
 

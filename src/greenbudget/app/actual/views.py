@@ -33,7 +33,6 @@ class ActualAttachmentViewSet(
     (2) DELETE /actuals/<pk>/attachments/pk/
     (3) POST /actuals/<pk>/attachments/
     """
-    pass
 
 
 class GenericActualViewSet(views.GenericViewSet):

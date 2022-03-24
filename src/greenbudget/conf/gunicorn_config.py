@@ -5,9 +5,11 @@ import traceback
 
 # The socket to bind.
 bind = '0.0.0.0:8000'
+
 # The number of pending connections.  This refers to the number of clients that
 # can be waiting to be served.
 backlog = 2048
+
 access_log_format = (
     '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"')
 errorlog = '-'

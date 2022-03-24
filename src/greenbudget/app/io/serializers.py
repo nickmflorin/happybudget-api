@@ -105,18 +105,18 @@ class UploadAttachmentsSerializer(serializers.Serializer):
         files = attrs.pop('files', None)
         if files is None:
             files = [attrs.pop('file')]
-        serializers = [UploadAttachmentSerializer(
+        child_serializers = [UploadAttachmentSerializer(
             data={**{'file': f}, **attrs}
         ) for f in files]
-        for serializer in serializers:
+        for serializer in child_serializers:
             serializer.is_valid(raise_exception=True)
-        return {'serializers': serializers}
+        return {'serializers': child_serializers}
 
     def create(self, validated_data):
-        serializers = validated_data.pop('serializers')
+        child_serializers = validated_data.pop('serializers')
         attachments = [
             serializer.save(**validated_data)
-            for serializer in serializers
+            for serializer in child_serializers
         ]
         return attachments
 

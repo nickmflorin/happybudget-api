@@ -91,7 +91,7 @@ class SubscriptionView(mixins.RetrieveModelMixin, views.GenericViewSet):
                     "error": e.error.to_dict_recursive(),
                     "request_id": e.request_id
                 })
-            raise StripeBadRequest()
+            raise StripeBadRequest() from e
 
     def retrieve(self, request, *args, **kwargs):
         subscription = self.get_object()
@@ -102,7 +102,7 @@ class SubscriptionView(mixins.RetrieveModelMixin, views.GenericViewSet):
             {"subscription": data}, status=status.HTTP_200_OK)
 
 
-@cache.endpoint_cache(id='products', path="/billing/products/")
+@cache.endpoint_cache(cache_id='products', path="/billing/products/")
 class ProductView(mixins.ListModelMixin, views.GenericViewSet):
     serializer_class = StripeProductSerializer
 

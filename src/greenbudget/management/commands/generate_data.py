@@ -89,7 +89,10 @@ class Command(CustomCommand):
             default=3,
             max_value=8,
             unconfirmed_value=None,
-            prompt='Enter the number of groups per table you would like to generate.'  # noqa
+            prompt=(
+                'Enter the number of groups per table you would like to '
+                'generate.'
+            )
         )
     )
     @Query.User.include(

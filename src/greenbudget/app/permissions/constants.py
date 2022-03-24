@@ -1,10 +1,10 @@
 import collections
 
 from greenbudget.app.authentication.exceptions import NotAuthenticatedError
-from .exceptions import PermissionError
+from .exceptions import PermissionErr
 
 
-PErrors = (PermissionError, NotAuthenticatedError)
+PErrors = (PermissionErr, NotAuthenticatedError)
 
 
 class PermissionContext:

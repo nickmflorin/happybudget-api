@@ -2,7 +2,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
 
-class ColorQuerier(object):
+class ColorQuerier:
 
     def for_model(self, model):
         content_type = ContentType.objects.get_for_model(model)

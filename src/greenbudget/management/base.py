@@ -3,7 +3,7 @@ from django.core import management
 from .query import Query
 
 
-class CustomCommandMixin(object):
+class CustomCommandMixin:
     def newline(self):
         self.prompt("\n")
 
@@ -20,7 +20,7 @@ class CustomCommandMixin(object):
         self.prompt(value, style_func=self.style.SUCCESS)
 
     def query_boolean(self, prompt, **kwargs):
-        query = Query.Boolean(self, prompt=prompt, **kwargs)
+        query = Query.Boolean(command=self, prompt=prompt, **kwargs)
         return query()
 
     def _get_style_func(self, style_func):
@@ -55,4 +55,3 @@ class CustomCommand(CustomCommandMixin, management.base.BaseCommand):
     A base class for all Django management commands.  Provides utility
     functionality for writing better more customizable/flexible commands.
     """
-    pass

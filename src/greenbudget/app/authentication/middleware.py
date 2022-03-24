@@ -104,7 +104,7 @@ class BillingTokenCookieMiddleware(AuthenticationMiddleware):
 
     def process_request(self, request):
         if not hasattr(request, 'session'):
-            return super().process_request(request)
+            super().process_request(request)
         request.user = SimpleLazyObject(lambda: get_session_user(request))
 
 

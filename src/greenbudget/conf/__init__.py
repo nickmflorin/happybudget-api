@@ -1,12 +1,13 @@
 import collections
 import copy
 import csv
-from dotenv import load_dotenv
 import functools
 import logging
 import os
 import pathlib
 import sys
+
+from dotenv import load_dotenv
 
 from django.utils.functional import SimpleLazyObject
 
@@ -17,6 +18,7 @@ logger = logging.getLogger('greenbudget')
 
 
 def get_lazy_setting(func):
+    # pylint: disable=import-outside-toplevel
     from django.conf import settings
     return func(settings)
 
@@ -29,6 +31,7 @@ def suppress_with_setting(attr, value=False, suppressed_return_value=None):
     def decorator(func):
         @functools.wraps(func)
         def inner(*args, **kwargs):
+            # pylint: disable=import-outside-toplevel
             from django.conf import settings
             current_value = getattr(settings, attr)
             if current_value != value:
@@ -75,7 +78,10 @@ class ConfigInvalidError(ConfigError):
     def __str__(self):
         if self.message is None:
             return f"The {self.config_name} environment variable is invalid."
-        return f"The {self.config_name} environment variable is invalid: {self.message}"  # noqa
+        return (
+            f"The {self.config_name} environment variable is invalid: "
+            "{self.message}"
+        )
 
 
 class ConfigRequiredError(ConfigError):
@@ -119,6 +125,7 @@ class ConfigOptions:
         return {o.param: getattr(self, o.param) for o in self.options}
 
     def clone(self, *args, **kwargs):
+        # pylint: disable=not-callable
         current_data = self.__dict__()
         current_data.update(dict(*args, **kwargs))
         return self.__class__(current_data)
@@ -187,7 +194,8 @@ class Config:
 
             Default: ""
 
-        required: :obj:`boolean`, :obj:`list`, :obj:`tuple` or :obj:`dict` (optional)  # noqa
+        required: :obj:`boolean`, :obj:`list`, :obj:`tuple` or :obj:`dict`
+            (optional)
             Whether or not the configuration parameter is required.
 
             If provided as a :obj:`dict`, whether or not the parameter is
@@ -300,8 +308,9 @@ class Config:
             raise ConfigInvalidError(name, message="Cast must be a callable.")
         try:
             return options.cast(value, **cast_kwargs)
-        except ValueError:
-            raise ConfigInvalidError(name, message="Could not cast value.")
+        except ValueError as e:
+            raise ConfigInvalidError(
+                name, message="Could not cast value.") from e
 
     @staticmethod
     def csvlist(value):

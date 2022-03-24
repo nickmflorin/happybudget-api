@@ -11,13 +11,13 @@ logger = logging.getLogger('greenbudget')
 
 
 def get_product_internal_id(product):
-    id = product
+    product_id = product
     if not isinstance(product, stripe.Product):
         product = stripe.Product.retrieve(product)
     else:
-        id = product.id
+        product_id = product.id
     if 'internal_id' not in product.metadata:
-        raise UnconfiguredProductException(id)
+        raise UnconfiguredProductException(product_id)
     return product.metadata['internal_id']
 
 
@@ -91,7 +91,8 @@ def get_products():
                 "request_id": exc.request_id
             }
         )
-        raise StripeBadRequest("Could not retrieve products from Stripe.")
+        raise StripeBadRequest(
+            "Could not retrieve products from Stripe.") from exc
     else:
         try:
             prices = request_until_all_received(stripe.Price.list)
@@ -103,7 +104,8 @@ def get_products():
                     "request_id": exc.request_id
                 }
             )
-            raise StripeBadRequest("Could not retrieve prices from Stripe.")
+            raise StripeBadRequest(
+                "Could not retrieve prices from Stripe.") from exc
         else:
             products_with_price = []
             for product in products:

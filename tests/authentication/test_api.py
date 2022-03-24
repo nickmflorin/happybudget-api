@@ -1,3 +1,4 @@
+# pylint: disable=redefined-outer-name
 import pytest
 
 
@@ -64,7 +65,7 @@ def test_login_invalid_email(login, settings):
     assert settings.JWT_TOKEN_COOKIE_NAME not in response.cookies
     assert response.json() == {
         'errors': [{
-            'message': 'The provided username does not exist in our system.',  # noqa
+            'message': 'The provided username does not exist in our system.',
             'error_type': 'field',
             'field': 'email',
             'code': 'email_does_not_exist'

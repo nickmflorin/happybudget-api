@@ -49,12 +49,12 @@ class ModelAuthentication(ModelBackend):
         if email is not None and password is not None:
             try:
                 user = get_user_model().objects.get(email=email)
-            except get_user_model().DoesNotExist:
+            except get_user_model().DoesNotExist as e:
                 # If we are coming from the Admin, we do not want to raise a
                 # DRF exception as it will not render in the response, it will
                 # just be a 500 error.
                 if not request_is_admin(request):
-                    raise EmailDoesNotExist(field='email')
+                    raise EmailDoesNotExist(field='email') from e
                 return None
             if not user.check_password(password):
                 # If we are coming from the Admin, we do not want to raise a

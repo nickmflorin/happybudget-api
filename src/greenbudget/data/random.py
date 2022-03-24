@@ -13,6 +13,7 @@ def select_random_index(data, **kwargs):
         raise Exception(
             "Cannot provide null frequency if null values not allowed.")
 
+    # pylint: disable=chained-comparison
     assert null_frequency <= 1.0 and null_frequency >= 0.0, \
         "The null frequency must be between 0 and 1."
 
@@ -20,7 +21,7 @@ def select_random_index(data, **kwargs):
         uniform = random.randint(0, 100)
         if uniform >= null_frequency <= null_frequency * 100.0:
             return None
-    return random.choice([i for i in range(len(data))])
+    return random.choice(list(range(len(data))))
 
 
 def select_random(data, **kwargs):
@@ -43,7 +44,7 @@ def select_random_count(data, **kwargs):
     elif min_count == max_count:
         return min_count
     return random.choice(
-        [i for i in range(max_count - min_count + 1)]) + min_count
+        list(range(max_count - min_count + 1))) + min_count
 
 
 def select_random_set(data, **kwargs):

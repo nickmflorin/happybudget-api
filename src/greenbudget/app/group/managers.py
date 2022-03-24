@@ -7,6 +7,7 @@ from greenbudget.app.tabling.query import RowQuerier, RowQuerySet
 
 class GroupQuerier(RowQuerier, BudgetAncestorQuerier):
     def for_budgets(self):
+        # pylint: disable=import-outside-toplevel
         from greenbudget.app.account.models import BudgetAccount
         from greenbudget.app.budget.models import Budget
         from greenbudget.app.subaccount.models import BudgetSubAccount
@@ -17,6 +18,7 @@ class GroupQuerier(RowQuerier, BudgetAncestorQuerier):
         return self.filter(content_type__id__in=ctype_ids)
 
     def for_templates(self):
+        # pylint: disable=import-outside-toplevel
         from greenbudget.app.account.models import TemplateAccount
         from greenbudget.app.template.models import Template
         from greenbudget.app.subaccount.models import TemplateSubAccount

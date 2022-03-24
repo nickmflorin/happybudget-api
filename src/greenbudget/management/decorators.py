@@ -27,6 +27,7 @@ def debug_only(cls):
                     return cls.__original_handle__(instance, *args, **kwargs)
                 else:
                     instance.info("Aborting...")
+                    return None
         else:
             return cls.__original_handle__(instance, *args, **kwargs)
 
@@ -88,5 +89,6 @@ def askable(*prompts):
             instance.prompt(*prompts)
             if instance.query_boolean():
                 return func(instance, *args, **kwargs)
+            return None
         return inner
     return decorator

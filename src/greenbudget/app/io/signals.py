@@ -41,6 +41,7 @@ def attachments_changed(instance, reverse, action, model, pk_set, **kwargs):
 
     if action in ('pre_add', 'pre_remove'):
         objs = model.objects.filter(pk__in=pk_set)
+        # pylint: disable=expression-not-assigned
         if reverse:
             [validate(instance, obj) for obj in objs]
         else:

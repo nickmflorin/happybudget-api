@@ -217,7 +217,7 @@ class BudgetingTreePolymorphicOrderedRowModel(
         abstract = True
 
     def __str__(self):
-        return self.identifier or self.description or "----"
+        return str(self.identifier) or str(self.description) or "----"
 
     @property
     def valid_parent_cls(self):

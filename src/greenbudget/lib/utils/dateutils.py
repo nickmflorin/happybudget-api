@@ -47,11 +47,11 @@ def ensure_datetime(value):
     elif isinstance(value, str):
         try:
             return parser.parse(value)
-        except ValueError:
+        except ValueError as e:
             raise ValueError(
                 "The provided value cannot be converted to a "
                 "datetime.datetime instance."
-            )
+            ) from e
     else:
         # A work around to allow our tests to use this logic in the presence
         # of pytest-freezegun.  pytest-freezegun works by replacing the datetime

@@ -67,7 +67,7 @@ class TagAdmin(PolymorphicParentModelAdmin):
     base_model = Tag
     child_models = (SubAccountUnit,)
     list_filter = (PolymorphicChildModelFilter,)
-    list_display = ("get_tag_type", "title", "order", "created_at", "updated_at")  # noqa
+    list_display = ("get_tag_type", "title", "order", "created_at", "updated_at")
     form = TagAdminForm
     show_in_index = True
 

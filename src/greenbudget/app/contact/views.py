@@ -29,7 +29,6 @@ class ContactAttachmentViewSet(
     (2) DELETE /contacts/<pk>/attachments/pk/
     (3) POST /contacts/<pk>/attachments/
     """
-    pass
 
 
 class ContactTaggedActualsViewSet(

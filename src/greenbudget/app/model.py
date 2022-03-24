@@ -285,8 +285,8 @@ class model:
                 if hasattr(track_fields, '__call__'):
                     try:
                         track_fields = track_fields(settings)
-                    except TypeError:
-                        raise CallableParameterException('track_fields')
+                    except TypeError as e:
+                        raise CallableParameterException('track_fields') from e
                 self._track_fields = set([
                     f for f in ensure_iterable(track_fields)
                     if f not in self._exclude_fields
@@ -311,9 +311,9 @@ class model:
     def get_field_instance(self, cls, field_name):
         try:
             return cls._meta.get_field(field_name)
-        except django.core.exceptions.FieldDoesNotExist:
+        except django.core.exceptions.FieldDoesNotExist as e:
             # pragma: no cover
-            raise FieldDoesNotExistError(field_name, cls)
+            raise FieldDoesNotExistError(field_name, cls) from e
 
     def validate_field(self, cls, field):
         field_instance = self.get_field_instance(cls, field)

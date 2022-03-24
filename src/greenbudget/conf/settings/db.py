@@ -19,17 +19,17 @@ class DatabaseConfig:
     __all__ = [POSTGRES, SQLITE]
 
     @classmethod
-    def get(cls, id):
-        if id not in [c.id for c in cls.__all__]:
-            raise LookupError(f"Unknown database config id {id}.")
-        return [c for c in cls.__all__ if c.id == id][0]
+    def get(cls, config_id):
+        if config_id not in [c.id for c in cls.__all__]:
+            raise LookupError(f"Unknown database config id {config_id}.")
+        return [c for c in cls.__all__ if c.id == config_id][0]
 
 
-def db(id, *args, **kwargs):
-    config = DatabaseConfig.get(id)
+def db(config_id, *args, **kwargs):
+    cfg = DatabaseConfig.get(config_id)
     default_data = {
         'ATOMIC_REQUESTS': ATOMIC_REQUESTS,
-        'ENGINE': config.engine,
+        'ENGINE': cfg.engine,
         'CONN_MAX_AGE': CONN_MAX_AGE
     }
     default_data.update(dict(*args, **kwargs))

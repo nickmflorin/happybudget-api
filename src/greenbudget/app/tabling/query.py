@@ -20,7 +20,7 @@ class RowQuerier:
         all of the tables determined by the set of table keys provided.
         """
         table_keys = ensure_iterable(table_keys)
-        assert len(table_keys), "At least 1 table key must be provided."
+        assert table_keys, "At least 1 table key must be provided."
         qs_filter = self.model.get_table_filter(table_key=table_keys[0])
         for table_key in table_keys[1:]:
             qs_filter = qs_filter | self.model.get_table_filter(
@@ -114,9 +114,6 @@ class OrderedRowQuerier(RowQuerier):
             self.bulk_update(instances, ["order"], batch_size=len(instances))
         return instances
 
-    def reorder_by(self, *fields, commit=True):
-        return self.reorder(commit=commit, instances=self.order_by(*fields))
-
     def reorder_all(self, commit=True):
         updated = []
         for table_qs in self.distinct_tables():
@@ -196,6 +193,8 @@ class OrderedRowQuerier(RowQuerier):
         # Make sure that all instances belong to the same table.  Unfortunately,
         # a dict is not hashable, so we cannot just check the size of a set.
         table_filter = None
+
+        # pylint: disable=not-an-iterable
         for obj in self:
             if table_filter is not None and obj.table_filter != table_filter:
                 raise Exception(
@@ -208,6 +207,7 @@ class OrderedRowQuerier(RowQuerier):
         models_without_groups = []
         models_with_group = {}
 
+        # pylint: disable=not-an-iterable
         for obj in self:
             # While the FE considers every row object to be groupable, every
             # row object in the backend isn't necessarily groupable.

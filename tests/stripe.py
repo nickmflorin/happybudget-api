@@ -1,10 +1,11 @@
+# pylint: disable=redefined-outer-name,unexpected-keyword-arg
 import datetime
 import functools
-import mock
-import pytest
 import random
 import string
 import time
+import mock
+import pytest
 
 from stripe.util import convert_to_stripe_object
 
@@ -68,9 +69,9 @@ def mock_stripe_data():
 
 @pytest.fixture
 def mock_stripe(mock_stripe_data):
-    def raise_resource_missing(id):
+    def raise_resource_missing(resource_id):
         raise stripe.error.InvalidRequestError(
-            'No such resource: %s' % id, 'id', code='resource_missing')
+            'No such resource: %s' % resource_id, 'id', code='resource_missing')
 
     @stripe_resource(
         object_type="billing_portal.session",
@@ -99,11 +100,11 @@ def mock_stripe(mock_stripe_data):
             "allow_promotion_codes", "customer_email", "client_reference_id"]
     )
     def checkout_session_base(**kwargs):
-        id = object_id(prefix="cs")
+        session_id = object_id(prefix="cs")
         customer = customer_create(kwargs["customer_email"])
         price = price_retrieve(kwargs['line_items'][0]['price'])
         return {
-            "id": id,
+            "id": session_id,
             "subscription": object_id(prefix="sub"),
             "amount_subtotal": price.unit_amount,
             "amount_total": price.unit_amount,
@@ -113,7 +114,7 @@ def mock_stripe(mock_stripe_data):
             "customer_email": kwargs["customer_email"],
             "customer": customer.id,
             # This will be the Stripe URL that we redirect to.
-            "url": "https://checkout.stripe.com/pay/%s" % id,
+            "url": "https://checkout.stripe.com/pay/%s" % session_id,
             "customer_details": {
                 # Currently, we do not collect this information as a part of the
                 # checkout process in Stripe.

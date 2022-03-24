@@ -46,6 +46,7 @@ def test_get_accounts_ordered_by_group(api_client, user, budget_f, create_group)
         create_group(parent=budget),
         create_group(parent=budget)
     ]
+    # pylint: disable=expression-not-assigned
     [
         budget_f.create_account(parent=budget, group=groups[1], order="n"),
         budget_f.create_account(parent=budget, order="t"),

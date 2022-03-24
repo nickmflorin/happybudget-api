@@ -36,16 +36,16 @@ def is_engine(engine, environments=None, strict=False):
     # We need to access the CACHES inside a function scope just in case the
     # CACHE settings are overridden in tests.
     backend = settings.CACHES["default"]["BACKEND"]
-    is_engine = backend == engine
-    if is_engine and environments \
+    evaluated_engine = backend == engine
+    if evaluated_engine and environments \
             and settings.ENVIRONMENT not in environments:
         raise Exception(
             f"Using {engine} in ${settings.ENVIRONMENT} environment is "
             "prohibited!"
         )
-    elif strict and not is_engine:
+    elif strict and not evaluated_engine:
         raise Exception(f"Engine is not {engine}.")
-    return is_engine
+    return evaluated_engine
 
 
 def is_database_engine(**kwargs):
@@ -78,16 +78,16 @@ class Registry:
     def caches(self):
         return self._caches
 
-    def add(self, cache):
-        assert cache.id is not None
-        if cache.id in [c.id for c in self._caches]:
+    def add(self, ch):
+        assert ch.id is not None
+        if ch.id in [c.id for c in self._caches]:
             raise Exception("Cannot register caches with the same ID.")
-        self._caches.append(cache)
+        self._caches.append(ch)
 
-    def get_cache(self, id):
-        if id not in [c.name for c in self._caches]:
-            raise LookupError("No registered cache with ID %s." % id)
-        return [c for c in self._caches if c.id == id][0]
+    def get_cache(self, cache_id):
+        if cache_id not in [c.name for c in self._caches]:
+            raise LookupError("No registered cache with ID %s." % cache_id)
+        return [c for c in self._caches if c.id == cache_id][0]
 
 
 registry = Registry()
@@ -272,8 +272,8 @@ class endpoint_cache:
     method = "GET"
     thread = threading.local()
 
-    def __init__(self, id, path, dependency=None, disabled=False):
-        self.id = id
+    def __init__(self, cache_id, path, dependency=None, disabled=False):
+        self.id = cache_id
         self._path = path
         self._dependency = dependency
 
@@ -462,7 +462,8 @@ class endpoint_cache:
             "Middleware is not properly associating the request with the " \
             "cache implementation."
 
-        if is_locmem_engine(environments=[Environments.LOCAL, Environments.TEST]):  # noqa
+        if is_locmem_engine(environments=[
+                Environments.LOCAL, Environments.TEST]):
             # When using a LocMemCache, wildcard supporting is not allowed.
             # This means that we cannot cache requests with query params at all
             # - because we would have no means of invalidating them when the
@@ -489,7 +490,7 @@ class endpoint_cache:
             # do not need to worry about issuing a warning.
             if not is_locmem_engine(
                     environments=[Environments.LOCAL, Environments.TEST]):
-                logger.warn(
+                logger.warning(
                     "Cannot obtain user from active request because the cache "
                     "is being invalidated outside the scope of an API request. "
                     "This means that we have to invalidate the cache for all "
@@ -529,7 +530,8 @@ class endpoint_cache:
             # When using a LocMemCache, wildcard supporting is not allowed - so
             # we cannot cache requests on a per-user basis, and we cannot cache
             # any requests with query parameters.
-            if is_locmem_engine(environments=[Environments.LOCAL, Environments.TEST]):  # noqa
+            if is_locmem_engine(environments=[
+                    Environments.LOCAL, Environments.TEST]):
                 return [f"{self.method}-{path}"]
             # Allow user to be provided as User object or ID.
             user_component = getattr(user, 'id', user)
@@ -604,12 +606,12 @@ class endpoint_cache:
             logger.debug("Returning cached value at %s." % cache_key)
         return data
 
-    def set(self, request, response):
+    def set(self, request, rsp):
         try:
             cache_key = self.get_cache_key(request=request)
         except RequestCannotBeCached:
             return
-        cache.set(cache_key, response.data, settings.CACHE_EXPIRY)
+        cache.set(cache_key, rsp.data, settings.CACHE_EXPIRY)
 
     def decorated_func(self, func):
         """
@@ -639,18 +641,18 @@ class endpoint_cache:
             by using the cached response (provided as a keyword argument)
             instead of the method on the view dictated by the request method.
             """
-            response = kwargs.pop('response')
+            rsp = kwargs.pop('response')
             try:
                 view.initial(request, *args, **kwargs)
                 # Here, traditional rest_framework's dispatch method would
                 # call the associated method on the view (whether it be
                 # get, post, patch, etc.) to get the response.
+            # pylint: disable=broad-except
             except Exception as exc:
                 # Instead of returning the response, we now have to allow DRF
                 # to handle the exception.
-                response = view.handle_exception(exc)
-            view.response = view.finalize_response(
-                request, response, *args, **kwargs)
+                rsp = view.handle_exception(exc)
+            view.response = view.finalize_response(request, rsp, *args, **kwargs)
             return view.response
 
         @functools.wraps(func)

@@ -45,6 +45,7 @@ class Base64ImageField(serializers.ImageField):
     """
 
     def to_representation(self, instance):
+        # pylint: disable=import-outside-toplevel
         from .serializers import ImageFileFieldSerializer
 
         if instance is not None:
@@ -82,6 +83,7 @@ class Base64ImageField(serializers.ImageField):
                 complete_file_name = "%s.%s" % (file_name, file_extension, )
                 data = ContentFile(decoded_file, name=complete_file_name)
 
+        # pylint: disable=super-with-arguments
         return super(Base64ImageField, self).to_internal_value(data)
 
     def get_file_extension(self, file_name, decoded_file):

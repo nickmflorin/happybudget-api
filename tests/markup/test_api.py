@@ -545,7 +545,8 @@ def test_change_account_flat_markup_to_percent_no_children(api_client, user,
     assert response.status_code == 400
     assert response.json() == {
         'errors': [{
-            'message': 'A markup with unit `percent` must have at least 1 child.',  # noqa
+            'message': (
+                'A markup with unit `percent` must have at least 1 child.'),
             'code': 'invalid',
             'error_type': 'field',
             'field': 'children'

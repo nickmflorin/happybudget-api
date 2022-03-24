@@ -97,7 +97,8 @@ def test_registration_user_on_waitlist(api_client):
         "emailBlacklisted": False
     }]
     with mock.patch(
-            'greenbudget.app.user.mail.contacts_api.get_contacts_from_list') as m:  # noqa
+            'greenbudget.app.user.mail.contacts_api.get_contacts_from_list') \
+            as m:
         m.return_value = mock_response
         response = api_client.post("/v1/users/registration/", data={
             "first_name": "Jack",
@@ -116,7 +117,8 @@ def test_registration_user_not_on_waitlist(api_client):
     mock_response.contacts = []
 
     with mock.patch(
-            'greenbudget.app.user.mail.contacts_api.get_contacts_from_list') as m:  # noqa
+            'greenbudget.app.user.mail.contacts_api.get_contacts_from_list') \
+            as m:
         m.return_value = mock_response
         response = api_client.post("/v1/users/registration/", data={
             "first_name": "Jack",

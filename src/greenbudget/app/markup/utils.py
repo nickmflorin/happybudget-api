@@ -7,6 +7,7 @@ def contribution_from_markups(value, markups):
     or a percent value, the determination of which is controlled by the `unit`
     field on the :obj:`Markup`.
     """
+    # pylint: disable=import-outside-toplevel
     from .models import Markup
 
     additional_values = []

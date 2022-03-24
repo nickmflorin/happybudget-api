@@ -5,24 +5,24 @@ from rest_framework import permissions
 from greenbudget.lib.utils import get_string_formatted_kwargs
 from greenbudget.app.authentication.exceptions import NotAuthenticatedError
 
-from .exceptions import PermissionError
+from .exceptions import PermissionErr
 
 
 def with_raise_exception(func):
     """
     Allows the permission methods on a permission class to be called with a
     `raise_exception` boolean flag, that will either force a
-    :obj:`PermissionError` to be raised specific to that permission class or
-    will forcefully suppress the :obj:`PermissionError` for that permission
+    :obj:`PermissionErr` to be raised specific to that permission class or
+    will forcefully suppress the :obj:`PermissionErr` for that permission
     class, returning the string message associated with the
-    :obj:`PermissionError` that would have otherwise be raised.
+    :obj:`PermissionErr` that would have otherwise be raised.
     """
     @functools.wraps(func)
     def decorated(instance, *args, **kwargs):
         raise_exception = kwargs.pop('raise_exception', True)
         try:
             evaluated = func(instance, *args, **kwargs)
-        except (PermissionError, NotAuthenticatedError) as e:
+        except (PermissionErr, NotAuthenticatedError) as e:
             if raise_exception is True:
                 raise e
             return False
@@ -30,7 +30,7 @@ def with_raise_exception(func):
             if evaluated is False or isinstance(evaluated, str):
                 # If the permission method returns a string message, than it
                 # indicates that the permission failed and the returned value
-                # is the message the PermissionError should have.
+                # is the message the PermissionErr should have.
                 if raise_exception:
                     if evaluated is False:
                         instance.permission_denied()
@@ -59,6 +59,7 @@ class BasePermissionMetaclass(permissions.BasePermissionMetaclass):
 
         @with_raise_exception
         def has_user_permission(instance, user):
+            # pylint: disable=not-callable
             return _user_has_permission(instance, user)
 
         def get_permissioned_obj(instance, obj):
@@ -67,6 +68,7 @@ class BasePermissionMetaclass(permissions.BasePermissionMetaclass):
             if instance._get_permissioned_obj is not None:
                 return instance._get_permissioned_obj(obj)
             elif _get_permissioned_obj is not None:
+                # pylint: disable=not-callable
                 return _get_permissioned_obj(instance, obj)
             return obj
 
@@ -99,10 +101,10 @@ class BasePermissionMetaclass(permissions.BasePermissionMetaclass):
         # class raise the appropriate error, such that it can be properly
         # handled in sequences of permissions and/or communicated to the FE.
         if not issubclass(getattr(klass, 'exception_class'),
-                (PermissionError, NotAuthenticatedError)):
+                (PermissionErr, NotAuthenticatedError)):
             raise Exception(
                 "The exception class defined for a permission must extend "
-                "either PermissionError or NotAuthenticatedError."
+                "either PermissionErr or NotAuthenticatedError."
             )
 
         _has_object_permission = getattr(klass, 'has_object_permission')
@@ -247,8 +249,7 @@ class BasePermission(metaclass=BasePermissionMetaclass):
 
         Default: True
     """
-    exception_class = PermissionError
-    exception_kwargs = {}
+    exception_class = PermissionErr
 
     def __init__(self, *args, **options):
         # Maintain set of arguments used to instantiate the permission class so
@@ -280,7 +281,7 @@ class BasePermission(metaclass=BasePermissionMetaclass):
         permission context, :obj:`ObjectContext` or :obj:`ViewContext`.
 
         When a permission is prioritized, it will be used for determining the
-        specific information raised in the :obj:`PermissionError` when it fails
+        specific information raised in the :obj:`PermissionErr` when it fails
         along with other permissions in a given :obj:`Operator`.
         """
         if self.priority is not None:
@@ -320,7 +321,7 @@ class BasePermission(metaclass=BasePermissionMetaclass):
         """
         Can be overridden by extensions of the :obj:`BasePermission` class
         such that the returned arguments are provided to the raised
-        :obj:`PermissionError` when the permission fails.
+        :obj:`PermissionErr` when the permission fails.
         """
         return {}
 

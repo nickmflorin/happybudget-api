@@ -26,7 +26,8 @@ def test_get_budget_subaccount_with_public_token(api_client, create_budget,
 
 
 def test_get_template_subaccount_with_public_token(api_client, create_template,
-        create_public_token, create_template_account, create_template_subaccount):
+        create_public_token, create_template_account,
+        create_template_subaccount):
     budget = create_template()
     account = create_template_account(parent=budget)
     subaccount = create_template_subaccount(parent=account)

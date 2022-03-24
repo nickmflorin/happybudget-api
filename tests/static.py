@@ -1,3 +1,4 @@
+# pylint: disable=redefined-outer-name
 from io import BytesIO
 from PIL import Image
 import pytest

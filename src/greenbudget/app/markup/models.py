@@ -49,7 +49,7 @@ class Markup(BudgetingRowModel):
         verbose_name_plural = "Markups"
 
     def __str__(self):
-        return self.identifier or self.description
+        return str(self.identifier) or str(self.description) or ""
 
     @property
     def actual(self):

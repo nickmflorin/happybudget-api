@@ -52,7 +52,7 @@ class MinCharacterCountRegexValidator(MinLengthValidator):
 
 class SpecialCharRegexValidator(Validator):
     def validate(self, password, user=None):
-        pattern = re.compile('[@_!#$%^&*()<>?/\|}{~:]')  # noqa
+        pattern = re.compile(r'[@_!#$%^&*()<>?/\|}{~:]')  # noqa
         searched = pattern.search(password)
         if not searched:
             self.fail()

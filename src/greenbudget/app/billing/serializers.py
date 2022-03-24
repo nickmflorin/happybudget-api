@@ -84,11 +84,11 @@ class UserSyncStripeSerializer(serializers.ModelSerializer):
             )
             raise CheckoutError(
                 "The checkout session could not be retrieved from the session "
-                "ID.")
+                "ID.") from exc
 
         try:
             client_reference_id = int(session.client_reference_id)
-        except ValueError:
+        except ValueError as e:
             logger.error(
                 "Stripe Checkout Error: Could not convert session's "
                 "`client_reference_id`, %s, to an integer primary key for "
@@ -97,7 +97,7 @@ class UserSyncStripeSerializer(serializers.ModelSerializer):
                     'email': request.user.email,
                 }
             )
-            raise CheckoutError("Corrupted checkout session.")
+            raise CheckoutError("Corrupted checkout session.") from e
 
         # Extra security check to make sure that the user that created the
         # checkout session is the user that is syncing the checkout session.
@@ -146,7 +146,7 @@ class StripeSessionSerializer(serializers.Serializer):
                     "request_id": exc.request_id
                 }
             )
-            raise StripeBadRequest()
+            raise StripeBadRequest() from exc
         return {"session": session}
 
     def create(self, validated_data):

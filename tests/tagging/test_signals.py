@@ -12,5 +12,6 @@ def test_reindex_tags(create_subaccount_unit, freezer):
     freezer.move_to("2020-01-02")
     units[1].order = 0
     units[1].save()
+    # pylint: disable=expression-not-assigned
     [unit.refresh_from_db() for unit in units]
     assert [unit.order for unit in units] == [1, 0, 2, 3]

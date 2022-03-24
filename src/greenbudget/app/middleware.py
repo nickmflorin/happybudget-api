@@ -25,6 +25,7 @@ class HealthCheckMiddleware(MiddlewareMixin):
     def process_request(self, request):
         if request.META["PATH_INFO"] == "/":
             return HttpResponse("Healthy")
+        return None
 
 
 class CacheUserMiddleware(MiddlewareMixin):

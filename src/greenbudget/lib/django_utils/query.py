@@ -37,6 +37,7 @@ class QuerySetMixin:
 
 
 class QuerySet(QuerySetMixin, models.QuerySet):
+    # pylint: disable=signature-differs
     def bulk_update(self, *args, **kwargs):
         kwargs.setdefault('batch_size', settings.DEFAULT_BULK_BATCH_SIZE)
         return super().bulk_update(*args, **kwargs)
@@ -72,7 +73,7 @@ class PolymorphicQuerySet(QuerySetMixin, RootPolymorphicQuerySet):
     various other types of fields or circumstances that it currently does
     not support.
     """
-
+    # pylint: disable=signature-differs
     def bulk_update(self, *args, **kwargs):
         kwargs.setdefault('batch_size', settings.DEFAULT_BULK_BATCH_SIZE)
         return super().bulk_update(*args, **kwargs)
@@ -266,12 +267,14 @@ class PolymorphicQuerySet(QuerySetMixin, RootPolymorphicQuerySet):
             # intentionally told to do so.
             if return_created_objects:
                 if refresh_from_db:
+                    # pylint: disable=expression-not-assigned
                     [obj.refresh_from_db() for obj in created_children]
                     return created_children
                 for child in created_children:
                     parent = [
                         p for p in created_polymorphic_bases
-                        # if p.pk == getattr(child, self.polymorphic_child_pointer_field.name)  # noqa
+                        # if p.pk == getattr(child,
+                        # self.polymorphic_child_pointer_field.name)
                         if p.pk == child.pk  # I think this is safe.
                     ][0]
                     for field in self.polymorphic_base._meta.local_fields:
@@ -279,6 +282,7 @@ class PolymorphicQuerySet(QuerySetMixin, RootPolymorphicQuerySet):
                             setattr(child, field.name,
                                     getattr(parent, field.name))
                 return created_children
+            return None
 
     def _prepare_for_bulk_create(self, objs):
         # Direct copy of Django's version - not currently called, as it causes
@@ -292,8 +296,9 @@ class PolymorphicQuerySet(QuerySetMixin, RootPolymorphicQuerySet):
 
     def _bulk_create(self, instances, **kwargs):
         """
-        Adapted functionality of Django's default :obj:`django.db.models.QuerySet`  # noqa
-        that is tweaked to work for the Polymorphic children models.
+        Adapted functionality of Django's default
+        :obj:`django.db.models.QuerySet` that is tweaked to work for the
+        Polymorphic children models.
         """
         ignore_conflicts = kwargs.pop('ignore_conflicts', False)
         kwargs.setdefault('batch_size', settings.DEFAULT_BULK_BATCH_SIZE)
@@ -350,7 +355,8 @@ class PolymorphicQuerySet(QuerySetMixin, RootPolymorphicQuerySet):
                         and not ignore_conflicts:
                     assert len(returned_columns) == len(objs_without_pk)
 
-                for obj_without_pk, results in zip(objs_without_pk, returned_columns):  # noqa
+                for obj_without_pk, results in zip(
+                        objs_without_pk, returned_columns):
                     for result, field in zip(results, opts.db_returning_fields):
                         setattr(obj_without_pk, field.attname, result)
 

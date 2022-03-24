@@ -36,6 +36,7 @@ def pytest_runtest_setup(item):
     recognized.
     """
     postgres_db_flagged = item.config.getoption("--postgresdb")
+    # pylint: disable=unnecessary-comprehension
     postgres_marks = [mark for mark in item.iter_markers(name="postgresdb")]
     need_to_write_marks = [
         mark for mark in item.iter_markers(name="needdtowrite")]
@@ -84,6 +85,7 @@ def django_db_setup(
     such that the `--postgresdb` flag implies that the database should be kept
     between tests (`--keepdb` flag).
     """
+    # pylint: disable=import-outside-toplevel
     from django.test.utils import setup_databases, teardown_databases
 
     def before_postgres_db_setup():
@@ -150,6 +152,7 @@ def django_db_setup(
                 try:
                     teardown_databases(
                         db_cfg, verbosity=request.config.option.verbose)
+                # pylint: disable=broad-except
                 except Exception as exc:
                     request.node.warn(
                         pytest.PytestWarning(

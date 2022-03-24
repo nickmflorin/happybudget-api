@@ -361,6 +361,7 @@ def test_bulk_update_contacts(api_client, user, create_contact):
             }
         ]})
     assert response.status_code == 200
+    # pylint: disable=expression-not-assigned
     [c.refresh_from_db() for c in contacts]
 
     assert contacts[0].city == "New York"

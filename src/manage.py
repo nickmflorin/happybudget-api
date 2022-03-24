@@ -7,6 +7,7 @@ def main():
     os.environ.setdefault(
         'DJANGO_SETTINGS_MODULE', 'greenbudget.conf.settings.local')
     try:
+        # pylint: disable=import-outside-toplevel
         from django.core.management import execute_from_command_line
     except ImportError as exc:
         raise ImportError(

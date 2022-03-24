@@ -33,7 +33,8 @@ def test_update_group_color_invalid_code(api_client, user, create_color, models,
         'color': '#AFff2AF2'
     })
     assert response.json() == {'errors': [{
-        'message': 'This code "#AFff2AF2" is not a valid hexadecimal color code.',  # noqa
+        'message': (
+            'This code "#AFff2AF2" is not a valid hexadecimal color code.'),
         'code': 'invalid_type',
         'error_type': 'field',
         'field': 'color'

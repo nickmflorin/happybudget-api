@@ -1,3 +1,4 @@
+# pylint: disable=redefined-outer-name
 from http.cookies import SimpleCookie
 import pytest
 

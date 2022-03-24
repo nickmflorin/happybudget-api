@@ -1,3 +1,4 @@
+# pylint: disable=redefined-outer-name
 from datetime import datetime
 from http.cookies import SimpleCookie
 from unittest import mock
@@ -52,6 +53,7 @@ def test_process_request_get_user_called(middleware_patch, req):
         middleware.process_request(request)
         assert mock_fn.call_count == 0, (
             "request.cookie_user is lazy, and it should not be called.")
+        # pylint: disable=pointless-statement
         request.cookie_user.is_active
         assert mock_fn.mock_calls == [mock.call(request)]
         assert request.cookie_user == user

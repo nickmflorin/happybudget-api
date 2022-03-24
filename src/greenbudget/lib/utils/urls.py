@@ -16,9 +16,9 @@ def parse_ids_from_request(request, param='ids'):
         ids = [id.strip() for id in ids.split(',')]
         numeric_ids = []
         has_invalid = False
-        for id in ids:
+        for check_id in ids:
             try:
-                numeric_ids.append(int(id))
+                numeric_ids.append(int(check_id))
             except ValueError:
                 has_invalid = True
         # Only return None if there were IDs in the request but none of them

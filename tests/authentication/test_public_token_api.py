@@ -1,5 +1,4 @@
 import pytest
-import uuid
 
 
 @pytest.mark.freeze_time('2020-01-01')
@@ -50,4 +49,3 @@ def test_update_budget_public_token_expiry(api_client, user, create_budget,
         'expires_at': "2021-12-12 00:00:00",
         'is_expired': False
     }
-

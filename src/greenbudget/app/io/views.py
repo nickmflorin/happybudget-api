@@ -8,6 +8,7 @@ from .serializers import (
 
 class TempUploadView(generics.GenericAPIView):
     def post(self, request, *args, **kwargs):
+        # pylint: disable=not-callable
         serializer = self.serializer_class(
             data=request.data,
             context={"request": request}

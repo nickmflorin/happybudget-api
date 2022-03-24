@@ -65,6 +65,7 @@ class AbstractTokenValidateView(views.GenericView):
         # they were actually provided.
         serializer_kwargs = dict(
             (k, v) for k, v in serializer_kwargs.items() if v is not None)
+        # pylint: disable=not-callable
         serializer = self.serializer_class(
             data=request.data, **serializer_kwargs)
         serializer.is_valid(raise_exception=True)
@@ -176,7 +177,7 @@ class LoginView(AbstractLoginView):
 
     @sensitive_post_parameters_m('password')
     def dispatch(self, request, *args, **kwargs):
-        return super(LoginView, self).dispatch(request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
 
 
 class VerifyEmailView(AbstractUnauthenticatedView):

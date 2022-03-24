@@ -89,7 +89,7 @@ class Actual(BudgetingOrderedRowModel):
         unique_together = (('budget', 'order'))
 
     def __str__(self):
-        return self.name or "----"
+        return str(self.name) or "----"
 
     def validate_before_save(self):
         try:

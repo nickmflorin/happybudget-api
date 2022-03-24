@@ -25,11 +25,13 @@ def test_subaccount_fringes_change(budget_f, create_fringe, models):
         quantity=1,
         rate=100
     )
-    assert account.nominal_value + account.accumulated_fringe_contribution == 225.0  # noqa
+    assert account.nominal_value + account.accumulated_fringe_contribution \
+        == 225.0
     assert subaccount.nominal_value + subaccount.fringe_contribution == 225.0
 
     subaccount.fringes.remove(fringes[0])
-    assert account.nominal_value + account.accumulated_fringe_contribution == 200.0  # noqa
+    assert account.nominal_value + account.accumulated_fringe_contribution \
+        == 200.0
     assert subaccount.nominal_value + subaccount.fringe_contribution == 200.0
 
 
@@ -55,14 +57,16 @@ def test_subaccount_fringe_changed(budget_f, create_fringe, models):
         quantity=1,
         rate=100
     )
-    assert account.nominal_value + account.accumulated_fringe_contribution == 225.0  # noqa
+    assert account.nominal_value + account.accumulated_fringe_contribution \
+        == 225.0
     assert subaccount.nominal_value + subaccount.fringe_contribution == 225.0
 
     fringes[1].rate = 200.0
     fringes[1].save()
 
     account.refresh_from_db()
-    assert account.nominal_value + account.accumulated_fringe_contribution == 325.0  # noqa
+    assert account.nominal_value + account.accumulated_fringe_contribution \
+        == 325.0
 
     subaccount.refresh_from_db()
     assert subaccount.nominal_value + subaccount.fringe_contribution == 325.0
@@ -90,13 +94,15 @@ def test_subaccount_fringe_deleted(budget_f, create_fringe, models):
         quantity=1,
         rate=100
     )
-    assert account.nominal_value + account.accumulated_fringe_contribution == 225.0  # noqa
+    assert account.nominal_value + account.accumulated_fringe_contribution \
+        == 225.0
     assert subaccount.nominal_value + subaccount.fringe_contribution == 225.0
 
     fringes[1].delete()
 
     account.refresh_from_db()
-    assert account.nominal_value + account.accumulated_fringe_contribution == 125.0  # noqa
+    assert account.nominal_value + account.accumulated_fringe_contribution \
+        == 125.0
 
     subaccount.refresh_from_db()
     assert subaccount.nominal_value + subaccount.fringe_contribution == 125.0

@@ -58,8 +58,8 @@ class ObjectSet(collections.abc.Mapping):
     def __getitem__(self, pk):
         try:
             return self._data.__getitem__(pk)
-        except KeyError:
-            raise AssociatedObjectNotFound(self.model_cls, pk)
+        except KeyError as e:
+            raise AssociatedObjectNotFound(self.model_cls, pk) from e
 
     def __setitem__(self, k, v):
         if k in self._data:

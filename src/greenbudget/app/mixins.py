@@ -2,6 +2,7 @@ from django.shortcuts import get_object_or_404
 from django.utils.functional import cached_property
 
 from rest_framework import mixins
+# pylint: disable=unused-import
 from rest_framework.mixins import (  # noqa
     ListModelMixin, DestroyModelMixin, RetrieveModelMixin)
 
@@ -47,6 +48,7 @@ class NestedObjectViewMeta(type):
             pms = permissions.instantiate_permissions(pms)
             permission = permissions.AND(pms)
 
+            # pylint: disable=unexpected-keyword-arg
             permission.has_permission(
                 instance.request, instance, raise_exception=True)
 
@@ -139,4 +141,3 @@ class NestedObjectViewMixin(metaclass=NestedObjectViewMeta):
     endpoints above will have access to a `budget` property, which returns
     the :obj:`Budget` instance the view nests off of.
     """
-    pass

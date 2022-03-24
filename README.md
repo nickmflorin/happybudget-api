@@ -397,13 +397,8 @@ following configurations to your `settings.json` file:
 {
 	"python.linting.flake8Enabled": true,
 	"python.linting.pylintEnabled": true,
-	"python.linting.pylintArgs": [
-		"--load-plugins=pylint_django",
-		"--errors-only"
-	],
 	"python.linting.flake8CategorySeverity.W": "Error",
 	"python.linting.pycodestyleEnabled": true,
-	"workbench.tree.indent": 22,
 	"editor.rulers": [
 		80,
 		100

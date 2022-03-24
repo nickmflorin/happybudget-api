@@ -36,7 +36,7 @@ class Timer:
         self._stats = {}
 
 
-def time_with_stat(id):
+def time_with_stat(identifier):
     def decorator(func):
         @functools.wraps(func)
         def inner(duplicator, *args, **kwargs):
@@ -71,9 +71,10 @@ class Duplicator:
         The determination on whether or not to duplicate or derive is based on
         the following cases:
 
-        (1) `budget` is instance of Budget, `destination_cls` is Budget or None  # noqa
+        (1) `budget` is instance of Budget, `destination_cls` is Budget or None
                 => Duplicate provided Budget to new Budget
-        (2) `budget` is instance of Template, `destination_cls` is Template or None  # noqa
+        (2) `budget` is instance of Template, `destination_cls` is Template
+            or None
                 => Duplicate provided Template to new Template
         (3) `budget` is instance of Template, `destination_cls` is Budget
                 => Derive new Budget from provided Template
@@ -260,6 +261,7 @@ class Duplicator:
         return subaccounts
 
     def duplicate_fringes(self, duplicated_budget, user):
+        # pylint: disable=import-outside-toplevel
         from greenbudget.app.fringe.models import Fringe
 
         # Duplicate the Fringe instances associated with the Budget.
@@ -270,6 +272,7 @@ class Duplicator:
         return fringes
 
     def associate_fringes(self, fringes, subaccounts):
+        # pylint: disable=import-outside-toplevel
         from greenbudget.app.subaccount.models import SubAccount
 
         # Apply the M2M Fringe relationhsips between a given Fringe and it's
@@ -287,6 +290,7 @@ class Duplicator:
         return fringe_through
 
     def duplicate_groups(self, duplicated_budget, accounts, subaccounts, user):
+        # pylint: disable=import-outside-toplevel
         from greenbudget.app.budget.models import BaseBudget
         from greenbudget.app.account.models import Account
         from greenbudget.app.group.models import Group
@@ -362,6 +366,7 @@ class Duplicator:
                     )
 
     def duplicate_markups(self, duplicated_budget, accounts, subaccounts, user):
+        # pylint: disable=import-outside-toplevel
         from greenbudget.app.markup.models import Markup
 
         markups = ConcreteObjectSet(model_cls=Markup, user=user)
@@ -386,6 +391,7 @@ class Duplicator:
         return markups
 
     def associate_markups(self, markups, accounts, subaccounts):
+        # pylint: disable=import-outside-toplevel
         from greenbudget.app.account.models import Account
         from greenbudget.app.subaccount.models import SubAccount
 
@@ -446,6 +452,7 @@ class Duplicator:
             SubAccount.markups.through.objects.bulk_create(subaccount_through)
 
     def duplicate_actuals(self, duplicated_budget, subaccounts, markups, user):
+        # pylint: disable=import-outside-toplevel
         from greenbudget.app.actual.models import Actual
         from greenbudget.app.markup.models import Markup
 

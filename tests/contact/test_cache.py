@@ -82,7 +82,7 @@ def test_cache_invalidated_on_bulk_update(api_client, user, create_contact):
 
 @override_settings(CACHE_ENABLED=True)
 def test_cache_invalidated_on_create(api_client, user, create_contact):
-    [create_contact(), create_contact()]
+    create_contact(count=2)
     api_client.force_login(user)
 
     response = api_client.get("/v1/contacts/")
@@ -101,7 +101,7 @@ def test_cache_invalidated_on_create(api_client, user, create_contact):
 
 @override_settings(CACHE_ENABLED=True)
 def test_cache_invalidated_on_bulk_create(api_client, user, create_contact):
-    [create_contact(), create_contact()]
+    create_contact(count=2)
     api_client.force_login(user)
 
     response = api_client.get("/v1/contacts/")

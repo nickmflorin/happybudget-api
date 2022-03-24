@@ -22,7 +22,10 @@ from .models import Actual, ActualType
 class ActualOwnerSerializer(PolymorphicNonPolymorphicSerializer):
     choices = {
         Markup: "greenbudget.app.markup.serializers.MarkupSimpleSerializer",
-        BudgetSubAccount: "greenbudget.app.subaccount.serializers.SubAccountAsOwnerSerializer",  # noqa
+        BudgetSubAccount: (
+            "greenbudget.app.subaccount.serializers."
+            "SubAccountAsOwnerSerializer"
+        ),
     }
 
 

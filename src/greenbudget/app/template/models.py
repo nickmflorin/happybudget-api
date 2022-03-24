@@ -28,7 +28,7 @@ class Template(BaseBudget):
         )]
 
     def __str__(self):
-        return self.name
+        return str(self.name)
 
     def validate_before_save(self, *args, **kwargs):
         if self.community is True and not self.created_by.is_staff:

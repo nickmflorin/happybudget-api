@@ -8,8 +8,8 @@ def test_get_account_markups(api_client, user, models, create_markup, budget_f):
     account = budget_f.create_account(parent=budget)
     markup = create_markup(parent=account)
     subaccounts = [
-        budget_f.create_subaccount(parent=account, markups=[markup], ),
-        budget_f.create_subaccount(parent=account, markups=[markup], )
+        budget_f.create_subaccount(parent=account, markups=[markup]),
+        budget_f.create_subaccount(parent=account, markups=[markup])
     ]
 
     api_client.force_login(user)
@@ -382,7 +382,8 @@ def test_create_account_percent_markup_no_children(api_client, user, data,
     assert response.status_code == 400
     assert response.json() == {
         'errors': [{
-            'message': 'A markup with unit `percent` must have at least 1 child.',  # noqa
+            'message': (
+                'A markup with unit `percent` must have at least 1 child.'),
             'code': 'invalid',
             'error_type': 'field',
             'field': 'children'

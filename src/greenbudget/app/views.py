@@ -23,12 +23,12 @@ logger = logging.getLogger('greenbudget')
 def _get_attribute(view, attr):
     try:
         return get_nested_attribute(view, attr)
-    except AttributeError:
+    except AttributeError as e:
         raise AttributeError(
             "View %s has invalid serializer class definition, "
             "serializer definition attribute %s does not exist "
             "on view." % (type(view).__name__, attr)
-        )
+        ) from e
 
 
 def _evaluate_view_attribute_map(view, mapping):
@@ -57,10 +57,12 @@ class GenericView(generics.GenericAPIView):
 
     def check_permissions(self, request):
         permission = permissions.AND(self.get_permissions())
+        # pylint: disable=unexpected-keyword-arg
         permission.has_permission(request, self, raise_exception=True)
 
     def check_object_permissions(self, request, obj):
         permission = permissions.AND(self.get_permissions())
+        # pylint: disable=unexpected-keyword-arg
         permission.has_object_permission(
             request, self, obj, raise_exception=True)
 
@@ -711,7 +713,7 @@ def exception_handler(exc, context):
     # Allow the exception to include extra data that will be attributed to the
     # response at the top level, not individual errors.
     if isinstance(getattr(exc, 'extra', None), Mapping):
-        response_data.update({k: v for k, v in exc.extra.items()})
+        response_data.update(exc.extra)
 
     logger.info("API Error", extra=response_data)
 

@@ -38,11 +38,11 @@ def raise_in_api_context(error_message):
     """
     def decorator(func):
         @functools.wraps(func)
-        def decorated(client, user, *args, **kwargs):
+        def decorated(instance, user, *args, **kwargs):
             raise_exception = kwargs.pop('raise_exception', False)
             if raise_exception:
                 try:
-                    return func(client, user, *args, **kwargs)
+                    return func(instance, user, *args, **kwargs)
                 except plaid.ApiException as e:
                     logger.error(
                         "Plaid HTTP Error: An error occurred performing "
@@ -53,8 +53,8 @@ def raise_in_api_context(error_message):
                             'status': e.status
                         }
                     )
-                    raise PlaidRequestError(error_message)
-            return func(client, user, *args, **kwargs)
+                    raise PlaidRequestError(error_message) from e
+            return func(instance, user, *args, **kwargs)
         return decorated
     return decorator
 
@@ -74,9 +74,8 @@ class PlaidClient(plaid_api.PlaidApi):
         Exchanges the Plaid public token for an access token, which can be
         used to make requests to Plaid's API.
         """
-        request = item_public_token_exchange_request.ItemPublicTokenExchangeRequest(  # noqa
-            public_token=public_token
-        )
+        request = item_public_token_exchange_request \
+            .ItemPublicTokenExchangeRequest(public_token=public_token)
         response = self.item_public_token_exchange(request)
         return response.access_token
 
@@ -133,7 +132,8 @@ class PlaidClient(plaid_api.PlaidApi):
 
         request = transactions_get_request.TransactionsGetRequest(
             access_token=access_token,
-            options=transactions_get_request_options.TransactionsGetRequestOptions(),  # noqa
+            options=transactions_get_request_options
+                .TransactionsGetRequestOptions(),
             **kwargs
         )
         response = client.transactions_get(request)

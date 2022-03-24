@@ -51,12 +51,12 @@ class Color(models.Model):
             code=self.code
         )
 
-    def save(self, *args, **kwargs):
+    def save(self, **kwargs):
         try:
             self.full_clean()
         except ValidationError as e:
-            raise IntegrityError(str(e))
-        return super().save(*args, **kwargs)
+            raise IntegrityError(str(e)) from e
+        return super().save(**kwargs)
 
 
 class Tag(PolymorphicModel):

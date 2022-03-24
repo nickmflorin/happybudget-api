@@ -4,9 +4,10 @@ Default settings configurations for all environments.
 Each separate environment will import these configurations and override on a
 per-case basis.
 """
-from corsheaders.defaults import default_headers
 import datetime
 import os
+
+from corsheaders.defaults import default_headers
 import plaid
 
 from greenbudget.conf import Environments, config, LazySetting
@@ -47,6 +48,7 @@ SECRET_KEY = config(
 )
 
 # Sentry Configuration
+# pylint: disable=line-too-long
 SENTRY_DSN = "https://9eeab5e26f804bd582385ffc5eda991d@o591585.ingest.sentry.io/5740484"  # noqa
 
 PWD_RESET_LINK_EXPIRY_TIME_IN_HRS = 24

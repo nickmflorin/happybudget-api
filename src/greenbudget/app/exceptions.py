@@ -1,4 +1,5 @@
 from rest_framework import exceptions, status
+# pylint: disable=unused-import
 from rest_framework.exceptions import AuthenticationFailed  # noqa
 from django.utils.translation import gettext_lazy as _
 
@@ -12,7 +13,7 @@ def _consolidate_field_errors(fields, message):
     return error
 
 
-class BadRequestErrorCodes(object):
+class BadRequestErrorCodes:
     BAD_REQUEST = "bad_request"
 
 
@@ -22,7 +23,7 @@ class BadRequest(exceptions.ParseError):
     status_code = status.HTTP_400_BAD_REQUEST
 
 
-class FieldErrorCodes(object):
+class FieldErrorCodes:
     REQUIRED = "required"
     INVALID = "invalid"
 

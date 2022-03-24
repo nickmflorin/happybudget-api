@@ -42,13 +42,19 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'verbose': {
-            'format': '[%(name)s] %(levelname)s [%(module)s:L%(lineno)d; %(funcName)s()]: %(message)s',  # noqa
+            'format': (
+                '[%(name)s] %(levelname)s [%(module)s:L%(lineno)d; '
+                '%(funcName)s()]: %(message)s'
+            ),
         },
         'simple': {
             'format': '[%(name)s] %(levelname)s: %(message)s',
         },
         'dynamic': {
-            '()': 'greenbudget.lib.logging.formatters.DynamicExtraArgumentFormatter',  # noqa
+            '()': (
+                'greenbudget.lib.logging.formatters.'
+                'DynamicExtraArgumentFormatter'
+            ),
         },
         'django.server': {
             '()': 'django.utils.log.ServerFormatter',
@@ -56,7 +62,10 @@ LOGGING = {
             'style': '{',
         },
         "aws": {
-            '()': 'greenbudget.lib.logging.formatters.DynamicExtraArgumentFormatter',  # noqa
+            '()': (
+                'greenbudget.lib.logging.formatters.'
+                'DynamicExtraArgumentFormatter'
+            ),
         },
     },
     'handlers': {

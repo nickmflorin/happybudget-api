@@ -39,12 +39,12 @@ class TablePrimaryKeyRelatedField(serializers.PrimaryKeyRelatedField):
             else:
                 try:
                     table_cls = self._table_instance_cls(self.lazy_context)
-                except TypeError:
+                except TypeError as e:
                     raise TypeError(
                         "`child_instance_cls` must either be a callable "
                         "taking serializer context as it's first and only "
                         "argument, or a class type."
-                    )
+                    ) from e
         else:
             table_cls = self.base_serializer.Meta.model
         assert hasattr(table_cls, 'get_table'), \

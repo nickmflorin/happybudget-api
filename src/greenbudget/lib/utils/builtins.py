@@ -9,7 +9,6 @@ class empty:
     or output value.
     It is required because `None` may be a valid input or output value.
     """
-    pass
 
 
 class DynamicArgumentException(Exception):

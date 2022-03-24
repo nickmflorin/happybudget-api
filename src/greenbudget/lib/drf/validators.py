@@ -88,6 +88,7 @@ class UniqueTogetherValidator(serializers.UniqueTogetherValidator):
                 # When the instance is being created, it is more likely than not
                 # that the values are already in the set of attributes provided
                 # to the method - in which case, we do not want to override them.
+                # pylint: disable=unsupported-membership-test
                 if field not in attrs:
                     attrs.add("context", field,
                         getattr(serializer.context, field))
@@ -96,6 +97,7 @@ class UniqueTogetherValidator(serializers.UniqueTogetherValidator):
                     and hasattr(field[1], '__call__'), \
                     "When defined as a tuple, the context field must be " \
                     "defined as (field, callback)."
+                # pylint: disable=unsupported-membership-test
                 if field[0] not in attrs:
                     attrs.add("context", field[0], field[1](serializer.context))
 

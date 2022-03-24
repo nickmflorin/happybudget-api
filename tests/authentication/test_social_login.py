@@ -194,7 +194,8 @@ def test_social_login_user_not_on_waitlist(api_client):
         }
     )
     with mock.patch(
-            'greenbudget.app.user.mail.contacts_api.get_contacts_from_list') as m:  # noqa
+        'greenbudget.app.user.mail.contacts_api.get_contacts_from_list'
+    ) as m:
         m.return_value = mock_response
         response = api_client.post("/v1/auth/social-login/", data={
             "token_id": "testtoken",

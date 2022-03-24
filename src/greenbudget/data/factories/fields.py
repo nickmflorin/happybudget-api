@@ -1,6 +1,6 @@
-from django.utils import timezone
 from datetime import datetime, timedelta
 
+from django.utils import timezone
 from factory.fuzzy import FuzzyNaiveDateTime
 
 
@@ -18,7 +18,7 @@ class PastDateTimeField(FuzzyNaiveDateTime):
         super().__init__(start_value, end_value, *args, **kwargs)
 
     def fuzz(self):
-        value = super(PastDateTimeField, self).fuzz()
+        value = super().fuzz()
         tz = timezone.get_current_timezone()
         return tz.localize(value)
 
@@ -34,18 +34,17 @@ class FutureDateTimeField(FuzzyNaiveDateTime):
             start_value + timedelta(days=kwargs.pop('horizon', 365 * 2)))
         if start_value >= end_value:
             raise ValueError("The end_value must be in the future.")
-        super(FutureDateTimeField, self).__init__(start_value, end_value, *args,
-            **kwargs)
+        super().__init__(start_value, end_value, *args, **kwargs)
 
     def fuzz(self):
-        value = super(FutureDateTimeField, self).fuzz()
+        value = super().fuzz()
         tz = timezone.get_current_timezone()
         return tz.localize(value)
 
 
 class FuzzyPastDateTimeStringField(PastDateTimeField):
     def fuzz(self):
-        value = super(FuzzyPastDateTimeStringField, self).fuzz()
+        value = super().fuzz()
         return str(value)
 
 

@@ -1,10 +1,11 @@
+# pylint: disable=redefined-outer-name
 import copy
 import functools
-import mock
-import pytest
-import requests
 import threading
 import time
+import requests
+import mock
+import pytest
 
 from django.core.cache import cache as django_cache
 from django.db import connection, connections
@@ -51,10 +52,11 @@ def api_client(settings):
             super().__init__(*args, **kwargs)
             self._dynamic_headers = {}
 
-        def force_login(self, user, **kwargs):
-            self.force_authenticate(user)
-            super().force_login(user, **kwargs)
+        def force_login(self, usr, **kwargs):
+            self.force_authenticate(usr)
+            super().force_login(usr, **kwargs)
 
+        # pylint: disable=signature-differs
         def generic(self, *args, **kwargs):
             kwargs_with_headers = copy.deepcopy(self._dynamic_headers)
             if self._dynamic_headers:

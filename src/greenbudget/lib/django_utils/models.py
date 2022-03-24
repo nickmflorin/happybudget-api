@@ -1,6 +1,7 @@
+import re
+
 import collections
 from polymorphic.models import PolymorphicModel
-import re
 
 from django.apps import apps
 from django.contrib.contenttypes.models import ContentType
@@ -51,7 +52,7 @@ def get_model_polymorphic_ptr_field(model_cls, strict=False):
     # Django does some weird things to prevent us from being able to access
     # the `parents` attribute on a model's Meta class as a normal dictionary.
     # The only thing we can do is iterate over it and treat them as tuples.
-    data = [(x, y) for x, y in model_cls._meta.parents.items()]
+    data = model_cls._meta.parents.items()
     # Data will be an array of length-1 where the only element is a tuple.  That
     # tuple will have as it's first element the parent model class, and as it's
     # second element the field associating the parent model to the child model.

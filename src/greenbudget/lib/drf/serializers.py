@@ -45,14 +45,14 @@ class LazyContext(collections.abc.MutableMapping):
     def __getattr__(self, attr):
         try:
             return self.__getitem__(attr)
-        except KeyError:
-            raise ContextFieldLookupError(attr, ref=self._ref)
+        except KeyError as e:
+            raise ContextFieldLookupError(attr, ref=self._ref) from e
 
     def __getitem__(self, attr):
         return self._data.__getitem__(attr)
 
-    def __setitem__(self, attr):
-        return self._data.__setitem__(attr)
+    def __setitem__(self, attr, v):
+        return self._data.__setitem__(attr, v)
 
     def __len__(self):
         return self._data.__len__()
@@ -60,8 +60,8 @@ class LazyContext(collections.abc.MutableMapping):
     def __delitem__(self, k):
         return self._data.__delitem__(k)
 
-    def update(self, *args, **kwargs):
-        return self._data.update(*args, **kwargs)
+    def update(self, *args):
+        return self._data.update(*args)
 
 
 class PolymorphicNonPolymorphicSerializer(serializers.Serializer):

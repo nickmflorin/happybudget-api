@@ -24,7 +24,6 @@ class Token(BaseToken):
     not defined dynamically in the __init__ method, so overriding the settings
     will not cause the tokens to use a different lifetime.
     """
-
     def __init__(self, token=None, verify=True, lifetime=None):
         self.lifetime = lifetime or getattr(self, 'lifetime', None)
         super().__init__(token=token, verify=verify)

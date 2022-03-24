@@ -135,7 +135,7 @@ class AbstractTokenValidationSerializer(serializers.Serializer):
         user = self.get_user(attrs)
         user = user_can_authenticate(
             user=user,
-            permissions=self.token_user_permission_classes,
+            pms=self.token_user_permission_classes,
         )
         return {"user": user}
 
@@ -211,8 +211,8 @@ class RecoverPasswordSerializer(serializers.Serializer):
         email = attrs['email']
         try:
             user = get_user_model().objects.get(email=email)
-        except get_user_model().DoesNotExist:
-            raise EmailDoesNotExist('email')
+        except get_user_model().DoesNotExist as e:
+            raise EmailDoesNotExist('email') from e
         return {"user": user_can_authenticate(user)}
 
     def create(self, validated_data):

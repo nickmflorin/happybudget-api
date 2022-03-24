@@ -7,6 +7,7 @@ def contribution_from_fringes(value, fringes):
     or a percent value, the determination of which is controlled by the `unit`
     field on the :obj:`Fringe`.
     """
+    # pylint: disable=import-outside-toplevel
     from .models import Fringe
 
     additional_values = []

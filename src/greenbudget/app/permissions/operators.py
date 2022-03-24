@@ -30,11 +30,13 @@ class Operator(BasePermission):
         if context == PermissionContext.VIEW:
             pms = [
                 p for p in pms
+                # pylint: disable=no-value-for-parameter
                 if p.is_view_applicable(self.view_context(*args))
             ]
         elif context == PermissionContext.OBJECT:
             pms = [
                 p for p in pms
+                # pylint: disable=no-value-for-parameter
                 if p.is_object_applicable(self.object_context(*args))
             ]
         if len(pms) == 0 and self._default is not None:
@@ -97,19 +99,20 @@ def track_failed_permissions(context):
                 # granted.  In the case of an OR clause, we can exit the
                 # permission check of the operator early since one permission
                 # was granted.
+                # pylint: disable=no-else-continue
                 if evaluated is True:
                     if instance.operation == PermissionOperation.OR:
                         return evaluated
                     continue
                 else:
                     # The permission returning the value of False, a string
-                    # error message or a PermissionError indicates that the
+                    # error message or a PermissionErr indicates that the
                     # permission was not granted.
                     assert evaluated is False or isinstance(evaluated, str) \
                         or isinstance(evaluated, PErrors), \
                         f"Unexpected type {type(evaluated)} returned from " \
                         f"permission method.  Expected either a string, a " \
-                        "boolean or a PermissionError."
+                        "boolean or a PermissionErr."
 
                     prioritized = permission.is_prioritized(*args[:1])
 

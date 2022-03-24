@@ -28,7 +28,8 @@ def construct_unique_name(name, names, with_extensions=True,
 
         Default: True
 
-        construct_unique_name("file1.pdf", ["file1.jpg"], with_extensions=False)  # noqa
+        construct_unique_name(
+            "file1.pdf", ["file1.jpg"], with_extensions=False)
         >>> file1(1).pdf
 
         construct_unique_name("file1.pdf", ["file1.jpg"], with_extensions=True)

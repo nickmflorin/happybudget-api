@@ -34,7 +34,7 @@ def ConstantTimeMixin(*fields):
     the provided field so it can be explicitly provided in the factory
     arguments without an override from Django on model save.
     """
-    class DynamicConstantTimeMixin(object):
+    class DynamicConstantTimeMixin:
         @classmethod
         def post_create(cls, model, **kwargs):
             update_kwargs = {}

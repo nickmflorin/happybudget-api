@@ -5,7 +5,11 @@ def test_fringe_value(create_budget, create_fringe, models):
     budget = create_budget()
     fringes = [
         create_fringe(
-            budget=budget, cutoff=50, rate=0.5, unit=models.Fringe.UNITS.percent),  # noqa
+            budget=budget,
+            cutoff=50,
+            rate=0.5,
+            unit=models.Fringe.UNITS.percent
+        ),
         create_fringe(budget=budget, rate=None),
         create_fringe(
             budget=budget, cutoff=20, rate=100, unit=models.Fringe.UNITS.flat),

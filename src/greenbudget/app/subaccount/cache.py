@@ -9,26 +9,26 @@ from greenbudget.app.account.cache import (
 
 
 subaccount_children_cache = cache.endpoint_cache(
-    id='subaccount-children',
+    cache_id='subaccount-children',
     disabled=True,
     path=lambda instance: reverse(
         'subaccount:child-list', kwargs={'pk': instance.pk})
 )
 
 subaccount_markups_cache = cache.endpoint_cache(
-    id='subaccount-markup',
+    cache_id='subaccount-markup',
     path=lambda instance: reverse(
         'subaccount:markup-list', kwargs={'pk': instance.pk})
 )
 
 subaccount_groups_cache = cache.endpoint_cache(
-    id='subaccount-group',
+    cache_id='subaccount-group',
     path=lambda instance: reverse(
         'subaccount:group-list', kwargs={'pk': instance.pk})
 )
 
 subaccount_units_cache = cache.endpoint_cache(
-    id='subaccount-units',
+    cache_id='subaccount-units',
     path=lazy_reverse('subaccount:unit-list')
 )
 
@@ -64,7 +64,7 @@ def invalidate_parent_groups_cache(instances, **kwargs):
 
 
 subaccount_instance_cache = cache.endpoint_cache(
-    id='subaccount-detail',
+    cache_id='subaccount-detail',
     dependency=[
         lambda instance: invalidate_parent_instance_cache(
             instance.parent),

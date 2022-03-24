@@ -35,6 +35,7 @@ class FringeManager(FringeQuerier, BudgetingOrderedRowManager):
 
     @signals.disable()
     def bulk_estimate_fringe_subaccounts(self, fringes, **kwargs):
+        # pylint: disable=import-outside-toplevel
         from greenbudget.app.account.models import Account
         from greenbudget.app.subaccount.models import SubAccount
 

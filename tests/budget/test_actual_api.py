@@ -171,7 +171,7 @@ def test_bulk_create_actual(api_client, user, create_budget, create_markup,
     assert response.json()['children'][0]['owner']['id'] == subaccounts[0].pk
 
     assert response.json()['children'][1]['value'] == 30.0
-    assert response.json()['children'][1]['owner']['id'] == subaccounts[0].pk  # noqa
+    assert response.json()['children'][1]['owner']['id'] == subaccounts[0].pk
 
     assert response.json()['children'][2]['value'] == 160.0
     assert response.json()['children'][2]['owner']['id'] == subaccounts[1].pk

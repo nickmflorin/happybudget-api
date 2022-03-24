@@ -113,7 +113,10 @@ class IsOwner(BasePermission):
     in user is accessing was created by that user.
     """
     object_name = "object"
-    message = "The user must does not have permission to view this {object_name}."  # noqa
+    message = (
+        "The user must does not have permission to view this "
+        "{object_name}."
+    )
 
     def __init__(self, owner_field='created_by', object_name=None, **kwargs):
         self._owner_field = owner_field

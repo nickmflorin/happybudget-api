@@ -40,7 +40,7 @@ class Group(RowModel):
         verbose_name_plural = "Groups"
 
     def __str__(self):
-        return self.name
+        return str(self.name)
 
     @property
     def child_instance_cls(self):
@@ -52,6 +52,7 @@ class Group(RowModel):
 
     @property
     def budget(self):
+        # pylint: disable=import-outside-toplevel
         from greenbudget.app.budget.models import BaseBudget
         parent = self.parent
         while not isinstance(parent, BaseBudget):

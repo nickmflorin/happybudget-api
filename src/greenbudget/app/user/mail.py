@@ -47,8 +47,9 @@ def get_template(slug):
             t for t in settings.SEND_IN_BLUE_TEMPLATES
             if t.slug == slug
         ][0]
-    except IndexError:
-        raise LookupError("Template %s is not configured in settings." % slug)
+    except IndexError as e:
+        raise LookupError(
+            "Template %s is not configured in settings." % slug) from e
 
 
 class Mail(sib_api_v3_sdk.SendSmtpEmail):
@@ -101,7 +102,7 @@ def send_mail(mail):
         email_api.send_transac_email(mail)
     except ApiException as e:
         logger.error("There was an error sending email: \n%s" % str(e))
-        raise EmailError()
+        raise EmailError() from e
 
 
 def send_email_confirmation_email(user, token=None):

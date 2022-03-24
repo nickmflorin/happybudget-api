@@ -82,6 +82,7 @@ def test_get_account_subaccounts_ordered_by_group(api_client, user, budget_f,
         create_group(parent=account),
         create_group(parent=account)
     ]
+    # pylint: disable=expression-not-assigned
     [
         budget_f.create_subaccount(parent=account, group=groups[1], order="n"),
         budget_f.create_subaccount(parent=account, order="t"),
@@ -218,6 +219,7 @@ def test_get_community_template_account_subaccounts(api_client, user,
         create_template_subaccount):
     template = create_template(community=True, created_by=staff_user)
     account = create_template_account(parent=template)
+    # pylint: disable=expression-not-assigned
     [
         create_template_subaccount(
             parent=account,
@@ -239,6 +241,7 @@ def test_get_another_users_community_template_account_subaccounts(api_client,
     user = create_user(is_staff=True)
     template = create_template(community=True, created_by=user)
     account = create_template_account(parent=template)
+    # pylint: disable=expression-not-assigned
     [
         create_template_subaccount(
             parent=account,

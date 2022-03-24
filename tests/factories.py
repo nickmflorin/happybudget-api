@@ -1,3 +1,4 @@
+# pylint: disable=redefined-outer-name
 import copy
 import functools
 from io import BytesIO
@@ -259,7 +260,6 @@ def create_domain_budget():
     >>>     budget = create_domain_budget(domain='budget')
     >>>     assert isinstance(budget, Budget)
     """
-    pass
 
 
 @pytest.fixture
@@ -341,7 +341,6 @@ def create_account():
     >>>     subaccount = create_account(domain='budget')
     >>>     assert isinstance(subaccount, BudgetAccount)
     """
-    pass
 
 
 @pytest.fixture
@@ -421,7 +420,6 @@ def create_subaccount():
     >>>     subaccount = create_subaccount(domain='budget')
     >>>     assert isinstance(subaccount, BudgetSubAccount)
     """
-    pass
 
 
 @pytest.fixture

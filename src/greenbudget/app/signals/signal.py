@@ -125,12 +125,15 @@ class Signal(dispatch.Signal):
         Unfortunately, there is no way to implement this behavior without
         overriding the entire method.
         """
+        # pylint: disable=import-outside-toplevel
         from django.conf import settings
 
         if settings.configured and settings.DEBUG \
-                and (not callable(receiver) or not func_accepts_kwargs(receiver)):  # noqa
+                and (not callable(receiver)
+                or not func_accepts_kwargs(receiver)):
             # Let Django raise the error.
-            return super().connect(receiver, **kwargs)
+            super().connect(receiver, **kwargs)
+            return
 
         dispatch_uid = kwargs.get('dispatch_uid')
         if dispatch_uid:
@@ -200,7 +203,6 @@ class Signal(dispatch.Signal):
         for lookup_key, receiver in receivers:
             kwargs = self._connected_receiver_kwargs[lookup_key]
 
-            receiver = receiver
             if isinstance(receiver, weakref.ref):
                 receiver = receiver()
 

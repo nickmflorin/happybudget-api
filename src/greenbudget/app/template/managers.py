@@ -19,6 +19,7 @@ class TemplateManager(TemplateQuerier, BaseBudgetManager):
     queryset_class = TemplateQuery
 
     def derive(self, template, user, **overrides):
+        # pylint: disable=import-outside-toplevel
         from greenbudget.app.budget.models import Budget
         duplicator = Duplicator(template, destination_cls=Budget)
         return duplicator(user, **overrides)

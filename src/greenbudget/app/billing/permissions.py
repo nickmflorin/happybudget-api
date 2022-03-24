@@ -8,7 +8,7 @@ class IsStripeCustomerPermission(permissions.BasePermission):
     def has_permission(self, request, view):
         if not request.user.is_authenticated \
                 or request.user.stripe_id is None:
-            raise permissions.PermissionError("User is not a Stripe customer.")
+            raise permissions.PermissionErr("User is not a Stripe customer.")
         return True
 
 
@@ -16,8 +16,7 @@ class IsNotStripeCustomerPermission(permissions.BasePermission):
     def has_permission(self, request, view):
         if not request.user.is_authenticated \
                 or request.user.stripe_id is not None:
-            raise permissions.PermissionError(
-                "User is already a Stripe customer.")
+            raise permissions.PermissionErr("User is already a Stripe customer.")
         return True
 
 
