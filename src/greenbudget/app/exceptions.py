@@ -21,6 +21,7 @@ class BadRequest(exceptions.ParseError):
     default_code = BadRequestErrorCodes.BAD_REQUEST
     default_detail = _("Bad request.")
     status_code = status.HTTP_400_BAD_REQUEST
+    error_type = 'bad_request'
 
 
 class FieldErrorCodes:
@@ -108,6 +109,7 @@ class ValidationError(exceptions.ValidationError):
       >>> MyCustomValidationError(["foo", "bar"], message="This is a message.")
     """
     default_code = FieldErrorCodes.INVALID
+    error_type = 'form'
 
     def __init__(self, *args, **kwargs):
 
@@ -135,7 +137,7 @@ class ValidationError(exceptions.ValidationError):
         data = _(message)
 
         if not hasattr(self, 'error_type'):
-            self.error_type = 'field' if fields else 'global'
+            self.error_type = 'field' if fields else 'form'
 
         # This ValidationError allows a default detail to be specified with
         # string formatted parameters that if provided on __init__, will be

@@ -1,294 +1,110 @@
-from collections.abc import Mapping
+import collections
 import logging
 
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.http import Http404
-from django.utils.functional import cached_property
 
-from rest_framework import views, exceptions, viewsets, serializers, generics
+from rest_framework import views, exceptions, status
 from rest_framework.response import Response
 from rest_framework.serializers import as_serializer_error
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
 
-from greenbudget.lib.utils import ensure_iterable, get_nested_attribute
-from greenbudget.lib.utils.urls import parse_ids_from_request
-
-from greenbudget.app import permissions
-from greenbudget.app.billing.exceptions import ProductPermissionError
+from greenbudget.app.billing.exceptions import (
+    BillingError, ProductPermissionError)
 
 
 logger = logging.getLogger('greenbudget')
 
 
-def _get_attribute(view, attr):
-    try:
-        return get_nested_attribute(view, attr)
-    except AttributeError as e:
-        raise AttributeError(
-            "View %s has invalid serializer class definition, "
-            "serializer definition attribute %s does not exist "
-            "on view." % (type(view).__name__, attr)
-        ) from e
+ErrorTypeDesignation = collections.namedtuple(
+    typename='ErrorTypeDesignation',
+    field_names=['exception_cls', 'error_type', 'conditional'],
+    defaults=(None, )
+)
 
-
-def _evaluate_view_attribute_map(view, mapping):
-    for k, v in mapping.items():
-        attr = k
-        iterable_lookup = False
-        if attr.endswith('__in'):
-            attr = attr.split('__in')[0]
-            iterable_lookup = True
-
-        attr_value = _get_attribute(view, attr)
-        if iterable_lookup and attr_value not in ensure_iterable(v):
-            return False
-        elif not iterable_lookup and attr_value != v:
-            return False
-    return True
-
-
-class GenericView(generics.GenericAPIView):
-    """
-    An extension of `rest_framework.generics.GenericAPIView` that allows us
-    to non intrusively and minorly manipulate the default behavior of the
-    `rest_framework.generics.GenericAPIView` class for specific functionality
-    used in this application.
-    """
-
-    def check_permissions(self, request):
-        permission = permissions.AND(self.get_permissions())
-        # pylint: disable=unexpected-keyword-arg
-        permission.has_permission(request, self, raise_exception=True)
-
-    def check_object_permissions(self, request, obj):
-        permission = permissions.AND(self.get_permissions())
-        # pylint: disable=unexpected-keyword-arg
-        permission.has_object_permission(
-            request, self, obj, raise_exception=True)
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context.update(request=self.request, user=self.request.user)
-        return context
-
-    def get_permissions(self):
-        """
-        Overrides the default `.get_permissions()` method in order to provide
-        the following (2) implementations:
-
-        (1) Including Additional Permissions
-
-            Typically, when you need to add a permission class to a specific
-            view, you have to include the default permission classes again
-            even though they should be included for every view based on the
-            `DEFAULT_PERMISSION_CLASSES` setting.
-
-            This method allows permission classes to be appended to the default
-            permission classes by specifying the `extra_permission_classes`
-            attribute.
-
-        (2) Allowing Permissions to be Instantiated
-
-            In our application, there are permissions that require configuration
-            parameters on __init__, so the permission classes themselves have
-            to be instantiated in the views.
-
-            class View(viewsets.GenericViewSet):
-                permission_classes = [IsAuthenticated(...options)]
-
-            This is compared to the way that the DRF view traditionally expects
-            them to be included, which is non-instantiated classes:
-
-            class View(viewsets.GenericViewSet):
-                permission_classes = [IsAuthenticated]
-        """
-        extra_permissions = getattr(self, 'extra_permission_classes', [])
-        extra_permissions = ensure_iterable(extra_permissions)
-        pm = list(self.permission_classes)[:] + [
-            p for p in extra_permissions if p not in self.permission_classes]
-        return permissions.instantiate_permissions(pm)
-
-    def get_serializer_class(self):
-        """
-        Allows the serializer class that a given instance of the view should
-        use to be defined dynamically based on a set of conditionals.
-
-        For each element of `serializer_classes`, the element must either be
-        an instance of :obj:`serializers.ModelSerializer` or an iterable of
-        length 2.
-
-        (1) Instance of `serializers.ModelSerializer`
-
-            When evaluating the `serializer_classes`, if an instance of
-            :obj:`serializers.ModelSerializer` is encountered, it will be
-            returned.  This is typically used for listing the default serializer
-            class as the last element in `serializer_classes` such that it is
-            used when none of the previous conditionals are met.
-
-        (2) Iterable of Length 2
-
-            When evaluating the `serializer_classes`, if an iterable is
-            encountered, the decision of whether or not to use the serialializer
-            class (as the second element of the iterable) is made based on
-            evaluating the first element of the conditional.
-
-            The first element of the conditional can either be a dictionary
-            mapping of properties and the required values on the view instance,
-            or a callback taking the view instance as it's first and only
-            argument.
-
-        Example:
-        --------
-        serializer_classes = (
-            ({'is_simple': True}, SimpleSerializer),
-            (lambda view: view.instance_cls is BaseClass, BaseSerializer)
-            ({'action': 'create'}, DetailSerializer),
-            RegularSerializer
+DefaultErrorTypes = [
+    ErrorTypeDesignation(
+        exception_cls=(Http404, exceptions.MethodNotAllowed),
+        error_type='http'
+    ),
+    ErrorTypeDesignation(
+        exception_cls=exceptions.PermissionDenied,
+        error_type='permission'
+    ),
+    ErrorTypeDesignation(exception_cls=BillingError, error_type='billing'),
+    ErrorTypeDesignation(
+        exception_cls=exceptions.ParseError,
+        error_type='bad_request'
+    ),
+    ErrorTypeDesignation(
+        exception_cls=exceptions.ValidationError,
+        error_type='form',
+        conditional=lambda e:
+            isinstance(e.detail, dict) and '__all__' in e.detail
+    ),
+    ErrorTypeDesignation(
+        exception_cls=exceptions.ValidationError,
+        error_type='field',
+        conditional=lambda e:
+            isinstance(e.detail, dict) and '__all__' not in e.detail
+    ),
+    ErrorTypeDesignation(
+        error_type='auth',
+        exception_cls=(
+            AuthenticationFailed,
+            exceptions.AuthenticationFailed,
+            exceptions.NotAuthenticated
         )
-
-        Additionally, the second element of a conditional serializer can also
-        be another set of conditional serializers, which will only be evaluated
-        if the former first element of the upper level conditional serializer
-        is True.
-
-        Example:
-        --------
-        serializer_classes = (
-            ({'is_simple': True}, [
-                (lambda view: view.instance_cls is BaseClass, BaseSerializer)
-                ({'action': 'create'}, DetailSerializer),
-            ]),
-        )
-        """
-        valid_types = (list, tuple)
-
-        def evaluate_serializer_conditional(conditional):
-            if not isinstance(conditional, dict) \
-                    and not hasattr(conditional, '__call__'):
-                raise ValueError(
-                    "View %s has invalid serializer class definition, "
-                    "serializer definition must either be of type %s "
-                    "or callable."
-                    % (type(self).__name__, dict)
-                )
-            if isinstance(conditional, dict):
-                return _evaluate_view_attribute_map(self, conditional)
-            return conditional(self)
-
-        def evaluate_serializer_classes(serializer_classes):
-            for definition in serializer_classes:
-                if not isinstance(definition, (list, tuple)) \
-                        and not issubclass(
-                            definition, serializers.ModelSerializer):
-                    raise ValueError(
-                        "View %s has invalid serializer class definition, "
-                        "serializer definition must either be of types %s "
-                        "or a valid subclass of %s."
-                        % (
-                            type(self).__name__,
-                            ", ".join(["%s" % s for s in valid_types]),
-                            serializers.ModelSerializer
-                        )
-                    )
-                if isinstance(definition, valid_types):
-                    if len(definition) != 2:
-                        raise ValueError(
-                            "View %s has invalid serializer class definition, "
-                            "serializer definition must be of length 2 when "
-                            "defined as an iterable." % type(self).__name__
-                        )
-
-                    if evaluate_serializer_conditional(definition[0]):
-                        if isinstance(definition[1], valid_types):
-                            return evaluate_serializer_classes(definition[1])
-                        return definition[1]
-                else:
-                    # Including the serializer without any configuration
-                    # conditional means that this is the default case (usually
-                    # at the bottom of the array of serializer_classes) so it
-                    # should be returned.
-                    return definition
-            return None
-
-        if hasattr(self, 'serializer_classes'):
-            evaluated = evaluate_serializer_classes(self.serializer_classes)
-            if evaluated is not None:
-                return evaluated
-
-        serializer_cls = getattr(self, 'serializer_class', None)
-        if serializer_cls is None:
-            raise Exception(
-                "View %s did not have a serializer class that met the "
-                "conditional and does not define a serializer class "
-                "statically." % type(self).__name__
-            )
-        return serializer_cls
+    )
+]
 
 
-class GenericViewSet(viewsets.ViewSetMixin, GenericView):
-    """
-    An extension of `rest_framework.viewsets.GenericViewSet` that allows us
-    to non intrusively and minorly manipulate the default behavior of the
-    `rest_framework.viewsets.GenericViewSet` class for specific functionality
-    used in this application.
-    """
-    lookup_field = 'pk'
-
-    @property
-    def is_simple(self):
-        return 'simple' in self.request.query_params
-
-    @cached_property
-    def instance(self):
-        return self.get_object()
-
-    @property
-    def instance_cls(self):
-        return type(self.instance)
-
-    def _update_kwargs(self, serializer):
-        kwargs = {}
-        if isinstance(serializer, serializers.ModelSerializer):
-            model_cls = serializer.Meta.model
-            if hasattr(model_cls, 'updated_by'):
-                kwargs.update(updated_by=self.request.user)
-        return kwargs
-
-    def update_kwargs(self, serializer):
-        return self._update_kwargs(serializer)
-
-    def create_kwargs(self, serializer):
-        kwargs = self._update_kwargs(serializer)
-        if isinstance(serializer, serializers.ModelSerializer):
-            model_cls = serializer.Meta.model
-            if hasattr(model_cls, 'created_by'):
-                kwargs.update(created_by=self.request.user)
-        return kwargs
+def get_default_error_type(e):
+    for d in DefaultErrorTypes:
+        if isinstance(e, d.exception_cls) \
+                and (d.conditional is None or d.conditional(e)):
+            return d.error_type
+    return None
 
 
-def filter_by_ids(cls):
-    """
-    A decorator for extensions of :obj:`rest_framework.views.ViewSet` that
-    will filter the queryset by a list of IDs provided as query params in
-    the URL.  Applicable for list related endpoints:
-    >>> GET /budgets/<id>/accounts?ids=[1, 2, 3]
-    """
-    original_get_queryset = cls.get_queryset
+def get_error_type(e):
+    return getattr(e, 'error_type', get_default_error_type(e))
 
-    @property
-    def request_ids(instance):
-        return parse_ids_from_request(instance.request)
 
-    def get_queryset(instance, *args, **kwargs):
-        qs = original_get_queryset(instance, *args, **kwargs)
-        if instance.request_ids is not None:
-            qs = qs.filter(pk__in=instance.request_ids)
-        return qs
+def map_detail(e, **kwargs):
+    detail = kwargs.pop('detail', None)
+    message = kwargs.pop('message', None)
+    code = kwargs.pop('code', None)
 
-    cls.request_ids = request_ids
-    if original_get_queryset is not None:
-        cls.get_queryset = get_queryset
-    return cls
+    assert detail or message, \
+        "Either the detail or the message must be provided."
+    assert code or detail, \
+        "Either the deatil or the code must be provided."
+
+    return {**{
+        'message': message or str(detail),
+        'code': code or getattr(detail, 'code'),
+        'error_type': get_error_type(e)
+    }, **kwargs}
+
+
+def map_details(e, **kwargs):
+    # Allow the details to be explicitly provided in the case that the
+    # details are nested on the original exception.
+    details = kwargs.pop('details', getattr(e, 'detail'))
+    mapped = []
+    if isinstance(details, dict):
+        for k, v in details.items():
+            mapped += map_details(e, details=v, field=k)
+    elif isinstance(details, list):
+        for detail_i in details:
+            if isinstance(detail_i, (list, dict)):
+                mapped += map_details(e, details=detail_i, **kwargs)
+            else:
+                mapped += [map_detail(e, detail=detail_i, **kwargs)]
+    else:
+        mapped += [map_detail(e, detail=details, **kwargs)]
+    return mapped
 
 
 def exception_handler(exc, context):
@@ -393,7 +209,7 @@ def exception_handler(exc, context):
         >>> }}
 
         If the error does not pertain to a specific field (i.e. the error
-        occurred during global level field validation in a serializer),
+        occurred during form level field validation in a serializer),
         Django REST Framework will index the error in the object embedded in
         the response by the field defined by the settings configuration
         `NON_FIELD_ERRORS_KEY` (typically "__all__"):
@@ -455,15 +271,19 @@ def exception_handler(exc, context):
             Errors that are related to unexpected API configuration related
             problems, such as 404 errors or 405 errors.
 
-        (2) field [400] Response
+        (2) bad_request [400] Response
+            General errors that do not fall under the field, form or billing
+            error types.
+
+        (3) field [400] Response
             Validation errors that are related to failed validation of specific
             fields in the request data.
 
-        (3) global [400] Response
+        (4) form [400] Response
             Validation errors that are related to request data validation that
             does not pertain to a specific field in the request data.
 
-        (4) auth [401] Response
+        (5) auth [401] Response
             Validation errors related to proper authentication of a user.  These
             occur when attempting to access a protected resource without being
             authenticated or when the JWT authentication token is being
@@ -471,11 +291,11 @@ def exception_handler(exc, context):
             of error is included in the response and will forcefully log out
             the user.
 
-        (5) billing [400] Response
+        (6) billing [400] Response
             Billing related errors that occur when a user is attempting to
             change, update or create subscriptions in Stripe.
 
-        (6) permission [403] Response
+        (7) permission [403] Response
             Errors raised when a user does not have the permissions to access
             a resource they are attempting to access.  These are usually avoided
             by the Front End, by only making requests when the logged in user
@@ -594,41 +414,6 @@ def exception_handler(exc, context):
         >>>    'error_type': 'http'
         >>> }]}
     """
-    def map_detail(detail, error_type, **kwargs):
-        return {**{
-            'message': str(detail),
-            'code': detail.code,
-            'error_type': error_type
-        }, **kwargs}
-
-    def map_details(details, error_type, **kwargs):
-        mapped = []
-        if isinstance(details, dict):
-            for k, v in details.items():
-                mapped += map_details(v, error_type, field=k)
-        elif isinstance(details, list):
-            for detail_i in details:
-                if isinstance(detail_i, (list, dict)):
-                    mapped += map_details(detail_i, error_type, **kwargs)
-                else:
-                    mapped += [map_detail(detail_i, error_type, **kwargs)]
-        else:
-            mapped += [map_detail(details, error_type, **kwargs)]
-        return mapped
-
-    def map_exception_details(exc, error_type=None, default_error_type='global',
-            **kwargs):
-        error_type = error_type or getattr(
-            exc, 'error_type', default_error_type)
-        detail_data = getattr(exc, 'detail_data', {})
-        return map_details(exc.detail, error_type, **{**kwargs, **detail_data})
-
-    def include_in_detail(data, **kwargs):
-        for err in data:
-            err.update(**kwargs)
-
-    response_data = {}
-
     # In case a Django ValidationError is raised outside of a serializer's
     # validation methods (as might happen if we don't know the validation error
     # until we send a request to a third party API), convert to a DRF
@@ -636,38 +421,56 @@ def exception_handler(exc, context):
     if isinstance(exc, DjangoValidationError):
         exc = exceptions.ValidationError(detail=as_serializer_error(exc))
 
-    # By default, Django REST Framework will catch Http404 and return a response
-    # { "detail": "Not found." }.  We want to include a code for the frontend.
-    if isinstance(exc, Http404):
-        message = str(exc) or 'The requested resource could not be found.'
-        logger.warning("API encountered a 404 error", extra={
-            'error_type': 'http',
-            'code': 'not_found'
-        })
-        return Response({'errors': [
-            {'message': message, 'error_type': 'http', 'code': 'not_found'}
-        ]}, status=404)
-
     # If the exception is not an instance of exceptions.APIException, allow
     # the original django-rest-framework exception handler to handle the
     # exception.
-    elif not isinstance(exc, exceptions.APIException):
+    if not isinstance(exc, (exceptions.APIException, Http404)):
         return views.exception_handler(exc, context)
 
+    additional_data = {}
+    default_error_type = get_default_error_type(exc)
+
+    # If the error type cannot be determined, we cannot use our own error
+    # handling protocols as the API consumer will expect that error type to
+    # be defined.
+    error_type = getattr(exc, 'error_type', default_error_type)
+    if error_type is None:
+        logger.warning(
+            "Could not determine default error type for exception "
+            f"{exc.__class__.__name__}."
+        )
+        return views.exception_handler(exc, context)
+
+    # By default, Django REST Framework will catch Http404 and return a response
+    # { "detail": "Not found." } and will catch exceptions.MethodNotAllowed
+    # and return a response { "detail": "Method not allowed." }.
+    if isinstance(exc, Http404):
+        message = str(exc) or "The requested resource could not be found."
+        logger.warning("API encountered a 404 error", extra={
+            'error_type': error_type,
+            'code': 'not_found'
+        })
+        return Response(
+            {'errors': [map_detail(exc, message=message, code='not_found')]},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    elif isinstance(exc, exceptions.MethodNotAllowed):
+        message = str(exc) or "This method is not allowed."
+        logger.error("API encountered a 405 error", extra={
+            'error_type': 'http',
+            'code': 'method_not_allowed'
+        })
+        return Response(
+            {'errors': [map_detail(exc, message=message, code='not_found')]},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED
+        )
     elif isinstance(exc, (
         AuthenticationFailed,
         exceptions.AuthenticationFailed,
         exceptions.NotAuthenticated,
         exceptions.PermissionDenied
     )):
-        default_error_type = 'permission' \
-            if isinstance(exc, exceptions.PermissionDenied) else 'auth'
-
-        data = map_details(
-            details=exc.detail,
-            error_type=getattr(exc, 'error_type', default_error_type)
-        )
-
         # There are cases where we need to include information about the user
         # that is attempting a request when a NotAuthenticated error surfaces.
         # This mostly pertains to things like email confirmation, where we might
@@ -679,40 +482,22 @@ def exception_handler(exc, context):
             if user_id is None and context['request'].user.id is not None:
                 user_id = context['request'].user.id
             if user_id is not None:
-                include_in_detail(data, user_id=user_id)
+                additional_data['user_id'] = user_id
 
         # There are cases where we need to include information about the products
         # that a user needs to be subscribed to in order to perform a certain
         # action.
         if isinstance(exc, ProductPermissionError):
-            include_in_detail(
-                data=data,
+            additional_data.update(
                 products=getattr(exc, 'products'),
                 permission_id=getattr(exc, 'permission_id')
             )
 
-    elif isinstance(exc.detail, dict):
-        default_error_type = 'field'
-        if '__all__' in exc.detail:
-            default_error_type = 'global'
-
-        error_type = getattr(exc, 'error_type', default_error_type)
-        data = map_exception_details(exc, error_type=error_type)
-
-        for err in data:
-            if err['error_type'] == 'global':
-                assert err['field'] == '__all__', \
-                    "Invalid field included for global error!"
-                del err["field"]
-
-    else:
-        data = map_exception_details(exc, default_error_type='global')
-
-    response_data['errors'] = data
+    response_data = {'errors': map_details(exc, **additional_data)}
 
     # Allow the exception to include extra data that will be attributed to the
     # response at the top level, not individual errors.
-    if isinstance(getattr(exc, 'extra', None), Mapping):
+    if isinstance(getattr(exc, 'extra', None), collections.abc.Mapping):
         response_data.update(exc.extra)
 
     logger.info("API Error", extra=response_data)

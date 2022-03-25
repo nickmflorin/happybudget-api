@@ -88,7 +88,6 @@ class AuthErrorCodes:
     EMAIL_DOES_NOT_EXIST = "email_does_not_exist"
     INVALID_SOCIAL_TOKEN = "invalid_social_token"
     INVALID_SOCIAL_PROVIDER = "invalid_social_provider"
-    EMAIL_ERROR = "email_error"
 
 
 class EmailDoesNotExist(exceptions.InvalidFieldError):
@@ -116,4 +115,3 @@ class InvalidSocialProvider(exceptions.AuthenticationFailed):
 
 class EmailError(exceptions.BadRequest):
     default_detail = _("There was a problem sending the email.")
-    default_code = AuthErrorCodes.EMAIL_ERROR

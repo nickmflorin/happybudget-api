@@ -21,7 +21,11 @@ class BillingErrorCodes:
     CHECKOUT_SESSION_INACTIVE = "checkout_session_inactive"
 
 
-class CheckoutError(exceptions.BadRequest):
+class BillingError(exceptions.BadRequest):
+    error_type = 'billing'
+
+
+class CheckoutError(BillingError):
     error_type = 'billing'
     default_code = BillingErrorCodes.CHECKOUT_ERROR
     default_detail = _("There was a error during checkout.")
@@ -32,7 +36,7 @@ class CheckoutSessionInactiveError(CheckoutError):
     default_detail = _("There is not an active checkout session.")
 
 
-class StripeBadRequest(exceptions.BadRequest):
+class StripeBadRequest(BillingError):
     error_type = 'billing'
     default_code = BillingErrorCodes.STRIPE_REQUEST_ERROR
     default_detail = _("There was a Stripe error.")
