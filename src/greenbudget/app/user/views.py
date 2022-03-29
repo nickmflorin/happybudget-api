@@ -3,11 +3,14 @@ from django.views.decorators.debug import sensitive_post_parameters
 
 from rest_framework import response, status
 
-from greenbudget.app import views, mixins, permissions
+from greenbudget.app import views, mixins, permissions, exceptions
 from greenbudget.app.user.mail import send_email_confirmation_email
 
+from .filters import UserSearchFilterBackend
+from .models import User
 from .serializers import (
-    UserSerializer, UserRegistrationSerializer, ChangePasswordSerializer)
+    UserSerializer, UserRegistrationSerializer, ChangePasswordSerializer,
+    SimpleUserSerializer)
 
 
 def sensitive_post_parameters_m(*args):
@@ -34,6 +37,17 @@ class UserRegistrationView(mixins.CreateModelMixin, views.GenericViewSet):
             UserSerializer(instance).data,
             status=status.HTTP_201_CREATED
         )
+
+
+class UserViewSet(mixins.ListModelMixin, views.GenericViewSet):
+    serializer_class = SimpleUserSerializer
+    search_fields = ['email', 'name']
+    filter_backends = [UserSearchFilterBackend]
+
+    def get_queryset(self):
+        if 'search' not in self.request.query_params:
+            raise exceptions.BadRequest("The search parameter is required.")
+        return User.objects.standard_filter()
 
 
 class ActiveUserViewSet(mixins.UpdateModelMixin, views.GenericViewSet):

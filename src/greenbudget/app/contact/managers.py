@@ -2,9 +2,12 @@ from greenbudget.app import signals
 from greenbudget.app.tabling.managers import OrderedRowManager
 
 from .cache import user_contacts_cache
+from .query import ContactQuerySet
 
 
 class ContactManager(OrderedRowManager):
+    queryset_class = ContactQuerySet
+
     @signals.disable()
     def bulk_delete(self, instances):
         for obj in instances:

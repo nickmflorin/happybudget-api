@@ -1,3 +1,6 @@
+# pylint: disable=redefined-outer-name
+import datetime
+import urllib.parse
 import mock
 import pytest
 
@@ -5,6 +8,77 @@ from django.test import override_settings
 
 from greenbudget.app.authentication.tokens import AccessToken
 from greenbudget.app.user.mail import get_template
+
+
+@pytest.fixture
+def searchable_users(create_user):
+    return [
+        create_user(
+            email="bcosby@gmail.com",
+            first_name="Bill",
+            last_name="Cosby",
+            last_login=datetime.datetime(2020, 4, 1)
+        ),
+        create_user(
+            email="slapattheoscars@gmail.com",
+            first_name="Will",
+            last_name="Smith",
+            last_login=datetime.datetime(2020, 3, 1)
+        ),
+        create_user(
+            email="wsmith@gmail.com",
+            first_name="Will",
+            last_name="Smith",
+            last_login=datetime.datetime(2020, 2, 1)
+        ),
+        create_user(
+            email="bjohnson@gmail.com",
+            first_name="Will",
+            last_name='Jackson',
+            last_login=datetime.datetime(2020, 1, 1)
+        ),
+    ]
+
+
+def test_search_users_no_search_term(api_client, user):
+    api_client.force_login(user)
+
+    # Not providing the search term should be prohibited, as we do not want to
+    # allow a blanket search of all the users in the application.
+    response = api_client.get("/v1/users/")
+    assert response.status_code == 400
+    assert response.json() == {'errors': [{
+        'message': 'The search parameter is required.',
+        'code': 'bad_request',
+        'error_type': 'bad_request'
+    }]}
+
+
+@pytest.mark.parametrize('search, expected', [
+    ('bcosby@gmail.com', [0]),
+    ('bill', []),
+    ('bill cosby', [0]),
+    ('bjohnson', []),
+    ('smith', []),
+    ('Will', []),
+    ('Will Smith', [1, 2]),
+    ('Jackson', [])
+])
+def test_search_users(api_client, user, search, expected, searchable_users):
+    api_client.force_login(user)
+    response = api_client.get(
+        f"/v1/users/?search={urllib.parse.quote_plus(search)}")
+    assert response.status_code == 200
+    assert response.json()['count'] == len(expected)
+    assert response.json()['data'] == [{
+        'id': searchable_users[i].pk,
+        'first_name': searchable_users[i].first_name,
+        'last_name': searchable_users[i].last_name,
+        'full_name': searchable_users[i].full_name,
+        'email': searchable_users[i].email,
+        'profile_image': None
+    } for i in expected]
+
 
 
 @pytest.mark.parametrize("password", [

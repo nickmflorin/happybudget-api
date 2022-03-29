@@ -3,7 +3,6 @@ import requests
 
 from django.conf import settings
 from django.contrib.auth.models import UserManager as DjangoUserManager
-from django.db import models
 
 from greenbudget.lib.utils.urls import add_query_params_to_url
 
@@ -11,6 +10,7 @@ from greenbudget.app.authentication.exceptions import (
     InvalidSocialProvider, InvalidSocialToken, AccountNotOnWaitlist)
 
 from .mail import user_is_on_waitlist
+from .query import UserQuerySet, UserQuerier
 
 
 logger = logging.getLogger('greenbudget')
@@ -46,21 +46,9 @@ SOCIAL_USER_LOOKUPS = {
 }
 
 
-class UserQuerier:
-    def active(self):
-        return self.filter(is_active=True)
-
-    def inactive(self):
-        return self.filter(is_active=False)
-
-
-class UserQuery(UserQuerier, models.query.QuerySet):
-    pass
-
-
 class UserManager(UserQuerier, DjangoUserManager):
     use_in_migrations = True
-    queryset_class = UserQuery
+    queryset_class = UserQuerySet
 
     def get_queryset(self):
         return self.queryset_class(self.model)

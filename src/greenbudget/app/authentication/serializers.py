@@ -222,7 +222,7 @@ class RecoverPasswordSerializer(serializers.Serializer):
 
 class VerifyEmailSerializer(serializers.Serializer):
     user = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.filter(is_active=True, is_verified=False),
+        queryset=User.objects.active().unverified(),
         required=True,
         allow_null=False
     )
