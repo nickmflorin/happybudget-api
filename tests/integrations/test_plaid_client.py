@@ -140,7 +140,6 @@ def test_fetch_transactions_with_public_token(user):
     assert mocked_t.call_args[0][0] == req
 
 
-
 @override_settings(PLAID_CLIENT_NAME='Test Plaid Client Name')
 def test_fetch_transactions_with_access_token(user):
     mock_transactions_response = mock.MagicMock()

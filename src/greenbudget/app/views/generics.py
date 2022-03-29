@@ -250,4 +250,3 @@ class GenericViewSet(viewsets.ViewSetMixin, GenericView):
             if hasattr(model_cls, 'created_by'):
                 kwargs.update(created_by=self.request.user)
         return kwargs
-

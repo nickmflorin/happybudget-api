@@ -24,4 +24,3 @@ def filter_by_ids(cls):
     if original_get_queryset is not None:
         cls.get_queryset = get_queryset
     return cls
-
