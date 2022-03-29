@@ -9,7 +9,7 @@ from greenbudget.app import signals
 from greenbudget.app.budget.cache import budget_actuals_owners_cache
 from greenbudget.app.budgeting.managers import (
     BudgetingPolymorphicOrderedRowManager)
-from greenbudget.app.budgeting.models import BudgetTree
+from greenbudget.app.budgeting.utils import BudgetTree
 from greenbudget.app.tabling.query import (
     OrderedRowQuerier, OrderedRowPolymorphicQuerySet)
 

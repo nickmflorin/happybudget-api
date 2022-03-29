@@ -8,7 +8,7 @@ from greenbudget.app.budget.cache import (
 )
 from greenbudget.app.budgeting.managers import (
     BudgetingPolymorphicOrderedRowManager)
-from greenbudget.app.budgeting.models import BudgetTree
+from greenbudget.app.budgeting.utils import BudgetTree
 
 from .cache import account_instance_cache
 

@@ -6,9 +6,10 @@ from django.db import models
 from greenbudget.lib.utils import cumulative_sum
 
 from greenbudget.app import model
+from greenbudget.app.budgeting.decorators import children_method_handler
 from greenbudget.app.budgeting.models import (
-    BudgetingTreePolymorphicOrderedRowModel, AssociatedModel,
-    children_method_handler)
+    BudgetingTreePolymorphicOrderedRowModel)
+from greenbudget.app.budgeting.utils import AssociatedModel
 from greenbudget.app.group.models import Group
 from greenbudget.app.markup.models import Markup
 from greenbudget.app.markup.utils import contribution_from_markups

@@ -80,7 +80,6 @@ def test_search_users(api_client, user, search, expected, searchable_users):
     } for i in expected]
 
 
-
 @pytest.mark.parametrize("password", [
     'hoopla',  # Not 8 characters long
     'hoopla122412H',  # No special characters

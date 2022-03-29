@@ -165,7 +165,7 @@ INSTALLED_APPS = [
     'greenbudget.app.tabling',
     'greenbudget.app.tagging',
     'greenbudget.app.template',
-    'greenbudget.app.user',
+    'greenbudget.app.user'
 ]
 
 

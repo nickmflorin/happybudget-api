@@ -1,7 +1,7 @@
 from greenbudget.lib.utils import ensure_iterable
 from greenbudget.app import signals
 from greenbudget.app.budgeting.managers import BudgetingPolymorphicManager
-from greenbudget.app.budgeting.models import BudgetTree
+from greenbudget.app.budgeting.utils import BudgetTree
 
 from .duplication import Duplicator
 

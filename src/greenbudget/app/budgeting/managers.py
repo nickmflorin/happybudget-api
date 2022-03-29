@@ -16,7 +16,7 @@ from greenbudget.app.tabling.query import (
     OrderedRowPolymorphicQuerySet, OrderedRowQuerySet, RowQuerySet)
 
 from .cache import invalidate_groups_cache
-from .models import BudgetTree
+from .utils import BudgetTree
 
 
 logger = logging.getLogger('greenbudget')
