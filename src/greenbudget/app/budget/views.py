@@ -429,12 +429,15 @@ class BudgetViewSet(
                     MultipleBudgetPermission(
                         products="__any__",
                         is_view_applicable=lambda c: c.view.action in (
-                            'create', 'duplicate')
+                            'create', 'duplicate'),
                     ),
                 ),
                 permissions.AND(
                     permissions.IsFullyAuthenticated(affects_after=True),
-                    IsCollaborator,
+                    permissions.AND(
+                        IsCollaborator,
+                        permissions.IsNotViewAction('duplicate')
+                    ),
                     is_view_applicable=False
                 ),
                 permissions.AND(

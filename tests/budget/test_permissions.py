@@ -6,7 +6,7 @@ from greenbudget.app.collaborator.models import Collaborator
 
 @pytest.fixture
 def another_user_case(api_client, user, create_user, create_domain_budget):
-    def inner(domain):
+    def inner(domain, case_info=None):
         another_user = create_user()
         api_client.force_login(user)
         return create_domain_budget(domain=domain, created_by=another_user)
@@ -14,43 +14,38 @@ def another_user_case(api_client, user, create_user, create_domain_budget):
 
 
 @pytest.fixture
-def budget_public_case(api_client, user, create_budget, create_public_token):
-    def inner():
+def public_case(api_client, user, create_budget, create_public_token,
+        create_template):
+    def inner(domain, case_info=None):
         budget = create_budget(created_by=user)
         public_token = create_public_token(instance=budget)
         api_client.include_public_token(public_token)
-        return budget
+        if domain == 'budget':
+            return budget
+        return create_template(created_by=user)
     return inner
 
 
 @pytest.fixture
-def template_public_case(api_client, user, create_template, create_budget,
+def another_public_case(api_client, user, create_budget, create_template,
         create_public_token):
-    def inner():
-        budget = create_budget(created_by=user)
-        template = create_template(created_by=user)
-        public_token = create_public_token(instance=budget)
-        api_client.include_public_token(public_token)
-        return template
-    return inner
-
-
-@pytest.fixture
-def budget_another_public_case(api_client, user, create_budget,
-        create_public_token):
-    def inner():
+    def inner(domain, case_info=None):
         budget = create_budget(created_by=user)
         another_budget = create_budget(created_by=user)
         public_token = create_public_token(instance=another_budget)
         api_client.include_public_token(public_token)
-        return budget
+        if domain == 'budget':
+            return budget
+        return create_template(created_by=user)
     return inner
 
 
 @pytest.fixture
 def logged_in_case(api_client, user, create_domain_budget):
-    def inner(domain):
-        budget = create_domain_budget(domain=domain, created_by=user)
+    def inner(domain, case_info=None):
+        budget = None
+        if case_info and case_info.get('create', False) is True:
+            budget = create_domain_budget(domain=domain, created_by=user)
         api_client.force_login(user)
         return budget
     return inner
@@ -58,80 +53,65 @@ def logged_in_case(api_client, user, create_domain_budget):
 
 @pytest.fixture
 def not_logged_in_case(user, create_domain_budget):
-    def inner(domain):
-        return create_domain_budget(domain=domain, created_by=user)
+    def inner(domain, case_info=None):
+        if case_info and case_info.get('create', False) is True:
+            return create_domain_budget(domain=domain, created_by=user)
+        return None
     return inner
 
 
 @pytest.fixture
 def multiple_case(api_client, create_domain_budget, user):
-    def inner(domain):
+    def inner(domain, case_info=None):
         create_domain_budget(domain=domain, created_by=user)
         budget = create_domain_budget(domain=domain, created_by=user)
-        api_client.force_login(user)
+        if case_info and case_info.get('login', True) is True:
+            api_client.force_login(user)
         return budget
     return inner
 
 
 @pytest.fixture
-def budget_collaborator_case(api_client, user, create_user, create_budget,
+def collaborator_case(api_client, user, create_user, create_budget,
         create_collaborator):
-    def inner(info):
+    def inner(domain, case_info):
         budget = create_budget(created_by=user)
         collaborating_user = create_user()
         create_collaborator(
-            access_type=info['access_type'],
+            access_type=case_info['access_type'],
             user=collaborating_user,
             instance=budget
         )
-        api_client.force_login(collaborating_user)
+        if case_info and case_info.get('login', True) is True:
+            api_client.force_login(collaborating_user)
         return budget
     return inner
 
 
 @pytest.fixture
-def budget_collaborator_not_logged_in_case(user, create_user, create_budget,
-        create_collaborator):
-    def inner(info):
-        budget = create_budget(created_by=user)
-        collaborating_user = create_user()
-        create_collaborator(
-            access_type=info['access_type'],
-            user=collaborating_user,
-            instance=budget
-        )
-        return budget
-    return inner
-
-
-@pytest.fixture
-def establish_case(another_user_case, multiple_case, budget_another_public_case,
-        budget_collaborator_case, logged_in_case, not_logged_in_case,
-        budget_public_case, template_public_case,
-        budget_collaborator_not_logged_in_case):
-    def inner(domain, case, info):
+def establish_case(another_user_case, multiple_case, another_public_case,
+        collaborator_case, logged_in_case, not_logged_in_case,
+        public_case):
+    def inner(domain, case):
         cases = {
-            'another_user': lambda: another_user_case(domain),
-            'not_logged_in': lambda: not_logged_in_case(domain),
-            'logged_in': lambda: logged_in_case(domain),
-            'multiple_budgets': lambda: multiple_case(domain),
-            'public_case': lambda: {
-                'budget': budget_public_case,
-                'template': template_public_case
-            }[domain](),
-            'another_public_case': lambda: budget_another_public_case(),
-            'collaborator': lambda: budget_collaborator_case(info),
-            'collaborator_not_logged_in':
-                lambda: budget_collaborator_not_logged_in_case(info)
+            'another_user': another_user_case,
+            'not_logged_in': not_logged_in_case,
+            'logged_in': logged_in_case,
+            'multiple_budgets': multiple_case,
+            'public_case': public_case,
+            'another_public_case': another_public_case,
+            'collaborator': collaborator_case,
         }
-        return cases[case]()
+        if isinstance(case, tuple):
+            return cases[case[0]](domain, case[1])
+        return cases[case](domain, {})
     return inner
 
 
 @pytest.fixture
 def list_test_case(api_client, establish_case):
     def inner(domain, case):
-        establish_case(domain, case, None)
+        establish_case(domain, case)
         return api_client.get("/v1/%ss/" % domain)
     return inner
 
@@ -139,24 +119,32 @@ def list_test_case(api_client, establish_case):
 @pytest.fixture
 def create_test_case(api_client, establish_case):
     def inner(domain, data, case):
-        establish_case(domain, case, None)
+        establish_case(domain, case)
         return api_client.post("/v1/%ss/" % domain, data=data)
     return inner
 
 
 @pytest.fixture
-def budget_detail_test_case(api_client, establish_case):
-    def inner(domain, case, info, path="/"):
-        budget = establish_case(domain, case, info)
+def update_test_case(api_client, establish_case):
+    def inner(domain, data, case):
+        budget = establish_case(domain, case)
+        return api_client.patch("/v1/budgets/%s/" % budget.pk, data=data)
+    return inner
+
+
+@pytest.fixture
+def detail_test_case(api_client, establish_case):
+    def inner(domain, case, path="/"):
+        budget = establish_case(domain, case)
         url = "/v1/budgets/%s%s" % (budget.pk, path)
         return api_client.get(url)
     return inner
 
 
 @pytest.fixture
-def budget_create_test_case(api_client, establish_case):
-    def inner(domain, data, case, info, path="/"):
-        budget = establish_case(domain, case, info)
+def detail_create_test_case(api_client, establish_case):
+    def inner(domain, data, case, path="/"):
+        budget = establish_case(domain, case)
         url = "/v1/budgets/%s%s" % (budget.pk, path)
         if hasattr(data, '__call__'):
             data = data(budget)
@@ -165,9 +153,9 @@ def budget_create_test_case(api_client, establish_case):
 
 
 @pytest.fixture
-def budget_update_test_case(api_client, establish_case):
-    def inner(domain, data, case, info, path="/"):
-        budget = establish_case(domain, case, info)
+def detail_update_test_case(api_client, establish_case):
+    def inner(domain, data, case, path="/"):
+        budget = establish_case(domain, case)
         url = "/v1/budgets/%s%s" % (budget.pk, path)
         return api_client.patch(url, data=data)
     return inner
@@ -193,23 +181,23 @@ def make_assertions():
     return inner
 
 
-@pytest.mark.parametrize('case,info,assertions', [
-    ('another_user', None, {'status': 403, 'error': {
+@pytest.mark.parametrize('case,assertions', [
+    ('another_user', {'status': 403, 'error': {
         'message': 'The user must does not have permission to view this budget.',
         'code': 'permission_error',
         'error_type': 'permission'
     }}),
-    ('not_logged_in', None, {'status': 401, 'error': {
+    (('not_logged_in', {'create': True}), {'status': 401, 'error': {
         'message': 'User is not authenticated.',
         'code': 'account_not_authenticated',
         'error_type': 'auth'
     }}),
-    ('public_case', None, {
+    ('public_case', {
         'status': lambda path: 401 if path == '/actuals/' else 200
     }),
-    ('another_public_case', None, {'status': 401}),
-    ('logged_in', None, {'status': 200}),
-    ('multiple_budgets', None, {
+    ('another_public_case', {'status': 401}),
+    (('logged_in', {'create': True}), {'status': 200}),
+    (('multiple_budgets', {'login': True}), {
         'status': 403,
         'error': {
             'message': (
@@ -220,59 +208,69 @@ def make_assertions():
             'permission_id': 'multiple_budgets'
         }
     }),
-    ('collaborator',
-        {'access_type': Collaborator.ACCESS_TYPES.view_only},
+    (('multiple_budgets', {'login': False}), {'status': 401, 'error': {
+        'message': 'User is not authenticated.',
+        'code': 'account_not_authenticated',
+        'error_type': 'auth'
+    }}),
+    (('collaborator',
+        {'login': True, 'access_type': Collaborator.ACCESS_TYPES.view_only}),
         {'status': 200}
     ),
-    ('collaborator',
-        {'access_type': Collaborator.ACCESS_TYPES.owner},
+    (('collaborator',
+        {'login': True, 'access_type': Collaborator.ACCESS_TYPES.owner}),
         {'status': 200}
     ),
-    ('collaborator',
-        {'access_type': Collaborator.ACCESS_TYPES.editor},
+    (('collaborator',
+        {'login': True, 'access_type': Collaborator.ACCESS_TYPES.editor}),
         {'status': 200}
     ),
-    ('collaborator_not_logged_in', {
-        'access_type': Collaborator.ACCESS_TYPES.view_only},
+    (('collaborator',
+        {'login': False, 'access_type': Collaborator.ACCESS_TYPES.view_only}),
         {'status': 401}
     ),
-    ('collaborator_not_logged_in', {
-        'access_type': Collaborator.ACCESS_TYPES.owner},
+    (('collaborator',
+        {'login': False, 'access_type': Collaborator.ACCESS_TYPES.owner}),
         {'status': 401}
     ),
-    ('collaborator_not_logged_in', {
-        'access_type': Collaborator.ACCESS_TYPES.editor},
+    (('collaborator',
+        {'login': False, 'access_type': Collaborator.ACCESS_TYPES.editor}),
         {'status': 401}
     ),
 ])
 @pytest.mark.parametrize('path', [
     '/', '/children/', '/actuals/', '/fringes/', '/markups/', '/groups/'])
-def test_budget_detail_read_permissions(case, info, path, assertions,
-        budget_detail_test_case, make_assertions):
-    response = budget_detail_test_case("budget", case, info, path)
+def test_budget_detail_read_permissions(case, path, assertions,
+        detail_test_case, make_assertions):
+    response = detail_test_case("budget", case, path)
     make_assertions(response, case, path, assertions)
 
 
-@pytest.mark.parametrize('case,info,assertions', [
-    ('another_user', None, {'status': 403, 'error': {
+@pytest.mark.parametrize('case,assertions', [
+    ('another_user', {'status': 403, 'error': {
         'message': 'The user must does not have permission to view this budget.',
         'code': 'permission_error',
         'error_type': 'permission'
     }}),
-    ('not_logged_in', None, {'status': 401, 'error': {
+    (('not_logged_in', {'create': True}), {'status': 401, 'error': {
         'message': 'User is not authenticated.',
         'code': 'account_not_authenticated',
         'error_type': 'auth'
     }}),
-    ('public_case', None, {'status': 401}),
-    ('logged_in', None, {'status': 200}),
-    ('multiple_budgets', None, {'status': 200})
+    ('public_case', {'status': 401}),
+    (('logged_in', {'create': True}), {'status': 200}),
+    (('multiple_budgets', {'login': True}), {'status': 200}),
+    (('multiple_budgets', {'login': False}), {'status': 401, 'error': {
+        'message': 'User is not authenticated.',
+        'code': 'account_not_authenticated',
+        'error_type': 'auth'
+    }}),
 ])
 @pytest.mark.parametrize('path', [
     '/', '/children/', '/fringes/', '/markups/', '/groups/'])
-def test_template_detail_read_permissions(case, info, path, assertions,
-        budget_detail_test_case, make_assertions):
-    response = budget_detail_test_case("template", case, info, path)
+def test_template_detail_read_permissions(case, path, assertions,
+        detail_test_case, make_assertions):
+    response = detail_test_case("template", case, path)
     make_assertions(response, case, path, assertions)
 
 
@@ -284,7 +282,12 @@ def test_template_detail_read_permissions(case, info, path, assertions,
     }}),
     ('public_case', {'status': 401}),
     ('logged_in', {'status': 200}),
-    ('multiple_budgets', {'status': 200})
+    (('multiple_budgets', {'login': True}), {'status': 200}),
+    (('multiple_budgets', {'login': False}), {'status': 401, 'error': {
+        'message': 'User is not authenticated.',
+        'code': 'account_not_authenticated',
+        'error_type': 'auth'
+    }}),
 ])
 @pytest.mark.parametrize('domain', ['budget', 'template'])
 def test_list_read_permissions(case, assertions, list_test_case, domain,
@@ -293,25 +296,21 @@ def test_list_read_permissions(case, assertions, list_test_case, domain,
     make_assertions(response, case, "/", assertions)
 
 
-@pytest.mark.parametrize('case,info,assertions', [
-    ('another_user', None, {'status': 403, 'error': {
+BUDGET_CREATE_PERMISSIONS = [
+    ('another_user', {'status': 403, 'error': {
         'message': 'The user must does not have permission to view this budget.',
         'code': 'permission_error',
         'error_type': 'permission'
     }}),
-    ('not_logged_in', None, {'status': 401, 'error': {
+    (('not_logged_in', {'create': True}), {'status': 401, 'error': {
         'message': 'User is not authenticated.',
         'code': 'account_not_authenticated',
         'error_type': 'auth'
     }}),
-    ('public_case', None, {'status': 401, 'error': {
-        'message': 'User is not authenticated.',
-        'code': 'account_not_authenticated',
-        'error_type': 'auth'
-    }}),
-    ('another_public_case', None, {'status': 401}),
-    ('logged_in', None, {'status': 201}),
-    ('multiple_budgets', None, {
+    ('public_case', {'status': 401}),
+    ('another_public_case', {'status': 401}),
+    (('logged_in', {'create': True}), {'status': 201}),
+    (('multiple_budgets', {'login': True}), {
         'status': 403,
         'error': {
             'message': (
@@ -322,61 +321,65 @@ def test_list_read_permissions(case, assertions, list_test_case, domain,
             'permission_id': 'multiple_budgets'
         }
     }),
-    ('collaborator',
-        {'access_type': Collaborator.ACCESS_TYPES.view_only},
+    (('multiple_budgets', {'login': False}), {'status': 401, 'error': {
+        'message': 'User is not authenticated.',
+        'code': 'account_not_authenticated',
+        'error_type': 'auth'
+    }}),
+    (('collaborator',
+        {'login': True, 'access_type': Collaborator.ACCESS_TYPES.view_only}),
         {'status': 403}
     ),
-    ('collaborator',
-        {'access_type': Collaborator.ACCESS_TYPES.owner},
+    (('collaborator',
+        {'login': True, 'access_type': Collaborator.ACCESS_TYPES.owner}),
         {'status': 201}
     ),
-    ('collaborator',
-        {'access_type': Collaborator.ACCESS_TYPES.editor},
+    (('collaborator',
+        {'login': True, 'access_type': Collaborator.ACCESS_TYPES.editor}),
         {'status': 201}
     ),
-    ('collaborator_not_logged_in', {
-        'access_type': Collaborator.ACCESS_TYPES.view_only},
+    (('collaborator',
+        {'login': False, 'access_type': Collaborator.ACCESS_TYPES.view_only}),
         {'status': 401}
     ),
-    ('collaborator_not_logged_in', {
-        'access_type': Collaborator.ACCESS_TYPES.owner},
+    (('collaborator',
+        {'login': False, 'access_type': Collaborator.ACCESS_TYPES.owner}),
         {'status': 401}
     ),
-    ('collaborator_not_logged_in', {
-        'access_type': Collaborator.ACCESS_TYPES.editor},
+    (('collaborator',
+        {'login': False, 'access_type': Collaborator.ACCESS_TYPES.editor}),
         {'status': 401}
     ),
-])
+]
+
+
+@pytest.mark.parametrize('case,assertions', BUDGET_CREATE_PERMISSIONS)
 @pytest.mark.parametrize('path,data', [
     ('/children/', {}),
     ('/actuals/', {}),
-    ('/fringes/', {}),
+    ('/fringes/', {})
 ])
-def test_budget_create_permissions(case, info, path, data, assertions,
-        budget_create_test_case, make_assertions):
-    response = budget_create_test_case("budget", data, case, info, path)
+def test_budget_detail_create_permissions(case, path, data, assertions,
+        detail_create_test_case, make_assertions):
+    response = detail_create_test_case("budget", data, case, path)
     make_assertions(response, case, path, assertions)
 
 
-@pytest.mark.parametrize('case,info,assertions', [
-    ('another_user', None, {'status': 403, 'error': {
+@pytest.mark.parametrize('case,assertions', [
+    ('another_user', {'status': 403, 'error': {
         'message': 'The user must does not have permission to view this budget.',
         'code': 'permission_error',
         'error_type': 'permission'
     }}),
-    ('not_logged_in', None, {'status': 401, 'error': {
+    (('not_logged_in', {'create': True}), {'status': 401, 'error': {
         'message': 'User is not authenticated.',
         'code': 'account_not_authenticated',
         'error_type': 'auth'
     }}),
-    ('public_case', None, {'status': 401, 'error': {
-        'message': 'User is not authenticated.',
-        'code': 'account_not_authenticated',
-        'error_type': 'auth'
-    }}),
-    ('another_public_case', None, {'status': 401}),
-    ('logged_in', None, {'status': 201}),
-    ('multiple_budgets', None, {
+    ('public_case', {'status': 401}),
+    ('another_public_case', {'status': 401}),
+    (('logged_in', {'create': True}), {'status': 403}),
+    (('multiple_budgets', {'login': True}), {
         'status': 403,
         'error': {
             'message': (
@@ -387,167 +390,230 @@ def test_budget_create_permissions(case, info, path, data, assertions,
             'permission_id': 'multiple_budgets'
         }
     }),
-    ('collaborator',
-        {'access_type': Collaborator.ACCESS_TYPES.view_only},
+    (('multiple_budgets', {'login': False}), {'status': 401, 'error': {
+        'message': 'User is not authenticated.',
+        'code': 'account_not_authenticated',
+        'error_type': 'auth'
+    }}),
+    (('collaborator',
+        {'login': True, 'access_type': Collaborator.ACCESS_TYPES.view_only}),
         {'status': 403}
     ),
-    ('collaborator',
-        {'access_type': Collaborator.ACCESS_TYPES.owner},
-        {'status': 201}
+    (('collaborator',
+        {'login': True, 'access_type': Collaborator.ACCESS_TYPES.owner}),
+        {'status': 403}
     ),
-    ('collaborator',
-        {'access_type': Collaborator.ACCESS_TYPES.editor},
-        {'status': 201}
+    (('collaborator',
+        {'login': True, 'access_type': Collaborator.ACCESS_TYPES.editor}),
+        {'status': 403}
     ),
-    ('collaborator_not_logged_in', {
-        'access_type': Collaborator.ACCESS_TYPES.view_only},
+    (('collaborator',
+        {'login': False, 'access_type': Collaborator.ACCESS_TYPES.view_only}),
         {'status': 401}
     ),
-    ('collaborator_not_logged_in', {
-        'access_type': Collaborator.ACCESS_TYPES.owner},
+    (('collaborator',
+        {'login': False, 'access_type': Collaborator.ACCESS_TYPES.owner}),
         {'status': 401}
     ),
-    ('collaborator_not_logged_in', {
-        'access_type': Collaborator.ACCESS_TYPES.editor},
+    (('collaborator',
+        {'login': False, 'access_type': Collaborator.ACCESS_TYPES.editor}),
         {'status': 401}
     ),
 ])
-def test_budget_create_groups_permissions(case, info, assertions,
-        budget_create_test_case, make_assertions, create_budget_account):
+def test_budget_duplicate_permissions(case, assertions,
+        detail_create_test_case, make_assertions):
+    response = detail_create_test_case("budget", {}, case, "/duplicate/")
+    make_assertions(response, case, "/duplicate/", assertions)
+
+
+@pytest.mark.needtowrite
+def test_budget_derive_permissions():
+    pass
+
+
+@pytest.mark.parametrize('case,assertions', [
+    ('another_user', {'status': 403, 'error': {
+        'message': 'The user must does not have permission to view this budget.',
+        'code': 'permission_error',
+        'error_type': 'permission'
+    }}),
+    (('not_logged_in', {'create': True}), {'status': 401, 'error': {
+        'message': 'User is not authenticated.',
+        'code': 'account_not_authenticated',
+        'error_type': 'auth'
+    }}),
+    ('public_case', {'status': 401}),
+    (('logged_in', {'create': True}), {'status': 201}),
+    (('multiple_budgets', {'login': True}), {'status': 201}),
+])
+def test_template_duplicate_permissions(case, assertions,
+        detail_create_test_case, make_assertions):
+    response = detail_create_test_case("template", {}, case, "/duplicate/")
+    make_assertions(response, case, "/duplicate/", assertions)
+
+
+@pytest.mark.parametrize('case,assertions', BUDGET_CREATE_PERMISSIONS)
+def test_budget_detail_create_groups_permissions(case, assertions,
+        detail_create_test_case, make_assertions, create_budget_account):
 
     def post_data(budget):
         accounts = [create_budget_account(parent=budget)]
         return {'children': [a.pk for a in accounts], 'name': 'Test Group'}
 
-    response = budget_create_test_case(
-        "budget", post_data, case, info, '/groups/')
+    response = detail_create_test_case("budget", post_data, case, '/groups/')
     make_assertions(response, case, '/groups/', assertions)
 
 
 @pytest.mark.needtowrite
-def test_budget_create_markups_permissions():
+def test_detail_create_markups_permissions():
     pass
 
 
-@pytest.mark.parametrize('case,assertions', [
+TEMPLATE_CREATE_PERMISSIONS = [
     ('another_user', {'status': 403, 'error': {
         'message': 'The user must does not have permission to view this budget.',
         'code': 'permission_error',
         'error_type': 'permission'
     }}),
-    ('not_logged_in', {'status': 401, 'error': {
+    (('not_logged_in', {'create': True}), {'status': 401, 'error': {
         'message': 'User is not authenticated.',
         'code': 'account_not_authenticated',
         'error_type': 'auth'
     }}),
-    ('public_case', {'status': 401, 'error': {
+    ('public_case', {'status': 401}),
+    (('logged_in', {'create': True}), {'status': 201}),
+    (('multiple_budgets', {'login': True}), {'status': 201}),
+    (('multiple_budgets', {'login': False}), {'status': 401, 'error': {
         'message': 'User is not authenticated.',
         'code': 'account_not_authenticated',
         'error_type': 'auth'
     }}),
-    ('logged_in', {'status': 201}),
-    ('multiple_budgets', {'status': 201}),
-])
+]
+
+
+@pytest.mark.parametrize('case,assertions', TEMPLATE_CREATE_PERMISSIONS)
 @pytest.mark.parametrize('path,data', [
     ('/children/', {}),
     ('/fringes/', {}),
 ])
-def test_template_create_permissions(case, path, data, assertions,
-        budget_create_test_case, make_assertions):
-    response = budget_create_test_case("template", data, case, None, path)
+def test_template_detail_create_permissions(case, path, data, assertions,
+        detail_create_test_case, make_assertions):
+    response = detail_create_test_case("template", data, case, path)
     make_assertions(response, case, path, assertions)
 
 
-@pytest.mark.parametrize('case,assertions', [
-    ('another_user', {'status': 403, 'error': {
-        'message': 'The user must does not have permission to view this budget.',
-        'code': 'permission_error',
-        'error_type': 'permission'
-    }}),
-    ('not_logged_in', {'status': 401, 'error': {
-        'message': 'User is not authenticated.',
-        'code': 'account_not_authenticated',
-        'error_type': 'auth'
-    }}),
-    ('public_case', {'status': 401, 'error': {
-        'message': 'User is not authenticated.',
-        'code': 'account_not_authenticated',
-        'error_type': 'auth'
-    }}),
-    ('logged_in', {'status': 201}),
-    ('multiple_budgets', {'status': 201}),
-])
-def test_template_create_groups_permissions(case, assertions,
-        budget_create_test_case, make_assertions, create_template_account):
+@pytest.mark.parametrize('case,assertions', TEMPLATE_CREATE_PERMISSIONS)
+def test_template_detail_create_groups_permissions(case, assertions,
+        detail_create_test_case, make_assertions, create_template_account):
 
     def post_data(budget):
         accounts = [create_template_account(parent=budget)]
         return {'children': [a.pk for a in accounts], 'name': 'Test Group'}
 
-    response = budget_create_test_case(
-        "template", post_data, case, None, '/groups/')
+    response = detail_create_test_case("template", post_data, case, '/groups/')
     make_assertions(response, case, '/groups/', assertions)
 
 
 @pytest.mark.needtowrite
-def test_template_create_markups_permissions():
+def test_template_detail_create_markups_permissions():
     pass
 
 
-def test_update_public_budget(api_client, create_budget, create_public_token):
-    budget = create_budget()
-    public_token = create_public_token(instance=budget)
-    api_client.include_public_token(public_token)
-    response = api_client.post("/v1/budgets/%s/" % budget.pk, data={
-        'name': 'New Name'
-    })
-    assert response.status_code == 401
+@pytest.mark.parametrize('case,assertions', [
+    ('not_logged_in', {'status': 401, 'error': {
+        'message': 'User is not authenticated.',
+        'code': 'account_not_authenticated',
+        'error_type': 'auth'
+    }}),
+    ('public_case', {'status': 401, 'error': {
+        'message': 'User is not authenticated.',
+        'code': 'account_not_authenticated',
+        'error_type': 'auth'
+    }}),
+    (('logged_in', {'create': False}), {'status': 201}),
+    (('multiple_budgets', {'login': True}), {'status': 403}),
+    (('multiple_budgets', {'login': False}), {'status': 401, 'error': {
+        'message': 'User is not authenticated.',
+        'code': 'account_not_authenticated',
+        'error_type': 'auth'
+    }}),
+])
+def test_budget_create_permissions(case, assertions, make_assertions,
+        create_test_case):
+    response = create_test_case("budget", {'name': 'Test Budget'}, case)
+    make_assertions(response, case, "/", assertions)
 
 
-def test_create_budget_not_logged_in(api_client):
-    response = api_client.post("/v1/budgets/", data={'name': 'New Name'})
-    assert response.status_code == 401
+@pytest.mark.parametrize('case,assertions', [
+    ('not_logged_in', {'status': 401, 'error': {
+        'message': 'User is not authenticated.',
+        'code': 'account_not_authenticated',
+        'error_type': 'auth'
+    }}),
+    ('public_case', {'status': 401, 'error': {
+        'message': 'User is not authenticated.',
+        'code': 'account_not_authenticated',
+        'error_type': 'auth'
+    }}),
+    (('logged_in', {'create': False}), {'status': 201}),
+    (('multiple_budgets', {'login': True}), {'status': 201}),
+    (('multiple_budgets', {'login': False}), {'status': 401, 'error': {
+        'message': 'User is not authenticated.',
+        'code': 'account_not_authenticated',
+        'error_type': 'auth'
+    }}),
+])
+def test_template_create_permissions(case, assertions, make_assertions,
+        create_test_case):
+    response = create_test_case("template", {'name': 'Test Budget'}, case)
+    make_assertions(response, case, "/", assertions)
 
 
-def test_create_budget_with_public_token(api_client, create_public_token,
-        create_budget):
-    budget = create_budget()
-    public_token = create_public_token(instance=budget)
-    api_client.include_public_token(public_token)
-    response = api_client.post("/v1/budgets/", data={'name': 'New Name'})
-    assert response.status_code == 401
+@pytest.mark.parametrize('case,assertions', [
+    (('not_logged_in', {'create': True}), {'status': 401, 'error': {
+        'message': 'User is not authenticated.',
+        'code': 'account_not_authenticated',
+        'error_type': 'auth'
+    }}),
+    ('public_case', {'status': 401, 'error': {
+        'message': 'User is not authenticated.',
+        'code': 'account_not_authenticated',
+        'error_type': 'auth'
+    }}),
+    (('logged_in', {'create': True}), {'status': 200}),
+    (('multiple_budgets', {'login': True}), {'status': 403}),
+    (('multiple_budgets', {'login': False}), {'status': 401, 'error': {
+        'message': 'User is not authenticated.',
+        'code': 'account_not_authenticated',
+        'error_type': 'auth'
+    }}),
+])
+def test_budget_update_permissions(case, assertions, make_assertions,
+        update_test_case):
+    response = update_test_case("budget", {'name': 'Test Budget'}, case)
+    make_assertions(response, case, "/", assertions)
 
 
-def test_create_additional_budget_unsubscribed(api_client, user, create_budget):
-    create_budget()
-    api_client.force_login(user)
-    response = api_client.post("/v1/budgets/", data={"name": "Test Name"})
-    assert response.status_code == 403
-    assert response.json() == {'errors': [{
-        'message': "The user's subscription does not support multiple budgets.",
-        'code': 'product_permission_error',
-        'error_type': 'permission',
-        'products': '__any__',
-        'permission_id': 'multiple_budgets'
-    }]}
-
-
-def test_duplicate_budget_unsubscribed(api_client, user, create_budget):
-    original = create_budget(created_by=user)
-    api_client.force_login(user)
-    response = api_client.post("/v1/budgets/%s/duplicate/" % original.pk)
-    assert response.status_code == 403
-    assert response.json() == {'errors': [{
-        'message': "The user's subscription does not support multiple budgets.",
-        'code': 'product_permission_error',
-        'error_type': 'permission',
-        'products': '__any__',
-        'permission_id': 'multiple_budgets'
-    }]}
-
-
-def test_duplicate_template_unsubscribed(api_client, user, create_template):
-    original = create_template(created_by=user)
-    api_client.force_login(user)
-    response = api_client.post("/v1/budgets/%s/duplicate/" % original.pk)
-    assert response.status_code == 201
+@pytest.mark.parametrize('case,assertions', [
+    (('not_logged_in', {'create': True}), {'status': 401, 'error': {
+        'message': 'User is not authenticated.',
+        'code': 'account_not_authenticated',
+        'error_type': 'auth'
+    }}),
+    ('public_case', {'status': 401, 'error': {
+        'message': 'User is not authenticated.',
+        'code': 'account_not_authenticated',
+        'error_type': 'auth'
+    }}),
+    (('logged_in', {'create': True}), {'status': 200}),
+    (('multiple_budgets', {'login': True}), {'status': 200}),
+    (('multiple_budgets', {'login': False}), {'status': 401, 'error': {
+        'message': 'User is not authenticated.',
+        'code': 'account_not_authenticated',
+        'error_type': 'auth'
+    }}),
+])
+def test_template_update_permissions(case, assertions, make_assertions,
+        update_test_case):
+    response = update_test_case("template", {'name': 'Test Budget'}, case)
+    make_assertions(response, case, "/", assertions)
