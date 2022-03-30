@@ -6,6 +6,7 @@ from greenbudget.app.account.models import BudgetAccount, TemplateAccount
 from greenbudget.app.actual.models import Actual, ActualType
 from greenbudget.app.authentication.models import PublicToken
 from greenbudget.app.budget.models import Budget
+from greenbudget.app.collaborator.models import Collaborator
 from greenbudget.app.contact.models import Contact
 from greenbudget.app.fringe.models import Fringe
 from greenbudget.app.group.models import Group
@@ -123,6 +124,24 @@ class BaseBudgetFactory(CustomModelFactory):
 
     class Meta:
         abstract = True
+
+
+class CollaboratorFactory(CustomModelFactory):
+    """
+    A DjangoModelFactory to create instances of :obj:`Collaborator`.
+    """
+    content_type = factory.LazyAttribute(
+        lambda o: ContentType.objects.get_for_model(o.instance))
+    object_id = factory.SelfAttribute('instance.pk')
+
+    class Meta:
+        model = Collaborator
+
+    class Params:
+        view_only = factory.Trait(
+            access_type=Collaborator.ACCESS_TYPES.view_only)
+        owner = factory.Trait(access_type=Collaborator.ACCESS_TYPES.owner)
+        editor = factory.Trait(access_type=Collaborator.ACCESS_TYPES.editor)
 
 
 class BudgetFactory(BaseBudgetFactory):

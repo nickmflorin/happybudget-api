@@ -9,6 +9,7 @@ from greenbudget.app import model
 from greenbudget.app.authentication.models import PublicToken
 from greenbudget.app.budgeting.decorators import children_method_handler
 from greenbudget.app.budgeting.models import BudgetingTreePolymorphicModel
+from greenbudget.app.collaborator.models import Collaborator
 from greenbudget.app.group.models import Group
 from greenbudget.app.markup.models import Markup
 from greenbudget.app.io.utils import upload_user_image_to
@@ -139,6 +140,7 @@ class Budget(BaseBudget):
     pdf_type = "pdf-budget"
     domain = "budget"
 
+    collaborators = GenericRelation(Collaborator)
     objects = BudgetManager()
     non_polymorphic = models.Manager()
 

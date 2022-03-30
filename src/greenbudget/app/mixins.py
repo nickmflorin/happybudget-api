@@ -49,9 +49,6 @@ class NestedObjectViewMeta(type):
             permission = permissions.AND(pms)
 
             # pylint: disable=unexpected-keyword-arg
-            permission.has_permission(
-                instance.request, instance, raise_exception=True)
-
             queryset = filter_queryset(instance, get_queryset(instance))
 
             lookup_url_kwarg_attr = f"{view_name}_lookup_url_kwarg"
@@ -81,7 +78,6 @@ class NestedObjectViewMeta(type):
 
             permission.has_object_permission(
                 instance.request, instance, obj, raise_exception=True)
-
             return obj
 
         def nested_object():

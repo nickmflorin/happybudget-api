@@ -51,6 +51,7 @@ class SubAccountPublicNestedMixin(SubAccountNestedMixin):
     subaccount_permission_classes = [
         permissions.OR(
             permissions.AND(
+                permissions.IsFullyAuthenticated(affects_after=True),
                 SubAccountOwnershipPermission(affects_after=True),
                 SubAccountProductPermission(products='__any__')
             ),
@@ -58,8 +59,7 @@ class SubAccountPublicNestedMixin(SubAccountNestedMixin):
                 permissions.IsPublic(
                     get_permissioned_obj=lambda view: view.budget),
                 permissions.IsSafeRequestMethod,
-                is_object_applicable=lambda c: c.obj.domain == 'budget',
-                is_view_applicable=False
+                is_object_applicable=lambda c: c.obj.domain == 'budget'
             )
         )
     ]

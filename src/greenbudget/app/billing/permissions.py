@@ -30,6 +30,7 @@ class BaseProductPermission(
     )
     exception_class = ProductPermissionError
     exception_kwargs = ['products', 'permission_id']
+    user_dependency_flags = ['is_authenticated', 'is_active', 'is_verified']
 
     def __init__(self, *args, **kwargs):
         permission_id = kwargs.get('permission_id', None)
@@ -42,7 +43,4 @@ class BaseProductPermission(
         return self._products
 
     def user_has_products(self, user):
-        assert user.is_authenticated, \
-            f"Permission class {self.__class__.__name__} should always be " \
-            "preceeded by a permission class that guarantees authentication."
         return user.has_product(self.products)

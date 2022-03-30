@@ -153,6 +153,7 @@ INSTALLED_APPS = [
     'greenbudget.app.authentication',
     'greenbudget.app.budget',
     'greenbudget.app.budgeting',
+    'greenbudget.app.collaborator',
     'greenbudget.app.contact',
     'greenbudget.app.fringe',
     'greenbudget.app.group',

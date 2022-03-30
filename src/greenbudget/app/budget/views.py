@@ -16,6 +16,7 @@ from greenbudget.app.authentication.serializers import PublicTokenSerializer
 from greenbudget.app.budgeting.decorators import (
     register_bulk_operations, BulkAction, BulkDeleteAction)
 from greenbudget.app.budgeting.permissions import IsBudgetDomain
+from greenbudget.app.collaborator.permissions import IsCollaborator
 from greenbudget.app.fringe.models import Fringe
 from greenbudget.app.fringe.serializers import FringeSerializer
 from greenbudget.app.fringe.views import GenericFringeViewSet
@@ -430,6 +431,11 @@ class BudgetViewSet(
                         is_view_applicable=lambda c: c.view.action in (
                             'create', 'duplicate')
                     ),
+                ),
+                permissions.AND(
+                    permissions.IsFullyAuthenticated(affects_after=True),
+                    IsCollaborator,
+                    is_view_applicable=False
                 ),
                 permissions.AND(
                     permissions.IsSafeRequestMethod,

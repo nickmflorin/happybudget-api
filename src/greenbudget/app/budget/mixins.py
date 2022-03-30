@@ -2,7 +2,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.utils.functional import cached_property
 
 from greenbudget.app import mixins, permissions
-from greenbudget.app.budgeting.permissions import IsTemplateDomain
+from greenbudget.app.collaborator.permissions import IsCollaborator
 
 from .models import BaseBudget, Budget
 from .permissions import BudgetProductPermission, BudgetOwnershipPermission
@@ -12,14 +12,26 @@ class BaseBudgetNestedMixin(mixins.NestedObjectViewMixin):
     """
     A mixin for views that extend off of a budget or template's detail endpoint.
     """
-    budget_permission_classes = [
-        BudgetOwnershipPermission(affects_after=True),
-        permissions.OR(
-            IsTemplateDomain,
-            BudgetProductPermission(products="__any__")
-        )
-    ]
     view_name = "budget"
+    budget_permission_classes = [permissions.AND(
+        permissions.OR(
+            permissions.AND(
+                permissions.IsFullyAuthenticated(affects_after=True),
+                BudgetOwnershipPermission(affects_after=True),
+                BudgetProductPermission(products="__any__"),
+            ),
+            permissions.AND(
+                permissions.IsFullyAuthenticated(affects_after=True),
+                IsCollaborator
+            ),
+            is_object_applicable=lambda c: c.obj.domain == 'budget',
+        ),
+        permissions.AND(
+            permissions.IsFullyAuthenticated(affects_after=True),
+            BudgetOwnershipPermission(affects_after=True),
+            is_object_applicable=lambda c: c.obj.domain == 'template'
+        ),
+    )]
 
     @property
     def instance(self):
@@ -37,40 +49,44 @@ class BudgetNestedMixin(BaseBudgetNestedMixin):
     """
     A mixin for views that extend off of a budget's detail endpoint.
     """
-    budget_permission_classes = [
-        BudgetOwnershipPermission(affects_after=True),
-        BudgetProductPermission(products="__any__")
-    ]
+    budget_permission_classes = [permissions.OR(
+        permissions.AND(
+            permissions.IsFullyAuthenticated(affects_after=True),
+            BudgetOwnershipPermission(affects_after=True),
+            BudgetProductPermission(products="__any__"),
+        ),
+        permissions.AND(
+            permissions.IsFullyAuthenticated(affects_after=True),
+            IsCollaborator
+        ),
+        is_object_applicable=lambda c: c.obj.domain == 'budget',
+    )]
 
     def get_budget_queryset(self):
         return Budget.objects.all()
 
 
 class BaseBudgetPublicNestedMixin(BaseBudgetNestedMixin):
-    budget_permission_classes = [
+    budget_permission_classes = [permissions.AND(
         permissions.OR(
             permissions.AND(
+                permissions.IsFullyAuthenticated(affects_after=True),
                 BudgetOwnershipPermission(affects_after=True),
-                permissions.OR(
-                    IsTemplateDomain,
-                    BudgetProductPermission(products="__any__")
-                )
+                BudgetProductPermission(products="__any__"),
             ),
-            permissions.OR(
-                IsTemplateDomain,
+            permissions.AND(
+                permissions.IsFullyAuthenticated(affects_after=True),
+                IsCollaborator
+            ),
+            permissions.AND(
+                permissions.IsSafeRequestMethod,
                 permissions.IsPublic,
-            )
-        )
-    ]
-
-
-class BudgetPublicNestedMixin(BudgetNestedMixin):
-    budget_permission_classes = [
-        permissions.OR(
-            permissions.AND(
-                BudgetOwnershipPermission(affects_after=True),
-                BudgetProductPermission(products="__any__")
             ),
-            permissions.IsPublic,
-        )
-    ]
+            is_object_applicable=lambda c: c.obj.domain == 'budget',
+        ),
+        permissions.AND(
+            permissions.IsFullyAuthenticated(affects_after=True),
+            BudgetOwnershipPermission(affects_after=True),
+            is_object_applicable=lambda c: c.obj.domain == 'template'
+        ),
+    )]

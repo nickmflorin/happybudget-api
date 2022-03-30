@@ -5,9 +5,9 @@ from greenbudget.app.authentication.exceptions import (
     AccountDisabled,
     AccountNotVerified
 )
-from greenbudget.app.authentication.utils import request_is_safe_method
 from .base import BasePermission
 from .operators import AND
+from .request import request_is_safe_method
 
 
 def PermissionOnWrite(permission_cls):
@@ -55,11 +55,9 @@ class IsActive(BasePermission):
     Permission that ensures that the active user's account is active.
     """
     exception_class = AccountDisabled
+    user_dependency_flags = ['is_authenticated']
 
     def has_user_permission(self, user):
-        assert user.is_authenticated, \
-            f"Permission class {self.__class__.__name__} should always be " \
-            "preceeded by a permission class that guarantees authentication."
         if not user.is_active:
             self.permission_denied(user_id=getattr(user, 'pk'))
         return True
@@ -70,11 +68,9 @@ class IsVerified(BasePermission):
     Permission that ensures that the active user's account is verified.
     """
     exception_class = AccountNotVerified
+    user_dependency_flags = ['is_authenticated']
 
     def has_user_permission(self, user):
-        assert user.is_authenticated, \
-            f"Permission class {self.__class__.__name__} should always be " \
-            "preceeded by a permission class that guarantees authentication."
         if not user.email_is_verified:
             self.permission_denied(user_id=getattr(user, 'pk'))
         return True
@@ -113,6 +109,7 @@ class IsOwner(BasePermission):
     in user is accessing was created by that user.
     """
     object_name = "object"
+    user_dependency_flags = ['is_authenticated', 'is_active', 'is_verified']
     message = (
         "The user must does not have permission to view this "
         "{object_name}."
@@ -125,22 +122,6 @@ class IsOwner(BasePermission):
 
     def has_object_permission(self, request, view, obj):
         return getattr(obj, self._owner_field) == request.user
-
-
-class IsOwnerOrReadOnly(IsOwner):
-    """
-    Object level permission that ensures that the object that an actively logged
-    in user is accessing was created by that user for write operations, but
-    allows all users to access that object for read operations.
-    """
-
-    def has_permission(self, request, view):
-        return request_is_safe_method(request)
-
-    def has_object_permission(self, request, view, obj):
-        if request_is_safe_method(request):
-            return True
-        return super().has_object_permission(request, view, obj)
 
 
 class IsPublic(BasePermission):

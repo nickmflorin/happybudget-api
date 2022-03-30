@@ -13,12 +13,13 @@ from django.utils.http import http_date
 from rest_framework_simplejwt.settings import api_settings
 
 from greenbudget.conf import Environments
+from greenbudget.app import permissions
 
 from .exceptions import InvalidToken
 from .tokens import AuthToken
 from .utils import (
     parse_token_from_request, parse_token, user_can_authenticate,
-    request_is_admin, request_is_write_method, parse_public_token)
+    parse_public_token)
 
 
 logger = logging.getLogger('greenbudget')
@@ -178,8 +179,9 @@ class AuthTokenCookieMiddleware(MiddlewareMixin):
         """
         is_missing_jwt = settings.JWT_TOKEN_COOKIE_NAME not in request.COOKIES
         is_validate_url = request.path == reverse('authentication:validate')
-        return not request_is_admin(request) and response.status_code != 401 \
-            and (is_missing_jwt or request_is_write_method(request)
+        return not permissions.request_is_admin(request) \
+            and response.status_code != 401 \
+            and (is_missing_jwt or permissions.request_is_write_method(request)
             or is_validate_url)
 
     def persist_cookie(self, request, response):

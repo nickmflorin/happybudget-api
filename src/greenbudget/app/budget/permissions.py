@@ -23,9 +23,6 @@ class BudgetProductPermission(BaseProductPermission):
     object_name = "budget"
 
     def has_object_permission(self, request, view, obj):
-        assert request.user.is_authenticated, \
-            f"Permission class {self.__class__.__name__} should always be " \
-            "preceeded by a permission class that guarantees authentication."
         if isinstance(obj, Template):
             return super().has_object_permission(request, view, obj)
         assert obj.created_by == request.user, \
@@ -41,11 +38,9 @@ class MultipleBudgetPermission(BudgetProductPermission):
     Permissions whether or not the :obj:`User` can create more than 1
     :obj:`Budget`.
     """
+    user_dependency_flags = ['is_authenticated', 'is_active', 'is_verified']
 
     def has_permission(self, request, view):
-        assert request.user.is_authenticated, \
-            f"Permission class {self.__class__.__name__} should always be " \
-            "preceeded by a permission class that guarantees authentication."
         if not self.user_has_products(request.user) \
                 and Budget.objects.filter(created_by=request.user).count() > 0:
             return False

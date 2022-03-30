@@ -89,11 +89,8 @@ class BudgetSimpleSerializer(BaseBudgetSerializer):
         # user is anonymous and we would not want to include that info in a
         # response.
         data = super().to_representation(instance)
-        if self.context['user'].is_authenticated:
-            assert instance.created_by == self.context['user'], \
-                f"Attempting to access budget {instance.pk} created by user " \
-                f"{instance.created_by.id} as logged in user " \
-                f"{self.context['user'].pk}!"
+        if self.context['user'].is_authenticated \
+                and instance.created_by == self.context['user']:
             data['is_permissioned'] = False
             if not self.context['user'].has_product('__any__'):
                 data['is_permissioned'] = not instance.is_first_created
@@ -107,8 +104,7 @@ class BudgetSerializer(BudgetSimpleSerializer):
     actual = serializers.FloatField(read_only=True)
     public_token = PublicTokenSerializer(read_only=True)
 
-    class Meta:
-        model = Budget
+    class Meta(BudgetSimpleSerializer.Meta):
         fields = BudgetSimpleSerializer.Meta.fields \
             + ('nominal_value', 'actual', 'public_token',
                 'accumulated_markup_contribution',

@@ -4,8 +4,10 @@ from django.contrib.auth.backends import ModelBackend
 
 from rest_framework import authentication
 
+from greenbudget.app import permissions
+
 from .exceptions import InvalidCredentialsError, EmailDoesNotExist
-from .utils import user_can_authenticate, request_is_admin
+from .utils import user_can_authenticate
 
 
 class SocialModelAuthentication(ModelBackend):
@@ -53,18 +55,18 @@ class ModelAuthentication(ModelBackend):
                 # If we are coming from the Admin, we do not want to raise a
                 # DRF exception as it will not render in the response, it will
                 # just be a 500 error.
-                if not request_is_admin(request):
+                if not permissions.request_is_admin(request):
                     raise EmailDoesNotExist(field='email') from e
                 return None
             if not user.check_password(password):
                 # If we are coming from the Admin, we do not want to raise a
                 # DRF exception as it will not render in the response, it will
                 # just be a 500 error.
-                if not request_is_admin(request):
+                if not permissions.request_is_admin(request):
                     raise InvalidCredentialsError(field="password")
                 return None
             return user_can_authenticate(
-                user, raise_exception=not request_is_admin(request))
+                user, raise_exception=not permissions.request_is_admin(request))
         return None
 
 

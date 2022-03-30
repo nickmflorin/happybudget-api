@@ -4,7 +4,6 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 
-from rest_framework import permissions
 from rest_framework_simplejwt.settings import api_settings
 
 from greenbudget.lib.utils import empty
@@ -15,18 +14,6 @@ from .models import AnonymousPublicToken, PublicToken
 from .tokens import AuthToken
 
 logger = logging.getLogger('greenbudget')
-
-
-def request_is_write_method(request):
-    return not request_is_safe_method(request)
-
-
-def request_is_safe_method(request):
-    return request.method in permissions.SAFE_METHODS
-
-
-def request_is_admin(request):
-    return '/admin/' in request.path
 
 
 def user_can_authenticate(user, raise_exception=True, pms=None):

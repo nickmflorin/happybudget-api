@@ -49,6 +49,7 @@ class BasePermissionMetaclass(permissions.BasePermissionMetaclass):
     def __new__(cls, name, bases, dct):
         @with_raise_exception
         def has_permission(instance, request, view):
+            instance.guarantee_user_dependency_flags(request)
             if hasattr(instance, 'has_user_permission') \
                     and not instance.has_user_permission(request.user):
                 return False
@@ -74,6 +75,7 @@ class BasePermissionMetaclass(permissions.BasePermissionMetaclass):
 
         @with_raise_exception
         def has_obj_permission(instance, request, view, obj):
+            instance.guarantee_user_dependency_flags(request)
             if hasattr(instance, 'has_user_permission') \
                     and not instance.has_user_permission(request.user):
                 return False
@@ -250,6 +252,7 @@ class BasePermission(metaclass=BasePermissionMetaclass):
         Default: True
     """
     exception_class = PermissionErr
+    user_dependency_flags = []
 
     def __init__(self, *args, **options):
         # Maintain set of arguments used to instantiate the permission class so
@@ -315,6 +318,25 @@ class BasePermission(metaclass=BasePermissionMetaclass):
         if isinstance(self._is_view_applicable, bool):
             return self._is_view_applicable
         return self._is_view_applicable(context)
+
+    def guarantee_user_dependency_flags(self, request):
+        """
+        Ensures that the flags on the :obj:`User` instance, defined by the
+        `user_dependency_flags` attribute, all evaluate to the desired values
+        before permission checks are performed.
+
+        This is done to ensure that certain permission classes are always
+        proceeded by a permission class that guarantees the authenticity
+        of the :obj:`User`.
+        """
+        user = request.user
+        for attr in self.user_dependency_flags:
+            if not getattr(user, attr):
+                raise Exception(
+                    f"The permission class {self.__class__.__name__} should "
+                    "always be preceeded by a permission class that guarantees "
+                    f"`{attr} = True` on the user."
+                )
 
     @property
     def exception_kwargs(self):
