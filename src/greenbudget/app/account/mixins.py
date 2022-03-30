@@ -3,6 +3,7 @@ from django.utils.functional import cached_property
 
 from greenbudget.app import mixins, permissions
 from greenbudget.app.budgeting.permissions import IsBudgetDomain
+from greenbudget.app.collaborator.permissions import IsCollaborator
 
 from .models import Account
 from .permissions import (
@@ -15,10 +16,35 @@ class AccountNestedMixin(mixins.NestedObjectViewMixin):
     """
     A mixin for views that extend off of an account's detail endpoint.
     """
-    account_permission_classes = [
-        permissions.IsFullyAuthenticated(affects_after=True),
-        AccountOwnershipPermission(affects_after=True),
-        AccountProductPermission(products="__any__")
+    account_permission_classes = [permissions.AND(
+        permissions.OR(
+            permissions.AND(
+                permissions.IsFullyAuthenticated(affects_after=True),
+                AccountOwnershipPermission(affects_after=True),
+                AccountProductPermission(products="__any__"),
+            ),
+            permissions.AND(
+                permissions.IsFullyAuthenticated(affects_after=True),
+                IsCollaborator(get_permissioned_obj=lambda obj: obj.budget)
+            ),
+            is_object_applicable=lambda c: c.obj.domain == 'budget',
+        ),
+        permissions.AND(
+            permissions.IsFullyAuthenticated(affects_after=True),
+            AccountOwnershipPermission(affects_after=True),
+            is_object_applicable=lambda c: c.obj.domain == 'template'
+        ),
+    )]
+    permission_classes = [
+        permissions.OR(
+            permissions.IsFullyAuthenticated,
+            permissions.AND(
+                IsBudgetDomain(get_nested_obj=lambda view: view.account.budget),
+                permissions.IsPublic(
+                    get_nested_obj=lambda view: view.account.budget),
+                permissions.IsSafeRequestMethod,
+            ),
+        )
     ]
     view_name = 'account'
 
@@ -45,7 +71,7 @@ class AccountNestedMixin(mixins.NestedObjectViewMixin):
 
 
 class AccountPublicNestedMixin(AccountNestedMixin):
-    account_permission_classes = [
+    account_permission_classes = [permissions.AND(
         permissions.OR(
             permissions.AND(
                 permissions.IsFullyAuthenticated(affects_after=True),
@@ -53,21 +79,19 @@ class AccountPublicNestedMixin(AccountNestedMixin):
                 AccountProductPermission(products="__any__"),
             ),
             permissions.AND(
+                permissions.IsFullyAuthenticated(affects_after=True),
+                IsCollaborator(get_permissioned_obj=lambda obj: obj.budget)
+            ),
+            permissions.AND(
+                permissions.IsSafeRequestMethod,
                 permissions.IsPublic(
                     get_permissioned_obj=lambda obj: obj.budget),
-                permissions.IsSafeRequestMethod,
-                is_object_applicable=lambda c: c.obj.domain == 'budget',
-            )
-        )
-    ]
-    permission_classes = [
-        permissions.OR(
-            permissions.IsFullyAuthenticated,
-            permissions.AND(
-                IsBudgetDomain(get_nested_obj=lambda view: view.account.budget),
-                permissions.IsPublic(
-                    get_nested_obj=lambda view: view.account.budget),
-                permissions.IsSafeRequestMethod,
             ),
-        )
-    ]
+            is_object_applicable=lambda c: c.obj.domain == 'budget',
+        ),
+        permissions.AND(
+            permissions.IsFullyAuthenticated(affects_after=True),
+            AccountOwnershipPermission(affects_after=True),
+            is_object_applicable=lambda c: c.obj.domain == 'template'
+        ),
+    )]

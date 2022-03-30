@@ -5,6 +5,7 @@ from greenbudget.app import views, mixins, permissions
 from greenbudget.app.budget.serializers import BudgetSerializer
 from greenbudget.app.budgeting.decorators import (
     register_bulk_operations, BulkAction, BulkDeleteAction)
+from greenbudget.app.collaborator.permissions import IsCollaborator
 from greenbudget.app.group.models import Group
 from greenbudget.app.group.serializers import GroupSerializer
 from greenbudget.app.io.views import GenericAttachmentViewSet
@@ -204,18 +205,32 @@ class SubAccountViewSet(
     (5) PATCH /subaccounts/<pk>/bulk-create-children/
     """
     permission_classes = [
-        permissions.OR(
+        permissions.AND(
+            permissions.OR(
+                permissions.AND(
+                    permissions.IsFullyAuthenticated(affects_after=True),
+                    SubAccountOwnershipPermission(affects_after=True),
+                    SubAccountProductPermission(products="__any__"),
+                ),
+                permissions.AND(
+                    permissions.IsFullyAuthenticated(affects_after=True),
+                    IsCollaborator(get_permissioned_obj=lambda obj: obj.budget),
+                    is_view_applicable=False
+                ),
+                permissions.AND(
+                    permissions.IsSafeRequestMethod,
+                    permissions.IsPublic(
+                        get_permissioned_obj=lambda obj: obj.budget)
+                ),
+                is_object_applicable=lambda c: c.obj.domain == 'budget',
+            ),
             permissions.AND(
                 permissions.IsFullyAuthenticated(affects_after=True),
                 SubAccountOwnershipPermission(affects_after=True),
-                SubAccountProductPermission(products="__any__")
+                is_object_applicable=lambda c: c.obj.domain == 'template',
+                is_view_applicable=False
             ),
-            permissions.AND(
-                permissions.IsPublic(
-                    get_permissioned_obj=lambda obj: obj.budget),
-                permissions.IsSafeRequestMethod,
-                is_object_applicable=lambda c: c.obj.domain == "budget"
-            )
+            default=permissions.IsFullyAuthenticated
         )
     ]
 

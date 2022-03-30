@@ -2,6 +2,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.utils.functional import cached_property
 
 from greenbudget.app import mixins, permissions
+from greenbudget.app.budgeting.permissions import IsBudgetDomain
 from greenbudget.app.collaborator.permissions import IsCollaborator
 
 from .models import BaseBudget, Budget
@@ -32,6 +33,16 @@ class BaseBudgetNestedMixin(mixins.NestedObjectViewMixin):
             is_object_applicable=lambda c: c.obj.domain == 'template'
         ),
     )]
+    permission_classes = [
+        permissions.OR(
+            permissions.IsFullyAuthenticated,
+            permissions.AND(
+                IsBudgetDomain(get_nested_obj=lambda view: view.budget),
+                permissions.IsPublic(get_nested_obj=lambda view: view.budget),
+                permissions.IsSafeRequestMethod,
+            )
+        )
+    ]
 
     @property
     def instance(self):

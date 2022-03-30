@@ -15,7 +15,6 @@ from greenbudget.app.authentication.models import PublicToken
 from greenbudget.app.authentication.serializers import PublicTokenSerializer
 from greenbudget.app.budgeting.decorators import (
     register_bulk_operations, BulkAction, BulkDeleteAction)
-from greenbudget.app.budgeting.permissions import IsBudgetDomain
 from greenbudget.app.collaborator.permissions import IsCollaborator
 from greenbudget.app.fringe.models import Fringe
 from greenbudget.app.fringe.serializers import FringeSerializer
@@ -62,16 +61,6 @@ class BudgetMarkupViewSet(
     (2) GET /budgets/<pk>/markups/
     """
     serializer_class = MarkupSerializer
-    permission_classes = [
-        permissions.OR(
-            permissions.IsFullyAuthenticated,
-            permissions.AND(
-                IsBudgetDomain(get_nested_obj=lambda view: view.budget),
-                permissions.IsPublic(get_nested_obj=lambda view: view.budget),
-                permissions.IsSafeRequestMethod,
-            )
-        )
-    ]
 
     def create_kwargs(self, serializer):
         return {**super().create_kwargs(serializer), **{'parent': self.budget}}
@@ -103,16 +92,6 @@ class BudgetGroupViewSet(
     (2) GET /budgets/<pk>/groups/
     """
     serializer_class = GroupSerializer
-    permission_classes = [
-        permissions.OR(
-            permissions.IsFullyAuthenticated,
-            permissions.AND(
-                IsBudgetDomain(get_nested_obj=lambda view: view.budget),
-                permissions.IsPublic(get_nested_obj=lambda view: view.budget),
-                permissions.IsSafeRequestMethod,
-            )
-        )
-    ]
 
     def create_kwargs(self, serializer):
         return {**super().create_kwargs(serializer), **{
@@ -213,17 +192,6 @@ class BudgetFringeViewSet(
     (1) GET /budgets/<pk>/fringes/
     (2) POST /budgets/<pk>/fringes/
     """
-    permission_classes = [
-        permissions.OR(
-            permissions.IsFullyAuthenticated,
-            permissions.AND(
-                IsBudgetDomain(get_nested_obj=lambda view: view.budget),
-                permissions.IsPublic(get_nested_obj=lambda view: view.budget),
-                permissions.IsSafeRequestMethod,
-            )
-        )
-    ]
-
     def create_kwargs(self, serializer):
         return {**super().create_kwargs(serializer), **{'budget': self.budget}}
 
@@ -250,17 +218,6 @@ class BudgetChildrenViewSet(
     (1) GET /budgets/<pk>/children/
     (2) POST /budgets/<pk>/children/
     """
-    permission_classes = [
-        permissions.OR(
-            permissions.IsFullyAuthenticated,
-            permissions.AND(
-                IsBudgetDomain(get_nested_obj=lambda view: view.budget),
-                permissions.IsPublic(get_nested_obj=lambda view: view.budget),
-                permissions.IsSafeRequestMethod,
-            )
-        )
-    ]
-
     def create_kwargs(self, serializer):
         return {**super().create_kwargs(serializer), **{'parent': self.budget}}
 
