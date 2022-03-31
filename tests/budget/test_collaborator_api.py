@@ -21,6 +21,7 @@ def test_get_collaborators_as_owner(api_client, create_collaborator,
             'id': collaborators[0].pk,
             'type': 'collaborator',
             'created_at': '2020-01-01 00:00:00',
+            'updated_at': '2020-01-01 00:00:00',
             'access_type': {
                 'id': collaborators[0].access_type,
                 'name': models.Collaborator.ACCESS_TYPES[
@@ -39,6 +40,7 @@ def test_get_collaborators_as_owner(api_client, create_collaborator,
             'id': collaborators[1].pk,
             'type': 'collaborator',
             'created_at': '2020-01-01 00:00:00',
+            'updated_at': '2020-01-01 00:00:00',
             'access_type': {
                 'id': collaborators[1].access_type,
                 'name': models.Collaborator.ACCESS_TYPES[
@@ -99,6 +101,7 @@ def test_create_collaborator_as_owner(api_client, create_budget, user, models,
         'id': collaborator.pk,
         'type': 'collaborator',
         'created_at': '2020-01-01 00:00:00',
+        'updated_at': '2020-01-01 00:00:00',
         'access_type': {
             'id': models.Collaborator.ACCESS_TYPES.editor,
             'name': models.Collaborator.ACCESS_TYPES[
@@ -168,6 +171,7 @@ def test_create_collaborator_as_collaborating_owner(api_client, create_budget,
         'id': collaborator.pk,
         'type': 'collaborator',
         'created_at': '2020-01-01 00:00:00',
+        'updated_at': '2020-01-01 00:00:00',
         'access_type': {
             'id': models.Collaborator.ACCESS_TYPES.editor,
             'name': models.Collaborator.ACCESS_TYPES[

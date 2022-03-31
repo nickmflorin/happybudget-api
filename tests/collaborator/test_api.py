@@ -20,6 +20,7 @@ def test_update_collaborator(api_client, create_collaborator, create_budget,
         'id': collaborator.pk,
         'type': 'collaborator',
         'created_at': '2020-01-01 00:00:00',
+        'updated_at': '2020-01-01 00:00:00',
         'access_type': {
             'id': models.Collaborator.ACCESS_TYPES.owner,
             'name': models.Collaborator.ACCESS_TYPES[
@@ -60,6 +61,7 @@ def test_update_collaborator_user(api_client, create_collaborator, create_budget
         'id': collaborator.pk,
         'type': 'collaborator',
         'created_at': '2020-01-01 00:00:00',
+        'updated_at': '2020-01-01 00:00:00',
         'access_type': {
             'id': collaborator.access_type,
             'name': models.Collaborator.ACCESS_TYPES[collaborator.access_type]

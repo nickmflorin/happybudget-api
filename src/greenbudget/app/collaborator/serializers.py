@@ -14,6 +14,7 @@ class CollaboratorSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     type = serializers.CharField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
+    updated_at = serializers.DateTimeField(read_only=True)
     user = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.standard_filter(),
         required=True
@@ -26,7 +27,8 @@ class CollaboratorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Collaborator
-        fields = ('id', 'type', 'created_at', 'access_type', 'user')
+        fields = (
+            'id', 'type', 'created_at', 'updated_at', 'access_type', 'user')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
