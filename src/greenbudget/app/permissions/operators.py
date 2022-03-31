@@ -72,7 +72,7 @@ class Operator(BasePermission):
             if isinstance(priority[2], PErrors):
                 raise priority[2]
             elif isinstance(priority[2], str):
-                priority[0].permission_denied(message=priority[1])
+                priority[0].permission_denied(message=priority[2])
             else:
                 priority[0].permission_denied()
         return True
@@ -142,11 +142,11 @@ class AND(Operator):
 
     @track_failed_permissions(context=PermissionContext.OBJECT)
     def has_object_permission(self, permission, *args):
-        return permission.has_object_permission(*args, raise_exception=True)
+        return permission.has_obj_perm(*args, raise_exception=True)
 
     @track_failed_permissions(context=PermissionContext.VIEW)
     def has_permission(self, permission, *args):
-        return permission.has_permission(*args, raise_exception=True)
+        return permission.has_perm(*args, raise_exception=True)
 
 
 class OR(Operator):
@@ -162,8 +162,8 @@ class OR(Operator):
 
     @track_failed_permissions(context=PermissionContext.OBJECT)
     def has_object_permission(self, permission, *args):
-        return permission.has_object_permission(*args, raise_exception=False)
+        return permission.has_obj_perm(*args, raise_exception=False)
 
     @track_failed_permissions(context=PermissionContext.VIEW)
     def has_permission(self, permission, *args):
-        return permission.has_permission(*args, raise_exception=False)
+        return permission.has_perm(*args, raise_exception=False)

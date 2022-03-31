@@ -66,6 +66,7 @@ class UniqueTogetherValidator(serializers.UniqueTogetherValidator):
     def __init__(self, queryset, fields=None, message=None, **kwargs):
         self.context_fields = ensure_iterable(kwargs.pop('context_fields', None))
         self.model_fields = ensure_iterable(kwargs.pop('model_fields', None))
+        self.exception_fields = kwargs.pop('exception_fields', None)
         super().__init__(queryset, fields or (), message=message)
 
     def __call__(self, data, serializer):
@@ -89,16 +90,15 @@ class UniqueTogetherValidator(serializers.UniqueTogetherValidator):
                 # that the values are already in the set of attributes provided
                 # to the method - in which case, we do not want to override them.
                 # pylint: disable=unsupported-membership-test
-                if field not in attrs:
-                    attrs.add("context", field,
-                        getattr(serializer.context, field))
+                if field not in attrs.context:
+                    attrs.add("context", field, serializer.context[field])
             else:
                 assert len(field) == 2 and isinstance(field[0], str) \
                     and hasattr(field[1], '__call__'), \
                     "When defined as a tuple, the context field must be " \
                     "defined as (field, callback)."
                 # pylint: disable=unsupported-membership-test
-                if field[0] not in attrs:
+                if field[0] not in attrs.context:
                     attrs.add("context", field[0], field[1](serializer.context))
 
         self.enforce_required_fields(attrs.serializer, serializer)
@@ -120,12 +120,13 @@ class UniqueTogetherValidator(serializers.UniqueTogetherValidator):
             message = self.message
             # The fields on the validator may not be present if they were
             # context related fields only.
-            if self.fields:
+            if self.fields and message is None:
                 message = (
-                    f"The fields {humanize_list(self.fields)} do not form a "
+                    f"The field(s) {humanize_list(self.fields)} do not form a "
                     "unique set."
                 )
-            raise exceptions.ValidationError(message, code='unique')
+            raise exceptions.ValidationError(
+                message, field=self.exception_fields, code='unique')
 
     def filter_queryset(self, attrs, queryset):
         return qs_filter(queryset, **attrs)

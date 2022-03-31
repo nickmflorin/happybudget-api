@@ -44,13 +44,12 @@ class GenericView(generics.GenericAPIView):
     def check_permissions(self, request):
         permission = permissions.AND(self.get_permissions())
         # pylint: disable=unexpected-keyword-arg
-        permission.has_permission(request, self, raise_exception=True)
+        permission.has_perm(request, self, raise_exception=True)
 
     def check_object_permissions(self, request, obj):
         permission = permissions.AND(self.get_permissions())
         # pylint: disable=unexpected-keyword-arg
-        permission.has_object_permission(
-            request, self, obj, raise_exception=True)
+        permission.has_obj_perm(request, self, obj, raise_exception=True)
 
     def get_serializer_context(self):
         context = super().get_serializer_context()

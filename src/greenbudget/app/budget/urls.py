@@ -9,7 +9,8 @@ from .views import (
     BudgetActualsViewSet,
     BudgetChildrenViewSet,
     BudgetActualsOwnersViewSet,
-    BudgetPublicTokenViewSet
+    BudgetPublicTokenViewSet,
+    BudgetCollaboratorsViewSet
 )
 
 app_name = "budget"
@@ -40,6 +41,10 @@ budget_public_token_router.register(
 budget_children_router = routers.SimpleRouter()
 budget_children_router.register(r'', BudgetChildrenViewSet, basename='child')
 
+budget_collaborators_router = routers.SimpleRouter()
+budget_collaborators_router.register(
+    r'', BudgetCollaboratorsViewSet, basename='collaborator')
+
 urlpatterns = router.urls + [
     path('<int:pk>/', include([
         path('children/', include(budget_children_router.urls)),
@@ -48,6 +53,7 @@ urlpatterns = router.urls + [
         path('fringes/', include(budget_fringes_router.urls)),
         path('markups/', include(budget_markup_router.urls)),
         path('groups/', include(budget_groups_router.urls)),
+        path('collaborators/', include(budget_collaborators_router.urls)),
         path('actual-owners/', include(budget_actuals_owners_router.urls))
     ]))
 ]

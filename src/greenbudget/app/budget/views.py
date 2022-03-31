@@ -15,7 +15,10 @@ from greenbudget.app.authentication.models import PublicToken
 from greenbudget.app.authentication.serializers import PublicTokenSerializer
 from greenbudget.app.budgeting.decorators import (
     register_bulk_operations, BulkAction, BulkDeleteAction)
-from greenbudget.app.collaborator.permissions import IsCollaborator
+from greenbudget.app.collaborator.models import Collaborator
+from greenbudget.app.collaborator.permissions import (
+    IsCollaborator, IsOwnerOrCollaboratingOwner, IsOwnerOrCollaborator)
+from greenbudget.app.collaborator.serializers import CollaboratorSerializer
 from greenbudget.app.fringe.models import Fringe
 from greenbudget.app.fringe.serializers import FringeSerializer
 from greenbudget.app.fringe.views import GenericFringeViewSet
@@ -125,7 +128,6 @@ class BudgetActualsViewSet(
     (1) GET /budgets/<pk>/actuals/
     (2) POST /budgets/<pk>/actuals/
     """
-
     def create_kwargs(self, serializer):
         return {
             **super().create_kwargs(serializer),
@@ -139,6 +141,45 @@ class BudgetActualsViewSet(
 
     def get_queryset(self):
         return Actual.objects.filter(budget=self.budget)
+
+
+class BudgetCollaboratorsViewSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    BudgetNestedMixin,
+    views.GenericViewSet
+):
+    """
+    ViewSet to handle requests to the following endpoints:
+
+    (1) GET /budgets/<pk>/collaborators/
+    (2) POST /budgets/<pk>/collaborators/
+    """
+    serializer_class = CollaboratorSerializer
+    budget_permission_classes = [
+        permissions.IsFullyAuthenticated(affects_after=True),
+        IsOwnerOrCollaboratingOwner(is_object_applicable=lambda c:
+            permissions.request_is_write_method(c.request)),
+        IsOwnerOrCollaborator(is_object_applicable=lambda c:
+            permissions.request_is_safe_method(c.request))
+    ]
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update(budget=self.budget)
+        return context
+
+    def create_kwargs(self, serializer):
+        return {**super().create_kwargs(serializer), **{
+            'content_type': self.content_type,
+            'object_id': self.budget.pk
+        }}
+
+    def get_queryset(self):
+        return Collaborator.objects.filter(
+            content_type=self.content_type,
+            object_id=self.budget.pk
+        )
 
 
 @budget_actuals_owners_cache

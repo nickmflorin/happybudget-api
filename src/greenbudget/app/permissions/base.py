@@ -25,7 +25,9 @@ def with_raise_exception(func):
         except (PermissionErr, NotAuthenticatedError) as e:
             if raise_exception is True:
                 raise e
-            return False
+            # Make sure to return the message on the exception class such that
+            # the failed permission will be treated with that same message.
+            return str(e.detail)
         else:
             if evaluated is False or isinstance(evaluated, str):
                 # If the permission method returns a string message, than it
@@ -36,7 +38,7 @@ def with_raise_exception(func):
                         instance.permission_denied()
                     else:
                         instance.permission_denied(message=evaluated)
-                return False
+                return evaluated
             assert evaluated is True, \
                 f"Unexpected type {type(evaluated)} returned from " \
                 f"permission method {func.__name__}.  Expected either " \
@@ -47,42 +49,37 @@ def with_raise_exception(func):
 
 class BasePermissionMetaclass(permissions.BasePermissionMetaclass):
     def __new__(cls, name, bases, dct):
-        @with_raise_exception
-        def has_permission(instance, request, view):
-            instance.guarantee_user_dependency_flags(request)
-            if hasattr(instance, 'has_user_permission') \
-                    and not instance.has_user_permission(request.user):
-                return False
-            if instance._get_nested_obj is not None:
-                nested_parent = instance._get_nested_obj(view)
-                return has_obj_permission(instance, request, view, nested_parent)
-            return _has_permission(instance, request, view)
+        def has_permission(original):
+            @with_raise_exception
+            def inner(instance, request, view):
+                instance.guarantee_user_dependency_flags(request)
+                if hasattr(instance, 'has_user_perm') \
+                        and not instance.has_user_perm(request.user):
+                    return False
+                if instance._get_nested_obj is not None:
+                    nested_parent = instance._get_nested_obj(view)
+                    return instance.has_obj_perm(request, view, nested_parent)
+                return original(instance, request, view)
+            return inner
 
-        @with_raise_exception
-        def has_user_permission(instance, user):
-            # pylint: disable=not-callable
-            return _user_has_permission(instance, user)
+        def has_user_permission(original):
+            @with_raise_exception
+            def inner(instance, user):
+                return original(instance, user)
+            return inner
 
-        def get_permissioned_obj(instance, obj):
-            # If the callback to get the permissioned object was provided on
-            # init, it overrides the class method.
-            if instance._get_permissioned_obj is not None:
-                return instance._get_permissioned_obj(obj)
-            elif _get_permissioned_obj is not None:
-                # pylint: disable=not-callable
-                return _get_permissioned_obj(instance, obj)
-            return obj
+        def has_obj_permission(original):
+            @with_raise_exception
+            def inner(instance, request, view, obj):
+                instance.guarantee_user_dependency_flags(request)
+                if hasattr(instance, 'has_user_perm') \
+                        and not instance.has_user_perm(request.user):
+                    return False
+                obj = instance.get_permissioned_obj(obj)
+                return original(instance, request, view, obj)
+            return inner
 
-        @with_raise_exception
-        def has_obj_permission(instance, request, view, obj):
-            instance.guarantee_user_dependency_flags(request)
-            if hasattr(instance, 'has_user_permission') \
-                    and not instance.has_user_permission(request.user):
-                return False
-            obj = get_permissioned_obj(instance, obj)
-            return _has_object_permission(instance, request, view, obj)
-
-        def permission_message(instance, original_message):
+        def format_permission_message(instance, original_message):
             formatted = original_message
             fkwargs = get_string_formatted_kwargs(formatted)
             for k in fkwargs:
@@ -92,33 +89,24 @@ class BasePermissionMetaclass(permissions.BasePermissionMetaclass):
                     formatted = formatted.replace("{%s}" % k, fvalue)
             return formatted
 
+        dct['format_permission_message'] = format_permission_message
         if 'message' in dct:
             msg = dct["message"]
             dct['message'] = property(
-                lambda instance, k=msg: permission_message(instance, k))
+                lambda instance, k=msg: format_permission_message(instance, k))
 
-        klass = super().__new__(cls, name, bases, dct)
+        if 'has_object_permission' in dct:
+            dct['has_obj_perm'] = has_obj_permission(
+                dct['has_object_permission'])
 
-        # It is important that the permission_denied operations on a permission
-        # class raise the appropriate error, such that it can be properly
-        # handled in sequences of permissions and/or communicated to the FE.
-        if not issubclass(getattr(klass, 'exception_class'),
-                (PermissionErr, NotAuthenticatedError)):
-            raise Exception(
-                "The exception class defined for a permission must extend "
-                "either PermissionErr or NotAuthenticatedError."
-            )
+        if 'has_permission' in dct:
+            dct['has_perm'] = has_permission(dct['has_permission'])
 
-        _has_object_permission = getattr(klass, 'has_object_permission')
-        _has_permission = getattr(klass, 'has_permission')
-        _user_has_permission = getattr(klass, 'has_user_permission', None)
-        _get_permissioned_obj = getattr(klass, 'get_permissioned_obj', None)
+        if 'has_user_permission' in dct:
+            dct['has_user_perm'] = has_user_permission(
+                dct['has_user_permission'])
 
-        setattr(klass, 'has_object_permission', has_obj_permission)
-        setattr(klass, 'has_permission', has_permission)
-        if _user_has_permission:
-            setattr(klass, 'has_user_permission', has_user_permission)
-        return klass
+        return super().__new__(cls, name, bases, dct)
 
 
 class BasePermission(metaclass=BasePermissionMetaclass):
@@ -278,6 +266,13 @@ class BasePermission(metaclass=BasePermissionMetaclass):
         kw.update(kwargs)
         return self.__class__(*self._args, **kw)
 
+    def get_permissioned_obj(self, obj):
+        # If the callback to get the permissioned object was provided on
+        # init, it overrides the class method.
+        if self._get_permissioned_obj is not None:
+            return self._get_permissioned_obj(obj)
+        return obj
+
     def is_prioritized(self, context):
         """
         Returns whether or not the permission is prioritized for the given
@@ -382,7 +377,7 @@ class BasePermission(metaclass=BasePermissionMetaclass):
             ))
         exception_kwargs.update(**kwargs)
         if message is not None:
-            kwargs['detail'] = message
+            exception_kwargs['detail'] = self.format_permission_message(message)
 
         raise self.exception_class(**exception_kwargs)
 

@@ -69,8 +69,7 @@ class BudgetNestedMixin(BaseBudgetNestedMixin):
         permissions.AND(
             permissions.IsFullyAuthenticated(affects_after=True),
             IsCollaborator
-        ),
-        is_object_applicable=lambda c: c.obj.domain == 'budget',
+        )
     )]
 
     def get_budget_queryset(self):

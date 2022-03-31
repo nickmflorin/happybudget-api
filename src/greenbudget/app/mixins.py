@@ -76,7 +76,7 @@ class NestedObjectViewMeta(type):
             filter_kwargs = {lookup_field: instance.kwargs[lookup_url_kwarg]}
             obj = get_object_or_404(queryset, **filter_kwargs)
 
-            permission.has_object_permission(
+            permission.has_obj_perm(
                 instance.request, instance, obj, raise_exception=True)
             return obj
 

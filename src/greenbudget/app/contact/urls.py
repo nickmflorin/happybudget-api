@@ -8,7 +8,6 @@ app_name = "contact"
 
 router = routers.SimpleRouter()
 router.register(r'', ContactViewSet, basename='contact')
-urlpatterns = router.urls
 
 contact_attachments_router = routers.SimpleRouter()
 contact_attachments_router.register(

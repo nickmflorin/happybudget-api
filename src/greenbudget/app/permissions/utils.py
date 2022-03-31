@@ -23,7 +23,7 @@ def check_user_permissions(user, permissions=None, raise_exception=True):
     permissions = permissions if permissions is not None \
         else get_default_permissions()
     for permission in instantiate_permissions(permissions):
-        if not permission.has_user_permission(user,
+        if not permission.has_user_perm(user,
                 raise_exception=raise_exception):
             # The individual UserPermission(s) instances should raise a
             # NotAuthenticatedError exception, but we do here just in case for

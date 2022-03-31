@@ -2,9 +2,12 @@ from model_utils import Choices
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
-from django.db import models
+from django.db import models, IntegrityError
+
+from greenbudget.app import model
 
 
+@model.model(type="collaborator")
 class Collaborator(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -43,3 +46,10 @@ class Collaborator(models.Model):
         verbose_name = "Collaborator"
         verbose_name_plural = "Collaborators"
         unique_together = (('content_type', 'object_id', 'user'))
+
+    def validate_before_save(self):
+        if not self.user.is_active or not self.user.is_verified:
+            raise IntegrityError(
+                "A collaborator can only be associated with active, verified "
+                "users."
+            )
