@@ -5,7 +5,11 @@ from .permissions import IsOwnerOrCollaboratingOwner
 from .serializers import CollaboratorSerializer
 
 
-class CollaboratorViewSet(mixins.UpdateModelMixin, views.GenericViewSet):
+class CollaboratorViewSet(
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    views.GenericViewSet
+):
     serializer_class = CollaboratorSerializer
     permission_classes = [IsOwnerOrCollaboratingOwner(
         get_permissioned_obj=lambda obj: obj.instance)]

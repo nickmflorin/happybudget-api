@@ -1,5 +1,7 @@
 import pytest
 
+from greenbudget.app.collaborator.models import Collaborator
+
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_update_collaborator(api_client, create_collaborator, create_budget,
@@ -37,6 +39,20 @@ def test_update_collaborator(api_client, create_collaborator, create_budget,
     }
     collaborator.refresh_from_db()
     assert collaborator.access_type == models.Collaborator.ACCESS_TYPES.owner
+
+
+def test_delete_collaborator(api_client, create_collaborator, create_budget,
+        user, models):
+    budget = create_budget()
+    collaborator = create_collaborator(
+        user=user,
+        instance=budget,
+        view_only=True
+    )
+    api_client.force_login(user)
+    response = api_client.delete("/v1/collaborators/%s/" % collaborator.pk)
+    assert response.status_code == 204
+    assert models.Collaborator.objects.count() == 0
 
 
 @pytest.mark.freeze_time('2020-01-01')
@@ -79,7 +95,6 @@ def test_update_collaborator_user(api_client, create_collaborator, create_budget
     assert collaborator.user == user
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_update_collaborator_as_collaborator(api_client, create_collaborator,
         create_budget, create_user, models):
     budget = create_budget()
@@ -97,15 +112,33 @@ def test_update_collaborator_as_collaborator(api_client, create_collaborator,
     assert response.status_code == 200
 
 
-@pytest.mark.freeze_time('2020-01-01')
-def test_update_collaborator_as_non_owner_collaborator(api_client, create_user,
-        create_collaborator, create_budget, models):
+def test_delete_collaborator_as_collaborator(api_client, create_collaborator,
+        create_budget, models, create_user):
     budget = create_budget()
     collaborating_user = create_user()
     collaborator = create_collaborator(
         user=collaborating_user,
         instance=budget,
-        editor=True
+        owner=True
+    )
+    api_client.force_login(collaborating_user)
+    response = api_client.delete("/v1/collaborators/%s/" % collaborator.pk)
+    assert response.status_code == 204
+    assert models.Collaborator.objects.count() == 0
+
+
+@pytest.mark.parametrize('access_type', [
+    Collaborator.ACCESS_TYPES.editor,
+    Collaborator.ACCESS_TYPES.view_only,
+])
+def test_update_collaborator_as_non_owner_collaborator(api_client, create_user,
+        create_collaborator, create_budget, models, access_type):
+    budget = create_budget()
+    collaborating_user = create_user()
+    collaborator = create_collaborator(
+        user=collaborating_user,
+        instance=budget,
+        access_type=access_type
     )
     api_client.force_login(collaborating_user)
     response = api_client.patch(
@@ -113,3 +146,37 @@ def test_update_collaborator_as_non_owner_collaborator(api_client, create_user,
         data={'access_type': models.Collaborator.ACCESS_TYPES.owner}
     )
     assert response.status_code == 403
+    assert response.json() == {'errors': [{
+        'message': (
+            'The user is a collaborator for this budget but does not have the '
+            'correct access type.'
+        ),
+        'code': 'permission_error',
+        'error_type': 'permission'
+    }]}
+
+
+@pytest.mark.parametrize('access_type', [
+    Collaborator.ACCESS_TYPES.editor,
+    Collaborator.ACCESS_TYPES.view_only,
+])
+def test_delete_collaborator_as_non_owner_collaborator(api_client, access_type,
+        create_collaborator, create_budget, create_user):
+    budget = create_budget()
+    collaborating_user = create_user()
+    collaborator = create_collaborator(
+        user=collaborating_user,
+        instance=budget,
+        access_type=access_type
+    )
+    api_client.force_login(collaborating_user)
+    response = api_client.delete("/v1/collaborators/%s/" % collaborator.pk)
+    assert response.status_code == 403
+    assert response.json() == {'errors': [{
+        'message': (
+            'The user is a collaborator for this budget but does not have the '
+            'correct access type.'
+        ),
+        'code': 'permission_error',
+        'error_type': 'permission'
+    }]}
