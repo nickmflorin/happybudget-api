@@ -1,6 +1,8 @@
 from django.db.models.constants import LOOKUP_SEP
 from rest_framework import filters
 
+from greenbudget.lib.utils.urls import parse_ids_from_request
+
 
 class FullNameSearchFilter(filters.SearchFilter):
     """
@@ -30,6 +32,9 @@ class FullNameSearchFilter(filters.SearchFilter):
             f"The queryset {queryset.__class__.__name__} must expose a " \
             "`annotate_name` method."
         qs = queryset.annotate_name()
+        exclude_ids = parse_ids_from_request(request, param='exclude')
+        if exclude_ids:
+            qs = qs.exclude(pk__in=exclude_ids)
         return super().filter_queryset(request, qs, view)
 
 

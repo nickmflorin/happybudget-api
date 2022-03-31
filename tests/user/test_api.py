@@ -6,6 +6,8 @@ import pytest
 
 from django.test import override_settings
 
+from greenbudget.lib.utils.urls import add_query_params_to_url
+
 from greenbudget.app.authentication.tokens import AccessToken
 from greenbudget.app.user.mail import get_template
 
@@ -54,20 +56,23 @@ def test_search_users_no_search_term(api_client, user):
     }]}
 
 
-@pytest.mark.parametrize('search, expected', [
-    ('bcosby@gmail.com', [0]),
-    ('bill', []),
-    ('bill cosby', [0]),
-    ('bjohnson', []),
-    ('smith', []),
-    ('Will', []),
-    ('Will Smith', [1, 2]),
-    ('Jackson', [])
+@pytest.mark.parametrize('search,expected,exclude', [
+    ('bcosby@gmail.com', [0], None),
+    ('bill', [], None),
+    ('bill cosby', [0], None),
+    ('bjohnson', [], None),
+    ('smith', [], None),
+    ('Will', [], None),
+    ('Will Smith', [1, 2], None),
+    ('Jackson', [], None),
+    ('Will Smith', [1], [4]),
 ])
-def test_search_users(api_client, user, search, expected, searchable_users):
+def test_search_users(api_client, user, search, expected, searchable_users,
+        exclude):
     api_client.force_login(user)
-    response = api_client.get(
-        f"/v1/users/?search={urllib.parse.quote_plus(search)}")
+    url = add_query_params_to_url(
+        url="/v1/users/", search=search, exclude=exclude)
+    response = api_client.get(url)
     assert response.status_code == 200
     assert response.json()['count'] == len(expected)
     assert response.json()['data'] == [{

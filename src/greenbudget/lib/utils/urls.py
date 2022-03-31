@@ -60,8 +60,10 @@ def add_query_params_to_url(url, **params):
     >>> add_query_params_to_url("https://google.com?a=1", b=2, c=3)
     >>> "https://google.com?a=1&b=2&c=3"
     """
+    filter_out = params.pop('filter_out', [None])
+
     scheme, netloc, path, query_string, fragment = urlsplit(url)
     query = OrderedDict(parse_qsl(query_string))
-    query.update(**params)
+    query.update({k: v for k, v in params.items() if v not in filter_out})
     query_string = urlencode(query)
     return urlunsplit([scheme, netloc, path, query_string, fragment])
