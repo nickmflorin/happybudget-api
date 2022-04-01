@@ -73,6 +73,11 @@ label {
   color: $text-primary !important;
 }
 
+label.vCheckboxLabel {
+  line-height: 22px !important;
+  margin-left: 4px !important;
+}
+
 h1 {
   @extend .header-base;
   &.ant-typography {
@@ -122,4 +127,8 @@ p.file-upload {
   input[type="file"] {
     margin-top: 4px;
   }
+}
+
+p.grp-help {
+  padding: 0px 22px 0 !important;
 }

@@ -61,6 +61,13 @@ input:focus-visible {
   border-radius: $input-small-border-radius !important;
 }
 
+input[type="checkbox"] {
+  margin: 4px !important;
+  height: 14px;
+  width: 14px;
+  top: 3px !important;
+}
+
 input:not([type='checkbox']) {
   @extend .input-base;
 
