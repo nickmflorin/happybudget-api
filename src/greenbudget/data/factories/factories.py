@@ -105,6 +105,7 @@ class UserFactory(CustomModelFactory):
     is_active = True
     is_first_time = False
     is_verified = True
+    password = "test_password"
 
     class Meta:
         model = User

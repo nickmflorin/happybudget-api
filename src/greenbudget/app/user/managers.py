@@ -2,7 +2,9 @@ import logging
 import requests
 
 from django.conf import settings
+from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import UserManager as DjangoUserManager
+from django.db import IntegrityError
 
 from greenbudget.lib.utils.urls import add_query_params_to_url
 
@@ -53,21 +55,9 @@ class UserManager(UserQuerier, DjangoUserManager):
     def get_queryset(self):
         return self.queryset_class(self.model)
 
-    def _create_user(self, email, password=None, **extra_fields):
-        if not email:
-            raise ValueError('Email is a required user field.')
-        email = self.normalize_email(email).lower()
-        user = self.model(email=email, **extra_fields)
-        if password is not None:
-            user.set_password(password)
-        user.save(using=self._db)
-        return user
-
-    def create(self, email, **kwargs):
-        return self.create_user(email, **kwargs)
-
-    def create_user(self, email, **kwargs):
+    def _create_user(self, email, password, **kwargs):
         force = kwargs.pop('force', False)
+        kwargs.setdefault('has_password', True)
         kwargs.setdefault('is_staff', False)
         kwargs.setdefault('is_superuser', False)
         kwargs.setdefault('is_active', True)
@@ -78,11 +68,27 @@ class UserManager(UserQuerier, DjangoUserManager):
                 and not user_is_on_waitlist(email):
             raise AccountNotOnWaitlist()
 
+        email = self.normalize_email(email)
+        if kwargs['has_password'] and password in (None, ""):
+            raise IntegrityError("The password must be a non-empty string.")
+        elif not kwargs['has_password'] and password != "":
+            raise IntegrityError("The password must be an empty string.")
+
+        user = self.model(email=email, **kwargs)
+        user.password = make_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create(self, email, password, **kwargs):
+        return self._create_user(email, password, **kwargs)
+
+    def create_from_social(self, email, **kwargs):
+        kwargs.update(password="", has_password=False, is_verified=True)
         return self._create_user(email, **kwargs)
 
-    def create_superuser(self, email, **kwargs):
+    def create_superuser(self, email, password, **kwargs):
         kwargs.update(is_staff=True, is_superuser=True, is_verified=True)
-        return self._create_user(email, **kwargs)
+        return self._create_user(email, password, **kwargs)
 
     def get_social_user(self, token, provider):
         try:
@@ -103,9 +109,8 @@ class UserManager(UserQuerier, DjangoUserManager):
 
     def create_from_google_token(self, token_id):
         google_user = self.get_social_user(token_id, "google")
-        return self.create(
+        return self.create_from_social(
             email=google_user.email,
-            is_verified=True,
             first_name=google_user.first_name,
             last_name=google_user.last_name
         )

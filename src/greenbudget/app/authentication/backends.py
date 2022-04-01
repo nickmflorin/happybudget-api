@@ -58,6 +58,12 @@ class ModelAuthentication(ModelBackend):
                 if not permissions.request_is_admin(request):
                     raise EmailDoesNotExist(field='email') from e
                 return None
+
+            # If the user was authenticated socially, do not authenticate with
+            # the password.
+            if not user.has_password:
+                return None
+
             if not user.check_password(password):
                 # If we are coming from the Admin, we do not want to raise a
                 # DRF exception as it will not render in the response, it will

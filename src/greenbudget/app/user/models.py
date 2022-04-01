@@ -30,6 +30,7 @@ SocialUser = collections.namedtuple(
     'SocialUser', ['first_name', 'last_name', 'email'])
 
 
+
 @model.model(track_user=False, type='user')
 class User(AbstractUser):
     username = None
@@ -49,6 +50,16 @@ class User(AbstractUser):
     phone_number = models.BigIntegerField(null=True, blank=True)
     timezone = TimeZoneField(default='America/New_York')
     profile_image = models.ImageField(upload_to=upload_to, null=True, blank=True)
+    password = models.CharField(_('Password'), max_length=128)
+    has_password = models.BooleanField(
+        _('Has Password'),
+        editable=False,
+        default=True,
+        help_text=_(
+            "Designates whether or not the user was authenticated with social "
+            "login."
+        )
+    )
     is_active = models.BooleanField(
         _('Active'),
         default=True,
