@@ -5,6 +5,7 @@ from django.conf import settings
 from rest_framework import serializers
 
 from greenbudget.lib.drf.fields import UnixTimestampField
+from greenbudget.app.serializers import ModelSerializer, Serializer
 from greenbudget.app.user.models import User
 
 from .exceptions import (
@@ -16,7 +17,7 @@ from . import stripe
 logger = logging.getLogger('greenbudget')
 
 
-class UserSyncStripeSerializer(serializers.ModelSerializer):
+class UserSyncStripeSerializer(ModelSerializer):
     session_id = serializers.CharField(
         required=True,
         allow_blank=False,
@@ -28,10 +29,8 @@ class UserSyncStripeSerializer(serializers.ModelSerializer):
         fields = ('session_id', )
 
     def validate(self, attrs):
-        request = self.context['request']
-
         # Permissions should prevent this from happening, but just in case...
-        assert request.user.stripe_id is None, \
+        assert self.user.stripe_id is None, \
             "The user cannot have more than one stripe ID."
 
         # If the session_id is not in the request session, we do not want to
@@ -39,18 +38,18 @@ class UserSyncStripeSerializer(serializers.ModelSerializer):
         # the FE /checkout-success route, without having been redirected from
         # Stripe.  The session_id provided in the request should be relied on
         # as the source of truth.
-        if "session_id" not in request.session:
+        if "session_id" not in self.request.session:
             raise CheckoutSessionInactiveError()
 
         # Security check to ensure that the session_id included in the redirect
         # from Stripe in the FE is the same as the session_id we stored on the
         # request in the backend.
-        request_session_id = request.session['session_id']
+        request_session_id = self.request.session['session_id']
 
         # Make sure to remove the checkout_id from the request session since it
         # is no longer valid, and trying to access it again is a sign that
         # something is amiss.
-        del request.session['session_id']
+        del self.request.session['session_id']
 
         if request_session_id != attrs['session_id']:
             logger.error(
@@ -59,8 +58,8 @@ class UserSyncStripeSerializer(serializers.ModelSerializer):
                 "session, `%s`.  This is a sign that something is off, and/or "
                 "someone is attempting to expose a security hole."
                 % (attrs['session_id'], request_session_id), extra={
-                    'user_id': request.user.pk,
-                    'email': request.user.email,
+                    'user_id': self.request.user.pk,
+                    'email': self.request.user.email,
                     "request_session_id": request_session_id,
                     "stripe_session_id": attrs['session_id']
                 })
@@ -75,9 +74,9 @@ class UserSyncStripeSerializer(serializers.ModelSerializer):
                 "associated with `checkout_id = %s` for user %s.  The user "
                 "needs to be manually associated with the Stripe Customer ID "
                 "that was created via checkout."
-                % (attrs['session_id'], request.user.pk), extra={
-                    'user_id': request.user.pk,
-                    'email': request.user.email,
+                % (attrs['session_id'], self.user.pk), extra={
+                    'user_id': self.user.pk,
+                    'email': self.user.email,
                     'error': "%s" % exc.error.to_dict_recursive(),
                     "request_id": exc.request_id
                 }
@@ -93,23 +92,23 @@ class UserSyncStripeSerializer(serializers.ModelSerializer):
                 "Stripe Checkout Error: Could not convert session's "
                 "`client_reference_id`, %s, to an integer primary key for "
                 "user." % session.client_reference_id, extra={
-                    'user_id': request.user.pk,
-                    'email': request.user.email,
+                    'user_id': self.user.pk,
+                    'email': self.user.email,
                 }
             )
             raise CheckoutError("Corrupted checkout session.") from e
 
         # Extra security check to make sure that the user that created the
         # checkout session is the user that is syncing the checkout session.
-        if request.user.id != client_reference_id:
+        if self.request.user.id != client_reference_id:
             logger.error(
                 "Stripe Checkout Error: The checkout session was created "
                 "by a different user, %s, than the one trying to sync with it, "
                 "%s.  This is a sign someone may be trying to exploit a "
                 "security hole."
-                % (session.client_reference_id, request.user.id), extra={
-                    'user_id': request.user.pk,
-                    'email': request.user.email,
+                % (session.client_reference_id, self.user.id), extra={
+                    'user_id': self.user.pk,
+                    'email': self.user.email,
                     'session_user_id': session.client_reference_id,
                     'session_user_email': session.customer_email
                 }
@@ -123,25 +122,24 @@ class UserSyncStripeSerializer(serializers.ModelSerializer):
         return {'stripe_id': session.customer}
 
 
-class StripeSessionSerializer(serializers.Serializer):
+class StripeSessionSerializer(Serializer):
     @property
     def session_type(self):
         raise NotImplementedError()
 
-    def create_session(self, validated_data, request):
+    def create_session(self, validated_data):
         raise NotImplementedError()
 
     def validate(self, attrs):
-        request = self.context['request']
         try:
-            session = self.create_session(attrs, request)
+            session = self.create_session(attrs)
         except stripe.error.InvalidRequestError as exc:
             logger.error(
                 f"Stripe {self.session_type.upper()} Session Error: "
                 f"Received HTTP error creating {self.session_type} session "
-                "with Stripe for user %s." % request.user.id, extra={
-                    'user_id': request.user.pk,
-                    'email': request.user.email,
+                "with Stripe for user %s." % self.user.id, extra={
+                    'user_id': self.user.pk,
+                    'email': self.user.email,
                     'error': "%s" % exc.error.to_dict(),
                     "request_id": exc.request_id
                 }
@@ -156,9 +154,9 @@ class StripeSessionSerializer(serializers.Serializer):
 class UserPortalSessionSerializer(StripeSessionSerializer):
     session_type = "portal"
 
-    def create_session(self, validated_data, request):
+    def create_session(self, validated_data):
         return stripe.billing_portal.Session.create(
-            customer=request.user.stripe_id,
+            customer=self.user.stripe_id,
             return_url=os.path.join(settings.FRONTEND_URL, "billing")
         )
 
@@ -174,7 +172,7 @@ class UserCheckoutSessionSerializer(StripeSessionSerializer):
     class Meta:
         fields = ('price_id', )
 
-    def create_session(self, validated_data, request):
+    def create_session(self, validated_data):
         return stripe.checkout.Session.create(
             success_url=os.path.join(
                 settings.FRONTEND_URL,
@@ -186,8 +184,8 @@ class UserCheckoutSessionSerializer(StripeSessionSerializer):
             ),
             mode='subscription',
             allow_promotion_codes=True,
-            client_reference_id="%s" % self.context['user'].pk,
-            customer_email=self.context['user'].email,
+            client_reference_id="%s" % self.user.pk,
+            customer_email=self.user.email,
             line_items=[{
                 'price': validated_data['price_id'],
                 'quantity': 1,
@@ -195,9 +193,9 @@ class UserCheckoutSessionSerializer(StripeSessionSerializer):
         )
 
 
-class StripeSubscriptionSerializer(serializers.Serializer):
+class StripeSubscriptionSerializer(Serializer):
     """
-    A :obj:`rest_framework.serializers.Serializer` class to handle the
+    A :obj:`rest_framework.Serializer` class to handle the
     serialization of :obj:`stripe.api_resources.product.Product`.
     """
     id = serializers.CharField(read_only=True)
@@ -214,7 +212,7 @@ class StripeSubscriptionSerializer(serializers.Serializer):
         return subscription_status(instance)
 
 
-class StripeProductSerializer(serializers.Serializer):
+class StripeProductSerializer(Serializer):
     """
     A :obj:`rest_framework.serializers.Serializer` class to handle the
     serialization of :obj:`stripe.api_resources.product.Product`.

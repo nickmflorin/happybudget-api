@@ -12,6 +12,7 @@ from greenbudget.app.markup.serializers import MarkupSimpleSerializer
 from greenbudget.app.tabling.serializers import row_order_serializer
 from greenbudget.app.tagging.fields import TagField
 from greenbudget.app.tagging.serializers import TagSerializer, ColorSerializer
+from greenbudget.app.serializers import ModelSerializer
 from greenbudget.app.subaccount.models import BudgetSubAccount
 from greenbudget.app.subaccount.serializers import SubAccountAsOwnerSerializer
 from greenbudget.app.user.fields import UserFilteredQuerysetPKField
@@ -33,10 +34,9 @@ class ActualOwnerField(GenericRelatedField):
 
     def get_queryset(self, data):
         qs = super().get_queryset(data)
-        request = self.context['request']
         # When bulk creating Actuals, even though the request method will be
         # PATCH there will not be an instance on the parent serializer.
-        if request.method == 'PATCH' \
+        if self.context['request'].method == 'PATCH' \
                 and self.context.get('bulk_create_context', False) is not True \
                 and self.context.get('bulk_update_context', False) is not True:
             budget = self.parent.instance.budget
@@ -64,7 +64,7 @@ class ActualTypeSerializer(TagSerializer):
         fields = TagSerializer.Meta.fields + ("color", )
 
 
-class TaggedActualSerializer(serializers.ModelSerializer):
+class TaggedActualSerializer(ModelSerializer):
     type = serializers.CharField(read_only=True)
     name = serializers.CharField(
         required=False,

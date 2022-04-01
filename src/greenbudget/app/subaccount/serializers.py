@@ -9,6 +9,7 @@ from greenbudget.app.group.serializers import GroupSerializer
 from greenbudget.app.io.models import Attachment
 from greenbudget.app.io.serializers import SimpleAttachmentSerializer
 from greenbudget.app.markup.serializers import MarkupSerializer
+from greenbudget.app.serializers import ModelSerializer
 from greenbudget.app.tabling.serializers import row_order_serializer
 from greenbudget.app.tagging.fields import TagField
 from greenbudget.app.tagging.serializers import TagSerializer, ColorSerializer
@@ -26,7 +27,7 @@ class SubAccountUnitSerializer(TagSerializer):
         fields = TagSerializer.Meta.fields + ("color", )
 
 
-class SubAccountAsOwnerSerializer(serializers.ModelSerializer):
+class SubAccountAsOwnerSerializer(ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     identifier = serializers.CharField(
         required=False,

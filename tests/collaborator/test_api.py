@@ -5,14 +5,9 @@ from greenbudget.app.collaborator.models import Collaborator
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_update_collaborator(api_client, create_collaborator, create_budget,
-        user, models, create_user):
+        user, models):
     budget = create_budget()
-    collaborating_user = create_user()
-    collaborator = create_collaborator(
-        user=collaborating_user,
-        instance=budget,
-        view_only=True
-    )
+    collaborator = create_collaborator(instance=budget, view_only=True)
     api_client.force_login(user)
     response = api_client.patch(
         "/v1/collaborators/%s/" % collaborator.pk,
@@ -30,11 +25,11 @@ def test_update_collaborator(api_client, create_collaborator, create_budget,
                 models.Collaborator.ACCESS_TYPES.owner]
         },
         'user': {
-            'id': collaborating_user.pk,
-            'first_name': collaborating_user.first_name,
-            'last_name': collaborating_user.last_name,
-            'full_name': collaborating_user.full_name,
-            'email': collaborating_user.email,
+            'id': collaborator.user.pk,
+            'first_name': collaborator.user.first_name,
+            'last_name': collaborator.user.last_name,
+            'full_name': collaborator.user.full_name,
+            'email': collaborator.user.email,
             'profile_image': None
         }
     }
@@ -42,19 +37,50 @@ def test_update_collaborator(api_client, create_collaborator, create_budget,
     assert collaborator.access_type == models.Collaborator.ACCESS_TYPES.owner
 
 
-def test_delete_collaborator(api_client, create_collaborator, create_budget,
-        user, models, create_user):
+def test_update_self_collaboration_state(api_client, create_collaborator,
+        create_budget, create_user, models):
     budget = create_budget()
     collaborating_user = create_user()
     collaborator = create_collaborator(
         user=collaborating_user,
         instance=budget,
-        view_only=True
+        owner=True
     )
+    api_client.force_login(collaborating_user)
+    response = api_client.patch(
+        "/v1/collaborators/%s/" % collaborator.pk,
+        data={'access_type': models.Collaborator.ACCESS_TYPES.owner}
+    )
+    assert response.status_code == 400
+    assert response.json() == {'errors': [{
+        'message': 'A user cannot update their own collaboration state.',
+        'code': 'bad_request',
+        'error_type': 'bad_request'
+    }]}
+
+
+def test_delete_collaborator(api_client, create_collaborator, create_budget,
+        user, models):
+    budget = create_budget()
+    collaborator = create_collaborator(instance=budget, view_only=True)
     api_client.force_login(user)
     response = api_client.delete("/v1/collaborators/%s/" % collaborator.pk)
     assert response.status_code == 204
     assert models.Collaborator.objects.count() == 0
+
+
+def test_delete_self_as_collaborator(api_client, create_collaborator,
+        create_budget):
+    budget = create_budget()
+    collaborator = create_collaborator(instance=budget, owner=True)
+    api_client.force_login(collaborator.user)
+    response = api_client.delete("/v1/collaborators/%s/" % collaborator.pk)
+    assert response.status_code == 400
+    assert response.json() == {'errors': [{
+        'message': 'A user cannot remove themselves as a collaborator.',
+        'code': 'bad_request',
+        'error_type': 'bad_request'
+    }]}
 
 
 @pytest.mark.freeze_time('2020-01-01')
@@ -86,11 +112,11 @@ def test_update_collaborator_user(api_client, create_collaborator, create_budget
             'name': models.Collaborator.ACCESS_TYPES[collaborator.access_type]
         },
         'user': {
-            'id': collaborating_user.pk,
-            'first_name': collaborating_user.first_name,
-            'last_name': collaborating_user.last_name,
-            'full_name': collaborating_user.full_name,
-            'email': collaborating_user.email,
+            'id': collaborator.user.pk,
+            'first_name': collaborator.user.first_name,
+            'last_name': collaborator.user.last_name,
+            'full_name': collaborator.user.full_name,
+            'email': collaborator.user.email,
             'profile_image': None
         }
     }
@@ -99,35 +125,28 @@ def test_update_collaborator_user(api_client, create_collaborator, create_budget
 
 
 def test_update_collaborator_as_collaborator(api_client, create_collaborator,
-        create_budget, create_user, models):
+        create_budget, models):
     budget = create_budget()
-    collaborating_user = create_user()
-    collaborator = create_collaborator(
-        user=collaborating_user,
-        instance=budget,
-        owner=True
-    )
-    api_client.force_login(collaborating_user)
+    collaborator = create_collaborator(instance=budget, owner=True)
+    another_collaborator = create_collaborator(instance=budget)
+    api_client.force_login(collaborator.user)
     response = api_client.patch(
-        "/v1/collaborators/%s/" % collaborator.pk,
+        "/v1/collaborators/%s/" % another_collaborator.pk,
         data={'access_type': models.Collaborator.ACCESS_TYPES.owner}
     )
     assert response.status_code == 200
 
 
 def test_delete_collaborator_as_collaborator(api_client, create_collaborator,
-        create_budget, models, create_user):
+        create_budget, models):
     budget = create_budget()
-    collaborating_user = create_user()
-    collaborator = create_collaborator(
-        user=collaborating_user,
-        instance=budget,
-        owner=True
-    )
-    api_client.force_login(collaborating_user)
-    response = api_client.delete("/v1/collaborators/%s/" % collaborator.pk)
+    collaborator = create_collaborator(instance=budget, owner=True)
+    another_collaborator = create_collaborator(instance=budget)
+    api_client.force_login(collaborator.user)
+    response = api_client.delete(
+        "/v1/collaborators/%s/" % another_collaborator.pk)
     assert response.status_code == 204
-    assert models.Collaborator.objects.count() == 0
+    assert models.Collaborator.objects.count() == 1
 
 
 @pytest.mark.parametrize('access_type', [

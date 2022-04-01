@@ -134,6 +134,7 @@ class CollaboratorFactory(CustomModelFactory):
     content_type = factory.LazyAttribute(
         lambda o: ContentType.objects.get_for_model(o.instance))
     object_id = factory.SelfAttribute('instance.pk')
+    user = factory.SubFactory(UserFactory)
 
     class Meta:
         model = Collaborator

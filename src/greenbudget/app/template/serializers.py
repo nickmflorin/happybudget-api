@@ -41,8 +41,7 @@ class TemplateSerializer(TemplateSimpleSerializer):
                 'accumulated_fringe_contribution')
 
     def validate(self, attrs):
-        request = self.context["request"]
-        if request.method == "POST":
+        if self.request.method == "POST":
             # For POST requests to /templates/community, the community flag is
             # automatically set to True and for POST requests to /templates, the
             # community flag is automatically set to False.
@@ -53,7 +52,7 @@ class TemplateSerializer(TemplateSimpleSerializer):
                     message="Only community templates can be hidden/shown.")
         else:
             is_community = attrs.get("community", self.instance.community)
-            if not request.user.is_staff and is_community:
+            if not self.user.is_staff and is_community:
                 raise permissions.PermissionErr(
                     "Only staff users can modify community templates.")
             elif 'hidden' in attrs:

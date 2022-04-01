@@ -6,6 +6,7 @@ from greenbudget.lib.drf.fields import ModelChoiceField
 from greenbudget.app import exceptions
 from greenbudget.app.budget.models import BaseBudget
 from greenbudget.app.budgeting.serializers import AncestrySerializer
+from greenbudget.app.serializers import ModelSerializer
 from greenbudget.app.tabling.fields import TablePrimaryKeyRelatedField
 
 from .models import Markup
@@ -25,7 +26,7 @@ def markup_table_filter(ctx):
     }
 
 
-class MarkupSimpleSerializer(serializers.ModelSerializer):
+class MarkupSimpleSerializer(ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     type = serializers.CharField(read_only=True)
     identifier = serializers.CharField(

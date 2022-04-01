@@ -3,12 +3,13 @@ from rest_framework import serializers, validators
 from greenbudget.app.authentication.exceptions import InvalidCredentialsError
 from greenbudget.app.authentication.utils import validate_password
 from greenbudget.app.io.fields import Base64ImageField
+from greenbudget.app.serializers import ModelSerializer
 
 from .fields import EmailField
 from .models import User
 
 
-class ChangePasswordSerializer(serializers.ModelSerializer):
+class ChangePasswordSerializer(ModelSerializer):
     password = serializers.CharField(
         required=True,
         allow_blank=False,
@@ -28,8 +29,7 @@ class ChangePasswordSerializer(serializers.ModelSerializer):
         fields = ('password', 'new_password')
 
     def validate(self, attrs):
-        request = self.context['request']
-        if not request.user.check_password(attrs['password']):
+        if not self.user.check_password(attrs['password']):
             raise InvalidCredentialsError(field='password')
         return attrs
 
@@ -39,7 +39,7 @@ class ChangePasswordSerializer(serializers.ModelSerializer):
         return instance
 
 
-class UserRegistrationSerializer(serializers.ModelSerializer):
+class UserRegistrationSerializer(ModelSerializer):
     first_name = serializers.CharField(
         required=True,
         allow_blank=False,
@@ -70,7 +70,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         fields = ('first_name', 'last_name', 'email', 'password')
 
 
-class SimpleUserSerializer(serializers.ModelSerializer):
+class SimpleUserSerializer(ModelSerializer):
     first_name = serializers.CharField(read_only=True)
     last_name = serializers.CharField(read_only=True)
     full_name = serializers.CharField(read_only=True)
@@ -84,7 +84,7 @@ class SimpleUserSerializer(serializers.ModelSerializer):
             'profile_image')
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserSerializer(ModelSerializer):
     first_name = serializers.CharField(
         required=True,
         allow_blank=False,

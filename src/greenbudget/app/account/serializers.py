@@ -6,12 +6,13 @@ from greenbudget.app.group.fields import GroupField
 from greenbudget.app.group.serializers import GroupSerializer
 from greenbudget.app.markup.serializers import MarkupSerializer
 from greenbudget.app.subaccount.serializers import SubAccountPdfSerializer
+from greenbudget.app.serializers import ModelSerializer
 from greenbudget.app.tabling.serializers import row_order_serializer
 
 from .models import Account, BudgetAccount, TemplateAccount
 
 
-class AccountSimpleSerializer(serializers.ModelSerializer):
+class AccountSimpleSerializer(ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     identifier = serializers.CharField(
         required=False,

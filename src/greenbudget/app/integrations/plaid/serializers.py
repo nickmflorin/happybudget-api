@@ -1,15 +1,16 @@
 from rest_framework import serializers
 
+from greenbudget.app.serializers import Serializer
 from .client import client
 
 
-class CreateLinkTokenSerializer(serializers.Serializer):
+class CreateLinkTokenSerializer(Serializer):
     link_token = serializers.CharField(read_only=True)
 
     def validate(self, attrs):
         # pylint: disable=unexpected-keyword-arg
         return {"link_token": client.create_link_token(
-            user=self.context["user"],
+            user=self.user,
             raise_exception=True
         )}
 

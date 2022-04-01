@@ -2,13 +2,14 @@ from rest_framework import serializers
 
 from greenbudget.lib.drf.fields import ModelChoiceField
 
+from greenbudget.app.serializers import ModelSerializer
 from greenbudget.app.tabling.serializers import row_order_serializer
 from greenbudget.app.tagging.serializers import ColorField
 
 from .models import Fringe
 
 
-class FringeSerializer(serializers.ModelSerializer):
+class FringeSerializer(ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     type = serializers.CharField(read_only=True)
     order = serializers.CharField(read_only=True)

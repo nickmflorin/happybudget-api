@@ -2,6 +2,7 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
+from greenbudget.app.serializers import ModelSerializer
 from .models import Color, ColorCodeValidator, Tag
 
 
@@ -47,7 +48,7 @@ class ColorField(serializers.RelatedField):
         return instance.code
 
 
-class ColorSerializer(serializers.ModelSerializer):
+class ColorSerializer(ModelSerializer):
     class Meta:
         model = Color
 
@@ -55,7 +56,7 @@ class ColorSerializer(serializers.ModelSerializer):
         return instance.code
 
 
-class TagSerializer(serializers.ModelSerializer):
+class TagSerializer(ModelSerializer):
     title = serializers.CharField(read_only=True)
     order = serializers.IntegerField(read_only=True)
     plural_title = serializers.CharField(read_only=True)

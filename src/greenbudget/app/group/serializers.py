@@ -4,6 +4,7 @@ from rest_framework import serializers
 from greenbudget.app import exceptions
 
 from greenbudget.app.budget.models import BaseBudget
+from greenbudget.app.serializers import ModelSerializer
 from greenbudget.app.tabling.fields import TablePrimaryKeyRelatedField
 from greenbudget.app.tagging.serializers import ColorField
 
@@ -24,7 +25,7 @@ def group_table_filter(ctx):
     }
 
 
-class GroupSerializer(serializers.ModelSerializer):
+class GroupSerializer(ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     type = serializers.CharField(read_only=True)
     name = serializers.CharField(

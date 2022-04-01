@@ -1,9 +1,9 @@
-from rest_framework import serializers
 from greenbudget.lib.drf.serializers import PolymorphicNonPolymorphicSerializer
 
 from greenbudget.app.account.models import (
     Account, BudgetAccount, TemplateAccount)
 from greenbudget.app.budget.models import Budget
+from greenbudget.app.serializers import ModelSerializer
 from greenbudget.app.subaccount.models import (
     SubAccount, BudgetSubAccount, TemplateSubAccount)
 from greenbudget.app.template.models import Template
@@ -36,7 +36,7 @@ class EntityPolymorphicSerializer(PolymorphicNonPolymorphicSerializer):
     }
 
 
-class AncestrySerializer(serializers.ModelSerializer):
+class AncestrySerializer(ModelSerializer):
     class Meta:
         abstract = True
 
@@ -49,13 +49,7 @@ class AncestrySerializer(serializers.ModelSerializer):
         if self._only_model:
             return data
         if self.read_only is not True:
-            if 'request' not in self.context:
-                raise Exception(
-                    "The request must be provided in context when using %s."
-                    % self.__class__.__name__
-                )
-
-            if self.context['request'].method in ('POST', 'PATCH'):
+            if self.request.method in ('POST', 'PATCH'):
                 parent = instance.parent
                 parent.refresh_from_db()
                 if isinstance(parent, (Budget, Template)):

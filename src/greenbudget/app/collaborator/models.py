@@ -59,6 +59,6 @@ class Collaborator(models.Model):
 
         if self.instance.created_by == self.user:
             raise IntegrityError(
-                "A user cannot be assigned as a collaborator for an instance " \
+                "A user cannot be assigned as a collaborator for an instance "
                 "they created."
             )

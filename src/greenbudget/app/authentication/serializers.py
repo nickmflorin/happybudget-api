@@ -10,6 +10,7 @@ from greenbudget.lib.drf.validators import UniqueTogetherValidator
 
 from greenbudget.app import exceptions
 from greenbudget.app.budget.models import Budget
+from greenbudget.app.serializers import ModelSerializer, Serializer
 from greenbudget.app.user.fields import EmailField
 from greenbudget.app.user.mail import (
     send_email_confirmation_email,
@@ -24,7 +25,7 @@ from .tokens import AuthToken, AccessToken
 from .utils import validate_password, parse_token, parse_public_token
 
 
-class PublicTokenSerializer(serializers.ModelSerializer):
+class PublicTokenSerializer(ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
     public_id = serializers.UUIDField(read_only=True)
@@ -37,7 +38,7 @@ class PublicTokenSerializer(serializers.ModelSerializer):
 
     def validate_expires_at(self, value):
         if value is not None:
-            tz = self.context['user'].timezone or datetime.timezone.utc
+            tz = self.user.timezone or datetime.timezone.utc
             if value <= datetime.datetime.now().replace(tzinfo=tz):
                 raise exceptions.ValidationError("Value must be in the future.")
         return value
@@ -95,7 +96,7 @@ class PublicTokenSerializer(serializers.ModelSerializer):
             return super().create(validated_data)
 
 
-class PublicTokenValidationSerializer(serializers.Serializer):
+class PublicTokenValidationSerializer(Serializer):
     instance = PublicTokenInstanceField(
         required=True,
         allow_null=False,
@@ -121,7 +122,7 @@ class PublicTokenValidationSerializer(serializers.Serializer):
         return validated_data["token"]
 
 
-class AbstractTokenValidationSerializer(serializers.Serializer):
+class AbstractTokenValidationSerializer(Serializer):
     def __init__(self, *args, **kwargs):
         self.token_user_permission_classes = kwargs.pop(
             'token_user_permission_classes')
@@ -162,7 +163,7 @@ class TokenValidationSerializer(AbstractTokenValidationSerializer):
 
 class AuthTokenValidationSerializer(AbstractTokenValidationSerializer):
     def get_user(self, attrs):
-        return self.context['request'].cookie_user
+        return self.request.cookie_user
 
 
 class EmailTokenValidationSerializer(TokenValidationSerializer):
@@ -181,13 +182,13 @@ class EmailTokenValidationSerializer(TokenValidationSerializer):
         return user
 
 
-class AbstractLoginSerializer(serializers.Serializer):
+class AbstractLoginSerializer(Serializer):
     def validate(self, attrs):
-        user = authenticate(self.context['request'], **attrs)
+        user = authenticate(self.request, **attrs)
         return {"user": user}
 
     def create(self, validated_data):
-        login(self.context['request'], validated_data['user'])
+        login(self.request, validated_data['user'])
         return validated_data['user']
 
 
@@ -201,7 +202,7 @@ class LoginSerializer(AbstractLoginSerializer):
     password = serializers.CharField(style={'input_type': 'password'})
 
 
-class RecoverPasswordSerializer(serializers.Serializer):
+class RecoverPasswordSerializer(Serializer):
     email = EmailField(required=True, allow_blank=False)
 
     def validate(self, attrs):
@@ -218,7 +219,7 @@ class RecoverPasswordSerializer(serializers.Serializer):
         return validated_data["user"]
 
 
-class VerifyEmailSerializer(serializers.Serializer):
+class VerifyEmailSerializer(Serializer):
     user = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.active().unverified(),
         required=True,

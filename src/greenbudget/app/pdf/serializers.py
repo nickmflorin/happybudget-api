@@ -1,11 +1,12 @@
 from rest_framework import serializers
 
 from greenbudget.app.io.fields import Base64ImageField
+from greenbudget.app.serializers import ModelSerializer
 
 from .models import HeaderTemplate
 
 
-class SimpleHeaderTemplateSerializer(serializers.ModelSerializer):
+class SimpleHeaderTemplateSerializer(ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     name = serializers.CharField(
         required=True, allow_null=False, allow_blank=False)
@@ -15,12 +16,11 @@ class SimpleHeaderTemplateSerializer(serializers.ModelSerializer):
         fields = ('id', 'name')
 
     def validate_name(self, value):
-        user = self.context['user']
         validator = serializers.UniqueTogetherValidator(
-            queryset=HeaderTemplate.objects.filter(created_by=user),
+            queryset=HeaderTemplate.objects.filter(created_by=self.user),
             fields=('name', ),
         )
-        validator({'name': value, 'created_by': user}, self)
+        validator({'name': value, 'created_by': self.user}, self)
         return value
 
 

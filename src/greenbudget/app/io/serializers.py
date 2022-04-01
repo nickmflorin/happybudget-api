@@ -7,6 +7,7 @@ from django.core.files.storage import get_storage_class
 from rest_framework import serializers
 
 from greenbudget.app import exceptions
+from greenbudget.app.serializers import ModelSerializer, Serializer
 
 from .exceptions import FileError
 from .fields import ImageField
@@ -23,7 +24,7 @@ from .utils import (
 logger = logging.getLogger('greenbudget')
 
 
-class ImageFileFieldSerializer(serializers.Serializer):
+class ImageFileFieldSerializer(Serializer):
     url = serializers.URLField(read_only=True)
     size = serializers.IntegerField(read_only=True)
     width = serializers.IntegerField(read_only=True)
@@ -53,7 +54,7 @@ class ImageFileFieldSerializer(serializers.Serializer):
             })
 
 
-class SimpleAttachmentSerializer(serializers.ModelSerializer):
+class SimpleAttachmentSerializer(ModelSerializer):
     id = serializers.PrimaryKeyRelatedField(read_only=True)
     name = serializers.SerializerMethodField()
     url = serializers.URLField(read_only=True, source='file.url')
@@ -79,7 +80,7 @@ class AttachmentSerializer(SimpleAttachmentSerializer):
         fields = SimpleAttachmentSerializer.Meta.fields + ('size', )
 
 
-class UploadAttachmentSerializer(serializers.ModelSerializer):
+class UploadAttachmentSerializer(ModelSerializer):
     file = serializers.FileField(required=False)
 
     class Meta:
@@ -91,7 +92,7 @@ class UploadAttachmentSerializer(serializers.ModelSerializer):
         return attrs
 
 
-class UploadAttachmentsSerializer(serializers.Serializer):
+class UploadAttachmentsSerializer(Serializer):
     file = serializers.FileField(required=False)
     files = serializers.ListField(
         child=serializers.FileField(),
@@ -121,8 +122,7 @@ class UploadAttachmentsSerializer(serializers.Serializer):
         return attachments
 
 
-class AbstractTempSerializer(serializers.Serializer):
-
+class AbstractTempSerializer(Serializer):
     def create(self, validated_data):
         storage_cls = get_storage_class()
         storage = storage_cls()
@@ -134,9 +134,8 @@ class TempFileSerializer(AbstractTempSerializer):
     file = serializers.FileField()
 
     def validate(self, attrs):
-        request = self.context['request']
         filename = upload_temp_user_file_to(
-            user=request.user,
+            user=self.user,
             filename=attrs['file'].name,
             error_field='file'
         )
@@ -147,9 +146,8 @@ class TempImageSerializer(AbstractTempSerializer):
     image = ImageField()
 
     def validate(self, attrs):
-        request = self.context['request']
         image_name = upload_temp_user_image_to(
-            user=request.user,
+            user=self.user,
             filename=attrs['image'].name,
             error_field='image'
         )

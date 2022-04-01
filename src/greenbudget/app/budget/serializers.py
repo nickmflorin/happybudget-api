@@ -7,13 +7,14 @@ from greenbudget.app.authentication.serializers import PublicTokenSerializer
 from greenbudget.app.group.serializers import GroupSerializer
 from greenbudget.app.io.fields import Base64ImageField
 from greenbudget.app.markup.serializers import MarkupSerializer
+from greenbudget.app.serializers import ModelSerializer
 from greenbudget.app.template.models import Template
 from greenbudget.app.user.fields import UserTimezoneAwareDateField
 
 from .models import BaseBudget, Budget
 
 
-class BaseBudgetSerializer(serializers.ModelSerializer):
+class BaseBudgetSerializer(ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     name = serializers.CharField(
         required=True,
@@ -70,14 +71,12 @@ class BudgetSimpleSerializer(BaseBudgetSerializer):
         template = validated_data.pop('template')
         if 'created_by' in validated_data:
             del validated_data['created_by']
-        request = self.context['request']
-        return Template.objects.derive(template, request.user, **validated_data)
+        return Template.objects.derive(template, self.user, **validated_data)
 
     def validate_template(self, template):
-        request = self.context['request']
-        if not request.user.is_staff:
+        if not self.user.is_staff:
             if not template.created_by.is_staff \
-                    and template.created_by != request.user:
+                    and template.created_by != self.user:
                 raise exceptions.ValidationError(
                     "Do not have permission to use template.")
         return template
@@ -89,10 +88,9 @@ class BudgetSimpleSerializer(BaseBudgetSerializer):
         # user is anonymous and we would not want to include that info in a
         # response.
         data = super().to_representation(instance)
-        if self.context['user'].is_authenticated \
-                and instance.created_by == self.context['user']:
+        if self.user.is_authenticated and instance.created_by == self.user:
             data['is_permissioned'] = False
-            if not self.context['user'].has_product('__any__'):
+            if not self.user.has_product('__any__'):
                 data['is_permissioned'] = not instance.is_first_created
         return data
 
@@ -113,15 +111,12 @@ class BudgetSerializer(BudgetSimpleSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        assert 'user' in self.context, \
-            "The context must be provided to this serializer when serializing " \
-            "instances."
-        if not self.context['user'].is_authenticated:
+        if not self.user.is_authenticated:
             del data['public_token']
         return data
 
 
-class BulkImportBudgetActualsSerializer(serializers.ModelSerializer):
+class BulkImportBudgetActualsSerializer(ModelSerializer):
     start_date = UserTimezoneAwareDateField(allow_null=False, required=True)
     end_date = UserTimezoneAwareDateField(
         allow_null=False,
@@ -155,8 +150,8 @@ class BulkImportBudgetActualsSerializer(serializers.ModelSerializer):
 
     def update(self, budget, validated_data):
         actuals = Actual.objects.bulk_import(
-            created_by=self.context['user'],
-            updated_by=self.context['user'],
+            created_by=self.user,
+            updated_by=self.user,
             budget=budget,
             raise_exception=True,
             **validated_data
