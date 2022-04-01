@@ -53,3 +53,12 @@ class Collaborator(models.Model):
                 "A collaborator can only be associated with active, verified "
                 "users."
             )
+        assert hasattr(self.instance, 'created_by'), \
+            "Collaborators can only be created for instances that dictate " \
+            "ownership."
+
+        if self.instance.created_by == self.user:
+            raise IntegrityError(
+                "A user cannot be assigned as a collaborator for an instance " \
+                "they created."
+            )

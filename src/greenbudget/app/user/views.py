@@ -47,7 +47,7 @@ class UserViewSet(mixins.ListModelMixin, views.GenericViewSet):
     def get_queryset(self):
         if 'search' not in self.request.query_params:
             raise exceptions.BadRequest("The search parameter is required.")
-        return User.objects.standard_filter()
+        return User.objects.fully_authenticated()
 
 
 class ActiveUserViewSet(mixins.UpdateModelMixin, views.GenericViewSet):

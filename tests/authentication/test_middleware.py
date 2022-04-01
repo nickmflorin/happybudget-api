@@ -5,7 +5,6 @@ from unittest import mock
 
 import pytest
 
-from django.contrib.auth.models import AnonymousUser
 from django.http import HttpResponse
 from django.utils.http import http_date
 
@@ -14,6 +13,7 @@ import greenbudget.app.authentication.middleware
 from greenbudget.app.authentication.exceptions import ExpiredToken, InvalidToken
 from greenbudget.app.authentication.middleware import (
     AuthTokenCookieMiddleware, get_cookie_user)
+from greenbudget.app.user.contrib import AnonymousUser
 
 
 @pytest.fixture

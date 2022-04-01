@@ -15,6 +15,7 @@ from greenbudget.app.billing import StripeCustomer
 from greenbudget.app.billing.constants import BillingStatus
 from greenbudget.app.io.utils import upload_user_image_to
 
+from .contrib import UserAuthenticationMixin
 from .managers import UserManager
 
 
@@ -31,7 +32,7 @@ SocialUser = collections.namedtuple(
 
 
 @model.model(track_user=False, type='user')
-class User(AbstractUser):
+class User(UserAuthenticationMixin, AbstractUser):
     username = None
     first_name = models.CharField(_('First Name'), max_length=150, blank=False)
     last_name = models.CharField(_('Last Name'), max_length=150, blank=False)

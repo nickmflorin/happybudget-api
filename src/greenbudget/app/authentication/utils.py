@@ -2,30 +2,18 @@ import logging
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import AnonymousUser
 
 from rest_framework_simplejwt.settings import api_settings
 
 from greenbudget.lib.utils import empty
+from greenbudget.app.user.contrib import AnonymousUser
 
-from .exceptions import (
-    BaseTokenError, InvalidToken, ExpiredToken, NotAuthenticatedError)
+from .exceptions import BaseTokenError, InvalidToken, ExpiredToken
 from .models import AnonymousPublicToken, PublicToken
 from .tokens import AuthToken
 
+
 logger = logging.getLogger('greenbudget')
-
-
-def user_can_authenticate(user, raise_exception=True, pms=None):
-    # pylint: disable=import-outside-toplevel
-    from greenbudget.app.permissions import check_user_permissions
-    try:
-        check_user_permissions(user, permissions=pms)
-    except NotAuthenticatedError as e:
-        if raise_exception:
-            raise e
-        return None
-    return user
 
 
 def validate_password(password):

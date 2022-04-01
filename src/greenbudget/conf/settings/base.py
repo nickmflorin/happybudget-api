@@ -234,6 +234,12 @@ AUTHENTICATION_BACKENDS = (
     'greenbudget.app.authentication.backends.SocialModelAuthentication',
 )
 
+AUTHENTICATION_PERMISSION_CLASSES = [
+    'greenbudget.app.permissions.IsAuthenticated',
+    'greenbudget.app.permissions.IsActive',
+    'greenbudget.app.permissions.IsVerified'
+]
+
 REST_FRAMEWORK = {
     'DATETIME_FORMAT': '%Y-%m-%d %H:%M:%S',
     'NON_FIELD_ERRORS_KEY': '__all__',
@@ -242,11 +248,7 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
     ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'greenbudget.app.permissions.IsAuthenticated',
-        'greenbudget.app.permissions.IsActive',
-        'greenbudget.app.permissions.IsVerified'
-    ],
+    'DEFAULT_PERMISSION_CLASSES': AUTHENTICATION_PERMISSION_CLASSES,
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'greenbudget.app.authentication.backends.SessionAuthentication',
     ),

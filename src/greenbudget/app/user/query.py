@@ -46,7 +46,7 @@ class UserQuerier(UserQuerySetMixin):
     def unverified(self):
         return self.filter(is_verified=False)
 
-    def standard_filter(self):
+    def fully_authenticated(self):
         return self.active().verified()
 
 

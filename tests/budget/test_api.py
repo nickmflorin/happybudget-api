@@ -33,6 +33,44 @@ def test_get_budgets(api_client, user, admin_user, create_budget):
     ]
 
 
+# @pytest.mark.freeze_time('2020-01-01')
+# def test_get_collaborating_budgets(api_client, user, admin_user, create_budget,
+#         create_collaborator):
+#     budgets = create_budget(count=4)
+#     collaborators = [
+#         create_collaborator(
+#             instance=
+#         )
+#     ]
+#     # Add additional budgets created by another use to ensure that those are
+#     # not included in the response.
+#     create_budget(count=2, created_by=admin_user)
+#     api_client.force_login(user)
+#     response = api_client.get("/v1/budgets/")
+#     assert response.status_code == 200
+#     assert response.json()['count'] == 2
+#     assert response.json()['data'] == [
+#         {
+#             "id": budgets[0].pk,
+#             "name": budgets[0].name,
+#             "type": "budget",
+#             "domain": "budget",
+#             "image": None,
+#             "updated_at": "2020-01-01 00:00:00",
+#             "is_permissioned": False
+#         },
+#         {
+#             "id": budgets[1].pk,
+#             "name": budgets[1].name,
+#             "type": "budget",
+#             "domain": "budget",
+#             "image": None,
+#             "updated_at": "2020-01-01 00:00:00",
+#             "is_permissioned": True
+#         }
+#     ]
+
+
 @pytest.mark.freeze_time('2020-01-01')
 def test_get_budget(api_client, user, create_budget):
     budget = create_budget()

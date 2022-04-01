@@ -21,8 +21,7 @@ from .exceptions import EmailDoesNotExist
 from .fields import PublicTokenInstanceField
 from .models import PublicToken
 from .tokens import AuthToken, AccessToken
-from .utils import (
-    validate_password, parse_token, user_can_authenticate, parse_public_token)
+from .utils import validate_password, parse_token, parse_public_token
 
 
 class PublicTokenSerializer(serializers.ModelSerializer):
@@ -133,10 +132,8 @@ class AbstractTokenValidationSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         user = self.get_user(attrs)
-        user = user_can_authenticate(
-            user=user,
-            pms=self.token_user_permission_classes,
-        )
+        user.has_permissions(
+            self.token_user_permission_classes, raise_exception=True)
         return {"user": user}
 
     def create(self, validated_data):
@@ -213,7 +210,8 @@ class RecoverPasswordSerializer(serializers.Serializer):
             user = get_user_model().objects.get(email=email)
         except get_user_model().DoesNotExist as e:
             raise EmailDoesNotExist('email') from e
-        return {"user": user_can_authenticate(user)}
+        user.can_authenticate()
+        return {"user": user}
 
     def create(self, validated_data):
         send_password_recovery_email(validated_data["user"])

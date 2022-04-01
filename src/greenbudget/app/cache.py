@@ -5,7 +5,6 @@ import logging
 import threading
 
 from django.conf import settings
-from django.contrib.auth.models import AnonymousUser
 from django.core.cache import cache
 
 from rest_framework import response, status
@@ -14,6 +13,7 @@ from greenbudget.conf import Environments
 from greenbudget.lib.utils import ensure_iterable, concat
 
 from greenbudget.app.user.models import User
+from greenbudget.app.user.contrib import AnonymousUser
 
 
 logger = logging.getLogger('greenbudget')

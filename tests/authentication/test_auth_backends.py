@@ -1,12 +1,12 @@
 # pylint: disable=redefined-outer-name
 import pytest
 
-from django.contrib.auth.models import AnonymousUser
 from rest_framework.request import Request
 from rest_framework.test import APIRequestFactory
 
 from greenbudget.app.authentication.backends import (
     SessionAuthentication, CookieSessionAuthentication)
+from greenbudget.app.user.contrib import AnonymousUser
 
 
 class FixedAPIRequestFactory(APIRequestFactory):

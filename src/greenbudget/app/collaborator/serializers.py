@@ -4,9 +4,9 @@ from rest_framework import serializers
 from greenbudget.lib.drf.fields import ModelChoiceField
 from greenbudget.lib.drf.validators import UniqueTogetherValidator
 
-from greenbudget.app.user.models import User
 from greenbudget.app.user.serializers import SimpleUserSerializer
 
+from .fields import CollaboratingUserField
 from .models import Collaborator
 
 
@@ -15,10 +15,7 @@ class CollaboratorSerializer(serializers.ModelSerializer):
     type = serializers.CharField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
-    user = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.standard_filter(),
-        required=True
-    )
+    user = CollaboratingUserField(required=True)
     access_type = ModelChoiceField(
         required=False,
         choices=Collaborator.ACCESS_TYPES,
@@ -32,6 +29,9 @@ class CollaboratorSerializer(serializers.ModelSerializer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        assert 'request' in self.context, \
+            "The request must be provided in context when using this " \
+            "serializer class."
         if self.context['request'].method == 'PATCH':
             self.fields['user'] = SimpleUserSerializer(read_only=True)
 

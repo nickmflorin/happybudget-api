@@ -118,6 +118,52 @@ def test_create_collaborator_as_owner(api_client, create_budget, user, models,
     }
 
 
+def test_assign_self_as_collaborator(api_client, create_budget, user, models):
+    budget = create_budget(created_by=user)
+    api_client.force_login(user)
+    response = api_client.post(
+        "/v1/budgets/%s/collaborators/" % budget.pk,
+        data={
+            'user': user.pk,
+            'access_type': models.Collaborator.ACCESS_TYPES.editor
+        }
+    )
+    assert response.status_code == 400
+    assert response.json() == {'errors': [{
+        'message': 'A user cannot assign themselves as a collaborator.',
+        'code': 'invalid',
+        'error_type': 'field',
+        'field': 'user'
+    }]}
+
+
+def test_assign_owner_as_collaborator(api_client, create_budget, user, models,
+        create_user, create_collaborator):
+    owner = create_user()
+    budget = create_budget(created_by=owner)
+    # Since we are not submitting the request as the owner of the budget, we
+    # must submit it as a collaborator with the owner access type.
+    create_collaborator(instance=budget, user=user, owner=True)
+    api_client.force_login(user)
+    response = api_client.post(
+        "/v1/budgets/%s/collaborators/" % budget.pk,
+        data={
+            'user': owner.pk,
+            'access_type': models.Collaborator.ACCESS_TYPES.editor
+        }
+    )
+    assert response.status_code == 400
+    assert response.json() == {'errors': [{
+        'message': (
+            f'The user {owner.pk} created the instance and cannot be assigned '
+            'as a collaborator.'
+        ),
+        'code': 'invalid',
+        'error_type': 'field',
+        'field': 'user'
+    }]}
+
+
 def test_create_duplicate_collaborator(api_client, create_budget, user, models,
         create_user, create_collaborator):
     budget = create_budget()

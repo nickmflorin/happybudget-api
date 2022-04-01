@@ -1,14 +1,12 @@
 from datetime import datetime
 from unittest import mock
 
-from django.contrib.auth.models import AnonymousUser
-
 import pytest
 
 from greenbudget.app.authentication.tokens import AuthToken, AccessToken
 from greenbudget.app.authentication.exceptions import InvalidToken, ExpiredToken
 from greenbudget.app.authentication.utils import parse_token
-
+from greenbudget.app.user.contrib import AnonymousUser
 from greenbudget.app.user.models import User
 
 

@@ -4,7 +4,6 @@ import json
 from django.conf import settings
 from django.contrib import auth
 from django.contrib.auth.middleware import AuthenticationMiddleware
-from django.contrib.auth.models import AnonymousUser
 from django.urls import reverse
 from django.utils.deprecation import MiddlewareMixin
 from django.utils.functional import SimpleLazyObject
@@ -14,12 +13,12 @@ from rest_framework_simplejwt.settings import api_settings
 
 from greenbudget.conf import Environments
 from greenbudget.app import permissions
+from greenbudget.app.user.contrib import AnonymousUser
 
 from .exceptions import InvalidToken
 from .tokens import AuthToken
 from .utils import (
-    parse_token_from_request, parse_token, user_can_authenticate,
-    parse_public_token)
+    parse_token_from_request, parse_token, parse_public_token)
 
 
 logger = logging.getLogger('greenbudget')
@@ -69,13 +68,11 @@ def force_reload_from_stripe(request):
 def get_session_user(request, cache_stripe_info=True):
     if not hasattr(request, '_cached_user'):
         session_user = auth.get_user(request)
-        if user_can_authenticate(session_user, raise_exception=False) \
+        if session_user.is_fully_authenticated \
                 and session_user.stripe_id is not None \
                 and cache_stripe_info:
-
             raw_token = parse_token_from_request(request)
             token_user, token_obj = parse_token(raw_token)
-
             # Unless the request indicates to force reload the data from Stripe's
             # API, use the billing related values from Stripe in the JWT token
             # to attribute the user.
@@ -118,14 +115,13 @@ def get_cookie_user(request):
         # If the session user is not authenticated, we do not want to allow the
         # token validation endpoints to return the user based on the JWT token.
         session_user = getattr(request, 'user', None)
-        if session_user \
-                and user_can_authenticate(session_user, raise_exception=False):
+        if session_user and session_user.is_fully_authenticated:
             if not is_validate_url:
                 request._cached_cookie_user = session_user
             else:
                 raw_token = parse_token_from_request(request)
                 token_user, token_obj = parse_token(raw_token)
-                if user_can_authenticate(token_user, raise_exception=False):
+                if token_user and token_user.is_fully_authenticated:
                     # We want to also prepopulate billing related values on the
                     # token user so that the JWT authentication token validation
                     # view does not make repetitive requests to Stripe's API.

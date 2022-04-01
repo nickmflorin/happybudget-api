@@ -319,6 +319,21 @@ class GenericBudgetViewSet(views.GenericViewSet):
     )
 
 
+class CollaboratingBudgetViewSet(mixins.ListModelMixin, GenericBudgetViewSet):
+    """
+    ViewSet to handle requests to the following endpoints:
+
+    (1) GET /budgets/collaborating/
+    """
+    def get_queryset(self):
+        return Budget.objects.filter(pk__in=[
+            collaboration.object_id
+            for collaboration in self.request.user.collaborations.filter(
+                content_type=ContentType.objects.get_for_model(Budget)
+            ).only('object_id')
+        ])
+
+
 @register_bulk_operations(
     base_cls=BaseBudget,
     get_budget=lambda instance: instance,

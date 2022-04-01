@@ -7,7 +7,6 @@ from rest_framework import authentication
 from greenbudget.app import permissions
 
 from .exceptions import InvalidCredentialsError, EmailDoesNotExist
-from .utils import user_can_authenticate
 
 
 class SocialModelAuthentication(ModelBackend):
@@ -22,7 +21,9 @@ class SocialModelAuthentication(ModelBackend):
                 token_id=token_id,
                 provider=provider
             )
-            return user_can_authenticate(user)
+            if not user.can_authenticate(raise_exception=True):
+                return None
+            return user
         return None
 
 
@@ -71,8 +72,10 @@ class ModelAuthentication(ModelBackend):
                 if not permissions.request_is_admin(request):
                     raise InvalidCredentialsError(field="password")
                 return None
-            return user_can_authenticate(
-                user, raise_exception=not permissions.request_is_admin(request))
+            if not user.can_authenticate(
+                    raise_exception=not permissions.request_is_admin(request)):
+                return None
+            return user
         return None
 
 
@@ -116,7 +119,7 @@ class SessionAuthentication(authentication.SessionAuthentication):
 
     def authenticate(self, request):
         user = getattr(request._request, self.user_ref, None)
-        if not user_can_authenticate(user, raise_exception=False):
+        if not user or not user.is_fully_authenticated:
             return None
         # Here, instead of always enforcing CSRF checks, only do so if the
         # specific authentication class does not bypass CSRF checks.
