@@ -426,17 +426,19 @@ class BudgetViewSet(
                     BudgetOwnershipPermission(affects_after=True),
                     MultipleBudgetPermission(
                         products="__any__",
-                        is_view_applicable=lambda c: c.view.action in (
-                            'create', 'duplicate'),
+                        is_object_applicable=lambda c:
+                            c.view.action != 'destroy',
+                        is_view_applicable=lambda c:
+                            c.view.action in ('create', 'duplicate'),
                     ),
                 ),
                 permissions.AND(
                     permissions.IsFullyAuthenticated(affects_after=True),
                     permissions.AND(
                         IsCollaborator,
-                        permissions.IsNotViewAction('duplicate')
+                        permissions.IsNotViewAction('duplicate', 'destroy')
                     ),
-                    is_view_applicable=False
+                    is_view_applicable=False,
                 ),
                 permissions.AND(
                     permissions.IsSafeRequestMethod,

@@ -210,11 +210,19 @@ class SubAccountViewSet(
                 permissions.AND(
                     permissions.IsFullyAuthenticated(affects_after=True),
                     SubAccountOwnershipPermission(affects_after=True),
-                    SubAccountProductPermission(products="__any__"),
+                    SubAccountProductPermission(
+                        products="__any__",
+                        is_object_applicable=lambda c:
+                            c.view.action != 'destroy',
+                    ),
                 ),
                 permissions.AND(
                     permissions.IsFullyAuthenticated(affects_after=True),
-                    IsCollaborator(get_permissioned_obj=lambda obj: obj.budget),
+                    permissions.AND(
+                        IsCollaborator(get_permissioned_obj=lambda obj:
+                            obj.budget),
+                        permissions.IsNotViewAction('destroy')
+                    ),
                     is_view_applicable=False
                 ),
                 permissions.AND(
