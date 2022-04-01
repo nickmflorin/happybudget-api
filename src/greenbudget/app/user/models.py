@@ -30,7 +30,6 @@ SocialUser = collections.namedtuple(
     'SocialUser', ['first_name', 'last_name', 'email'])
 
 
-
 @model.model(track_user=False, type='user')
 class User(AbstractUser):
     username = None

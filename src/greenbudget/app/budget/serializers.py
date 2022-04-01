@@ -134,10 +134,15 @@ class BulkImportBudgetActualsSerializer(serializers.ModelSerializer):
         allow_null=False,
         allow_blank=False
     )
+    account_ids = serializers.ListField(
+        child=serializers.CharField(),
+        required=False
+    )
 
     class Meta:
         model = Budget
-        fields = ('start_date', 'end_date', 'source', 'public_token')
+        fields = (
+            'start_date', 'end_date', 'source', 'public_token', 'account_ids')
 
     def validate(self, attrs):
         # Since the end_date can default to today, it is more appropriate to

@@ -68,11 +68,13 @@ class ActualManager(BudgetingOrderedRowManager):
     def import_plaid_transactions(self, public_token, start_date, end_date,
             **kwargs):
         raise_exception = kwargs.pop('raise_exception', False)
+        account_ids = kwargs.pop('account_ids', None)
         transactions = client.fetch_transactions(
             user=kwargs['created_by'],
             public_token=public_token,
             start_date=start_date,
             end_date=end_date,
+            account_ids=account_ids,
             raise_exception=raise_exception
         )
         return self.bulk_add([

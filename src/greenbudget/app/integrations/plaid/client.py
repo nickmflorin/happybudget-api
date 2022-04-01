@@ -59,6 +59,10 @@ def raise_in_api_context(error_message):
     return decorator
 
 
+GetTransactionsOptions = transactions_get_request_options\
+    .TransactionsGetRequestOptions
+
+
 class PlaidClient(plaid_api.PlaidApi):
     """
     Manages interactions with Plaid's API.
@@ -120,9 +124,17 @@ class PlaidClient(plaid_api.PlaidApi):
             must be provided explicitly.
 
             Default: None
+
+        account_ids: :obj:`list` (optional)
+            The IDs of the accounts for which the transactions should be
+            requested for.  If omitted, the transactions for all associated
+            accounts will be fetched.
+
+            Default: []
         """
         public_token = kwargs.pop('public_token', None)
         access_token = kwargs.pop('access_token', None)
+        account_ids = kwargs.pop('account_ids', None)
 
         assert public_token is not None or access_token is not None, \
             "Either the public token or access token must be provided."
@@ -130,10 +142,13 @@ class PlaidClient(plaid_api.PlaidApi):
         if access_token is None:
             access_token = self.exchange_public_token(user, public_token)
 
+        options = GetTransactionsOptions()
+        if account_ids:
+            options = GetTransactionsOptions(account_ids=account_ids)
+
         request = transactions_get_request.TransactionsGetRequest(
             access_token=access_token,
-            options=transactions_get_request_options
-                .TransactionsGetRequestOptions(),
+            options=options,
             **kwargs
         )
         response = client.transactions_get(request)

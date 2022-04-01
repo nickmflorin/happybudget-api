@@ -1,6 +1,5 @@
 # pylint: disable=redefined-outer-name
 import datetime
-import urllib.parse
 import mock
 import pytest
 
