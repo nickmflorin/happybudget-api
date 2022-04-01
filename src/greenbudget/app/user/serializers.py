@@ -75,7 +75,7 @@ class SimpleUserSerializer(serializers.ModelSerializer):
     last_name = serializers.CharField(read_only=True)
     full_name = serializers.CharField(read_only=True)
     email = EmailField(read_only=True)
-    profile_image = serializers.ImageField(read_only=True)
+    profile_image = Base64ImageField(read_only=True)
 
     class Meta:
         model = User
