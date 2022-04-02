@@ -41,7 +41,7 @@ def test_get_archived_budgets(api_client, user, admin_user, create_budget):
     archived_budgets = create_budget(count=2, archived=True)
     # Add additional budgets created by another use to ensure that those are
     # not included in the response.
-    create_budget(count=2, created_by=admin_user)
+    create_budget(count=2, created_by=admin_user, archived=True)
     # Add additional non-archived budgets to ensure that those are not included
     # in the response.
     create_budget(count=2, created_by=user)

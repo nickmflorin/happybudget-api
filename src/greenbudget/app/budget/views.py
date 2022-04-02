@@ -341,7 +341,7 @@ class AcrhivedBudgetViewSet(mixins.ListModelMixin, GenericBudgetViewSet):
     (1) GET /budgets/archived/
     """
     def get_queryset(self):
-        return Budget.objects.filter(archived=True)
+        return Budget.objects.filter(archived=True, created_by=self.request.user)
 
 
 @register_bulk_operations(
