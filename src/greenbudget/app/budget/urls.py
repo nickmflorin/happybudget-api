@@ -11,7 +11,8 @@ from .views import (
     BudgetActualsOwnersViewSet,
     BudgetPublicTokenViewSet,
     BudgetCollaboratorsViewSet,
-    CollaboratingBudgetViewSet
+    CollaboratingBudgetViewSet,
+    AcrhivedBudgetViewSet
 )
 
 app_name = "budget"
@@ -22,6 +23,7 @@ router.register(
     CollaboratingBudgetViewSet,
     basename='collaborating-budget'
 )
+router.register(r'archived', AcrhivedBudgetViewSet, basename='archived-budget')
 router.register(r'', BudgetViewSet, basename='budget')
 
 budget_fringes_router = routers.SimpleRouter()

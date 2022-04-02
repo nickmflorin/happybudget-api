@@ -101,10 +101,11 @@ class BudgetSerializer(BudgetSimpleSerializer):
     accumulated_markup_contribution = serializers.FloatField(read_only=True)
     actual = serializers.FloatField(read_only=True)
     public_token = PublicTokenSerializer(read_only=True)
+    archived = serializers.BooleanField(write_only=True, required=False)
 
     class Meta(BudgetSimpleSerializer.Meta):
         fields = BudgetSimpleSerializer.Meta.fields \
-            + ('nominal_value', 'actual', 'public_token',
+            + ('nominal_value', 'actual', 'public_token', 'archived',
                 'accumulated_markup_contribution',
                 'accumulated_fringe_contribution'
             )

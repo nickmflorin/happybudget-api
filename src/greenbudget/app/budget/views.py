@@ -3,7 +3,7 @@ from django.db import models
 
 from rest_framework import response, status, decorators
 
-from greenbudget.app import views, mixins, permissions
+from greenbudget.app import views, mixins, permissions, exceptions
 from greenbudget.app.account.serializers import (
     BudgetAccountSerializer, TemplateAccountSerializer)
 from greenbudget.app.account.views import GenericAccountViewSet
@@ -334,6 +334,16 @@ class CollaboratingBudgetViewSet(mixins.ListModelMixin, GenericBudgetViewSet):
         ])
 
 
+class AcrhivedBudgetViewSet(mixins.ListModelMixin, GenericBudgetViewSet):
+    """
+    ViewSet to handle requests to the following endpoints:
+
+    (1) GET /budgets/archived/
+    """
+    def get_queryset(self):
+        return Budget.objects.filter(archived=True)
+
+
 @register_bulk_operations(
     base_cls=BaseBudget,
     get_budget=lambda instance: instance,
@@ -477,9 +487,12 @@ class BudgetViewSet(
         if self.action in ('pdf', 'list', 'bulk_import_actuals') \
                 or self.in_bulk_entity('actuals'):
             base_cls = Budget
+        qs = base_cls.objects
         if self.action == 'list':
-            return base_cls.objects.filter(created_by=self.request.user)
-        return base_cls.objects.all()
+            qs = qs.filter(created_by=self.request.user)
+            if base_cls is Budget:
+                qs = qs.filter(archived=False)
+        return qs
 
     @decorators.action(detail=True, methods=["GET"])
     def pdf(self, request, *args, **kwargs):
@@ -488,6 +501,14 @@ class BudgetViewSet(
 
     @decorators.action(detail=True, methods=["POST"])
     def duplicate(self, request, *args, **kwargs):
+        # We do not want to allow duplicating archived budgets, but we cannot
+        # perform this filter in the `get_queryset` method because duplication
+        # applies for both Templates and Budgets, but archiving does not apply
+        # for Templates - so the base_cls will not appropriately handle the
+        # filter.
+        if getattr(self.instance, 'archived', False) is True:
+            raise exceptions.BadRequest(
+                'Duplicating archived budgets is not permitted.')
         duplicated = type(self.instance).objects.duplicate(
             self.instance, request.user)
         serializer_class = self.get_serializer_class()

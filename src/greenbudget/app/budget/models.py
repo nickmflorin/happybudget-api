@@ -137,12 +137,14 @@ class BaseBudget(BudgetingTreePolymorphicModel):
 
 @model.model(type='budget')
 class Budget(BaseBudget):
-    pdf_type = "pdf-budget"
-    domain = "budget"
+    archived = models.BooleanField(default=False)
 
     collaborators = GenericRelation(Collaborator)
     objects = BudgetManager()
     non_polymorphic = models.Manager()
+
+    pdf_type = "pdf-budget"
+    domain = "budget"
 
     class Meta(BaseBudget.Meta):
         verbose_name = "Budget"
