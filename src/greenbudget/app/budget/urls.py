@@ -17,6 +17,11 @@ from .views import (
 app_name = "budget"
 
 router = routers.SimpleRouter()
+router.register(
+    r'collaborating',
+    CollaboratingBudgetViewSet,
+    basename='collaborating-budget'
+)
 router.register(r'', BudgetViewSet, basename='budget')
 
 budget_fringes_router = routers.SimpleRouter()
@@ -46,12 +51,7 @@ budget_collaborators_router = routers.SimpleRouter()
 budget_collaborators_router.register(
     r'', BudgetCollaboratorsViewSet, basename='collaborator')
 
-collaborating_budgets_router = routers.SimpleRouter()
-collaborating_budgets_router.register(
-    r'', CollaboratingBudgetViewSet, basename='collaborating-budget')
-
 urlpatterns = router.urls + [
-    path('collaborating/', include(collaborating_budgets_router.urls)),
     path('<int:pk>/', include([
         path('children/', include(budget_children_router.urls)),
         path('public-token/', include(budget_public_token_router.urls)),

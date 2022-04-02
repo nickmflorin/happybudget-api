@@ -34,6 +34,51 @@ def test_get_budgets(api_client, user, admin_user, create_budget):
 
 
 @pytest.mark.freeze_time('2020-01-01')
+def test_get_collaborating_budgets(api_client, create_budget, create_user,
+        create_collaborator):
+    users = create_user(count=4)
+    budgets = create_budget(count=4, created_by_array=users)
+    # The second budget cannot have a collaborator assigned as the second user
+    # because the second user will be registered as the creator of the second
+    # budget.
+    _ = [
+        create_collaborator(instance=budgets[0], user=users[1]),
+        create_collaborator(instance=budgets[2], user=users[1]),
+        create_collaborator(instance=budgets[3], user=users[1]),
+    ]
+    api_client.force_login(users[1])
+    response = api_client.get("/v1/budgets/collaborating/")
+    assert response.status_code == 200
+    assert response.json()['count'] == 3
+    assert response.json()['data'] == [
+        {
+            "id": budgets[0].pk,
+            "name": budgets[0].name,
+            "type": "budget",
+            "domain": "budget",
+            "image": None,
+            "updated_at": "2020-01-01 00:00:00"
+        },
+        {
+            "id": budgets[2].pk,
+            "name": budgets[2].name,
+            "type": "budget",
+            "domain": "budget",
+            "image": None,
+            "updated_at": "2020-01-01 00:00:00"
+        },
+        {
+            "id": budgets[3].pk,
+            "name": budgets[3].name,
+            "type": "budget",
+            "domain": "budget",
+            "image": None,
+            "updated_at": "2020-01-01 00:00:00"
+        }
+    ]
+
+
+@pytest.mark.freeze_time('2020-01-01')
 def test_get_budget(api_client, user, create_budget):
     budget = create_budget()
     api_client.force_login(user)
