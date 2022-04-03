@@ -119,7 +119,7 @@ class RowModelMixin(models.Model):
         ]
         if missing_pivots:
             raise Exception(
-                "Table key cannot be constructed because pivots for fields " \
+                "Table key cannot be constructed because pivots for fields "
                 f"{humanize_list(missing_pivots)} are not defined."
             )
 
@@ -169,7 +169,7 @@ class RowModelMixin(models.Model):
         """
         assert len(args) in (0, 1), "Inproper use of this method."
 
-        assert (len(args) == 1 \
+        assert (len(args) == 1
                 and isinstance(args[0], (cls, dict, models.Model))) or kwargs, \
             "Either the current instance, the related instance or the data " \
             "used to create the instance must be provided to get the table key."

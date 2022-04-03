@@ -521,6 +521,14 @@ flake8 = ">3.0.0"
 junit-xml = ">=1.8"
 
 [[package]]
+name = "fontawesomefree"
+version = "6.1.1"
+description = "Font Awesome Free"
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "freezegun"
 version = "1.2.0"
 description = "Let your Python tests travel through time"
@@ -1433,7 +1441,7 @@ docs = []
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "6014c4d4b88f225c1d39d6cc7c45e13b992c70e2d414b4272309e725df0de1db"
+content-hash = "d40dc4d7bb0600621fde6849106956c375bb0d871a6daea05f464ebb13013e9d"
 
 [metadata.files]
 appnope = [
@@ -1720,6 +1728,9 @@ flake8 = [
 flake8-formatter-junit-xml = [
     {file = "flake8_formatter_junit_xml-0.0.6-py2.py3-none-any.whl", hash = "sha256:6358a44ecafdf0f9c8ee5314859b8d6f553dc2e55e946a24c538185e1eba7ce6"},
     {file = "flake8_formatter_junit_xml-0.0.6.tar.gz", hash = "sha256:1ddd9356bb30ba736c3f14c769c837cfacf4f79c3d383ab963ef9d38eea05a9c"},
+]
+fontawesomefree = [
+    {file = "fontawesomefree-6.1.1-py3-none-any.whl", hash = "sha256:b077739369c013e8c8cf5edd59cb7fca3a5b16803d632cd466a62fd2e28937cb"},
 ]
 freezegun = [
     {file = "freezegun-1.2.0-py3-none-any.whl", hash = "sha256:93e90676da387a241a7c2ae7ae68af7b95bfe80e952d0bbf3e088342de90a38d"},
