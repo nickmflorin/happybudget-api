@@ -5,6 +5,27 @@ from greenbudget.lib.django_utils.models import (
     import_model_at_path, ModelImportMap, ModelMap)
 
 
+def entity_text(model):
+    assert hasattr(model, 'identifier') and hasattr(model, 'description'), \
+        "The model must have an `identifier` and `description` field."
+
+    def parse_field(field):
+        v = getattr(model, field)
+        if v is not None:
+            return v.strip()
+        return ""
+
+    identifier = parse_field('identifier')
+    description = parse_field('description')
+    if identifier and description:
+        return f"{identifier} - {description}"
+    elif identifier:
+        return identifier
+    elif description:
+        return description
+    return ""
+
+
 TreeDomainModelMap = {
     None: ModelImportMap(
         budget='budget.BaseBudget',

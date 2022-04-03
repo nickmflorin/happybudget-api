@@ -42,6 +42,13 @@ class Group(RowModel):
     def __str__(self):
         return str(self.name)
 
+    @classmethod
+    def parse_related_model_table_key_data(cls, parent):
+        return {
+            'content_type_id': ContentType.objects.get_for_model(parent).pk,
+            'object_id': parent.pk
+        }
+
     @property
     def child_instance_cls(self):
         return self.parent.child_instance_cls

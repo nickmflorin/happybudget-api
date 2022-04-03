@@ -6,7 +6,7 @@ from greenbudget.lib.utils import humanize_list
 from greenbudget.app.tabling.models import (
     RowModel, OrderedRowModel, OrderedRowPolymorphicModel)
 
-from .utils import AssociatedModel
+from .utils import AssociatedModel, entity_text
 
 
 class BudgetingModelMixin:
@@ -83,14 +83,14 @@ class BudgetingTreePolymorphicOrderedRowModel(
         to='group.Group',
         null=True,
         on_delete=models.SET_NULL,
-        related_name='%(class)ss'
+        related_name='%(class)ss',
     )
 
     class Meta:
         abstract = True
 
     def __str__(self):
-        return str(self.identifier) or str(self.description) or "----"
+        return entity_text(self)
 
     @property
     def valid_parent_cls(self):

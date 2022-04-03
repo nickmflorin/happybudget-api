@@ -19,5 +19,9 @@ class BudgetAdmin(nested_admin.NestedModelAdmin):
     form = BudgetAdminForm
     inlines = [BudgetAccountInline]
 
+    def get_form(self, request, obj=None, **kwargs):
+        request.__obj__ = obj
+        return super().get_form(request, obj, **kwargs)
+
 
 admin.site.register(Budget, BudgetAdmin)

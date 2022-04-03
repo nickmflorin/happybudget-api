@@ -1,19 +1,14 @@
-import nested_admin
-
 from django import forms
 from django.contrib import admin
 
+from greenbudget.app.budgeting.admin import (
+    BudgetingTreePolymorphicOrderedRowModelInline)
 from .models import BudgetAccount, TemplateAccount
 
 
 class AccountAdmin(admin.ModelAdmin):
     list_display = (
         "identifier", "description", "parent", "created_by", "created_at")
-
-
-class AccountInline(nested_admin.NestedStackedInline):
-    sortable_field_name = "identifier"
-    fields = ('identifier', 'description', 'markups', 'group')
 
 
 class BudgetAccountAdminForm(forms.ModelForm):
@@ -28,11 +23,11 @@ class TemplateAccountAdminForm(forms.ModelForm):
         fields = ('identifier', 'description', 'markups', 'group')
 
 
-class BudgetAccountInline(AccountInline):
+class BudgetAccountInline(BudgetingTreePolymorphicOrderedRowModelInline):
     model = BudgetAccount
 
 
-class TemplateAccountInline(AccountInline):
+class TemplateAccountInline(BudgetingTreePolymorphicOrderedRowModelInline):
     model = TemplateAccount
 
 

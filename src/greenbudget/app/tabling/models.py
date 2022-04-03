@@ -81,7 +81,13 @@ class RowModelMixin(models.Model):
             corresponding to the fields of the `table_pivot` will be used to
             construct the table filter.
 
-        (2) Mapping
+        (2) Related Instance
+            If the model class defines the method
+            `parse_related_model_table_key_data`, then the table key can be
+            constructed based on the data parsed from the related instance in
+            that method.
+
+        (3) Mapping
             In this case, the values defined on the mapping corresponding to
             the fields of the `table_pivot` will be used to construct the
             table filter.  The mapping can either be provided as **kwargs,
@@ -91,57 +97,34 @@ class RowModelMixin(models.Model):
         retrieve the table instances before the additional instance is created
         - in which case we can supply the values as a mapping or table key.
         """
-        assert (len(args) == 1 and isinstance(args[0], (cls, dict, TableKey))) \
-            or kwargs, \
-            "Either the current instance or the data used to create the " \
-            "instance must be provided to get the table filter."
-
-        if not hasattr(cls, 'table_pivot'):
-            raise Exception(f"Model {cls.__name__} does not define table pivot.")
-
         if 'table_key' in kwargs or (len(args) == 1
                 and isinstance(args[0], TableKey)):
             table_key = kwargs.pop('table_key', None)
             if not table_key:
                 table_key = args[0]
-            if len(table_key) != len(cls.table_pivot):
-                raise ValueError("Invalid table key %s provided." % table_key)
-            return models.Q(**{f: table_key[f] for f in cls.table_pivot})
 
-        getter_kwargs = copy.deepcopy(kwargs)
-        getter_kwargs.update(default=empty, strict=False)
-
-        query_kwargs = {
-            k: get_attribute(k, *args, **getter_kwargs)
-            for k in ensure_iterable(cls.table_pivot)
-        }
-        missing_pivots = [k for k, v in query_kwargs.items() if v is empty]
-        if missing_pivots:
-            raise Exception(
-                "Table filter cannot be constructed because pivots for fields "
-                f"{humanize_list(missing_pivots)} are not defined."
-            )
-        return models.Q(**query_kwargs)
+            if isinstance(table_key, TableKey):
+                return table_key.filter
+        return cls.get_table_key(*args, **kwargs).filter
 
     @property
     def table_key(self):
         return self.get_table_key(self)
 
     @classmethod
-    def get_table_key(cls, *args, **kwargs):
-        """
-        Returns the tuple of values corresponding to the iterable of fields
-        that comprise the `table_pivot` defined on the class, for either a
-        instance of the class or a mapping - provided as an :obj:`dict` instance
-        or a set of keyword arguments.
-        """
-        assert (len(args) == 1 and isinstance(args[0], (cls, dict))) or kwargs, \
-            "Either the current instance or the data used to create the " \
-            "instance must be provided to get the table key."
+    def _validate_table_key_data(cls, table_key_data):
+        missing_pivots = [
+            k for k in table_key_data
+            if table_key_data.get(k, empty) is empty
+        ]
+        if missing_pivots:
+            raise Exception(
+                "Table key cannot be constructed because pivots for fields " \
+                f"{humanize_list(missing_pivots)} are not defined."
+            )
 
-        if not hasattr(cls, 'table_pivot'):
-            raise Exception(f"Model {cls.__name__} does not define table pivot.")
-
+    @classmethod
+    def _instantiate_table_key(cls, *args, **kwargs):
         getter_kwargs = copy.deepcopy(kwargs)
         getter_kwargs.update(default=empty, strict=False)
 
@@ -149,12 +132,61 @@ class RowModelMixin(models.Model):
             k: get_attribute(k, *args, **getter_kwargs)
             for k in ensure_iterable(cls.table_pivot)
         }
-        missing_pivots = [k for k in table_key if table_key[k] is empty]
-        assert not missing_pivots, \
-            "Table key cannot be constructed because pivots for fields " \
-            f"{humanize_list(missing_pivots)} are not defined."
-
+        cls._validate_table_key_data(table_key)
         return TableKey(table_key)
+
+    @classmethod
+    def get_table_key(cls, *args, **kwargs):
+        """
+        Returns the :obj:`TableKey` instance that uniquely identifies the
+        instances belonging to the same "table", based on the `table_pivot`
+        defined on the model class and the values corresponding to the fields of
+        the `table_pivot` provided to this method.
+
+        The values corresponding to the fields of the `table_pivot` can be
+        provided in the following ways:
+
+        (1) Model Instance
+            In this case, the attributes defined on the model instance
+            corresponding to the fields of the `table_pivot` will be used to
+            construct the table filter.
+
+        (2) Related Instance
+            If the model class defines the method
+            `parse_related_model_table_key_data`, then the table key can be
+            constructed based on the data parsed from the related instance in
+            that method.
+
+        (3) Mapping
+            In this case, the values defined on the mapping corresponding to
+            the fields of the `table_pivot` will be used to construct the
+            table filter.  The mapping can either be provided as **kwargs or
+            an :obj:`dict` instance.
+
+        The reason for this flexibility is that there are cases when we need to
+        retrieve the table instances before the additional instance is created
+        - in which case we can supply the values as a mapping or table key.
+        """
+        assert len(args) in (0, 1), "Inproper use of this method."
+
+        assert (len(args) == 1 \
+                and isinstance(args[0], (cls, dict, models.Model))) or kwargs, \
+            "Either the current instance, the related instance or the data " \
+            "used to create the instance must be provided to get the table key."
+
+        assert hasattr(cls, 'table_pivot'), \
+            f"Model {cls.__name__} does not define table pivot."
+
+        if args and not isinstance(args[0], cls) \
+                and not isinstance(args[0], dict):
+            assert hasattr(cls, 'parse_related_model_table_key_data'), \
+                f"Model {cls.__name__} does not define the method " \
+                "`parse_related_model_table_key_data`, as such, the table key " \
+                "cannot be determined from a related model."
+            data = cls.parse_related_model_table_key_data(args[0])
+            return cls._instantiate_table_key(**data)
+
+        return cls._instantiate_table_key(*args, **kwargs)
 
     @classmethod
     def get_table(cls, *args, **kwargs):

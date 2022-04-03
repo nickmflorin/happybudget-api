@@ -60,6 +60,10 @@ class Account(BudgetingTreePolymorphicOrderedRowModel):
         verbose_name_plural = "Accounts"
         unique_together = (('parent', 'order'))
 
+    @classmethod
+    def parse_related_model_table_key_data(cls, parent):
+        return {'parent_id': parent.pk}
+
     @property
     def nominal_value(self):
         return self.accumulated_value

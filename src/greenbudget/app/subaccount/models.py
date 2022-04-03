@@ -107,6 +107,13 @@ class SubAccount(BudgetingTreePolymorphicOrderedRowModel):
         verbose_name_plural = "Sub Accounts"
         unique_together = (('content_type', 'object_id', 'order'))
 
+    @classmethod
+    def parse_related_model_table_key_data(cls, parent):
+        return {
+            'content_type_id': ContentType.objects.get_for_model(parent).pk,
+            'object_id': parent.pk
+        }
+
     @property
     def account(self):
         parent = self.parent
