@@ -26,6 +26,38 @@ table.grp-table thead {
       background-image: none !important;
       background-color: $table-border-color !important;
 
+      .grp-text {
+        margin-right: 4px !important;
+        flex-grow: 100;
+      }
+
+      .grp-sortoptions {
+        display: flex !important;
+        flex-direction: row;
+        float: none !important;
+
+        a {
+          height: 16px !important;
+          width: 16px !important;
+          line-height: 16px !important;
+          background-image: none !important;
+          display: flex !important;
+          justify-content: center;
+          flex-direction: column;
+
+          > i {
+            height: 16px;
+            width: 16px;
+          }
+        }
+
+        span.grp-sortpriority {
+          height: 16px;
+          line-height: 16px;
+          padding: 0 !important;
+        }
+      }
+
       a {
         display: block;
         margin: -6px -10px;

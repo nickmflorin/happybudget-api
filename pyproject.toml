@@ -48,6 +48,7 @@ sib-api-v3-sdk = "^7.3.0"
 django-nested-admin = "^3.4.0"
 tqdm = "^4.62.3"
 plaid-python = "^9.1.0"
+fontawesomefree = "^6.1.1"
 
 [tool.poetry.extras]
 docs = [

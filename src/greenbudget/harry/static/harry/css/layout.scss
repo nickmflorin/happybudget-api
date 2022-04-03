@@ -85,3 +85,16 @@
   background-color: $app-alt-background-color !important;
   border-bottom: $border !important;
 }
+
+.grp-pagination {
+  .grp-results {
+    span {
+      color: $text-secondary !important;
+      background-color: $transparent !important;
+      font-family: $avenir !important;
+      border: $border !important;
+      background: none !important;
+      font-weight: 500 !important;
+    }
+  }
+}

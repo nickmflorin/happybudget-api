@@ -140,6 +140,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_extensions',
     'colorful',
+    'fontawesomefree',
     'rest_framework',
     'generic_relations',
     'nested_admin',
@@ -192,7 +193,7 @@ ROOT_URLCONF = 'greenbudget.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / "templates"],
+        'DIRS': [BASE_DIR / "harry" / "templates"],
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',

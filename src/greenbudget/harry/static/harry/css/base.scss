@@ -18,6 +18,13 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
+i {
+  vertical-align: 0rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+}
+
 .menu-base {
   box-sizing: border-box;
   margin: 0;
@@ -154,7 +161,7 @@ code {
 }
 
 #grp-content-title {
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   height: 36px;
   display: flex;
   flex-direction: row;
