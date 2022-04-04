@@ -1,8 +1,21 @@
-@import "./_variables";
+@import './_variables';
 
-#grp-breadcrumbs > ul a {
-  font-weight: 400;
-  content: "\f09a";
+#grp-breadcrumbs > ul {
+  a {
+    font-weight: 400;
+    content: '\f09a';
+    background-image: none !important;
+    padding-right: 0px;
+  }
+
+  .breadcrumb-item-content {
+    display: flex;
+    flex-direction: row;
+
+    a {
+      margin-right: 8px;
+    }
+  }
 }
 
 #grp-navigation {

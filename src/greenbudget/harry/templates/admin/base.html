@@ -2,6 +2,7 @@
 
 {% load static %}
 {% load compress %}
+{% load i18n grp_tags %}
 
 {% block stylesheets %}
     {{block.super}}
@@ -11,4 +12,29 @@
     {% compress css %}
         <link type="text/x-scss" rel='stylesheet' href="{% static 'harry/css/base.scss' %}" media="screen">
     {% endcompress %}
+{% endblock %}
+
+{% block context-navigation %}
+    <!-- CONTEXT NAVIGATION -->
+    <div id="grp-context-navigation">
+        <nav id="grp-breadcrumbs" class="{% block breadcrumbs-class %}{% endblock %}">
+            <header style="display:none"><h1>Breadcrumbs</h1></header>
+            {% block breadcrumbs %}
+                <ul>
+                    <li><a href="{% url 'admin:index' %}">{% trans 'Home' %}</a></li>
+                    {% if title %}
+                        <li>
+                          <div class="breadcrum-item">
+                            {{ title }}
+                          </div>
+                        </li>
+                    {% endif %}
+                </ul>
+            {% endblock %}
+        </nav>
+        <nav id="grp-page-tools">
+            <header style="display:none"><h1>Page Tools</h1></header>
+            {% block page-tools %}{% endblock %}
+        </nav>
+    </div>
 {% endblock %}

@@ -1,0 +1,24 @@
+{% extends "admin/app_index.html" %}
+{% load i18n grp_tags %}
+
+{% if not is_popup %}
+    {% block breadcrumbs %}
+        <ul class="grp-horizontal-list">
+          <li>
+            <div class="breadcrumb-item-content">
+              <a href="{% url 'admin:index' %}">{% trans "Home" %}</a>
+              <i class="fa-solid fa-arrow-right"></i>
+            </div>
+          </li>
+          {% for app in app_list %}
+            {% blocktrans with app.name as name %}
+              <li>
+                <div class="breadcrumb-item-content">
+                  {{ name }}
+                </div>
+              </li>
+            {% endblocktrans %}
+          {% endfor %}
+        </ul>
+    {% endblock %}
+{% endif %}
