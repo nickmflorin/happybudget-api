@@ -2,6 +2,8 @@ from django import forms
 from django.contrib import admin
 
 from greenbudget.harry.utils import color_icon
+from greenbudget.harry.widgets import use_custom_related_field_wrapper
+
 from .models import Fringe, BudgetFringe, TemplateFringe
 
 
@@ -11,6 +13,7 @@ class FringeForm(forms.ModelForm):
         fields = '__all__'
 
 
+@use_custom_related_field_wrapper
 class FringeAdmin(admin.ModelAdmin):
     list_display = (
         "id", "name", "get_color_for_admin", "rate", "cutoff", "unit", "budget",

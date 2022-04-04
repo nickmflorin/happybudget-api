@@ -80,7 +80,6 @@ input:not([type='checkbox']) {
 
 input:not([type='checkbox']):not([type="file"]) {
   background-color: $gray-light !important;
-  // Padding with line-height must be 36px for our standard size.  7px + 7px + 22px = 36px
   padding-top: 5px;
   padding-bottom: 5px;
   padding-left: 12px;
@@ -96,7 +95,7 @@ textarea {
   font-weight: 400;
   border-radius: 10px !important;
   border: 1px solid transparent !important;
-  min-height: 36px !important;
+  min-height: 32px !important;
   font-size: 12px;
 }
 
@@ -111,7 +110,7 @@ select {
   float: none !important;
   padding-top: 0px !important;
   padding-bottom: 0px !important;
-  height: 36px !important;
+  height: 32px !important;
   margin: 0;
 }
 

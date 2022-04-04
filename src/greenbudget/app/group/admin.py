@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib import admin
 
+from greenbudget.harry.widgets import use_custom_related_field_wrapper
 from greenbudget.harry.utils import color_icon
 
 from .models import Group
@@ -13,6 +14,7 @@ class GroupForm(forms.ModelForm):
 
 
 @admin.register(Group)
+@use_custom_related_field_wrapper
 class GroupAdmin(admin.ModelAdmin):
     form = GroupForm
     list_display = (

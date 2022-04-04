@@ -2,6 +2,8 @@ from django import forms
 from django.contrib import admin
 from django.utils.html import mark_safe
 
+from greenbudget.harry.widgets import use_custom_related_field_wrapper
+
 from .models import User
 
 
@@ -12,6 +14,7 @@ class UserAdminForm(forms.ModelForm):
 
 
 @admin.register(User)
+@use_custom_related_field_wrapper
 class UserAdmin(admin.ModelAdmin):
     list_display = (
         "first_name", "last_name", "email", "created_at", "last_login",

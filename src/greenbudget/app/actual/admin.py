@@ -2,6 +2,8 @@ from django import forms
 from django.contrib import admin
 
 from greenbudget.harry.utils import color_icon
+from greenbudget.harry.widgets import use_custom_related_field_wrapper
+
 from greenbudget.app.tagging.admin import TagAdminForm
 
 from .models import Actual, ActualType
@@ -14,6 +16,7 @@ class ActualTypeForm(TagAdminForm):
 
 
 @admin.register(ActualType)
+@use_custom_related_field_wrapper
 class ActualTypeAdmin(admin.ModelAdmin):
     list_display = (
         "title", "get_color_for_admin", "order", "created_at", "updated_at")
@@ -36,5 +39,6 @@ class ActualAdminForm(forms.ModelForm):
 
 
 @admin.register(Actual)
+@use_custom_related_field_wrapper
 class ActualAdmin(admin.ModelAdmin):
     list_display = ("budget", "value", "created_by", "created_at")

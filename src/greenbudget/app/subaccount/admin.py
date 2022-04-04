@@ -2,6 +2,8 @@ from django import forms
 from django.contrib import admin
 
 from greenbudget.harry.utils import color_icon
+from greenbudget.harry.widgets import use_custom_related_field_wrapper
+
 from greenbudget.app.tagging.admin import TagAdminForm
 
 from .models import (
@@ -15,6 +17,7 @@ class SubAccountUnitForm(TagAdminForm):
 
 
 @admin.register(SubAccountUnit)
+@use_custom_related_field_wrapper
 class SubAccountUnitAdmin(admin.ModelAdmin):
     list_display = (
         "title", "get_color_for_admin", "order", "created_at", "updated_at")
@@ -54,10 +57,12 @@ class TemplateSubAccountAdminForm(forms.ModelForm):
 
 
 @admin.register(BudgetSubAccount)
+@use_custom_related_field_wrapper
 class BudgetSubAccountAdmin(SubAccountAdmin):
     form = BudgetSubAccountAdminForm
 
 
 @admin.register(TemplateSubAccount)
+@use_custom_related_field_wrapper
 class TemplateSubAccountAdmin(SubAccountAdmin):
     form = TemplateSubAccountAdminForm

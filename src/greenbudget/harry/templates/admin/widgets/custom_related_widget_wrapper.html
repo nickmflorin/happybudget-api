@@ -1,0 +1,40 @@
+{% extends "admin/widgets/related_widget_wrapper.html" %}
+{% load i18n static %}
+
+{% block links %}
+  {% if can_change_related or can_add_related or can_delete_related %}
+    <div class="grp-tools grp-related-widget-tools">
+      {% comment %}
+      {% if can_change_related %}
+        <div class="related-widget-tool-item">
+          <a class="grp-related-widget-wrapper-link grp-change-related related-widget-wrapper-link change-related" id="change_id_{{ name }}"
+              data-href-template="{{ change_related_template_url }}?{{ url_params }}"
+              title="{% blocktrans %}Change selected {{ model }}{% endblocktrans %}">
+              <i class="fa-solid fa-arrow-right"></i>
+          </a>
+        </div>
+      {% endif %}
+      {% endcomment %}
+      {% if can_add_related %}
+        <div class="related-widget-tool-item">
+          <a class="grp-related-widget-wrapper-link grp-add-related grp-add-another related-widget-wrapper-link add-related add-another" id="add_id_{{ name }}"
+              href="{{ add_related_url }}?{{ url_params }}"
+              title="{% blocktrans %}Add another {{ model }}{% endblocktrans %}">
+              <i class="fa-solid fa-plus"></i>
+          </a>
+        </div>
+      {% endif %}
+      {% comment %}
+      {% if can_delete_related %}
+        <div class="related-widget-tool-item">
+          <a class="grp-related-widget-wrapper-link grp-delete-related related-widget-wrapper-link delete-related" id="delete_id_{{ name }}"
+              data-href-template="{{ delete_related_template_url }}?{{ url_params }}"
+              title="{% blocktrans %}Delete selected {{ model }}{% endblocktrans %}">
+              <i class="fa-solid fa-trash"></i>
+          </a>
+        </div>
+      {% endif %}
+      {% endcomment %}
+    </div>
+  {% endif %}
+{% endblock %}

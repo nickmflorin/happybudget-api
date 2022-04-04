@@ -1,0 +1,23 @@
+.grp-related-widget-wrapper {
+  display: flex !important;
+  float: none !important;
+
+  .grp-related-widget-tools {
+    display: flex !important;
+    flex-direction: row;
+    height: 32px !important;
+    float: none !important;
+    top: 0 !important;
+    margin: 0 !important;
+    margin-left: 5px !important;
+
+    a.grp-related-widget-wrapper-link {
+      background-image: none !important;
+      height: 32px !important;
+      width: 32px !important;
+      display: flex !important;
+      flex-direction: column;
+      justify-content: center;
+    }
+  }
+}

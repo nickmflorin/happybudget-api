@@ -5,6 +5,7 @@
 @import './login.scss';
 @import './typography.scss';
 @import './tables.scss';
+@import './widgets.scss';
 
 body {
   margin: 0;
@@ -162,12 +163,12 @@ i {
 
 #grp-content-title {
   margin-bottom: 10px;
-  height: 36px;
+  height: 32px;
   display: flex;
   flex-direction: row;
 
   h1 {
-    line-height: 36px;
+    line-height: 32px;
     flex-grow: 100;
   }
 
@@ -199,7 +200,7 @@ i {
 
 li.grp-changelist-actions .grp-horizontal-list .grp-button {
   padding: 8px 10px;
-  height: 36px;
+  height: 32px;
   line-height: 20px;
   -moz-border-radius: $input-border-radius !important;
   -webkit-border-radius: $input-border-radius !important;

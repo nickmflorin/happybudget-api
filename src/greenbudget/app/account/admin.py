@@ -1,6 +1,8 @@
 from django import forms
 from django.contrib import admin
 
+from greenbudget.harry.widgets import use_custom_related_field_wrapper
+
 from greenbudget.app.budgeting.admin import (
     BudgetingTreePolymorphicOrderedRowModelInline)
 from .models import BudgetAccount, TemplateAccount
@@ -23,6 +25,7 @@ class TemplateAccountAdminForm(forms.ModelForm):
         fields = ('identifier', 'description', 'markups', 'group')
 
 
+@use_custom_related_field_wrapper
 class BudgetAccountInline(BudgetingTreePolymorphicOrderedRowModelInline):
     model = BudgetAccount
 
@@ -31,6 +34,7 @@ class TemplateAccountInline(BudgetingTreePolymorphicOrderedRowModelInline):
     model = TemplateAccount
 
 
+@use_custom_related_field_wrapper
 class BudgetAccountAdmin(AccountAdmin):
     form = BudgetAccountAdminForm
 
