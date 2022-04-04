@@ -104,7 +104,8 @@ def test_get_cookie_user_passes_cookie_args(settings, middleware_patch, rf,
     request.user = user
     middleware = AuthTokenCookieMiddleware()
     middleware.process_request(request)
-    with middleware_patch('parse_token', return_value=(None, None)) as mock_fn:
+    with middleware_patch(
+            'parse_token', return_value=(AnonymousUser(), None)) as mock_fn:
         get_cookie_user(request)
     assert mock_fn.mock_calls == [mock.call('token')]
 

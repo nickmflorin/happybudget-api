@@ -110,15 +110,19 @@ class BillingTokenCookieMiddleware(AuthenticationMiddleware):
 
 
 def get_cookie_user(request):
-    # We only want to use the session user in the case that we are not in the
-    # process of validating the JWT authentication token.
-    is_validate_url = request.path == reverse('authentication:validate')
-    if not hasattr(request, '_cached_cookie_user'):
+    # We do not want to use JWT authentication for the admin.
+    if permissions.request_is_admin(request):
         request._cached_cookie_user = AnonymousUser()
-        # If the session user is not authenticated, we do not want to allow the
-        # token validation endpoints to return the user based on the JWT token.
+    elif not hasattr(request, '_cached_cookie_user'):
+        is_validate_url = request.path == reverse('authentication:validate')
+        request._cached_cookie_user = AnonymousUser()
+        # If the session user is not authenticated, we do not want to allow
+        # the token validation endpoints to return the user based on the JWT
+        # token.
         session_user = getattr(request, 'user', None)
         if session_user and session_user.is_fully_authenticated:
+            # We only want to use the session user in the case that we are
+            # not in the process of validating the JWT authentication token.
             if not is_validate_url:
                 request._cached_cookie_user = session_user
             else:
@@ -126,9 +130,10 @@ def get_cookie_user(request):
                 token_user, token_obj = parse_token(raw_token)
                 if token_user.is_fully_authenticated:
                     assert token_obj is not None
-                    # We want to also prepopulate billing related values on the
-                    # token user so that the JWT authentication token validation
-                    # view does not make repetitive requests to Stripe's API.
+                    # We want to also prepopulate billing related values on
+                    # the token user so that the JWT authentication token
+                    # validation view does not make repetitive requests to
+                    # Stripe's API.
                     if not force_reload_from_stripe(request):
                         token_user.cache_stripe_from_token(token_obj)
                     request._cached_cookie_user = token_user
