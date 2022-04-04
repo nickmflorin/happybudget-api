@@ -114,6 +114,10 @@ select {
   margin: 0;
 }
 
+select[multiple] {
+  height: 160px !important;
+}
+
 fieldset.grp-module .grp-row label {
   margin: 0 !important;
   font-size: 12px;
