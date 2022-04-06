@@ -4,6 +4,7 @@ from timezone_field import TimeZoneField
 
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -15,7 +16,7 @@ from greenbudget.app.billing import StripeCustomer
 from greenbudget.app.billing.constants import BillingStatus
 from greenbudget.app.io.utils import upload_user_image_to
 
-from .contrib import UserAuthenticationMixin
+from .mixins import UserAuthenticationMixin
 from .managers import UserManager
 
 
@@ -120,6 +121,41 @@ class User(UserAuthenticationMixin, AbstractUser):
     @property
     def num_budgets(self):
         return self.budgets.count()
+
+    @property
+    def num_templates(self):
+        # pylint: disable=import-outside-toplevel
+        from greenbudget.app.template.models import Template
+        return Template.objects.filter(community=False, created_by=self).count()
+
+    @property
+    def num_contacts(self):
+        return self.created_contacts.count()
+
+    @property
+    def num_collaborating_budgets(self):
+        return self.collaborating_budgets.count()
+
+    @property
+    def collaborating_budgets(self):
+        # pylint: disable=import-outside-toplevel
+        from greenbudget.app.budget.models import Budget
+        return Budget.objects.filter(pk__in=[
+            collaboration.object_id
+            for collaboration in self.collaborations.filter(
+                content_type=ContentType.objects.get_for_model(Budget)
+            ).only('object_id')
+        ])
+
+    @property
+    def num_archived_budgets(self):
+        return self.archived_budgets.count()
+
+    @property
+    def archived_budgets(self):
+        # pylint: disable=import-outside-toplevel
+        from greenbudget.app.budget.models import Budget
+        return Budget.objects.filter(archived=True, created_by=self)
 
     def sync_with_social_provider(self, social_user=None, token=None,
             provider=None):

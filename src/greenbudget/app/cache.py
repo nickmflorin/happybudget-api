@@ -12,8 +12,8 @@ from rest_framework import response, status
 from greenbudget.conf import Environments
 from greenbudget.lib.utils import ensure_iterable, concat
 
-from greenbudget.app.user.models import User
 from greenbudget.app.user.contrib import AnonymousUser
+from greenbudget.app.user.models import User
 
 
 logger = logging.getLogger('greenbudget')

@@ -326,12 +326,7 @@ class CollaboratingBudgetViewSet(mixins.ListModelMixin, GenericBudgetViewSet):
     (1) GET /budgets/collaborating/
     """
     def get_queryset(self):
-        return Budget.objects.filter(pk__in=[
-            collaboration.object_id
-            for collaboration in self.request.user.collaborations.filter(
-                content_type=ContentType.objects.get_for_model(Budget)
-            ).only('object_id')
-        ])
+        return self.request.user.collaborating_budgets
 
 
 class AcrhivedBudgetViewSet(mixins.ListModelMixin, GenericBudgetViewSet):

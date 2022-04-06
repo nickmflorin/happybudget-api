@@ -51,7 +51,13 @@ def test_social_login_user_exists(api_client, create_user):
         "is_first_time": False,
         "product_id": None,
         "billing_status": None,
-        "num_budgets": 0
+        "metrics": {
+            "num_budgets": 0,
+            "num_templates": 0,
+            "num_contacts": 0,
+            "num_collaborating_budgets": 0,
+            "num_archived_budgets": 0
+        }
     }
 
 
@@ -100,7 +106,13 @@ def test_social_login_user_does_not_exist(api_client, models):
         "is_first_time": True,
         "product_id": None,
         "billing_status": None,
-        "num_budgets": 0
+        "metrics": {
+            "num_budgets": 0,
+            "num_templates": 0,
+            "num_contacts": 0,
+            "num_collaborating_budgets": 0,
+            "num_archived_budgets": 0
+        }
     }
 
 

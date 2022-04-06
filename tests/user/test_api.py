@@ -144,7 +144,13 @@ def test_registration(api_client, models, settings, user):
                 "is_first_time": True,
                 "billing_status": None,
                 "product_id": None,
-                "num_budgets": 0
+                "metrics": {
+                    "num_budgets": 0,
+                    "num_templates": 0,
+                    "num_contacts": 0,
+                    "num_collaborating_budgets": 0,
+                    "num_archived_budgets": 0
+                }
             }
 
     assert m.called
@@ -241,7 +247,13 @@ def test_update_logged_in_user(api_client, user):
         "is_first_time": False,
         "billing_status": None,
         "product_id": None,
-        "num_budgets": 0
+        "metrics": {
+            "num_budgets": 0,
+            "num_templates": 0,
+            "num_contacts": 0,
+            "num_collaborating_budgets": 0,
+            "num_archived_budgets": 0
+        }
     }
 
     user.refresh_from_db()
@@ -277,7 +289,13 @@ def test_change_password(api_client, user, user_password):
         "is_first_time": False,
         "billing_status": None,
         "product_id": None,
-        "num_budgets": 0
+        "metrics": {
+            "num_budgets": 0,
+            "num_templates": 0,
+            "num_contacts": 0,
+            "num_collaborating_budgets": 0,
+            "num_archived_budgets": 0
+        }
     }
 
     user.refresh_from_db()

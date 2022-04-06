@@ -84,6 +84,20 @@ class SimpleUserSerializer(ModelSerializer):
             'profile_image')
 
 
+class UserMetricsSerializer(ModelSerializer):
+    num_budgets = serializers.IntegerField(read_only=True)
+    num_contacts = serializers.IntegerField(read_only=True)
+    num_collaborating_budgets = serializers.IntegerField(read_only=True)
+    num_archived_budgets = serializers.IntegerField(read_only=True)
+    num_templates = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = User
+        fields = (
+            'num_budgets', 'num_contacts', 'num_collaborating_budgets',
+            'num_archived_budgets', 'num_templates')
+
+
 class UserSerializer(ModelSerializer):
     first_name = serializers.CharField(
         required=True,
@@ -103,7 +117,6 @@ class UserSerializer(ModelSerializer):
         validators=[
             validators.UniqueValidator(queryset=User.objects.all())]
     )
-    num_budgets = serializers.IntegerField(read_only=True)
     company = serializers.CharField(allow_null=True, required=False)
     position = serializers.CharField(allow_null=True, required=False)
     address = serializers.CharField(allow_null=True, required=False)
@@ -125,4 +138,9 @@ class UserSerializer(ModelSerializer):
             'is_active', 'is_superuser', 'is_staff', 'full_name',
             'profile_image', 'last_login', 'date_joined', 'timezone',
             'is_first_time', 'company', 'position', 'address', 'phone_number',
-            'product_id', 'billing_status', 'num_budgets')
+            'product_id', 'billing_status')
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data.update(metrics=UserMetricsSerializer(instance).data)
+        return data

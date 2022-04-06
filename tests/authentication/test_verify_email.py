@@ -47,7 +47,13 @@ def test_validate_email_token(validate_email_token, unverified_user):
         "is_first_time": False,
         "product_id": None,
         "billing_status": None,
-        "num_budgets": 0
+        "metrics": {
+            "num_budgets": 0,
+            "num_templates": 0,
+            "num_contacts": 0,
+            "num_collaborating_budgets": 0,
+            "num_archived_budgets": 0
+        }
     }
 
 

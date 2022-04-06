@@ -36,7 +36,13 @@ def test_validate_auth_token(api_client, settings, standard_product_user):
         "is_first_time": False,
         "product_id": "greenbudget_standard",
         "billing_status": "active",
-        "num_budgets": 0
+        "metrics": {
+            "num_budgets": 0,
+            "num_templates": 0,
+            "num_contacts": 0,
+            "num_collaborating_budgets": 0,
+            "num_archived_budgets": 0
+        }
     }
 
 
