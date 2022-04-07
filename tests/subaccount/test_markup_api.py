@@ -26,7 +26,8 @@ def test_get_subaccount_markups(api_client, user, models, create_markup,
         "actual": 0.0,
         "unit": {
             "id": markup.unit,
-            "name": models.Markup.UNITS[markup.unit]
+            "name": models.Markup.UNITS[markup.unit].name,
+            "slug": models.Markup.UNITS[markup.unit].slug
         },
         "children": [child_subaccount.pk]
     }]
@@ -112,7 +113,8 @@ def test_create_subaccount_percent_markup(api_client, user, models, budget_f):
         "actual": 0.0,
         "unit": {
             "id": markup.unit,
-            "name": models.Markup.UNITS[markup.unit]
+            "name": models.Markup.UNITS[markup.unit].name,
+            "slug": models.Markup.UNITS[markup.unit].slug
         },
         "children": [s.pk for s in subaccounts]
     }
@@ -205,7 +207,8 @@ def test_create_subaccount_percent_markup_without_rate(api_client, user, models,
         "actual": 0.0,
         "unit": {
             "id": markup.unit,
-            "name": models.Markup.UNITS[markup.unit]
+            "name": models.Markup.UNITS[markup.unit].name,
+            "slug": models.Markup.UNITS[markup.unit].slug
         },
         "children": [s.pk for s in subaccounts]
     }
@@ -295,7 +298,8 @@ def test_create_subaccount_flat_markup(api_client, user, models, budget_f):
         "actual": 0.0,
         "unit": {
             "id": markup.unit,
-            "name": models.Markup.UNITS[markup.unit]
+            "name": models.Markup.UNITS[markup.unit].name,
+            "slug": models.Markup.UNITS[markup.unit].slug
         },
     }
 
@@ -384,7 +388,8 @@ def test_create_subaccount_flat_markup_without_rate(api_client, user, models,
         "actual": 0.0,
         "unit": {
             "id": markup.unit,
-            "name": models.Markup.UNITS[markup.unit]
+            "name": models.Markup.UNITS[markup.unit].name,
+            "slug": models.Markup.UNITS[markup.unit].slug
         },
     }
 

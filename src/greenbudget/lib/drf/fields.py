@@ -81,12 +81,12 @@ class ModelChoiceField(serializers.ChoiceField):
     """
     A :obj:`rest_framework.serializers.ModelSerializer` field that allows
     :obj:`django.db.models.Model` fields that have distinct choices to be
-    represented by both their internal database reference and their display
-    name.
+    represented by both their internal database reference, their display
+    name and the slug accessor on the model instance.
 
     Write operations will still be referenced by just the internal database
-    reference where as read operations will serialize both the internal ref
-    and the display name/label.
+    reference where as read operations will serialize the internal ref, the
+    display name/label and the slug accessor:
 
     class MyModel(models.Model):
         FRUITS = Choices(
@@ -100,13 +100,24 @@ class ModelChoiceField(serializers.ChoiceField):
         fruit = ModelChoiceField(source='FRUITS')
 
     PATCH "/models/<pk>/" {"fruit": 0}
-    >>> {"fruit": {"name": "Apple", "id": 0}}
+    >>> {"fruit": {"name": "Apple", "id": 0, "slug": "apple"}}
 
     GET "/models/pk/"
-    >>> {"fruit": {"name": "Apple", "id": 0}}
+    >>> {"fruit": {"name": "Apple", "id": 0, "slug": "Apple"}}
     """
+    def __init__(self, choices, **kwargs):
+        # DRF's :obj:`serializers.ChoiceField` does not maintain the original
+        # :obj:`Choices` instance passed in, but converts it to an
+        # :obj:`collections.OrderedDict`.  We need the original :obj:`Choices`
+        # instance to be able to access the slug representations.
+        self._original_choices_obj = choices
+        super().__init__(choices, **kwargs)
 
     def to_representation(self, value):
         if value is not None:
-            return {'id': value, 'name': self.choices[value]}
+            return {
+                'id': value,
+                'name': self._original_choices_obj[value].name,
+                'slug': self._original_choices_obj[value].slug
+            }
         return value

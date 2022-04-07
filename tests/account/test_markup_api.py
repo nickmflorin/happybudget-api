@@ -26,7 +26,8 @@ def test_get_account_markups(api_client, user, models, create_markup, budget_f):
         "actual": 0.0,
         "unit": {
             "id": markup.unit,
-            "name": models.Markup.UNITS[markup.unit]
+            "name": models.Markup.UNITS[markup.unit].name,
+            "slug": models.Markup.UNITS[markup.unit].slug,
         },
         "children": [sub.pk for sub in subaccounts]
     }]
@@ -97,8 +98,9 @@ def test_create_account_flat_markup(api_client, user, budget_f, models):
         "actual": 0.0,
         "unit": {
             "id": markup.unit,
-            "name": models.Markup.UNITS[markup.unit]
-        }
+            "name": models.Markup.UNITS[markup.unit].name,
+            "slug": models.Markup.UNITS[markup.unit].slug,
+        },
     }
 
     assert response.json()["parent"]["accumulated_markup_contribution"] == 20.0
@@ -175,8 +177,9 @@ def test_create_account_flat_markup_without_rate(api_client, user, budget_f,
         "actual": 0.0,
         "unit": {
             "id": markup.unit,
-            "name": models.Markup.UNITS[markup.unit]
-        }
+            "name": models.Markup.UNITS[markup.unit].name,
+            "slug": models.Markup.UNITS[markup.unit].slug,
+        },
     }
 
     assert response.json()["parent"]["accumulated_markup_contribution"] == 0.0
@@ -256,7 +259,8 @@ def test_create_account_percent_markup(api_client, user, budget_f, models):
         "actual": 0.0,
         "unit": {
             "id": markup.unit,
-            "name": models.Markup.UNITS[markup.unit]
+            "name": models.Markup.UNITS[markup.unit].name,
+            "slug": models.Markup.UNITS[markup.unit].slug,
         },
         "children": [s.pk for s in subaccounts]
     }
@@ -337,7 +341,8 @@ def test_create_account_percent_markup_without_rate(api_client, user, budget_f,
         "actual": 0.0,
         "unit": {
             "id": markup.unit,
-            "name": models.Markup.UNITS[markup.unit]
+            "name": models.Markup.UNITS[markup.unit].name,
+            "slug": models.Markup.UNITS[markup.unit].slug,
         },
         "children": [s.pk for s in subaccounts]
     }

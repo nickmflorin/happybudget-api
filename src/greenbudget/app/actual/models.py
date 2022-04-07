@@ -1,9 +1,10 @@
 import datetime
-from model_utils import Choices
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models, IntegrityError
+
+from greenbudget.lib.django_utils.models import Choices
 
 from greenbudget.app import model
 from greenbudget.app.budgeting.models import BudgetingOrderedRowModel
@@ -76,7 +77,7 @@ class Actual(BudgetingOrderedRowModel):
     owner = GenericForeignKey('content_type', 'object_id')
     objects = ActualManager()
 
-    IMPORT_SOURCES = Choices((0, "plaid", "Plaid"), )
+    IMPORT_SOURCES = Choices((0, "bank_account", "Bank Account"), )
 
     table_pivot = ('budget_id', )
     domain = 'budget'

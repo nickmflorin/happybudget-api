@@ -3,12 +3,66 @@ import re
 import collections
 from polymorphic.models import PolymorphicModel
 
+from model_utils import Choices as RootChoices
+
 from django.apps import apps
 from django.contrib.contenttypes.models import ContentType
 from django.db import IntegrityError
 
 from greenbudget.lib.utils import (
     humanize_list, ensure_iterable, ImmutableAttributeMapping)
+
+
+class Choice:
+    def __init__(self, name, slug):
+        self.name = name
+        self.slug = slug
+
+    def __str__(self):
+        return f"Choice name={self.name} slug={self.slug}"
+
+
+class Choices(RootChoices):
+    """
+    Overrides the default :obj:`model_utils.Choices` implementation to provide
+    the ability to access the slug model accessor of an individual choice.
+
+    Typically, with the default :obj:`model_utils.Choices` key lookup on the
+    object returns just the display name.
+
+    class MyModel(models.Model):
+        FRUITS = model_utils.Choices(
+            (0, "apple", "Apple"),
+            (1, "banana", "Banana"),
+            (2, "strawberry", "Strawberry"),
+        )
+        fruit = models.IntegerField(choices=FRUITS)
+
+    >>> MyModel.FRUITS[0]
+    >>> "Apple"
+
+    But for our purposes, we are interested in both the display name and the
+    slug that is used to access the instance on the model.
+
+    class MyModel(models.Model):
+        FRUITS = greenbudget.lib.django_utils.models.Choices(
+            (0, "apple", "Apple"),
+            (1, "banana", "Banana"),
+            (2, "strawberry", "Strawberry"),
+        )
+        fruit = models.IntegerField(choices=FRUITS)
+
+    >>> choice = MyModel.FRUITS[0]
+    >>> <Choice name="Apple" slug="apple">
+    >>> choice.slug
+    >>> "apple"
+    """
+    @property
+    def slug(self):
+        return {v: k for k, v in self._identifier_map.items()}
+
+    def __getitem__(self, key):
+        return Choice(name=self._display_map[key], slug=self.slug[key])
 
 
 def error_is_unique_constraint(err, field):

@@ -310,7 +310,8 @@ def test_get_budget_pdf(api_client, user, create_budget, create_markup,
             "actual": 0.0,
             "unit": {
                 "id": budget_markups[0].unit,
-                "name": budget_markups[0].UNITS[budget_markups[0].unit]
+                "name": budget_markups[0].UNITS[budget_markups[0].unit].name,
+                "slug": budget_markups[0].UNITS[budget_markups[0].unit].slug
             },
             "children": [account.pk]
         }],
@@ -337,7 +338,10 @@ def test_get_budget_pdf(api_client, user, create_budget, create_markup,
                     "actual": 0.0,
                     "unit": {
                         "id": account_markups[0].unit,
-                        "name": account_markups[0].UNITS[account_markups[0].unit]
+                        "name": account_markups[0].UNITS[
+                            account_markups[0].unit].name,
+                        "slug": account_markups[0].UNITS[
+                            account_markups[0].unit].slug
                     },
                     "children": [subaccount.pk]
                 }],

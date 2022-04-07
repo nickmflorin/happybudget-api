@@ -1,7 +1,6 @@
-from model_utils import Choices
-
 from django.db import models
 
+from greenbudget.lib.django_utils.models import Choices
 from greenbudget.lib.utils import conditionally_separate_strings
 
 from greenbudget.app import model

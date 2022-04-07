@@ -25,7 +25,9 @@ def test_get_collaborators_as_owner(api_client, create_collaborator,
             'access_type': {
                 'id': collaborators[0].access_type,
                 'name': models.Collaborator.ACCESS_TYPES[
-                    collaborators[0].access_type]
+                    collaborators[0].access_type].name,
+                'slug': models.Collaborator.ACCESS_TYPES[
+                    collaborators[0].access_type].slug,
             },
             'user': {
                 'id': additional_users[0].pk,
@@ -44,7 +46,9 @@ def test_get_collaborators_as_owner(api_client, create_collaborator,
             'access_type': {
                 'id': collaborators[1].access_type,
                 'name': models.Collaborator.ACCESS_TYPES[
-                    collaborators[1].access_type]
+                    collaborators[1].access_type].name,
+                'slug': models.Collaborator.ACCESS_TYPES[
+                    collaborators[1].access_type].slug,
             },
             'user': {
                 'id': additional_users[1].pk,
@@ -105,7 +109,9 @@ def test_create_collaborator_as_owner(api_client, create_budget, user, models,
         'access_type': {
             'id': models.Collaborator.ACCESS_TYPES.editor,
             'name': models.Collaborator.ACCESS_TYPES[
-                models.Collaborator.ACCESS_TYPES.editor]
+                models.Collaborator.ACCESS_TYPES.editor].name,
+            'slug': models.Collaborator.ACCESS_TYPES[
+                models.Collaborator.ACCESS_TYPES.editor].slug
         },
         'user': {
             'id': collaborating_user.pk,
@@ -221,7 +227,9 @@ def test_create_collaborator_as_collaborating_owner(api_client, create_budget,
         'access_type': {
             'id': models.Collaborator.ACCESS_TYPES.editor,
             'name': models.Collaborator.ACCESS_TYPES[
-                models.Collaborator.ACCESS_TYPES.editor]
+                models.Collaborator.ACCESS_TYPES.editor].name,
+            'slug': models.Collaborator.ACCESS_TYPES[
+                models.Collaborator.ACCESS_TYPES.editor].slug
         },
         'user': {
             'id': another_collaborating_user.pk,

@@ -51,7 +51,7 @@ def test_bulk_import_actuals(api_client, user, budget_df, models, monkeypatch,
             "start_date": "2021-12-31",
             "end_date": "2022-01-01",
             "account_ids": ["test-id1", "test-id2"],
-            "source": Actual.IMPORT_SOURCES.plaid,
+            "source": Actual.IMPORT_SOURCES.bank_account,
             "public_token": "mock_public_token",
         }
     )
@@ -106,7 +106,7 @@ def test_bulk_import_actuals_plaid_error_token_exchange(create_budget, user,
                 "start_date": "2021-12-31",
                 "end_date": "2022-01-01",
                 "account_ids": ["test-id1", "test-id2"],
-                "source": Actual.IMPORT_SOURCES.plaid,
+                "source": Actual.IMPORT_SOURCES.bank_account,
                 "public_token": "mock_public_token",
             }
         )
@@ -138,7 +138,7 @@ def test_bulk_import_actuals_plaid_error_transactions_get(create_budget, user,
                 "start_date": "2021-12-31",
                 "account_ids": ["test-id1", "test-id2"],
                 "end_date": "2022-01-01",
-                "source": Actual.IMPORT_SOURCES.plaid,
+                "source": Actual.IMPORT_SOURCES.bank_account,
                 "public_token": "mock_public_token",
             }
         )
@@ -160,7 +160,7 @@ def test_bulk_import_actuals_with_template(api_client, user, template_df):
             "start_date": "2021-12-31",
             "end_date": "2022-01-01",
             "account_ids": ["test-id1", "test-id2"],
-            "source": Actual.IMPORT_SOURCES.plaid,
+            "source": Actual.IMPORT_SOURCES.bank_account,
             "public_token": "mock_public_token",
         }
     )
@@ -178,7 +178,7 @@ def test_bulk_import_actuals_end_date_before_start_date(api_client, user,
             "start_date": "2021-12-31",
             "end_date": "2020-01-01",
             "account_ids": ["test-id1", "test-id2"],
-            "source": Actual.IMPORT_SOURCES.plaid,
+            "source": Actual.IMPORT_SOURCES.bank_account,
             "public_token": "mock_public_token"
         }
     )

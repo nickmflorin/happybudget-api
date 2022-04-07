@@ -72,7 +72,8 @@ def test_get_fringe(api_client, user, budget_f, create_fringe, models):
         "order": "n",
         "unit": {
             "id": fringe.unit,
-            "name": models.Fringe.UNITS[fringe.unit]
+            "name": models.Fringe.UNITS[fringe.unit].name,
+            "slug": models.Fringe.UNITS[fringe.unit].slug
         },
     }
 ```

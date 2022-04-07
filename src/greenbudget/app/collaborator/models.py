@@ -1,9 +1,8 @@
-from model_utils import Choices
-
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models, IntegrityError
 
+from greenbudget.lib.django_utils.models import Choices
 from greenbudget.app import model
 
 

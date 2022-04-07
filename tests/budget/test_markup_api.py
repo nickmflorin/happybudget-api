@@ -21,7 +21,8 @@ def test_get_account_markups(api_client, user, models, budget_f, create_markup):
         "actual": 0.0,
         "unit": {
             "id": markup.unit,
-            "name": models.Markup.UNITS[markup.unit]
+            "name": models.Markup.UNITS[markup.unit].name,
+            "slug": models.Markup.UNITS[markup.unit].slug
         },
         "children": [account.pk]
     }]
@@ -94,7 +95,8 @@ def test_create_flat_markup(api_client, user, models, budget_f):
         "actual": 0.0,
         "unit": {
             "id": markup.unit,
-            "name": models.Markup.UNITS[markup.unit]
+            "name": models.Markup.UNITS[markup.unit].name,
+            "slug": models.Markup.UNITS[markup.unit].slug
         }
     }
 
@@ -168,7 +170,8 @@ def test_create_flat_markup_without_rate(api_client, user, models, budget_f):
         "actual": 0.0,
         "unit": {
             "id": markup.unit,
-            "name": models.Markup.UNITS[markup.unit]
+            "name": models.Markup.UNITS[markup.unit].name,
+            "slug": models.Markup.UNITS[markup.unit].slug
         }
     }
 
@@ -244,7 +247,8 @@ def test_create_percent_markup(api_client, user, models, budget_f):
         "actual": 0.0,
         "unit": {
             "id": markup.unit,
-            "name": models.Markup.UNITS[markup.unit]
+            "name": models.Markup.UNITS[markup.unit].name,
+            "slug": models.Markup.UNITS[markup.unit].slug
         },
         "children": [account.pk]
     }
@@ -320,7 +324,8 @@ def test_create_percent_markup_without_rate(api_client, user, models, budget_f):
         "actual": 0.0,
         "unit": {
             "id": markup.unit,
-            "name": models.Markup.UNITS[markup.unit]
+            "name": models.Markup.UNITS[markup.unit].name,
+            "slug": models.Markup.UNITS[markup.unit].slug
         },
         "children": [account.pk]
     }

@@ -60,13 +60,16 @@ class ActualManager(BudgetingOrderedRowManager):
         self.bulk_actualize_all(owners_to_reactualize)
 
     def bulk_import(self, source, *args, **kwargs):
-        imports = {self.model.IMPORT_SOURCES.plaid: 'import_plaid_transactions'}
+        imports = {
+            self.model.IMPORT_SOURCES.bank_account: \
+                'import_bank_account_transactions'
+        }
         if source not in imports:
             raise ValueError(f"Invalid source {source} provided.")
         return getattr(self, imports[source])(*args, **kwargs)
 
-    def import_plaid_transactions(self, public_token, start_date, end_date,
-            **kwargs):
+    def import_bank_account_transactions(self, public_token, start_date,
+            end_date, **kwargs):
         raise_exception = kwargs.pop('raise_exception', False)
         account_ids = kwargs.pop('account_ids', None)
         transactions = client.fetch_transactions(

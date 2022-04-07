@@ -20,7 +20,8 @@ def test_get_fringes(api_client, user, create_fringe, models, budget_f):
             "order": "n",
             "unit": {
                 "id": fringes[0].unit,
-                "name": models.Fringe.UNITS[fringes[0].unit]
+                "name": models.Fringe.UNITS[fringes[0].unit].name,
+                "slug": models.Fringe.UNITS[fringes[0].unit].slug
             }
         },
         {
@@ -34,7 +35,8 @@ def test_get_fringes(api_client, user, create_fringe, models, budget_f):
             "order": "t",
             "unit": {
                 "id": fringes[1].unit,
-                "name": models.Fringe.UNITS[fringes[1].unit]
+                "name": models.Fringe.UNITS[fringes[1].unit].name,
+                "slug": models.Fringe.UNITS[fringes[1].unit].slug
             }
         },
     ]
@@ -63,7 +65,8 @@ def test_create_fringe(api_client, user, budget_f, models):
         "order": "n",
         "unit": {
             "id": 1,
-            "name": models.Fringe.UNITS[1]
+            "name": models.Fringe.UNITS[1].name,
+            "slug": models.Fringe.UNITS[1].slug
         }
     }
     assert fringe.name == "Test Fringe"

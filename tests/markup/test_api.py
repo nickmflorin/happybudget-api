@@ -19,7 +19,8 @@ def test_get_account_markup(api_client, user, budget_f, create_markup, models):
         "actual": 0.0,
         "unit": {
             "id": markup.unit,
-            "name": models.Markup.UNITS[markup.unit]
+            "name": models.Markup.UNITS[markup.unit].name,
+            "slug": models.Markup.UNITS[markup.unit].slug
         },
         "children": [account.pk]
     }
@@ -45,7 +46,8 @@ def test_get_subaccount_markup(api_client, user, budget_f, create_markup,
         "actual": 0.0,
         "unit": {
             "id": markup.unit,
-            "name": models.Markup.UNITS[markup.unit]
+            "name": models.Markup.UNITS[markup.unit].name,
+            "slug": models.Markup.UNITS[markup.unit].slug
         },
         "children": [subaccount.pk]
     }
@@ -157,7 +159,8 @@ def test_update_markup_children(api_client, user, budget_f, create_markup,
         "actual": 0.0,
         "unit": {
             "id": markups[0].unit,
-            "name": models.Markup.UNITS[markups[0].unit]
+            "name": models.Markup.UNITS[markups[0].unit].name,
+            "slug": models.Markup.UNITS[markups[0].unit].slug
         },
         "children": [a.pk for a in accounts],
     }
@@ -246,7 +249,8 @@ def test_update_account_markup_children(api_client, user, budget_f, models,
         "actual": 0.0,
         "unit": {
             "id": markups[1].unit,
-            "name": models.Markup.UNITS[markups[1].unit]
+            "name": models.Markup.UNITS[markups[1].unit].name,
+            "slug": models.Markup.UNITS[markups[1].unit].slug
         },
         "children": [a.pk for a in subaccounts],
     }
@@ -342,7 +346,8 @@ def test_update_subaccount_markup_children(api_client, user, budget_f, models,
         "actual": 0.0,
         "unit": {
             "id": markups[1].unit,
-            "name": models.Markup.UNITS[markups[1].unit]
+            "name": models.Markup.UNITS[markups[1].unit].name,
+            "slug": models.Markup.UNITS[markups[1].unit].slug,
         },
         "children": [a.pk for a in children_subaccounts],
     }
@@ -422,7 +427,8 @@ def test_update_account_flat_markup_rate(api_client, user, budget_f, models,
         "actual": 0.0,
         "unit": {
             "id": markups[0].unit,
-            "name": models.Markup.UNITS[markups[0].unit]
+            "name": models.Markup.UNITS[markups[0].unit].name,
+            "slug": models.Markup.UNITS[markups[0].unit].slug
         }
     }
 
@@ -502,7 +508,8 @@ def test_change_account_flat_markup_to_percent(api_client, user, models,
         "children": [accounts[1].pk],
         "unit": {
             "id": markups[0].unit,
-            "name": models.Markup.UNITS[markups[0].unit]
+            "name": models.Markup.UNITS[markups[0].unit].name,
+            "slug": models.Markup.UNITS[markups[0].unit].slug
         }
     }
 
@@ -624,7 +631,8 @@ def test_update_account_percent_markup_rate(api_client, user, budget_f, models,
         "actual": 0.0,
         "unit": {
             "id": markups[0].unit,
-            "name": models.Markup.UNITS[markups[0].unit]
+            "name": models.Markup.UNITS[markups[0].unit].name,
+            "slug": models.Markup.UNITS[markups[0].unit].slug
         },
         "children": [a.pk for a in accounts],
     }
@@ -706,7 +714,8 @@ def test_change_account_percent_markup_to_flat(api_client, user, models,
         "actual": 0.0,
         "unit": {
             "id": markups[0].unit,
-            "name": models.Markup.UNITS[markups[0].unit]
+            "name": models.Markup.UNITS[markups[0].unit].name,
+            "slug": models.Markup.UNITS[markups[0].unit].slug
         },
     }
 

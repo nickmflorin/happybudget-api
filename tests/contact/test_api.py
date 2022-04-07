@@ -24,7 +24,8 @@ def test_get_contact(api_client, user, create_contact, models):
         "notes": None,
         "contact_type": {
             "id": contact.contact_type,
-            "name": models.Contact.TYPES[contact.contact_type]
+            "name": models.Contact.TYPES[contact.contact_type].name,
+            "slug": models.Contact.TYPES[contact.contact_type].slug
         }
     }
 
@@ -104,7 +105,8 @@ def test_get_contacts(api_client, user, create_contact, models):
             "notes": None,
             "contact_type": {
                 "id": contacts[0].contact_type,
-                "name": models.Contact.TYPES[contacts[0].contact_type]
+                "name": models.Contact.TYPES[contacts[0].contact_type].name,
+                "slug": models.Contact.TYPES[contacts[0].contact_type].slug
             }
         },
         {
@@ -125,7 +127,8 @@ def test_get_contacts(api_client, user, create_contact, models):
             "notes": None,
             "contact_type": {
                 "id": contacts[1].contact_type,
-                "name": models.Contact.TYPES[contacts[1].contact_type]
+                "name": models.Contact.TYPES[contacts[1].contact_type].name,
+                "slug": models.Contact.TYPES[contacts[1].contact_type].slug
             }
         }
     ]
@@ -174,7 +177,8 @@ def test_create_contact(api_client, user, models):
         "notes": None,
         "contact_type": {
             "id": 1,
-            "name": models.Contact.TYPES[1]
+            "name": models.Contact.TYPES[1].name,
+            "slug": models.Contact.TYPES[1].slug
         }
     }
 
@@ -250,7 +254,9 @@ def test_update_contact(api_client, user, create_contact, models):
         "notes": None,
         "contact_type": {
             "id": contact.contact_type,
-            "name": models.Contact.TYPES[contact.contact_type]
+            "name": models.Contact.TYPES[contact.contact_type].name,
+            "slug": models.Contact.TYPES[contact.contact_type].slug
+
         }
     }
 
@@ -315,7 +321,8 @@ def test_bulk_create_contact(api_client, user, models):
             "notes": None,
             "contact_type": {
                 "id": 1,
-                "name": models.Contact.TYPES[1]
+                "name": models.Contact.TYPES[1].name,
+                "slug": models.Contact.TYPES[1].slug
             }
         },
         {

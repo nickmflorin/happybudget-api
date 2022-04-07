@@ -1,11 +1,11 @@
 import logging
-from model_utils import Choices
 
 from django.db import models
 from django.contrib.contenttypes.fields import (
     GenericRelation, GenericForeignKey)
 from django.contrib.contenttypes.models import ContentType
 
+from greenbudget.lib.django_utils.models import Choices
 from greenbudget.lib.utils import cumulative_sum
 
 from greenbudget.app import model
