@@ -16,12 +16,20 @@ def mock_transactions():
             "name": "SparkFun",
             "amount": 89.4,
             "date": datetime.date(2022, 1, 1),
+            "datetime": datetime.datetime(2022, 1, 1, 0, 0, 0),
+            "iso_currency_code": 'USD',
+            "transaction_id": 1,
+            "merchant_name": 'SparkFun'
         },
         {
             "category": ["Entertainment"],
             "name": "Dave & Busters",
             "amount": 10.0,
             "date": datetime.date(2022, 10, 5),
+            "datetime": datetime.datetime(2022, 10, 5, 0, 0, 0),
+            "iso_currency_code": 'USD',
+            "transaction_id": 2,
+            "merchant_name": 'Dave'
         }
     ]
 
@@ -63,7 +71,7 @@ def test_bulk_import_actuals(api_client, user, budget_df, models, monkeypatch,
             "actual_type": actuals[0].actual_type,
             "attachments": [],
             "contact": None,
-            "date": "2022-01-01 00:00:00",
+            "date": "2022-01-01",
             "id": actuals[0].pk,
             "name": "SparkFun",
             "notes": "Food and Drink, Restaurants",
@@ -78,7 +86,7 @@ def test_bulk_import_actuals(api_client, user, budget_df, models, monkeypatch,
             "actual_type": actuals[1].actual_type,
             "attachments": [],
             "contact": None,
-            "date": "2022-10-05 00:00:00",
+            "date": "2022-10-05",
             "id": actuals[1].pk,
             "name": "Dave & Busters",
             "notes": "Entertainment",

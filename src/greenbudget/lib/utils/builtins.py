@@ -67,6 +67,14 @@ class DynamicArgumentException(Exception):
         return self.message
 
 
+def split_kwargs(*fields, **kwargs):
+    original_kwargs = copy.deepcopy(kwargs)
+    split = {}
+    for k in [f for f in fields if f in original_kwargs]:
+        split[k] = original_kwargs.pop(k)
+    return split, original_kwargs
+
+
 def humanize_list(value, callback=six.text_type, conjunction='and',
         oxford_comma=True):
     """

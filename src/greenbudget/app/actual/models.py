@@ -1,5 +1,3 @@
-import datetime
-
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models, IntegrityError
@@ -53,7 +51,7 @@ class Actual(BudgetingOrderedRowModel):
         related_name='actuals'
     )
     purchase_order = models.CharField(null=True, max_length=128)
-    date = models.DateTimeField(null=True)
+    date = models.DateField(null=True)
     payment_id = models.CharField(max_length=50, null=True)
     value = models.FloatField(null=True)
     actual_type = models.ForeignKey(
@@ -112,9 +110,9 @@ class Actual(BudgetingOrderedRowModel):
     @classmethod
     def from_plaid_transaction(cls, transaction, **kwargs):
         return cls(
-            name=transaction['name'][:50],
-            notes=(', '.join(transaction['category'])),
-            date=datetime.datetime.fromisoformat(str(transaction['date'])),
-            value=transaction['amount'],
+            name=transaction.name[:50],
+            notes=', '.join(transaction.categories),
+            date=transaction.date,
+            value=transaction.amount,
             **kwargs
         )

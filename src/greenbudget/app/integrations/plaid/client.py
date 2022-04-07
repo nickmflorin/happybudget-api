@@ -1,5 +1,7 @@
+import datetime
 import functools
 import logging
+
 import plaid
 from plaid.api import plaid_api
 from plaid.model import (
@@ -14,6 +16,7 @@ from plaid.model import (
 
 from django.conf import settings
 
+from .models import PlaidTransaction
 from .exceptions import PlaidRequestError
 
 
@@ -136,6 +139,17 @@ class PlaidClient(plaid_api.PlaidApi):
         access_token = kwargs.pop('access_token', None)
         account_ids = kwargs.pop('account_ids', None)
 
+        assert 'start_date' in kwargs \
+            and type(kwargs['start_date']) is datetime.date, \
+            "The start date must be provided and it must be a valid " \
+            f"{datetime.date} type."
+
+        kwargs.setdefault('end_date', user.today_in_timezone)
+        assert 'end_date' in kwargs \
+            and type(kwargs['end_date']) is datetime.date, \
+            "The end date must be provided and it must be a valid " \
+            f"{datetime.date} type."
+
         assert public_token is not None or access_token is not None, \
             "Either the public token or access token must be provided."
 
@@ -152,7 +166,10 @@ class PlaidClient(plaid_api.PlaidApi):
             **kwargs
         )
         response = client.transactions_get(request)
-        return response.to_dict()['transactions']
+        return [
+            PlaidTransaction.from_data(user, **d)
+            for d in response.to_dict()['transactions']
+        ]
 
 
 client = PlaidClient(api_client)

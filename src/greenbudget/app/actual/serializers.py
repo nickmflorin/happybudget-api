@@ -72,7 +72,7 @@ class TaggedActualSerializer(ModelSerializer):
         allow_null=True,
         trim_whitespace=False
     )
-    date = serializers.DateTimeField(
+    date = serializers.DateField(
         required=False,
         allow_null=True
     )

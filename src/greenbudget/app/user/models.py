@@ -1,4 +1,5 @@
 import collections
+import datetime
 import stripe
 from timezone_field import TimeZoneField
 
@@ -9,6 +10,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from greenbudget.lib.utils import ensure_iterable
+from greenbudget.lib.utils.dateutils import ensure_datetime
 
 from greenbudget.app import model
 from greenbudget.app.authentication.utils import parse_user_id_from_token
@@ -107,6 +109,23 @@ class User(UserAuthenticationMixin, AbstractUser):
 
     def __str__(self):
         return str(self.get_username())
+
+    @property
+    def now_in_timezone(self):
+        return self.in_timezone(datetime.datetime.now())
+
+    @property
+    def today_in_timezone(self):
+        return self.in_timezone(datetime.date.today())
+
+    def in_timezone(self, value, is_date=False, force_date=False):
+        aware = ensure_datetime(value).replace(tzinfo=self.timezone)
+        # Note: This means that string provided dates will be returned as
+        # datetimes unless parameter is specified.
+        if type(value) is datetime.date \
+                or (isinstance(value, str) and is_date) or force_date:
+            return aware.date()
+        return aware
 
     @property
     def full_name(self):

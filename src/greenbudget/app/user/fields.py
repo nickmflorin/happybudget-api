@@ -1,10 +1,7 @@
-import datetime
-
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
 from greenbudget.lib.drf.fields import find_parent_base_serializer
-from greenbudget.lib.utils.dateutils import ensure_datetime
 
 
 class UserDateTimeFieldDefault:
@@ -17,8 +14,7 @@ class UserDateTimeFieldDefault:
     def __call__(self, serializer_field):
         assert 'request' in serializer_field.context, \
             "The request must be provided in context when using this default."
-        return datetime.datetime.now().replace(
-            tzinfo=serializer_field.context['request'].user.timezone)
+        return self.context['request'].user.now_in_timezone
 
 
 class UserDateFieldDefault(UserDateTimeFieldDefault):
@@ -32,23 +28,20 @@ class UserDateFieldDefault(UserDateTimeFieldDefault):
 
 
 class UserTimezoneAwareFieldMixin:
-    def to_representation(self, value):
-        obj = super().to_representation(value)
-        assert 'request' in self.context, \
-            "The request must be provided in context when using this default."
-        if obj is not None:
-            return ensure_datetime(obj).replace(
-                tzinfo=self.context['request'].user.timezone)
-        return obj
-
-    def to_internal_value(self, obj):
-        value = super().to_internal_value(obj)
+    def _transform(self, value, **kwargs):
         assert 'request' in self.context, \
             "The request must be provided in context when using this default."
         if value is not None:
-            return ensure_datetime(value).replace(
-                tzinfo=self.context['request'].user.timezone)
+            return self.context['request'].user.in_timezone(value, **kwargs)
         return value
+
+    def to_representation(self, value, **kwargs):
+        obj = super().to_representation(value)
+        return self._transform(obj, **kwargs)
+
+    def to_internal_value(self, obj, **kwargs):
+        value = super().to_internal_value(obj)
+        return self._transform(value, **kwargs)
 
 
 class UserTimezoneAwareDateField(
@@ -65,16 +58,10 @@ class UserTimezoneAwareDateField(
         super().__init__(*args, **kwargs)
 
     def to_internal_value(self, obj):
-        value = super().to_internal_value(obj)
-        if value is not None:
-            return value.date()
-        return value
+        return super().to_internal_value(obj, force_date=True)
 
     def to_representation(self, value):
-        obj = super().to_representation(value)
-        if obj is not None:
-            return obj.date()
-        return obj
+        return super().to_representation(value, force_date=True)
 
 
 class UserTimezoneAwareDateTimeField(

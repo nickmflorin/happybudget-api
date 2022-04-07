@@ -1,4 +1,5 @@
 from greenbudget.lib.django_utils.models import generic_fk_instance_change
+from greenbudget.lib.utils import split_kwargs
 
 from greenbudget.app import signals
 from greenbudget.app.account.cache import account_instance_cache
@@ -61,27 +62,20 @@ class ActualManager(BudgetingOrderedRowManager):
 
     def bulk_import(self, source, *args, **kwargs):
         imports = {
-            self.model.IMPORT_SOURCES.bank_account: \
+            self.model.IMPORT_SOURCES.bank_account:
                 'import_bank_account_transactions'
         }
         if source not in imports:
             raise ValueError(f"Invalid source {source} provided.")
         return getattr(self, imports[source])(*args, **kwargs)
 
-    def import_bank_account_transactions(self, public_token, start_date,
-            end_date, **kwargs):
-        raise_exception = kwargs.pop('raise_exception', False)
-        account_ids = kwargs.pop('account_ids', None)
-        transactions = client.fetch_transactions(
-            user=kwargs['created_by'],
-            public_token=public_token,
-            start_date=start_date,
-            end_date=end_date,
-            account_ids=account_ids,
-            raise_exception=raise_exception
-        )
+    def import_bank_account_transactions(self, **kwargs):
+        split, model = split_kwargs(
+            'raise_exception', 'account_ids', 'start_date', 'end_date',
+            'public_token', **kwargs)
+        transactions = client.fetch_transactions(model['created_by'], **split)
         return self.bulk_add([
-            self.model.from_plaid_transaction(t, **kwargs)
+            self.model.from_plaid_transaction(t, **model)
             for t in transactions
         ])
 
