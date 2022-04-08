@@ -16,7 +16,7 @@ def mock_transactions():
             "name": "SparkFun",
             "amount": 89.4,
             "date": datetime.date(2022, 1, 1),
-            "datetime": datetime.datetime(2022, 1, 1, 0, 0, 0),
+            "datetime": None,
             "iso_currency_code": 'USD',
             "transaction_id": 1,
             "merchant_name": 'SparkFun'
@@ -30,6 +30,30 @@ def mock_transactions():
             "iso_currency_code": 'USD',
             "transaction_id": 2,
             "merchant_name": 'Dave'
+        },
+        {
+            "category": ["Restaurants"],
+            "name": "Spinellis",
+            "amount": 15.0,
+            # Omitting the date should still cause the actual date to be
+            # determined from the datetime.
+            "date": None,
+            "datetime": datetime.datetime(2022, 10, 6, 0, 0, 0),
+            "iso_currency_code": 'USD',
+            "transaction_id": 2,
+            "merchant_name": 'Spinelli'
+        },
+        {
+            "category": ["Restaurants"],
+            "name": "Royal Forms",
+            "amount": 11.0,
+            # Omitting the date and datetime should cause the Actual not to have
+            # an associated date.
+            "date": None,
+            "datetime": None,
+            "iso_currency_code": 'USD',
+            "transaction_id": 2,
+            "merchant_name": 'RoFo'
         }
     ]
 
@@ -64,7 +88,7 @@ def test_bulk_import_actuals(api_client, user, budget_df, models, monkeypatch,
         }
     )
     actuals = models.Actual.objects.all()
-    assert actuals.count() == 2
+    assert actuals.count() == 4
     assert response.status_code == 200
     assert response.json()["children"] == [
         {
@@ -96,6 +120,36 @@ def test_bulk_import_actuals(api_client, user, budget_df, models, monkeypatch,
             "purchase_order": actuals[1].purchase_order,
             "type": actuals[1].type,
             "value": 10.0
+        },
+        {
+            "actual_type": actuals[2].actual_type,
+            "attachments": [],
+            "contact": None,
+            "date": "2022-10-06",
+            "id": actuals[2].pk,
+            "name": "Spinellis",
+            "notes": "Restaurants",
+            "order": actuals[2].order,
+            "owner": None,
+            "payment_id": actuals[2].payment_id,
+            "purchase_order": actuals[2].purchase_order,
+            "type": actuals[2].type,
+            "value": 15.0
+        },
+        {
+            "actual_type": actuals[3].actual_type,
+            "attachments": [],
+            "contact": None,
+            "date": None,
+            "id": actuals[3].pk,
+            "name": "Royal Forms",
+            "notes": "Restaurants",
+            "order": actuals[3].order,
+            "owner": None,
+            "payment_id": actuals[3].payment_id,
+            "purchase_order": actuals[3].purchase_order,
+            "type": actuals[3].type,
+            "value": 11.0
         }
     ]
 

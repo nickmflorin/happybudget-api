@@ -118,12 +118,13 @@ class User(UserAuthenticationMixin, AbstractUser):
     def today_in_timezone(self):
         return self.in_timezone(datetime.date.today())
 
-    def in_timezone(self, value, is_date=False, force_date=False):
+    def in_timezone(self, value, force_date=False, force_datetime=False):
+        assert not (force_date and force_datetime), \
+            "Both date and datetime formatting cannot be forced.s"
         aware = ensure_datetime(value).replace(tzinfo=self.timezone)
         # Note: This means that string provided dates will be returned as
         # datetimes unless parameter is specified.
-        if type(value) is datetime.date \
-                or (isinstance(value, str) and is_date) or force_date:
+        if type(value) is datetime.date or force_date and not force_datetime:
             return aware.date()
         return aware
 
