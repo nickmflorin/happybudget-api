@@ -147,7 +147,6 @@ def test_registration(api_client, models, settings, user):
                 "metrics": {
                     "num_budgets": 0,
                     "num_templates": 0,
-                    "num_contacts": 0,
                     "num_collaborating_budgets": 0,
                     "num_archived_budgets": 0
                 }
@@ -250,7 +249,6 @@ def test_update_logged_in_user(api_client, user):
         "metrics": {
             "num_budgets": 0,
             "num_templates": 0,
-            "num_contacts": 0,
             "num_collaborating_budgets": 0,
             "num_archived_budgets": 0
         }
@@ -292,7 +290,6 @@ def test_change_password(api_client, user, user_password):
         "metrics": {
             "num_budgets": 0,
             "num_templates": 0,
-            "num_contacts": 0,
             "num_collaborating_budgets": 0,
             "num_archived_budgets": 0
         }

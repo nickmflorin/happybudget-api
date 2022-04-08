@@ -86,7 +86,6 @@ class SimpleUserSerializer(ModelSerializer):
 
 class UserMetricsSerializer(ModelSerializer):
     num_budgets = serializers.IntegerField(read_only=True)
-    num_contacts = serializers.IntegerField(read_only=True)
     num_collaborating_budgets = serializers.IntegerField(read_only=True)
     num_archived_budgets = serializers.IntegerField(read_only=True)
     num_templates = serializers.IntegerField(read_only=True)
@@ -94,8 +93,8 @@ class UserMetricsSerializer(ModelSerializer):
     class Meta:
         model = User
         fields = (
-            'num_budgets', 'num_contacts', 'num_collaborating_budgets',
-            'num_archived_budgets', 'num_templates')
+            'num_budgets', 'num_collaborating_budgets', 'num_archived_budgets',
+            'num_templates')
 
 
 class UserSerializer(ModelSerializer):

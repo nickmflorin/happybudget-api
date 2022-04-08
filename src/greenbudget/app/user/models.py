@@ -149,10 +149,6 @@ class User(UserAuthenticationMixin, AbstractUser):
         return Template.objects.filter(community=False, created_by=self).count()
 
     @property
-    def num_contacts(self):
-        return self.created_contacts.count()
-
-    @property
     def num_collaborating_budgets(self):
         return self.collaborating_budgets.count()
 

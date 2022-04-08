@@ -45,7 +45,6 @@ def test_validate_password_token(api_client, user):
         "metrics": {
             "num_budgets": 0,
             "num_templates": 0,
-            "num_contacts": 0,
             "num_collaborating_budgets": 0,
             "num_archived_budgets": 0
         }
@@ -223,7 +222,6 @@ def test_reset_password(user, api_client):
         "metrics": {
             "num_budgets": 0,
             "num_templates": 0,
-            "num_contacts": 0,
             "num_collaborating_budgets": 0,
             "num_archived_budgets": 0
         }
