@@ -1,14 +1,9 @@
 import logging
 
-from greenbudget.lib.django_utils.models import Choices
+from greenbudget.app.actual.models import ActualType
 
 
 logger = logging.getLogger('greenbudget')
-
-
-PLAID_TRANSACTION_TYPES = Choices(
-    (0, "credit_card", "Credit Card"),
-)
 
 
 class PlaidAccountType:
@@ -107,7 +102,7 @@ CLASSIFICATIONS = [
     PlaidTransactionClassification(
         account_type=PlaidAccountType.CREDIT,
         account_subtype=PlaidAccountSubType.CREDIT_CARD,
-        transaction_type=PLAID_TRANSACTION_TYPES.credit_card
+        transaction_type=ActualType.PLAID_TRANSACTION_TYPES.credit_card
     )
 ]
 

@@ -7,7 +7,6 @@ from greenbudget.lib.django_utils.models import Choices
 
 from greenbudget.app import model
 from greenbudget.app.budgeting.models import BudgetingOrderedRowModel
-from greenbudget.app.integrations.plaid.models import PLAID_TRANSACTION_TYPES
 from greenbudget.app.tagging.models import Tag
 
 from .managers import ActualManager
@@ -24,7 +23,9 @@ class ActualType(Tag):
             content_types__app_label="actual"
         ))
 
-    PLAID_TRANSACTION_TYPES = PLAID_TRANSACTION_TYPES
+    PLAID_TRANSACTION_TYPES = Choices(
+        (0, "credit_card", "Credit Card"),
+    )
     plaid_transaction_type = models.IntegerField(
         choices=PLAID_TRANSACTION_TYPES,
         null=True,

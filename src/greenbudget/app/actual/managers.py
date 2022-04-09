@@ -6,7 +6,6 @@ from greenbudget.app.account.cache import account_instance_cache
 from greenbudget.app.budget.cache import (
     budget_instance_cache, budget_actuals_cache, budget_children_cache)
 from greenbudget.app.budgeting.managers import BudgetingOrderedRowManager
-from greenbudget.app.integrations.plaid.api import client
 from greenbudget.app.subaccount.cache import (
     subaccount_instance_cache, invalidate_parent_children_cache)
 
@@ -70,6 +69,8 @@ class ActualManager(BudgetingOrderedRowManager):
         return getattr(self, imports[source])(*args, **kwargs)
 
     def import_bank_account_transactions(self, **kwargs):
+        # pylint: disable=import-outside-toplevel
+        from greenbudget.app.integrations.plaid.api import client
         split, model = split_kwargs(
             'raise_exception', 'account_ids', 'start_date', 'end_date',
             'public_token', **kwargs)
