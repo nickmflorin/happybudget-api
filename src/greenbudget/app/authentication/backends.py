@@ -6,7 +6,8 @@ from rest_framework import authentication
 
 from greenbudget.app import permissions
 
-from .exceptions import InvalidCredentialsError, EmailDoesNotExist
+from .exceptions import (
+    InvalidCredentialsError, EmailDoesNotExist, NotAuthenticatedError)
 
 
 class SocialModelAuthentication(ModelBackend):
@@ -51,32 +52,32 @@ class ModelAuthentication(ModelBackend):
         email = email or username
         if email is not None and password is not None:
             try:
-                user = get_user_model().objects.get(email=email)
-            except get_user_model().DoesNotExist as e:
+                return self._authenticate(email, password)
+            except (InvalidCredentialsError, EmailDoesNotExist,
+                    NotAuthenticatedError) as e:
                 # If we are coming from the Admin, we do not want to raise a
                 # DRF exception as it will not render in the response, it will
                 # just be a 500 error.
                 if not permissions.request_is_admin(request):
-                    raise EmailDoesNotExist(field='email') from e
+                    raise e
                 return None
-
-            # If the user was authenticated socially, do not authenticate with
-            # the password.
-            if not user.has_password:
-                return None
-
-            if not user.check_password(password):
-                # If we are coming from the Admin, we do not want to raise a
-                # DRF exception as it will not render in the response, it will
-                # just be a 500 error.
-                if not permissions.request_is_admin(request):
-                    raise InvalidCredentialsError(field="password")
-                return None
-            if not user.can_authenticate(
-                    raise_exception=not permissions.request_is_admin(request)):
-                return None
-            return user
         return None
+
+    def _authenticate(self, email, password):
+        try:
+            user = get_user_model().objects.get(email=email)
+        except get_user_model().DoesNotExist as e:
+            raise EmailDoesNotExist(field='email') from e
+
+        # If the user was authenticated socially, do not authenticate with
+        # the password.
+        if not user.has_password:
+            return None
+        elif not user.check_password(password):
+            raise InvalidCredentialsError(field="password")
+        elif not user.can_authenticate(raise_exception=True):
+            return None
+        return user
 
 
 class SessionAuthentication(authentication.SessionAuthentication):

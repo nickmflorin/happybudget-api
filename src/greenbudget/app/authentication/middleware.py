@@ -167,7 +167,8 @@ class AuthTokenCookieMiddleware(MiddlewareMixin):
     def force_logout(self, request, response):
         # In tests, using RequestFactory, there will be no session on the
         # request.
-        if settings.ENVIRONMENT != Environments.TEST:
+        if not permissions.request_is_admin(request) \
+                and settings.ENVIRONMENT != Environments.TEST:
             auth.logout(request)
         return self.delete_cookie(response)
 
@@ -218,7 +219,7 @@ class AuthTokenCookieMiddleware(MiddlewareMixin):
         is_logout_url = request.path == reverse('authentication:logout')
         try:
             is_authenticated = request.cookie_user \
-                and request.cookie_user.is_authenticated
+                and request.cookie_user.is_fully_authenticated
         except InvalidToken:
             # If the JWT token stored in cookies is invalid or missing, remove
             # the user's session and delete the JWT token from the response.
@@ -230,8 +231,7 @@ class AuthTokenCookieMiddleware(MiddlewareMixin):
             # If the user dictated by the JWT token is either not authenticated,
             # not active or not verified, remove the user's session and delete
             # the JWT token from the response.
-            if not is_authenticated or not request.cookie_user.is_active \
-                    or not request.cookie_user.email_is_verified:
+            if not is_authenticated:
                 return self.force_logout(request, response)
 
             # For security purposes, we need to make sure that the user dictated
@@ -239,7 +239,8 @@ class AuthTokenCookieMiddleware(MiddlewareMixin):
             # token.  If they are not, we need to remove the session and delete
             # the JWT token from the response, as this is indicative of a
             # malicious attempt to exploit potential security holes.
-            if settings.ENVIRONMENT != Environments.TEST:
+            if settings.ENVIRONMENT != Environments.TEST \
+                    and not permissions.request_is_admin(request):
                 session_user = get_session_user(request, cache_stripe_info=False)
                 if session_user != request.cookie_user \
                         and session_user.is_authenticated:
