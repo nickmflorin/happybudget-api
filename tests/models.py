@@ -75,7 +75,7 @@ def colors(db, models):
     for i, code in enumerate(color_list):
         color_obj = models.Color.objects.create(
             code=code,
-            name="Test Color %s" % i
+            name=f"Test Color {i}"
         )
         color_obj.content_types.set(content_types)
         color_obj.save()

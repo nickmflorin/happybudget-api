@@ -372,7 +372,7 @@ IDE they use is an important aspect of that workflow.
 
 While it is not required that a developer use
 [VSCode](https://code.visualstudio.com/), it is strongly, strongly recommended
-that they do.  Usage of [VSCode](https://code.visualstudio.com/) will mean that
+that they do. Usage of [VSCode](https://code.visualstudio.com/) will mean that
 the setup for the team's code environment will more seamlessly integrate into
 your workflow.
 
@@ -395,15 +395,18 @@ following configurations to your `settings.json` file:
 
 ```json
 {
-	"python.linting.flake8Enabled": true,
-	"python.linting.pylintEnabled": true,
-	"python.linting.flake8CategorySeverity.W": "Error",
-	"python.linting.pycodestyleEnabled": true,
-	"editor.rulers": [
-		80,
-		100
-	],
-	"python.languageServer": "Pylance"
+  "editor.formatOnSave": true,
+  "[python]": {
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "editor.formatOnSave": true
+  },
+  "python.linting.flake8Enabled": true,
+  "python.linting.pylintEnabled": true,
+  "python.linting.flake8CategorySeverity.W": "Error",
+  "python.linting.pycodestyleEnabled": true,
+  "editor.rulers": [80, 100],
+  "python.languageServer": "Pylance"
 }
 ```
 

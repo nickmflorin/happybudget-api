@@ -12,7 +12,7 @@ from .models import Actual, ActualType
 class ActualTypeForm(TagAdminForm):
     class Meta:
         model = ActualType
-        fields = ('order', 'title', 'color')
+        fields = ('order', 'title', 'color', 'plaid_transaction_type')
 
 
 @admin.register(ActualType)

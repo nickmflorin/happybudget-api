@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from greenbudget.app.serializers import Serializer
-from .client import client
+from .api import client
 
 
 class CreateLinkTokenSerializer(Serializer):

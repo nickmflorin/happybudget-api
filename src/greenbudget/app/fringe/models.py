@@ -7,7 +7,7 @@ from greenbudget.app.budgeting.models import BudgetingOrderedRowModel
 from .managers import FringeManager, BudgetFringeManager, TemplateFringeManager
 
 
-@model.model(user_field='updated_by', type='fringe')
+@model.model(type='fringe')
 class Fringe(BudgetingOrderedRowModel):
     name = models.CharField(max_length=128, null=True)
     description = models.CharField(null=True, max_length=128)

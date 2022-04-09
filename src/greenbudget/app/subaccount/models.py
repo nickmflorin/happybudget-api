@@ -260,7 +260,7 @@ class SubAccount(BudgetingTreePolymorphicOrderedRowModel):
         return any(alterations)
 
 
-@model.model(user_field='updated_by', type='subaccount')
+@model.model(type='subaccount')
 class BudgetSubAccount(SubAccount):
     attachments = models.ManyToManyField(
         to='io.Attachment',
@@ -339,7 +339,7 @@ class BudgetSubAccount(SubAccount):
         return previous_value != self.actual
 
 
-@model.model(user_field='updated_by', type='subaccount')
+@model.model(type='subaccount')
 class TemplateSubAccount(SubAccount):
     domain = "template"
     objects = TemplateSubAccountManager()

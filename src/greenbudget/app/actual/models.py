@@ -1,11 +1,13 @@
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models, IntegrityError
+from django.utils.translation import gettext_lazy as _
 
 from greenbudget.lib.django_utils.models import Choices
 
 from greenbudget.app import model
 from greenbudget.app.budgeting.models import BudgetingOrderedRowModel
+from greenbudget.app.integrations.plaid.models import PLAID_TRANSACTION_TYPES
 from greenbudget.app.tagging.models import Tag
 
 from .managers import ActualManager
@@ -22,6 +24,17 @@ class ActualType(Tag):
             content_types__app_label="actual"
         ))
 
+    PLAID_TRANSACTION_TYPES = PLAID_TRANSACTION_TYPES
+    plaid_transaction_type = models.IntegerField(
+        choices=PLAID_TRANSACTION_TYPES,
+        null=True,
+        unique=True,
+        help_text=_(
+            'Designates which Plaid transaction type should be mapped to '
+            'this actual type.'
+        ),
+    )
+
     class Meta:
         get_latest_by = "created_at"
         ordering = ("order",)
@@ -30,13 +43,10 @@ class ActualType(Tag):
 
     def __str__(self):
         color_string = None if self.color is None else self.color.code
-        return "{title}: {color}".format(
-            color=color_string,
-            title=self.title
-        )
+        return f"{self.title}: {color_string}"
 
 
-@model.model(user_field='updated_by', type='actual')
+@model.model(type='actual')
 class Actual(BudgetingOrderedRowModel):
     name = models.CharField(null=True, max_length=128)
     notes = models.CharField(null=True, max_length=256)
@@ -109,10 +119,15 @@ class Actual(BudgetingOrderedRowModel):
 
     @classmethod
     def from_plaid_transaction(cls, transaction, **kwargs):
+        actual_type = None
+        if transaction.transaction_type_classification is not None:
+            pttype = transaction.transaction_type_classification
+            actual_type = ActualType.objects.get(plaid_transaction_type=pttype)
         return cls(
             name=transaction.name[:50],
             notes=', '.join(transaction.categories),
             date=transaction.date,
             value=transaction.amount,
+            actual_type=actual_type,
             **kwargs
         )

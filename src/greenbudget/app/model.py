@@ -294,9 +294,6 @@ class model:
         else:
             self._track_all_fields = True
 
-        # A field on the model that is used to determine the user performing
-        # the action when the request is not available.
-        self._user_field = kwargs.pop('user_field', None)
         self._track_user = kwargs.pop('track_user', True)
 
     def type(self, cls):
@@ -642,38 +639,25 @@ class model:
         else:
             user = getattr(self.thread, 'user', None)
 
-        def validate_and_return_user(usr):
-            # Really, we should be authenticating the user in tests.
-            # But since we don't always do that, this is a PATCH for
-            # now.
-            # pragma: no cover
-            if usr is not None and (not user.is_authenticated
-                    or not user.is_verified) \
-                    and settings.ENVIRONMENT != Environments.TEST:
-                raise Exception("The user should be authenticated!")
-            elif usr is None:
-                # pragma: no cover
-                if 'greenbudget.app.middleware.ModelRequestMiddleware' \
-                        not in settings.MIDDLEWARE:
-                    logger.warning(
-                        "The user cannot be inferred for the model save "
-                        "because the appropriate middleware is not installed."
-                    )
-                # pragma: no cover
-                elif settings.ENVIRONMENT != Environments.TEST:
-                    logger.warning(
-                        "The user cannot be inferred from the model save for "
-                        "model %s." % instance.__class__.__name__
-                    )
-            return usr
+        # Really, we should be authenticating the user in tests.  But since we
+        # do not always do that, this is a patch for now.
+        assert user is None or user.is_fully_authenticated \
+            or settings.ENVIRONMENT == Environments.TEST, \
+            f"The user editing the model {self._type} should be fully " \
+            "authenticated!"
 
         if user is None:
-            if self._user_field is not None:
-                # pragma: no cover
-                if not hasattr(instance, self._user_field):
-                    raise FieldDoesNotExistError(
-                        field=self._user_field,
-                        model=instance
-                    )
-                user = getattr(instance, self._user_field)
-        return validate_and_return_user(user)
+            # pragma: no cover
+            if 'greenbudget.app.middleware.ModelRequestMiddleware' \
+                    not in settings.MIDDLEWARE:
+                logger.warning(
+                    "The user cannot be inferred for the model save "
+                    "because the appropriate middleware is not installed."
+                )
+            # pragma: no cover
+            elif settings.ENVIRONMENT != Environments.TEST:
+                logger.warning(
+                    "The user cannot be inferred from the model save for "
+                    "model %s." % instance.__class__.__name__
+                )
+        return user

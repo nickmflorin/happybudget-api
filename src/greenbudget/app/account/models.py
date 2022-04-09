@@ -139,7 +139,7 @@ class Account(BudgetingTreePolymorphicOrderedRowModel):
         return self.estimate(*args, **kwargs)
 
 
-@model.model(user_field='updated_by', type="account")
+@model.model(type="account")
 class BudgetAccount(Account):
     objects = BudgetAccountManager()
 
@@ -187,7 +187,7 @@ class BudgetAccount(Account):
         return any(alterations)
 
 
-@model.model(user_field='updated_by', type="account")
+@model.model(type="account")
 class TemplateAccount(Account):
     objects = TemplateAccountManager()
     domain = "template"

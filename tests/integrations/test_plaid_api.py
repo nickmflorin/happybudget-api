@@ -1,7 +1,7 @@
 import mock
 import plaid
 
-from greenbudget.app.integrations.plaid import client
+from greenbudget.app.integrations.plaid.api import client
 
 
 def test_create_link_token(api_client, user, monkeypatch):

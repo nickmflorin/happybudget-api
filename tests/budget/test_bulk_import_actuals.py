@@ -5,7 +5,34 @@ import plaid
 import pytest
 
 from greenbudget.app.actual.models import Actual
-from greenbudget.app.integrations.plaid import client
+from greenbudget.app.integrations.plaid.api import client
+
+
+@pytest.fixture
+def mock_accounts():
+    return [
+        {
+            "account_id": 1,
+            'name': 'Savings Account',
+            'official_name': 'My Savings Account',
+            'type': 'depository',
+            'subtype': 'savings'
+        },
+        {
+            "account_id": 2,
+            'name': 'Checking Account',
+            'official_name': 'My Checking Account',
+            'type': 'depository',
+            'subtype': 'checking'
+        },
+        {
+            "account_id": 3,
+            'name': 'Credit Account',
+            'official_name': 'My Credit Card Account',
+            'type': 'credit',
+            'subtype': 'credit card'
+        }
+    ]
 
 
 @pytest.fixture
@@ -19,6 +46,7 @@ def mock_transactions():
             "datetime": None,
             "iso_currency_code": 'USD',
             "transaction_id": 1,
+            "account_id": 3,
             "merchant_name": 'SparkFun'
         },
         {
@@ -29,6 +57,7 @@ def mock_transactions():
             "datetime": datetime.datetime(2022, 10, 5, 0, 0, 0),
             "iso_currency_code": 'USD',
             "transaction_id": 2,
+            "account_id": 1,
             "merchant_name": 'Dave'
         },
         {
@@ -40,7 +69,8 @@ def mock_transactions():
             "date": None,
             "datetime": datetime.datetime(2022, 10, 6, 0, 0, 0),
             "iso_currency_code": 'USD',
-            "transaction_id": 2,
+            "transaction_id": 3,
+            "account_id": 2,
             "merchant_name": 'Spinelli'
         },
         {
@@ -51,20 +81,24 @@ def mock_transactions():
             # an associated date.
             "date": None,
             "datetime": None,
+            "account_id": 3,
             "iso_currency_code": 'USD',
-            "transaction_id": 2,
+            "transaction_id": 4,
             "merchant_name": 'RoFo'
         }
     ]
 
 
 def test_bulk_import_actuals(api_client, user, budget_df, models, monkeypatch,
-        mock_transactions):
+        mock_transactions, mock_accounts, create_actual_type):
     access_token_response = mock.MagicMock()
     access_token_response.access_token = "mock_access_token"
 
     transactions_response = mock.MagicMock()
-    transactions_response.to_dict = lambda: {'transactions': mock_transactions}
+    transactions_response.to_dict = lambda: {
+        'transactions': mock_transactions,
+        'accounts': mock_accounts
+    }
 
     monkeypatch.setattr(
         client,
@@ -73,6 +107,13 @@ def test_bulk_import_actuals(api_client, user, budget_df, models, monkeypatch,
     )
     monkeypatch.setattr(
         client, 'transactions_get', lambda *args: transactions_response)
+
+    plaid_tran_type = models.ActualType.PLAID_TRANSACTION_TYPES.credit_card
+    actual_type = create_actual_type(
+        title="Credit Card",
+        color=None,
+        plaid_transaction_type=plaid_tran_type
+    )
 
     budget = budget_df.create_budget()
     api_client.force_login(user)
@@ -92,64 +133,76 @@ def test_bulk_import_actuals(api_client, user, budget_df, models, monkeypatch,
     assert response.status_code == 200
     assert response.json()["children"] == [
         {
-            "actual_type": actuals[0].actual_type,
-            "attachments": [],
-            "contact": None,
-            "date": "2022-01-01",
             "id": actuals[0].pk,
             "name": "SparkFun",
             "notes": "Food and Drink, Restaurants",
+            "attachments": [],
+            "contact": None,
+            "date": "2022-01-01",
             "order": actuals[0].order,
             "owner": None,
             "payment_id": actuals[0].payment_id,
             "purchase_order": actuals[0].purchase_order,
             "type": actuals[0].type,
-            "value": 89.4
+            "value": 89.4,
+            "actual_type": {
+                "id": actual_type.pk,
+                "order": actual_type.order,
+                "color": None,
+                "plural_title": None,
+                "title": "Credit Card"
+            }
         },
         {
-            "actual_type": actuals[1].actual_type,
-            "attachments": [],
-            "contact": None,
-            "date": "2022-10-05",
             "id": actuals[1].pk,
             "name": "Dave & Busters",
             "notes": "Entertainment",
             "order": actuals[1].order,
+            "attachments": [],
+            "contact": None,
+            "date": "2022-10-05",
             "owner": None,
             "payment_id": actuals[1].payment_id,
             "purchase_order": actuals[1].purchase_order,
             "type": actuals[1].type,
-            "value": 10.0
+            "value": 10.0,
+            "actual_type": None,
         },
         {
-            "actual_type": actuals[2].actual_type,
-            "attachments": [],
-            "contact": None,
-            "date": "2022-10-06",
             "id": actuals[2].pk,
             "name": "Spinellis",
             "notes": "Restaurants",
+            "attachments": [],
+            "contact": None,
+            "date": "2022-10-06",
             "order": actuals[2].order,
             "owner": None,
             "payment_id": actuals[2].payment_id,
             "purchase_order": actuals[2].purchase_order,
             "type": actuals[2].type,
-            "value": 15.0
+            "value": 15.0,
+            "actual_type": None,
         },
         {
-            "actual_type": actuals[3].actual_type,
-            "attachments": [],
-            "contact": None,
-            "date": None,
             "id": actuals[3].pk,
             "name": "Royal Forms",
             "notes": "Restaurants",
             "order": actuals[3].order,
             "owner": None,
+            "attachments": [],
+            "contact": None,
+            "date": None,
             "payment_id": actuals[3].payment_id,
             "purchase_order": actuals[3].purchase_order,
             "type": actuals[3].type,
-            "value": 11.0
+            "value": 11.0,
+            "actual_type": {
+                "id": actual_type.pk,
+                "order": actual_type.order,
+                "color": None,
+                "plural_title": None,
+                "title": "Credit Card"
+            }
         }
     ]
 

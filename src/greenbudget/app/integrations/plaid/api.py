@@ -16,7 +16,7 @@ from plaid.model import (
 
 from django.conf import settings
 
-from .models import PlaidTransaction
+from .models import PlaidTransaction, PlaidAccount
 from .exceptions import PlaidRequestError
 
 
@@ -166,8 +166,12 @@ class PlaidClient(plaid_api.PlaidApi):
             **kwargs
         )
         response = client.transactions_get(request)
+        accounts = [
+            PlaidAccount(**d)
+            for d in response.to_dict()['accounts']
+        ]
         return [
-            PlaidTransaction.from_data(user, **d)
+            PlaidTransaction(user, accounts, **d)
             for d in response.to_dict()['transactions']
         ]
 
