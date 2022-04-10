@@ -40,6 +40,10 @@ class PlaidAccountSubType:
 
 
 class PlaidCategoryGroup:
+    """
+    The group that a Plaid category is assigned.  Each Plaid category is
+    associated with a group and up to 3 hierarchy categorizations.
+    """
     SPECIAL = 'special'
     PLACE = 'place'
 
@@ -49,6 +53,9 @@ class PlaidHierarchy1:
     The first hierarchy level of a Plaid category.  This will be the first
     element in the array of categories attached to a transaction.  This list
     is not exhaustive, but only includes the values we are concerned with.
+
+    For an exhaustive list of values, see the `get_plaid_categories` management
+    command.
     """
     PAYMENT = 'Payment'
     TRANSFER = 'Transfer'
@@ -60,6 +67,9 @@ class PlaidHierarchy2:
     The second hierarchy level of a Plaid category.  This will be the second
     element in the array of categories attached to a transaction.  This list
     is not exhaustive, but only includes the values we are concerned with.
+
+    For an exhaustive list of values, see the `get_plaid_categories` management
+    command.
     """
     CREDIT_CARD = 'Credit Card'
     ACH = 'ACH'
@@ -83,6 +93,9 @@ class PlaidHierarchy3:
     The third hierarchy level of a Plaid category.  This will be the last
     element in the array of categories attached to a transaction.  This list
     is not exhaustive, but only includes the values we are concerned with.
+
+    For an exhaustive list of values, see the `get_plaid_categories` management
+    command.
     """
     CHECK = 'Check'
     ATM = 'ATM'

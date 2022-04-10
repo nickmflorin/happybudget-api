@@ -8,6 +8,10 @@ class ImmutableSequence(collections.abc.Sequence):
         else:
             self._store = list(args)
 
+    @property
+    def data(self):
+        return self._store
+
     def __getitem__(self, i):
         return self._store[i]
 

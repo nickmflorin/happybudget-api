@@ -6,7 +6,7 @@ import pytest
 
 from greenbudget.app.actual.models import Actual
 from greenbudget.app.integrations.plaid.api import client
-from greenbudget.app.integrations.plaid.classification import PlaidCategory
+from greenbudget.app.integrations.plaid.classification import PlaidCategories
 
 
 @pytest.fixture
@@ -85,7 +85,7 @@ def mock_transactions(mock_plaid):
         ),
         # This transaction should be ignored.
         mock_plaid.Transaction(
-            category=PlaidCategory.BANK_FEES.native,
+            category=PlaidCategories.BANK_FEES.data,
             name="Bank Fee",
             amount=11.0,
             date=datetime.date(2022, 1, 5),
@@ -97,7 +97,7 @@ def mock_transactions(mock_plaid):
         ),
         # This transaction should be ignored.
         mock_plaid.Transaction(
-            category=PlaidCategory.OVERDRAFT_FEES.native,
+            category=PlaidCategories.OVERDRAFT_FEES.data,
             name="Overdraft Fee",
             amount=100.0,
             date=datetime.date(2022, 1, 5),
@@ -108,7 +108,7 @@ def mock_transactions(mock_plaid):
             merchant_name=None,
         ),
         mock_plaid.Transaction(
-            category=PlaidCategory.CHECK_WITHDRAWAL.native,
+            category=PlaidCategories.CHECK_WITHDRAWAL.data,
             name="Check Withdrawal",
             amount=1000.0,
             date=datetime.date(2022, 3, 5),
@@ -119,7 +119,7 @@ def mock_transactions(mock_plaid):
             merchant_name=None,
         ),
         mock_plaid.Transaction(
-            category=PlaidCategory.ACH_TRANSFER.native,
+            category=PlaidCategories.ACH_TRANSFER.data,
             name="ACH Transfer",
             amount=4000.0,
             date=datetime.date(2021, 3, 5),
@@ -130,7 +130,7 @@ def mock_transactions(mock_plaid):
             merchant_name=None,
         ),
         mock_plaid.Transaction(
-            category=PlaidCategory.WIRE_TRANSFER.native,
+            category=PlaidCategories.WIRE_TRANSFER.data,
             name="Wire Transfer",
             amount=9000.0,
             date=datetime.date(2021, 6, 5),

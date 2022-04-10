@@ -166,10 +166,7 @@ class PlaidClient(plaid_api.PlaidApi):
             **kwargs
         )
         response = client.transactions_get(request)
-        accounts = [
-            PlaidAccount(d)
-            for d in response.accounts
-        ]
+        accounts = [PlaidAccount(d) for d in response.accounts]
         return [
             PlaidTransaction(user, accounts, d)
             for d in response.transactions

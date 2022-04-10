@@ -5,7 +5,7 @@ from plaid.model.transaction import Transaction
 
 from greenbudget.lib.utils import ensure_iterable
 from .classification import (
-    PlaidCategorization, TRANSACTION_CLASSIFICATIONS,
+    PlaidCategory, TRANSACTION_CLASSIFICATIONS,
     TRANSACTION_IGNORE_CLASSIFICATIONS)
 
 
@@ -13,10 +13,11 @@ logger = logging.getLogger('greenbudget')
 
 
 class PlaidAttribute:
-    def __init__(self, plaid_attr, attr=None, getter=None):
+    def __init__(self, plaid_attr, attr=None, getter=None, scope_private=False):
         self._plaid_attr = plaid_attr
         self._attr = attr
         self._getter = getter
+        self._scope_private = scope_private
 
     @property
     def attr(self):
@@ -27,8 +28,14 @@ class PlaidAttribute:
             return self._getter(model)
         return getattr(model, self._plaid_attr)
 
+    @property
+    def setting_attr(self):
+        if self._scope_private:
+            return f'_{self.attr}'
+        return self.attr
+
     def _set_on_instance(self, instance, value):
-        setattr(instance, f'_{self.attr}', value)
+        setattr(instance, self.setting_attr, value)
 
     def _set_from_model(self, instance, model):
         self._set_on_instance(instance, self._get_from_model(model))
@@ -75,7 +82,7 @@ class PlaidModel:
 
 class PlaidAccount(PlaidModel):
     attrs = [
-        PlaidAttribute('account_id', attr='id'),
+        PlaidAttribute('account_id'),
         PlaidAttribute('name'),
         PlaidAttribute('official_name'),
         PlaidAttribute('type', getter=lambda a: a.type.value),
@@ -83,28 +90,12 @@ class PlaidAccount(PlaidModel):
     ]
     plaid_counterpart = AccountBase
 
-    @property
-    def name(self):
-        return self._name
-
-    @property
-    def official_name(self):
-        return self._official_name
-
-    @property
-    def type(self):
-        return self._type
-
-    @property
-    def subtype(self):
-        return self._subtype
-
 
 class PlaidTransaction(PlaidModel):
     attrs = [
-        PlaidAttribute('transaction_id', attr='id'),
-        PlaidAttribute('datetime'),
-        PlaidAttribute('date'),
+        PlaidAttribute('transaction_id'),
+        PlaidAttribute('datetime', scope_private=True),
+        PlaidAttribute('date', scope_private=True),
         PlaidAttribute('name'),
         PlaidAttribute('merchant_name'),
         PlaidAttribute('amount'),
@@ -125,17 +116,17 @@ class PlaidTransaction(PlaidModel):
 
     @property
     def account(self):
-        filtered = [a for a in self.accounts if a.id == self.account_id]
+        filtered = [a for a in self.accounts if a.account_id == self.account_id]
         if not filtered:
             logger.error(
                 f"Plaid's API returned {len(self.accounts)} but none of them "
                 f"map to the account ID {self.account_id} associated with "
-                "transaction {self.id}.", extra={
+                "transaction {self.transaction_id}.", extra={
                     'user_id': self._user.pk,
                     'user_email': self._user.email,
-                    'transaction_id': self.id,
+                    'transaction_id': self.transaction_id,
                     'account_id': self.account_id,
-                    'accounts': ', '.join([a.id for a in self.accounts])
+                    'accounts': ', '.join([a.account_id for a in self.accounts])
                 }
             )
             return None
@@ -143,28 +134,28 @@ class PlaidTransaction(PlaidModel):
             logger.error(
                 f"Plaid's API returned multiple ({len(filtered)}) accounts "
                 f"for the same account ID {self.account_id} for transaction "
-                f"{self.id}.", extra={
+                f"{self.transaction_id}.", extra={
                     'user_id': self._user.pk,
                     'user_email': self._user.email,
-                    'transaction_id': self.id,
+                    'transaction_id': self.transaction_id,
                     'account_id': self.account_id,
-                    'accounts': ', '.join([a.id for a in self.accounts])
+                    'accounts': ', '.join([a.account_id for a in self.accounts])
                 }
             )
         return filtered[0]
 
     def is_category(self, *categories):
         categories = ensure_iterable(categories)
-        assert all([isinstance(x, PlaidCategorization) for x in categories]), \
+        assert all([isinstance(x, PlaidCategory) for x in categories]), \
             "All provided categories must be instances of " \
-            f"{PlaidCategorization}."
+            f"{PlaidCategory}."
         return any([c == self.categories for c in categories])
 
     def is_category_or_subset_of(self, *categories):
         categories = ensure_iterable(categories)
-        assert all([isinstance(x, PlaidCategorization) for x in categories]), \
+        assert all([isinstance(x, PlaidCategory) for x in categories]), \
             "All provided categories must be instances of " \
-            f"{PlaidCategorization}."
+            f"{PlaidCategory}."
         return any([
             c.is_equal_or_parent_of(self.categories) for c in categories])
 
@@ -175,14 +166,6 @@ class PlaidTransaction(PlaidModel):
     @property
     def should_ignore(self):
         return TRANSACTION_IGNORE_CLASSIFICATIONS.classify(self)
-
-    @property
-    def account_id(self):
-        return self._account_id
-
-    @property
-    def iso_currency_code(self):
-        return self._iso_currency_code
 
     @property
     def datetime(self):
@@ -196,19 +179,3 @@ class PlaidTransaction(PlaidModel):
     def date(self):
         # The date property will never be None.
         return self._user.in_timezone(self._date)
-
-    @property
-    def amount(self):
-        return self._amount
-
-    @property
-    def name(self):
-        return self._name
-
-    @property
-    def merchant_name(self):
-        return self._merchant_name
-
-    @property
-    def categories(self):
-        return self._categories
