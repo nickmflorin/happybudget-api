@@ -77,7 +77,7 @@ class ActualManager(BudgetingOrderedRowManager):
         transactions = client.fetch_transactions(model['created_by'], **split)
         return self.bulk_add([
             self.model.from_plaid_transaction(t, **model)
-            for t in transactions
+            for t in transactions if t.should_ignore is False
         ])
 
     def get_owners_to_reactualize(self, obj):

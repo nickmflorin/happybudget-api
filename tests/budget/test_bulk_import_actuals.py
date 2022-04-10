@@ -6,86 +6,140 @@ import pytest
 
 from greenbudget.app.actual.models import Actual
 from greenbudget.app.integrations.plaid.api import client
+from greenbudget.app.integrations.plaid.classification import PlaidCategory
 
 
 @pytest.fixture
-def mock_accounts():
+def mock_accounts(mock_plaid):
     return [
-        {
-            "account_id": 1,
-            'name': 'Savings Account',
-            'official_name': 'My Savings Account',
-            'type': 'depository',
-            'subtype': 'savings'
-        },
-        {
-            "account_id": 2,
-            'name': 'Checking Account',
-            'official_name': 'My Checking Account',
-            'type': 'depository',
-            'subtype': 'checking'
-        },
-        {
-            "account_id": 3,
-            'name': 'Credit Account',
-            'official_name': 'My Credit Card Account',
-            'type': 'credit',
-            'subtype': 'credit card'
-        }
+        mock_plaid.Account(
+            account_id='01',
+            name='Savings Account',
+            official_name='My Savings Account',
+            type=mock_plaid.AccountType(value='depository'),
+            subtype=mock_plaid.AccountSubType(value='savings'),
+        ),
+        mock_plaid.Account(
+            account_id='02',
+            name='Checking Account',
+            official_name='My Checking Account',
+            type=mock_plaid.AccountType(value='depository'),
+            subtype=mock_plaid.AccountSubType(value='checking'),
+        ),
+        mock_plaid.Account(
+            account_id='03',
+            name='Credit Account',
+            official_name='My Credit Card Account',
+            type=mock_plaid.AccountType(value='credit'),
+            subtype=mock_plaid.AccountSubType(value='credit card')
+        ),
     ]
 
 
 @pytest.fixture
-def mock_transactions():
+def mock_transactions(mock_plaid):
     return [
-        {
-            "category": ["Food and Drink", "Restaurants"],
-            "name": "SparkFun",
-            "amount": 89.4,
-            "date": datetime.date(2022, 1, 1),
-            "datetime": None,
-            "iso_currency_code": 'USD',
-            "transaction_id": 1,
-            "account_id": 3,
-            "merchant_name": 'SparkFun'
-        },
-        {
-            "category": ["Entertainment"],
-            "name": "Dave & Busters",
-            "amount": 10.0,
-            "date": datetime.date(2022, 10, 5),
-            "datetime": datetime.datetime(2022, 10, 5, 0, 0, 0),
-            "iso_currency_code": 'USD',
-            "transaction_id": 2,
-            "account_id": 1,
-            "merchant_name": 'Dave'
-        },
-        {
-            "category": ["Restaurants"],
-            "name": "Spinellis",
-            "amount": 15.0,
-            # Omitting the date should still cause the actual date to be
-            # determined from the datetime.
-            "date": None,
-            "datetime": datetime.datetime(2022, 10, 6, 0, 0, 0),
-            "iso_currency_code": 'USD',
-            "transaction_id": 3,
-            "account_id": 2,
-            "merchant_name": 'Spinelli'
-        },
-        {
-            "category": ["Restaurants"],
-            "name": "Royal Forms",
-            "amount": 11.0,
-            # Omitting the date and datetime should cause the Actual not to have
-            # an associated date.
-            "date": None,
-            "datetime": None,
-            "account_id": 3,
-            "iso_currency_code": 'USD',
-            "transaction_id": 4,
-            "merchant_name": 'RoFo'
-        }
+        mock_plaid.Transaction(
+            category=["Food and Drink", "Restaurants"],
+            name="SparkFun",
+            amount=89.4,
+            date=datetime.date(2022, 1, 1),
+            datetime=None,
+            iso_currency_code='USD',
+            transaction_id='01',
+            account_id='03',
+            merchant_name='Spark Fun',
+        ),
+        mock_plaid.Transaction(
+            category=["Entertainment"],
+            name="Dave & Busters",
+            amount=10.0,
+            date=datetime.date(2022, 10, 5),
+            datetime=datetime.datetime(2022, 10, 5, 0, 0, 0),
+            iso_currency_code='USD',
+            transaction_id='02',
+            account_id='01',
+            merchant_name='Dave',
+        ),
+        mock_plaid.Transaction(
+            category=["Restaurants"],
+            name="Spinellis",
+            amount=15.0,
+            date=datetime.date(2022, 10, 6),
+            datetime=datetime.datetime(2022, 10, 6, 0, 0, 0),
+            iso_currency_code='USD',
+            transaction_id='03',
+            account_id='02',
+            merchant_name='Spinelli',
+        ),
+        mock_plaid.Transaction(
+            category=["Restaurants"],
+            name="Royal Farms",
+            amount=11.0,
+            date=datetime.date(2022, 10, 5),
+            datetime=None,
+            iso_currency_code='USD',
+            transaction_id='04',
+            account_id='03',
+            merchant_name='Rofo',
+        ),
+        # This transaction should be ignored.
+        mock_plaid.Transaction(
+            category=PlaidCategory.BANK_FEES.native,
+            name="Bank Fee",
+            amount=11.0,
+            date=datetime.date(2022, 1, 5),
+            datetime=None,
+            iso_currency_code='USD',
+            transaction_id='05',
+            account_id='03',
+            merchant_name=None,
+        ),
+        # This transaction should be ignored.
+        mock_plaid.Transaction(
+            category=PlaidCategory.OVERDRAFT_FEES.native,
+            name="Overdraft Fee",
+            amount=100.0,
+            date=datetime.date(2022, 1, 5),
+            datetime=None,
+            iso_currency_code='USD',
+            transaction_id='06',
+            account_id='03',
+            merchant_name=None,
+        ),
+        mock_plaid.Transaction(
+            category=PlaidCategory.CHECK_WITHDRAWAL.native,
+            name="Check Withdrawal",
+            amount=1000.0,
+            date=datetime.date(2022, 3, 5),
+            datetime=None,
+            iso_currency_code='USD',
+            transaction_id='06',
+            account_id='02',
+            merchant_name=None,
+        ),
+        mock_plaid.Transaction(
+            category=PlaidCategory.ACH_TRANSFER.native,
+            name="ACH Transfer",
+            amount=4000.0,
+            date=datetime.date(2021, 3, 5),
+            datetime=None,
+            iso_currency_code='USD',
+            transaction_id='07',
+            account_id='02',
+            merchant_name=None,
+        ),
+        mock_plaid.Transaction(
+            category=PlaidCategory.WIRE_TRANSFER.native,
+            name="Wire Transfer",
+            amount=9000.0,
+            date=datetime.date(2021, 6, 5),
+            datetime=None,
+            iso_currency_code='USD',
+            transaction_id='08',
+            account_id='02',
+            merchant_name=None,
+        )
     ]
 
 
@@ -95,10 +149,8 @@ def test_bulk_import_actuals(api_client, user, budget_df, models, monkeypatch,
     access_token_response.access_token = "mock_access_token"
 
     transactions_response = mock.MagicMock()
-    transactions_response.to_dict = lambda: {
-        'transactions': mock_transactions,
-        'accounts': mock_accounts
-    }
+    transactions_response.transactions = mock_transactions
+    transactions_response.accounts = mock_accounts
 
     monkeypatch.setattr(
         client,
@@ -108,11 +160,29 @@ def test_bulk_import_actuals(api_client, user, budget_df, models, monkeypatch,
     monkeypatch.setattr(
         client, 'transactions_get', lambda *args: transactions_response)
 
-    plaid_tran_type = models.ActualType.PLAID_TRANSACTION_TYPES.credit_card
-    actual_type = create_actual_type(
+    plaid_credit_card_tp = models.ActualType.PLAID_TRANSACTION_TYPES.credit_card
+    plaid_check_tp = models.ActualType.PLAID_TRANSACTION_TYPES.check
+    plaid_ach_tp = models.ActualType.PLAID_TRANSACTION_TYPES.ach
+    plaid_wire_tp = models.ActualType.PLAID_TRANSACTION_TYPES.wire
+    credit_card_actual_type = create_actual_type(
         title="Credit Card",
         color=None,
-        plaid_transaction_type=plaid_tran_type
+        plaid_transaction_type=plaid_credit_card_tp
+    )
+    check_actual_type = create_actual_type(
+        title="Check",
+        color=None,
+        plaid_transaction_type=plaid_check_tp
+    )
+    ach_actual_type = create_actual_type(
+        title="ACH",
+        color=None,
+        plaid_transaction_type=plaid_ach_tp
+    )
+    wire_actual_type = create_actual_type(
+        title="Wire",
+        color=None,
+        plaid_transaction_type=plaid_wire_tp
     )
 
     budget = budget_df.create_budget()
@@ -129,7 +199,7 @@ def test_bulk_import_actuals(api_client, user, budget_df, models, monkeypatch,
         }
     )
     actuals = models.Actual.objects.all()
-    assert actuals.count() == 4
+    assert actuals.count() == 7
     assert response.status_code == 200
     assert response.json()["children"] == [
         {
@@ -143,11 +213,11 @@ def test_bulk_import_actuals(api_client, user, budget_df, models, monkeypatch,
             "owner": None,
             "payment_id": actuals[0].payment_id,
             "purchase_order": actuals[0].purchase_order,
-            "type": actuals[0].type,
+            "type": "actual",
             "value": 89.4,
             "actual_type": {
-                "id": actual_type.pk,
-                "order": actual_type.order,
+                "id": credit_card_actual_type.pk,
+                "order": credit_card_actual_type.order,
                 "color": None,
                 "plural_title": None,
                 "title": "Credit Card"
@@ -164,7 +234,7 @@ def test_bulk_import_actuals(api_client, user, budget_df, models, monkeypatch,
             "owner": None,
             "payment_id": actuals[1].payment_id,
             "purchase_order": actuals[1].purchase_order,
-            "type": actuals[1].type,
+            "type": "actual",
             "value": 10.0,
             "actual_type": None,
         },
@@ -179,29 +249,92 @@ def test_bulk_import_actuals(api_client, user, budget_df, models, monkeypatch,
             "owner": None,
             "payment_id": actuals[2].payment_id,
             "purchase_order": actuals[2].purchase_order,
-            "type": actuals[2].type,
+            "type": "actual",
             "value": 15.0,
             "actual_type": None,
         },
         {
             "id": actuals[3].pk,
-            "name": "Royal Forms",
+            "name": "Royal Farms",
             "notes": "Restaurants",
             "order": actuals[3].order,
             "owner": None,
             "attachments": [],
             "contact": None,
-            "date": None,
+            "date": "2022-10-05",
             "payment_id": actuals[3].payment_id,
             "purchase_order": actuals[3].purchase_order,
-            "type": actuals[3].type,
+            "type": "actual",
             "value": 11.0,
             "actual_type": {
-                "id": actual_type.pk,
-                "order": actual_type.order,
+                "id": credit_card_actual_type.pk,
+                "order": credit_card_actual_type.order,
                 "color": None,
                 "plural_title": None,
                 "title": "Credit Card"
+            }
+        },
+        {
+            "id": actuals[4].pk,
+            "name": "Check Withdrawal",
+            "notes": "Transfer, Withdrawal, Check",
+            "order": actuals[4].order,
+            "owner": None,
+            "attachments": [],
+            "contact": None,
+            "date": "2022-03-05",
+            "payment_id": actuals[4].payment_id,
+            "purchase_order": actuals[4].purchase_order,
+            "type": "actual",
+            "value": 1000.0,
+            "actual_type": {
+                "id": check_actual_type.pk,
+                "order": check_actual_type.order,
+                "color": None,
+                "plural_title": None,
+                "title": "Check"
+            }
+        },
+        {
+            "id": actuals[5].pk,
+            "name": "ACH Transfer",
+            "notes": "Transfer, ACH",
+            "order": actuals[5].order,
+            "owner": None,
+            "attachments": [],
+            "contact": None,
+            "date": "2021-03-05",
+            "payment_id": actuals[5].payment_id,
+            "purchase_order": actuals[5].purchase_order,
+            "type": "actual",
+            "value": 4000.0,
+            "actual_type": {
+                "id": ach_actual_type.pk,
+                "order": ach_actual_type.order,
+                "color": None,
+                "plural_title": None,
+                "title": "ACH"
+            }
+        },
+        {
+            "id": actuals[6].pk,
+            "name": "Wire Transfer",
+            "notes": "Transfer, Wire",
+            "order": actuals[6].order,
+            "owner": None,
+            "attachments": [],
+            "contact": None,
+            "date": "2021-06-05",
+            "payment_id": actuals[6].payment_id,
+            "purchase_order": actuals[6].purchase_order,
+            "type": "actual",
+            "value": 9000.0,
+            "actual_type": {
+                "id": wire_actual_type.pk,
+                "order": wire_actual_type.order,
+                "color": None,
+                "plural_title": None,
+                "title": "Wire"
             }
         }
     ]

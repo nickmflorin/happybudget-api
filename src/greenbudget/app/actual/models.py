@@ -25,6 +25,9 @@ class ActualType(Tag):
 
     PLAID_TRANSACTION_TYPES = Choices(
         (0, "credit_card", "Credit Card"),
+        (1, "check", "Check"),
+        (2, "wire", "Wire"),
+        (3, "ach", "ACH"),
     )
     plaid_transaction_type = models.IntegerField(
         choices=PLAID_TRANSACTION_TYPES,
@@ -121,9 +124,9 @@ class Actual(BudgetingOrderedRowModel):
     @classmethod
     def from_plaid_transaction(cls, transaction, **kwargs):
         actual_type = None
-        if transaction.transaction_type_classification is not None:
-            pttype = transaction.transaction_type_classification
-            actual_type = ActualType.objects.get(plaid_transaction_type=pttype)
+        if transaction.classification is not None:
+            actual_type = ActualType.objects.get(
+                plaid_transaction_type=transaction.classification)
         return cls(
             name=transaction.name[:50],
             notes=', '.join(transaction.categories),

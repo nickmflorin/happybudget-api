@@ -1,133 +1,72 @@
 import logging
 
-from greenbudget.app.actual.models import ActualType
+from plaid.model.account_base import AccountBase
+from plaid.model.transaction import Transaction
+
+from greenbudget.lib.utils import ensure_iterable
+from .classification import (
+    PlaidCategorization, TRANSACTION_CLASSIFICATIONS,
+    TRANSACTION_IGNORE_CLASSIFICATIONS)
 
 
 logger = logging.getLogger('greenbudget')
 
 
-class PlaidAccountType:
-    """
-    The type of an Account in Plaid.
+class PlaidAttribute:
+    def __init__(self, plaid_attr, attr=None, getter=None):
+        self._plaid_attr = plaid_attr
+        self._attr = attr
+        self._getter = getter
 
-    This list is exhaustive and encompasses every possible type that an Account
-    can have in Plaid.
+    @property
+    def attr(self):
+        return self._attr or self._plaid_attr
 
-    Further information can be found here:
-    https://plaid.com/docs/api/products/transactions/#transactions-get-response-
-    accounts-type
-    """
-    INVESTMENT = 'investment'
-    CREDIT = 'credit'
-    DEPOSITORY = 'depository'
-    LOAN = 'loan'
-    # This value has been deprecated in newer versions of the API.  It's
-    # replacement is 'investment'.
-    BROKERAGE = 'brokerage'
-    OTHER = 'other'
+    def _get_from_model(self, model):
+        if self._getter is not None:
+            return self._getter(model)
+        return getattr(model, self._plaid_attr)
 
+    def _set_on_instance(self, instance, value):
+        setattr(instance, f'_{self.attr}', value)
 
-class PlaidAccountSubType:
-    """
-    The sub-type of an Account in Plaid.
+    def _set_from_model(self, instance, model):
+        self._set_on_instance(instance, self._get_from_model(model))
 
-    This list is not exhaustive, there are many, many more sub-types that their
-    API can return that are not listed here.  Only the sub-types that we are
-    concerned with are attributed to this class.
+    def _set_from_data(self, instance, *args, **kwargs):
+        data = dict(*args, **kwargs)
+        self._set_on_instance(instance, data[self._plaid_attr])
 
-    The full list of sub-types can be found here:
-    https://plaid.com/docs/api/products/transactions/#transactions-get-response
-    accounts-subtype
-    """
-    SAVINGS = 'savings'
-    CREDIT_CARD = 'credit card'
-    PAYPAL = 'paypal'
-    CHECKING = 'checking'
-    OVERDRAFT = 'overdraft'
-    DEPOSIT = 'deposit'
-
-
-class PlaidTransactionClassification:
-    evaluations = [
-        'transaction_check', 'account_check', 'account_type',
-        'account_subtype'
-    ]
-
-    def __init__(self, transaction_type, **kwargs):
-        self._transaction_type = transaction_type
-
-        assert any([x in kwargs for x in self.evaluations]), \
-            "At least one evaluation criteria must be provided."
-
-        self._account_check = kwargs.pop('account_check', None)
-        self._transaction_check = kwargs.pop('transaction_check', None)
-        self._account_type = kwargs.pop('account_type', None)
-        self._account_subtype = kwargs.pop('account_subtype', None)
-
-    def __call__(self, transaction):
-        if any([
-            getattr(self, evaluation)(transaction) is False
-            for evaluation in self.evaluations
-        ]):
-            return None
-        return self._transaction_type
-
-    def transaction_check(self, t):
-        if self._transaction_check is not None \
-                and not self._transaction_check(t):
-            return False
-        return True
-
-    def account_check(self, t):
-        if self._account_check is not None and (
-                t.account is None or not self._account_check(t.account)):
-            return False
-        return True
-
-    def account_type(self, t):
-        if self._account_type is not None and (
-                t.account is None or self._account_type != t.account.type):
-            return False
-        return True
-
-    def account_subtype(self, t):
-        if self._account_subtype is not None and (
-                t.account is None
-                or self._account_subtype != t.account.subtype):
-            return False
-        return True
-
-
-CLASSIFICATIONS = [
-    PlaidTransactionClassification(
-        account_type=PlaidAccountType.CREDIT,
-        account_subtype=PlaidAccountSubType.CREDIT_CARD,
-        transaction_type=ActualType.PLAID_TRANSACTION_TYPES.credit_card
-    )
-]
+    def implement(self, instance, *args, **kwargs):
+        if args and not isinstance(args[0], dict):
+            self._set_from_model(instance, args[0])
+        else:
+            self._set_from_data(instance, *args, **kwargs)
 
 
 class PlaidModel:
     attrs = []
 
     def __init__(self, *args, **kwargs):
-        data = dict(*args, **kwargs)
-        for attr in self.attribute_pairs:
-            setattr(self, f'_{attr[1]}', data[attr[0]])
+        for attr in self.attrs:
+            attr.implement(self, *args, **kwargs)
 
     @property
     def id(self):
         return self._id
 
+    @property
+    def plaid_counterpart(self):
+        raise NotImplementedError()
+
     def __repr__(self):
-        return str({k[1]: getattr(self, k[1]) for k in self.attribute_pairs})
+        return str({
+            a.attr: getattr(self, a.attr)
+            for a in self.attrs
+        })
 
     def __str__(self):
         return self.__repr__()
-
-    @property
-    def attribute_pairs(self):
-        return [(k, k) if not isinstance(k, tuple) else k for k in self.attrs]
 
     @classmethod
     def ensure_models(cls, *args, models):
@@ -135,7 +74,14 @@ class PlaidModel:
 
 
 class PlaidAccount(PlaidModel):
-    attrs = (('account_id', 'id'), 'name', 'official_name', 'type', 'subtype')
+    attrs = [
+        PlaidAttribute('account_id', attr='id'),
+        PlaidAttribute('name'),
+        PlaidAttribute('official_name'),
+        PlaidAttribute('type', getter=lambda a: a.type.value),
+        PlaidAttribute('subtype', getter=lambda a: a.subtype.value),
+    ]
+    plaid_counterpart = AccountBase
 
     @property
     def name(self):
@@ -155,11 +101,18 @@ class PlaidAccount(PlaidModel):
 
 
 class PlaidTransaction(PlaidModel):
-    attrs = (
-        ('transaction_id', 'id'), 'datetime', 'date', 'name',
-        'merchant_name', 'amount', 'iso_currency_code', 'account_id',
-        ('category', 'categories')
-    )
+    attrs = [
+        PlaidAttribute('transaction_id', attr='id'),
+        PlaidAttribute('datetime'),
+        PlaidAttribute('date'),
+        PlaidAttribute('name'),
+        PlaidAttribute('merchant_name'),
+        PlaidAttribute('amount'),
+        PlaidAttribute('iso_currency_code'),
+        PlaidAttribute('account_id'),
+        PlaidAttribute('category', attr='categories')
+    ]
+    plaid_counterpart = Transaction
 
     def __init__(self, user, accounts, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -200,13 +153,28 @@ class PlaidTransaction(PlaidModel):
             )
         return filtered[0]
 
+    def is_category(self, *categories):
+        categories = ensure_iterable(categories)
+        assert all([isinstance(x, PlaidCategorization) for x in categories]), \
+            "All provided categories must be instances of " \
+            f"{PlaidCategorization}."
+        return any([c == self.categories for c in categories])
+
+    def is_category_or_subset_of(self, *categories):
+        categories = ensure_iterable(categories)
+        assert all([isinstance(x, PlaidCategorization) for x in categories]), \
+            "All provided categories must be instances of " \
+            f"{PlaidCategorization}."
+        return any([
+            c.is_equal_or_parent_of(self.categories) for c in categories])
+
     @property
-    def transaction_type_classification(self):
-        for classification in CLASSIFICATIONS:
-            result = classification(self)
-            if result is not None:
-                return result
-        return None
+    def classification(self):
+        return TRANSACTION_CLASSIFICATIONS.classify(self)
+
+    @property
+    def should_ignore(self):
+        return TRANSACTION_IGNORE_CLASSIFICATIONS.classify(self)
 
     @property
     def account_id(self):
@@ -226,15 +194,8 @@ class PlaidTransaction(PlaidModel):
 
     @property
     def date(self):
-        if self._date is not None:
-            return self._user.in_timezone(self._date)
-        # If the datetime is None, the `_date` attribute is guaranteed to be
-        # None - so we cannot convert.
-        elif self.datetime is not None:
-            # Use the timezone aware datetime property instead of the raw date
-            # value returned from the API as it is already made timezone aware.
-            return self.datetime.date()
-        return None
+        # The date property will never be None.
+        return self._user.in_timezone(self._date)
 
     @property
     def amount(self):

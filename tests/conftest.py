@@ -9,6 +9,7 @@ from pytest_django.fixtures import _disable_native_migrations
 from .factories import *  # noqa
 from .http import *  # noqa
 from .models import *  # noqa
+from .plaid import *  # noqa
 from .static import *  # noqa
 from .stripe import *  # noqa
 
