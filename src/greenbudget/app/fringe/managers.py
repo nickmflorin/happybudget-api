@@ -17,12 +17,15 @@ from greenbudget.app.tabling.query import (
 class FringeQuerier(OrderedRowQuerier):
 
     def for_budgets(self):
-        ctype_id = ContentType.objects.get_for_model(self.model.budget_cls).id
+        # pylint: disable=import-outside-toplevel
+        from greenbudget.app.budget.models import Budget
+        ctype_id = ContentType.objects.get_for_model(Budget).id
         return self.filter(budget__polymorphic_ctype_id=ctype_id)
 
     def for_templates(self):
-        ctype_id = ContentType.objects.get_for_model(
-            self.model.template_cls()).id
+        # pylint: disable=import-outside-toplevel
+        from greenbudget.app.template.models import Template
+        ctype_id = ContentType.objects.get_for_model(Template).id
         return self.filter(budget__polymorphic_ctype_id=ctype_id)
 
 
