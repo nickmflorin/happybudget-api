@@ -167,6 +167,37 @@ class PlaidClient(plaid_api.PlaidApi):
         )
         response = client.transactions_get(request)
         accounts = [PlaidAccount(d) for d in response.accounts]
+
+        # Temporary checks.
+        seen_names = []
+        seen_ids = []
+        duplicate_names = []
+        duplicate_ids = []
+        for transaction in response.transactions:
+            if transaction.transaction_id in seen_ids \
+                    and transaction.transaction_id not in duplicate_ids:
+                duplicate_ids.append(transaction.transaction_id)
+            elif transaction.transaction_id not in seen_ids:
+                seen_ids.append(transaction.transaction_id)
+
+            if transaction.name in seen_names \
+                    and transaction.name not in duplicate_names:
+                duplicate_names.append(transaction.name)
+            elif transaction.name not in seen_names:
+                seen_names.append(transaction.name)
+
+        if seen_names:
+            logger.error(
+                "Plaid API returned transactions with duplicate names "
+                f"{', '.join(duplicate_names)}."
+            )
+
+        if seen_ids:
+            logger.error(
+                "Plaid API returned transactions with duplicate IDs "
+                f"{', '.join(duplicate_ids)}."
+            )
+
         return [
             PlaidTransaction(user, accounts, d)
             for d in response.transactions
