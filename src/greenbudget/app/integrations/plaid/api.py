@@ -178,6 +178,15 @@ class PlaidClient(plaid_api.PlaidApi):
             id = transaction.transaction_id
             name = transaction.name
 
+            if (id, name) in seen:
+                duplicates.add((id, name))
+            else:
+                if id in [s[0] for s in seen]:
+                    duplicate_ids.add(id)
+                if name in [s[1] for s in seen]:
+                    duplicate_names.add(name)
+            seen.add((id, name))
+
         if duplicates:
             stringified = ["%s-%s" % (i, n) for (i, n) in duplicates]
             logger.error(
