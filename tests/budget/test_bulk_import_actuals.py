@@ -1,6 +1,5 @@
 # pylint: disable=redefined-outer-name
 import datetime
-from re import M
 import mock
 import plaid
 import pytest
