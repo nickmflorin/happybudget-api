@@ -54,6 +54,10 @@ class ActualType(Tag):
         color_string = None if self.color is None else self.color.code
         return f"{self.title}: {color_string}"
 
+    @classmethod
+    def plaid_transaction_name(cls, transaction_type):
+        return cls.PLAID_TRANSACTION_TYPES.get_name(transaction_type)
+
 
 @model.model(type='actual')
 class Actual(BudgetingOrderedRowModel):
@@ -134,9 +138,15 @@ class Actual(BudgetingOrderedRowModel):
                 actual_type = ActualType.objects.get(
                     plaid_transaction_type=transaction.classification)
             except ActualType.DoesNotExist:
+                # This can happen if the relevant ActualType has not been
+                # configured yet.  In this case, we don't want the import to
+                # fail - we just want to be aware that the ActualType needs to
+                # be configured.
+                name = ActualType.plaid_transaction_name(
+                    transaction.classification)
                 logger.warning(
                     "No actual type is configured for plaid transaction "
-                    f"type {transaction.classification}."
+                    f"type {name}."
                 )
         return cls(
             name=transaction.name[:50],

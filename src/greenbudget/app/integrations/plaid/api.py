@@ -1,6 +1,9 @@
+import collections
 import datetime
 import functools
+import json
 import logging
+from re import L
 
 import plaid
 from plaid.api import plaid_api
@@ -167,6 +170,38 @@ class PlaidClient(plaid_api.PlaidApi):
         )
         response = client.transactions_get(request)
         accounts = [PlaidAccount(d) for d in response.accounts]
+
+        # This is a temporary check to determine why Plaid seems to be returning
+        # duplicate transactions.
+        already_seen = collections.defaultdict(list)
+
+        for transaction in response.transactions:
+            already_seen[(transaction.name, transaction.amount)].append(
+                transaction)
+
+        def to_data(obj):
+            data = obj.to_dict()
+            return_data = {}
+            for k, v in data.items():
+                try:
+                    json.dumps(v)
+                except TypeError:
+                    if hasattr(v, 'to_dict'):
+                        return_data[k] = to_data(v)
+                else:
+                    return_data[k] = v
+            return json.dumps(return_data)
+
+        duplicates = [(k, v) for k, v in already_seen.items() if len(v) != 1]
+        for (identifier, duplicate_list) in duplicates:
+            jsonified = [to_data(t) for t in duplicate_list]
+            message = (
+                "Plaid returned duplicate transactions for transaction name "
+                f"{identifier[0]} with amount {identifier[1]}.  The duplicate "
+                "transactions are as follows: \n" + "\n".join(jsonified)
+            )
+            logger.error(message)
+
         return [
             PlaidTransaction(user, accounts, d)
             for d in response.transactions

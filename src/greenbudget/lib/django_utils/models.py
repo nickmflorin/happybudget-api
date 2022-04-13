@@ -58,11 +58,20 @@ class Choices(RootChoices):
     >>> "apple"
     """
     @property
-    def slug(self):
+    def _slug_map(self):
         return {v: k for k, v in self._identifier_map.items()}
 
     def __getitem__(self, key):
-        return Choice(name=self._display_map[key], slug=self.slug[key])
+        assert isinstance(key, int), \
+            "The provided choice must be the value that is stored in the " \
+            "database, an integer."
+        return Choice(name=self._display_map[key], slug=self._slug_map[key])
+
+    def get_name(self, key):
+        return self.__getitem__(key).name
+
+    def get_slug(self, key):
+        return self.__getitem__(key).slug
 
 
 def error_is_unique_constraint(err, field):

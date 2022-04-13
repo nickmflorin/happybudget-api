@@ -9,6 +9,8 @@ from plaid.model.location import Location
 from plaid.model.transaction import Transaction
 from plaid.model.payment_meta import PaymentMeta
 
+from greenbudget.app.integrations.plaid.constants import PlaidCategoryGroup
+
 
 class MockPlaidModel:
     """
@@ -99,7 +101,8 @@ class MockPlaidTransaction(MockPlaidModel):
         'payment_channel': 'mock_payment_channel',
         'payment_meta': MockPlaidPaymentMeta,
         'location': MockPlaidLocation,
-        'transaction_type': 'special'
+        'transaction_type': PlaidCategoryGroup.SPECIAL,
+        'iso_currency_code': 'USD',
     }
 
 
