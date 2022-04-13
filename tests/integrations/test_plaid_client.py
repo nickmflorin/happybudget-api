@@ -110,10 +110,9 @@ def test_fetch_transactions_with_public_token(user):
     mock_response.access_token = "test_access_token"
 
     mock_transactions_response = mock.MagicMock()
-    mock_transactions_response.to_dict = lambda: {
-        'transactions': [],
-        'accounts': []
-    }
+    mock_transactions_response.transactions = []
+    mock_transactions_response.accounts = []
+    mock_transactions_response.total_transactions = 0
 
     with mock.patch.object(client, 'item_public_token_exchange') as mocked:
         mocked.side_effect = lambda req: mock_response
@@ -147,10 +146,9 @@ def test_fetch_transactions_with_public_token(user):
 @override_settings(PLAID_CLIENT_NAME='Test Plaid Client Name')
 def test_fetch_transactions_with_access_token(user):
     mock_transactions_response = mock.MagicMock()
-    mock_transactions_response.to_dict = lambda: {
-        'transactions': [],
-        'accounts': []
-    }
+    mock_transactions_response.transactions = []
+    mock_transactions_response.accounts = []
+    mock_transactions_response.total_transactions = 0
 
     with mock.patch.object(client, 'item_public_token_exchange') as mocked:
         with mock.patch.object(client, 'transactions_get') as mocked_t:

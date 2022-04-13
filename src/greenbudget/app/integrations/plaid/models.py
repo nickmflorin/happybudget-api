@@ -101,7 +101,9 @@ class PlaidTransaction(PlaidModel):
         PlaidAttribute('amount'),
         PlaidAttribute('iso_currency_code'),
         PlaidAttribute('account_id'),
-        PlaidAttribute('category', attr='categories')
+        PlaidAttribute('category', attr='categories'),
+        PlaidAttribute(
+            'payment_method', getter=lambda t: t.payment_meta.payment_method)
     ]
     plaid_counterpart = Transaction
 

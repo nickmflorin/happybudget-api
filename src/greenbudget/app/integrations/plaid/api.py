@@ -3,7 +3,6 @@ import datetime
 import functools
 import json
 import logging
-from re import L
 
 import plaid
 from plaid.api import plaid_api
@@ -35,6 +34,26 @@ configuration = plaid.Configuration(
 )
 
 api_client = plaid.ApiClient(configuration)
+
+
+def obj_to_json(obj):
+    # This is a temporary method we are using for logging.
+    data = obj.to_dict()
+    return_data = {}
+    for k, v in data.items():
+        if isinstance(v, datetime.date):
+            return_data[k] = v.strftime('%Y-%m-%d')
+        elif isinstance(v, datetime.datetime):
+            return_data[k] = v.strftime('%Y-%m-%d, %H:%M:%S')
+        else:
+            try:
+                json.dumps(v)
+            except TypeError:
+                if hasattr(v, 'to_dict'):
+                    return_data[k] = obj_to_json(v)
+            else:
+                return_data[k] = v
+    return json.dumps(return_data)
 
 
 def raise_in_api_context(error_message):
@@ -106,6 +125,43 @@ class PlaidClient(plaid_api.PlaidApi):
         response = self.link_token_create(request)
         return response.link_token
 
+    def log_duplicates(self, response):
+        # This is a temporary check to determine why Plaid seems to be returning
+        # duplicate transactions.
+        already_seen = collections.defaultdict(list)
+
+        for transaction in response.transactions:
+            already_seen[(transaction.name, transaction.amount)].append(
+                transaction)
+
+        duplicates = [(k, v) for k, v in already_seen.items() if len(v) != 1]
+        for (identifier, duplicate_list) in duplicates:
+            jsonified = [obj_to_json(t) for t in duplicate_list]
+            message = (
+                "Plaid returned duplicate transactions for transaction name "
+                f"{identifier[0]} with amount {identifier[1]}.  The duplicate "
+                "transactions are as follows: \n" + "\n".join(jsonified)
+            )
+            logger.error(message)
+
+    def _fetch_transactions(self, access_token, account_ids=None,
+            option_kwargs=None, **kwargs):
+        option_kwargs = option_kwargs or {}
+        options = GetTransactionsOptions(**option_kwargs)
+        if account_ids:
+            options = GetTransactionsOptions(
+                account_ids=account_ids,
+                **option_kwargs
+            )
+        request = transactions_get_request.TransactionsGetRequest(
+            access_token=access_token,
+            options=options,
+            **kwargs
+        )
+        response = self.transactions_get(request)
+        self.log_duplicates(response)
+        return response
+
     @raise_in_api_context("There was an error retrieving the transactions.")
     def fetch_transactions(self, user, **kwargs):
         """
@@ -159,53 +215,28 @@ class PlaidClient(plaid_api.PlaidApi):
         if access_token is None:
             access_token = self.exchange_public_token(user, public_token)
 
-        options = GetTransactionsOptions()
-        if account_ids:
-            options = GetTransactionsOptions(account_ids=account_ids)
-
-        request = transactions_get_request.TransactionsGetRequest(
+        response = self._fetch_transactions(
             access_token=access_token,
-            options=options,
+            account_ids=account_ids,
             **kwargs
         )
-        response = client.transactions_get(request)
         accounts = [PlaidAccount(d) for d in response.accounts]
-
-        # This is a temporary check to determine why Plaid seems to be returning
-        # duplicate transactions.
-        already_seen = collections.defaultdict(list)
-
-        for transaction in response.transactions:
-            already_seen[(transaction.name, transaction.amount)].append(
-                transaction)
-
-        def to_data(obj):
-            data = obj.to_dict()
-            return_data = {}
-            for k, v in data.items():
-                try:
-                    json.dumps(v)
-                except TypeError:
-                    if hasattr(v, 'to_dict'):
-                        return_data[k] = to_data(v)
-                else:
-                    return_data[k] = v
-            return json.dumps(return_data)
-
-        duplicates = [(k, v) for k, v in already_seen.items() if len(v) != 1]
-        for (identifier, duplicate_list) in duplicates:
-            jsonified = [to_data(t) for t in duplicate_list]
-            message = (
-                "Plaid returned duplicate transactions for transaction name "
-                f"{identifier[0]} with amount {identifier[1]}.  The duplicate "
-                "transactions are as follows: \n" + "\n".join(jsonified)
-            )
-            logger.error(message)
-
-        return [
+        transactions = [
             PlaidTransaction(user, accounts, d)
             for d in response.transactions
         ]
+        while len(transactions) < response.total_transactions:
+            response = self._fetch_transactions(
+                access_token=access_token,
+                account_ids=account_ids,
+                option_kwargs={'offset': len(transactions)},
+                **kwargs
+            )
+            transactions += [
+                PlaidTransaction(user, accounts, d)
+                for d in response.transactions
+            ]
+        return transactions
 
 
 client = PlaidClient(api_client)

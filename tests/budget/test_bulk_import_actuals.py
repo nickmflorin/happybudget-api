@@ -2,6 +2,10 @@
 import datetime
 import mock
 import plaid
+from plaid.model import (
+    transactions_get_request,
+    transactions_get_request_options,
+)
 import pytest
 
 from greenbudget.app.actual.models import Actual
@@ -9,24 +13,40 @@ from greenbudget.app.integrations.plaid.api import client
 from greenbudget.app.integrations.plaid.classification import PlaidCategories
 
 
+OptsCls = transactions_get_request_options.TransactionsGetRequestOptions
+
+
 @pytest.fixture
-def patch_plaid_client(monkeypatch):
-    def inner(mock_transactions=None, mock_accounts=None):
-        access_token_response = mock.MagicMock()
-        access_token_response.access_token = "mock_access_token"
+def patch_client_access_token(monkeypatch):
+    access_token_response = mock.MagicMock()
+    access_token_response.access_token = "mock_access_token"
 
+    monkeypatch.setattr(
+        client,
+        'item_public_token_exchange',
+        lambda *args: access_token_response
+    )
+
+
+@pytest.fixture
+def transaction_response():
+    def inner(mock_transactions, mock_accounts, total_transactions=None):
+        response = mock.MagicMock()
+        response.transactions = mock_transactions
+        response.accounts = mock_accounts
+        response.total_transactions = total_transactions \
+            or len(mock_transactions)
+        return response
+    return inner
+
+
+@pytest.fixture
+def patch_transactions_response(monkeypatch, patch_client_access_token,
+        transaction_response):
+    def inner(mock_transactions, mock_accounts):
+        response = transaction_response(mock_transactions, mock_accounts)
         monkeypatch.setattr(
-            client,
-            'item_public_token_exchange',
-            lambda *args: access_token_response
-        )
-        if mock_transactions and mock_accounts:
-            transactions_response = mock.MagicMock()
-            transactions_response.transactions = mock_transactions
-            transactions_response.accounts = mock_accounts
-
-            monkeypatch.setattr(
-                client, 'transactions_get', lambda *args: transactions_response)
+            client, 'transactions_get', lambda *args: response)
     return inner
 
 
@@ -195,8 +215,8 @@ def actual_types(models, create_actual_type):
 
 
 def test_bulk_import_actuals(models, mock_accounts, mock_transactions,
-        patch_plaid_client, actual_types, perform_request):
-    patch_plaid_client(mock_transactions, mock_accounts)
+        patch_transactions_response, actual_types, perform_request):
+    patch_transactions_response(mock_transactions, mock_accounts)
     response = perform_request()
 
     actuals = models.Actual.objects.all()
@@ -341,8 +361,47 @@ def test_bulk_import_actuals(models, mock_accounts, mock_transactions,
     ]
 
 
+def test_bulk_import_actuals_paginated(mock_accounts, mock_transactions,
+        patch_client_access_token, perform_request, transaction_response):
+    with mock.patch.object(client, 'transactions_get') as mocked:
+        mocked.side_effect = [
+            transaction_response(
+                mock_transactions=mock_transactions[:4],
+                mock_accounts=mock_accounts,
+                total_transactions=len(mock_transactions)
+            ),
+            transaction_response(
+                mock_transactions=mock_transactions[4:],
+                mock_accounts=mock_accounts,
+                total_transactions=len(mock_transactions)
+            )
+        ]
+        perform_request()
+
+    assert mocked.call_count == 2
+    mocked.assert_has_calls([
+        mock.call(transactions_get_request.TransactionsGetRequest(
+            access_token='mock_access_token',
+            options=OptsCls(
+                account_ids=["test-id1", "test-id2"]
+            ),
+            start_date=datetime.date(2021, 12, 31),
+            end_date=datetime.date(2022, 1, 1)
+        )),
+        mock.call(transactions_get_request.TransactionsGetRequest(
+            access_token='mock_access_token',
+            options=OptsCls(
+                account_ids=["test-id1", "test-id2"],
+                offset=4
+            ),
+            start_date=datetime.date(2021, 12, 31),
+            end_date=datetime.date(2022, 1, 1)
+        ))
+    ])
+
+
 def test_bulk_import_actuals_unconfigured_actual_type_map(perform_request,
-        models, mock_plaid, actual_types, patch_plaid_client):
+        models, mock_plaid, actual_types, patch_transactions_response):
     # This account should cause the transaction to be classified as being
     # associated with ActualType.PLAID_TRANSACTION_TYPES.checking, which would
     # normally be mapped to an ActualType that is assigned to
@@ -369,7 +428,7 @@ def test_bulk_import_actuals_unconfigured_actual_type_map(perform_request,
         merchant_name='Spark Fun',
     )
 
-    patch_plaid_client([transaction], [account])
+    patch_transactions_response([transaction], [account])
 
     # Delete the ActualType associated with
     # ActualType.PLAID_TRANSACTION_TYPES.checking such that the mapping no
@@ -412,9 +471,8 @@ def test_bulk_import_actuals_plaid_error_token_exchange(perform_request):
     }]}
 
 
-def test_bulk_import_actuals_plaid_error_transactions_get(patch_plaid_client,
-        perform_request):
-    patch_plaid_client()
+def test_bulk_import_actuals_plaid_error_transactions_get(
+        patch_client_access_token, perform_request):
     with mock.patch.object(client, 'transactions_get') as mocked:
         mocked.side_effect = plaid.ApiException()
         response = perform_request()

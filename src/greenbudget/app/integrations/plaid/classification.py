@@ -201,6 +201,10 @@ TRANSACTION_CLASSIFICATIONS = PlaidClassifications([
         classification=ActualType.PLAID_TRANSACTION_TYPES.credit_card
     ),
     PlaidClassification(
+        transaction=lambda t: t.payment_method == "ACH",
+        classification=ActualType.PLAID_TRANSACTION_TYPES.ach
+    ),
+    PlaidClassification(
         transaction=lambda t: t.is_category(PlaidCategories.ACH_TRANSFER),
         classification=ActualType.PLAID_TRANSACTION_TYPES.ach
     ),
