@@ -18,7 +18,8 @@ class UserAdminForm(forms.ModelForm):
 class UserAdmin(admin.ModelAdmin):
     list_display = (
         "first_name", "last_name", "email", "created_at", "last_login",
-        "is_staff", "is_superuser", "email_actions")
+        "is_staff", "is_superuser", "billing_status", "product_id",
+        "email_actions")
     fieldsets = (
         ('Profile info', {
             'fields': (

@@ -7,13 +7,13 @@ from greenbudget.app.template.models import Template
 from .models import Budget
 
 
-class BudgetOwnershipPermission(permissions.AdminPermissionMixin,
+class BudgetOwnershipPermission(permissions.StaffUserPermissionMixin,
         permissions.IsOwner):
     object_name = 'budget'
 
     def has_object_permission(self, request, view, obj):
         if isinstance(obj, Template) and obj.community is True:
-            return self.has_admin_permission(request, view)
+            return self.has_staff_permission(request, view)
         return super().has_object_permission(request, view, obj)
 
 

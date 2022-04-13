@@ -12,6 +12,7 @@ from .base import (
 from .logging import attach_aws_logger, attach_sentry_logger
 
 ENVIRONMENT = Environments.PROD
+STAFF_USER_GLOBAL_PERMISSIONS = True
 
 STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 STATIC_URL = config(

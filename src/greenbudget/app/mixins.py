@@ -6,7 +6,7 @@ from rest_framework import mixins
 from rest_framework.mixins import (  # noqa
     ListModelMixin, DestroyModelMixin, RetrieveModelMixin)
 
-from greenbudget.app import permissions
+from greenbudget.app import permissions, views
 
 
 class UpdateModelMixin(mixins.UpdateModelMixin):
@@ -45,8 +45,7 @@ class NestedObjectViewMeta(type):
 
         def get_object(instance):
             pms = getattr(instance, '%s_permission_classes' % view_name, [])
-            pms = permissions.instantiate_permissions(pms)
-            permission = permissions.AND(pms)
+            permission = views.to_view_permission(pms)
 
             # pylint: disable=unexpected-keyword-arg
             queryset = filter_queryset(instance, get_queryset(instance))

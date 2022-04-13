@@ -5,6 +5,8 @@ from rest_framework import viewsets, serializers, generics
 from greenbudget.lib.utils import ensure_iterable, get_nested_attribute
 from greenbudget.app import permissions
 
+from .permissions import to_view_permission
+
 
 def _get_attribute(view, attr):
     try:
@@ -42,12 +44,12 @@ class GenericView(generics.GenericAPIView):
     """
 
     def check_permissions(self, request):
-        permission = permissions.AND(self.get_permissions())
+        permission = to_view_permission(self.get_permissions())
         # pylint: disable=unexpected-keyword-arg
         permission.has_perm(request, self, raise_exception=True)
 
     def check_object_permissions(self, request, obj):
-        permission = permissions.AND(self.get_permissions())
+        permission = to_view_permission(self.get_permissions())
         # pylint: disable=unexpected-keyword-arg
         permission.has_obj_perm(request, self, obj, raise_exception=True)
 

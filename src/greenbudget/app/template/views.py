@@ -17,7 +17,7 @@ class TemplateCommunityViewSet(
     (1) GET /templates/community/
     (2) POST /templates/community/
     """
-    permission_classes = (permissions.IsAdminOrReadOnly, )
+    permission_classes = (permissions.IsStaffUserOrReadOnly, )
     serializer_class = TemplateSerializer
     ordering_fields = ['updated_at', 'name', 'created_at']
     search_fields = ['name']

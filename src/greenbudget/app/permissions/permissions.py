@@ -10,32 +10,6 @@ from .operators import AND
 from .request import request_is_safe_method
 
 
-def PermissionOnWrite(permission_cls):
-    class _PermissionOnWrite(permission_cls):
-        def has_permission(self, request, view):
-            if request_is_safe_method(request):
-                return True
-            return super().has_permission(request, view)
-
-        def has_object_permission(self, request, view, obj):
-            if request_is_safe_method(request):
-                return True
-            return super().has_object_permission(request, view, obj)
-    return _PermissionOnWrite
-
-
-class AllowAny(BasePermission):
-    pass
-
-
-class IsAdminUser(BasePermission):
-    def has_permission(self, request, view):
-        return bool(request.user and request.user.is_staff)
-
-
-IsAdminOrReadOnly = PermissionOnWrite(IsAdminUser)
-
-
 class IsAuthenticated(BasePermission):
     """
     Permission that ensures that the active user's account is both authenticated
@@ -79,6 +53,38 @@ class IsVerified(BasePermission):
 IsFullyAuthenticated = AND(IsAuthenticated, IsActive, IsVerified)
 
 
+def PermissionOnWrite(permission_cls):
+    class _PermissionOnWrite(permission_cls):
+        def has_permission(self, request, view):
+            if request_is_safe_method(request):
+                return True
+            return super().has_permission(request, view)
+
+        def has_object_permission(self, request, view, obj):
+            if request_is_safe_method(request):
+                return True
+            return super().has_object_permission(request, view, obj)
+    return _PermissionOnWrite
+
+
+class AllowAny(BasePermission):
+    pass
+
+
+class IsStaffUser(BasePermission):
+    user_dependency_flags = ['is_authenticated', 'is_active', 'is_verified']
+
+    def has_permission(self, request, view):
+        print("IS STAFF: %s" % request.user.is_staff)
+        return bool(request.user and request.user.is_staff)
+
+    def has_object_permission(self, request, view, obj):
+        return bool(request.user and request.user.is_staff)
+
+
+IsStaffUserOrReadOnly = PermissionOnWrite(IsStaffUser)
+
+
 class IsAnonymous(BasePermission):
     """
     Permission that ensures that a user is not already logged in.  The
@@ -97,10 +103,10 @@ class IsAnonymous(BasePermission):
         return request.user is None or not request.user.is_authenticated
 
 
-class AdminPermissionMixin:
-    def has_admin_permission(self, request, view):
-        admin_permission = permissions.IsAdminUser()
-        return admin_permission.has_permission(request, view)
+class StaffUserPermissionMixin:
+    def has_staff_permission(self, request, view):
+        staff_permission = IsStaffUser()
+        return staff_permission.has_permission(request, view)
 
 
 class IsOwner(BasePermission):

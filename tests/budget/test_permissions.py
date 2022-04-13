@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name
 import pytest
 
+from django.test import override_settings
 from greenbudget.app.collaborator.models import Collaborator
 
 
@@ -10,6 +11,14 @@ def another_user_case(api_client, user, create_user, create_domain_budget):
         another_user = create_user()
         api_client.force_login(user)
         return create_domain_budget(domain=domain, created_by=another_user)
+    return inner
+
+
+@pytest.fixture
+def staff_user_case(api_client, staff_user, user, create_domain_budget):
+    def inner(domain, case_info=None):
+        api_client.force_login(staff_user)
+        return create_domain_budget(domain=domain, created_by=user)
     return inner
 
 
@@ -90,7 +99,7 @@ def collaborator_case(api_client, user, create_user, create_budget,
 
 @pytest.fixture
 def establish_case(another_user_case, multiple_case, another_public_case,
-        collaborator_case, logged_in_case, not_logged_in_case,
+        collaborator_case, logged_in_case, not_logged_in_case, staff_user_case,
         public_case):
     def inner(domain, case):
         cases = {
@@ -101,6 +110,7 @@ def establish_case(another_user_case, multiple_case, another_public_case,
             'public_case': public_case,
             'another_public_case': another_public_case,
             'collaborator': collaborator_case,
+            'staff_user': staff_user_case
         }
         if isinstance(case, tuple):
             return cases[case[0]](domain, case[1])
@@ -205,6 +215,7 @@ def make_assertions():
     }),
     ('another_public_case', {'status': 401}),
     (('logged_in', {'create': True}), {'status': 200}),
+    (('staff_user', {'create': True}), {'status': 200}),
     (('multiple_budgets', {'login': True}), {
         'status': 403,
         'error': {
@@ -248,8 +259,9 @@ def make_assertions():
 ])
 @pytest.mark.parametrize('path', [
     '/', '/children/', '/actuals/', '/fringes/', '/markups/', '/groups/'])
-def test_budget_detail_read_permissions(case, path, assertions,
-        detail_test_case, make_assertions):
+@override_settings(STAFF_USER_GLOBAL_PERMISSIONS=True)
+def test_budget_detail_read_permissions(case, path, assertions, make_assertions,
+        detail_test_case):
     response = detail_test_case("budget", case, path)
     make_assertions(response, case, path, assertions)
 

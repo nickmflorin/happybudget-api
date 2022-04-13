@@ -120,6 +120,12 @@ SIMPLE_JWT = {
 
 AUTH_USER_MODEL = 'user.User'
 
+# When True, a staff user will be granted global permissions for all endpoints.
+# This means that they will be able to access information related to any user.
+# This flag is used for production environments, where we may need to diagnose
+# problems that a real user is having inside the application.
+STAFF_USER_GLOBAL_PERMISSIONS = False
+
 # When True, User's will not be allowed to register unless they are on a
 # waitlist in SendGrid.
 WAITLIST_ENABLED = True
