@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models, IntegrityError
@@ -10,6 +12,9 @@ from greenbudget.app.budgeting.models import BudgetingOrderedRowModel
 from greenbudget.app.tagging.models import Tag
 
 from .managers import ActualManager
+
+
+logger = logging.getLogger('greenbudget')
 
 
 class ActualType(Tag):
@@ -125,8 +130,14 @@ class Actual(BudgetingOrderedRowModel):
     def from_plaid_transaction(cls, transaction, **kwargs):
         actual_type = None
         if transaction.classification is not None:
-            actual_type = ActualType.objects.get(
-                plaid_transaction_type=transaction.classification)
+            try:
+                actual_type = ActualType.objects.get(
+                    plaid_transaction_type=transaction.classification)
+            except ActualType.DoesNotExist:
+                logger.warning(
+                    "No actual type is configured for plaid transaction "
+                    f"type {transaction.classification}."
+                )
         return cls(
             name=transaction.name[:50],
             notes=', '.join(transaction.categories),
