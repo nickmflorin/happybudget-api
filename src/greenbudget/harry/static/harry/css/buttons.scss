@@ -13,6 +13,8 @@
   vertical-align: middle;
   justify-content: center;
   border-color: $transparent;
+  margin: 0;
+  display: inline-flex !important;
 
   &:disabled,
   &.disabled,
@@ -125,8 +127,11 @@
   padding: 0;
   border: none !important;
   color: $blue;
+  line-height: 16px;
+  height: 16px;
 
   &:hover {
+    background-color: transparent !important;
     color: lighten($blue, 10%);
   }
 
@@ -138,6 +143,10 @@
       color: lighten($text-primary, 10%);
     }
   }
+}
+
+button.link {
+  width: auto;
 }
 
 a {
@@ -165,8 +174,6 @@ p.file-upload {
   height: 32px;
   line-height: 20px;
   border-radius: 4px;
-  margin: 0;
-  display: inline-flex;
   outline: 0;
   border-width: 1px;
   color: $text-secondary;
@@ -189,7 +196,7 @@ p.file-upload {
 a.grp-button,
 button.grp-button,
 input[type="button"].grp-button,
-button,
+button:not(.link),
 .grp-button,
 input[type="submit"] {
   @extend .btn;

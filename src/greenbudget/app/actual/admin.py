@@ -1,9 +1,6 @@
 from django import forms
-from django.contrib import admin
 
-from greenbudget.harry.utils import color_icon
-from greenbudget.harry.widgets import use_custom_related_field_wrapper
-
+from greenbudget import harry
 from greenbudget.app.tagging.admin import TagAdminForm
 
 from .models import Actual, ActualType
@@ -15,9 +12,7 @@ class ActualTypeForm(TagAdminForm):
         fields = ('order', 'title', 'color', 'plaid_transaction_type')
 
 
-@admin.register(ActualType)
-@use_custom_related_field_wrapper
-class ActualTypeAdmin(admin.ModelAdmin):
+class ActualTypeAdmin(harry.HarryModelAdmin):
     list_display = (
         "title", "get_color_for_admin", "order", "created_at", "updated_at")
     form = ActualTypeForm
@@ -25,7 +20,7 @@ class ActualTypeAdmin(admin.ModelAdmin):
 
     def get_color_for_admin(self, obj):
         if obj.color:
-            return color_icon(obj.color.code)
+            return harry.utils.color_icon(obj.color.code)
         return u''
 
     get_color_for_admin.allow_tags = True
@@ -38,7 +33,9 @@ class ActualAdminForm(forms.ModelForm):
         fields = '__all__'
 
 
-@admin.register(Actual)
-@use_custom_related_field_wrapper
-class ActualAdmin(admin.ModelAdmin):
+class ActualAdmin(harry.HarryModelAdmin):
     list_display = ("budget", "value", "created_by", "created_at")
+
+
+harry.site.register(Actual, ActualAdmin)
+harry.site.register(ActualType, ActualTypeAdmin)

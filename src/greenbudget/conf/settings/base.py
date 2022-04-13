@@ -138,7 +138,7 @@ INSTALLED_APPS = [
     'greenbudget',  # Must be before django authentication.
     'polymorphic',
     'raven.contrib.django.raven_compat',
-    'django.contrib.admin',
+    # 'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -154,7 +154,8 @@ INSTALLED_APPS = [
     'timezone_field',
     'greenbudget.app',
     'greenbudget.data',
-    'greenbudget.harry',
+    # 'greenbudget.harry',
+    'greenbudget.harry.apps.HarryAdminConfig',
     'greenbudget.app.account',
     'greenbudget.app.actual',
     'greenbudget.app.authentication',
@@ -232,6 +233,7 @@ STATICFILES_FINDERS = (
 MEDIA_URL = '/media/'
 MEDIA_ROOT = str(BASE_DIR / "media")
 
+COMPRESS_ROOT = str(BASE_DIR / "harry" / "static")
 COMPRESS_PRECOMPILERS = (
     ('text/x-scss', 'django_libsass.SassCompiler'),
 )

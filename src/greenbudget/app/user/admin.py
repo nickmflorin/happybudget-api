@@ -1,9 +1,6 @@
 from django import forms
-from django.contrib import admin
-from django.utils.html import mark_safe
 
-from greenbudget.harry.widgets import use_custom_related_field_wrapper
-
+from greenbudget import harry
 from .models import User
 
 
@@ -13,13 +10,10 @@ class UserAdminForm(forms.ModelForm):
         fields = '__all__'
 
 
-@admin.register(User)
-@use_custom_related_field_wrapper
-class UserAdmin(admin.ModelAdmin):
-    list_display = (
+class UserAdmin(harry.HarryModelAdmin):
+    base_list_display = (
         "first_name", "last_name", "email", "created_at", "last_login",
-        "is_staff", "is_superuser", "billing_status", "product_id",
-        "email_actions")
+        "is_staff", "is_superuser", "billing_status", "product_id")
     fieldsets = (
         ('Profile info', {
             'fields': (
@@ -33,17 +27,31 @@ class UserAdmin(admin.ModelAdmin):
             )
         }),
     )
+    row_actions = [
+        harry.RowAction(
+            name='send_email_verification',
+            title='Send Email Verification'
+        ),
+        harry.RowAction(
+            name='send_forgot_password',
+            title='Send Forgot Password'
+        )
+    ]
     form = UserAdminForm
 
-    def email_actions(self, instance):
-        return mark_safe(u"""
-            <div style="display: flex; flex-direction: row;">
-                <a class="link">Send Email Verification</a>
-                <span class="link" style="margin-left: 5px; margin-right: 5px;">
-                  |
-                </span>
-                <a class="link">Send Forgot Password</a>
-            </div>
-        """)
+    def send_email_verification(self, request, instance_id):
+        self.message_user(
+            request,
+            "This feature is currently being built.",
+            level="warning"
+        )
 
-    email_actions.allow_tags = True
+    def send_forgot_password(self, request, instance_id):
+        self.message_user(
+            request,
+            "This feature is currently being built.",
+            level="warning"
+        )
+
+
+harry.site.register(User, UserAdmin)

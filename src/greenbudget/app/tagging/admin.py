@@ -5,13 +5,10 @@ from polymorphic.admin import (
 
 from django import forms
 from django.apps import apps
-from django.contrib import admin
 from django.contrib.contenttypes.models import ContentType
 from django.db import IntegrityError, models
 
-from greenbudget.harry.widgets import use_custom_related_field_wrapper
-from greenbudget.harry.utils import color_icon
-
+from greenbudget import harry
 from greenbudget.app.subaccount.models import SubAccountUnit
 
 from .models import Color, Tag
@@ -64,8 +61,7 @@ def assign_to_factory(model_cls):
     return assign_to
 
 
-@admin.register(Tag)
-@use_custom_related_field_wrapper
+@harry.widgets.use_custom_related_field_wrapper
 class TagAdmin(PolymorphicParentModelAdmin):
     base_model = Tag
     child_models = (SubAccountUnit,)
@@ -86,9 +82,7 @@ class TagChildAdmin(PolymorphicChildModelAdmin):
     base_model = Tag
 
 
-@admin.register(Color)
-@use_custom_related_field_wrapper
-class ColorAdmin(admin.ModelAdmin):
+class ColorAdmin(harry.HarryModelAdmin):
     list_display = (
         "get_color_for_admin", "name", "code", "created_at", "get_usage")
     form = ColorAdminForm
@@ -121,7 +115,11 @@ class ColorAdmin(admin.ModelAdmin):
         return actions
 
     def get_color_for_admin(self, obj):
-        return color_icon(obj.code)
+        return harry.utils.color_icon(obj.code)
 
     get_color_for_admin.allow_tags = True
     get_color_for_admin.short_description = 'Color'
+
+
+harry.site.register(Color, ColorAdmin)
+harry.site.register(Tag, TagAdmin)
