@@ -6,7 +6,7 @@ from rest_framework import mixins
 from rest_framework.mixins import (  # noqa
     ListModelMixin, DestroyModelMixin, RetrieveModelMixin)
 
-from greenbudget.app import permissions, views
+from greenbudget.app import views
 
 
 class UpdateModelMixin(mixins.UpdateModelMixin):

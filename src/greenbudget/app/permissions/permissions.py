@@ -1,5 +1,3 @@
-from rest_framework import permissions
-
 from greenbudget.app.authentication.exceptions import (
     NotAuthenticatedError,
     AccountDisabled,

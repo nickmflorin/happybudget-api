@@ -1,12 +1,19 @@
-import collections
-
 from django.contrib import admin
 from django.utils.html import mark_safe
 
 from .widgets import use_custom_related_field_wrapper
 
 
-RowAction = collections.namedtuple('RowAction', ['name', 'title'])
+class RowAction:
+    def __init__(self, name, title, disabled=None):
+        self.name = name
+        self.title = title
+        self._disabled = disabled
+
+    def is_disabled_for_instance(self, instance):
+        if self._disabled is not None:
+            return self._disabled(instance)
+        return False
 
 
 @use_custom_related_field_wrapper
@@ -46,10 +53,11 @@ class HarryModelAdmin(admin.ModelAdmin):
         buttons = [
             self._row_action_button(instance, action)
             for action in self.row_actions
+            if not action.is_disabled_for_instance(instance)
         ]
         return mark_safe(u"""
             <div style="display: flex; flex-direction: row;">%s</div>
         """ % separator.join(buttons))
 
     get_row_actions.allow_tags = True
-    get_row_actions.display_name = 'Actions'
+    get_row_actions.short_description = 'Actions'

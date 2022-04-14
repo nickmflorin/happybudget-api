@@ -147,7 +147,7 @@ def test_send_verification_email(api_client, unverified_user):
     assert m.called
     mail_obj = m.call_args[0][0]
     assert mail_obj.to == [{'email': unverified_user.email}]
-    assert mail_obj.template_id == get_template("email_confirmation").id
+    assert mail_obj.template_id == get_template("email_verification").id
     assert mail_obj.params == {
         'redirect_url': (
             'https://app.greenbudget.io/verify?token=%s' % str(token)

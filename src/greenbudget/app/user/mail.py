@@ -8,8 +8,8 @@ from sib_api_v3_sdk.rest import ApiException
 from greenbudget.conf import suppress_with_setting
 from greenbudget.lib.utils.urls import add_query_params_to_url
 
-from greenbudget.app.authentication.exceptions import EmailError
 from greenbudget.app.authentication.tokens import AccessToken
+from .exceptions import EmailError
 
 
 logger = logging.getLogger("greenbudget")
@@ -74,8 +74,8 @@ class Mail(sib_api_v3_sdk.SendSmtpEmail):
         raise NotImplementedError()
 
 
-class EmailConfirmationMail(Mail):
-    template_slug = "email_confirmation"
+class EmailVerificationMail(Mail):
+    template_slug = "email_verification"
 
     def __init__(self, user, token, **kwargs):
         super().__init__(
@@ -105,9 +105,11 @@ def send_mail(mail):
         raise EmailError() from e
 
 
-def send_email_confirmation_email(user, token=None):
+def send_email_verification_email(user, token=None):
+    if user.is_verified:
+        raise Exception("User is already verified.")
     token = token or AccessToken.for_user(user)
-    mail = EmailConfirmationMail(user, str(token))
+    mail = EmailVerificationMail(user, str(token))
     return send_mail(mail)
 
 

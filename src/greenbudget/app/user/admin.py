@@ -1,6 +1,9 @@
 from django import forms
 
 from greenbudget import harry
+
+from .exceptions import EmailError
+from .mail import send_email_verification_email, send_password_recovery_email
 from .models import User
 
 
@@ -30,7 +33,8 @@ class UserAdmin(harry.HarryModelAdmin):
     row_actions = [
         harry.RowAction(
             name='send_email_verification',
-            title='Send Email Verification'
+            title='Send Email Verification',
+            disabled=lambda user: user.is_verified
         ),
         harry.RowAction(
             name='send_forgot_password',
@@ -40,18 +44,38 @@ class UserAdmin(harry.HarryModelAdmin):
     form = UserAdminForm
 
     def send_email_verification(self, request, instance_id):
-        self.message_user(
-            request,
-            "This feature is currently being built.",
-            level="warning"
-        )
+        user = User.objects.get(pk=instance_id)
+        try:
+            send_email_verification_email(user)
+        except EmailError:
+            self.message_user(
+                request=request,
+                message="There was an error communicating with the email API.",
+                level="error"
+            )
+        else:
+            self.message_user(
+                request=request,
+                message=f"Email successfully sent to {user.email}.",
+                level="success"
+            )
 
     def send_forgot_password(self, request, instance_id):
-        self.message_user(
-            request,
-            "This feature is currently being built.",
-            level="warning"
-        )
+        user = User.objects.get(pk=instance_id)
+        try:
+            send_password_recovery_email(user)
+        except EmailError:
+            self.message_user(
+                request=request,
+                message="There was an error communicating with the email API.",
+                level="error"
+            )
+        else:
+            self.message_user(
+                request=request,
+                message=f"Email successfully sent to {user.email}.",
+                level="success"
+            )
 
 
 harry.site.register(User, UserAdmin)

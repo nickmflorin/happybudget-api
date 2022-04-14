@@ -71,6 +71,7 @@ def perform_request(api_client, user, budget_df):
         )
     return inner
 
+
 @pytest.fixture
 def mock_accounts(mock_plaid):
     return [

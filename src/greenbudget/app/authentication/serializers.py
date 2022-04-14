@@ -13,7 +13,7 @@ from greenbudget.app.budget.models import Budget
 from greenbudget.app.serializers import ModelSerializer, Serializer
 from greenbudget.app.user.fields import EmailField
 from greenbudget.app.user.mail import (
-    send_email_confirmation_email,
+    send_email_verification_email,
     send_password_recovery_email
 )
 from greenbudget.app.user.models import User
@@ -227,7 +227,7 @@ class VerifyEmailSerializer(Serializer):
     )
 
     def create(self, validated_data):
-        send_email_confirmation_email(validated_data["user"])
+        send_email_verification_email(validated_data["user"])
         return validated_data['user']
 
 

@@ -1,9 +1,3 @@
-"""
-django-rest-framework-simplejwt does not distinguish between tokens that are
-expired but otherwise valid, and tokens that are invalid for other reasons.
-We use these exceptions to distinguish these cases in our own JWT serializers
-and views
-"""
 from django.utils.translation import gettext_lazy as _
 from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated
@@ -111,7 +105,3 @@ class InvalidSocialProvider(exceptions.AuthenticationFailed):
     default_detail = _(
         "The provided social provider is missing or invalid.")
     default_code = AuthErrorCodes.INVALID_SOCIAL_PROVIDER
-
-
-class EmailError(exceptions.BadRequest):
-    default_detail = _("There was a problem sending the email.")

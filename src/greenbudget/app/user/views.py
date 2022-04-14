@@ -4,7 +4,7 @@ from django.views.decorators.debug import sensitive_post_parameters
 from rest_framework import response, status
 
 from greenbudget.app import views, mixins, permissions, exceptions
-from greenbudget.app.user.mail import send_email_confirmation_email
+from greenbudget.app.user.mail import send_email_verification_email
 
 from .filters import UserSearchFilterBackend
 from .models import User
@@ -31,7 +31,7 @@ class UserRegistrationView(mixins.CreateModelMixin, views.GenericViewSet):
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
 
-        send_email_confirmation_email(instance)
+        send_email_verification_email(instance)
 
         return response.Response(
             UserSerializer(instance).data,

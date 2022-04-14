@@ -31,7 +31,7 @@ SEND_IN_BLUE_TEMPLATES = [
     ),
     SendInBlueTemplate(
         id=1,
-        slug="email_confirmation",
+        slug="email_verification",
         redirect_base_url=LazySetting(
             lambda settings: os.path.join(
                 str(settings.FRONTEND_URL), "verify")
