@@ -1,4 +1,4 @@
-from greenbudget.app import views, mixins, exceptions
+from greenbudget.app import views, exceptions
 
 from .models import Collaborator
 from .permissions import IsOwnerOrCollaboratingOwner
@@ -6,8 +6,8 @@ from .serializers import CollaboratorSerializer
 
 
 class CollaboratorViewSet(
-    mixins.UpdateModelMixin,
-    mixins.DestroyModelMixin,
+    views.UpdateModelMixin,
+    views.DestroyModelMixin,
     views.GenericViewSet
 ):
     serializer_class = CollaboratorSerializer

@@ -1,14 +1,13 @@
-from greenbudget.app import views, mixins, permissions
+from greenbudget.app import views, permissions
 from greenbudget.app.budget.cache import budget_instance_cache
-from greenbudget.app.budget.permissions import BudgetOwnershipPermission
 
 from .models import Template
 from .serializers import TemplateSerializer, TemplateSimpleSerializer
 
 
 class TemplateCommunityViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
+    views.CreateModelMixin,
+    views.ListModelMixin,
     views.GenericViewSet
 ):
     """
@@ -44,8 +43,8 @@ class TemplateCommunityViewSet(
 
 @budget_instance_cache
 class TemplateViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
+    views.CreateModelMixin,
+    views.ListModelMixin,
     views.GenericViewSet
 ):
     """
@@ -54,7 +53,6 @@ class TemplateViewSet(
     (1) GET /templates/
     (2) POST /templates/
     """
-    extra_permission_classes = (BudgetOwnershipPermission, )
     serializer_class = TemplateSerializer
     ordering_fields = ['updated_at', 'name', 'created_at']
     search_fields = ['name']

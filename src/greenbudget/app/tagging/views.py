@@ -1,6 +1,6 @@
-from rest_framework import mixins, viewsets
+from rest_framework import viewsets
 
-from greenbudget.app import permissions
+from greenbudget.app import permissions, views
 
 from .models import Color
 from .serializers import ColorSerializer
@@ -17,10 +17,7 @@ def ColorsViewSet(model_cls, permission_classes=None):
         permissions.IsPublic
     )
 
-    class _ColorsViewSet(
-        mixins.ListModelMixin,
-        viewsets.GenericViewSet
-    ):
+    class _ColorsViewSet(views.ListModelMixin, viewsets.GenericViewSet):
         serializer_class = ColorSerializer
         permission_classes = [pms]
 

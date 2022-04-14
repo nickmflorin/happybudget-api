@@ -13,13 +13,14 @@ from greenbudget.app.collaborator.models import Collaborator
 from greenbudget.app.group.models import Group
 from greenbudget.app.markup.models import Markup
 from greenbudget.app.io.utils import upload_user_image_to
+from greenbudget.app.user.mixins import ModelOwnershipMixin
 
 from .managers import BudgetManager, BaseBudgetManager
 
 
 def upload_to(instance, filename):
     return upload_user_image_to(
-        user=instance.created_by,
+        user=instance.user_owner,
         filename=filename,
         directory="budgets"
     )
@@ -33,10 +34,16 @@ ESTIMATED_FIELDS = (
 CALCULATED_FIELDS = ESTIMATED_FIELDS + ('actual', )
 
 
-class BaseBudget(BudgetingTreePolymorphicModel):
+class BaseBudget(BudgetingTreePolymorphicModel, ModelOwnershipMixin):
     name = models.CharField(max_length=256)
-    created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(
+        to='user.User',
+        related_name='updated_budgets',
+        on_delete=models.CASCADE,
+        editable=False
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(
         to='user.User',
         related_name='budgets',
@@ -61,6 +68,7 @@ class BaseBudget(BudgetingTreePolymorphicModel):
 
     objects = BaseBudgetManager()
     non_polymorphic = models.Manager()
+    user_ownership_field = 'created_by'
 
     class Meta:
         get_latest_by = "updated_at"
@@ -88,8 +96,18 @@ class BaseBudget(BudgetingTreePolymorphicModel):
         return self.nominal_value + self.accumulated_fringe_contribution \
             + self.accumulated_markup_contribution
 
-    def mark_updated(self):
-        self.save(update_fields=['updated_at'])
+    def mark_updated(self, user=None):
+        """
+        Marks the :obj:`BaseBudget` instance as having been updated by a
+        specific :obj:`User`.  This is only pertinent when the update is
+        performed inside of the request context with an actively logged in
+        :obj:`User`.
+        """
+        assert user is None or user.is_fully_authenticated, \
+            "A user that is not fully authenticated should not be " \
+            "permissioned to update any entities!"
+        self.updated_by = user
+        self.save(update_fields=['updated_at', 'updated_by'])
 
     @children_method_handler
     def accumulate_value(self, children):
@@ -134,6 +152,12 @@ class BaseBudget(BudgetingTreePolymorphicModel):
     def calculate(self, children, **kwargs):
         return self.estimate(children, **kwargs)
 
+    def save(self, *args, **kwargs):
+        if self.id is None and self.updated_by is None \
+                and self.created_by is not None:
+            self.updated_by = self.created_by
+        super().save(*args, **kwargs)
+
 
 @model.model(type='budget')
 class Budget(BaseBudget):
@@ -144,7 +168,7 @@ class Budget(BaseBudget):
     non_polymorphic = models.Manager()
 
     pdf_type = "pdf-budget"
-    domain = "budget"
+    static_domain = "budget"
 
     class Meta(BaseBudget.Meta):
         verbose_name = "Budget"

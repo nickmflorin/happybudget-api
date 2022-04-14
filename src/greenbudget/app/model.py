@@ -1,5 +1,5 @@
 import collections
-from copy import deepcopy
+import copy
 import logging
 import threading
 
@@ -12,15 +12,13 @@ from greenbudget.conf import Environments
 from greenbudget.lib.utils import (
     ensure_iterable, humanize_list, DynamicArgumentException)
 
-from .constants import ActionName
-from .signals.signal import disable
-from .signals.signals import field_changed, fields_changed, post_create_by_user
+from greenbudget.app import constants, signals
 
 
 logger = logging.getLogger('greenbudget')
 
 
-class model_is_deleting(disable):
+class model_is_deleting(signals.disable):
     """
     Context manager that manages the deleting state of a model instance while
     in the process of being deleted, and optionally suppresses signal behavior
@@ -294,8 +292,6 @@ class model:
         else:
             self._track_all_fields = True
 
-        self._track_user = kwargs.pop('track_user', True)
-
     def type(self, cls):
         # pragma: no cover
         if self._type is None:
@@ -355,7 +351,7 @@ class model:
             for field in self._track_fields:
                 if field not in self._exclude_fields:
                     self.validate_field(cls, field)
-            return deepcopy(self._track_fields)
+            return copy.deepcopy(self._track_fields)
 
     def __call__(self, cls):
         cls.type = self.type(cls)
@@ -535,8 +531,9 @@ class model:
         def save(instance, *args, **kwargs):
             """
             Overrides the :obj:`django.db.models.Model` save behavior to
-            hook into the provided callbacks when fields are changed, fields
-            are removed or the instance is created for the first time.
+            maintain the values of the model fields just after the last save,
+            such that the determination of how fields have changed since the
+            last model save can be made.
             """
             setattr(instance, '__just_added', False)
             if instance.pk is None:
@@ -550,13 +547,6 @@ class model:
 
             dispatch_changes = []
 
-            field_signal_kwargs = {
-                'sender': type(instance),
-                'instance': instance
-            }
-            if self._track_user:
-                field_signal_kwargs['user'] = self.get_user(instance)
-
             if not new_instance and track_changes is not False:
                 for k in instance.__tracked_fields:
                     if instance.field_has_changed(k):
@@ -567,16 +557,21 @@ class model:
                             field_instance=self.get_field_instance(cls, k)
                         )
                         dispatch_changes.append(change)
-                        field_changed.send(
-                            change=change,
-                            **field_signal_kwargs
+                        self.send_with_user(
+                            signal=signals.field_changed,
+                            instance=instance,
+                            signal_kwargs={'change': change}
                         )
                 # Dispatch signals for the changed fields we are tracking.
                 if dispatch_changes:
-                    fields_changed.send(
-                        changes=FieldChanges(dispatch_changes),
-                        **field_signal_kwargs
+                    self.send_with_user(
+                        signal=signals.fields_changed,
+                        instance=instance,
+                        signal_kwargs={
+                            'changes': FieldChanges(dispatch_changes)}
                     )
+            # Update the __data property on the model instance to reflect the
+            # field values as they were for the last model save.
             store(instance)
 
         def _post_init(sender, instance, **kwargs):
@@ -586,17 +581,22 @@ class model:
             if hasattr(instance, 'validate_before_save'):
                 instance.validate_before_save()
 
-        def _post_save(sender, instance, **kwargs):
-            if kwargs['created'] is True and self._track_user:
-                post_create_by_user.send(
-                    sender=type(instance),
-                    instance=instance,
-                    user=self.get_user(instance)
-                )
+        def _pre_delete(instance, **kwargs):
+            self.send_with_user(
+                signal=signals.pre_delete_by_user,
+                instance=instance,
+                signal_kwargs=kwargs
+            )
+
+        def _post_save(instance, **kwargs):
+            signal = signals.post_create_by_user if kwargs['created'] \
+                else signals.post_update_by_user
+            self.send_with_user(signal, instance, signal_kwargs=kwargs)
 
         models.signals.post_init.connect(_post_init, sender=cls, weak=False)
         models.signals.post_save.connect(_post_save, sender=cls, weak=False)
         models.signals.pre_save.connect(_pre_save, sender=cls, weak=False)
+        models.signals.pre_delete.connect(_pre_delete, sender=cls, weak=False)
 
         # Expose helper methods on the model class.
         cls.get_last_saved_data = get_last_saved_data
@@ -611,7 +611,7 @@ class model:
 
         # Expose the :obj:`ActionName`` class on the model class for utility
         # purposes.
-        setattr(cls, 'actions', ActionName)
+        setattr(cls, 'actions', constants.ActionName)
 
         # Replace the model save method with the overridden one, but keep track
         # of the original save method so it can be reapplied.
@@ -628,10 +628,25 @@ class model:
         setattr(cls, '__decorated_for_signals__', self)
         return cls
 
+    def send_with_user(self, signal, instance, signal_kwargs, strict=False):
+        for attr in [k for k in ['sender', 'signal'] if k in signal_kwargs]:
+            del signal_kwargs[attr]
+
+        # The user may be None if the change is being performed outside of a
+        # request context.  The user may also be an AnonymousUser if in a
+        # test environment.
+        user = self.get_user(instance)
+        signal_kwargs.update(
+            sender=type(instance),
+            instance=instance,
+            user=user
+        )
+        signal.send(**signal_kwargs)
+
     def get_user(self, instance):
         # Allow the user to either be set directly on the thread or via the
-        # request.  There are cases (like management commands) where we do not
-        # have access to the request, but can set the user on the thread
+        # request.  There are cases (like management commands) or tests where we
+        # do not have access to the request, but can set the user on the thread
         # explicitly.
         request = getattr(self.thread, 'request', None)
         if request is not None:
@@ -639,25 +654,27 @@ class model:
         else:
             user = getattr(self.thread, 'user', None)
 
-        # Really, we should be authenticating the user in tests.  But since we
-        # do not always do that, this is a patch for now.
-        assert user is None or user.is_fully_authenticated \
-            or settings.ENVIRONMENT == Environments.TEST, \
-            f"The user editing the model {self._type} should be fully " \
-            "authenticated!"
-
+        MIDDLEWARE_NAME = 'greenbudget.app.middleware.ModelRequestMiddleware'
         if user is None:
-            # pragma: no cover
-            if 'greenbudget.app.middleware.ModelRequestMiddleware' \
-                    not in settings.MIDDLEWARE:
+            if MIDDLEWARE_NAME not in settings.MIDDLEWARE:
                 logger.warning(
-                    "The user cannot be inferred for the model save "
-                    "because the appropriate middleware is not installed."
+                    "The user cannot be inferred for the model save because the"
+                    "appropriate middleware is not installed."
                 )
-            # pragma: no cover
             elif settings.ENVIRONMENT != Environments.TEST:
                 logger.warning(
-                    "The user cannot be inferred from the model save for "
-                    "model %s." % instance.__class__.__name__
+                    "The user cannot be inferred from the model save for model "
+                    "%s." % instance.__class__.__name__
+                )
+        elif not user.is_fully_authenticated:
+            # There are cases in tests where the user inferred from the middle
+            # ware may not be authenticated.  We need to allow this, as this
+            # often happens when creating objects from factories.  In this case,
+            # the user related signals will not fire - but we do not want to
+            # throw a hard error.
+            if settings.ENVIRONMENT != Environments.TEST:
+                raise Exception(
+                    f"The user editing the model {self._type} should be fully "
+                    "authenticated!"
                 )
         return user

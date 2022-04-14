@@ -13,7 +13,7 @@ from greenbudget.app.serializers import ModelSerializer
 from greenbudget.app.tabling.serializers import row_order_serializer
 from greenbudget.app.tagging.fields import TagField
 from greenbudget.app.tagging.serializers import TagSerializer, ColorSerializer
-from greenbudget.app.user.fields import UserFilteredQuerysetPKField
+from greenbudget.app.user.fields import OwnershipPrimaryKeyRelatedField
 
 from .models import (
     SubAccount, BudgetSubAccount, TemplateSubAccount, SubAccountUnit)
@@ -92,11 +92,10 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
         required=False,
         queryset=Fringe.objects.all()
     )
-    contact = UserFilteredQuerysetPKField(
+    contact = OwnershipPrimaryKeyRelatedField(
         required=False,
         allow_null=True,
         queryset=Contact.objects.all(),
-        user_field='created_by'
     )
     order = serializers.CharField(read_only=True)
 
@@ -126,11 +125,10 @@ class BudgetSubAccountSerializer(SubAccountSerializer):
         required=False,
         many=True
     )
-    contact = UserFilteredQuerysetPKField(
+    contact = OwnershipPrimaryKeyRelatedField(
         required=False,
         allow_null=True,
         queryset=Contact.objects.all(),
-        user_field='created_by'
     )
 
     class Meta(SubAccountSerializer.Meta):
@@ -189,11 +187,10 @@ class SubAccountPdfSerializer(SubAccountSimpleSerializer):
         read_only=True,
         serializer_class=SubAccountUnitSerializer
     )
-    contact = UserFilteredQuerysetPKField(
+    contact = OwnershipPrimaryKeyRelatedField(
         required=False,
         allow_null=True,
         queryset=Contact.objects.all(),
-        user_field='created_by'
     )
     children = serializers.SerializerMethodField()
     groups = GroupSerializer(many=True, read_only=True)

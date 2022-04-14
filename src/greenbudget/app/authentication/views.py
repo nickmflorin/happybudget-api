@@ -5,7 +5,7 @@ from django.views.decorators.debug import sensitive_post_parameters
 
 from rest_framework import response, status
 
-from greenbudget.app import views, mixins, permissions
+from greenbudget.app import views, permissions
 from greenbudget.app.user.serializers import UserSerializer
 
 from .backends import (
@@ -189,9 +189,9 @@ class RecoverPasswordView(AbstractUnauthenticatedView):
 
 
 class PublicTokenView(
-    mixins.DestroyModelMixin,
-    mixins.UpdateModelMixin,
-    mixins.RetrieveModelMixin,
+    views.DestroyModelMixin,
+    views.UpdateModelMixin,
+    views.RetrieveModelMixin,
     views.GenericViewSet
 ):
     serializer_class = PublicTokenSerializer

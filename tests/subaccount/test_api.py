@@ -1052,24 +1052,16 @@ def test_bulk_update_children_budget_updated_once(api_client, user, budget_f,
     monkeypatch.setattr(
         BudgetingPolymorphicOrderedRowManager,
         'mark_budgets_updated',
-        lambda obj, instances: calls.append(None)
+        lambda obj, instances, req: calls.append(None)
     )
 
     response = api_client.patch(
         "/v1/subaccounts/%s/bulk-update-children/" % subaccount.pk,
         format='json',
-        data={
-            'data': [
-                {
-                    'id': subaccounts[0].pk,
-                    'description': 'New Desc 1',
-                },
-                {
-                    'id': subaccounts[1].pk,
-                    'description': 'New Desc 2',
-                }
-            ]
-        })
+        data={'data': [
+            {'id': subaccounts[0].pk, 'description': 'New Desc 1'},
+            {'id': subaccounts[1].pk, 'description': 'New Desc 2'}
+        ]})
     assert response.status_code == 200
     assert len(calls) == 1
 

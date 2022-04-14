@@ -44,8 +44,12 @@ router.register(r'', SubAccountViewSet, basename='subaccount')
 urlpatterns = router.urls + [
     path('<int:pk>/', include([
         path('children/', include(subaccount_children_router.urls)),
-        path('attachments/', include(subaccount_attachments_router.urls)),
         path('groups/', include(subaccount_groups_router.urls)),
         path('markups/', include(subaccount_markup_router.urls)),
+    ])),
+    # We have to use the subaccount_pk lookup kwarg because we use the PK for
+    # the DELETE /subaccounts/<subaccount_pk>/attachments/<pk>/ endpoint.
+    path('<int:subaccount_pk>/', include([
+        path('attachments/', include(subaccount_attachments_router.urls)),
     ]))
 ]

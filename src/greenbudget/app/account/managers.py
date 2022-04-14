@@ -16,7 +16,7 @@ from .cache import account_instance_cache
 class AccountManager(BudgetingPolymorphicOrderedRowManager):
 
     @signals.disable()
-    def bulk_delete(self, instances):
+    def bulk_delete(self, instances, request=None):
         budgets = set([inst.budget for inst in instances])
         groups = [obj.group for obj in instances if obj.group is not None]
         # We must invalidate the caches before the delete is performed so
@@ -27,12 +27,17 @@ class AccountManager(BudgetingPolymorphicOrderedRowManager):
         for obj in instances:
             obj.delete()
 
-        self.mark_budgets_updated(budgets)
+        # If the bulk operation is not being performed inside the context of
+        # an active request, we should not mark the Budget(s) as having been
+        # updated because the method is being called programatically.
+        if request is not None:
+            self.mark_budgets_updated(budgets, request.user)
+
         self.bulk_delete_empty_groups(groups)
         self.model.budget_cls.objects.bulk_calculate(budgets)
 
     @signals.disable()
-    def bulk_save(self, instances, update_fields):
+    def bulk_save(self, instances, update_fields, request=None):
         tree = self.bulk_calculate(instances, commit=False)
 
         account_instance_cache.invalidate(instances)
@@ -49,11 +54,16 @@ class AccountManager(BudgetingPolymorphicOrderedRowManager):
             tuple(self.model.CALCULATED_FIELDS) + tuple(update_fields)
         )
         self.model.budget_cls.objects.bulk_update_post_calc(tree.budgets)
-        self.mark_budgets_updated(instances)
         self.bulk_delete_empty_groups(groups)
 
+        # If the bulk operation is not being performed inside the context of
+        # an active request, we should not mark the Budget(s) as having been
+        # updated because the method is being called programatically.
+        if request is not None:
+            self.mark_budgets_updated(budgets, request.user)
+
     @signals.disable()
-    def bulk_add(self, instances):
+    def bulk_add(self, instances, request=None):
         # It is important to perform the bulk create first, because we need
         # the primary keys for the instances to be hashable.
         created = self.bulk_create(instances, return_created_objects=True)
@@ -64,7 +74,13 @@ class AccountManager(BudgetingPolymorphicOrderedRowManager):
         budget_children_cache.invalidate(parents)
 
         self.bulk_calculate(created)
-        self.mark_budgets_updated(created)
+
+        # If the bulk operation is not being performed inside the context of
+        # an active request, we should not mark the Budget(s) as having been
+        # updated because the method is being called programatically.
+        if request is not None:
+            self.mark_budgets_updated(instances, request.user)
+
         return created
 
     @signals.disable()

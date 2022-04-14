@@ -182,7 +182,7 @@ def test_upload_attachment(api_client, user, create_budget_account,
         data={'file': uploaded_file}
     )
 
-    assert response.status_code == 200
+    assert response.status_code == 201
 
     subaccount.refresh_from_db()
     assert subaccount.attachments.count() == 3
@@ -224,7 +224,7 @@ def test_upload_multiple_attachments(api_client, user, create_budget_account,
         data={'files': uploaded_files}
     )
 
-    assert response.status_code == 200
+    assert response.status_code == 201
 
     subaccount.refresh_from_db()
     assert subaccount.attachments.count() == 4

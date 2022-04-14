@@ -22,6 +22,14 @@ def test_get_budget_with_public_token(api_client, user, create_budget,
         "domain": "budget",
         "image": None,
         "is_permissioned": False,
+        "updated_by": {
+            "id": user.id,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "full_name": user.full_name,
+            "email": user.email,
+            "profile_image": None
+        },
         "public_token": {
             'id': public_token.pk,
             'created_at': '2020-01-01 00:00:00',

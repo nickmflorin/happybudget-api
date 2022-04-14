@@ -1,13 +1,15 @@
-from greenbudget.app import views, mixins
+from greenbudget.app import views
+from greenbudget.app.budget.permissions import BudgetObjPermission
+from greenbudget.app.template.permissions import TemplateObjPermission
 
 from .models import Markup
 from .serializers import MarkupSerializer
 
 
 class MarkupViewSet(
-    mixins.UpdateModelMixin,
-    mixins.RetrieveModelMixin,
-    mixins.DestroyModelMixin,
+    views.UpdateModelMixin,
+    views.RetrieveModelMixin,
+    views.DestroyModelMixin,
     views.GenericViewSet
 ):
     """
@@ -18,6 +20,19 @@ class MarkupViewSet(
     (3) DELETE /markups/<pk>/
     """
     serializer_class = MarkupSerializer
+    permission_classes = [
+        BudgetObjPermission(
+            get_budget=lambda obj: obj.budget,
+            object_name='markup',
+            collaborator_can_destroy=True,
+            is_object_applicable=lambda c: c.obj.domain == 'budget',
+        ),
+        TemplateObjPermission(
+            get_budget=lambda obj: obj.budget,
+            object_name='markup',
+            is_object_applicable=lambda c: c.obj.domain == 'template',
+        )
+    ]
 
     def get_serializer_context(self, parent=None):
         context = super().get_serializer_context()
@@ -33,4 +48,4 @@ class MarkupViewSet(
         return context
 
     def get_queryset(self):
-        return Markup.objects.filter(created_by=self.request.user)
+        return Markup.objects.all()

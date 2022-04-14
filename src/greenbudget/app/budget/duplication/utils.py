@@ -49,5 +49,4 @@ def instantiate_duplicate(instance, user, **overrides):
         kwargs['created_by'] = user
     if hasattr(instance.__class__, 'updated_by'):
         kwargs['updated_by'] = user
-
     return destination_cls(**kwargs, **overrides)

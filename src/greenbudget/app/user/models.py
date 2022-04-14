@@ -34,7 +34,7 @@ SocialUser = collections.namedtuple(
     'SocialUser', ['first_name', 'last_name', 'email'])
 
 
-@model.model(track_user=False, type='user')
+@model.model(type='user')
 class User(UserAuthenticationMixin, AbstractUser):
     username = None
     first_name = models.CharField(_('First Name'), max_length=150, blank=False)

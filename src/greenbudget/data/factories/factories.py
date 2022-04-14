@@ -122,6 +122,7 @@ class BaseBudgetFactory(CustomModelFactory):
     """
     name = factory.Sequence(lambda n: f"Budget {n}")
     created_by = factory.SubFactory(UserFactory)
+    updated_by = factory.SubFactory(UserFactory)
 
     class Meta:
         abstract = True
@@ -168,6 +169,7 @@ class FringeFactory(CustomModelFactory):
     """
     created_by = factory.SubFactory(UserFactory)
     updated_by = factory.SubFactory(UserFactory)
+
     name = factory.Sequence(lambda n: f"Fringe {n}")
     description = factory.Faker('sentence')
     cutoff = None
@@ -184,6 +186,7 @@ class MarkupFactory(CustomModelFactory):
     """
     created_by = factory.SubFactory(UserFactory)
     updated_by = factory.SubFactory(UserFactory)
+
     identifier = factory.Faker('name')
     description = factory.Faker('sentence')
 
@@ -379,6 +382,8 @@ class ContactFactory(CustomModelFactory):
     """
     A DjangoModelFactory to create instances of :obj:`Contact`.
     """
+    created_by = factory.SubFactory(UserFactory)
+    updated_by = factory.SubFactory(UserFactory)
     first_name = factory.Faker('first_name')
     last_name = factory.Faker('last_name')
     email = factory.Faker('email')

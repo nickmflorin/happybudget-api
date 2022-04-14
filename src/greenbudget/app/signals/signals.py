@@ -6,6 +6,8 @@ from .signal import Signal
 post_create = Signal(name='post_create')
 post_save = Signal(name='post_save')
 post_create_by_user = Signal(name='post_create_by_user')
+post_update_by_user = Signal(name='post_update_by_user')
+pre_delete_by_user = Signal(name='pre_delete_by_user')
 field_changed = Signal(name='field_changed')
 fields_changed = Signal(name='fields_changed')
 m2m_changed = Signal(name='m2m_changed')

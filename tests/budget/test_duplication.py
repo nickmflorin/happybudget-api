@@ -136,7 +136,7 @@ def generate_data(create_fringe, create_group, create_markup, colors,
 
 
 @pytest.fixture
-def make_assertions():
+def make_result_assertions():
     def make_assert(data, base, user, include_actuals=False):
         assert base.name == "Test Name"
         assert base.children.count() == len(data['accounts'])
@@ -301,25 +301,25 @@ def make_assertions():
     return make_assert
 
 
-def test_duplicate_budget(budget_df, user, generate_data, make_assertions,
-        models):
+def test_duplicate_budget(budget_df, user, generate_data, models,
+        make_result_assertions):
     data = generate_data(budget_df, user, include_actuals=True)
     budget = models.Budget.objects.duplicate(data['base'], user)
     assert isinstance(budget, models.Budget)
-    make_assertions(data, budget, user, include_actuals=True)
+    make_result_assertions(data, budget, user, include_actuals=True)
 
 
-def test_duplicate_template(template_df, user, generate_data, make_assertions,
-        models):
+def test_duplicate_template(template_df, user, generate_data, models,
+        make_result_assertions):
     data = generate_data(template_df, user)
     template = models.Template.objects.duplicate(data['base'], user)
     assert isinstance(template, models.Template)
-    make_assertions(data, template, user)
+    make_result_assertions(data, template, user)
 
 
-def test_derive_budget(template_df, user, generate_data, make_assertions,
+def test_derive_budget(template_df, user, generate_data, make_result_assertions,
         models, admin_user):
     data = generate_data(template_df, admin_user)
     budget = models.Template.objects.derive(data['base'], user)
     budget.refresh_from_db()
-    make_assertions(data, budget, user)
+    make_result_assertions(data, budget, user)

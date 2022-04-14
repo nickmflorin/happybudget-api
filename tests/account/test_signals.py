@@ -45,12 +45,21 @@ def test_delete_account_reactualizes(budget_df, create_actual):
 
 
 @pytest.mark.freeze_time
-def test_saving_subaccount_saves_budget(freezer, budget_f):
+def test_saving_account_saves_budget(freezer, budget_f, user, staff_user,
+        set_model_middleware_user):
     freezer.move_to('2017-05-20')
-    budget = budget_f.create_budget()
+    budget = budget_f.create_budget(created_by=user)
     account = budget_f.create_account(parent=budget)
     freezer.move_to('2019-05-20')
+
+    # There must be an actively authenticated user that is saving the Account
+    # in the context of a request in order for the signals to denote the Budget
+    # as having been updated by the user.  We can mimic this by setting the
+    # user on the model thread.
+    set_model_middleware_user(staff_user)
     account.save()
+
     budget.refresh_from_db()
     assert budget.updated_at == datetime.datetime(
         2019, 5, 20).replace(tzinfo=timezone.utc)
+    assert budget.updated_by == staff_user

@@ -12,7 +12,7 @@ from greenbudget.app.subaccount.cache import (
 
 class ActualManager(BudgetingOrderedRowManager):
     @signals.disable()
-    def bulk_delete(self, instances):
+    def bulk_delete(self, instances, request=None):
         budgets = set([obj.budget for obj in instances])
         budget_actuals_cache.invalidate(budgets)
         owners = set([obj.owner for obj in instances])
@@ -20,11 +20,15 @@ class ActualManager(BudgetingOrderedRowManager):
         for obj in instances:
             obj.delete()
 
-        self.mark_budgets_updated(budgets)
         self.bulk_actualize_all(owners)
+        # If the bulk operation is not being performed inside the context of
+        # an active request, we should not mark the Budget(s) as having been
+        # updated because the method is being called programatically.
+        if request is not None:
+            self.mark_budgets_updated(budgets, request.user)
 
     @signals.disable()
-    def bulk_add(self, instances):
+    def bulk_add(self, instances, request=None):
         # It is important to perform the bulk create first, because we need
         # the primary keys for the instances to be hashable.
         created = self.bulk_create(instances, predetermine_pks=True)
@@ -32,15 +36,20 @@ class ActualManager(BudgetingOrderedRowManager):
         owners_to_reactualize = set(
             [obj.owner for obj in created if obj.owner is not None])
 
-        self.mark_budgets_updated(created)
         self.bulk_actualize_all(owners_to_reactualize)
 
         budgets = set([obj.budget for obj in created])
         budget_actuals_cache.invalidate(budgets)
+
+        # If the bulk operation is not being performed inside the context of
+        # an active request, we should not mark the Budget(s) as having been
+        # updated because the method is being called programatically.
+        if request is not None:
+            self.mark_budgets_updated(created, request.user)
         return created
 
     @signals.disable()
-    def bulk_save(self, instances, update_fields):
+    def bulk_save(self, instances, update_fields, request=None):
         budgets = set([obj.budget for obj in instances])
         budget_actuals_cache.invalidate(budgets)
 
@@ -56,8 +65,12 @@ class ActualManager(BudgetingOrderedRowManager):
         for obj in instances:
             owners_to_reactualize.update(self.get_owners_to_reactualize(obj))
 
-        self.mark_budgets_updated(instances)
         self.bulk_actualize_all(owners_to_reactualize)
+        # If the bulk operation is not being performed inside the context of
+        # an active request, we should not mark the Budget(s) as having been
+        # updated because the method is being called programatically.
+        if request is not None:
+            self.mark_budgets_updated(instances, request.user)
 
     def bulk_import(self, source, *args, **kwargs):
         imports = {

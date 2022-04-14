@@ -55,7 +55,7 @@ def test_caches_invalidated_on_upload_attachment(api_client, user,
         "/v1/subaccounts/%s/attachments/" % subaccounts[0].pk,
         data={'file': uploaded_file}
     )
-    assert response.status_code == 200
+    assert response.status_code == 201
 
     # Make another request to the sub accounts endpoints to ensure that the
     # results are not cached.

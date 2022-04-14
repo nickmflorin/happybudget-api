@@ -45,12 +45,12 @@ class SubAccountQuerier(OrderedRowQuerier):
         be used sparingly.
         """
         return self.annotate(
-            _ongoing=Case(
-                When(self._get_case_query(budget), then=V(True)),
+            _has_budget=Case(
+                When(self._get_budget_query(budget), then=V(True)),
                 default=V(False),
                 output_field=BooleanField()
             )
-        ).filter(_ongoing=True)
+        ).filter(_has_budget=True)
 
     def _get_subaccount_levels(self, budget):
         subaccount_levels = []
@@ -67,7 +67,7 @@ class SubAccountQuerier(OrderedRowQuerier):
             ])
         return subaccount_levels
 
-    def _get_case_query(self, budget):
+    def _get_budget_query(self, budget):
         account_ct = ContentType.objects.get_for_model(budget.account_cls)
         subaccount_ct = ContentType.objects.get_for_model(
             budget.subaccount_cls)
@@ -133,7 +133,7 @@ class SubAccountManager(
             list(grouped.items()), key=lambda tup: tup[0], reverse=reverse)
 
     @signals.disable()
-    def bulk_delete(self, instances):
+    def bulk_delete(self, instances, request=None):
         groups = [obj.group for obj in instances if obj.group is not None]
         budgets = set([inst.budget for inst in instances])
 
@@ -148,19 +148,22 @@ class SubAccountManager(
         for obj in instances:
             obj.delete()
 
-        self.mark_budgets_updated(budgets)
         self.bulk_calculate_all([
             obj.parent for obj in
             [i for i in instances
             if i.will_change_parent_estimation(i.actions.DELETE)]
         ])
         self.bulk_delete_empty_groups(groups)
+        # If the bulk operation is not being performed inside the context of
+        # an active request, we should not mark the Budget(s) as having been
+        # updated because the method is being called programatically.
+        if request is not None:
+            self.mark_budgets_updated(budgets, request.user)
 
     @signals.disable()
-    def bulk_add(self, instances):
+    def bulk_add(self, instances, request=None):
         created = self.bulk_create(instances, return_created_objects=True)
 
-        self.mark_budgets_updated(created)
         budget_actuals_owners_cache.invalidate(created)
         parents = set([p.parent for p in created])
         invalidate_parent_children_cache(parents)
@@ -178,10 +181,15 @@ class SubAccountManager(
             i for i in created
             if i.will_change_parent_estimation(i.actions.CREATE)
         ])
+        # If the bulk operation is not being performed inside the context of
+        # an active request, we should not mark the Budget(s) as having been
+        # updated because the method is being called programatically.
+        if request is not None:
+            self.mark_budgets_updated(created, request.user)
         return created
 
     @signals.disable()
-    def bulk_save(self, instances, update_fields):
+    def bulk_save(self, instances, update_fields, request=None):
         instances = ensure_iterable(instances)
         # The estimation is only concerned with looking at the children of the
         # SubAccount, and when we are bulk updating SubAccount(s) we cannot
@@ -211,7 +219,11 @@ class SubAccountManager(
         self.model.budget_cls.objects.bulk_update_post_calc(tree.budgets)
 
         self.bulk_delete_empty_groups(groups)
-        self.mark_budgets_updated(instances)
+        # If the bulk operation is not being performed inside the context of
+        # an active request, we should not mark the Budget(s) as having been
+        # updated because the method is being called programatically.
+        if request is not None:
+            self.mark_budgets_updated(instances, request.user)
 
     @signals.disable()
     def bulk_calculate(self, *args, **kwargs):

@@ -74,7 +74,7 @@ class FringeManager(FringeQuerier, BudgetingOrderedRowManager):
         ])
 
     @signals.disable()
-    def bulk_delete(self, instances):
+    def bulk_delete(self, instances, request=None):
         budgets = set([obj.budget for obj in instances])
         self.bulk_estimate_fringe_subaccounts(
             fringes=instances,
@@ -84,10 +84,14 @@ class FringeManager(FringeQuerier, BudgetingOrderedRowManager):
             obj.delete()
 
         budget_fringes_cache.invalidate(budgets)
-        self.mark_budgets_updated(budgets)
+        # If the bulk operation is not being performed inside the context of
+        # an active request, we should not mark the Budget(s) as having been
+        # updated because the method is being called programatically.
+        if request is not None:
+            self.mark_budgets_updated(budgets, request.user)
 
     @signals.disable()
-    def bulk_add(self, instances):
+    def bulk_add(self, instances, request=None):
         # In the case that the Fringe is added with a flat value, the cutoff
         # is irrelevant.
         for instance in [
@@ -99,11 +103,15 @@ class FringeManager(FringeQuerier, BudgetingOrderedRowManager):
         self.bulk_estimate_fringe_subaccounts(created)
 
         budget_fringes_cache.invalidate(set([obj.budget for obj in created]))
-        self.mark_budgets_updated(created)
+        # If the bulk operation is not being performed inside the context of
+        # an active request, we should not mark the Budget(s) as having been
+        # updated because the method is being called programatically.
+        if request is not None:
+            self.mark_budgets_updated(created, request.user)
         return created
 
     @signals.disable()
-    def bulk_save(self, instances, update_fields):
+    def bulk_save(self, instances, update_fields, request=None):
         # In the case that the Fringe is added with a flat value, the cutoff
         # is irrelevant.
         for instance in [
@@ -114,8 +122,11 @@ class FringeManager(FringeQuerier, BudgetingOrderedRowManager):
         self.bulk_estimate_fringe_subaccounts(instances)
 
         budget_fringes_cache.invalidate(set([obj.budget for obj in instances]))
-
-        self.mark_budgets_updated(instances)
+        # If the bulk operation is not being performed inside the context of
+        # an active request, we should not mark the Budget(s) as having been
+        # updated because the method is being called programatically.
+        if request is not None:
+            self.mark_budgets_updated(instances, request.user)
         return updated
 
 

@@ -15,7 +15,7 @@ from greenbudget.app.tagging.serializers import TagSerializer, ColorSerializer
 from greenbudget.app.serializers import ModelSerializer
 from greenbudget.app.subaccount.models import BudgetSubAccount
 from greenbudget.app.subaccount.serializers import SubAccountAsOwnerSerializer
-from greenbudget.app.user.fields import UserFilteredQuerysetPKField
+from greenbudget.app.user.fields import OwnershipPrimaryKeyRelatedField
 
 from .models import Actual, ActualType
 
@@ -31,7 +31,6 @@ class ActualOwnerSerializer(PolymorphicNonPolymorphicSerializer):
 
 
 class ActualOwnerField(GenericRelatedField):
-
     def get_queryset(self, data):
         qs = super().get_queryset(data)
         # When bulk creating Actuals, even though the request method will be
@@ -120,11 +119,10 @@ class ActualSerializer(TaggedActualSerializer):
         required=False,
         allow_null=True
     )
-    contact = UserFilteredQuerysetPKField(
+    contact = OwnershipPrimaryKeyRelatedField(
         required=False,
         allow_null=True,
         queryset=Contact.objects.all(),
-        user_field='created_by'
     )
 
     class Meta:

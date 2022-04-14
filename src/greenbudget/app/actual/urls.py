@@ -16,7 +16,9 @@ actual_attachments_router.register(
 )
 
 urlpatterns = router.urls + [
-    path('<int:pk>/', include([
+    # We have to use the actual_pk lookup kwarg because we use the PK for
+    # the DELETE /actuals/<actual_pk>/attachments/<pk>/ endpoint.
+    path('<int:actual_pk>/', include([
         path('attachments/', include(actual_attachments_router.urls)),
     ]))
 ]

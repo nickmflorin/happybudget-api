@@ -1,3 +1,9 @@
+import datetime
+
+from django.test import override_settings
+import pytest
+
+
 def test_type_properly_serializes(api_client, user, create_actual, create_budget,
         create_actual_type):
     budget = create_budget()
@@ -252,3 +258,43 @@ def test_change_actual_owner_invalid_markup(api_client, user, create_actual,
         data={"owner": {"type": "markup", "id": markup.pk}}
     )
     assert response.status_code == 400
+
+
+@pytest.mark.freeze_time('2020-01-01')
+def test_delete_actual(api_client, user, create_actual, create_budget, freezer,
+        models):
+    budget = create_budget(created_by=user)
+    actual = create_actual(budget=budget, created_by=user)
+
+    api_client.force_login(user)
+    freezer.move_to("2020-01-02")
+    response = api_client.delete("/v1/actuals/%s/" % actual.pk)
+    assert response.status_code == 204
+    assert models.Actual.objects.count() == 0
+
+    budget.refresh_from_db()
+    assert budget.updated_at == datetime.datetime(2020, 1, 2).replace(
+        tzinfo=datetime.timezone.utc)
+    assert budget.updated_by == user
+
+
+@pytest.mark.freeze_time('2020-01-01')
+@override_settings(STAFF_USER_GLOBAL_PERMISSIONS=True)
+def test_delete_actual_as_staff_user(api_client, user, staff_user, create_actual,
+        create_budget, freezer, models):
+    budget = create_budget(created_by=user)
+    actual = create_actual(budget=budget, created_by=user)
+
+    # Login as the staff user because the staff user should be able to delete
+    # another user's actual.
+    api_client.force_login(staff_user)
+
+    freezer.move_to("2020-01-02")
+    response = api_client.delete("/v1/actuals/%s/" % actual.pk)
+    assert response.status_code == 204
+    assert models.Actual.objects.count() == 0
+
+    budget.refresh_from_db()
+    assert budget.updated_at == datetime.datetime(2020, 1, 2).replace(
+        tzinfo=datetime.timezone.utc)
+    assert budget.updated_by == staff_user

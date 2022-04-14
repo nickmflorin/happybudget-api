@@ -1,4 +1,4 @@
-from greenbudget.app import views, mixins
+from greenbudget.app import views
 
 from .models import HeaderTemplate
 from .serializers import (
@@ -6,11 +6,11 @@ from .serializers import (
 
 
 class HeaderTemplateViewSet(
-    mixins.UpdateModelMixin,
-    mixins.RetrieveModelMixin,
-    mixins.CreateModelMixin,
-    mixins.DestroyModelMixin,
-    mixins.ListModelMixin,
+    views.UpdateModelMixin,
+    views.RetrieveModelMixin,
+    views.CreateModelMixin,
+    views.DestroyModelMixin,
+    views.ListModelMixin,
     views.GenericViewSet
 ):
     """

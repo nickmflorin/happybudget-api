@@ -229,7 +229,10 @@ def create_bulk_delete_serializer(child_cls, **kwargs):
         def perform(self, validated_data):
             # Exception should have already been raised at this point.
             assert hasattr(child_cls.objects, 'bulk_delete')
-            return child_cls.objects.bulk_delete(validated_data['ids'])
+            return child_cls.objects.bulk_delete(
+                validated_data['ids'],
+                request=self.context['request']
+            )
 
     return BulkDeleteSerializer
 
@@ -348,7 +351,8 @@ def create_bulk_update_serializer(serializer_cls, **kwargs):
             # in which case there will be no `update_fields` and we do not need
             # to apply the bulk save.
             if update_fields:
-                ModelClass.objects.bulk_save(children, update_fields)
+                ModelClass.objects.bulk_save(
+                    children, update_fields, request=self.context['request'])
 
             # Note that many-to-many fields are set after updating instance.
             # Setting m2m fields triggers signals which could potentially change
@@ -433,7 +437,8 @@ def create_bulk_create_serializer(serializer_cls, **kwargs):
             # only way to know what M2M field changes related to what instance
             # is the order of the M2M changes in the array and the order of the
             # associated instance in the array of created children.
-            created = ModelClass.objects.bulk_add(children)
+            created = ModelClass.objects.bulk_add(
+                children, request=self.context['request'])
             assert len(created) == len(m2m_fields)
 
             # Note that many-to-many fields are set after updating instance.

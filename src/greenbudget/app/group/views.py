@@ -1,13 +1,15 @@
-from greenbudget.app import views, mixins
+from greenbudget.app import views
+from greenbudget.app.budget.permissions import BudgetObjPermission
+from greenbudget.app.template.permissions import TemplateObjPermission
 
 from .models import Group
 from .serializers import GroupSerializer
 
 
 class GroupViewSet(
-    mixins.UpdateModelMixin,
-    mixins.RetrieveModelMixin,
-    mixins.DestroyModelMixin,
+    views.UpdateModelMixin,
+    views.RetrieveModelMixin,
+    views.DestroyModelMixin,
     views.GenericViewSet
 ):
     """
@@ -18,6 +20,20 @@ class GroupViewSet(
     (3) DELETE /groups/<pk>/
     """
     serializer_class = GroupSerializer
+    permission_classes = [
+        BudgetObjPermission(
+            get_budget=lambda obj: obj.budget,
+            object_name='group',
+            collaborator_can_destroy=True,
+            public=True,
+            is_object_applicable=lambda c: c.obj.domain == 'budget',
+        ),
+        TemplateObjPermission(
+            get_budget=lambda obj: obj.budget,
+            object_name='group',
+            is_object_applicable=lambda c: c.obj.domain == 'template',
+        )
+    ]
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -30,4 +46,4 @@ class GroupViewSet(
         return context
 
     def get_queryset(self):
-        return Group.objects.filter(created_by=self.request.user)
+        return Group.objects.all()

@@ -1,9 +1,9 @@
-from greenbudget.app import mixins
+from greenbudget.app import views
 
 from .models import Contact
 
 
-class ContactNestedMixin(mixins.NestedObjectViewMixin):
+class ContactNestedMixin(views.NestedObjectViewMixin):
     """
     A mixin for views that extend off of an contacts's detail endpoint.
     """

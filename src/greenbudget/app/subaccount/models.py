@@ -3,7 +3,7 @@ import copy
 from django.contrib.contenttypes.fields import (
     GenericForeignKey, GenericRelation)
 from django.contrib.contenttypes.models import ContentType
-from django.db import models, IntegrityError
+from django.db import models
 from django.utils.functional import cached_property
 
 from greenbudget.lib.utils import cumulative_sum
@@ -96,6 +96,8 @@ class SubAccount(BudgetingTreePolymorphicOrderedRowModel):
 
     table_pivot = ('content_type_id', 'object_id')
     child_instance_cls = AssociatedModel('self')
+    user_ownership_field = 'budget__created_by'
+
     ESTIMATED_FIELDS = ESTIMATED_FIELDS
     CALCULATED_FIELDS = CALCULATED_FIELDS
     VALID_PARENTS = ['account_cls', 'subaccount_cls']
@@ -283,12 +285,8 @@ class BudgetSubAccount(SubAccount):
 
     def validate_before_save(self):
         super().validate_before_save()
-        if self.contact is not None \
-                and self.contact.created_by != self.created_by:
-            raise IntegrityError(
-                "Cannot assign a contact created by one user to a sub account "
-                "created by another user."
-            )
+        if self.contact is not None:
+            self.contact.has_same_owner(self, raise_exception=True)
 
     @children_method_handler
     def calculate(self, children, **kwargs):

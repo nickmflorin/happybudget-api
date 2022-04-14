@@ -1,7 +1,7 @@
-from greenbudget.app import views, mixins
+from greenbudget.app import views, permissions
+from greenbudget.app.budget.permissions import BudgetObjPermission
 from greenbudget.app.io.views import GenericAttachmentViewSet
 
-from .mixins import ActualNestedMixin
 from .models import Actual, ActualType
 from .serializers import (
     ActualSerializer,
@@ -10,7 +10,7 @@ from .serializers import (
 )
 
 
-class ActualTypeViewSet(mixins.ListModelMixin, views.GenericViewSet):
+class ActualTypeViewSet(views.ListModelMixin, views.GenericViewSet):
     """
     Viewset to handle requests to the following endpoints:
 
@@ -23,7 +23,7 @@ class ActualTypeViewSet(mixins.ListModelMixin, views.GenericViewSet):
 
 
 class ActualAttachmentViewSet(
-    ActualNestedMixin,
+    views.NestedObjectViewMixin,
     GenericAttachmentViewSet
 ):
     """
@@ -33,6 +33,29 @@ class ActualAttachmentViewSet(
     (2) DELETE /actuals/<pk>/attachments/pk/
     (3) POST /actuals/<pk>/attachments/
     """
+    view_name = 'actual'
+    actual_lookup_url_kwarg = 'actual_pk'
+    permission_classes = [
+        permissions.IsFullyAuthenticated(affects_after=True),
+        permissions.IsOwner(object_name='attachment'),
+    ]
+    actual_permission_classes = [BudgetObjPermission(
+        get_budget=lambda obj: obj.budget,
+        object_name='actual',
+        # Currently, we do not allow Attachment(s) to be uploaded, deleted or
+        # retrieved for instances that belong to another User.
+        collaborator=False,
+        # Attachments are not applicable for the public domain.
+        public=False
+    )]
+
+    @property
+    # pylint: disable=invalid-overridden-method
+    def instance(self):
+        return self.actual
+
+    def get_actual_queryset(self):
+        return Actual.objects.all()
 
 
 class GenericActualViewSet(views.GenericViewSet):
@@ -46,9 +69,9 @@ class GenericActualViewSet(views.GenericViewSet):
 
 
 class ActualsViewSet(
-    mixins.UpdateModelMixin,
-    mixins.RetrieveModelMixin,
-    mixins.DestroyModelMixin,
+    views.UpdateModelMixin,
+    views.RetrieveModelMixin,
+    views.DestroyModelMixin,
     GenericActualViewSet
 ):
     """
@@ -58,6 +81,13 @@ class ActualsViewSet(
     (2) PATCH /actuals/<pk>/
     (3) DELETE /actuals/<pk>/
     """
+    # Currently, the Actual(s) are not relevant for public permissions on a
+    # Budget.
+    permission_classes = [BudgetObjPermission(
+        get_budget=lambda obj: obj.budget,
+        collaborator_can_destroy=True,
+        object_name='actual'
+    )]
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -65,4 +95,4 @@ class ActualsViewSet(
         return context
 
     def get_queryset(self):
-        return Actual.objects.filter(created_by=self.request.user)
+        return Actual.objects.all()

@@ -10,6 +10,7 @@ from greenbudget.app.markup.serializers import MarkupSerializer
 from greenbudget.app.serializers import ModelSerializer
 from greenbudget.app.template.models import Template
 from greenbudget.app.user.fields import UserTimezoneAwareDateField
+from greenbudget.app.user.serializers import SimpleUserSerializer
 
 from .models import BaseBudget, Budget
 
@@ -69,16 +70,20 @@ class BudgetSimpleSerializer(BaseBudgetSerializer):
         if 'template' not in validated_data:
             return super().create(validated_data)
         template = validated_data.pop('template')
-        if 'created_by' in validated_data:
-            del validated_data['created_by']
+
+        # These values cannot be included in the derivation because they are
+        # related to the users that created and updated the Budget we are
+        # deriving.
+        for fld in ('created_by', 'updated_by'):
+            if fld in validated_data:
+                del validated_data[fld]
         return Template.objects.derive(template, self.user, **validated_data)
 
     def validate_template(self, template):
-        if not self.user.is_staff:
-            if not template.created_by.is_staff \
-                    and template.created_by != self.user:
-                raise exceptions.ValidationError(
-                    "Do not have permission to use template.")
+        if not self.user.is_staff and not template.user_owner.is_staff \
+                and template.user_owner != self.user:
+            raise exceptions.ValidationError(
+                "User does not have permission to use template.")
         return template
 
     def to_representation(self, instance):
@@ -88,7 +93,9 @@ class BudgetSimpleSerializer(BaseBudgetSerializer):
         # user is anonymous and we would not want to include that info in a
         # response.
         data = super().to_representation(instance)
-        if self.user.is_authenticated and instance.created_by == self.user:
+        data['updated_by'] = SimpleUserSerializer(
+            instance=instance.updated_by).data
+        if self.user.is_authenticated and instance.user_owner == self.user:
             data['is_permissioned'] = False
             if not self.user.has_product('__any__'):
                 data['is_permissioned'] = not instance.is_first_created

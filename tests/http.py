@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name
 import copy
 import functools
+import json
 import threading
 import time
 import requests
@@ -166,3 +167,51 @@ def establish_cache_user():
         mock_request.user = user
         cache.endpoint_cache.thread.request = mock_request
     return establish
+
+
+def stringify_e(err, indexed=True):
+    if isinstance(err, dict):
+        return json.dumps(err, indent=2)
+    stringified = [stringify_e(e) for e in err]
+    if indexed:
+        stringified = [
+            f"({i + 1}): {stringify_e(e)}" for i, e in enumerate(err)]
+    return "\n".join(stringified)
+
+
+@pytest.fixture
+def assert_response_errors():
+    def inner(response, err, **kwargs):
+        # If the err are a dictionary, it is a singular error.
+        if isinstance(err, dict):
+            inner(response, [err], indexed=False)
+        else:
+            assert hasattr(err, '__iter__') and len(err) != 0, \
+                "Invalid error structure provided."
+            indexed = kwargs.get('indexed', len(err) != 1)
+            expected = stringify_e(err, indexed=indexed)
+
+            prefix = "The expected error in the response was: \n"
+            if len(err) != 1:
+                prefix = "The expected error(s) in the response were: \n"
+            prefix = prefix + expected + "\n"
+
+            # Make sure there are errors in the response to begin with.
+            assert 'errors' in response.json(), \
+                prefix + "However, the response contained no errors."
+            # Make sure the number of errors expected is consistent.
+            assert len(response.json()['errors']) == len(err), \
+                prefix \
+                + "However, the response contained " \
+                f"{len(response.json()['errors'])} errors."
+
+            # Make sure the errors were equivalent.
+            equivalency_message = prefix \
+                + "However, the actual error in the response was: " \
+                + stringify_e(response.json()['errors'][0], indexed=indexed)
+            if len(err) != 1:
+                equivalency_message = prefix \
+                    + "However, the actual errors in the response were: " \
+                    + stringify_e(response.json()['errors'], indexed=indexed)
+            assert response.json() == {'errors': err}, equivalency_message
+    return inner

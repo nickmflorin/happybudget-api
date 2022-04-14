@@ -6,6 +6,7 @@ from django.test import override_settings
 def test_detail_cache_invalidated_on_delete(api_client, user, budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
+    account_id = account.pk
 
     api_client.force_login(user)
     response = api_client.get("/v1/accounts/%s/" % account.pk)
@@ -13,7 +14,7 @@ def test_detail_cache_invalidated_on_delete(api_client, user, budget_f):
     assert response.json()['id'] == account.pk
 
     account.delete()
-    response = api_client.get("/v1/accounts/%s/" % account.pk)
+    response = api_client.get("/v1/accounts/%s/" % account_id)
     # Note: This is kind of a dumb test, because this will return a 404
     # regardless of whether or not the instance was removed from the cache
     # because the Http404 is raised before the .retrieve() method executes.
@@ -140,7 +141,7 @@ def test_caches_invalidated_on_upload_attachment(api_client, user,
         "/v1/subaccounts/%s/attachments/" % subaccounts[0].pk,
         data={'file': uploaded_file}
     )
-    assert response.status_code == 200
+    assert response.status_code == 201
 
     # Make another request to the sub accounts endpoints to ensure that the
     # results are not cached.

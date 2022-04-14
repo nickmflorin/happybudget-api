@@ -52,6 +52,7 @@ class Account(BudgetingTreePolymorphicOrderedRowModel):
 
     table_pivot = ('parent_id', )
     child_instance_cls = AssociatedModel('subaccount_cls')
+    user_ownership_field = 'parent__created_by'
 
     class Meta:
         get_latest_by = "order"
@@ -142,9 +143,8 @@ class Account(BudgetingTreePolymorphicOrderedRowModel):
 @model.model(type="account")
 class BudgetAccount(Account):
     objects = BudgetAccountManager()
-
     pdf_type = "pdf-account"
-    domain = "budget"
+    static_domain = "budget"
 
     class Meta(Account.Meta):
         verbose_name = "Account"
@@ -190,7 +190,7 @@ class BudgetAccount(Account):
 @model.model(type="account")
 class TemplateAccount(Account):
     objects = TemplateAccountManager()
-    domain = "template"
+    static_domain = "template"
 
     class Meta(Account.Meta):
         verbose_name = "Account"

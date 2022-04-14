@@ -3,7 +3,7 @@ from django.views.decorators.debug import sensitive_post_parameters
 
 from rest_framework import response, status
 
-from greenbudget.app import views, mixins, permissions, exceptions
+from greenbudget.app import views, permissions, exceptions
 from greenbudget.app.user.mail import send_email_verification_email
 
 from .filters import UserSearchFilterBackend
@@ -17,7 +17,7 @@ def sensitive_post_parameters_m(*args):
     return method_decorator(sensitive_post_parameters(*args))
 
 
-class UserRegistrationView(mixins.CreateModelMixin, views.GenericViewSet):
+class UserRegistrationView(views.CreateModelMixin, views.GenericViewSet):
     authentication_classes = []
     permission_classes = (permissions.AllowAny, )
     serializer_class = UserRegistrationSerializer
@@ -39,7 +39,7 @@ class UserRegistrationView(mixins.CreateModelMixin, views.GenericViewSet):
         )
 
 
-class UserViewSet(mixins.ListModelMixin, views.GenericViewSet):
+class UserViewSet(views.ListModelMixin, views.GenericViewSet):
     serializer_class = SimpleUserSerializer
     search_fields = ['email', 'name']
     filter_backends = [UserSearchFilterBackend]
@@ -50,7 +50,7 @@ class UserViewSet(mixins.ListModelMixin, views.GenericViewSet):
         return User.objects.fully_authenticated()
 
 
-class ActiveUserViewSet(mixins.UpdateModelMixin, views.GenericViewSet):
+class ActiveUserViewSet(views.UpdateModelMixin, views.GenericViewSet):
     serializer_class = UserSerializer
 
     def get_object(self):

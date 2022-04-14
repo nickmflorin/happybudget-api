@@ -6,19 +6,19 @@ from greenbudget.app.collaborator.models import Collaborator
 
 
 @pytest.fixture
-def another_user_case(api_client, user, create_user, create_domain_budget):
+def another_user_case(api_client, user, create_user, create_budget):
     def inner(domain, case_info=None):
         another_user = create_user()
         api_client.force_login(user)
-        return create_domain_budget(domain=domain, created_by=another_user)
+        return create_budget(domain=domain, created_by=another_user)
     return inner
 
 
 @pytest.fixture
-def staff_user_case(api_client, staff_user, user, create_domain_budget):
+def staff_user_case(api_client, staff_user, user, create_budget):
     def inner(domain, case_info=None):
         api_client.force_login(staff_user)
-        return create_domain_budget(domain=domain, created_by=user)
+        return create_budget(domain=domain, created_by=user)
     return inner
 
 
@@ -50,30 +50,30 @@ def another_public_case(api_client, user, create_budget, create_template,
 
 
 @pytest.fixture
-def logged_in_case(api_client, user, create_domain_budget):
+def logged_in_case(api_client, user, create_budget):
     def inner(domain, case_info=None):
         budget = None
         if case_info and case_info.get('create', False) is True:
-            budget = create_domain_budget(domain=domain, created_by=user)
+            budget = create_budget(domain=domain, created_by=user)
         api_client.force_login(user)
         return budget
     return inner
 
 
 @pytest.fixture
-def not_logged_in_case(user, create_domain_budget):
+def not_logged_in_case(user, create_budget):
     def inner(domain, case_info=None):
         if case_info and case_info.get('create', False) is True:
-            return create_domain_budget(domain=domain, created_by=user)
+            return create_budget(domain=domain, created_by=user)
         return None
     return inner
 
 
 @pytest.fixture
-def multiple_case(api_client, create_domain_budget, user):
+def multiple_case(api_client, create_budget, user):
     def inner(domain, case_info=None):
-        create_domain_budget(domain=domain, created_by=user)
-        budget = create_domain_budget(domain=domain, created_by=user)
+        create_budget(domain=domain, created_by=user)
+        budget = create_budget(domain=domain, created_by=user)
         if case_info and case_info.get('login', True) is True:
             api_client.force_login(user)
         return budget
@@ -179,26 +179,6 @@ def detail_update_test_case(api_client, establish_case):
     return inner
 
 
-@pytest.fixture
-def make_assertions():
-    def evaluate(path, assertion):
-        if hasattr(assertion, '__call__'):
-            return assertion(path)
-        return assertion
-
-    def inner(response, case, path, assertions):
-        if 'status' in assertions:
-            status_code = evaluate(path, assertions['status'])
-            assert response.status_code == status_code, \
-                f"The expected status code for path {path}, case {case}, " \
-                f"was {status_code}, but the response had status code " \
-                f"{response.status_code}."
-        if 'error' in assertions:
-            error = status_code = evaluate(path, assertions['error'])
-            assert response.json() == {'errors': [error]}
-    return inner
-
-
 @pytest.mark.parametrize('case,assertions', [
     ('another_user', {'status': 403, 'error': {
         'message': 'The user must does not have permission to view this budget.',
@@ -260,10 +240,10 @@ def make_assertions():
 @pytest.mark.parametrize('path', [
     '/', '/children/', '/actuals/', '/fringes/', '/markups/', '/groups/'])
 @override_settings(STAFF_USER_GLOBAL_PERMISSIONS=True)
-def test_budget_detail_read_permissions(case, path, assertions, make_assertions,
-        detail_test_case):
+def test_budget_detail_read_permissions(case, path, assertions, detail_test_case,
+        make_permission_assertions):
     response = detail_test_case("budget", case, path)
-    make_assertions(response, case, path, assertions)
+    make_permission_assertions(response, case, assertions, path)
 
 
 @pytest.mark.parametrize('case,assertions', [
@@ -289,9 +269,9 @@ def test_budget_detail_read_permissions(case, path, assertions, make_assertions,
 @pytest.mark.parametrize('path', [
     '/', '/children/', '/fringes/', '/markups/', '/groups/'])
 def test_template_detail_read_permissions(case, path, assertions,
-        detail_test_case, make_assertions):
+        detail_test_case, make_permission_assertions):
     response = detail_test_case("template", case, path)
-    make_assertions(response, case, path, assertions)
+    make_permission_assertions(response, case, assertions, path)
 
 
 @pytest.mark.parametrize('case,assertions', [
@@ -311,9 +291,9 @@ def test_template_detail_read_permissions(case, path, assertions,
 ])
 @pytest.mark.parametrize('domain', ['budget', 'template'])
 def test_list_read_permissions(case, assertions, list_test_case, domain,
-        make_assertions):
+        make_permission_assertions):
     response = list_test_case(domain, case)
-    make_assertions(response, case, "/", assertions)
+    make_permission_assertions(response, case, assertions, path="/")
 
 
 @pytest.mark.parametrize('case,assertions', [
@@ -361,11 +341,29 @@ def test_list_read_permissions(case, assertions, list_test_case, domain,
         {'status': 401}
     ),
 ])
-@pytest.mark.parametrize('domain', ['budget', 'template'])
-def test_delete_permissions(case, assertions, delete_test_case, domain,
-        make_assertions):
-    response = delete_test_case(domain, case)
-    make_assertions(response, case, "/", assertions)
+def test_budget_delete_permissions(case, assertions, delete_test_case,
+        make_permission_assertions):
+    response = delete_test_case("budget", case)
+    make_permission_assertions(response, case, assertions, path="/")
+
+
+@pytest.mark.parametrize('case,assertions', [
+    ('another_user', {'status': 403, 'error': {
+        'message': 'The user must does not have permission to view this budget.',
+        'code': 'permission_error',
+        'error_type': 'permission'
+    }}),
+    (('not_logged_in', {'create': True}), {'status': 401, 'error': {
+        'message': 'User is not authenticated.',
+        'code': 'account_not_authenticated',
+        'error_type': 'auth'
+    }}),
+    (('logged_in', {'create': True}), {'status': 204}),
+])
+def test_template_delete_permissions(case, assertions, delete_test_case,
+        make_permission_assertions):
+    response = delete_test_case("template", case)
+    make_permission_assertions(response, case, assertions, path="/")
 
 
 BUDGET_CREATE_PERMISSIONS = [
@@ -432,9 +430,9 @@ BUDGET_CREATE_PERMISSIONS = [
     ('/fringes/', {})
 ])
 def test_budget_detail_create_permissions(case, path, data, assertions,
-        detail_create_test_case, make_assertions):
+        detail_create_test_case, make_permission_assertions):
     response = detail_create_test_case("budget", data, case, path)
-    make_assertions(response, case, path, assertions)
+    make_permission_assertions(response, case, assertions, path)
 
 
 @pytest.mark.parametrize('case,assertions', [
@@ -493,9 +491,9 @@ def test_budget_detail_create_permissions(case, path, data, assertions,
     ),
 ])
 def test_budget_duplicate_permissions(case, assertions,
-        detail_create_test_case, make_assertions):
+        detail_create_test_case, make_permission_assertions):
     response = detail_create_test_case("budget", {}, case, "/duplicate/")
-    make_assertions(response, case, "/duplicate/", assertions)
+    make_permission_assertions(response, case, assertions, path="/duplicate/")
 
 
 @pytest.mark.needtowrite
@@ -519,21 +517,22 @@ def test_budget_derive_permissions():
     (('multiple_budgets', {'login': True}), {'status': 201}),
 ])
 def test_template_duplicate_permissions(case, assertions,
-        detail_create_test_case, make_assertions):
+        detail_create_test_case, make_permission_assertions):
     response = detail_create_test_case("template", {}, case, "/duplicate/")
-    make_assertions(response, case, "/duplicate/", assertions)
+    make_permission_assertions(response, case, assertions, path="/duplicate/")
 
 
 @pytest.mark.parametrize('case,assertions', BUDGET_CREATE_PERMISSIONS)
 def test_budget_detail_create_groups_permissions(case, assertions,
-        detail_create_test_case, make_assertions, create_budget_account):
+        detail_create_test_case, make_permission_assertions,
+        create_budget_account):
 
     def post_data(budget):
         accounts = [create_budget_account(parent=budget)]
         return {'children': [a.pk for a in accounts], 'name': 'Test Group'}
 
     response = detail_create_test_case("budget", post_data, case, '/groups/')
-    make_assertions(response, case, '/groups/', assertions)
+    make_permission_assertions(response, case, assertions, path="/groups/")
 
 
 @pytest.mark.needtowrite
@@ -569,21 +568,22 @@ TEMPLATE_CREATE_PERMISSIONS = [
     ('/fringes/', {}),
 ])
 def test_template_detail_create_permissions(case, path, data, assertions,
-        detail_create_test_case, make_assertions):
+        detail_create_test_case, make_permission_assertions):
     response = detail_create_test_case("template", data, case, path)
-    make_assertions(response, case, path, assertions)
+    make_permission_assertions(response, case, assertions, path)
 
 
 @pytest.mark.parametrize('case,assertions', TEMPLATE_CREATE_PERMISSIONS)
 def test_template_detail_create_groups_permissions(case, assertions,
-        detail_create_test_case, make_assertions, create_template_account):
+        detail_create_test_case, make_permission_assertions,
+        create_template_account):
 
     def post_data(budget):
         accounts = [create_template_account(parent=budget)]
         return {'children': [a.pk for a in accounts], 'name': 'Test Group'}
 
     response = detail_create_test_case("template", post_data, case, '/groups/')
-    make_assertions(response, case, '/groups/', assertions)
+    make_permission_assertions(response, case, assertions, path="/groups/")
 
 
 @pytest.mark.needtowrite
@@ -610,10 +610,10 @@ def test_template_detail_create_markups_permissions():
         'error_type': 'auth'
     }}),
 ])
-def test_budget_create_permissions(case, assertions, make_assertions,
+def test_budget_create_permissions(case, assertions, make_permission_assertions,
         create_test_case):
     response = create_test_case("budget", {'name': 'Test Budget'}, case)
-    make_assertions(response, case, "/", assertions)
+    make_permission_assertions(response, case, assertions, path="/")
 
 
 @pytest.mark.parametrize('case,assertions', [
@@ -635,10 +635,10 @@ def test_budget_create_permissions(case, assertions, make_assertions,
         'error_type': 'auth'
     }}),
 ])
-def test_template_create_permissions(case, assertions, make_assertions,
-        create_test_case):
+def test_template_create_permissions(case, assertions, create_test_case,
+        make_permission_assertions):
     response = create_test_case("template", {'name': 'Test Budget'}, case)
-    make_assertions(response, case, "/", assertions)
+    make_permission_assertions(response, case, assertions, path="/")
 
 
 @pytest.mark.parametrize('case,assertions', [
@@ -660,10 +660,10 @@ def test_template_create_permissions(case, assertions, make_assertions,
         'error_type': 'auth'
     }}),
 ])
-def test_budget_update_permissions(case, assertions, make_assertions,
+def test_budget_update_permissions(case, assertions, make_permission_assertions,
         update_test_case):
     response = update_test_case("budget", {'name': 'Test Budget'}, case)
-    make_assertions(response, case, "/", assertions)
+    make_permission_assertions(response, case, assertions, path="/")
 
 
 @pytest.mark.parametrize('case,assertions', [
@@ -685,7 +685,7 @@ def test_budget_update_permissions(case, assertions, make_assertions,
         'error_type': 'auth'
     }}),
 ])
-def test_template_update_permissions(case, assertions, make_assertions,
-        update_test_case):
+def test_template_update_permissions(case, assertions, update_test_case,
+        make_permission_assertions):
     response = update_test_case("template", {'name': 'Test Budget'}, case)
-    make_assertions(response, case, "/", assertions)
+    make_permission_assertions(response, case, assertions, path="/")

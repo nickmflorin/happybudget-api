@@ -97,11 +97,12 @@ class Actual(BudgetingOrderedRowModel):
     object_id = models.PositiveIntegerField(db_index=True, null=True)
     owner = GenericForeignKey('content_type', 'object_id')
     objects = ActualManager()
+    user_ownership_field = 'budget__created_by'
 
     IMPORT_SOURCES = Choices((0, "bank_account", "Bank Account"), )
 
     table_pivot = ('budget_id', )
-    domain = 'budget'
+    static_domain = 'budget'
 
     class Meta:
         get_latest_by = "order"
@@ -114,6 +115,8 @@ class Actual(BudgetingOrderedRowModel):
         return str(self.name) or "----"
 
     def validate_before_save(self):
+        if self.contact is not None:
+            self.contact.has_same_owner(self, raise_exception=True)
         try:
             budget = self.budget
         except Actual.budget.RelatedObjectDoesNotExist:
@@ -122,12 +125,6 @@ class Actual(BudgetingOrderedRowModel):
             if self.owner is not None and self.owner.budget != budget:
                 raise IntegrityError(
                     "Can only add actuals with the same parent as the instance.")
-            elif self.contact is not None \
-                    and self.contact.created_by != self.created_by:
-                raise IntegrityError(
-                    "Cannot assign a contact created by one user to an actual "
-                    "created by another user."
-                )
         super().validate_before_save()
 
     @classmethod

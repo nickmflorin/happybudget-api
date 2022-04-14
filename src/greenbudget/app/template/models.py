@@ -11,7 +11,7 @@ class Template(BaseBudget):
     community = models.BooleanField(default=False)
     hidden = models.BooleanField(default=False)
     objects = TemplateManager()
-    domain = "template"
+    static_domain = "template"
 
     class Meta(BaseBudget.Meta):
         verbose_name = "Template"
@@ -31,6 +31,6 @@ class Template(BaseBudget):
         return str(self.name)
 
     def validate_before_save(self, *args, **kwargs):
-        if self.community is True and not self.created_by.is_staff:
+        if self.community is True and not self.owner_is_staff:
             raise IntegrityError(
                 "Community templates can only be created by staff users.")

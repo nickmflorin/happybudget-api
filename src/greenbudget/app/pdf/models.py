@@ -2,17 +2,18 @@ from django.core.validators import MinLengthValidator
 from django.db import models
 
 from greenbudget.app.io.utils import upload_user_image_to
+from greenbudget.app.user.mixins import ModelOwnershipMixin
 
 
 def upload_to(instance, filename):
     return upload_user_image_to(
-        user=instance.created_by,
+        user=instance.user_owner,
         filename=filename,
         directory="exports/templates"
     )
 
 
-class HeaderTemplate(models.Model):
+class HeaderTemplate(models.Model, ModelOwnershipMixin):
     name = models.CharField(
         max_length=32,
         blank=False,
@@ -31,6 +32,7 @@ class HeaderTemplate(models.Model):
         on_delete=models.CASCADE,
         related_name="header_templates"
     )
+    ownership_field = 'created_by'
 
     class Meta:
         verbose_name = "Header Template"

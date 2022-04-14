@@ -1,10 +1,9 @@
-from greenbudget.app import views, mixins
-
+from greenbudget.app import views
 from .serializers import CreateLinkTokenSerializer
 
 
 class PlaidLinkTokenView(
-    mixins.CreateModelMixin,
+    views.CreateModelMixin,
     views.GenericViewSet
 ):
     """

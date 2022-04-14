@@ -111,7 +111,7 @@ def test_update_account_invalid_group(api_client, user, budget_f, create_group):
     }]}
 
 
-def test_bulk_update_subaccounts(api_client, user, freezer, budget_f):
+def test_bulk_update_children(api_client, user, freezer, budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccounts = [
@@ -180,8 +180,8 @@ def test_bulk_update_subaccounts(api_client, user, freezer, budget_f):
     assert budget.actual == 0.0
 
 
-def test_bulk_update_subaccount_fringes(api_client, user, create_fringe,
-        budget_f):
+def test_bulk_update_children_fringes(api_client, user, create_fringe,
+         budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccounts = [
@@ -251,7 +251,7 @@ def test_bulk_update_subaccount_fringes(api_client, user, create_fringe,
     assert budget.accumulated_fringe_contribution == 70.0
 
 
-def test_bulk_delete_subaccounts(api_client, user, models, budget_f):
+def test_bulk_delete_children(api_client, user, models, budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccounts = [
@@ -295,7 +295,7 @@ def test_bulk_delete_subaccounts(api_client, user, models, budget_f):
     assert budget.nominal_value == 0.0
 
 
-def test_bulk_update_subaccounts_budget_updated_once(api_client, user, budget_f,
+def test_bulk_update_children_budget_updated_once(api_client, user, budget_f,
         monkeypatch):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
@@ -315,28 +315,20 @@ def test_bulk_update_subaccounts_budget_updated_once(api_client, user, budget_f,
     monkeypatch.setattr(
         BudgetingPolymorphicOrderedRowManager,
         'mark_budgets_updated',
-        lambda obj, instances: calls.append(None)
+        lambda obj, instances, req: calls.append(None)
     )
     response = api_client.patch(
         "/v1/accounts/%s/bulk-update-children/" % account.pk,
         format='json',
-        data={
-            'data': [
-                {
-                    'id': subaccounts[0].pk,
-                    'name': 'New Desc 1',
-                },
-                {
-                    'id': subaccounts[1].pk,
-                    'name': 'New Desc 2',
-                }
-            ]
-        })
+        data={'data': [
+            {'id': subaccounts[0].pk, 'name': 'New Desc 1'},
+            {'id': subaccounts[1].pk, 'name': 'New Desc 2'}
+        ]})
     assert response.status_code == 200
     assert len(calls) == 1
 
 
-def test_bulk_create_subaccount(api_client, user, models, budget_f):
+def test_bulk_create_children(api_client, user, models, budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
 

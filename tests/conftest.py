@@ -1,3 +1,4 @@
+# pylint: disable=redefined-outer-name
 import logging
 import pytest
 
@@ -6,9 +7,12 @@ from django.db import connections
 
 from pytest_django.fixtures import _disable_native_migrations
 
+from greenbudget.app import model
+
 from .factories import *  # noqa
 from .http import *  # noqa
 from .models import *  # noqa
+from .permissions import *  # noqa
 from .plaid import *  # noqa
 from .static import *  # noqa
 from .stripe import *  # noqa
@@ -20,6 +24,28 @@ def pytest_addoption(parser):
         action="store_true",
         help="Run tests that require a postgres database.",
     )
+
+
+@pytest.fixture
+def set_model_middleware_user():
+    def inner(user):
+        setattr(model.model.thread, 'request', None)
+        setattr(model.model.thread, 'user', user)
+    return inner
+
+
+@pytest.fixture(autouse=True)
+def clear_local_threads(set_model_middleware_user):
+    """
+    Fixture that will automatically clear the request user associated with the
+    local threads on the :obj:`greenbudget.app.model.model` instance.
+
+    This is important because occasionally one test will execute after another
+    test had already set a :obj:`User` on the local thread, where the
+    :obj:`User` either no longer exists or is invalid in the scope of the
+    subsequent test.
+    """
+    set_model_middleware_user(None)
 
 
 def pytest_runtest_setup(item):

@@ -1,17 +1,18 @@
 from django.db import models
 
 from greenbudget.app.io.utils import upload_user_file_to
+from greenbudget.app.user.mixins import ModelOwnershipMixin
 
 
 def upload_attachment_to(instance, filename):
     return upload_user_file_to(
-        user=instance.created_by,
+        user=instance.user_owner,
         filename=filename,
         directory="attachments"
     )
 
 
-class Attachment(models.Model):
+class Attachment(models.Model, ModelOwnershipMixin):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
@@ -21,6 +22,7 @@ class Attachment(models.Model):
         editable=False
     )
     file = models.FileField(upload_to=upload_attachment_to, null=False)
+    user_ownership_field = 'created_by'
 
     class Meta:
         get_latest_by = "created_at"

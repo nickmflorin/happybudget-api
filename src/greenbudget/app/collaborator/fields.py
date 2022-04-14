@@ -16,11 +16,11 @@ class CollaboratingUserField(serializers.PrimaryKeyRelatedField):
         return self.context['request'].user
 
     @property
-    def owner(self):
+    def user_owner(self):
         assert 'budget' in self.context, \
             "The budget must be provided in context when using this " \
             "serializer field."
-        return self.context['budget'].created_by
+        return self.context['budget'].user_owner
 
     def get_queryset(self):
         assert self.user.is_fully_authenticated
@@ -31,7 +31,7 @@ class CollaboratingUserField(serializers.PrimaryKeyRelatedField):
         # (2) The user that created the instance: Since a user cannot be
         #     a collaborator of an instance that they are the owner of.
         return User.objects.fully_authenticated().exclude(
-            pk__in=[self.owner.pk, self.user.pk])
+            pk__in=[self.user_owner.pk, self.user.pk])
 
     def to_internal_value(self, data):
         if self.pk_field is not None:
@@ -48,7 +48,7 @@ class CollaboratingUserField(serializers.PrimaryKeyRelatedField):
                         'A user cannot assign themselves as a collaborator.'),
                     code='invalid'
                 ) from e
-            elif int(data) == self.owner.pk:
+            elif int(data) == self.user_owner.pk:
                 raise exceptions.ValidationError(
                     message=_(
                         f'The user {data} created the instance and cannot be '

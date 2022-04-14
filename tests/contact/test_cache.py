@@ -138,7 +138,7 @@ def test_cache_invalidated_on_upload_attachment(api_client, user,
         "/v1/contacts/%s/attachments/" % contacts[0].pk,
         data={'file': uploaded_file}
     )
-    assert response.status_code == 200
+    assert response.status_code == 201
 
     # Make another request to the contacts endpoint to ensure that the
     # results are not cached.

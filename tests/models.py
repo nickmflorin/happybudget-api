@@ -5,8 +5,8 @@ import django.apps
 from django.contrib.contenttypes.models import ContentType
 
 
-@pytest.fixture
-def models(db):
+@pytest.fixture(scope='session')
+def models():
     class Models:
         def __init__(self):
             for model in django.apps.apps.get_models():

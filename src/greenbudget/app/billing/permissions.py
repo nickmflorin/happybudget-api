@@ -23,7 +23,6 @@ class IsNotStripeCustomerPermission(permissions.BasePermission):
 class BaseProductPermission(
         ProductPermissionIdMixin, permissions.BasePermission):
     code = permissions.PermissionErrorCodes.PRODUCT_PERMISSION_ERROR
-    object_name = "object"
     message = (
         "The user does not have the correct subscription to view this "
         "{object_name}."

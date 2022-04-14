@@ -72,6 +72,7 @@ class NestedObjectViewMeta(type):
                     f'"{lookup_url_kwarg}". Fix your URL conf, or set the '
                     '`.lookup_field` attribute on the view correctly.'
                 )
+
             filter_kwargs = {lookup_field: instance.kwargs[lookup_url_kwarg]}
             obj = get_object_or_404(queryset, **filter_kwargs)
 
@@ -125,7 +126,7 @@ class NestedObjectViewMixin(metaclass=NestedObjectViewMeta):
     -------
     >>> class BudgetNestedMixin(NestedObjectViewMixin):
     >>>     budget_permission_classes = [
-    >>>         BudgetOwnershipPermission
+    >>>         BudgetObjPermission
     >>>     ]
     >>>     view_name = "budget"
     >>>

@@ -57,7 +57,15 @@ def test_get_contact_tagged_actuals(api_client, user, create_contact,
                 'domain': 'budget',
                 'updated_at': api_datetime_string(budget.updated_at),
                 'image': None,
-                'is_permissioned': False
+                'is_permissioned': False,
+                "updated_by": {
+                    "id": user.id,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "full_name": user.full_name,
+                    "email": user.email,
+                    "profile_image": None
+                }
             }
         },
         {
@@ -74,7 +82,15 @@ def test_get_contact_tagged_actuals(api_client, user, create_contact,
                 'domain': 'budget',
                 'updated_at': api_datetime_string(budget.updated_at),
                 'image': None,
-                'is_permissioned': False
+                'is_permissioned': False,
+                "updated_by": {
+                    "id": user.id,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "full_name": user.full_name,
+                    "email": user.email,
+                    "profile_image": None
+                }
             }
         }
     ]

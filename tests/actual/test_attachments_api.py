@@ -176,7 +176,7 @@ def test_upload_attachment(api_client, user, create_actual, create_budget,
         data={'file': uploaded_file}
     )
 
-    assert response.status_code == 200
+    assert response.status_code == 201
 
     actual.refresh_from_db()
     assert actual.attachments.count() == 3
@@ -216,7 +216,7 @@ def test_upload_multiple_attachments(api_client, user, create_actual,
         data={'files': uploaded_files}
     )
 
-    assert response.status_code == 200
+    assert response.status_code == 201
 
     actual.refresh_from_db()
     assert actual.attachments.count() == 4

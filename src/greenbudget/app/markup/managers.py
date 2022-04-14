@@ -77,7 +77,7 @@ class MarkupManager(BudgetAncestorQuerier, BudgetingManager):
         return tree
 
     @signals.disable()
-    def bulk_delete(self, instances, strict=True):
+    def bulk_delete(self, instances, strict=True, request=None):
         budgets = set([inst.budget for inst in instances])
         budget_actuals_owners_cache.invalidate([
             b for b in budgets if b.domain == 'budget'])
@@ -92,3 +92,9 @@ class MarkupManager(BudgetAncestorQuerier, BudgetingManager):
             except self.model.DoesNotExist as e:
                 if strict:
                     raise e
+
+        # If the bulk operation is not being performed inside the context of
+        # an active request, we should not mark the Budget(s) as having been
+        # updated because the method is being called programatically.
+        if request is not None:
+            self.mark_budgets_updated(budgets, request.user)

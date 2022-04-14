@@ -22,7 +22,15 @@ def test_get_budgets(api_client, user, admin_user, create_budget):
             "domain": "budget",
             "image": None,
             "updated_at": "2020-01-01 00:00:00",
-            "is_permissioned": False
+            "is_permissioned": False,
+            "updated_by": {
+                "id": user.id,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "full_name": user.full_name,
+                "email": user.email,
+                "profile_image": None
+            }
         },
         {
             "id": budgets[1].pk,
@@ -31,7 +39,15 @@ def test_get_budgets(api_client, user, admin_user, create_budget):
             "domain": "budget",
             "image": None,
             "updated_at": "2020-01-01 00:00:00",
-            "is_permissioned": True
+            "is_permissioned": True,
+            "updated_by": {
+                "id": user.id,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "full_name": user.full_name,
+                "email": user.email,
+                "profile_image": None
+            }
         }
     ]
 
@@ -57,7 +73,15 @@ def test_get_archived_budgets(api_client, user, admin_user, create_budget):
             "domain": "budget",
             "image": None,
             "updated_at": "2020-01-01 00:00:00",
-            "is_permissioned": False
+            "is_permissioned": False,
+            "updated_by": {
+                "id": user.id,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "full_name": user.full_name,
+                "email": user.email,
+                "profile_image": None
+            }
         },
         {
             "id": archived_budgets[1].pk,
@@ -66,7 +90,15 @@ def test_get_archived_budgets(api_client, user, admin_user, create_budget):
             "domain": "budget",
             "image": None,
             "updated_at": "2020-01-01 00:00:00",
-            "is_permissioned": True
+            "is_permissioned": True,
+            "updated_by": {
+                "id": user.id,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "full_name": user.full_name,
+                "email": user.email,
+                "profile_image": None
+            }
         }
     ]
 
@@ -95,7 +127,15 @@ def test_get_collaborating_budgets(api_client, create_budget, create_user,
             "type": "budget",
             "domain": "budget",
             "image": None,
-            "updated_at": "2020-01-01 00:00:00"
+            "updated_at": "2020-01-01 00:00:00",
+            "updated_by": {
+                "id": users[0].id,
+                "first_name": users[0].first_name,
+                "last_name": users[0].last_name,
+                "full_name": users[0].full_name,
+                "email": users[0].email,
+                "profile_image": None
+            }
         },
         {
             "id": budgets[2].pk,
@@ -103,7 +143,15 @@ def test_get_collaborating_budgets(api_client, create_budget, create_user,
             "type": "budget",
             "domain": "budget",
             "image": None,
-            "updated_at": "2020-01-01 00:00:00"
+            "updated_at": "2020-01-01 00:00:00",
+            "updated_by": {
+                "id": users[2].id,
+                "first_name": users[2].first_name,
+                "last_name": users[2].last_name,
+                "full_name": users[2].full_name,
+                "email": users[2].email,
+                "profile_image": None
+            }
         },
         {
             "id": budgets[3].pk,
@@ -111,7 +159,15 @@ def test_get_collaborating_budgets(api_client, create_budget, create_user,
             "type": "budget",
             "domain": "budget",
             "image": None,
-            "updated_at": "2020-01-01 00:00:00"
+            "updated_at": "2020-01-01 00:00:00",
+            "updated_by": {
+                "id": users[3].id,
+                "first_name": users[3].first_name,
+                "last_name": users[3].last_name,
+                "full_name": users[3].full_name,
+                "email": users[3].email,
+                "profile_image": None
+            }
         }
     ]
 
@@ -134,7 +190,15 @@ def test_get_budget(api_client, user, create_budget):
         "domain": "budget",
         "image": None,
         "is_permissioned": False,
-        "public_token": None
+        "public_token": None,
+        "updated_by": {
+            "id": user.id,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "full_name": user.full_name,
+            "email": user.email,
+            "profile_image": None
+        }
     }
 
 
@@ -160,7 +224,15 @@ def test_update_budget(api_client, user, create_budget):
         "domain": "budget",
         "image": None,
         "is_permissioned": False,
-        "public_token": None
+        "public_token": None,
+        "updated_by": {
+            "id": user.id,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "full_name": user.full_name,
+            "email": user.email,
+            "profile_image": None
+        }
     }
 
 
@@ -183,7 +255,15 @@ def test_create_budget(api_client, user, models):
         "domain": "budget",
         "image": None,
         "is_permissioned": False,
-        "public_token": None
+        "public_token": None,
+        "updated_by": {
+            "id": user.id,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "full_name": user.full_name,
+            "email": user.email,
+            "profile_image": None
+        }
     }
 
 
@@ -211,7 +291,15 @@ def test_derive_budget(api_client, user, template_df, staff_user, models):
         "domain": "budget",
         "image": None,
         "is_permissioned": False,
-        "public_token": None
+        "public_token": None,
+        "updated_by": {
+            "id": user.id,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "full_name": user.full_name,
+            "email": user.email,
+            "profile_image": None
+        }
     }
 
 
@@ -236,7 +324,15 @@ def test_duplicate_budget(api_client, standard_product_user, create_budget,
         "domain": "budget",
         "image": None,
         "is_permissioned": False,
-        "public_token": None
+        "public_token": None,
+        "updated_by": {
+            "id": standard_product_user.id,
+            "first_name": standard_product_user.first_name,
+            "last_name": standard_product_user.last_name,
+            "full_name": standard_product_user.full_name,
+            "email": standard_product_user.email,
+            "profile_image": None
+        }
     }
 
 

@@ -1,7 +1,7 @@
 import datetime
 
 
-def test_get_account_subaccounts(api_client, user, budget_f):
+def test_get_account_children(api_client, user, budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     another_account = budget_f.create_account(parent=budget)
@@ -74,7 +74,7 @@ def test_get_account_subaccounts(api_client, user, budget_f):
     assert response.json()['data'] == response_data
 
 
-def test_get_account_subaccounts_ordered_by_group(api_client, user, budget_f,
+def test_get_account_children_ordered_by_group(api_client, user, budget_f,
         create_group):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
@@ -214,7 +214,7 @@ def test_create_subaccount_group_empty(api_client, user, budget_f,
     assert response.json()['errors'][0]['code'] == 'is_empty'
 
 
-def test_get_community_template_account_subaccounts(api_client, user,
+def test_get_community_template_account_children(api_client, user,
         staff_user, create_template, create_template_account,
         create_template_subaccount):
     template = create_template(community=True, created_by=staff_user)
@@ -235,7 +235,7 @@ def test_get_community_template_account_subaccounts(api_client, user,
     assert response.status_code == 403
 
 
-def test_get_another_users_community_template_account_subaccounts(api_client,
+def test_get_another_users_community_template_account_children(api_client,
         create_user, staff_user, create_template, create_template_account,
         create_template_subaccount):
     user = create_user(is_staff=True)

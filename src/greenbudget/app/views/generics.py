@@ -1,8 +1,10 @@
+from django.http import Http404
 from django.utils.functional import cached_property
+from django.shortcuts import get_object_or_404
 
 from rest_framework import viewsets, serializers, generics
 
-from greenbudget.lib.utils import ensure_iterable, get_nested_attribute
+from greenbudget.lib.utils import ensure_iterable, get_attribute
 from greenbudget.app import permissions
 
 from .permissions import to_view_permission
@@ -10,7 +12,7 @@ from .permissions import to_view_permission
 
 def _get_attribute(view, attr):
     try:
-        return get_nested_attribute(view, attr)
+        return get_attribute(attr, view)
     except AttributeError as e:
         raise AttributeError(
             "View %s has invalid serializer class definition, "
@@ -57,6 +59,74 @@ class GenericView(generics.GenericAPIView):
         context = super().get_serializer_context()
         context.update(request=self.request, user=self.request.user)
         return context
+
+    def _get_object(self, qs):
+        """
+        An implementation of the default `get_object` method of the
+        :obj:`rest_framework.generics.GenericAPIView` that simply takes the
+        queryset as an argument, instead of accessing inside the method.
+
+        This allows us to perform the logic inside of the `get_object` method
+        for different querysets on the same view.
+        """
+        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
+        # If the `lookup_url_kwarg` is not in the view arguments, then we will
+        # just use the original `get_object` method such that rest_framework
+        # can raise the proper error.
+        if lookup_url_kwarg not in self.kwargs:
+            return super().get_object()
+
+        filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
+        obj = get_object_or_404(qs, **filter_kwargs)
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+    def get_object(self):
+        """
+        Overrides the default `get_object` method of the
+        :obj:`rest_framework.generics.GenericAPIView` such that, in certain
+        cases, the view can differentiate between an instance not existing
+        at all in the database and the instance not existing in a potentially
+        filtered queryset returned from the `get_queryset` method.
+
+        This implementation allows us to optionally prioritize responses that
+        indicate permission related errors instead of a 404 in the case that
+        the instance does indeed exist, but is not permissioned for the current
+        request.
+
+        Responses that indicate a permission error rather than a 404 will be
+        prioritized if the `get_permissioned_queryset` method is implemented on
+        the view and the following conditions are met:
+
+        (1) The instance exists in the queryset returned from the
+            `get_permissioned_queryset` method.
+        (2) The instance does not exist in the queryset returned from the
+            `get_queryset` method.
+        (3) Object level permission checks fail on the relevant instance.
+        """
+        qs = self.filter_queryset(self.get_queryset())
+        try:
+            return self._get_object(qs)
+        except Http404 as e:
+            # If the instance does not exist in the queryset returned from the
+            # base `get_queryset` method, and the `get_permissioned_queryset`
+            # method is defined on the view, check to see if we can raise
+            # object level permissions on the instance before returning a 404.
+            if hasattr(self, 'get_permissioned_queryset'):
+                # Here, if the instance does not exist in either queryset, a
+                # 404 will be raised.
+                instance = self._get_object(qs)
+                # A 404 was not raised, so we want to check object level
+                # permissions on the instance.  If the permission checks fail,
+                # we will get a response indicating there was a permission error
+                # instead of a 404.  If the permission checks succeed, revert
+                # back to the previous logic and raise the 404.
+                self.check_object_permissions(self.request, instance)
+                raise e
+            else:
+                # Use the default behavior if the view does not implement the
+                # `get_permissioned_queryset` method.
+                raise e
 
     def get_permissions(self):
         """

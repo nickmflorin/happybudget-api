@@ -2,9 +2,11 @@ import copy
 import functools
 from rest_framework import permissions
 
-from greenbudget.lib.utils import get_string_formatted_kwargs
+from greenbudget.lib.utils import (
+    get_string_formatted_kwargs, with_falsey_default)
 from greenbudget.app.authentication.exceptions import NotAuthenticatedError
 
+from .constants import PermissionContext
 from .exceptions import PermissionErr
 
 
@@ -49,32 +51,40 @@ def with_raise_exception(func):
 
 class BasePermissionMetaclass(permissions.BasePermissionMetaclass):
     def __new__(cls, name, bases, dct):
-        def has_permission(original):
-            @with_raise_exception
-            def inner(instance, request, view):
-                instance.guarantee_user_dependency_flags(request)
-                if hasattr(instance, 'has_user_perm') \
-                        and not instance.has_user_perm(request.user):
-                    return False
-                if instance._get_nested_obj is not None:
-                    nested_parent = instance._get_nested_obj(view)
-                    return instance.has_obj_perm(request, view, nested_parent)
-                return original(instance, request, view)
-            return inner
-
         def has_user_permission(original):
             @with_raise_exception
             def inner(instance, user):
                 return original(instance, user)
             return inner
 
+        def has_permission(original):
+            @with_raise_exception
+            def inner(instance, request, view):
+                instance.guarantee_user_dependency_flags(request)
+
+                # If the permission exposes a user permission method and this
+                # method evaluates to False, do not grant permission access.
+                if hasattr(instance, 'has_user_perm') \
+                        and not instance.has_user_perm(request.user):
+                    return False
+
+                if instance._get_nested_obj is not None:
+                    nested_parent = instance._get_nested_obj(view)
+                    return instance.has_obj_perm(request, view, nested_parent)
+                return original(instance, request, view)
+            return inner
+
         def has_obj_permission(original):
             @with_raise_exception
             def inner(instance, request, view, obj):
                 instance.guarantee_user_dependency_flags(request)
+
+                # If the permission exposes a user permission method and this
+                # method evaluates to False, do not grant permission access.
                 if hasattr(instance, 'has_user_perm') \
                         and not instance.has_user_perm(request.user):
                     return False
+
                 obj = instance.get_permissioned_obj(obj)
                 return original(instance, request, view, obj)
             return inner
@@ -241,6 +251,7 @@ class BasePermission(metaclass=BasePermissionMetaclass):
     """
     exception_class = PermissionErr
     user_dependency_flags = []
+    default_object_name = 'object'
 
     def __init__(self, *args, **options):
         # Maintain set of arguments used to instantiate the permission class so
@@ -248,14 +259,22 @@ class BasePermission(metaclass=BasePermissionMetaclass):
         self._args = list(args)
         self._kwargs = copy.deepcopy(options)
 
+        # Allow None values to be passed in and still trigger the default True
+        # values.
+        with_falsey = with_falsey_default(options)
+
+        self._object_name = with_falsey.get(
+            'object_name', self.default_object_name)
+        self._is_view_applicable = with_falsey.get('is_view_applicable', True)
+        self._is_object_applicable = with_falsey.get(
+            'is_object_applicable', True)
+
         self._priority = options.get('priority',
             getattr(self, 'priority', False))
         self._affects_after = options.get('affects_after',
             getattr(self, 'affects_after', False))
         self._get_permissioned_obj = options.get('get_permissioned_obj')
         self._get_nested_obj = options.get('get_nested_obj', None)
-        self._is_view_applicable = options.get('is_view_applicable', True)
-        self._is_object_applicable = options.get('is_object_applicable', True)
 
     def __call__(self, **kwargs):
         """
@@ -273,7 +292,7 @@ class BasePermission(metaclass=BasePermissionMetaclass):
             return self._get_permissioned_obj(obj)
         return obj
 
-    def is_prioritized(self, context):
+    def is_prioritized(self, *args):
         """
         Returns whether or not the permission is prioritized for the given
         permission context, :obj:`ObjectContext` or :obj:`ViewContext`.
@@ -284,7 +303,7 @@ class BasePermission(metaclass=BasePermissionMetaclass):
         """
         if self.priority is not None:
             if hasattr(self.priority, '__call__'):
-                return self.priority(context)
+                return self.priority(PermissionContext.from_args(*args))
             return self.priority
         return False
 

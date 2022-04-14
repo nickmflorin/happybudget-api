@@ -114,7 +114,7 @@ def track_failed_permissions(context):
                         f"permission method.  Expected either a string, a " \
                         "boolean or a PermissionErr."
 
-                    prioritized = permission.is_prioritized(*args[:1])
+                    prioritized = permission.is_prioritized(*args)
 
                     instance._failed_permissions.append(
                         (permission, prioritized, evaluated))

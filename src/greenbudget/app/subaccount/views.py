@@ -1,16 +1,17 @@
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
-from greenbudget.app import views, mixins, permissions
+from greenbudget.app import views, permissions
+from greenbudget.app.budget.permissions import BudgetObjPermission
 from greenbudget.app.budget.serializers import BudgetSerializer
 from greenbudget.app.budgeting.decorators import (
     register_bulk_operations, BulkAction, BulkDeleteAction)
-from greenbudget.app.collaborator.permissions import IsCollaborator
 from greenbudget.app.group.models import Group
 from greenbudget.app.group.serializers import GroupSerializer
 from greenbudget.app.io.views import GenericAttachmentViewSet
 from greenbudget.app.markup.models import Markup
 from greenbudget.app.markup.serializers import MarkupSerializer
+from greenbudget.app.template.permissions import TemplateObjPermission
 from greenbudget.app.template.serializers import TemplateSerializer
 
 from .cache import (
@@ -22,10 +23,6 @@ from .cache import (
 )
 from .mixins import SubAccountNestedMixin, SubAccountPublicNestedMixin
 from .models import SubAccount, TemplateSubAccount, SubAccountUnit
-from .permissions import (
-    SubAccountProductPermission,
-    SubAccountOwnershipPermission
-)
 from .serializers import (
     TemplateSubAccountSerializer,
     BudgetSubAccountSerializer,
@@ -38,8 +35,8 @@ from .serializers import (
 
 @subaccount_units_cache
 class SubAccountUnitViewSet(
-    mixins.ListModelMixin,
-    mixins.RetrieveModelMixin,
+    views.ListModelMixin,
+    views.RetrieveModelMixin,
     views.GenericViewSet
 ):
     """
@@ -65,8 +62,8 @@ class SubAccountUnitViewSet(
 @views.filter_by_ids
 @subaccount_markups_cache
 class SubAccountMarkupViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
+    views.CreateModelMixin,
+    views.ListModelMixin,
     SubAccountPublicNestedMixin,
     views.GenericViewSet
 ):
@@ -93,8 +90,8 @@ class SubAccountMarkupViewSet(
 @views.filter_by_ids
 @subaccount_groups_cache
 class SubAccountGroupViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
+    views.CreateModelMixin,
+    views.ListModelMixin,
     SubAccountPublicNestedMixin,
     views.GenericViewSet
 ):
@@ -129,6 +126,22 @@ class SubAccountAttachmentViewSet(
     (2) DELETE /subaccounts/<pk>/attachments/pk/
     (3) POST /subaccounts/<pk>/attachments/
     """
+    subaccount_lookup_url_kwarg = 'subaccount_pk'
+    subaccount_permission_classes = [
+        BudgetObjPermission(
+            get_budget=lambda obj: obj.budget,
+            object_name='subaccount',
+            # Currently, we do not allow Attachment(s) to be uploaded, deleted
+            # or retrieved for instances that belong to another User.
+            collaborator=False,
+            # Attachments are not applicable for the public domain.
+            public=False
+        )
+    ]
+    permission_classes = [
+        permissions.IsFullyAuthenticated(affects_after=True),
+        permissions.IsOwner(object_name='attachment'),
+    ]
 
 
 class GenericSubAccountViewSet(views.GenericViewSet):
@@ -190,9 +203,9 @@ class GenericSubAccountViewSet(views.GenericViewSet):
 )
 @subaccount_instance_cache
 class SubAccountViewSet(
-    mixins.UpdateModelMixin,
-    mixins.RetrieveModelMixin,
-    mixins.DestroyModelMixin,
+    views.UpdateModelMixin,
+    views.RetrieveModelMixin,
+    views.DestroyModelMixin,
     GenericSubAccountViewSet
 ):
     """
@@ -205,40 +218,17 @@ class SubAccountViewSet(
     (5) PATCH /subaccounts/<pk>/bulk-create-children/
     """
     permission_classes = [
-        permissions.AND(
-            permissions.OR(
-                permissions.AND(
-                    permissions.IsFullyAuthenticated(affects_after=True),
-                    SubAccountOwnershipPermission(affects_after=True),
-                    SubAccountProductPermission(
-                        products="__any__",
-                        is_object_applicable=lambda c:
-                            c.view.action != 'destroy',
-                    ),
-                ),
-                permissions.AND(
-                    permissions.IsFullyAuthenticated(affects_after=True),
-                    permissions.AND(
-                        IsCollaborator(get_permissioned_obj=lambda obj:
-                            obj.budget),
-                        permissions.IsNotViewAction('destroy')
-                    ),
-                    is_view_applicable=False
-                ),
-                permissions.AND(
-                    permissions.IsSafeRequestMethod,
-                    permissions.IsPublic(
-                        get_permissioned_obj=lambda obj: obj.budget)
-                ),
-                is_object_applicable=lambda c: c.obj.domain == 'budget',
-            ),
-            permissions.AND(
-                permissions.IsFullyAuthenticated(affects_after=True),
-                SubAccountOwnershipPermission(affects_after=True),
-                is_object_applicable=lambda c: c.obj.domain == 'template',
-                is_view_applicable=False
-            ),
-            default=permissions.IsFullyAuthenticated
+        BudgetObjPermission(
+            get_budget=lambda obj: obj.budget,
+            object_name='subaccount',
+            public=True,
+            collaborator_can_destroy=True,
+            is_object_applicable=lambda c: c.obj.domain == 'budget',
+        ),
+        TemplateObjPermission(
+            get_budget=lambda obj: obj.budget,
+            object_name='subaccount',
+            is_object_applicable=lambda c: c.obj.domain == 'template',
         )
     ]
 
@@ -272,8 +262,8 @@ class SubAccountViewSet(
 @views.filter_by_ids
 @subaccount_children_cache
 class SubAccountRecursiveViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
+    views.CreateModelMixin,
+    views.ListModelMixin,
     SubAccountPublicNestedMixin,
     GenericSubAccountViewSet
 ):

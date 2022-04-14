@@ -1,13 +1,13 @@
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
-from greenbudget.app import views, mixins, permissions
+from greenbudget.app import views
 
 from greenbudget.app.account.models import Account
+from greenbudget.app.budget.permissions import BudgetObjPermission
 from greenbudget.app.budget.serializers import BudgetSerializer
 from greenbudget.app.budgeting.decorators import (
     register_bulk_operations, BulkAction, BulkDeleteAction)
-from greenbudget.app.collaborator.permissions import IsCollaborator
 from greenbudget.app.group.models import Group
 from greenbudget.app.group.serializers import GroupSerializer
 from greenbudget.app.markup.models import Markup
@@ -17,6 +17,7 @@ from greenbudget.app.subaccount.serializers import (
     TemplateSubAccountSerializer
 )
 from greenbudget.app.subaccount.views import GenericSubAccountViewSet
+from greenbudget.app.template.permissions import TemplateObjPermission
 from greenbudget.app.template.serializers import TemplateSerializer
 
 from .cache import (
@@ -26,10 +27,6 @@ from .cache import (
     account_instance_cache
 )
 from .mixins import AccountPublicNestedMixin
-from .permissions import (
-    AccountOwnershipPermission,
-    AccountProductPermission
-)
 from .serializers import (
     BudgetAccountDetailSerializer,
     TemplateAccountDetailSerializer,
@@ -42,8 +39,8 @@ from .serializers import (
 @views.filter_by_ids
 @account_markups_cache
 class AccountMarkupViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
+    views.CreateModelMixin,
+    views.ListModelMixin,
     AccountPublicNestedMixin,
     views.GenericViewSet,
 ):
@@ -76,8 +73,8 @@ class AccountMarkupViewSet(
 @views.filter_by_ids
 @account_groups_cache
 class AccountGroupViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
+    views.CreateModelMixin,
+    views.ListModelMixin,
     AccountPublicNestedMixin,
     views.GenericViewSet,
 ):
@@ -104,8 +101,8 @@ class AccountGroupViewSet(
 @views.filter_by_ids
 @account_children_cache
 class AccountChildrenViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
+    views.CreateModelMixin,
+    views.ListModelMixin,
     AccountPublicNestedMixin,
     GenericSubAccountViewSet,
 ):
@@ -190,9 +187,9 @@ class GenericAccountViewSet(views.GenericViewSet):
 )
 @account_instance_cache
 class AccountViewSet(
-    mixins.UpdateModelMixin,
-    mixins.RetrieveModelMixin,
-    mixins.DestroyModelMixin,
+    views.UpdateModelMixin,
+    views.RetrieveModelMixin,
+    views.DestroyModelMixin,
     GenericAccountViewSet
 ):
     """
@@ -205,40 +202,17 @@ class AccountViewSet(
     (5) PATCH /accounts/<pk>/bulk-create-children/
     """
     permission_classes = [
-        permissions.AND(
-            permissions.OR(
-                permissions.AND(
-                    permissions.IsFullyAuthenticated(affects_after=True),
-                    AccountOwnershipPermission(affects_after=True),
-                    AccountProductPermission(
-                        products="__any__",
-                        is_object_applicable=lambda c:
-                            c.view.action != 'destroy',
-                    ),
-                ),
-                permissions.AND(
-                    permissions.IsFullyAuthenticated(affects_after=True),
-                    permissions.AND(
-                        IsCollaborator(get_permissioned_obj=lambda obj:
-                            obj.budget),
-                        permissions.IsNotViewAction('destroy')
-                    ),
-                    is_view_applicable=False
-                ),
-                permissions.AND(
-                    permissions.IsSafeRequestMethod,
-                    permissions.IsPublic(
-                        get_permissioned_obj=lambda obj: obj.budget)
-                ),
-                is_object_applicable=lambda c: c.obj.domain == 'budget',
-            ),
-            permissions.AND(
-                permissions.IsFullyAuthenticated(affects_after=True),
-                AccountOwnershipPermission(affects_after=True),
-                is_object_applicable=lambda c: c.obj.domain == 'template',
-                is_view_applicable=False
-            ),
-            default=permissions.IsFullyAuthenticated
+        BudgetObjPermission(
+            get_budget=lambda obj: obj.budget,
+            object_name='account',
+            public=True,
+            collaborator_can_destroy=True,
+            is_object_applicable=lambda c: c.obj.domain == 'budget',
+        ),
+        TemplateObjPermission(
+            get_budget=lambda obj: obj.budget,
+            object_name='account',
+            is_object_applicable=lambda c: c.obj.domain == 'template',
         )
     ]
 

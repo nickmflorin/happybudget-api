@@ -3,7 +3,7 @@ from django.db import models
 
 from rest_framework import response, status, decorators
 
-from greenbudget.app import views, mixins, permissions, exceptions
+from greenbudget.app import views, permissions, exceptions
 from greenbudget.app.account.serializers import (
     BudgetAccountSerializer, TemplateAccountSerializer)
 from greenbudget.app.account.views import GenericAccountViewSet
@@ -17,7 +17,7 @@ from greenbudget.app.budgeting.decorators import (
     register_bulk_operations, BulkAction, BulkDeleteAction)
 from greenbudget.app.collaborator.models import Collaborator
 from greenbudget.app.collaborator.permissions import (
-    IsCollaborator, IsOwnerOrCollaboratingOwner, IsOwnerOrCollaborator)
+    IsOwnerOrCollaboratingOwner, IsOwnerOrCollaborator)
 from greenbudget.app.collaborator.serializers import CollaboratorSerializer
 from greenbudget.app.fringe.models import Fringe
 from greenbudget.app.fringe.serializers import FringeSerializer
@@ -27,6 +27,7 @@ from greenbudget.app.group.serializers import GroupSerializer
 from greenbudget.app.markup.models import Markup
 from greenbudget.app.markup.serializers import MarkupSerializer
 from greenbudget.app.subaccount.models import BudgetSubAccount
+from greenbudget.app.template.permissions import TemplateObjPermission
 from greenbudget.app.template.serializers import TemplateSerializer
 
 from .cache import (
@@ -40,7 +41,7 @@ from .cache import (
 )
 from .models import Budget, BaseBudget
 from .mixins import BudgetNestedMixin, BaseBudgetPublicNestedMixin
-from .permissions import MultipleBudgetPermission, BudgetOwnershipPermission
+from .permissions import MultipleBudgetPermission, BudgetObjPermission
 from .serializers import (
     BudgetSerializer,
     BudgetSimpleSerializer,
@@ -52,8 +53,8 @@ from .serializers import (
 @views.filter_by_ids
 @budget_markups_cache
 class BudgetMarkupViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
+    views.CreateModelMixin,
+    views.ListModelMixin,
     BaseBudgetPublicNestedMixin,
     views.GenericViewSet
 ):
@@ -83,8 +84,8 @@ class BudgetMarkupViewSet(
 @views.filter_by_ids
 @budget_groups_cache
 class BudgetGroupViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
+    views.CreateModelMixin,
+    views.ListModelMixin,
     BaseBudgetPublicNestedMixin,
     views.GenericViewSet
 ):
@@ -117,8 +118,8 @@ class BudgetGroupViewSet(
 @views.filter_by_ids
 @budget_actuals_cache
 class BudgetActualsViewSet(
-    mixins.ListModelMixin,
-    mixins.CreateModelMixin,
+    views.ListModelMixin,
+    views.CreateModelMixin,
     BudgetNestedMixin,
     GenericActualViewSet
 ):
@@ -144,8 +145,8 @@ class BudgetActualsViewSet(
 
 
 class BudgetCollaboratorsViewSet(
-    mixins.ListModelMixin,
-    mixins.CreateModelMixin,
+    views.ListModelMixin,
+    views.CreateModelMixin,
     BudgetNestedMixin,
     views.GenericViewSet
 ):
@@ -184,7 +185,7 @@ class BudgetCollaboratorsViewSet(
 
 @budget_actuals_owners_cache
 class BudgetActualsOwnersViewSet(
-    mixins.ListModelMixin,
+    views.ListModelMixin,
     BudgetNestedMixin,
     views.GenericViewSet
 ):
@@ -203,9 +204,9 @@ class BudgetActualsOwnersViewSet(
 
     def list(self, request, *args, **kwargs):
         """
-        Overrides DRF's :obj:`mixins.ListModelMixin` so that the methodology
-        (filtering, paginating, etc.) can be applied to multiple querysets
-        at the same time.
+        Overrides DRF's :obj:`views.ListModelMixin` so that the
+        methodology (filtering, paginating, etc.) can be applied to multiple
+        querysets at the same time.
         """
         sub_account_qs = self.filter_queryset(self.get_queryset())
         markup_qs = self.filter_queryset(self.get_markup_queryset())
@@ -222,8 +223,8 @@ class BudgetActualsOwnersViewSet(
 @views.filter_by_ids
 @budget_fringes_cache
 class BudgetFringeViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
+    views.CreateModelMixin,
+    views.ListModelMixin,
     BaseBudgetPublicNestedMixin,
     GenericFringeViewSet
 ):
@@ -248,8 +249,8 @@ class BudgetFringeViewSet(
 @views.filter_by_ids
 @budget_children_cache
 class BudgetChildrenViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
+    views.CreateModelMixin,
+    views.ListModelMixin,
     BaseBudgetPublicNestedMixin,
     GenericAccountViewSet
 ):
@@ -277,7 +278,7 @@ class BudgetChildrenViewSet(
 
 
 class BudgetPublicTokenViewSet(
-    mixins.CreateModelMixin,
+    views.CreateModelMixin,
     BudgetNestedMixin,
     views.GenericViewSet
 ):
@@ -292,7 +293,7 @@ class BudgetPublicTokenViewSet(
         return {**super().create_kwargs(serializer), **{
             'content_type': self.content_type,
             'object_id': self.budget.pk,
-            'created_by': self.request.user
+            'created_by': self.request.user,
         }}
 
     def get_serializer_context(self):
@@ -319,7 +320,7 @@ class GenericBudgetViewSet(views.GenericViewSet):
     )
 
 
-class CollaboratingBudgetViewSet(mixins.ListModelMixin, GenericBudgetViewSet):
+class CollaboratingBudgetViewSet(views.ListModelMixin, GenericBudgetViewSet):
     """
     ViewSet to handle requests to the following endpoints:
 
@@ -329,7 +330,7 @@ class CollaboratingBudgetViewSet(mixins.ListModelMixin, GenericBudgetViewSet):
         return self.request.user.collaborating_budgets
 
 
-class AcrhivedBudgetViewSet(mixins.ListModelMixin, GenericBudgetViewSet):
+class AcrhivedBudgetViewSet(views.ListModelMixin, GenericBudgetViewSet):
     """
     ViewSet to handle requests to the following endpoints:
 
@@ -409,11 +410,11 @@ class AcrhivedBudgetViewSet(mixins.ListModelMixin, GenericBudgetViewSet):
 )
 @budget_instance_cache
 class BudgetViewSet(
-    mixins.CreateModelMixin,
-    mixins.UpdateModelMixin,
-    mixins.RetrieveModelMixin,
-    mixins.ListModelMixin,
-    mixins.DestroyModelMixin,
+    views.CreateModelMixin,
+    views.UpdateModelMixin,
+    views.RetrieveModelMixin,
+    views.ListModelMixin,
+    views.DestroyModelMixin,
     GenericBudgetViewSet
 ):
     """
@@ -438,44 +439,47 @@ class BudgetViewSet(
     (17) POST /budgets/<pk>/duplicate/
     (18) PATCH /budgets/<pk>/bulk-import-actuals/
     """
-    permission_classes = [
+    permission_classes = [permissions.OR(
         permissions.AND(
-            permissions.OR(
-                permissions.AND(
-                    permissions.IsFullyAuthenticated(affects_after=True),
-                    BudgetOwnershipPermission(affects_after=True),
-                    MultipleBudgetPermission(
-                        products="__any__",
-                        is_object_applicable=lambda c:
-                            c.view.action != 'destroy',
-                        is_view_applicable=lambda c:
-                            c.view.action in ('create', 'duplicate'),
-                    ),
-                ),
-                permissions.AND(
-                    permissions.IsFullyAuthenticated(affects_after=True),
-                    permissions.AND(
-                        IsCollaborator,
-                        permissions.IsNotViewAction('duplicate', 'destroy')
-                    ),
-                    is_view_applicable=False,
-                ),
-                permissions.AND(
-                    permissions.IsSafeRequestMethod,
-                    permissions.IsPublic,
-                    is_view_applicable=lambda c: c.view.action != "list"
-                ),
-                is_object_applicable=lambda c: c.obj.domain == 'budget',
-            ),
+            permissions.IsViewAction('list', affects_after=True),
+            permissions.IsFullyAuthenticated(priority=True),
+            priority=lambda c: c.view.action == 'list',
+        ),
+        permissions.AND(
+            permissions.IsViewAction('create', 'duplicate', affects_after=True),
             permissions.AND(
                 permissions.IsFullyAuthenticated(affects_after=True),
-                BudgetOwnershipPermission(affects_after=True),
-                is_object_applicable=lambda c: c.obj.domain == 'template',
-                is_view_applicable=False
+                permissions.IsOwner(object_name='budget', affects_after=True),
+                MultipleBudgetPermission(
+                    is_object_applicable=lambda c: c.obj.domain == 'budget'
+                ),
+                priority=True
             ),
-            default=permissions.IsFullyAuthenticated
+            priority=lambda c: c.view.action in ('create', 'duplicate'),
+        ),
+        permissions.AND(
+            permissions.IsNotViewAction('list', 'create', 'duplicate'),
+            permissions.AND(
+                BudgetObjPermission(
+                    # Collaborators are not allowed to delete or duplicate the
+                    # budget, only view and edit it's contents.
+                    collaborator_can_destroy=False,
+                    # A user should be able to delete a Budget even if it is
+                    # not permissioned due to the User's billing status.
+                    product_can_destroy=True,
+                    public=True,
+                    is_object_applicable=lambda c: c.obj.domain == 'budget'
+                ),
+                TemplateObjPermission(
+                    is_object_applicable=lambda c: c.obj.domain == 'template',
+                ),
+                priority=True,
+                default=permissions.IsFullyAuthenticated
+            ),
+            priority=lambda c:
+            c.view.action not in ('list', 'create', 'duplicate')
         )
-    ]
+    )]
 
     def get_queryset(self):
         base_cls = BaseBudget
@@ -487,7 +491,7 @@ class BudgetViewSet(
             qs = qs.filter(created_by=self.request.user)
             if base_cls is Budget:
                 qs = qs.filter(archived=False)
-        return qs
+        return qs.all()
 
     @decorators.action(detail=True, methods=["GET"])
     def pdf(self, request, *args, **kwargs):

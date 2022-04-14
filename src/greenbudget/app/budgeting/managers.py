@@ -60,6 +60,60 @@ class BudgetingManagerMixin:
             return self.bulk_update(instances, fields=['actual'], **kwargs)
         return None
 
+    def mark_budgets_updated(self, instances, user):
+        """
+        Marks the series of :obj:`Budget` or :obj:`Template` instances as having
+        been updated at the current time by the provided :obj:`User`.  The
+        series of :obj:`Budget` or :obj:`Template` instances can be provided
+        either as the :obj:`Budget` or :obj:`Template` instances themselves or
+        any instance that has a `budget` field pointing to the related
+        :obj:`Budget` or :obj:`Template` instance.
+
+        Note:
+        ----
+        In regard to the `updated_at` and `updated_by` fields on a :obj:`Budget`
+        or :obj:`Template` there are two things that we need to be aware of:
+
+        (1) Usage of `auto_now` on Django Fields
+
+        The `auto_now` attribute of the `updated_at` field for a :obj:`Budget`
+        or :obj:`Template` does not automatically update when instances of
+        :obj:`Budget` or :obj:`Template` are bulk updated or bulk created, only
+        when they are created or updated one instance at a time outside the
+        bulk operation methods inherently built in via Django's model managers.
+
+        (2) Related Models of :obj:`Budget` or :obj:`Template`
+
+        There are times when we are creating, deleting or updating models that
+        are related to the :obj:`Budget` or :obj:`Template` but will not trigger
+        a save of the :obj:`Budget` or :obj:`Template` itself, because they
+        are separate models.
+
+        Because of these two considerations, we have to explicitly update the
+        `updated_at` and `updated_by` fields when performing operations on
+        models related to a :obj:`Budget` or :obj:`Template` in a bulk context.
+        """
+        # pylint: disable=import-outside-toplevel
+        from greenbudget.app.budget.models import BaseBudget
+
+        budgets = set([])
+        for instance in instances:
+            assert isinstance(instance, BaseBudget) \
+                or hasattr(instance, 'budget'), \
+                f"The model class {instance.__class__} does not have a " \
+                "`budget` field, so the instances provided to the method " \
+                f"must all be of type {type(BaseBudget)}."
+            if isinstance(instance, BaseBudget):
+                budgets.add(instance.pk)
+            else:
+                budgets.add(getattr(instance, 'budget').pk)
+
+        self.model.budget_cls.objects.filter(pk__in=budgets).update(
+            updated_at=datetime.datetime.now().replace(
+                tzinfo=datetime.timezone.utc),
+            updated_by=user
+        )
+
     @signals.disable()
     def bulk_delete_empty_groups(self, groups):
         """
@@ -451,39 +505,6 @@ class BudgetingManager(BudgetingManagerMixin, models.Manager):
 class BudgetingRowManager(
         RowManagerMixin, BudgetingManagerMixin, models.Manager):
     queryset_class = RowQuerySet
-
-    def mark_budgets_updated(self, instances):
-        """
-        Marks the series of :obj:`Budget` or :obj:`Template` instances,
-        provided as either the instance itself or an instance that has a
-        `budget` field pointing to :obj:`BaseBudget`.
-
-        The `auto_now` attribute of the `updated_at` field for a :obj:`Budget`
-        or :obj:`Template` does not automatically update when instances of
-        :obj:`Budget` or :obj:`Template` are bulk updated or bulk created, only
-        when they are created or updated one instance at a time.  Furthermore,
-        there are times when we are changing relational fields of a :obj:`Budget`
-        or :obj:`Template` and want to denote the :obj:`Budget` or
-        :obj:`Template` as having been updated, but do not actually save the
-        :obj:`Budget` or :obj:`Template` itself.
-
-        This method is meant to account for the above (2) cases by manually
-        updating the `updated_at` fields of the provided :obj:`Budget` or
-        :obj:`Template` instances.
-        """
-        # pylint: disable=import-outside-toplevel
-        from greenbudget.app.budget.models import BaseBudget
-
-        budgets = set([])
-        for instance in instances:
-            if isinstance(instance, BaseBudget):
-                budgets.add(instance.pk)
-            else:
-                budgets.add(getattr(instance, 'budget').pk)
-
-        self.model.budget_cls.objects.filter(pk__in=budgets) \
-            .update(updated_at=datetime.datetime.now().replace(
-                tzinfo=datetime.timezone.utc))
 
 
 class BudgetingOrderedRowManager(OrderedRowManagerMixin, BudgetingRowManager):

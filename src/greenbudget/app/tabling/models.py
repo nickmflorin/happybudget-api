@@ -6,6 +6,8 @@ from polymorphic.models import PolymorphicModel
 from greenbudget.lib.utils import (
     ensure_iterable, humanize_list, get_attribute, empty,
     ImmutableAttributeMapping)
+from greenbudget.app.user.mixins import ModelOwnershipMixin
+
 from .utils import lexographic_midpoint, validate_order
 
 
@@ -38,7 +40,7 @@ class TableKey(ImmutableAttributeMapping):
         return hash(self.values)
 
 
-class RowModelMixin(models.Model):
+class RowModelMixin(ModelOwnershipMixin, models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     updated_by = models.ForeignKey(
@@ -53,6 +55,7 @@ class RowModelMixin(models.Model):
         on_delete=models.CASCADE,
         editable=False
     )
+    owner_field = 'created_by'
 
     class Meta:
         abstract = True

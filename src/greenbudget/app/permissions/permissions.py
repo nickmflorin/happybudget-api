@@ -100,31 +100,23 @@ class IsAnonymous(BasePermission):
         return request.user is None or not request.user.is_authenticated
 
 
-class StaffUserPermissionMixin:
-    def has_staff_permission(self, request, view):
-        staff_permission = IsStaffUser()
-        return staff_permission.has_permission(request, view)
-
-
 class IsOwner(BasePermission):
     """
     Object level permission that ensures that the object that an actively logged
     in user is accessing was created by that user.
     """
-    object_name = "object"
+    default_object_name = "object"
     user_dependency_flags = ['is_authenticated', 'is_active', 'is_verified']
     message = (
         "The user must does not have permission to view this "
         "{object_name}."
     )
 
-    def __init__(self, owner_field='created_by', object_name=None, **kwargs):
-        self._owner_field = owner_field
-        self._object_name = object_name
-        super().__init__(**kwargs)
-
     def has_object_permission(self, request, view, obj):
-        return getattr(obj, self._owner_field) == request.user
+        assert hasattr(obj, 'user_owner'), \
+            f"The model {obj.__class__} does not define a means of making " \
+            "ownership determination."
+        return obj.user_owner == request.user
 
 
 class IsPublic(BasePermission):
@@ -139,9 +131,9 @@ class IsPublic(BasePermission):
 
 
 class IsRequestMethod(BasePermission):
-    def __init__(self, *methods):
+    def __init__(self, *methods, **kwargs):
         self._methods = list(methods)
-        super().__init__(*methods)
+        super().__init__(*methods, **kwargs)
 
     def has_permission(self, request, view):
         return request.method.upper() in [m.upper() for m in self._methods]
@@ -167,9 +159,9 @@ class IsWriteRequestMethod(BasePermission):
 
 
 class IsViewAction(BasePermission):
-    def __init__(self, *actions):
+    def __init__(self, *actions, **kwargs):
         self._actions = list(actions)
-        super().__init__(*actions)
+        super().__init__(*actions, **kwargs)
 
     def has_permission(self, request, view):
         return view.action in self._actions
@@ -179,8 +171,8 @@ class IsViewAction(BasePermission):
 
 
 class IsNotViewAction(BasePermission):
-    def __init__(self, *actions):
-        self._actions = list(actions)
+    def __init__(self, *actions, **kwargs):
+        self._actions = list(actions, **kwargs)
         super().__init__(*actions)
 
     def has_permission(self, request, view):

@@ -1,7 +1,7 @@
 from django.db import models
 from rest_framework import decorators, response, status, filters
 
-from greenbudget.app import views, mixins, serializers
+from greenbudget.app import views, serializers
 from greenbudget.app.actual.serializers import TaggedActualSerializer
 from greenbudget.app.io.views import GenericAttachmentViewSet
 
@@ -26,7 +26,7 @@ class ContactAttachmentViewSet(
 
 
 class ContactTaggedActualsViewSet(
-    mixins.ListModelMixin,
+    views.ListModelMixin,
     ContactNestedMixin,
     views.GenericViewSet
 ):
@@ -43,11 +43,11 @@ class ContactTaggedActualsViewSet(
 
 @user_contacts_cache
 class ContactViewSet(
-    mixins.UpdateModelMixin,
-    mixins.RetrieveModelMixin,
-    mixins.CreateModelMixin,
-    mixins.DestroyModelMixin,
-    mixins.ListModelMixin,
+    views.UpdateModelMixin,
+    views.RetrieveModelMixin,
+    views.CreateModelMixin,
+    views.DestroyModelMixin,
+    views.ListModelMixin,
     views.GenericViewSet
 ):
     """
@@ -83,7 +83,10 @@ class ContactViewSet(
             filter_qs=models.Q(created_by=request.user),
             child_cls=Contact
         )
-        serializer = serializer_cls(data=request.data)
+        serializer = serializer_cls(
+            data=request.data,
+            context=self.get_serializer_context()
+        )
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return response.Response(status=status.HTTP_204_NO_CONTENT)
@@ -94,7 +97,10 @@ class ContactViewSet(
             serializer_cls=self.serializer_class,
             filter_qs=models.Q(created_by=request.user)
         )
-        serializer = serializer_cls(data=request.data)
+        serializer = serializer_cls(
+            data=request.data,
+            context=self.get_serializer_context()
+        )
         serializer.is_valid(raise_exception=True)
         children = self.perform_update(serializer)
         return response.Response({
@@ -106,7 +112,10 @@ class ContactViewSet(
         serializer_cls = serializers.create_bulk_create_serializer(
             serializer_cls=self.serializer_class,
         )
-        serializer = serializer_cls(data=request.data)
+        serializer = serializer_cls(
+            data=request.data,
+            context=self.get_serializer_context()
+        )
         serializer.is_valid(raise_exception=True)
 
         # The serializer here is a bulk create serializer, which does not have

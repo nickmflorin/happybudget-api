@@ -12,7 +12,7 @@ from .managers import ContactManager
 
 def upload_to(instance, filename):
     return upload_user_image_to(
-        user=instance.created_by,
+        user=instance.user_owner,
         filename=filename,
         directory="contacts"
     )
@@ -43,6 +43,7 @@ class Contact(OrderedRowModel):
 
     objects = ContactManager()
     table_pivot = ('created_by_id', )
+    user_ownership_field = 'created_by'
 
     class Meta:
         get_latest_by = "order"

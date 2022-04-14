@@ -1,6 +1,6 @@
 from django.utils.functional import cached_property
 
-from greenbudget.lib.utils import ensure_iterable, get_nested_attribute
+from greenbudget.lib.utils import ensure_iterable, get_attribute
 from greenbudget.lib.django_utils.models import (
     import_model_at_path, ModelImportMap, ModelMap)
 
@@ -102,12 +102,23 @@ class AssociatedModel:
             return objtype
         elif len(self._model_lookup) == 1:
             if self._model_lookup[0] in ('budget', 'account', 'subaccount'):
-                # The obj may be None, in which case the objtype is provided.
-                obj_type = objtype or type(obj)
-                assert hasattr(obj_type, 'domain'), \
-                    "If the model type is provided, the domain must be " \
-                    f"attributed on model {obj_type.__name__}."
-                domain = getattr(obj_type, 'domain')
-                return getattr(TreeDomainModelMap[domain], self._model_lookup[0])
-            return get_nested_attribute(obj, self._model_lookup[0])
+                # If the `obj` is None, then the lookup is being performed on
+                # the model class itself - not an instance of the model class.
+                # In this case, it is possible that the `domain` is None.
+                if obj is None:
+                    return getattr(
+                        TreeDomainModelMap[objtype.domain],
+                        self._model_lookup[0]
+                    )
+                # If the `obj` is not None, then the lookup is being
+                # performed on an instance of the model class and the domain
+                # should always be defined.
+                assert obj.domain in ('budget', 'template'), \
+                    f"Invalid domain {obj.domain} encountered for an " \
+                    f"instance of model {type(obj)}."
+                return getattr(
+                    TreeDomainModelMap[obj.domain],
+                    self._model_lookup[0]
+                )
+            return get_attribute(self._model_lookup[0], obj)
         return import_model_at_path(*self._model_lookup)

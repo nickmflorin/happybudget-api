@@ -1,5 +1,4 @@
 from django import dispatch
-from django.db import IntegrityError
 
 from greenbudget.app import signals
 
@@ -32,20 +31,16 @@ def attachment_deleted(instance, **kwargs):
     sender=Contact.attachments.through
 )
 def attachments_changed(instance, reverse, action, model, pk_set, **kwargs):
-    def validate(attachment, obj):
-        if obj.created_by != attachment.created_by:
-            raise IntegrityError(
-                "Attachment %s was not created by the same user that the "
-                "%s %s was." % (attachment.pk, obj.__class__.__name__, obj.pk)
-            )
-
+    # For now, until we figure out how to appropriately handle multi-user
+    # permissions in regard to attachments, the attachment owners must be
+    # self consistent with the BudgetSubAccount, Actual or Contact owners.
+    # Regardless of multi-user, this will always be the case for Contact(s),
+    # since Contact(s) are not collaborative, but we will eventually need to
+    # develop a better system around attachments of a BudgetSubAccount or Actual.
     if action in ('pre_add', 'pre_remove'):
         objs = model.objects.filter(pk__in=pk_set)
-        # pylint: disable=expression-not-assigned
-        if reverse:
-            [validate(instance, obj) for obj in objs]
-        else:
-            [validate(obj, instance) for obj in objs]
+        for obj in objs:
+            obj.has_same_owner(instance, raise_exception=True)
 
     elif action in ('post_add', 'post_remove'):
         if not reverse:

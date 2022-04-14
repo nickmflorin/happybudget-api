@@ -3,13 +3,13 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
 from greenbudget.app import model
-from greenbudget.app.tabling.models import RowModel
+from greenbudget.app.budgeting.models import BudgetingRowModel
 
 from .managers import GroupManager, BudgetGroupManager, TemplateGroupManager
 
 
 @model.model(type='group')
-class Group(RowModel):
+class Group(BudgetingRowModel):
     name = models.CharField(max_length=128)
     color = models.ForeignKey(
         to='tagging.Color',
@@ -32,6 +32,8 @@ class Group(RowModel):
 
     objects = GroupManager()
     table_pivot = ('object_id', 'content_type_id')
+    user_ownership_field = 'parent__user_owner'
+    domain_field = 'parent__domain'
 
     class Meta:
         get_latest_by = "created_at"

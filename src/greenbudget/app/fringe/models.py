@@ -34,6 +34,8 @@ class Fringe(BudgetingOrderedRowModel):
     )
     objects = FringeManager()
     table_pivot = ('budget_id', )
+    user_ownership_field = 'budget__created_by'
+    domain_field = 'budget__domain'
 
     class Meta:
         get_latest_by = "order"

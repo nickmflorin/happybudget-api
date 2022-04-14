@@ -1,4 +1,5 @@
 import copy
+import functools
 import importlib
 import six
 
@@ -93,30 +94,136 @@ def humanize_list(value, callback=six.text_type, conjunction='and',
     return u", ".join(map(callback, value[:num]))
 
 
-def get_nested_attribute(obj, attr):
-    if '.' in attr:
-        parts = attr.split('.')
-        if not hasattr(obj, parts[0]):
-            raise AttributeError('Object does not have attribute %s.' % parts[0])
-        return get_nested_attribute(getattr(obj, parts[0]), '.'.join(parts[1:]))
-    return getattr(obj, attr)
+def with_falsey_default(data, falsey=empty):
+    """
+    Performs a :obj:`dict` `.get()` method or `.pop()` method where the default
+    value will also be used for present but falsey representations of the value
+    associated with the provided key in the :obj:`dict`.
+
+    The problem this attempts to solve is illustrated via the following example:
+
+    Example:
+    -------
+    >>> class MyObject:
+    >>>     def __init__(self, *args, **kwargs):
+    >>>         default_private_method = lambda a: a + 1
+    >>>         self._private_method = kwargs.pop(
+    >>>             'private_method',
+    >>>             default_private_method
+    >>>         )
+    >>>
+    >>>     def private_method(self, a):
+    >>>         return self._private_method(a) + 1
+
+    Here, if we initialize MyObject without including `private_method` - all
+    works fine, because the default `default_private_method` callable will
+    be used.
+
+    However, there are some cases, particularly when we are passing keyword
+    arguments down from one function or method call to another function
+    or method call, where we might wind up with `default_private_method` having
+    a value of `None` - which we want to be treated as not having been provided
+    in the keyword arguments to begin with.
+
+    Currently, if we initialize MyObject as MyObject(private_method=None),
+    then we will get a TypeError when calling the method on the instance:
+
+    >>> obj = MyObject(private_method=None)
+    >>> obj.private_method()
+    >>> TypeError
+
+    This is because `kwargs.pop` will only use the default value if the key
+    is not in the provided set of keyword arguments.
+
+    Here, we can perform the :obj:`dict` `.get()` method or `.pop()` method and
+    use the default value both if the key is not in the :obj:`dict` OR if the
+    associated value is in the provided set of `falsey` values:
+
+    >>> class MyObject:
+    >>>     def __init__(self, *args, **kwargs):
+    >>>         default_private_method = lambda a: a + 1
+    >>>         self._private_method = with_falsey_default(kwargs).pop(
+    >>>             'private_method', default_private_method)
+    """
+    if not isinstance(data, dict):
+        raise ValueError(f"The first argument must be of type {type(dict)}.")
+
+    if falsey is empty:
+        falsey = [None]
+    falsey = ensure_iterable(falsey)
+
+    def use_default_if_applicable(func):
+        @functools.wraps(func)
+        def inner(cls, attr, default):
+            result = func(cls, attr, default)
+            if result is empty or result in falsey:
+                return default
+            return result
+        return inner
+
+    class _WithFalsey:
+        @classmethod
+        @use_default_if_applicable
+        def get(cls, attr, default):
+            return data.get(attr, empty)
+
+        @classmethod
+        @use_default_if_applicable
+        def pop(cls, attr, default):
+            return data.pop(attr, empty)
+
+    return _WithFalsey
 
 
 def get_attribute(*args, **kwargs):
     """
     Retrieves an attribute from either the provided instance, provided
-    :obj:`dict` or from the set of provided keyword arguments.
+    :obj:`dict` or from the set of provided keyword arguments.  The attribute
+    can be nested, with the nesting of the attribute at each level determined
+    by the string attribute separated with the delimiter.
+
+    Usage:
+    -----
+    This method can be used in the following ways:
+
+    (1) Attribute or nested attribute lookup on dict:
+    >>> my_dict = {'foo': {'bar': 5}}
+    >>> get_attribute('foo.bar', my_dict)
+
+    (2) Attribute or nested attribute lookup on instance:
+    >>> my_obj = MyObj(foo={'bar': 5})
+    >>> get_attribute('foo.bar', my_obj)
+
+    (3) Attribute or nested attribute lookup on kwargs:
+    >>> kwargs = {'foo': {'bar': 5}}
+    >>> get_attribute('foo.bar', **kwargs)
     """
     strict = kwargs.pop('strict', True)
     default = kwargs.pop('default', None)
+    delimiter = kwargs.pop('delimiter', '.')
 
     def get_from_dict(v, k):
-        if strict:
+        if delimiter in k:
+            parts = k.split(delimiter)
+            if parts[0] not in v:
+                raise AttributeError(
+                    'Dictionary does not have key %s.' % parts[0])
+            # The default cannot be applied until the last level.
+            return get_from_dict(parts[0][k], delimiter.join(parts[1:]))
+        elif strict:
             return v[k]
         return v.get(k, default)
 
     def get_from_instance(v, k):
-        if strict:
+        if delimiter in k:
+            parts = k.split(delimiter)
+            if not hasattr(v, parts[0]):
+                raise AttributeError(
+                    'Object does not have attribute %s.' % parts[0])
+            # The default cannot be applied until the last level.
+            return get_from_instance(
+                getattr(v, parts[0]), delimiter.join(parts[1:]))
+        elif strict:
             return getattr(v, k)
         return getattr(v, k, default)
 
@@ -126,6 +233,8 @@ def get_attribute(*args, **kwargs):
         "provided."
 
     if len(args) == 2:
+        assert isinstance(args[0], str), \
+            f"Attribute must be a string name, not {type(args[0])}"
         if isinstance(args[1], dict):
             return get_from_dict(args[1], args[0])
         return get_from_instance(args[1], args[0])
