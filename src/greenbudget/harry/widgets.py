@@ -7,7 +7,7 @@ class CustomRelatedFieldWidgetWrapper(RelatedFieldWidgetWrapper):
     RelatedFieldWidgetWrapper` such that our custom related widget wrapper
     template is used.
     """
-    template_name = 'admin/widgets/custom_related_widget_wrapper.html'
+    template_name = 'admin/widgets/related_widget_wrapper.html'
 
     @classmethod
     def create_from_root(cls, root_widget: RelatedFieldWidgetWrapper):

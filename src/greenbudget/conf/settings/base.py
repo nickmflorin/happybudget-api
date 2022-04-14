@@ -138,7 +138,7 @@ INSTALLED_APPS = [
     'greenbudget',  # Must be before django authentication.
     'polymorphic',
     'raven.contrib.django.raven_compat',
-    # 'django.contrib.admin',
+    'greenbudget.harry.apps.HarryAdminConfig',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -154,8 +154,6 @@ INSTALLED_APPS = [
     'timezone_field',
     'greenbudget.app',
     'greenbudget.data',
-    # 'greenbudget.harry',
-    'greenbudget.harry.apps.HarryAdminConfig',
     'greenbudget.app.account',
     'greenbudget.app.actual',
     'greenbudget.app.authentication',
