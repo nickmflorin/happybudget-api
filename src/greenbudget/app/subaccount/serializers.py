@@ -110,16 +110,16 @@ class SubAccountSerializer(SubAccountSimpleSerializer):
             'accumulated_fringe_contribution',
         )
 
-    def validate(self, attrs):
-        if 'rate' in attrs and 'quantity' not in attrs:
-            # On a PATCH request to update the SubAccount, we automatically
-            # assign quantity = 1.0 if the rate is being assigned but the
-            # quantity is not.
-            if (self.instance is not None and self.instance.quantity is None) \
-                    or self.instance is None:
-                attrs.update(quantity=1.0)
+    # def validate(self, attrs):
+    #     if 'rate' in attrs and 'quantity' not in attrs:
+    #         # On a PATCH request to update the SubAccount, we automatically
+    #         # assign quantity = 1.0 if the rate is being assigned but the
+    #         # quantity is not.
+    #         if (self.instance is not None and self.instance.quantity is None) \
+    #                 or self.instance is None:
+    #             attrs.update(quantity=1.0)
 
-        return super().validate(attrs)
+    #     return super().validate(attrs)
 
 
 class BudgetSubAccountSerializer(SubAccountSerializer):
