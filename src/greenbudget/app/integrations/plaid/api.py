@@ -225,6 +225,8 @@ class PlaidClient(plaid_api.PlaidApi):
             PlaidTransaction(user, accounts, d)
             for d in response.transactions
         ]
+        # Plaid paginates their transaction responses, so we have to continue
+        # making requests until we have received all of the transactions.
         while len(transactions) < response.total_transactions:
             response = self._fetch_transactions(
                 access_token=access_token,
@@ -236,7 +238,26 @@ class PlaidClient(plaid_api.PlaidApi):
                 PlaidTransaction(user, accounts, d)
                 for d in response.transactions
             ]
-        return transactions
+
+        # Right now, we are excluding pending transactions from the data because
+        # Plaid seems to be including duplicate pending transactions with
+        # different IDs.  Eventually we may want to include these, but for now
+        # we want to exclude them and carefully log weird behavior to better
+        # understand what is going on under the hood.
+        posted_transactions = [t for t in transactions if t.pending is not True]
+        pending_transactions = [t for t in transactions if t.pending is True]
+
+        for t in posted_transactions:
+            if t.pending_transaction_id not in [
+                    t.transaction_id for t in pending_transactions]:
+                message = (
+                    "Plaid returned transaction with a pending transaction ID "
+                    "that was not included in the transactions API response. "
+                    "The transaction is as follows: \n"
+                ) + str(t)
+                logger.warning(message)
+
+        return posted_transactions
 
 
 client = PlaidClient(api_client)

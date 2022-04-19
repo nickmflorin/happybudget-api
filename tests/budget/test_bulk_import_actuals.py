@@ -181,6 +181,16 @@ def mock_transactions(mock_plaid, mock_accounts):
             date=datetime.date(2021, 6, 5),
             transaction_id='08',
             account_id=mock_accounts[1].account_id,
+        ),
+        # Pending transactions should be excluded.
+        mock_plaid.Transaction(
+            category=PlaidCategories.WIRE_TRANSFER.data,
+            name="Wire Transfer",
+            amount=9000.0,
+            pending=True,
+            date=datetime.date(2021, 6, 5),
+            transaction_id='09',
+            account_id=mock_accounts[1].account_id,
         )
     ]
 

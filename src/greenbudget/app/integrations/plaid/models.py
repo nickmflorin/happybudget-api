@@ -59,10 +59,6 @@ class PlaidModel:
             attr.implement(self, *args, **kwargs)
 
     @property
-    def id(self):
-        return self._id
-
-    @property
     def plaid_counterpart(self):
         raise NotImplementedError()
 
@@ -94,6 +90,16 @@ class PlaidAccount(PlaidModel):
 class PlaidTransaction(PlaidModel):
     attrs = [
         PlaidAttribute('transaction_id'),
+        # There are two types of transactions: pending and posted. A transaction
+        # begins its life as a pending transaction, then becomes posted once the
+        # funds have actually been transferred. Plaid does not model the
+        # transition of a pending to posted transaction as a state change for
+        # an existing transaction; instead, the posted transaction is a new
+        # transaction with a pending_transaction_id field that matches it to a
+        # corresponding pending transaction.
+        # See https://plaid.com/docs/transactions/transactions-data/
+        PlaidAttribute('pending_transaction_id'),
+        PlaidAttribute('pending'),
         PlaidAttribute('datetime', scope_private=True),
         PlaidAttribute('date', scope_private=True),
         PlaidAttribute('name'),
