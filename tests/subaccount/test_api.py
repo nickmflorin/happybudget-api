@@ -811,6 +811,98 @@ def test_bulk_update_children(api_client, user, freezer, budget_f):
     assert budget.actual == 0.0
 
 
+def test_bulk_update_children_with_rate_quantity_defaults(api_client, user,
+        budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    subaccount = budget_f.create_subaccount(parent=account)
+    subaccounts = [
+        budget_f.create_subaccount(
+            parent=subaccount,
+            created_at=datetime.datetime(2020, 1, 1),
+            quantity=None,
+            rate=None
+        ),
+        budget_f.create_subaccount(
+            parent=subaccount,
+            created_at=datetime.datetime(2020, 1, 2),
+            quantity=None,
+            rate=None
+        )
+    ]
+    api_client.force_login(user)
+    response = api_client.patch(
+        "/v1/subaccounts/%s/bulk-update-children/" % subaccount.pk,
+        format='json',
+        data={'data': [
+            {'id': subaccounts[0].pk, 'rate': 1.5},
+            {'id': subaccounts[1].pk, 'rate': 1.5}
+        ]})
+
+    assert response.status_code == 200
+
+    assert response.json()['parent']['id'] == subaccount.pk
+    assert response.json()['parent']['nominal_value'] == 3.0
+
+    assert response.json()['budget']['id'] == budget.pk
+    assert response.json()['budget']['nominal_value'] == 3.0
+
+    # Make sure the SubAccount(s) are updated in the database.
+    subaccounts[0].refresh_from_db()
+    assert subaccounts[0].quantity == 1.0
+    assert subaccounts[0].rate == 1.5
+
+    subaccounts[1].refresh_from_db()
+    assert subaccounts[1].quantity == 1.0
+    assert subaccounts[1].rate == 1.5
+
+
+def test_bulk_update_children_with_rate_quantity_doesnt_default(api_client,
+        user, budget_f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    subaccount = budget_f.create_subaccount(parent=account)
+    subaccounts = [
+        budget_f.create_subaccount(
+            parent=subaccount,
+            created_at=datetime.datetime(2020, 1, 1),
+            quantity=10.0,
+            rate=None
+        ),
+        budget_f.create_subaccount(
+            parent=subaccount,
+            created_at=datetime.datetime(2020, 1, 2),
+            quantity=10.0,
+            rate=None
+        )
+    ]
+    api_client.force_login(user)
+    response = api_client.patch(
+        "/v1/subaccounts/%s/bulk-update-children/" % subaccount.pk,
+        format='json',
+        data={'data': [
+            {'id': subaccounts[0].pk, 'rate': 1.5},
+            {'id': subaccounts[1].pk, 'rate': 1.5}
+        ]})
+
+    assert response.status_code == 200
+
+    assert response.json()['parent']['id'] == subaccount.pk
+    assert response.json()['parent']['nominal_value'] == 30.0
+
+    assert response.json()['budget']['id'] == budget.pk
+    assert response.json()['budget']['nominal_value'] == 30.0
+
+    # Make sure the SubAccount(s) are updated in the database.
+    subaccounts[0].refresh_from_db()
+    assert subaccounts[0].quantity == 10.0
+    assert subaccounts[0].rate == 1.5
+
+    subaccounts[1].refresh_from_db()
+    assert subaccounts[1].quantity == 10.0
+    assert subaccounts[1].rate == 1.5
+
+
 def test_bulk_update_children_fringes(api_client, user, budget_f, create_fringe):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)

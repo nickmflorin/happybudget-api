@@ -73,7 +73,6 @@ class IsStaffUser(BasePermission):
     user_dependency_flags = ['is_authenticated', 'is_active', 'is_verified']
 
     def has_permission(self, request, view):
-        print("IS STAFF: %s" % request.user.is_staff)
         return bool(request.user and request.user.is_staff)
 
     def has_object_permission(self, request, view, obj):

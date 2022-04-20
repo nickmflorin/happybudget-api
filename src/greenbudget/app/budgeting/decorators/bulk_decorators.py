@@ -6,7 +6,7 @@ from typing import Any
 from django.db import models
 from rest_framework import decorators, response, status
 
-from greenbudget.lib.drf.bulk_serializers import (
+from greenbudget.app.serializers import (
     create_bulk_create_serializer,
     create_bulk_update_serializer,
     create_bulk_delete_serializer

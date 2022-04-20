@@ -1,13 +1,7 @@
 from django.db import models
 from rest_framework import decorators, response, status, filters
 
-from greenbudget.lib.drf.bulk_serializers import (
-    create_bulk_create_serializer,
-    create_bulk_update_serializer,
-    create_bulk_delete_serializer
-)
-
-from greenbudget.app import views, mixins
+from greenbudget.app import views, mixins, serializers
 from greenbudget.app.actual.serializers import TaggedActualSerializer
 from greenbudget.app.io.views import GenericAttachmentViewSet
 
@@ -85,7 +79,7 @@ class ContactViewSet(
 
     @decorators.action(detail=False, url_path="bulk-delete", methods=["PATCH"])
     def bulk_delete(self, request, *args, **kwargs):
-        serializer_cls = create_bulk_delete_serializer(
+        serializer_cls = serializers.create_bulk_delete_serializer(
             filter_qs=models.Q(created_by=request.user),
             child_cls=Contact
         )
@@ -96,7 +90,7 @@ class ContactViewSet(
 
     @decorators.action(detail=False, url_path="bulk-update", methods=["PATCH"])
     def bulk_update(self, request, *args, **kwargs):
-        serializer_cls = create_bulk_update_serializer(
+        serializer_cls = serializers.create_bulk_update_serializer(
             serializer_cls=self.serializer_class,
             filter_qs=models.Q(created_by=request.user)
         )
@@ -109,7 +103,7 @@ class ContactViewSet(
 
     @decorators.action(detail=False, url_path="bulk-create", methods=["PATCH"])
     def bulk_create(self, request, *args, **kwargs):
-        serializer_cls = create_bulk_create_serializer(
+        serializer_cls = serializers.create_bulk_create_serializer(
             serializer_cls=self.serializer_class,
         )
         serializer = serializer_cls(data=request.data)
