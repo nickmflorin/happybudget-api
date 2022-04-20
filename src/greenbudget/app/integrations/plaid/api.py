@@ -244,20 +244,7 @@ class PlaidClient(plaid_api.PlaidApi):
         # different IDs.  Eventually we may want to include these, but for now
         # we want to exclude them and carefully log weird behavior to better
         # understand what is going on under the hood.
-        posted_transactions = [t for t in transactions if t.pending is not True]
-        pending_transactions = [t for t in transactions if t.pending is True]
-
-        for t in posted_transactions:
-            if t.pending_transaction_id not in [
-                    t.transaction_id for t in pending_transactions]:
-                message = (
-                    "Plaid returned transaction with a pending transaction ID "
-                    "that was not included in the transactions API response. "
-                    "The transaction is as follows: \n"
-                ) + str(t)
-                logger.warning(message)
-
-        return posted_transactions
+        return [t for t in transactions if t.pending is not True]
 
 
 client = PlaidClient(api_client)

@@ -98,8 +98,11 @@ class PlaidTransaction(PlaidModel):
         # transaction with a pending_transaction_id field that matches it to a
         # corresponding pending transaction.
         # See https://plaid.com/docs/transactions/transactions-data/
-        PlaidAttribute('pending_transaction_id'),
         PlaidAttribute('pending'),
+        # Note that it is often the case that the transaction with a transaction
+        # ID associated with another transaction's pending transaction ID will
+        # not be included in the response, for unknown reasons.
+        PlaidAttribute('pending_transaction_id'),
         PlaidAttribute('datetime', scope_private=True),
         PlaidAttribute('date', scope_private=True),
         PlaidAttribute('name'),
