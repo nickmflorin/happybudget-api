@@ -137,7 +137,10 @@ def test_fetch_transactions_with_public_token(user):
         start_date=datetime.date(2022, 1, 1),
         end_date=datetime.date(2022, 3, 1),
         options=transactions_get_request_options
-            .TransactionsGetRequestOptions(account_ids=["test-id1", "test-id2"]),
+            .TransactionsGetRequestOptions(
+                count=500,
+                account_ids=["test-id1", "test-id2"]
+            ),
     )
     assert mocked_t.called
     assert mocked_t.call_args[0][0] == req
@@ -171,7 +174,7 @@ def test_fetch_transactions_with_access_token(user):
         start_date=datetime.date(2022, 1, 1),
         end_date=datetime.date(2022, 3, 1),
         options=transactions_get_request_options
-            .TransactionsGetRequestOptions(),
+            .TransactionsGetRequestOptions(count=500),
     )
     assert mocked_t.called
     assert mocked_t.call_args[0][0] == req

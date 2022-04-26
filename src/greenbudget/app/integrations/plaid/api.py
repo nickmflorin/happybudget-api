@@ -147,6 +147,16 @@ class PlaidClient(plaid_api.PlaidApi):
     def _fetch_transactions(self, access_token, account_ids=None,
             option_kwargs=None, **kwargs):
         option_kwargs = option_kwargs or {}
+        # If not specified, the count will default to 100 - which means only
+        # the 100 most recent transactions will be retrieved.  We want to fetch
+        # all of them, so we want to use the maximum value for the count
+        # parameter.  Note that this does not necessarily mean we will get all
+        # of the transactions present - as older transactions may not be ready
+        # yet, in which case we will need to use a webhook.
+        # See https://plaid.com/docs/transactions/pagination/
+        # #fetching-recent-transactions
+        option_kwargs.setdefault('count', 500)
+
         options = GetTransactionsOptions(**option_kwargs)
         if account_ids:
             options = GetTransactionsOptions(

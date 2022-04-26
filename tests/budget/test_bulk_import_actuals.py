@@ -394,7 +394,8 @@ def test_bulk_import_actuals_paginated(mock_accounts, mock_transactions,
         mock.call(transactions_get_request.TransactionsGetRequest(
             access_token='mock_access_token',
             options=OptsCls(
-                account_ids=["test-id1", "test-id2"]
+                account_ids=["test-id1", "test-id2"],
+                count=500,
             ),
             start_date=datetime.date(2021, 12, 31),
             end_date=datetime.date(2022, 1, 1)
@@ -403,6 +404,7 @@ def test_bulk_import_actuals_paginated(mock_accounts, mock_transactions,
             access_token='mock_access_token',
             options=OptsCls(
                 account_ids=["test-id1", "test-id2"],
+                count=500,
                 offset=4
             ),
             start_date=datetime.date(2021, 12, 31),
