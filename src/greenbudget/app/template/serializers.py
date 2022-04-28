@@ -3,6 +3,7 @@ from rest_framework import serializers
 from greenbudget.app import permissions, exceptions
 from greenbudget.app.budget.serializers import BaseBudgetSerializer
 from greenbudget.app.io.fields import Base64ImageField
+from greenbudget.app.user.serializers import SimpleUserSerializer
 
 from .models import Template
 
@@ -19,6 +20,8 @@ class TemplateSimpleSerializer(BaseBudgetSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
+        data['updated_by'] = SimpleUserSerializer(
+            instance=instance.updated_by).data
         if instance.community is False:
             del data['hidden']
         return data
@@ -61,3 +64,4 @@ class TemplateSerializer(TemplateSimpleSerializer):
                         message="Only community templates can be hidden/shown.")
 
         return super().validate(attrs)
+

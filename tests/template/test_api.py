@@ -20,7 +20,15 @@ def test_get_templates(api_client, user, create_template, staff_user):
             "updated_at": "2020-01-01 00:00:00",
             "type": "budget",
             "domain": "template",
-            "image": None
+            "image": None,
+            "updated_by": {
+                "id": user.id,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "full_name": user.full_name,
+                "email": user.email,
+                "profile_image": None
+            }
         },
         {
             "id": templates[1].pk,
@@ -29,6 +37,14 @@ def test_get_templates(api_client, user, create_template, staff_user):
             "type": "budget",
             "domain": "template",
             "image": None,
+            "updated_by": {
+                "id": user.id,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "full_name": user.full_name,
+                "email": user.email,
+                "profile_image": None
+            }
         }
     ]
 
@@ -53,6 +69,14 @@ def test_get_staff_user_templates(api_client, create_template, staff_user):
             "type": "budget",
             "domain": "template",
             "image": None,
+            "updated_by": {
+                "id": staff_user.id,
+                "first_name": staff_user.first_name,
+                "last_name": staff_user.last_name,
+                "full_name": staff_user.full_name,
+                "email": staff_user.email,
+                "profile_image": None
+            }
         },
         {
             "id": templates[1].pk,
@@ -61,6 +85,14 @@ def test_get_staff_user_templates(api_client, create_template, staff_user):
             "type": "budget",
             "domain": "template",
             "image": None,
+            "updated_by": {
+                "id": staff_user.id,
+                "first_name": staff_user.first_name,
+                "last_name": staff_user.last_name,
+                "full_name": staff_user.full_name,
+                "email": staff_user.email,
+                "profile_image": None
+            }
         }
     ]
 
@@ -85,6 +117,14 @@ def test_get_community_templates(api_client, user, create_template, staff_user):
             "domain": "template",
             "image": None,
             "hidden": False,
+            "updated_by": {
+                "id": staff_user.id,
+                "first_name": staff_user.first_name,
+                "last_name": staff_user.last_name,
+                "full_name": staff_user.full_name,
+                "email": staff_user.email,
+                "profile_image": None
+            }
         },
         {
             "id": templates[1].pk,
@@ -94,6 +134,14 @@ def test_get_community_templates(api_client, user, create_template, staff_user):
             "domain": "template",
             "image": None,
             "hidden": False,
+            "updated_by": {
+                "id": staff_user.id,
+                "first_name": staff_user.first_name,
+                "last_name": staff_user.last_name,
+                "full_name": staff_user.full_name,
+                "email": staff_user.email,
+                "profile_image": None
+            }
         }
     ]
 
@@ -120,6 +168,14 @@ def test_create_template(api_client, user, models):
         "type": "budget",
         "domain": "template",
         "image": None,
+        "updated_by": {
+            "id": user.id,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "full_name": user.full_name,
+            "email": user.email,
+            "profile_image": None
+        }
     }
 
 
@@ -147,6 +203,14 @@ def test_create_community_template(api_client, staff_user, models):
         "domain": "template",
         "image": None,
         "hidden": False,
+        "updated_by": {
+            "id": staff_user.id,
+            "first_name": staff_user.first_name,
+            "last_name": staff_user.last_name,
+            "full_name": staff_user.full_name,
+            "email": staff_user.email,
+            "profile_image": None
+        }
     }
 
 

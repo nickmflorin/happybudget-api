@@ -18,6 +18,14 @@ def test_get_template(api_client, user, create_template):
         "type": "budget",
         "domain": "template",
         "image": None,
+        "updated_by": {
+            "id": user.id,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "full_name": user.full_name,
+            "email": user.email,
+            "profile_image": None
+        }
     }
 
 
@@ -50,6 +58,14 @@ def test_get_community_template(api_client, staff_user, create_template,
         "domain": "template",
         "image": None,
         "hidden": False,
+        "updated_by": {
+            "id": another_staff_user.id,
+            "first_name": another_staff_user.first_name,
+            "last_name": another_staff_user.last_name,
+            "full_name": another_staff_user.full_name,
+            "email": another_staff_user.email,
+            "profile_image": None
+        }
     }
 
 
@@ -93,6 +109,14 @@ def test_update_template(api_client, user, create_template):
         "type": "budget",
         "domain": "template",
         "image": None,
+        "updated_by": {
+            "id": user.id,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "full_name": user.full_name,
+            "email": user.email,
+            "profile_image": None
+        }
     }
 
 
@@ -118,6 +142,14 @@ def test_update_community_template(api_client, staff_user, create_template):
         "domain": "template",
         "image": None,
         "hidden": False,
+        "updated_by": {
+            "id": staff_user.id,
+            "first_name": staff_user.first_name,
+            "last_name": staff_user.last_name,
+            "full_name": staff_user.full_name,
+            "email": staff_user.email,
+            "profile_image": None
+        }
     }
 
 
@@ -174,6 +206,14 @@ def test_update_another_users_community_template(api_client, staff_user,
         "domain": "template",
         "image": None,
         "hidden": False,
+        "updated_by": {
+            "id": staff_user.id,
+            "first_name": staff_user.first_name,
+            "last_name": staff_user.last_name,
+            "full_name": staff_user.full_name,
+            "email": staff_user.email,
+            "profile_image": None
+        }
     }
 
 
@@ -228,6 +268,14 @@ def test_duplicate_template(api_client, user, create_template, models):
         "type": "budget",
         "domain": "template",
         "image": None,
+        "updated_by": {
+            "id": user.id,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "full_name": user.full_name,
+            "email": user.email,
+            "profile_image": None
+        }
     }
 
 
