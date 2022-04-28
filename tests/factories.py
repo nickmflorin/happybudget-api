@@ -317,9 +317,10 @@ def create_template(user):
 )
 def create_budget():
     """
-    A fixture that creates a :obj:`Budget` or :obj:`Template` instance using
-    associated factories determined by the `domain` argument provided to the
-    fixture.
+    A fixture that creates either a :obj:`Budget` or :obj:`Template` instance,
+    depending on the `domain` argument supplied, using associated factories.
+
+    The default domain is `budget`.
 
     Usage:
     -----
@@ -405,9 +406,11 @@ def create_template_account(default_owner):
 )
 def create_account():
     """
-    A fixture that creates a :obj:`BudgetAccount` or :obj:`TemplateAccount`
-    instance using associated factories determined by the `domain` argument
-    provided to the fixture.
+    A fixture that creates either a :obj:`BudgetAccount` or
+    :obj:`TemplateAccount` instance, depending on the `domain` argument supplied,
+    using associated factories.
+
+    The default domain is `budget`.
 
     Usage:
     -----
@@ -490,9 +493,11 @@ def create_template_subaccount(default_owner):
 )
 def create_subaccount():
     """
-    A fixture that creates a :obj:`BudgetSubAccount` or :obj:`TemplateSubAccount`
-    instance using associated factories determined by the `domain` argument
-    provided to the fixture.
+    A fixture that creates either a :obj:`BudgetSubAccount` or
+    :obj:`TemplateSubAccount` instance, depending on the `domain` argument
+    supplied, using associated factories.
+
+    The default domain is `budget`.
 
     Usage:
     -----

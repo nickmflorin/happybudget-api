@@ -189,12 +189,17 @@ def assert_response_errors():
             assert hasattr(err, '__iter__') and len(err) != 0, \
                 "Invalid error structure provided."
             indexed = kwargs.get('indexed', len(err) != 1)
-            expected = stringify_e(err, indexed=indexed)
 
-            prefix = "The expected error in the response was: \n"
+            prefix = ""
+            if 'url' in kwargs:
+                prefix += "URL: %s\n" % kwargs['url']
+            if 'method' in kwargs:
+                prefix += "METHOD: %s\n" % kwargs['method'].upper()
+
+            prefix += "The expected error in the response was: \n"
             if len(err) != 1:
                 prefix = "The expected error(s) in the response were: \n"
-            prefix = prefix + expected + "\n"
+            prefix = prefix + stringify_e(err, indexed=indexed) + "\n"
 
             # Make sure there are errors in the response to begin with.
             assert 'errors' in response.json(), \
@@ -204,7 +209,6 @@ def assert_response_errors():
                 prefix \
                 + "However, the response contained " \
                 f"{len(response.json()['errors'])} errors."
-
             # Make sure the errors were equivalent.
             equivalency_message = prefix \
                 + "However, the actual error in the response was: " \

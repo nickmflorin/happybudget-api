@@ -2,422 +2,296 @@
 import pytest
 
 from greenbudget.app.collaborator.models import Collaborator
+from tests.permissions import ParameterizedCase
 
 
 @pytest.fixture
-def another_user_case(api_client, user, f):
-    def inner(case_info=None, model_kwargs=None):
-        another_user = f.create_user()
-        api_client.force_login(user)
-        budget = f.create_budget(created_by=another_user)
-        model_kwargs = model_kwargs or {}
-        if hasattr(model_kwargs, '__call__'):
-            model_kwargs = model_kwargs(budget)
-        # Here, the user that created the Actual doesn't really matter, since
-        # the ownership is dictated by the Budget.
-        return f.create_actual(budget=budget, **model_kwargs)
-    return inner
+def base_url():
+    return "/v1/actuals/"
 
 
 @pytest.fixture
-def public_case(api_client, user, f):
-    def inner(case_info=None, model_kwargs=None):
-        budget = f.create_budget(created_by=user)
-        public_token = f.create_public_token(instance=budget)
-        api_client.include_public_token(public_token)
-        model_kwargs = model_kwargs or {}
+def create_obj(f):
+    def inner(budget, case):
+        model_kwargs = getattr(case, 'model_kwargs', {})
         if hasattr(model_kwargs, '__call__'):
             model_kwargs = model_kwargs(budget)
         return f.create_actual(budget=budget, **model_kwargs)
     return inner
 
 
-@pytest.fixture
-def another_public_case(api_client, user, f):
-    def inner(case_info=None, model_kwargs=None):
-        budget = f.create_budget(created_by=user)
-        another_budget = f.create_budget(created_by=user)
-        public_token = f.create_public_token(instance=another_budget)
-        api_client.include_public_token(public_token)
-        model_kwargs = model_kwargs or {}
-        if hasattr(model_kwargs, '__call__'):
-            model_kwargs = model_kwargs(budget)
-        return f.create_actual(budget=budget, **model_kwargs)
-    return inner
-
-
-@pytest.fixture
-def logged_in_case(api_client, user, f):
-    def inner(case_info=None, model_kwargs=None):
-        budget = f.create_budget(created_by=user)
-        api_client.force_login(user)
-        model_kwargs = model_kwargs or {}
-        if hasattr(model_kwargs, '__call__'):
-            model_kwargs = model_kwargs(budget)
-        return f.create_actual(budget=budget, **model_kwargs)
-    return inner
-
-
-@pytest.fixture
-def not_logged_in_case(user, f):
-    def inner(case_info=None, model_kwargs=None):
-        budget = f.create_budget(created_by=user)
-        model_kwargs = model_kwargs or {}
-        if hasattr(model_kwargs, '__call__'):
-            model_kwargs = model_kwargs(budget)
-        return f.create_actual(budget=budget, **model_kwargs)
-    return inner
-
-
-@pytest.fixture
-def multiple_case(api_client, f, user):
-    def inner(case_info=None, model_kwargs=None):
-        f.create_budget(created_by=user)
-        budget = f.create_budget(created_by=user)
-        model_kwargs = model_kwargs or {}
-        if hasattr(model_kwargs, '__call__'):
-            model_kwargs = model_kwargs(budget)
-        actual = f.create_actual(budget=budget, **model_kwargs)
-        if case_info and case_info.get('login', True) is True:
-            api_client.force_login(user)
-        return actual
-    return inner
-
-
-@pytest.fixture
-def collaborator_case(api_client, user, f):
-    def inner(case_info, model_kwargs=None):
-        budget = f.create_budget(created_by=user)
-        collaborating_user = f.create_user()
-        f.create_collaborator(
-            access_type=case_info['access_type'],
-            user=collaborating_user,
-            instance=budget
-        )
-        if case_info and case_info.get('login', True) is True:
-            api_client.force_login(collaborating_user)
-        model_kwargs = model_kwargs or {}
-        if hasattr(model_kwargs, '__call__'):
-            model_kwargs = model_kwargs(budget)
-        return f.create_actual(budget=budget, **model_kwargs)
-    return inner
-
-
-@pytest.fixture
-def establish_case(another_user_case, multiple_case, another_public_case,
-        collaborator_case, logged_in_case, not_logged_in_case, public_case):
-    def inner(case, model_kwargs=None):
-        cases = {
-            'another_user': another_user_case,
-            'not_logged_in': not_logged_in_case,
-            'logged_in': logged_in_case,
-            'multiple_budgets': multiple_case,
-            'public_case': public_case,
-            'another_public_case': another_public_case,
-            'collaborator': collaborator_case,
-        }
-        if isinstance(case, tuple):
-            return cases[case[0]](case[1], model_kwargs=model_kwargs)
-        return cases[case]({}, model_kwargs=model_kwargs)
-    return inner
-
-
-@pytest.fixture
-def update_test_case(api_client, establish_case):
-    def inner(data, case):
-        actual = establish_case(case)
-        return api_client.patch("/v1/actuals/%s/" % actual.pk, data=data)
-    return inner
-
-
-@pytest.fixture
-def detail_test_case(api_client, establish_case):
-    def inner(case, path="/"):
-        actual = establish_case(case)
-        url = "/v1/actuals/%s%s" % (actual.pk, path)
-        return api_client.get(url)
-    return inner
-
-
-@pytest.fixture
-def detail_create_test_case(api_client, establish_case):
-    def inner(data, case, path="/"):
-        actual = establish_case(case)
-        url = "/v1/actuals/%s%s" % (actual.pk, path)
-        if hasattr(data, '__call__'):
-            data = data(actual)
-        return api_client.post(url, data=data)
-    return inner
-
-
-@pytest.fixture
-def detail_delete_test_case(api_client, establish_case):
-    def inner(case, path="/", model_kwargs=None):
-        actual = establish_case(case, model_kwargs=model_kwargs)
-        if hasattr(path, '__call__'):
-            path = path(actual)
-        url = "/v1/actuals/%s%s" % (actual.pk, path)
-        return api_client.delete(url)
-    return inner
-
-
-@pytest.fixture
-def delete_test_case(api_client, establish_case):
-    def inner(case):
-        actual = establish_case(case)
-        return api_client.delete("/v1/actuals/%s/" % actual.pk)
-    return inner
-
-
-@pytest.mark.parametrize('case,assertions', [
-    ('another_user', {'status': 403, 'error': {
+@pytest.mark.parametrize('case', [
+    ParameterizedCase(name='another_user', status=403, error={
         'message': (
             'The user must does not have permission to view this actual.'),
         'code': 'permission_error',
         'error_type': 'permission'
-    }}),
-    (('not_logged_in', {'create': True}), {'status': 401, 'error': {
-        'message': 'User is not authenticated.',
-        'code': 'account_not_authenticated',
-        'error_type': 'auth'
-    }}),
-    ('public_case', {'status': 401}),
-    ('another_public_case', {'status': 401}),
-    (('logged_in', {'create': True}), {'status': 200}),
-    (('multiple_budgets', {'login': True}), {
-        'status': 403,
-        'error': {
-            'message': (
-                "The user's subscription does not support multiple budgets."),
-            'code': 'product_permission_error',
-            'error_type': 'permission',
-            'products': '__any__',
-            'permission_id': 'multiple_budgets'
-        }
     }),
-    (('multiple_budgets', {'login': False}), {'status': 401, 'error': {
+    ParameterizedCase.not_logged_in(),
+    # Public domain does not yet include access to actuals.
+    ParameterizedCase('public_case', status=401),
+    ParameterizedCase('another_public_case', status=401),
+    ParameterizedCase('logged_in', create=True, status=200),
+    ParameterizedCase.multiple_budgets_restricted(),
+    ParameterizedCase('multiple_budgets', login=False, status=401, error={
         'message': 'User is not authenticated.',
         'code': 'account_not_authenticated',
         'error_type': 'auth'
-    }}),
-    (('collaborator',
-        {'login': True, 'access_type': Collaborator.ACCESS_TYPES.view_only}),
-        {'status': 200}
+    }),
+    ParameterizedCase(
+        'collaborator',
+        login=True,
+        access_type=Collaborator.ACCESS_TYPES.view_only,
+        status=200
     ),
-    (('collaborator',
-        {'login': True, 'access_type': Collaborator.ACCESS_TYPES.owner}),
-        {'status': 200}
+    ParameterizedCase(
+        'collaborator',
+        login=True,
+        access_type=Collaborator.ACCESS_TYPES.owner,
+        status=200
     ),
-    (('collaborator',
-        {'login': True, 'access_type': Collaborator.ACCESS_TYPES.editor}),
-        {'status': 200}
+    ParameterizedCase(
+        'collaborator',
+        login=True,
+        access_type=Collaborator.ACCESS_TYPES.editor,
+        status=200
     ),
-    (('collaborator',
-        {'login': False, 'access_type': Collaborator.ACCESS_TYPES.view_only}),
-        {'status': 401}
+    ParameterizedCase(
+        'collaborator',
+        login=False,
+        access_type=Collaborator.ACCESS_TYPES.view_only,
+        status=401
     ),
-    (('collaborator',
-        {'login': False, 'access_type': Collaborator.ACCESS_TYPES.owner}),
-        {'status': 401}
+    ParameterizedCase(
+        'collaborator',
+        login=False,
+        access_type=Collaborator.ACCESS_TYPES.owner,
+        status=401
     ),
-    (('collaborator',
-        {'login': False, 'access_type': Collaborator.ACCESS_TYPES.editor}),
-        {'status': 401}
-    ),
+    ParameterizedCase(
+        'collaborator',
+        login=False,
+        access_type=Collaborator.ACCESS_TYPES.editor,
+        status=401
+    )
 ])
-def test_detail_read_permissions(case, assertions, detail_test_case,
+def test_detail_read_permissions(case, detail_response,
         make_permission_assertions):
-    response = detail_test_case(case)
-    make_permission_assertions(response, case, assertions)
+    response = detail_response(case)
+    make_permission_assertions(response)
 
 
-@pytest.mark.parametrize('case,assertions', [
-    ('another_user', {'status': 403, 'error': {
+@pytest.mark.parametrize('case', [
+    ParameterizedCase(name='another_user', status=403, error={
         'message': (
             'The user must does not have permission to view this actual.'),
         'code': 'permission_error',
         'error_type': 'permission'
-    }}),
-    (('not_logged_in', {'create': True}), {'status': 401, 'error': {
-        'message': 'User is not authenticated.',
-        'code': 'account_not_authenticated',
-        'error_type': 'auth'
-    }}),
-    ('public_case', {'status': 401}),
-    ('another_public_case', {'status': 401}),
-    (('logged_in', {'create': True}), {'status': 204}),
-    (('multiple_budgets', {'login': True}), {
-        'status': 403,
-        'error': {
-            'message': (
-                "The user's subscription does not support multiple budgets."),
-            'code': 'product_permission_error',
-            'error_type': 'permission',
-            'products': '__any__',
-            'permission_id': 'multiple_budgets'
-        }
     }),
-    (('multiple_budgets', {'login': False}), {'status': 401, 'error': {
+    ParameterizedCase.not_logged_in(),
+    ParameterizedCase('public_case', status=401),
+    ParameterizedCase('logged_in', create=True, status=204),
+    ParameterizedCase('multiple_budgets', login=False, status=401, error={
         'message': 'User is not authenticated.',
         'code': 'account_not_authenticated',
         'error_type': 'auth'
-    }}),
-    (('collaborator',
-        {'login': True, 'access_type': Collaborator.ACCESS_TYPES.view_only}),
-        {'status': 403}
+    }),
+    ParameterizedCase.multiple_budgets_restricted(),
+    ParameterizedCase('another_public_case', status=401),
+    ParameterizedCase(
+        'collaborator',
+        login=True,
+        access_type=Collaborator.ACCESS_TYPES.view_only,
+        status=403
     ),
-    (('collaborator',
-        {'login': True, 'access_type': Collaborator.ACCESS_TYPES.owner}),
-        {'status': 204}
+    ParameterizedCase(
+        'collaborator',
+        login=True,
+        access_type=Collaborator.ACCESS_TYPES.owner,
+        status=204
     ),
-    (('collaborator',
-        {'login': True, 'access_type': Collaborator.ACCESS_TYPES.editor}),
-        {'status': 204}
+    ParameterizedCase(
+        'collaborator',
+        login=True,
+        access_type=Collaborator.ACCESS_TYPES.editor,
+        status=204
     ),
-    (('collaborator',
-        {'login': False, 'access_type': Collaborator.ACCESS_TYPES.view_only}),
-        {'status': 401}
+    ParameterizedCase(
+        'collaborator',
+        login=False,
+        access_type=Collaborator.ACCESS_TYPES.view_only,
+        status=401
     ),
-    (('collaborator',
-        {'login': False, 'access_type': Collaborator.ACCESS_TYPES.owner}),
-        {'status': 401}
+    ParameterizedCase(
+        'collaborator',
+        login=False,
+        access_type=Collaborator.ACCESS_TYPES.owner,
+        status=401
     ),
-    (('collaborator',
-        {'login': False, 'access_type': Collaborator.ACCESS_TYPES.editor}),
-        {'status': 401}
-    ),
+    ParameterizedCase(
+        'collaborator',
+        login=False,
+        access_type=Collaborator.ACCESS_TYPES.editor,
+        status=401
+    )
 ])
-def test_delete_permissions(case, assertions, delete_test_case,
-        make_permission_assertions):
-    response = delete_test_case(case)
-    make_permission_assertions(response, case, assertions)
+def test_delete_permissions(case, delete_response, make_permission_assertions):
+    response = delete_response(case)
+    make_permission_assertions(response)
 
 
-@pytest.mark.parametrize('case,assertions', [
-    (('not_logged_in', {'create': True}), {'status': 401, 'error': {
+@pytest.mark.parametrize('case', [
+    ParameterizedCase(name='another_user', status=403, error={
+        'message': (
+            'The user must does not have permission to view this actual.'),
+        'code': 'permission_error',
+        'error_type': 'permission'
+    }),
+    ParameterizedCase.not_logged_in(),
+    ParameterizedCase('public_case', status=401),
+    ParameterizedCase('another_public_case', status=401),
+    ParameterizedCase('logged_in', create=True, status=200),
+    ParameterizedCase.multiple_budgets_restricted(),
+    ParameterizedCase('multiple_budgets', login=False, status=401, error={
         'message': 'User is not authenticated.',
         'code': 'account_not_authenticated',
         'error_type': 'auth'
-    }}),
-    ('public_case', {'status': 401, 'error': {
-        'message': 'User is not authenticated.',
-        'code': 'account_not_authenticated',
-        'error_type': 'auth'
-    }}),
-    (('logged_in', {'create': True}), {'status': 200}),
-    (('multiple_budgets', {'login': True}), {'status': 403}),
-    (('multiple_budgets', {'login': False}), {'status': 401, 'error': {
-        'message': 'User is not authenticated.',
-        'code': 'account_not_authenticated',
-        'error_type': 'auth'
-    }}),
+    }),
+    ParameterizedCase(
+        'collaborator',
+        login=True,
+        access_type=Collaborator.ACCESS_TYPES.view_only,
+        status=403
+    ),
+    ParameterizedCase(
+        'collaborator',
+        login=True,
+        access_type=Collaborator.ACCESS_TYPES.owner,
+        status=200
+    ),
+    ParameterizedCase(
+        'collaborator',
+        login=True,
+        access_type=Collaborator.ACCESS_TYPES.editor,
+        status=200
+    ),
+    ParameterizedCase(
+        'collaborator',
+        login=False,
+        access_type=Collaborator.ACCESS_TYPES.view_only,
+        status=401
+    ),
+    ParameterizedCase(
+        'collaborator',
+        login=False,
+        access_type=Collaborator.ACCESS_TYPES.owner,
+        status=401
+    ),
+    ParameterizedCase(
+        'collaborator',
+        login=False,
+        access_type=Collaborator.ACCESS_TYPES.editor,
+        status=401
+    )
 ])
-def test_update_permissions(case, assertions, update_test_case,
-        make_permission_assertions):
-    response = update_test_case({'name': 'Test Actual'}, case)
-    make_permission_assertions(response, case, assertions)
+def test_update_permissions(case, update_response, make_permission_assertions):
+    response = update_response(case, data={'name': 'Test Actual'})
+    make_permission_assertions(response)
 
 
 ACTUAL_DETAIL_ATTACHMENT_PERMISSIONS = [
-    ('another_user', {'status': 403, 'error': {
-        'message': 'The user must does not have permission to view this actual.',
+    ParameterizedCase(name='another_user', status=403, error={
+        'message': (
+            'The user must does not have permission to view this actual.'),
         'code': 'permission_error',
         'error_type': 'permission'
-    }}),
-    (('not_logged_in', {'create': True}), {'status': 401, 'error': {
-        'message': 'User is not authenticated.',
-        'code': 'account_not_authenticated',
-        'error_type': 'auth'
-    }}),
-    ('public_case', {'status': 401}),
-    ('another_public_case', {'status': 401}),
-    (('multiple_budgets', {'login': True}), {
-        'status': 403,
-        'error': {
-            'message': (
-                "The user's subscription does not support multiple budgets."),
-            'code': 'product_permission_error',
-            'error_type': 'permission',
-            'products': '__any__',
-            'permission_id': 'multiple_budgets'
-        }
     }),
-    (('multiple_budgets', {'login': False}), {'status': 401, 'error': {
-        'message': 'User is not authenticated.',
-        'code': 'account_not_authenticated',
-        'error_type': 'auth'
-    }}),
+    ParameterizedCase.not_logged_in(),
+    ParameterizedCase('public_case', status=401),
+    ParameterizedCase('another_public_case', status=401),
+    ParameterizedCase.multiple_budgets_restricted(),
     # Note: Currently, we do not allow uploading, deleting or updating of
     # attachments for entities that do not belong to the logged in user, even
     # when collaborating on the Budget.
-    (('collaborator',
-        {'login': True, 'access_type': Collaborator.ACCESS_TYPES.view_only}),
-        {'status': 403}
+    ParameterizedCase(
+        'collaborator',
+        login=True,
+        access_type=Collaborator.ACCESS_TYPES.view_only,
+        status=403
     ),
-    (('collaborator',
-        {'login': True, 'access_type': Collaborator.ACCESS_TYPES.owner}),
-        {'status': 403}
+    ParameterizedCase(
+        'collaborator',
+        login=True,
+        access_type=Collaborator.ACCESS_TYPES.owner,
+        status=403
     ),
-    (('collaborator',
-        {'login': True, 'access_type': Collaborator.ACCESS_TYPES.editor}),
-        {'status': 403}
+    ParameterizedCase(
+        'collaborator',
+        login=True,
+        access_type=Collaborator.ACCESS_TYPES.editor,
+        status=403
     ),
-    (('collaborator',
-        {'login': False, 'access_type': Collaborator.ACCESS_TYPES.view_only}),
-        {'status': 401}
+    ParameterizedCase(
+        'collaborator',
+        login=False,
+        access_type=Collaborator.ACCESS_TYPES.view_only,
+        status=401
     ),
-    (('collaborator',
-        {'login': False, 'access_type': Collaborator.ACCESS_TYPES.owner}),
-        {'status': 401}
+    ParameterizedCase(
+        'collaborator',
+        login=False,
+        access_type=Collaborator.ACCESS_TYPES.owner,
+        status=401
     ),
-    (('collaborator',
-        {'login': False, 'access_type': Collaborator.ACCESS_TYPES.editor}),
-        {'status': 401}
-    ),
+    ParameterizedCase(
+        'collaborator',
+        login=False,
+        access_type=Collaborator.ACCESS_TYPES.editor,
+        status=401
+    )
 ]
 
 
 @pytest.mark.parametrize(
-    'case,assertions',
+    'case',
     ACTUAL_DETAIL_ATTACHMENT_PERMISSIONS + [
-        (('logged_in', {'create': True}), {'status': 201})
+        ParameterizedCase('logged_in', create=True, status=201),
     ]
 )
-def test_actual_detail_upload_attachment_permissions(case, assertions,
-        detail_create_test_case, make_permission_assertions,
-        test_uploaded_file):
+def test_actual_detail_upload_attachment_permissions(case,
+        detail_create_response, make_permission_assertions, test_uploaded_file):
     uploaded_file = test_uploaded_file('test.jpeg')
-    response = detail_create_test_case(
-        {'file': uploaded_file}, case, '/attachments/')
-    make_permission_assertions(response, case, assertions, path='/attachments/')
+    response = detail_create_response(case,
+        data={'file': uploaded_file}, path='/attachments/')
+    make_permission_assertions(response)
 
 
 @pytest.mark.parametrize(
-    'case,assertions',
+    'case',
     ACTUAL_DETAIL_ATTACHMENT_PERMISSIONS + [
-        (('logged_in', {'create': True}), {'status': 200}),
+        ParameterizedCase('logged_in', create=True, status=200),
     ]
 )
-def test_actual_detail_read_attachment_permissions(case, assertions,
-        detail_test_case, make_permission_assertions):
-    response = detail_test_case(case, '/attachments/')
-    make_permission_assertions(response, case, assertions, path='/attachments/')
+def test_actual_detail_read_attachment_permissions(case, detail_response,
+        make_permission_assertions):
+    response = detail_response(case, path='/attachments/')
+    make_permission_assertions(response)
 
 
 @pytest.mark.parametrize(
-    'case,assertions',
+    'case',
     ACTUAL_DETAIL_ATTACHMENT_PERMISSIONS + [
-        (('logged_in', {'create': True}), {'status': 204}),
+        ParameterizedCase('logged_in', create=True, status=204),
     ]
 )
-def test_actual_detail_delete_attachment_permissions(case, assertions, f,
-        detail_delete_test_case, make_permission_assertions):
+def test_actual_detail_delete_attachment_permissions(case, f, delete_response,
+        make_permission_assertions):
     def path(actual):
         return '/attachments/%s/' % actual.attachments.first().pk
 
     def model_kwargs(budget):
-        # The attachments must belong to the same owner that the Actual will
-        # have, and an Actual's ownership is dictated by the owner of the
+        # The attachments must belong to the same owner that the SubAccount will
+        # have, and an SubAccount's ownership is dictated by the owner of the
         # related Budget.
         return {'attachments': [
             f.create_attachment(
@@ -430,9 +304,5 @@ def test_actual_detail_delete_attachment_permissions(case, assertions, f,
             )
         ]}
 
-    response = detail_delete_test_case(
-        case,
-        path,
-        model_kwargs=model_kwargs
-    )
-    make_permission_assertions(response, case, assertions, path='/attachments/')
+    response = delete_response(case, path=path, model_kwargs=model_kwargs)
+    make_permission_assertions(response)

@@ -63,7 +63,8 @@ def update_budget_updated_at(instance, **kwargs):
     explicitly perform the logic in the views/serializers associated with the
     relevant endpoints.
     """
-    if kwargs['user'] is not None and kwargs['user'].is_authenticated:
+    if kwargs['user'] is not None and kwargs['user'].is_authenticated \
+            and not instance.budget.is_deleting:
         instance.budget.mark_updated(kwargs['user'])
 
 

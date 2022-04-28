@@ -4,492 +4,346 @@ import pytest
 from django.test import override_settings
 from greenbudget.app.collaborator.models import Collaborator
 
+from tests.permissions import ParameterizedCase
+
 
 @pytest.fixture
-def another_user_case(api_client, user, f):
-    def inner(domain, case_info=None):
-        another_user = f.create_user()
-        api_client.force_login(user)
-        return f.create_budget(domain=domain, created_by=another_user)
+def base_url():
+    def inner(case, obj=None):
+        if obj is None and case.method == 'GET':
+            return "/v1/%ss/" % case.domain  # List response
+        elif obj is None and case.method == 'POST':
+            return "/v1/%ss/" % case.domain  # Create response
+        return "/v1/budgets/"
     return inner
 
 
 @pytest.fixture
-def staff_user_case(api_client, staff_user, user, f):
-    def inner(domain, case_info=None):
-        api_client.force_login(staff_user)
-        return f.create_budget(domain=domain, created_by=user)
-    return inner
-
-
-@pytest.fixture
-def public_case(api_client, user, f):
-    def inner(domain, case_info=None):
-        budget = f.create_budget(created_by=user)
-        public_token = f.create_public_token(instance=budget)
-        api_client.include_public_token(public_token)
-        if domain == 'budget':
-            return budget
-        return f.create_template(created_by=user)
-    return inner
-
-
-@pytest.fixture
-def another_public_case(api_client, user, f):
-    def inner(domain, case_info=None):
-        budget = f.create_budget(created_by=user)
-        another_budget = f.create_budget(created_by=user)
-        public_token = f.create_public_token(instance=another_budget)
-        api_client.include_public_token(public_token)
-        if domain == 'budget':
-            return budget
-        return f.create_template(created_by=user)
-    return inner
-
-
-@pytest.fixture
-def logged_in_case(api_client, user, f):
-    def inner(domain, case_info=None):
-        budget = None
-        if case_info and case_info.get('create', False) is True:
-            budget = f.create_budget(domain=domain, created_by=user)
-        api_client.force_login(user)
+def create_obj():
+    def inner(budget, case):
         return budget
     return inner
 
 
-@pytest.fixture
-def not_logged_in_case(user, f):
-    def inner(domain, case_info=None):
-        if case_info and case_info.get('create', False) is True:
-            return f.create_budget(domain=domain, created_by=user)
-        return None
-    return inner
-
-
-@pytest.fixture
-def multiple_case(api_client, f, user):
-    def inner(domain, case_info=None):
-        f.create_budget(domain=domain, created_by=user)
-        if case_info and case_info.get('login', True) is True:
-            api_client.force_login(user)
-        return f.create_budget(domain=domain, created_by=user)
-    return inner
-
-
-@pytest.fixture
-def collaborator_case(api_client, user, f):
-    def inner(domain, case_info):
-        budget = f.create_budget(created_by=user)
-        collaborating_user = f.create_user()
-        f.create_collaborator(
-            access_type=case_info['access_type'],
-            user=collaborating_user,
-            instance=budget
-        )
-        if case_info and case_info.get('login', True) is True:
-            api_client.force_login(collaborating_user)
-        return budget
-    return inner
-
-
-@pytest.fixture
-def establish_case(another_user_case, multiple_case, another_public_case,
-        collaborator_case, logged_in_case, not_logged_in_case, staff_user_case,
-        public_case):
-    def inner(domain, case):
-        cases = {
-            'another_user': another_user_case,
-            'not_logged_in': not_logged_in_case,
-            'logged_in': logged_in_case,
-            'multiple_budgets': multiple_case,
-            'public_case': public_case,
-            'another_public_case': another_public_case,
-            'collaborator': collaborator_case,
-            'staff_user': staff_user_case
-        }
-        if isinstance(case, tuple):
-            return cases[case[0]](domain, case[1])
-        return cases[case](domain, {})
-    return inner
-
-
-@pytest.fixture
-def list_test_case(api_client, establish_case):
-    def inner(domain, case):
-        establish_case(domain, case)
-        return api_client.get("/v1/%ss/" % domain)
-    return inner
-
-
-@pytest.fixture
-def delete_test_case(api_client, establish_case):
-    def inner(domain, case):
-        budget = establish_case(domain, case)
-        return api_client.delete("/v1/budgets/%s/" % budget.pk)
-    return inner
-
-
-@pytest.fixture
-def create_test_case(api_client, establish_case):
-    def inner(domain, data, case):
-        establish_case(domain, case)
-        return api_client.post("/v1/%ss/" % domain, data=data)
-    return inner
-
-
-@pytest.fixture
-def update_test_case(api_client, establish_case):
-    def inner(domain, data, case):
-        budget = establish_case(domain, case)
-        return api_client.patch("/v1/budgets/%s/" % budget.pk, data=data)
-    return inner
-
-
-@pytest.fixture
-def detail_test_case(api_client, establish_case):
-    def inner(domain, case, path="/"):
-        budget = establish_case(domain, case)
-        url = "/v1/budgets/%s%s" % (budget.pk, path)
-        return api_client.get(url)
-    return inner
-
-
-@pytest.fixture
-def detail_create_test_case(api_client, establish_case):
-    def inner(domain, data, case, path="/"):
-        budget = establish_case(domain, case)
-        url = "/v1/budgets/%s%s" % (budget.pk, path)
-        if hasattr(data, '__call__'):
-            data = data(budget)
-        return api_client.post(url, data=data)
-    return inner
-
-
-@pytest.fixture
-def detail_update_test_case(api_client, establish_case):
-    def inner(domain, data, case, path="/"):
-        budget = establish_case(domain, case)
-        url = "/v1/budgets/%s%s" % (budget.pk, path)
-        return api_client.patch(url, data=data)
-    return inner
-
-
-@pytest.mark.parametrize('case,assertions', [
-    ('another_user', {'status': 403, 'error': {
-        'message': 'The user must does not have permission to view this budget.',
+@pytest.mark.parametrize('case', [
+    ParameterizedCase(name='another_user', status=403, error={
+        'message': (
+            'The user must does not have permission to view this budget.'),
         'code': 'permission_error',
         'error_type': 'permission'
-    }}),
-    (('not_logged_in', {'create': True}), {'status': 401, 'error': {
+    }),
+    ParameterizedCase.not_logged_in(),
+    ParameterizedCase(
+        'public_case',
+        status=lambda case: 401 if case.path == '/actuals/' else 200
+    ),
+    ParameterizedCase('another_public_case', status=401),
+    ParameterizedCase('logged_in', create=True, status=200),
+    ParameterizedCase('logged_in_staff', create=True, status=200),
+    ParameterizedCase.multiple_budgets_restricted(),
+    ParameterizedCase('multiple_budgets', login=False, status=401, error={
         'message': 'User is not authenticated.',
         'code': 'account_not_authenticated',
         'error_type': 'auth'
-    }}),
-    ('public_case', {
-        'status': lambda path: 401 if path == '/actuals/' else 200
     }),
-    ('another_public_case', {'status': 401}),
-    (('logged_in', {'create': True}), {'status': 200}),
-    (('staff_user', {'create': True}), {'status': 200}),
-    (('multiple_budgets', {'login': True}), {
-        'status': 403,
-        'error': {
-            'message': (
-                "The user's subscription does not support multiple budgets."),
-            'code': 'product_permission_error',
-            'error_type': 'permission',
-            'products': '__any__',
-            'permission_id': 'multiple_budgets'
-        }
-    }),
-    (('multiple_budgets', {'login': False}), {'status': 401, 'error': {
-        'message': 'User is not authenticated.',
-        'code': 'account_not_authenticated',
-        'error_type': 'auth'
-    }}),
-    (('collaborator',
-        {'login': True, 'access_type': Collaborator.ACCESS_TYPES.view_only}),
-        {'status': 200}
+    ParameterizedCase(
+        'collaborator',
+        login=True,
+        access_type=Collaborator.ACCESS_TYPES.view_only,
+        status=200
     ),
-    (('collaborator',
-        {'login': True, 'access_type': Collaborator.ACCESS_TYPES.owner}),
-        {'status': 200}
+    ParameterizedCase(
+        'collaborator',
+        login=True,
+        access_type=Collaborator.ACCESS_TYPES.owner,
+        status=200
     ),
-    (('collaborator',
-        {'login': True, 'access_type': Collaborator.ACCESS_TYPES.editor}),
-        {'status': 200}
+    ParameterizedCase(
+        'collaborator',
+        login=True,
+        access_type=Collaborator.ACCESS_TYPES.editor,
+        status=200
     ),
-    (('collaborator',
-        {'login': False, 'access_type': Collaborator.ACCESS_TYPES.view_only}),
-        {'status': 401}
+    ParameterizedCase(
+        'collaborator',
+        login=False,
+        access_type=Collaborator.ACCESS_TYPES.view_only,
+        status=401
     ),
-    (('collaborator',
-        {'login': False, 'access_type': Collaborator.ACCESS_TYPES.owner}),
-        {'status': 401}
+    ParameterizedCase(
+        'collaborator',
+        login=False,
+        access_type=Collaborator.ACCESS_TYPES.owner,
+        status=401
     ),
-    (('collaborator',
-        {'login': False, 'access_type': Collaborator.ACCESS_TYPES.editor}),
-        {'status': 401}
-    ),
+    ParameterizedCase(
+        'collaborator',
+        login=False,
+        access_type=Collaborator.ACCESS_TYPES.editor,
+        status=401
+    )
 ])
 @pytest.mark.parametrize('path', [
     '/', '/children/', '/actuals/', '/fringes/', '/markups/', '/groups/'])
 @override_settings(STAFF_USER_GLOBAL_PERMISSIONS=True)
-def test_budget_detail_read_permissions(case, path, assertions, detail_test_case,
+def test_budget_detail_read_permissions(case, path, detail_response,
         make_permission_assertions):
-    response = detail_test_case("budget", case, path)
-    make_permission_assertions(response, case, assertions, path)
+    response = detail_response(case, domain="budget", path=path)
+    make_permission_assertions(response)
 
 
-@pytest.mark.parametrize('case,assertions', [
-    ('another_user', {'status': 403, 'error': {
-        'message': 'The user must does not have permission to view this budget.',
+@pytest.mark.parametrize('case', [
+    ParameterizedCase(name='another_user', status=403, error={
+        'message': (
+            'The user must does not have permission to view this budget.'),
         'code': 'permission_error',
         'error_type': 'permission'
-    }}),
-    (('not_logged_in', {'create': True}), {'status': 401, 'error': {
+    }),
+    ParameterizedCase.not_logged_in(),
+    ParameterizedCase('public_case', status=401),
+    ParameterizedCase('logged_in', create=True, status=200),
+    ParameterizedCase('logged_in_staff', create=True, status=200),
+    ParameterizedCase('multiple_budgets', login=True, status=200),
+    ParameterizedCase('multiple_budgets', login=False, status=401, error={
         'message': 'User is not authenticated.',
         'code': 'account_not_authenticated',
         'error_type': 'auth'
-    }}),
-    ('public_case', {'status': 401}),
-    (('logged_in', {'create': True}), {'status': 200}),
-    (('multiple_budgets', {'login': True}), {'status': 200}),
-    (('multiple_budgets', {'login': False}), {'status': 401, 'error': {
-        'message': 'User is not authenticated.',
-        'code': 'account_not_authenticated',
-        'error_type': 'auth'
-    }}),
+    })
 ])
 @pytest.mark.parametrize('path', [
     '/', '/children/', '/fringes/', '/markups/', '/groups/'])
-def test_template_detail_read_permissions(case, path, assertions,
-        detail_test_case, make_permission_assertions):
-    response = detail_test_case("template", case, path)
-    make_permission_assertions(response, case, assertions, path)
+@override_settings(STAFF_USER_GLOBAL_PERMISSIONS=True)
+def test_template_detail_read_permissions(case, path, detail_response,
+        make_permission_assertions):
+    response = detail_response(case, domain="template", path=path)
+    make_permission_assertions(response)
 
 
-@pytest.mark.parametrize('case,assertions', [
-    ('not_logged_in', {'status': 401, 'error': {
+@pytest.mark.parametrize('case', [
+    ParameterizedCase.not_logged_in(),
+    ParameterizedCase('public_case', status=401),
+    ParameterizedCase('logged_in', status=200),
+    ParameterizedCase('multiple_budgets', login=True, status=200),
+    ParameterizedCase('multiple_budgets', login=False, status=401, error={
         'message': 'User is not authenticated.',
         'code': 'account_not_authenticated',
         'error_type': 'auth'
-    }}),
-    ('public_case', {'status': 401}),
-    ('logged_in', {'status': 200}),
-    (('multiple_budgets', {'login': True}), {'status': 200}),
-    (('multiple_budgets', {'login': False}), {'status': 401, 'error': {
-        'message': 'User is not authenticated.',
-        'code': 'account_not_authenticated',
-        'error_type': 'auth'
-    }}),
+    })
 ])
 @pytest.mark.parametrize('domain', ['budget', 'template'])
-def test_list_read_permissions(case, assertions, list_test_case, domain,
+def test_list_read_permissions(case, list_response, domain,
         make_permission_assertions):
-    response = list_test_case(domain, case)
-    make_permission_assertions(response, case, assertions, path="/")
+    response = list_response(case, domain=domain)
+    make_permission_assertions(response)
 
 
-@pytest.mark.parametrize('case,assertions', [
-    ('another_user', {'status': 403, 'error': {
-        'message': 'The user must does not have permission to view this budget.',
+BUDGET_DELETE_PERMISSIONS = [
+    ParameterizedCase(name='another_user', status=403, error={
+        'message': (
+            'The user must does not have permission to view this budget.'),
         'code': 'permission_error',
         'error_type': 'permission'
-    }}),
-    (('not_logged_in', {'create': True}), {'status': 401, 'error': {
-        'message': 'User is not authenticated.',
-        'code': 'account_not_authenticated',
-        'error_type': 'auth'
-    }}),
-    ('public_case', {'status': 401}),
-    ('another_public_case', {'status': 401}),
-    (('logged_in', {'create': True}), {'status': 204}),
-    (('multiple_budgets', {'login': True}), {'status': 204}),
-    (('multiple_budgets', {'login': False}), {'status': 401, 'error': {
-        'message': 'User is not authenticated.',
-        'code': 'account_not_authenticated',
-        'error_type': 'auth'
-    }}),
-    (('collaborator',
-        {'login': True, 'access_type': Collaborator.ACCESS_TYPES.view_only}),
-        {'status': 403}
-    ),
-    (('collaborator',
-        {'login': True, 'access_type': Collaborator.ACCESS_TYPES.owner}),
-        {'status': 403}
-    ),
-    (('collaborator',
-        {'login': True, 'access_type': Collaborator.ACCESS_TYPES.editor}),
-        {'status': 403}
-    ),
-    (('collaborator',
-        {'login': False, 'access_type': Collaborator.ACCESS_TYPES.view_only}),
-        {'status': 401}
-    ),
-    (('collaborator',
-        {'login': False, 'access_type': Collaborator.ACCESS_TYPES.owner}),
-        {'status': 401}
-    ),
-    (('collaborator',
-        {'login': False, 'access_type': Collaborator.ACCESS_TYPES.editor}),
-        {'status': 401}
-    ),
-])
-def test_budget_delete_permissions(case, assertions, delete_test_case,
-        make_permission_assertions):
-    response = delete_test_case("budget", case)
-    make_permission_assertions(response, case, assertions, path="/")
-
-
-@pytest.mark.parametrize('case,assertions', [
-    ('another_user', {'status': 403, 'error': {
-        'message': 'The user must does not have permission to view this budget.',
-        'code': 'permission_error',
-        'error_type': 'permission'
-    }}),
-    (('not_logged_in', {'create': True}), {'status': 401, 'error': {
-        'message': 'User is not authenticated.',
-        'code': 'account_not_authenticated',
-        'error_type': 'auth'
-    }}),
-    (('logged_in', {'create': True}), {'status': 204}),
-])
-def test_template_delete_permissions(case, assertions, delete_test_case,
-        make_permission_assertions):
-    response = delete_test_case("template", case)
-    make_permission_assertions(response, case, assertions, path="/")
-
-
-BUDGET_CREATE_PERMISSIONS = [
-    ('another_user', {'status': 403, 'error': {
-        'message': 'The user must does not have permission to view this budget.',
-        'code': 'permission_error',
-        'error_type': 'permission'
-    }}),
-    (('not_logged_in', {'create': True}), {'status': 401, 'error': {
-        'message': 'User is not authenticated.',
-        'code': 'account_not_authenticated',
-        'error_type': 'auth'
-    }}),
-    ('public_case', {'status': 401}),
-    ('another_public_case', {'status': 401}),
-    (('logged_in', {'create': True}), {'status': 201}),
-    (('multiple_budgets', {'login': True}), {
-        'status': 403,
-        'error': {
-            'message': (
-                "The user's subscription does not support multiple budgets."),
-            'code': 'product_permission_error',
-            'error_type': 'permission',
-            'products': '__any__',
-            'permission_id': 'multiple_budgets'
-        }
     }),
-    (('multiple_budgets', {'login': False}), {'status': 401, 'error': {
+    ParameterizedCase.not_logged_in(),
+    ParameterizedCase('public_case', status=401),
+    ParameterizedCase('logged_in', create=True, status=204),
+    ParameterizedCase('multiple_budgets', login=True, status=204),
+    ParameterizedCase('multiple_budgets', login=False, status=401, error={
         'message': 'User is not authenticated.',
         'code': 'account_not_authenticated',
         'error_type': 'auth'
-    }}),
-    (('collaborator',
-        {'login': True, 'access_type': Collaborator.ACCESS_TYPES.view_only}),
-        {'status': 403}
-    ),
-    (('collaborator',
-        {'login': True, 'access_type': Collaborator.ACCESS_TYPES.owner}),
-        {'status': 201}
-    ),
-    (('collaborator',
-        {'login': True, 'access_type': Collaborator.ACCESS_TYPES.editor}),
-        {'status': 201}
-    ),
-    (('collaborator',
-        {'login': False, 'access_type': Collaborator.ACCESS_TYPES.view_only}),
-        {'status': 401}
-    ),
-    (('collaborator',
-        {'login': False, 'access_type': Collaborator.ACCESS_TYPES.owner}),
-        {'status': 401}
-    ),
-    (('collaborator',
-        {'login': False, 'access_type': Collaborator.ACCESS_TYPES.editor}),
-        {'status': 401}
-    ),
+    })
 ]
 
 
-@pytest.mark.parametrize('case,assertions', BUDGET_CREATE_PERMISSIONS)
+@pytest.mark.parametrize('case', BUDGET_DELETE_PERMISSIONS + [
+    ParameterizedCase('another_public_case', status=401),
+    ParameterizedCase(
+        'collaborator',
+        login=True,
+        access_type=Collaborator.ACCESS_TYPES.view_only,
+        status=403
+    ),
+    ParameterizedCase(
+        'collaborator',
+        login=True,
+        access_type=Collaborator.ACCESS_TYPES.owner,
+        status=403
+    ),
+    ParameterizedCase(
+        'collaborator',
+        login=True,
+        access_type=Collaborator.ACCESS_TYPES.editor,
+        status=403
+    ),
+    ParameterizedCase(
+        'collaborator',
+        login=False,
+        access_type=Collaborator.ACCESS_TYPES.view_only,
+        status=401
+    ),
+    ParameterizedCase(
+        'collaborator',
+        login=False,
+        access_type=Collaborator.ACCESS_TYPES.owner,
+        status=401
+    ),
+    ParameterizedCase(
+        'collaborator',
+        login=False,
+        access_type=Collaborator.ACCESS_TYPES.editor,
+        status=401
+    )
+])
+def test_budget_delete_permissions(case, delete_response,
+        make_permission_assertions):
+    response = delete_response(case, domain="budget")
+    make_permission_assertions(response)
+
+
+@pytest.mark.parametrize('case', BUDGET_DELETE_PERMISSIONS)
+def test_template_delete_permissions(case, delete_response,
+        make_permission_assertions):
+    response = delete_response(case, domain="template")
+    make_permission_assertions(response)
+
+
+BUDGET_CREATE_PERMISSIONS = [
+    ParameterizedCase(name='another_user', status=403, error={
+        'message': (
+            'The user must does not have permission to view this budget.'),
+        'code': 'permission_error',
+        'error_type': 'permission'
+    }),
+    ParameterizedCase.not_logged_in(),
+    ParameterizedCase('public_case', status=401),
+    ParameterizedCase('another_public_case', status=401),
+    ParameterizedCase('logged_in', create=True, status=201),
+    ParameterizedCase.multiple_budgets_restricted(),
+    ParameterizedCase('multiple_budgets', login=False, status=401, error={
+        'message': 'User is not authenticated.',
+        'code': 'account_not_authenticated',
+        'error_type': 'auth'
+    }),
+    ParameterizedCase(
+        'collaborator',
+        login=True,
+        access_type=Collaborator.ACCESS_TYPES.view_only,
+        status=403
+    ),
+    ParameterizedCase(
+        'collaborator',
+        login=True,
+        access_type=Collaborator.ACCESS_TYPES.owner,
+        status=201
+    ),
+    ParameterizedCase(
+        'collaborator',
+        login=True,
+        access_type=Collaborator.ACCESS_TYPES.editor,
+        status=201
+    ),
+    ParameterizedCase(
+        'collaborator',
+        login=False,
+        access_type=Collaborator.ACCESS_TYPES.view_only,
+        status=401
+    ),
+    ParameterizedCase(
+        'collaborator',
+        login=False,
+        access_type=Collaborator.ACCESS_TYPES.owner,
+        status=401
+    ),
+    ParameterizedCase(
+        'collaborator',
+        login=False,
+        access_type=Collaborator.ACCESS_TYPES.editor,
+        status=401
+    )
+]
+
+
+@pytest.mark.parametrize('case', BUDGET_CREATE_PERMISSIONS)
 @pytest.mark.parametrize('path,data', [
     ('/children/', {}),
     ('/actuals/', {}),
     ('/fringes/', {})
 ])
-def test_budget_detail_create_permissions(case, path, data, assertions,
-        detail_create_test_case, make_permission_assertions):
-    response = detail_create_test_case("budget", data, case, path)
-    make_permission_assertions(response, case, assertions, path)
+def test_budget_detail_create_permissions(case, path, data,
+        detail_create_response, make_permission_assertions):
+    response = detail_create_response(
+        case, domain="budget", data=data, path=path)
+    make_permission_assertions(response)
 
 
-@pytest.mark.parametrize('case,assertions', [
-    ('another_user', {'status': 403, 'error': {
-        'message': 'The user must does not have permission to view this budget.',
+@pytest.mark.parametrize('case', [
+    ParameterizedCase(name='another_user', status=403, error={
+        'message': (
+            'The user must does not have permission to view this budget.'),
         'code': 'permission_error',
         'error_type': 'permission'
-    }}),
-    (('not_logged_in', {'create': True}), {'status': 401, 'error': {
-        'message': 'User is not authenticated.',
-        'code': 'account_not_authenticated',
-        'error_type': 'auth'
-    }}),
-    ('public_case', {'status': 401}),
-    ('another_public_case', {'status': 401}),
-    (('logged_in', {'create': True}), {'status': 403}),
-    (('multiple_budgets', {'login': True}), {
-        'status': 403,
-        'error': {
-            'message': (
-                "The user's subscription does not support multiple budgets."),
-            'code': 'product_permission_error',
-            'error_type': 'permission',
-            'products': '__any__',
-            'permission_id': 'multiple_budgets'
-        }
     }),
-    (('multiple_budgets', {'login': False}), {'status': 401, 'error': {
+    ParameterizedCase.not_logged_in(),
+    ParameterizedCase('public_case', status=401),
+    ParameterizedCase('another_public_case', status=401),
+    # This will still be a 403 because the User will have a Budget already.
+    ParameterizedCase('logged_in', create=True, status=403, error={
+        'message': (
+            "The user's subscription does not support multiple budgets."),
+        'code': 'product_permission_error',
+        'error_type': 'permission',
+        'products': '__any__',
+        'permission_id': 'multiple_budgets'
+    }),
+    ParameterizedCase.multiple_budgets_restricted(),
+    ParameterizedCase('multiple_budgets', login=False, status=401, error={
         'message': 'User is not authenticated.',
         'code': 'account_not_authenticated',
         'error_type': 'auth'
-    }}),
-    (('collaborator',
-        {'login': True, 'access_type': Collaborator.ACCESS_TYPES.view_only}),
-        {'status': 403}
+    }),
+    ParameterizedCase(
+        'collaborator',
+        login=True,
+        access_type=Collaborator.ACCESS_TYPES.view_only,
+        status=403
     ),
-    (('collaborator',
-        {'login': True, 'access_type': Collaborator.ACCESS_TYPES.owner}),
-        {'status': 403}
+    ParameterizedCase(
+        'collaborator',
+        login=True,
+        access_type=Collaborator.ACCESS_TYPES.owner,
+        status=403
     ),
-    (('collaborator',
-        {'login': True, 'access_type': Collaborator.ACCESS_TYPES.editor}),
-        {'status': 403}
+    ParameterizedCase(
+        'collaborator',
+        login=True,
+        access_type=Collaborator.ACCESS_TYPES.editor,
+        status=403
     ),
-    (('collaborator',
-        {'login': False, 'access_type': Collaborator.ACCESS_TYPES.view_only}),
-        {'status': 401}
+    ParameterizedCase(
+        'collaborator',
+        login=False,
+        access_type=Collaborator.ACCESS_TYPES.view_only,
+        status=401
     ),
-    (('collaborator',
-        {'login': False, 'access_type': Collaborator.ACCESS_TYPES.owner}),
-        {'status': 401}
+    ParameterizedCase(
+        'collaborator',
+        login=False,
+        access_type=Collaborator.ACCESS_TYPES.owner,
+        status=401
     ),
-    (('collaborator',
-        {'login': False, 'access_type': Collaborator.ACCESS_TYPES.editor}),
-        {'status': 401}
-    ),
+    ParameterizedCase(
+        'collaborator',
+        login=False,
+        access_type=Collaborator.ACCESS_TYPES.editor,
+        status=401
+    )
 ])
-def test_budget_duplicate_permissions(case, assertions,
-        detail_create_test_case, make_permission_assertions):
-    response = detail_create_test_case("budget", {}, case, "/duplicate/")
-    make_permission_assertions(response, case, assertions, path="/duplicate/")
+def test_budget_duplicate_permissions(case, detail_create_response,
+        make_permission_assertions):
+    response = detail_create_response(
+        case, domain="budget", data={}, path="/duplicate/")
+    make_permission_assertions(response)
 
 
 @pytest.mark.needtowrite
@@ -497,42 +351,46 @@ def test_budget_derive_permissions():
     pass
 
 
-@pytest.mark.parametrize('case,assertions', [
-    ('another_user', {'status': 403, 'error': {
-        'message': 'The user must does not have permission to view this budget.',
+@pytest.mark.parametrize('case', [
+    ParameterizedCase(name='another_user', status=403, error={
+        'message': (
+            'The user must does not have permission to view this budget.'),
         'code': 'permission_error',
         'error_type': 'permission'
-    }}),
-    (('not_logged_in', {'create': True}), {'status': 401, 'error': {
+    }),
+    ParameterizedCase.not_logged_in(),
+    ParameterizedCase('public_case', status=401),
+    ParameterizedCase('logged_in', create=True, status=201),
+    ParameterizedCase('multiple_budgets', login=True, status=201),
+    ParameterizedCase('multiple_budgets', login=False, status=401, error={
         'message': 'User is not authenticated.',
         'code': 'account_not_authenticated',
         'error_type': 'auth'
-    }}),
-    ('public_case', {'status': 401}),
-    (('logged_in', {'create': True}), {'status': 201}),
-    (('multiple_budgets', {'login': True}), {'status': 201}),
+    })
 ])
-def test_template_duplicate_permissions(case, assertions,
-        detail_create_test_case, make_permission_assertions):
-    response = detail_create_test_case("template", {}, case, "/duplicate/")
-    make_permission_assertions(response, case, assertions, path="/duplicate/")
+def test_template_duplicate_permissions(case, detail_create_response,
+        make_permission_assertions):
+    response = detail_create_response(
+        case, domain="template", data={}, path="/duplicate/")
+    make_permission_assertions(response)
 
 
-@pytest.mark.parametrize('case,assertions', BUDGET_CREATE_PERMISSIONS)
-def test_budget_detail_create_groups_permissions(case, assertions, f,
-        detail_create_test_case, make_permission_assertions):
+@pytest.mark.parametrize('case', BUDGET_CREATE_PERMISSIONS)
+def test_budget_detail_create_groups_permissions(case, f, detail_create_response,
+        make_permission_assertions):
 
     def post_data(budget):
         accounts = [f.create_budget_account(parent=budget)]
         return {'children': [a.pk for a in accounts], 'name': 'Test Group'}
 
-    response = detail_create_test_case("budget", post_data, case, '/groups/')
-    make_permission_assertions(response, case, assertions, path="/groups/")
+    response = detail_create_response(
+        case, domain="budget", data=post_data, path='/groups/')
+    make_permission_assertions(response)
 
 
-@pytest.mark.parametrize('case,assertions', BUDGET_CREATE_PERMISSIONS)
-def test_budget_detail_create_markups_permissions(case, assertions, f,
-        detail_create_test_case, make_permission_assertions, models):
+@pytest.mark.parametrize('case', BUDGET_CREATE_PERMISSIONS)
+def test_budget_detail_create_markups_permissions(case, f,
+        detail_create_response, make_permission_assertions, models):
 
     def post_data(budget):
         accounts = [f.create_budget_account(parent=budget)]
@@ -541,58 +399,58 @@ def test_budget_detail_create_markups_permissions(case, assertions, f,
             'identifier': '0001',
             'unit': models.Markup.UNITS.percent,
         }
-    response = detail_create_test_case("budget", post_data, case, '/markups/')
-    make_permission_assertions(response, case, assertions, path="/markups/")
+    response = detail_create_response(
+        case, domain="budget", data=post_data, path='/markups/')
+    make_permission_assertions(response)
 
 
 TEMPLATE_CREATE_PERMISSIONS = [
-    ('another_user', {'status': 403, 'error': {
-        'message': 'The user must does not have permission to view this budget.',
+    ParameterizedCase(name='another_user', status=403, error={
+        'message': (
+            'The user must does not have permission to view this budget.'),
         'code': 'permission_error',
         'error_type': 'permission'
-    }}),
-    (('not_logged_in', {'create': True}), {'status': 401, 'error': {
+    }),
+    ParameterizedCase.not_logged_in(),
+    ParameterizedCase('public_case', status=401),
+    ParameterizedCase('logged_in', create=True, status=201),
+    ParameterizedCase('multiple_budgets', login=True, status=201),
+    ParameterizedCase('multiple_budgets', login=False, status=401, error={
         'message': 'User is not authenticated.',
         'code': 'account_not_authenticated',
         'error_type': 'auth'
-    }}),
-    ('public_case', {'status': 401}),
-    (('logged_in', {'create': True}), {'status': 201}),
-    (('multiple_budgets', {'login': True}), {'status': 201}),
-    (('multiple_budgets', {'login': False}), {'status': 401, 'error': {
-        'message': 'User is not authenticated.',
-        'code': 'account_not_authenticated',
-        'error_type': 'auth'
-    }}),
+    }),
 ]
 
 
-@pytest.mark.parametrize('case,assertions', TEMPLATE_CREATE_PERMISSIONS)
+@pytest.mark.parametrize('case', TEMPLATE_CREATE_PERMISSIONS)
 @pytest.mark.parametrize('path,data', [
     ('/children/', {}),
     ('/fringes/', {}),
 ])
-def test_template_detail_create_permissions(case, path, data, assertions,
-        detail_create_test_case, make_permission_assertions):
-    response = detail_create_test_case("template", data, case, path)
-    make_permission_assertions(response, case, assertions, path)
+def test_template_detail_create_permissions(case, path, data,
+        detail_create_response, make_permission_assertions):
+    response = detail_create_response(
+        case, domain="template", data=data, path=path)
+    make_permission_assertions(response)
 
 
-@pytest.mark.parametrize('case,assertions', TEMPLATE_CREATE_PERMISSIONS)
-def test_template_detail_create_groups_permissions(case, assertions,
-        detail_create_test_case, make_permission_assertions, f):
+@pytest.mark.parametrize('case', TEMPLATE_CREATE_PERMISSIONS)
+def test_template_detail_create_groups_permissions(case, f,
+        detail_create_response, make_permission_assertions):
 
     def post_data(budget):
         accounts = [f.create_template_account(parent=budget)]
         return {'children': [a.pk for a in accounts], 'name': 'Test Group'}
 
-    response = detail_create_test_case("template", post_data, case, '/groups/')
-    make_permission_assertions(response, case, assertions, path="/groups/")
+    response = detail_create_response(
+        case, domain="template", data=post_data, path='/groups/')
+    make_permission_assertions(response)
 
 
-@pytest.mark.parametrize('case,assertions', TEMPLATE_CREATE_PERMISSIONS)
-def test_template_detail_create_markups_permissions(case, assertions,
-        detail_create_test_case, make_permission_assertions, models, f):
+@pytest.mark.parametrize('case', TEMPLATE_CREATE_PERMISSIONS)
+def test_template_detail_create_markups_permissions(case, f, models,
+        detail_create_response, make_permission_assertions):
 
     def post_data(budget):
         accounts = [f.create_template_account(parent=budget)]
@@ -601,105 +459,79 @@ def test_template_detail_create_markups_permissions(case, assertions,
             'identifier': '0001',
             'unit': models.Markup.UNITS.percent,
         }
-    response = detail_create_test_case("template", post_data, case, '/markups/')
-    make_permission_assertions(response, case, assertions, path="/markups/")
+
+    response = detail_create_response(
+        case, domain="template", data=post_data, path='/markups/')
+    make_permission_assertions(response)
 
 
-@pytest.mark.parametrize('case,assertions', [
-    ('not_logged_in', {'status': 401, 'error': {
+@pytest.mark.parametrize('case', [
+    ParameterizedCase.not_logged_in(),
+    ParameterizedCase('public_case', status=401),
+    ParameterizedCase('logged_in', create=False, status=201),
+    ParameterizedCase.multiple_budgets_restricted(),
+    ParameterizedCase('multiple_budgets', login=False, status=401, error={
         'message': 'User is not authenticated.',
         'code': 'account_not_authenticated',
         'error_type': 'auth'
-    }}),
-    ('public_case', {'status': 401, 'error': {
-        'message': 'User is not authenticated.',
-        'code': 'account_not_authenticated',
-        'error_type': 'auth'
-    }}),
-    (('logged_in', {'create': False}), {'status': 201}),
-    (('multiple_budgets', {'login': True}), {'status': 403}),
-    (('multiple_budgets', {'login': False}), {'status': 401, 'error': {
-        'message': 'User is not authenticated.',
-        'code': 'account_not_authenticated',
-        'error_type': 'auth'
-    }}),
+    })
 ])
-def test_budget_create_permissions(case, assertions, make_permission_assertions,
-        create_test_case):
-    response = create_test_case("budget", {'name': 'Test Budget'}, case)
-    make_permission_assertions(response, case, assertions, path="/")
+def test_budget_create_permissions(case, make_permission_assertions,
+        create_response):
+    response = create_response(
+        case, domain="budget", data={'name': 'Test Budget'})
+    make_permission_assertions(response)
 
 
-@pytest.mark.parametrize('case,assertions', [
-    ('not_logged_in', {'status': 401, 'error': {
+@pytest.mark.parametrize('case', [
+    ParameterizedCase.not_logged_in(),
+    ParameterizedCase('public_case', status=401),
+    ParameterizedCase('logged_in', create=True, status=201),
+    ParameterizedCase('multiple_budgets', login=True, status=201),
+    ParameterizedCase('multiple_budgets', login=False, status=401, error={
         'message': 'User is not authenticated.',
         'code': 'account_not_authenticated',
         'error_type': 'auth'
-    }}),
-    ('public_case', {'status': 401, 'error': {
-        'message': 'User is not authenticated.',
-        'code': 'account_not_authenticated',
-        'error_type': 'auth'
-    }}),
-    (('logged_in', {'create': False}), {'status': 201}),
-    (('multiple_budgets', {'login': True}), {'status': 201}),
-    (('multiple_budgets', {'login': False}), {'status': 401, 'error': {
-        'message': 'User is not authenticated.',
-        'code': 'account_not_authenticated',
-        'error_type': 'auth'
-    }}),
+    })
 ])
-def test_template_create_permissions(case, assertions, create_test_case,
+def test_template_create_permissions(case, create_response,
         make_permission_assertions):
-    response = create_test_case("template", {'name': 'Test Budget'}, case)
-    make_permission_assertions(response, case, assertions, path="/")
+    response = create_response(
+        case, domain="template", data={'name': 'Test Budget'})
+    make_permission_assertions(response)
 
 
-@pytest.mark.parametrize('case,assertions', [
-    (('not_logged_in', {'create': True}), {'status': 401, 'error': {
+@pytest.mark.parametrize('case', [
+    ParameterizedCase.not_logged_in(),
+    ParameterizedCase('public_case', status=401),
+    ParameterizedCase('logged_in', create=True, status=200),
+    ParameterizedCase.multiple_budgets_restricted(),
+    ParameterizedCase('multiple_budgets', login=False, status=401, error={
         'message': 'User is not authenticated.',
         'code': 'account_not_authenticated',
         'error_type': 'auth'
-    }}),
-    ('public_case', {'status': 401, 'error': {
-        'message': 'User is not authenticated.',
-        'code': 'account_not_authenticated',
-        'error_type': 'auth'
-    }}),
-    (('logged_in', {'create': True}), {'status': 200}),
-    (('multiple_budgets', {'login': True}), {'status': 403}),
-    (('multiple_budgets', {'login': False}), {'status': 401, 'error': {
-        'message': 'User is not authenticated.',
-        'code': 'account_not_authenticated',
-        'error_type': 'auth'
-    }}),
+    })
 ])
-def test_budget_update_permissions(case, assertions, make_permission_assertions,
-        update_test_case):
-    response = update_test_case("budget", {'name': 'Test Budget'}, case)
-    make_permission_assertions(response, case, assertions, path="/")
+def test_budget_update_permissions(case, make_permission_assertions,
+        update_response):
+    response = update_response(
+        case, domain="budget", data={'name': 'Test Budget'})
+    make_permission_assertions(response)
 
 
-@pytest.mark.parametrize('case,assertions', [
-    (('not_logged_in', {'create': True}), {'status': 401, 'error': {
+@pytest.mark.parametrize('case', [
+    ParameterizedCase.not_logged_in(),
+    ParameterizedCase('public_case', status=401),
+    ParameterizedCase('logged_in', create=True, status=200),
+    ParameterizedCase('multiple_budgets', login=True, status=200),
+    ParameterizedCase('multiple_budgets', login=False, status=401, error={
         'message': 'User is not authenticated.',
         'code': 'account_not_authenticated',
         'error_type': 'auth'
-    }}),
-    ('public_case', {'status': 401, 'error': {
-        'message': 'User is not authenticated.',
-        'code': 'account_not_authenticated',
-        'error_type': 'auth'
-    }}),
-    (('logged_in', {'create': True}), {'status': 200}),
-    (('multiple_budgets', {'login': True}), {'status': 200}),
-    (('multiple_budgets', {'login': False}), {'status': 401, 'error': {
-        'message': 'User is not authenticated.',
-        'code': 'account_not_authenticated',
-        'error_type': 'auth'
-    }}),
+    })
 ])
-def test_template_update_permissions(case, assertions, update_test_case,
-        make_permission_assertions):
-    response = update_test_case("template", {'name': 'Test Budget'}, case)
-    make_permission_assertions(response, case, assertions, path="/")
+def test_template_update_permissions(case, make_permission_assertions,
+        update_response):
+    response = update_response(
+        case, domain="template", data={'name': 'Test Budget'})
+    make_permission_assertions(response)

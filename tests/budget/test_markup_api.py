@@ -358,15 +358,13 @@ def test_create_percent_markup_no_children(api_client, user, data, budget_f):
     api_client.force_login(user)
     response = api_client.post("/v1/budgets/%s/markups/" % budget.pk, data=data)
     assert response.status_code == 400
-    assert response.json() == {
-        'errors': [{
-            'message': (
-                'A markup with unit `percent` must have at least 1 child.'),
-            'code': 'invalid',
-            'error_type': 'field',
-            'field': 'children'
-        }]
-    }
+    assert response.json() == {'errors': [{
+        'message': (
+            'A markup with unit `percent` must have at least 1 child.'),
+        'code': 'invalid',
+        'error_type': 'field',
+        'field': 'children'
+    }]}
 
 
 def test_create_flat_markup_children(api_client, user, models, budget_f):
@@ -380,14 +378,12 @@ def test_create_flat_markup_children(api_client, user, models, budget_f):
         'unit': models.Markup.UNITS.flat
     })
     assert response.status_code == 400
-    assert response.json() == {
-        'errors': [{
-            'message': 'A markup with unit `flat` cannot have children.',
-            'code': 'invalid',
-            'error_type': 'field',
-            'field': 'children'
-        }]
-    }
+    assert response.json() == {'errors': [{
+        'message': 'A markup with unit `flat` cannot have children.',
+        'code': 'invalid',
+        'error_type': 'field',
+        'field': 'children'
+    }]}
 
 
 def test_bulk_delete_markups(api_client, user, models, f, budget_f):
