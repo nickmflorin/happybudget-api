@@ -174,6 +174,7 @@ def test_registration(api_client, models, settings, user):
 @override_settings(WAITLIST_ENABLED=True)
 def test_registration_user_on_waitlist(api_client):
     mock_response = mock.MagicMock()
+    mock_response.count = 1
     mock_response.contacts = [{
         "email": "jjohnson@gmail.com",
         "emailBlacklisted": False
@@ -197,6 +198,7 @@ def test_registration_user_on_waitlist(api_client):
 def test_registration_user_not_on_waitlist(api_client):
     mock_response = mock.MagicMock()
     mock_response.contacts = []
+    mock_response.count = 0
 
     with mock.patch(
             'greenbudget.app.user.mail.contacts_api.get_contacts_from_list') \

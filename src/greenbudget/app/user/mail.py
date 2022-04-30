@@ -24,10 +24,29 @@ contacts_api = sib_api_v3_sdk.ContactsApi(client)
 email_api = sib_api_v3_sdk.TransactionalEmailsApi(client)
 
 
+def get_whitelist():
+    total_contacts = []
+    response = contacts_api.get_contacts_from_list(
+        settings.SEND_IN_BLUE_WHITELIST_ID,
+        limit=100
+    )
+    total_contacts = response.contacts
+    while len(total_contacts) < response.count:
+        response = contacts_api.get_contacts_from_list(
+            settings.SEND_IN_BLUE_WHITELIST_ID,
+            limit=100,
+            offset=len(total_contacts)
+        )
+        total_contacts += response.contacts
+    return [
+        c["email"].lower() for c in total_contacts
+        if c["emailBlacklisted"] is not True
+    ]
+
+
 def user_is_on_waitlist(email):
     try:
-        response = contacts_api.get_contacts_from_list(
-            settings.SEND_IN_BLUE_WHITELIST_ID)
+        contacts = get_whitelist()
     except ApiException as e:
         logger.error(
             "There was a request error checking the waitlist for user %s: \n%s"
@@ -35,10 +54,7 @@ def user_is_on_waitlist(email):
         )
         return False
     else:
-        return email.lower() in [
-            c["email"].lower() for c in response.contacts
-            if c["emailBlacklisted"] is not True
-        ]
+        return email.lower() in contacts
 
 
 def get_template(slug):
