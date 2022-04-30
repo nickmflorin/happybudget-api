@@ -245,7 +245,7 @@ def test_budget_account_detail_read_permissions(case, path, assertions,
         'error_type': 'auth'
     }}),
 ])
-@pytest.mark.parametrize('path', [ '/', '/children/', '/markups/', '/groups/'])
+@pytest.mark.parametrize('path', ['/', '/children/', '/markups/', '/groups/'])
 def test_template_account_detail_read_permissions(case, path, assertions,
         detail_test_case, make_permission_assertions):
     response = detail_test_case("template", case, path)

@@ -64,4 +64,3 @@ class TemplateSerializer(TemplateSimpleSerializer):
                         message="Only community templates can be hidden/shown.")
 
         return super().validate(attrs)
-
