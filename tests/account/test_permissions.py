@@ -327,7 +327,7 @@ def test_template_account_delete_permissions(case, assertions, delete_test_case,
     make_permission_assertions(response, case, assertions, path="/")
 
 
-ACCOUNT_CREATE_PERMISSIONS = [
+BUDGET_ACCOUNT_CREATE_PERMISSIONS = [
     ('another_user', {'status': 403, 'error': {
         'message': (
             'The user must does not have permission to view this account.'),
@@ -385,7 +385,7 @@ ACCOUNT_CREATE_PERMISSIONS = [
 ]
 
 
-@pytest.mark.parametrize('case,assertions', ACCOUNT_CREATE_PERMISSIONS)
+@pytest.mark.parametrize('case,assertions', BUDGET_ACCOUNT_CREATE_PERMISSIONS)
 @pytest.mark.parametrize('path,data', [('/children/', {})])
 def test_budget_account_detail_create_permissions(case, path, data, assertions,
         detail_create_test_case, make_permission_assertions):
@@ -393,25 +393,37 @@ def test_budget_account_detail_create_permissions(case, path, data, assertions,
     make_permission_assertions(response, case, assertions, path)
 
 
-@pytest.mark.parametrize('case,assertions', ACCOUNT_CREATE_PERMISSIONS)
+@pytest.mark.parametrize('case,assertions', BUDGET_ACCOUNT_CREATE_PERMISSIONS)
 def test_budget_account_detail_create_groups_permissions(case, assertions,
         detail_create_test_case, make_permission_assertions,
         create_budget_subaccount):
 
     def post_data(account):
-        accounts = [create_budget_subaccount(parent=account)]
-        return {'children': [a.pk for a in accounts], 'name': 'Test Group'}
+        subaccounts = [create_budget_subaccount(parent=account)]
+        return {'children': [a.pk for a in subaccounts], 'name': 'Test Group'}
 
     response = detail_create_test_case("budget", post_data, case, '/groups/')
     make_permission_assertions(response, case, assertions, path="/groups/")
 
 
-@pytest.mark.needtowrite
-def test_budget_account_detail_create_markups_permissions():
-    pass
+@pytest.mark.parametrize('case,assertions', BUDGET_ACCOUNT_CREATE_PERMISSIONS)
+def test_budget_account_detail_create_markups_permissions(case, assertions,
+        detail_create_test_case, make_permission_assertions, models,
+        create_budget_subaccount):
+
+    def post_data(account):
+        subaccounts = [create_budget_subaccount(parent=account)]
+        return {
+            'children': [a.pk for a in subaccounts],
+            'identifier': '0001',
+            'unit': models.Markup.UNITS.percent,
+        }
+
+    response = detail_create_test_case("budget", post_data, case, '/markups/')
+    make_permission_assertions(response, case, assertions, path="/markups/")
 
 
-TEMPLATE_CREATE_PERMISSIONS = [
+TEMPLATE_ACCOUNT_CREATE_PERMISSIONS = [
     ('another_user', {'status': 403, 'error': {
         'message': (
             'The user must does not have permission to view this account.'),
@@ -434,7 +446,7 @@ TEMPLATE_CREATE_PERMISSIONS = [
 ]
 
 
-@pytest.mark.parametrize('case,assertions', TEMPLATE_CREATE_PERMISSIONS)
+@pytest.mark.parametrize('case,assertions', TEMPLATE_ACCOUNT_CREATE_PERMISSIONS)
 @pytest.mark.parametrize('path,data', [('/children/', {})])
 def test_template_account_detail_create_permissions(case, path, data, assertions,
         detail_create_test_case, make_permission_assertions):
@@ -442,22 +454,34 @@ def test_template_account_detail_create_permissions(case, path, data, assertions
     make_permission_assertions(response, case, assertions, path)
 
 
-@pytest.mark.parametrize('case,assertions', TEMPLATE_CREATE_PERMISSIONS)
+@pytest.mark.parametrize('case,assertions', TEMPLATE_ACCOUNT_CREATE_PERMISSIONS)
 def test_template_account_detail_create_groups_permissions(case, assertions,
         detail_create_test_case, make_permission_assertions,
         create_template_subaccount):
 
     def post_data(account):
-        accounts = [create_template_subaccount(parent=account)]
-        return {'children': [a.pk for a in accounts], 'name': 'Test Group'}
+        subaccounts = [create_template_subaccount(parent=account)]
+        return {'children': [a.pk for a in subaccounts], 'name': 'Test Group'}
 
     response = detail_create_test_case("template", post_data, case, '/groups/')
     make_permission_assertions(response, case, assertions, path='/groups/')
 
 
-@pytest.mark.needtowrite
-def test_template_account_detail_create_markups_permissions():
-    pass
+@pytest.mark.parametrize('case,assertions', TEMPLATE_ACCOUNT_CREATE_PERMISSIONS)
+def test_template_account_detail_create_markups_permissions(case, assertions,
+        detail_create_test_case, make_permission_assertions, models,
+        create_template_subaccount):
+
+    def post_data(account):
+        subaccounts = [create_template_subaccount(parent=account)]
+        return {
+            'children': [a.pk for a in subaccounts],
+            'identifier': '0001',
+            'unit': models.Markup.UNITS.percent,
+        }
+
+    response = detail_create_test_case("template", post_data, case, '/markups/')
+    make_permission_assertions(response, case, assertions, path="/markups/")
 
 
 @pytest.mark.parametrize('case,assertions', [

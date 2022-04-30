@@ -483,9 +483,21 @@ def test_budget_subaccount_detail_create_groups_permissions(case, assertions,
     make_permission_assertions(response, case, assertions, path='/groups/')
 
 
-@pytest.mark.needtowrite
-def test_budget_subaccount_detail_create_markups_permissions():
-    pass
+@pytest.mark.parametrize('case,assertions', BUDGET_SUBACCOUNT_CREATE_PERMISSIONS)
+def test_budget_subaccount_detail_create_markups_permissions(case, assertions,
+        detail_create_test_case, make_permission_assertions, models,
+        create_budget_subaccount):
+
+    def post_data(account):
+        subaccounts = [create_budget_subaccount(parent=account)]
+        return {
+            'children': [a.pk for a in subaccounts],
+            'identifier': '0001',
+            'unit': models.Markup.UNITS.percent,
+        }
+
+    response = detail_create_test_case("budget", post_data, case, '/markups/')
+    make_permission_assertions(response, case, assertions, path="/markups/")
 
 
 TEMPLATE_SUBACCOUNT_CREATE_PERMISSIONS = [
@@ -534,9 +546,22 @@ def test_template_subaccount_detail_create_groups_permissions(case, assertions,
     make_permission_assertions(response, case, assertions, path='/groups/')
 
 
-@pytest.mark.needtowrite
-def test_template_subaccount_detail_create_markups_permissions():
-    pass
+@pytest.mark.parametrize(
+    'case,assertions', TEMPLATE_SUBACCOUNT_CREATE_PERMISSIONS)
+def test_template_subaccount_detail_create_markups_permissions(case, assertions,
+        detail_create_test_case, make_permission_assertions, models,
+        create_template_subaccount):
+
+    def post_data(account):
+        subaccounts = [create_template_subaccount(parent=account)]
+        return {
+            'children': [a.pk for a in subaccounts],
+            'identifier': '0001',
+            'unit': models.Markup.UNITS.percent,
+        }
+
+    response = detail_create_test_case("template", post_data, case, '/markups/')
+    make_permission_assertions(response, case, assertions, path="/markups/")
 
 
 @pytest.mark.parametrize('case,assertions', [
