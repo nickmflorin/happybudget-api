@@ -24,12 +24,9 @@ def public_case(api_client, user, create_budget, create_public_token,
         budget = create_budget(created_by=user)
         public_token = create_public_token(instance=budget)
         api_client.include_public_token(public_token)
-
         if domain == 'budget':
             return create_budget_account(parent=budget)
-
-        template = create_template(created_by=user)
-        return create_template_account(parent=template)
+        return create_template_account(parent=create_template(created_by=user))
     return inner
 
 
@@ -41,12 +38,9 @@ def another_public_case(api_client, user, create_budget, create_template,
         another_budget = create_budget(created_by=user)
         public_token = create_public_token(instance=another_budget)
         api_client.include_public_token(public_token)
-
         if domain == 'budget':
             return create_budget_account(parent=budget)
-
-        template = create_template(created_by=user)
-        return create_template_account(parent=template)
+        return create_template_account(parent=create_template(created_by=user))
     return inner
 
 
@@ -55,8 +49,10 @@ def logged_in_case(api_client, user, create_budget, create_account):
     def inner(domain, case_info=None):
         api_client.force_login(user)
         if case_info and case_info.get('create', False) is True:
-            budget = create_budget(domain=domain, created_by=user)
-            return create_account(domain=domain, parent=budget)
+            return create_account(
+                domain=domain,
+                parent=create_budget(domain=domain, created_by=user)
+            )
         return None
     return inner
 
@@ -77,8 +73,10 @@ def multiple_case(api_client, create_budget, create_account, user):
         if case_info and case_info.get('login', True) is True:
             api_client.force_login(user)
         create_budget(domain=domain, created_by=user)
-        budget = create_budget(domain=domain, created_by=user)
-        return create_account(domain=domain, parent=budget)
+        return create_account(
+            domain=domain,
+            parent=create_budget(domain=domain, created_by=user)
+        )
     return inner
 
 
@@ -219,9 +217,7 @@ def detail_create_test_case(api_client, establish_case):
         {'status': 401}
     ),
 ])
-@pytest.mark.parametrize('path', [
-    '/', '/children/', '/markups/', '/groups/'])
-@pytest.mark.parametrize('path', ['/groups/'])
+@pytest.mark.parametrize('path', ['/', '/children/', '/markups/', '/groups/'])
 def test_budget_account_detail_read_permissions(case, path, assertions,
         detail_test_case, make_permission_assertions):
     response = detail_test_case("budget", case, path)
@@ -249,8 +245,7 @@ def test_budget_account_detail_read_permissions(case, path, assertions,
         'error_type': 'auth'
     }}),
 ])
-@pytest.mark.parametrize('path', [
-    '/', '/children/', '/markups/', '/groups/'])
+@pytest.mark.parametrize('path', [ '/', '/children/', '/markups/', '/groups/'])
 def test_template_account_detail_read_permissions(case, path, assertions,
         detail_test_case, make_permission_assertions):
     response = detail_test_case("template", case, path)

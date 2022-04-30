@@ -193,6 +193,7 @@ def test_social_login_account_disabled(api_client, create_user):
 def test_social_login_user_not_on_waitlist(api_client):
     mock_response = mock.MagicMock()
     mock_response.contacts = []
+    mock_response.count = 0
 
     responses.add(
         method=responses.GET,
