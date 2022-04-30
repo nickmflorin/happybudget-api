@@ -164,66 +164,69 @@ def detail_create_test_case(api_client, establish_case):
 
 
 @pytest.mark.parametrize('case,assertions', [
-    ('another_user', {'status': 403, 'error': {
-        'message': (
-            'The user must does not have permission to view this account.'),
-        'code': 'permission_error',
-        'error_type': 'permission'
-    }}),
-    (('not_logged_in', {'create': True}), {'status': 401, 'error': {
-        'message': 'User is not authenticated.',
-        'code': 'account_not_authenticated',
-        'error_type': 'auth'
-    }}),
+    # ('another_user', {'status': 403, 'error': {
+    #     'message': (
+    #         'The user must does not have permission to view this account.'),
+    #     'code': 'permission_error',
+    #     'error_type': 'permission'
+    # }}),
+    # (('not_logged_in', {'create': True}), {'status': 401, 'error': {
+    #     'message': 'User is not authenticated.',
+    #     'code': 'account_not_authenticated',
+    #     'error_type': 'auth'
+    # }}),
     ('public_case', {'status': 200}),
-    ('another_public_case', {'status': 401}),
-    (('logged_in', {'create': True}), {'status': 200}),
-    (('multiple_budgets', {'login': True}), {
-        'status': 403,
-        'error': {
-            'message': (
-                "The user's subscription does not support multiple budgets."),
-            'code': 'product_permission_error',
-            'error_type': 'permission',
-            'products': '__any__',
-            'permission_id': 'multiple_budgets'
-        }
-    }),
-    (('multiple_budgets', {'login': False}), {'status': 401, 'error': {
-        'message': 'User is not authenticated.',
-        'code': 'account_not_authenticated',
-        'error_type': 'auth'
-    }}),
-    (('collaborator',
-        {'login': True, 'access_type': Collaborator.ACCESS_TYPES.view_only}),
-        {'status': 200}
-    ),
-    (('collaborator',
-        {'login': True, 'access_type': Collaborator.ACCESS_TYPES.owner}),
-        {'status': 200}
-    ),
-    (('collaborator',
-        {'login': True, 'access_type': Collaborator.ACCESS_TYPES.editor}),
-        {'status': 200}
-    ),
-    (('collaborator',
-        {'login': False, 'access_type': Collaborator.ACCESS_TYPES.view_only}),
-        {'status': 401}
-    ),
-    (('collaborator',
-        {'login': False, 'access_type': Collaborator.ACCESS_TYPES.owner}),
-        {'status': 401}
-    ),
-    (('collaborator',
-        {'login': False, 'access_type': Collaborator.ACCESS_TYPES.editor}),
-        {'status': 401}
-    ),
+    # ('another_public_case', {'status': 401}),
+    # (('logged_in', {'create': True}), {'status': 200}),
+    # (('multiple_budgets', {'login': True}), {
+    #     'status': 403,
+    #     'error': {
+    #         'message': (
+    #             "The user's subscription does not support multiple budgets."),
+    #         'code': 'product_permission_error',
+    #         'error_type': 'permission',
+    #         'products': '__any__',
+    #         'permission_id': 'multiple_budgets'
+    #     }
+    # }),
+    # (('multiple_budgets', {'login': False}), {'status': 401, 'error': {
+    #     'message': 'User is not authenticated.',
+    #     'code': 'account_not_authenticated',
+    #     'error_type': 'auth'
+    # }}),
+    # (('collaborator',
+    #     {'login': True, 'access_type': Collaborator.ACCESS_TYPES.view_only}),
+    #     {'status': 200}
+    # ),
+    # (('collaborator',
+    #     {'login': True, 'access_type': Collaborator.ACCESS_TYPES.owner}),
+    #     {'status': 200}
+    # ),
+    # (('collaborator',
+    #     {'login': True, 'access_type': Collaborator.ACCESS_TYPES.editor}),
+    #     {'status': 200}
+    # ),
+    # (('collaborator',
+    #     {'login': False, 'access_type': Collaborator.ACCESS_TYPES.view_only}),
+    #     {'status': 401}
+    # ),
+    # (('collaborator',
+    #     {'login': False, 'access_type': Collaborator.ACCESS_TYPES.owner}),
+    #     {'status': 401}
+    # ),
+    # (('collaborator',
+    #     {'login': False, 'access_type': Collaborator.ACCESS_TYPES.editor}),
+    #     {'status': 401}
+    # ),
 ])
-@pytest.mark.parametrize('path', [
-    '/', '/children/', '/markups/', '/groups/'])
+# @pytest.mark.parametrize('path', [
+#     '/', '/children/', '/markups/', '/groups/'])
+@pytest.mark.parametrize('path', ['/groups/'])
 def test_budget_account_detail_read_permissions(case, path, assertions,
         detail_test_case, make_permission_assertions):
     response = detail_test_case("budget", case, path)
+    print(response)
+    print(response.json())
     make_permission_assertions(response, case, assertions, path)
 
 
