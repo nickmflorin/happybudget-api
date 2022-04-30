@@ -42,7 +42,7 @@ class Markup(BudgetingRowModel):
     actuals = GenericRelation(Actual)
     objects = MarkupManager()
     table_pivot = ('object_id', 'content_type_id')
-    user_ownership_field = 'parent__created_by'
+    user_ownership_field = 'budget__created_by'
     domain_field = 'parent__domain'
 
     class Meta:
