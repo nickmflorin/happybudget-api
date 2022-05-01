@@ -96,6 +96,7 @@ def domain_fixture(**contextuals):
                 if hasattr(factory._meta.model, 'updated_by'):
                     kw.setdefault('updated_by', kw.get(ownership_field, user))
                 return factory(*args, **kw)
+            inner.__name__ = func.__name__
             return inner
 
         fixture.__name__ = func.__name__
@@ -192,6 +193,8 @@ def create_attachment(db, user, temp_media_root):
             kwargs['file'] = SimpleUploadedFile(
                 '%s.%s' % (name, ext), image.getvalue())
         return factories.AttachmentFactory(*args, **kwargs)
+
+    inner.__name__ = 'create_attachment'
     return inner
 
 
@@ -212,6 +215,8 @@ def create_color(db):
     @allow_multiple
     def inner(*args, **kwargs):
         return factories.ColorFactory(*args, **kwargs)
+
+    inner.__name__ = 'create_color'
     return inner
 
 
@@ -231,6 +236,8 @@ def create_user(db):
     @allow_multiple
     def inner(*args, **kwargs):
         return factories.UserFactory(*args, **kwargs)
+
+    inner.__name__ = 'create_user'
     return inner
 
 
@@ -254,6 +261,8 @@ def create_public_token(user):
             ct = ContentType.objects.get_for_model(type(instance))
             kwargs.update(content_type=ct, object_id=instance.pk)
         return factories.PublicTokenFactory(*args, **kwargs)
+
+    inner.__name__ = 'create_public_token'
     return inner
 
 
@@ -274,6 +283,8 @@ def create_collaborator(db):
     @allow_multiple
     def inner(*args, **kwargs):
         return factories.CollaboratorFactory(*args, **kwargs)
+
+    inner.__name__ = 'create_collaborator'
     return inner
 
 
@@ -295,6 +306,8 @@ def create_template(user):
         kwargs.setdefault('created_by', user)
         kwargs.setdefault('updated_by', kwargs['created_by'])
         return factories.TemplateFactory(*args, **kwargs)
+
+    inner.__name__ = 'create_template'
     return inner
 
 
@@ -335,6 +348,7 @@ def create_fringe(default_owner):
             'created_by', default_owner('budget', 'created_by', **kwargs))
         kwargs.setdefault('updated_by', kwargs['created_by'])
         return factories.FringeFactory(*args, **kwargs)
+    inner.__name__ = 'create_fringe'
     return inner
 
 
@@ -357,6 +371,7 @@ def create_budget_account(default_owner):
             'created_by', default_owner('parent', 'created_by', **kwargs))
         kwargs.setdefault('updated_by', kwargs['created_by'])
         return factories.BudgetAccountFactory(*args, **kwargs)
+    inner.__name__ = 'create_budget_account'
     return inner
 
 
@@ -379,6 +394,7 @@ def create_template_account(default_owner):
             'created_by', default_owner('parent', 'created_by', **kwargs))
         kwargs.setdefault('updated_by', kwargs['created_by'])
         return factories.TemplateAccountFactory(*args, **kwargs)
+    inner.__name__ = 'create_template_account'
     return inner
 
 
@@ -417,6 +433,7 @@ def create_subaccount_unit(db):
     @allow_multiple
     def inner(*args, **kwargs):
         return factories.SubAccountUnitFactory(*args, **kwargs)
+    inner.__name__ = 'create_subaccount_unit'
     return inner
 
 
@@ -439,6 +456,7 @@ def create_budget_subaccount(default_owner):
             'created_by', default_owner('parent', 'created_by', **kwargs))
         kwargs.setdefault('updated_by', kwargs['created_by'])
         return factories.BudgetSubAccountFactory(*args, **kwargs)
+    inner.__name__ = 'create_budget_subaccount'
     return inner
 
 
@@ -461,6 +479,7 @@ def create_template_subaccount(default_owner):
             'created_by', default_owner('parent', 'created_by', **kwargs))
         kwargs.setdefault('updated_by', kwargs['created_by'])
         return factories.TemplateSubAccountFactory(*args, **kwargs)
+    inner.__name__ = 'create_template_subaccount'
     return inner
 
 
@@ -506,6 +525,7 @@ def create_group(default_owner):
             ct = ContentType.objects.get_for_model(type(parent))
             kwargs.update(content_type=ct, object_id=parent.pk)
         return factories.GroupFactory(*args, **kwargs)
+    inner.__name__ = 'create_group'
     return inner
 
 
@@ -528,6 +548,7 @@ def create_markup(default_owner):
             'created_by', default_owner('owner', 'created_by', **kwargs))
         kwargs.setdefault('updated_by', kwargs['created_by'])
         return factories.MarkupFactory(*args, **kwargs)
+    inner.__name__ = 'create_markup'
     return inner
 
 
@@ -547,6 +568,7 @@ def create_actual_type(db):
     @allow_multiple
     def inner(*args, **kwargs):
         return factories.ActualTypeFactory(*args, **kwargs)
+    inner.__name__ = 'create_actual_type'
     return inner
 
 
@@ -569,6 +591,7 @@ def create_actual(default_owner):
             'created_by', default_owner('budget', 'created_by', **kwargs))
         kwargs.setdefault('updated_by', kwargs['created_by'])
         return factories.ActualFactory(*args, **kwargs)
+    inner.__name__ = 'create_actual'
     return inner
 
 
@@ -590,6 +613,7 @@ def create_contact(user):
         kwargs.setdefault('created_by', user)
         kwargs.setdefault('updated_by', kwargs['created_by'])
         return factories.ContactFactory(*args, **kwargs)
+    inner.__name__ = 'create_contact'
     return inner
 
 
@@ -609,7 +633,68 @@ def create_header_template(user):
     def inner(*args, **kwargs):
         kwargs.setdefault('created_by', user)
         return factories.HeaderTemplateFactory(*args, **kwargs)
+    inner.__name__ = 'create_header_template'
     return inner
+
+
+
+@pytest.fixture
+def all_fixture_factories(
+    create_attachment,
+    create_color,
+    create_user,
+    create_public_token,
+    create_collaborator,
+    create_template,
+    create_budget,
+    create_account,
+    create_subaccount,
+    create_budget_subaccount,
+    create_budget_account,
+    create_template_subaccount,
+    create_template_account,
+    create_markup,
+    create_fringe,
+    create_group,
+    create_header_template,
+    create_subaccount_unit,
+    create_actual_type,
+    create_actual,
+    create_contact
+):
+    return [
+        create_attachment,
+        create_color,
+        create_user,
+        create_public_token,
+        create_collaborator,
+        create_template,
+        create_budget,
+        create_account,
+        create_subaccount,
+        create_budget_subaccount,
+        create_budget_account,
+        create_template_subaccount,
+        create_template_account,
+        create_markup,
+        create_fringe,
+        create_group,
+        create_header_template,
+        create_subaccount_unit,
+        create_actual_type,
+        create_actual,
+        create_contact
+    ]
+
+
+@pytest.fixture
+def f(all_fixture_factories):
+    class F:
+        def __init__(self):
+            # pylint:disable=not-an-iterable
+            for f in all_fixture_factories:
+                setattr(self, f.__name__, f)
+    return F()
 
 
 CONTEXT_BUDGETS = {
@@ -648,16 +733,6 @@ def budget_factories(create_budget, create_account, create_subaccount):
     def inner(param):
         return BudgetFactories(param)
     return inner
-
-
-@pytest.fixture
-def budget_df(budget_factories):
-    yield budget_factories("budget")
-
-
-@pytest.fixture
-def template_df(budget_factories):
-    yield budget_factories("template")
 
 
 @pytest.fixture(params=["budget", "template"])

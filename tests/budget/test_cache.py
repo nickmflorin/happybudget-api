@@ -151,12 +151,11 @@ def test_caches_invalidated_on_bulk_create(api_client, user, budget_f):
 
 
 @override_settings(CACHE_ENABLED=True)
-def test_caches_invalidated_on_add_fringe(api_client, user, budget_f,
-        create_fringe):
+def test_caches_invalidated_on_add_fringe(api_client, user, budget_f, f):
     budget = budget_f.create_budget()
     fringes = [
-        create_fringe(budget=budget, rate=0.5),
-        create_fringe(budget=budget, rate=0.2)
+        f.create_fringe(budget=budget, rate=0.5),
+        f.create_fringe(budget=budget, rate=0.2)
     ]
     account = budget_f.create_account(parent=budget)
     subaccounts = [
@@ -187,7 +186,7 @@ def test_caches_invalidated_on_add_fringe(api_client, user, budget_f,
     assert detail_response.status_code == 200
     assert detail_response.json()['accumulated_fringe_contribution'] == 210.0
 
-    new_fringe = create_fringe(budget=budget, rate=0.5)
+    new_fringe = f.create_fringe(budget=budget, rate=0.5)
     subaccounts[0].fringes.add(new_fringe)
 
     response = api_client.get("/v1/budgets/%s/children/" % budget.pk)
@@ -200,12 +199,11 @@ def test_caches_invalidated_on_add_fringe(api_client, user, budget_f,
     assert detail_response.json()['accumulated_fringe_contribution'] == 260.0
 
 
-def test_caches_invalidated_on_update_fringe(api_client, user, budget_f,
-        create_fringe):
+def test_caches_invalidated_on_update_fringe(api_client, user, budget_f, f):
     budget = budget_f.create_budget()
     fringes = [
-        create_fringe(budget=budget, rate=0.5),
-        create_fringe(budget=budget, rate=0.2)
+        f.create_fringe(budget=budget, rate=0.5),
+        f.create_fringe(budget=budget, rate=0.2)
     ]
     account = budget_f.create_account(parent=budget)
     budget_f.create_subaccount(
@@ -250,11 +248,11 @@ def test_caches_invalidated_on_update_fringe(api_client, user, budget_f,
 
 
 def test_caches_invalidated_on_bulk_update_fringes(api_client, user, budget_f,
-        create_fringe):
+        f):
     budget = budget_f.create_budget()
     fringes = [
-        create_fringe(budget=budget, rate=0.5),
-        create_fringe(budget=budget, rate=0.2)
+        f.create_fringe(budget=budget, rate=0.5),
+        f.create_fringe(budget=budget, rate=0.2)
     ]
     account = budget_f.create_account(parent=budget)
     budget_f.create_subaccount(
@@ -304,12 +302,11 @@ def test_caches_invalidated_on_bulk_update_fringes(api_client, user, budget_f,
 
 
 @override_settings(CACHE_ENABLED=True)
-def test_caches_invalidated_on_delete_fringe(api_client, user, budget_f,
-        create_fringe):
+def test_caches_invalidated_on_delete_fringe(api_client, user, budget_f, f):
     budget = budget_f.create_budget()
     fringes = [
-        create_fringe(budget=budget, rate=0.5),
-        create_fringe(budget=budget, rate=0.2)
+        f.create_fringe(budget=budget, rate=0.5),
+        f.create_fringe(budget=budget, rate=0.2)
     ]
     account = budget_f.create_account(parent=budget)
     budget_f.create_subaccount(
@@ -353,11 +350,11 @@ def test_caches_invalidated_on_delete_fringe(api_client, user, budget_f,
 
 @override_settings(CACHE_ENABLED=True)
 def test_caches_invalidated_on_bulk_delete_fringes(api_client, user, budget_f,
-        create_fringe):
+        f):
     budget = budget_f.create_budget()
     fringes = [
-        create_fringe(budget=budget, rate=0.5),
-        create_fringe(budget=budget, rate=0.2)
+        f.create_fringe(budget=budget, rate=0.5),
+        f.create_fringe(budget=budget, rate=0.2)
     ]
     account = budget_f.create_account(parent=budget)
     budget_f.create_subaccount(

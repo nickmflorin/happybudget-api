@@ -2,15 +2,14 @@ from django.test import override_settings
 
 
 @override_settings(CACHE_ENABLED=True)
-def test_markups_cache_invalidated_on_delete(api_client, user, budget_f,
-        create_markup):
+def test_markups_cache_invalidated_on_delete(api_client, user, budget_f, f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccounts = [
         budget_f.create_subaccount(parent=account),
         budget_f.create_subaccount(parent=account)
     ]
-    markup = create_markup(parent=account, subaccounts=subaccounts)
+    markup = f.create_markup(parent=account, subaccounts=subaccounts)
 
     api_client.force_login(user)
     response = api_client.get("/v1/accounts/%s/markups/" % account.pk)
@@ -26,15 +25,14 @@ def test_markups_cache_invalidated_on_delete(api_client, user, budget_f,
 
 
 @override_settings(CACHE_ENABLED=True)
-def test_markups_cache_invalidated_on_bulk_delete(api_client, user, budget_f,
-        create_markup):
+def test_markups_cache_invalidated_on_bulk_delete(api_client, user, budget_f, f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccounts = [
         budget_f.create_subaccount(parent=account),
         budget_f.create_subaccount(parent=account)
     ]
-    markup = create_markup(parent=account, subaccounts=subaccounts)
+    markup = f.create_markup(parent=account, subaccounts=subaccounts)
 
     api_client.force_login(user)
     response = api_client.get("/v1/accounts/%s/markups/" % account.pk)
@@ -54,14 +52,14 @@ def test_markups_cache_invalidated_on_bulk_delete(api_client, user, budget_f,
 
 @override_settings(CACHE_ENABLED=True)
 def test_markups_cache_invalidated_on_create(api_client, user, budget_f, models,
-        create_markup):
+        f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccounts = [
         budget_f.create_subaccount(parent=account),
         budget_f.create_subaccount(parent=account)
     ]
-    create_markup(parent=account, subaccounts=subaccounts)
+    f.create_markup(parent=account, subaccounts=subaccounts)
 
     api_client.force_login(user)
 
@@ -84,15 +82,14 @@ def test_markups_cache_invalidated_on_create(api_client, user, budget_f, models,
 
 
 @override_settings(CACHE_ENABLED=True)
-def test_markups_cache_invalidated_on_update(api_client, user, budget_f,
-        create_markup):
+def test_markups_cache_invalidated_on_update(api_client, user, budget_f, f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccounts = [
         budget_f.create_subaccount(parent=account),
         budget_f.create_subaccount(parent=account)
     ]
-    markup = create_markup(parent=account, subaccounts=subaccounts)
+    markup = f.create_markup(parent=account, subaccounts=subaccounts)
 
     api_client.force_login(user)
     response = api_client.get("/v1/accounts/%s/markups/" % account.pk)

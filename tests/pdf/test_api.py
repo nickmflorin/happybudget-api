@@ -1,5 +1,5 @@
-def test_get_header_template(api_client, user, create_header_template):
-    template = create_header_template(left_info="<h1>Test</h1>")
+def test_get_header_template(api_client, user, f):
+    template = f.create_header_template(left_info="<h1>Test</h1>")
 
     api_client.force_login(user)
     response = api_client.get(
@@ -16,8 +16,8 @@ def test_get_header_template(api_client, user, create_header_template):
     }
 
 
-def test_get_header_templates(api_client, user, create_header_template):
-    template = create_header_template(left_info="<h1>Test</h1>")
+def test_get_header_templates(api_client, user, f):
+    template = f.create_header_template(left_info="<h1>Test</h1>")
     api_client.force_login(user)
     response = api_client.get("/v1/pdf/header-templates/")
     assert response.status_code == 200
@@ -46,9 +46,8 @@ def test_create_header_template_empty_field(api_client, user, models):
     assert template.left_info is None
 
 
-def test_create_header_template_non_unique_name(api_client, user,
-        create_header_template):
-    create_header_template(name="Test Header Template")
+def test_create_header_template_non_unique_name(api_client, user, f):
+    f.create_header_template(name="Test Header Template")
     api_client.force_login(user)
     response = api_client.post(
         "/v1/pdf/header-templates/",
@@ -85,9 +84,8 @@ def test_create_header_template(api_client, user, models):
     }
 
 
-def test_update_header_template(api_client, user, create_header_template,
-        models):
-    template = create_header_template(left_info="<h1>Test</h1>")
+def test_update_header_template(api_client, user, f, models):
+    template = f.create_header_template(left_info="<h1>Test</h1>")
 
     api_client.force_login(user)
     response = api_client.patch(
@@ -113,9 +111,8 @@ def test_update_header_template(api_client, user, create_header_template,
     }
 
 
-def test_delete_header_template(api_client, user, create_header_template,
-        models):
-    template = create_header_template(left_info="<h1>Test</h1>")
+def test_delete_header_template(api_client, user, f, models):
+    template = f.create_header_template(left_info="<h1>Test</h1>")
     api_client.force_login(user)
     response = api_client.delete("/v1/pdf/header-templates/%s/" % template.pk)
 

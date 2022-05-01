@@ -5,90 +5,85 @@ from greenbudget.app.collaborator.models import Collaborator
 
 
 @pytest.fixture
-def another_user_case(api_client, user, create_user, create_budget,
-        create_markup, create_account):
+def another_user_case(api_client, user, f):
     def inner(domain, case_info=None):
-        another_user = create_user()
+        another_user = f.create_user()
         api_client.force_login(user)
-        budget = create_budget(domain=domain, created_by=another_user)
-        account = create_account(domain=domain, parent=budget)
+        budget = f.create_budget(domain=domain, created_by=another_user)
+        account = f.create_account(domain=domain, parent=budget)
         # Here, the user that created the Markup doesn't really matter, since
         # the ownership is dictated by the Budget.
-        return create_markup(parent=budget, accounts=[account])
+        return f.create_markup(parent=budget, accounts=[account])
     return inner
 
 
 @pytest.fixture
-def public_case(api_client, user, create_budget, create_public_token,
-        create_template, create_markup, create_account):
+def public_case(api_client, user, f):
     def inner(domain, case_info=None):
-        budget = create_budget(created_by=user)
-        public_token = create_public_token(instance=budget)
+        budget = f.create_budget(created_by=user)
+        public_token = f.create_public_token(instance=budget)
         api_client.include_public_token(public_token)
 
         if domain == 'budget':
-            account = create_account(domain=domain, parent=budget)
-            return create_markup(parent=budget, accounts=[account])
+            account = f.create_account(domain=domain, parent=budget)
+            return f.create_markup(parent=budget, accounts=[account])
 
-        template = create_template(created_by=user)
-        account = create_account(domain=domain, parent=template)
-        return create_markup(parent=template, accounts=[account])
+        template = f.create_template(created_by=user)
+        account = f.create_account(domain=domain, parent=template)
+        return f.create_markup(parent=template, accounts=[account])
     return inner
 
 
 @pytest.fixture
-def logged_in_case(api_client, user, create_budget, create_markup,
-        create_account):
+def logged_in_case(api_client, user, f):
     def inner(domain, case_info=None):
         api_client.force_login(user)
         if case_info and case_info.get('create', False) is True:
-            budget = create_budget(domain=domain, created_by=user)
-            account = create_account(domain=domain, parent=budget)
-            return create_markup(parent=budget, accounts=[account])
+            budget = f.create_budget(domain=domain, created_by=user)
+            account = f.create_account(domain=domain, parent=budget)
+            return f.create_markup(parent=budget, accounts=[account])
         return None
     return inner
 
 
 @pytest.fixture
-def not_logged_in_case(user, create_budget, create_account, create_markup):
+def not_logged_in_case(user, f):
     def inner(domain, case_info=None):
         if case_info and case_info.get('create', False) is True:
-            budget = create_budget(domain=domain, created_by=user)
-            account = create_account(domain=domain, parent=budget)
-            return create_markup(parent=budget, accounts=[account])
+            budget = f.create_budget(domain=domain, created_by=user)
+            account = f.create_account(domain=domain, parent=budget)
+            return f.create_markup(parent=budget, accounts=[account])
         return None
     return inner
 
 
 @pytest.fixture
-def multiple_case(api_client, create_budget, create_account, create_markup,
-        user):
+def multiple_case(api_client, f, user):
     def inner(domain, case_info=None):
         if case_info and case_info.get('login', True) is True:
             api_client.force_login(user)
-        create_budget(domain=domain, created_by=user)
-        budget = create_budget(domain=domain, created_by=user)
-        account = create_account(domain=domain, parent=budget)
-        return create_markup(parent=budget, accounts=[account])
+        f.create_budget(domain=domain, created_by=user)
+        budget = f.create_budget(domain=domain, created_by=user)
+        account = f.create_account(domain=domain, parent=budget)
+        return f.create_markup(parent=budget, accounts=[account])
     return inner
 
 
 @pytest.fixture
-def collaborator_case(api_client, user, create_user, create_budget,
-        create_collaborator, create_account, create_markup):
+def collaborator_case(api_client, user, f):
     def inner(domain, case_info):
-        collaborating_user = create_user()
+        collaborating_user = f.create_user()
         if case_info and case_info.get('login', True) is True:
             api_client.force_login(collaborating_user)
 
-        budget = create_budget(created_by=user)
-        create_collaborator(
+        budget = f.create_budget(created_by=user)
+        f.create_collaborator(
             access_type=case_info['access_type'],
             user=collaborating_user,
             instance=budget
         )
-        account = create_account(parent=budget)
-        return create_markup(parent=budget, accounts=[account])
+        account = f.create_account(parent=budget)
+        return f.create_markup(parent=budget, accounts=[account])
     return inner
 
 

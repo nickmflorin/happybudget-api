@@ -5,91 +5,87 @@ from greenbudget.app.collaborator.models import Collaborator
 
 
 @pytest.fixture
-def another_user_case(api_client, user, create_user, create_budget,
-        create_group):
+def another_user_case(api_client, user, f):
     def inner(domain, case_info=None):
-        another_user = create_user()
+        another_user = f.create_user()
         api_client.force_login(user)
-        budget = create_budget(domain=domain, created_by=another_user)
+        budget = f.create_budget(domain=domain, created_by=another_user)
         # Here, the user that created the Group doesn't really matter, since
         # the ownership is dictated by the Budget.
-        return create_group(parent=budget)
+        return f.create_group(parent=budget)
     return inner
 
 
 @pytest.fixture
-def public_case(api_client, user, create_budget, create_public_token,
-        create_template, create_group):
+def public_case(api_client, user, f):
     def inner(domain, case_info=None):
-        budget = create_budget(created_by=user)
-        public_token = create_public_token(instance=budget)
+        budget = f.create_budget(created_by=user)
+        public_token = f.create_public_token(instance=budget)
         api_client.include_public_token(public_token)
         if domain == 'budget':
-            return create_group(parent=budget)
-        template = create_template(created_by=user)
-        return create_group(parent=template)
+            return f.create_group(parent=budget)
+        template = f.create_template(created_by=user)
+        return f.create_group(parent=template)
     return inner
 
 
 @pytest.fixture
-def another_public_case(api_client, user, create_budget, create_group,
-        create_public_token):
+def another_public_case(api_client, user, f):
     def inner(case_info=None, model_kwargs=None):
-        budget = create_budget(created_by=user)
-        another_budget = create_budget(created_by=user)
-        public_token = create_public_token(instance=another_budget)
+        budget = f.create_budget(created_by=user)
+        another_budget = f.create_budget(created_by=user)
+        public_token = f.create_public_token(instance=another_budget)
         api_client.include_public_token(public_token)
         model_kwargs = model_kwargs or {}
-        return create_group(parent=budget, **model_kwargs)
+        return f.create_group(parent=budget, **model_kwargs)
     return inner
 
 
 @pytest.fixture
-def logged_in_case(api_client, user, create_budget, create_group):
+def logged_in_case(api_client, user, f):
     def inner(domain, case_info=None):
         api_client.force_login(user)
         if case_info and case_info.get('create', False) is True:
-            budget = create_budget(domain=domain, created_by=user)
-            return create_group(parent=budget)
+            budget = f.create_budget(domain=domain, created_by=user)
+            return f.create_group(parent=budget)
         return None
     return inner
 
 
 @pytest.fixture
-def not_logged_in_case(user, create_budget, create_group):
+def not_logged_in_case(user, f):
     def inner(domain, case_info=None):
         if case_info and case_info.get('create', False) is True:
-            budget = create_budget(domain=domain, created_by=user)
-            return create_group(parent=budget)
+            budget = f.create_budget(domain=domain, created_by=user)
+            return f.create_group(parent=budget)
         return None
     return inner
 
 
 @pytest.fixture
-def multiple_case(api_client, create_budget, create_group, user):
+def multiple_case(api_client, f, user):
     def inner(domain, case_info=None):
         if case_info and case_info.get('login', True) is True:
             api_client.force_login(user)
-        create_budget(domain=domain, created_by=user)
-        budget = create_budget(domain=domain, created_by=user)
-        return create_group(parent=budget)
+        f.create_budget(domain=domain, created_by=user)
+        budget = f.create_budget(domain=domain, created_by=user)
+        return f.create_group(parent=budget)
     return inner
 
 
 @pytest.fixture
-def collaborator_case(api_client, user, create_user, create_budget,
-        create_collaborator, create_group):
+def collaborator_case(api_client, user, f):
     def inner(domain, case_info):
-        collaborating_user = create_user()
+        collaborating_user = f.create_user()
         if case_info and case_info.get('login', True) is True:
             api_client.force_login(collaborating_user)
-        budget = create_budget(created_by=user)
-        create_collaborator(
+        budget = f.create_budget(created_by=user)
+        f.create_collaborator(
             access_type=case_info['access_type'],
             user=collaborating_user,
             instance=budget
         )
-        return create_group(parent=budget)
+        return f.create_group(parent=budget)
     return inner
 
 

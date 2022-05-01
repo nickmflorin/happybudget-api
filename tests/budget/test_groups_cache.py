@@ -2,10 +2,9 @@ from django.test import override_settings
 
 
 @override_settings(CACHE_ENABLED=True)
-def test_groups_cache_invalidated_on_delete(api_client, user, budget_f,
-        create_group):
+def test_groups_cache_invalidated_on_delete(api_client, user, budget_f, f):
     budget = budget_f.create_budget()
-    group = create_group(parent=budget)
+    group = f.create_group(parent=budget)
     accounts = [
         budget_f.create_account(parent=budget, group=group),
         budget_f.create_account(parent=budget)
@@ -57,10 +56,9 @@ def test_groups_cache_invalidated_on_create(api_client, user, budget_f):
 
 
 @override_settings(CACHE_ENABLED=True)
-def test_groups_cache_invalidated_on_update(api_client, user, budget_f,
-        create_group):
+def test_groups_cache_invalidated_on_update(api_client, user, budget_f, f):
     budget = budget_f.create_budget()
-    group = create_group(parent=budget)
+    group = f.create_group(parent=budget)
     accounts = [
         budget_f.create_account(parent=budget, group=group),
         budget_f.create_account(parent=budget)
@@ -96,10 +94,9 @@ def test_groups_cache_invalidated_on_update(api_client, user, budget_f,
 
 
 @override_settings(CACHE_ENABLED=True)
-def test_groups_cache_invalidated_on_create_child(api_client, user, budget_f,
-        create_group):
+def test_groups_cache_invalidated_on_create_child(api_client, user, budget_f, f):
     budget = budget_f.create_budget()
-    group = create_group(parent=budget)
+    group = f.create_group(parent=budget)
     accounts = [
         budget_f.create_account(parent=budget, group=group),
         budget_f.create_account(parent=budget, group=group)
@@ -137,9 +134,9 @@ def test_groups_cache_invalidated_on_create_child(api_client, user, budget_f,
 
 @override_settings(CACHE_ENABLED=True)
 def test_groups_cache_invalidated_on_bulk_create_children(api_client, user,
-        budget_f, create_group):
+        budget_f, f):
     budget = budget_f.create_budget()
-    group = create_group(parent=budget)
+    group = f.create_group(parent=budget)
     accounts = [
         budget_f.create_account(parent=budget, group=group),
         budget_f.create_account(parent=budget, group=group)
@@ -178,9 +175,9 @@ def test_groups_cache_invalidated_on_bulk_create_children(api_client, user,
 
 @override_settings(CACHE_ENABLED=True)
 def test_groups_cache_invalidated_on_update_child(api_client, user, budget_f,
-        create_group):
+        f):
     budget = budget_f.create_budget()
-    group = create_group(parent=budget)
+    group = f.create_group(parent=budget)
     accounts = [
         budget_f.create_account(parent=budget, group=group),
         budget_f.create_account(parent=budget, group=group)
@@ -215,10 +212,10 @@ def test_groups_cache_invalidated_on_update_child(api_client, user, budget_f,
 
 
 @override_settings(CACHE_ENABLED=True)
-def test_groups_cache_invalidated_on_bulk_update_child(api_client, user,
-        budget_f, create_group):
+def test_groups_cache_invalidated_on_bulk_update_child(api_client, user, f,
+        budget_f):
     budget = budget_f.create_budget()
-    group = create_group(parent=budget)
+    group = f.create_group(parent=budget)
     accounts = [
         budget_f.create_account(parent=budget, group=group),
         budget_f.create_account(parent=budget, group=group)
@@ -255,9 +252,9 @@ def test_groups_cache_invalidated_on_bulk_update_child(api_client, user,
 
 @override_settings(CACHE_ENABLED=True)
 def test_groups_cache_invalidated_on_delete_child(api_client, user, budget_f,
-        create_group):
+        f):
     budget = budget_f.create_budget()
-    group = create_group(parent=budget)
+    group = f.create_group(parent=budget)
     accounts = [
         budget_f.create_account(parent=budget, group=group),
         budget_f.create_account(parent=budget, group=group)
@@ -288,10 +285,10 @@ def test_groups_cache_invalidated_on_delete_child(api_client, user, budget_f,
 
 
 @override_settings(CACHE_ENABLED=True)
-def test_groups_cache_invalidated_on_bulk_delete_child(api_client, user,
-        budget_f, create_group):
+def test_groups_cache_invalidated_on_bulk_delete_child(api_client, user, f,
+        budget_f):
     budget = budget_f.create_budget()
-    group = create_group(parent=budget)
+    group = f.create_group(parent=budget)
     accounts = [
         budget_f.create_account(parent=budget, group=group),
         budget_f.create_account(parent=budget, group=group)

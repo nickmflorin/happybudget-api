@@ -5,82 +5,79 @@ from greenbudget.app.collaborator.models import Collaborator
 
 
 @pytest.fixture
-def another_user_case(api_client, user, create_user, create_budget,
-        create_actual):
+def another_user_case(api_client, user, f):
     def inner(case_info=None, model_kwargs=None):
-        another_user = create_user()
+        another_user = f.create_user()
         api_client.force_login(user)
-        budget = create_budget(created_by=another_user)
+        budget = f.create_budget(created_by=another_user)
         model_kwargs = model_kwargs or {}
         if hasattr(model_kwargs, '__call__'):
             model_kwargs = model_kwargs(budget)
         # Here, the user that created the Actual doesn't really matter, since
         # the ownership is dictated by the Budget.
-        return create_actual(budget=budget, **model_kwargs)
+        return f.create_actual(budget=budget, **model_kwargs)
     return inner
 
 
 @pytest.fixture
-def public_case(api_client, user, create_budget, create_public_token,
-        create_actual):
+def public_case(api_client, user, f):
     def inner(case_info=None, model_kwargs=None):
-        budget = create_budget(created_by=user)
-        public_token = create_public_token(instance=budget)
+        budget = f.create_budget(created_by=user)
+        public_token = f.create_public_token(instance=budget)
         api_client.include_public_token(public_token)
         model_kwargs = model_kwargs or {}
         if hasattr(model_kwargs, '__call__'):
             model_kwargs = model_kwargs(budget)
-        return create_actual(budget=budget, **model_kwargs)
+        return f.create_actual(budget=budget, **model_kwargs)
     return inner
 
 
 @pytest.fixture
-def another_public_case(api_client, user, create_budget, create_actual,
-        create_public_token):
+def another_public_case(api_client, user, f):
     def inner(case_info=None, model_kwargs=None):
-        budget = create_budget(created_by=user)
-        another_budget = create_budget(created_by=user)
-        public_token = create_public_token(instance=another_budget)
+        budget = f.create_budget(created_by=user)
+        another_budget = f.create_budget(created_by=user)
+        public_token = f.create_public_token(instance=another_budget)
         api_client.include_public_token(public_token)
         model_kwargs = model_kwargs or {}
         if hasattr(model_kwargs, '__call__'):
             model_kwargs = model_kwargs(budget)
-        return create_actual(budget=budget, **model_kwargs)
+        return f.create_actual(budget=budget, **model_kwargs)
     return inner
 
 
 @pytest.fixture
-def logged_in_case(api_client, user, create_budget, create_actual):
+def logged_in_case(api_client, user, f):
     def inner(case_info=None, model_kwargs=None):
-        budget = create_budget(created_by=user)
+        budget = f.create_budget(created_by=user)
         api_client.force_login(user)
         model_kwargs = model_kwargs or {}
         if hasattr(model_kwargs, '__call__'):
             model_kwargs = model_kwargs(budget)
-        return create_actual(budget=budget, **model_kwargs)
+        return f.create_actual(budget=budget, **model_kwargs)
     return inner
 
 
 @pytest.fixture
-def not_logged_in_case(user, create_budget, create_actual):
+def not_logged_in_case(user, f):
     def inner(case_info=None, model_kwargs=None):
-        budget = create_budget(created_by=user)
+        budget = f.create_budget(created_by=user)
         model_kwargs = model_kwargs or {}
         if hasattr(model_kwargs, '__call__'):
             model_kwargs = model_kwargs(budget)
-        return create_actual(budget=budget, **model_kwargs)
+        return f.create_actual(budget=budget, **model_kwargs)
     return inner
 
 
 @pytest.fixture
-def multiple_case(api_client, create_budget, create_actual, user):
+def multiple_case(api_client, f, user):
     def inner(case_info=None, model_kwargs=None):
-        create_budget(created_by=user)
-        budget = create_budget(created_by=user)
+        f.create_budget(created_by=user)
+        budget = f.create_budget(created_by=user)
         model_kwargs = model_kwargs or {}
         if hasattr(model_kwargs, '__call__'):
             model_kwargs = model_kwargs(budget)
-        actual = create_actual(budget=budget, **model_kwargs)
+        actual = f.create_actual(budget=budget, **model_kwargs)
         if case_info and case_info.get('login', True) is True:
             api_client.force_login(user)
         return actual
@@ -88,12 +85,11 @@ def multiple_case(api_client, create_budget, create_actual, user):
 
 
 @pytest.fixture
-def collaborator_case(api_client, user, create_user, create_budget,
-        create_collaborator, create_actual):
+def collaborator_case(api_client, user, f):
     def inner(case_info, model_kwargs=None):
-        budget = create_budget(created_by=user)
-        collaborating_user = create_user()
-        create_collaborator(
+        budget = f.create_budget(created_by=user)
+        collaborating_user = f.create_user()
+        f.create_collaborator(
             access_type=case_info['access_type'],
             user=collaborating_user,
             instance=budget
@@ -103,7 +99,7 @@ def collaborator_case(api_client, user, create_user, create_budget,
         model_kwargs = model_kwargs or {}
         if hasattr(model_kwargs, '__call__'):
             model_kwargs = model_kwargs(budget)
-        return create_actual(budget=budget, **model_kwargs)
+        return f.create_actual(budget=budget, **model_kwargs)
     return inner
 
 
@@ -414,8 +410,8 @@ def test_actual_detail_read_attachment_permissions(case, assertions,
         (('logged_in', {'create': True}), {'status': 204}),
     ]
 )
-def test_actual_detail_delete_attachment_permissions(case, assertions,
-        detail_delete_test_case, create_attachment, make_permission_assertions):
+def test_actual_detail_delete_attachment_permissions(case, assertions, f,
+        detail_delete_test_case, make_permission_assertions):
     def path(actual):
         return '/attachments/%s/' % actual.attachments.first().pk
 
@@ -424,11 +420,11 @@ def test_actual_detail_delete_attachment_permissions(case, assertions,
         # have, and an Actual's ownership is dictated by the owner of the
         # related Budget.
         return {'attachments': [
-            create_attachment(
+            f.create_attachment(
                 name='attachment1.jpeg',
                 created_by=budget.user_owner
             ),
-            create_attachment(
+            f.create_attachment(
                 name='attachment2.jpeg',
                 created_by=budget.user_owner
             )

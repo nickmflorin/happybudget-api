@@ -342,12 +342,11 @@ def test_caches_invalidated_on_add_fringe(api_client, user, budget_f,
     assert detail_response.json()['accumulated_fringe_contribution'] == 260.0
 
 
-def test_caches_invalidated_on_update_fringe(api_client, user, budget_f,
-        create_fringe):
+def test_caches_invalidated_on_update_fringe(api_client, user, budget_f, f):
     budget = budget_f.create_budget()
     fringes = [
-        create_fringe(budget=budget, rate=0.5),
-        create_fringe(budget=budget, rate=0.2)
+        f.create_fringe(budget=budget, rate=0.5),
+        f.create_fringe(budget=budget, rate=0.2)
     ]
     account = budget_f.create_account(parent=budget)
     budget_f.create_subaccount(

@@ -11,8 +11,8 @@ def test_ordering_bulk_create(api_client, user, models):
     assert [c.order for c in contacts] == ["n", "t", "w"]
 
 
-def test_move_contact_down(api_client, user, models, create_contact):
-    contacts = create_contact(count=10)
+def test_move_contact_down(api_client, user, models, f):
+    contacts = f.create_contact(count=10)
     assert [c.order for c in contacts] == \
         ['n', 't', 'w', 'y', 'yn', 'ynt', 'yntw', 'yntwy', 'yntwyn', 'yntwynt']
     assert [c.pk for c in contacts] == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -29,8 +29,8 @@ def test_move_contact_down(api_client, user, models, create_contact):
     assert [c.pk for c in contacts] == [1, 2, 5, 3, 4, 6, 7, 8, 9, 10]
 
 
-def test_move_contact_to_start(api_client, user, models, create_contact):
-    contacts = create_contact(count=10)
+def test_move_contact_to_start(api_client, user, models, f):
+    contacts = f.create_contact(count=10)
     assert [c.order for c in contacts] == \
         ['n', 't', 'w', 'y', 'yn', 'ynt', 'yntw', 'yntwy', 'yntwyn', 'yntwynt']
     assert [c.pk for c in contacts] == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -49,8 +49,8 @@ def test_move_contact_to_start(api_client, user, models, create_contact):
     assert [a.pk for a in contacts] == [5, 1, 2, 3, 4, 6, 7, 8, 9, 10]
 
 
-def test_move_contact_to_end(api_client, user, models, create_contact):
-    contacts = create_contact(count=10)
+def test_move_contact_to_end(api_client, user, models, f):
+    contacts = f.create_contact(count=10)
     assert [a.order for a in contacts] == \
         ['n', 't', 'w', 'y', 'yn', 'ynt', 'yntw', 'yntwy', 'yntwyn', 'yntwynt']
     assert [a.pk for a in contacts] == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -69,8 +69,8 @@ def test_move_contact_to_end(api_client, user, models, create_contact):
     assert [a.pk for a in contacts] == [1, 2, 3, 4, 6, 7, 8, 9, 10, 5]
 
 
-def test_move_contact_self_referential(api_client, user, create_contact):
-    contacts = create_contact(count=10)
+def test_move_contact_self_referential(api_client, user, f):
+    contacts = f.create_contact(count=10)
     assert [a.order for a in contacts] == \
         ['n', 't', 'w', 'y', 'yn', 'ynt', 'yntw', 'yntwy', 'yntwyn', 'yntwynt']
     assert [a.pk for a in contacts] == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -82,8 +82,8 @@ def test_move_contact_self_referential(api_client, user, create_contact):
     assert response.status_code == 400
 
 
-def test_move_contact_same_order(api_client, user, models, create_contact):
-    contacts = create_contact(count=10)
+def test_move_contact_same_order(api_client, user, models, f):
+    contacts = f.create_contact(count=10)
     assert [c.order for c in contacts] == \
         ['n', 't', 'w', 'y', 'yn', 'ynt', 'yntw', 'yntwy', 'yntwyn', 'yntwynt']
     assert [c.pk for c in contacts] == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -100,8 +100,8 @@ def test_move_contact_same_order(api_client, user, models, create_contact):
     assert [c.pk for c in contacts] == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 
-def test_move_contact_up(api_client, user, models, create_contact):
-    contacts = create_contact(count=10)
+def test_move_contact_up(api_client, user, models, f):
+    contacts = f.create_contact(count=10)
     assert [c.order for c in contacts] == \
         ['n', 't', 'w', 'y', 'yn', 'ynt', 'yntw', 'yntwy', 'yntwyn', 'yntwynt']
     assert [c.pk for c in contacts] == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]

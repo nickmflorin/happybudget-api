@@ -1,9 +1,8 @@
-def test_create_actual_recalculates(create_budget_account, create_budget,
-        create_actual, create_budget_subaccount):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    subaccount = create_budget_subaccount(parent=account)
-    create_actual(owner=subaccount, budget=budget, value=10)
+def test_create_actual_recalculates(f):
+    budget = f.create_budget()
+    account = f.create_budget_account(parent=budget)
+    subaccount = f.create_budget_subaccount(parent=account)
+    f.create_actual(owner=subaccount, budget=budget, value=10)
 
     subaccount.refresh_from_db()
     assert subaccount.actual == 10.0
@@ -15,12 +14,11 @@ def test_create_actual_recalculates(create_budget_account, create_budget,
     assert budget.actual == 10.0
 
 
-def test_delete_actual_recalculates(create_budget_account, create_budget,
-        create_actual, create_budget_subaccount):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    subaccount = create_budget_subaccount(parent=account)
-    actual = create_actual(owner=subaccount, budget=budget, value=10)
+def test_delete_actual_recalculates(f):
+    budget = f.create_budget()
+    account = f.create_budget_account(parent=budget)
+    subaccount = f.create_budget_subaccount(parent=account)
+    actual = f.create_actual(owner=subaccount, budget=budget, value=10)
 
     subaccount.refresh_from_db()
     assert subaccount.actual == 10.0
@@ -43,14 +41,12 @@ def test_delete_actual_recalculates(create_budget_account, create_budget,
     assert budget.actual == 0.0
 
 
-def test_change_actual_owner_type_recalculates(create_budget_account,
-        create_budget, create_actual, create_budget_subaccount,
-        create_markup):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    subaccount = create_budget_subaccount(parent=account)
-    markup = create_markup(parent=account)
-    actual = create_actual(owner=subaccount, budget=budget, value=10)
+def test_change_actual_owner_type_recalculates(f):
+    budget = f.create_budget()
+    account = f.create_budget_account(parent=budget)
+    subaccount = f.create_budget_subaccount(parent=account)
+    markup = f.create_markup(parent=account)
+    actual = f.create_actual(owner=subaccount, budget=budget, value=10)
 
     actual.owner = markup
     actual.save()
@@ -62,14 +58,13 @@ def test_change_actual_owner_type_recalculates(create_budget_account,
     assert markup.actual == 10.0
 
 
-def test_change_actual_owner_recalculates(create_budget_account,
-        create_budget, create_actual, create_budget_subaccount):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    subaccount = create_budget_subaccount(parent=account)
-    actual = create_actual(owner=subaccount, budget=budget, value=10)
+def test_change_actual_owner_recalculates(f):
+    budget = f.create_budget()
+    account = f.create_budget_account(parent=budget)
+    subaccount = f.create_budget_subaccount(parent=account)
+    actual = f.create_actual(owner=subaccount, budget=budget, value=10)
 
-    another_subaccount = create_budget_subaccount(parent=account)
+    another_subaccount = f.create_budget_subaccount(parent=account)
     actual.owner = another_subaccount
     actual.save()
 
@@ -86,12 +81,11 @@ def test_change_actual_owner_recalculates(create_budget_account,
     assert budget.actual == 10.0
 
 
-def test_change_actual_value_recalculates(create_budget_account,
-        create_budget, create_actual, create_budget_subaccount):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    subaccount = create_budget_subaccount(parent=account)
-    actual = create_actual(owner=subaccount, budget=budget, value=10)
+def test_change_actual_value_recalculates(f):
+    budget = f.create_budget()
+    account = f.create_budget_account(parent=budget)
+    subaccount = f.create_budget_subaccount(parent=account)
+    actual = f.create_actual(owner=subaccount, budget=budget, value=10)
 
     actual.value = 5
     actual.save()

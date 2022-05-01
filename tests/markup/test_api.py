@@ -1,10 +1,10 @@
 import pytest
 
 
-def test_get_account_markup(api_client, user, budget_f, create_markup, models):
+def test_get_account_markup(api_client, user, budget_f, f, models):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
-    markup = create_markup(parent=budget, accounts=[account])
+    markup = f.create_markup(parent=budget, accounts=[account])
 
     api_client.force_login(user)
     response = api_client.get("/v1/markups/%s/" % markup.pk)
@@ -26,12 +26,11 @@ def test_get_account_markup(api_client, user, budget_f, create_markup, models):
     }
 
 
-def test_get_subaccount_markup(api_client, user, budget_f, create_markup,
-        models):
+def test_get_subaccount_markup(api_client, user, budget_f, f, models):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccount = budget_f.create_subaccount(parent=account)
-    markup = create_markup(parent=account, subaccounts=[subaccount])
+    markup = f.create_markup(parent=account, subaccounts=[subaccount])
 
     api_client.force_login(user)
     response = api_client.get("/v1/markups/%s/" % markup.pk)
@@ -53,13 +52,12 @@ def test_get_subaccount_markup(api_client, user, budget_f, create_markup,
     }
 
 
-def test_update_markup_children(api_client, user, budget_f, create_markup,
-        models):
+def test_update_markup_children(api_client, user, budget_f, f, models):
     budget = budget_f.create_budget()
     markups = [
-        create_markup(parent=budget, flat=True, rate=20),
-        create_markup(parent=budget, flat=True, rate=30),
-        create_markup(parent=budget, percent=True, rate=0.5)
+        f.create_markup(parent=budget, flat=True, rate=20),
+        f.create_markup(parent=budget, flat=True, rate=30),
+        f.create_markup(parent=budget, percent=True, rate=0.5)
     ]
     accounts = [
         budget_f.create_account(parent=budget, markups=[markups[2]]),
@@ -169,14 +167,13 @@ def test_update_markup_children(api_client, user, budget_f, create_markup,
     assert response.json()["parent"]["nominal_value"] == 60.0
 
 
-def test_update_account_markup_children(api_client, user, budget_f, models,
-        create_markup):
+def test_update_account_markup_children(api_client, user, budget_f, models, f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     markups = [
-        create_markup(parent=account, flat=True, rate=20),
-        create_markup(parent=account, percent=True, rate=0.5),
-        create_markup(parent=account, percent=True, rate=0.5)
+        f.create_markup(parent=account, flat=True, rate=20),
+        f.create_markup(parent=account, percent=True, rate=0.5),
+        f.create_markup(parent=account, percent=True, rate=0.5)
     ]
     subaccounts = [
         budget_f.create_subaccount(
@@ -260,14 +257,14 @@ def test_update_account_markup_children(api_client, user, budget_f, models,
 
 
 def test_update_subaccount_markup_children(api_client, user, budget_f, models,
-        create_markup):
+        f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccount = budget_f.create_subaccount(parent=account)
     markups = [
-        create_markup(parent=subaccount, flat=True, rate=20),
-        create_markup(parent=subaccount, percent=True, rate=0.5),
-        create_markup(parent=subaccount, percent=True, rate=0.5)
+        f.create_markup(parent=subaccount, flat=True, rate=20),
+        f.create_markup(parent=subaccount, percent=True, rate=0.5),
+        f.create_markup(parent=subaccount, percent=True, rate=0.5)
     ]
     children_subaccounts = [
         budget_f.create_subaccount(
@@ -359,12 +356,11 @@ def test_update_subaccount_markup_children(api_client, user, budget_f, models,
     assert response.json()["budget"]["nominal_value"] == 20.0
 
 
-def test_update_account_flat_markup_rate(api_client, user, budget_f, models,
-        create_markup):
+def test_update_account_flat_markup_rate(api_client, user, budget_f, models, f):
     budget = budget_f.create_budget()
     markups = [
-        create_markup(parent=budget, flat=True, rate=20),
-        create_markup(parent=budget, flat=True, rate=30)
+        f.create_markup(parent=budget, flat=True, rate=20),
+        f.create_markup(parent=budget, flat=True, rate=30)
     ]
     accounts = [
         budget_f.create_account(parent=budget),
@@ -519,11 +515,11 @@ def test_change_account_flat_markup_to_percent(api_client, user, models,
 
 @pytest.mark.parametrize('data', [{}, {'children': []}])
 def test_change_account_flat_markup_to_percent_no_children(api_client, user,
-        models, budget_f, create_markup, data):
+        models, budget_f, f, data):
     budget = budget_f.create_budget()
     markups = [
-        create_markup(parent=budget, flat=True, rate=20),
-        create_markup(parent=budget, flat=True, rate=30)
+        f.create_markup(parent=budget, flat=True, rate=20),
+        f.create_markup(parent=budget, flat=True, rate=30)
     ]
     accounts = [
         budget_f.create_account(parent=budget),
@@ -562,11 +558,11 @@ def test_change_account_flat_markup_to_percent_no_children(api_client, user,
 
 
 def test_update_account_percent_markup_rate(api_client, user, budget_f, models,
-        create_markup):
+        f):
     budget = budget_f.create_budget()
     markups = [
-        create_markup(parent=budget, percent=True, rate=0.5),
-        create_markup(parent=budget, flat=True, rate=30)
+        f.create_markup(parent=budget, percent=True, rate=0.5),
+        f.create_markup(parent=budget, flat=True, rate=30)
     ]
     accounts = [
         budget_f.create_account(parent=budget, markups=[markups[0]]),
@@ -642,11 +638,11 @@ def test_update_account_percent_markup_rate(api_client, user, budget_f, models,
 
 
 def test_change_account_percent_markup_to_flat(api_client, user, models,
-        budget_f, create_markup):
+        budget_f, f):
     budget = budget_f.create_budget()
     markups = [
-        create_markup(parent=budget, percent=True, rate=0.5),
-        create_markup(parent=budget, flat=True, rate=30)
+        f.create_markup(parent=budget, percent=True, rate=0.5),
+        f.create_markup(parent=budget, flat=True, rate=30)
     ]
     accounts = [
         budget_f.create_account(parent=budget, markups=[markups[0]]),
@@ -724,11 +720,11 @@ def test_change_account_percent_markup_to_flat(api_client, user, models,
 
 
 def test_change_account_percent_markup_to_flat_children(api_client, user, models,
-        budget_f, create_markup):
+        budget_f, f):
     budget = budget_f.create_budget()
     markups = [
-        create_markup(parent=budget, percent=True, rate=0.5),
-        create_markup(parent=budget, flat=True, rate=30)
+        f.create_markup(parent=budget, percent=True, rate=0.5),
+        f.create_markup(parent=budget, flat=True, rate=30)
     ]
     accounts = [
         budget_f.create_account(parent=budget, markups=[markups[0]]),
@@ -764,11 +760,11 @@ def test_change_account_percent_markup_to_flat_children(api_client, user, models
 
 
 def test_update_budget_markup_child_not_same_parent(api_client, user, budget_f,
-        create_markup):
+        f):
     budget = budget_f.create_budget()
     another_budget = budget_f.create_budget()
     account = budget_f.create_account(parent=another_budget)
-    markup = create_markup(parent=budget, percent=True)
+    markup = f.create_markup(parent=budget, percent=True)
 
     api_client.force_login(user)
     response = api_client.patch("/v1/markups/%s/" % markup.pk, data={
@@ -779,12 +775,12 @@ def test_update_budget_markup_child_not_same_parent(api_client, user, budget_f,
 
 
 def test_update_account_markup_child_not_same_parent(api_client, user, budget_f,
-        create_markup):
+        f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     another_account = budget_f.create_account(parent=budget)
     subaccount = budget_f.create_subaccount(parent=another_account)
-    markup = create_markup(parent=account, percent=True)
+    markup = f.create_markup(parent=account, percent=True)
 
     api_client.force_login(user)
     response = api_client.patch("/v1/markups/%s/" % markup.pk, data={
@@ -794,17 +790,16 @@ def test_update_account_markup_child_not_same_parent(api_client, user, budget_f,
     assert response.status_code == 400
 
 
-def test_delete_budget_flat_markup(api_client, user, models, budget_df,
-        create_actual, create_markup):
-    budget = budget_df.create_budget()
+def test_delete_budget_flat_markup(api_client, user, models, f):
+    budget = f.create_budget()
     markups = [
-        create_markup(parent=budget, flat=True, rate=100),
-        create_markup(parent=budget, percent=True, rate=0.1)
+        f.create_markup(parent=budget, flat=True, rate=100),
+        f.create_markup(parent=budget, percent=True, rate=0.1)
     ]
-    create_actual(owner=markups[0], value=100, budget=budget)
-    create_actual(owner=markups[1], value=100, budget=budget)
-    account = budget_df.create_account(parent=budget, markups=[markups[1]])
-    budget_df.create_subaccount(
+    f.create_actual(owner=markups[0], value=100, budget=budget)
+    f.create_actual(owner=markups[1], value=100, budget=budget)
+    account = f.create_account(parent=budget, markups=[markups[1]])
+    f.create_subaccount(
         count=2,
         rate=10,
         multiplier=1,
@@ -838,15 +833,14 @@ def test_delete_budget_flat_markup(api_client, user, models, budget_df,
     assert budget.accumulated_markup_contribution == 2.0
 
 
-def test_delete_template_flat_markup(api_client, user, models, template_df,
-        create_markup):
-    budget = template_df.create_budget()
+def test_delete_template_flat_markup(api_client, user, models, f):
+    budget = f.create_template()
     markups = [
-        create_markup(parent=budget, flat=True, rate=100),
-        create_markup(parent=budget, percent=True, rate=0.1)
+        f.create_markup(parent=budget, flat=True, rate=100),
+        f.create_markup(parent=budget, percent=True, rate=0.1)
     ]
-    account = template_df.create_account(parent=budget, markups=[markups[1]])
-    template_df.create_subaccount(
+    account = f.create_template_account(parent=budget, markups=[markups[1]])
+    f.create_template_subaccount(
         count=2,
         rate=10,
         multiplier=1,
@@ -876,17 +870,16 @@ def test_delete_template_flat_markup(api_client, user, models, template_df,
     assert budget.accumulated_markup_contribution == 2.0
 
 
-def test_delete_budget_percent_markup(api_client, user, budget_df, models,
-        create_markup, create_actual):
-    budget = budget_df.create_budget()
+def test_delete_budget_percent_markup(api_client, user, models, f):
+    budget = f.create_budget()
     markups = [
-        create_markup(parent=budget, flat=True, rate=100),
-        create_markup(parent=budget, percent=True, rate=0.1)
+        f.create_markup(parent=budget, flat=True, rate=100),
+        f.create_markup(parent=budget, percent=True, rate=0.1)
     ]
-    create_actual(owner=markups[0], value=100, budget=budget)
-    create_actual(owner=markups[1], value=100, budget=budget)
-    account = budget_df.create_account(parent=budget, markups=[markups[1]])
-    budget_df.create_subaccount(
+    f.create_actual(owner=markups[0], value=100, budget=budget)
+    f.create_actual(owner=markups[1], value=100, budget=budget)
+    account = f.create_account(parent=budget, markups=[markups[1]])
+    f.create_subaccount(
         count=2,
         rate=10,
         multiplier=1,
@@ -920,15 +913,14 @@ def test_delete_budget_percent_markup(api_client, user, budget_df, models,
     assert budget.accumulated_markup_contribution == 100.0
 
 
-def test_delete_template_percent_markup(api_client, user, models, create_markup,
-        template_df):
-    budget = template_df.create_budget()
+def test_delete_template_percent_markup(api_client, user, models, f):
+    budget = f.create_template()
     markups = [
-        create_markup(parent=budget, flat=True, rate=100),
-        create_markup(parent=budget, percent=True, rate=0.1)
+        f.create_markup(parent=budget, flat=True, rate=100),
+        f.create_markup(parent=budget, percent=True, rate=0.1)
     ]
-    account = template_df.create_account(parent=budget, markups=[markups[1]])
-    template_df.create_subaccount(
+    account = f.create_template_account(parent=budget, markups=[markups[1]])
+    f.create_template_subaccount(
         count=2,
         rate=10,
         multiplier=1,
@@ -958,25 +950,24 @@ def test_delete_template_percent_markup(api_client, user, models, create_markup,
     assert budget.accumulated_markup_contribution == 100.0
 
 
-def test_delete_budget_account_flat_markup(api_client, user, budget_df,
-        models, create_markup, create_actual):
-    budget = budget_df.create_budget()
-    account = budget_df.create_account(parent=budget)
+def test_delete_budget_account_flat_markup(api_client, user, models, f):
+    budget = f.create_budget()
+    account = f.create_account(parent=budget)
     markups = [
-        create_markup(parent=account, flat=True, rate=100),
-        create_markup(parent=account, percent=True, rate=0.1)
+        f.create_markup(parent=account, flat=True, rate=100),
+        f.create_markup(parent=account, percent=True, rate=0.1)
     ]
-    create_actual(owner=markups[0], value=100, budget=budget)
-    create_actual(owner=markups[1], value=100, budget=budget)
+    f.create_actual(owner=markups[0], value=100, budget=budget)
+    f.create_actual(owner=markups[1], value=100, budget=budget)
     subaccounts = [
-        budget_df.create_subaccount(
+        f.create_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,
             parent=account,
             markups=[markups[1]]
         ),
-        budget_df.create_subaccount(
+        f.create_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,
@@ -1033,23 +1024,22 @@ def test_delete_budget_account_flat_markup(api_client, user, budget_df,
     assert budget.accumulated_markup_contribution == 2.0
 
 
-def test_delete_template_account_flat_markup(api_client, user, template_df,
-        models, create_markup):
-    budget = template_df.create_budget()
-    account = template_df.create_account(parent=budget)
+def test_delete_template_account_flat_markup(api_client, user, models, f):
+    budget = f.create_template()
+    account = f.create_template_account(parent=budget)
     markups = [
-        create_markup(parent=account, flat=True, rate=100),
-        create_markup(parent=account, percent=True, rate=0.1)
+        f.create_markup(parent=account, flat=True, rate=100),
+        f.create_markup(parent=account, percent=True, rate=0.1)
     ]
     subaccounts = [
-        template_df.create_subaccount(
+        f.create_template_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,
             parent=account,
             markups=[markups[1]]
         ),
-        template_df.create_subaccount(
+        f.create_template_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,
@@ -1098,25 +1088,24 @@ def test_delete_template_account_flat_markup(api_client, user, template_df,
     assert budget.accumulated_markup_contribution == 2.0
 
 
-def test_delete_budget_account_percent_markup(api_client, user, budget_df,
-        models, create_markup, create_actual):
-    budget = budget_df.create_budget()
-    account = budget_df.create_account(parent=budget)
+def test_delete_budget_account_percent_markup(api_client, user, f, models):
+    budget = f.create_budget()
+    account = f.create_account(parent=budget)
     markups = [
-        create_markup(parent=account, flat=True, rate=100),
-        create_markup(parent=account, percent=True, rate=0.1)
+        f.create_markup(parent=account, flat=True, rate=100),
+        f.create_markup(parent=account, percent=True, rate=0.1)
     ]
-    create_actual(owner=markups[0], value=100, budget=budget)
-    create_actual(owner=markups[1], value=100, budget=budget)
+    f.create_actual(owner=markups[0], value=100, budget=budget)
+    f.create_actual(owner=markups[1], value=100, budget=budget)
     subaccounts = [
-        budget_df.create_subaccount(
+        f.create_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,
             parent=account,
             markups=[markups[1]]
         ),
-        budget_df.create_subaccount(
+        f.create_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,
@@ -1173,23 +1162,22 @@ def test_delete_budget_account_percent_markup(api_client, user, budget_df,
     assert budget.accumulated_markup_contribution == 100.0
 
 
-def test_delete_template_account_percent_markup(api_client, user, create_markup,
-        template_df, models):
-    budget = template_df.create_budget()
-    account = template_df.create_account(parent=budget)
+def test_delete_template_account_percent_markup(api_client, user, f, models):
+    budget = f.create_template()
+    account = f.create_template_account(parent=budget)
     markups = [
-        create_markup(parent=account, flat=True, rate=100),
-        create_markup(parent=account, percent=True, rate=0.1)
+        f.create_markup(parent=account, flat=True, rate=100),
+        f.create_markup(parent=account, percent=True, rate=0.1)
     ]
     subaccounts = [
-        template_df.create_subaccount(
+        f.create_template_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,
             parent=account,
             markups=[markups[1]]
         ),
-        template_df.create_subaccount(
+        f.create_template_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,
@@ -1238,26 +1226,25 @@ def test_delete_template_account_percent_markup(api_client, user, create_markup,
     assert budget.accumulated_markup_contribution == 100.0
 
 
-def test_delete_budget_subaccount_flat_markup(api_client, user, budget_df,
-        models, create_markup, create_actual):
-    budget = budget_df.create_budget()
-    account = budget_df.create_account(parent=budget)
-    subaccount = budget_df.create_subaccount(parent=account)
+def test_delete_budget_subaccount_flat_markup(api_client, user, f, models):
+    budget = f.create_budget()
+    account = f.create_account(parent=budget)
+    subaccount = f.create_subaccount(parent=account)
     markups = [
-        create_markup(parent=subaccount, flat=True, rate=100),
-        create_markup(parent=subaccount, percent=True, rate=0.1)
+        f.create_markup(parent=subaccount, flat=True, rate=100),
+        f.create_markup(parent=subaccount, percent=True, rate=0.1)
     ]
-    create_actual(owner=markups[0], value=100, budget=budget)
-    create_actual(owner=markups[1], value=100, budget=budget)
+    f.create_actual(owner=markups[0], value=100, budget=budget)
+    f.create_actual(owner=markups[1], value=100, budget=budget)
     subaccounts = [
-        budget_df.create_subaccount(
+        f.create_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,
             parent=subaccount,
             markups=[markups[1]]
         ),
-        budget_df.create_subaccount(
+        f.create_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,
@@ -1326,26 +1313,25 @@ def test_delete_budget_subaccount_flat_markup(api_client, user, budget_df,
     assert budget.accumulated_markup_contribution == 2.0
 
 
-def test_delete_budget_subaccount_percent_markup(api_client, user, budget_df,
-        models, create_markup, create_actual):
-    budget = budget_df.create_budget()
-    account = budget_df.create_account(parent=budget)
-    subaccount = budget_df.create_subaccount(parent=account)
+def test_delete_budget_subaccount_percent_markup(api_client, user, f, models):
+    budget = f.create_budget()
+    account = f.create_account(parent=budget)
+    subaccount = f.create_subaccount(parent=account)
     markups = [
-        create_markup(parent=subaccount, flat=True, rate=100),
-        create_markup(parent=subaccount, percent=True, rate=0.1)
+        f.create_markup(parent=subaccount, flat=True, rate=100),
+        f.create_markup(parent=subaccount, percent=True, rate=0.1)
     ]
-    create_actual(owner=markups[0], value=100, budget=budget)
-    create_actual(owner=markups[1], value=100, budget=budget)
+    f.create_actual(owner=markups[0], value=100, budget=budget)
+    f.create_actual(owner=markups[1], value=100, budget=budget)
     subaccounts = [
-        budget_df.create_subaccount(
+        f.create_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,
             parent=subaccount,
             markups=[markups[1]]
         ),
-        budget_df.create_subaccount(
+        f.create_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,
@@ -1414,24 +1400,23 @@ def test_delete_budget_subaccount_percent_markup(api_client, user, budget_df,
     assert budget.accumulated_markup_contribution == 100.0
 
 
-def test_delete_template_subaccount_flat_markup(api_client, user, models,
-        template_df, create_markup):
-    budget = template_df.create_budget()
-    account = template_df.create_account(parent=budget)
-    subaccount = template_df.create_subaccount(parent=account)
+def test_delete_template_subaccount_flat_markup(api_client, user, models, f):
+    budget = f.create_template()
+    account = f.create_template_account(parent=budget)
+    subaccount = f.create_template_subaccount(parent=account)
     markups = [
-        create_markup(parent=subaccount, flat=True, rate=100),
-        create_markup(parent=subaccount, percent=True, rate=0.1)
+        f.create_markup(parent=subaccount, flat=True, rate=100),
+        f.create_markup(parent=subaccount, percent=True, rate=0.1)
     ]
     subaccounts = [
-        template_df.create_subaccount(
+        f.create_template_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,
             parent=subaccount,
             markups=[markups[1]]
         ),
-        template_df.create_subaccount(
+        f.create_template_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,
@@ -1490,24 +1475,23 @@ def test_delete_template_subaccount_flat_markup(api_client, user, models,
     assert budget.accumulated_markup_contribution == 2.0
 
 
-def test_delete_template_subaccount_percent_markup(api_client, user, models,
-        template_df, create_markup):
-    budget = template_df.create_budget()
-    account = template_df.create_account(parent=budget)
-    subaccount = template_df.create_subaccount(parent=account)
+def test_delete_template_subaccount_percent_markup(api_client, user, models, f):
+    budget = f.create_template()
+    account = f.create_template_account(parent=budget)
+    subaccount = f.create_template_subaccount(parent=account)
     markups = [
-        create_markup(parent=subaccount, flat=True, rate=100),
-        create_markup(parent=subaccount, percent=True, rate=0.1)
+        f.create_markup(parent=subaccount, flat=True, rate=100),
+        f.create_markup(parent=subaccount, percent=True, rate=0.1)
     ]
     subaccounts = [
-        template_df.create_subaccount(
+        f.create_template_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,
             parent=subaccount,
             markups=[markups[1]]
         ),
-        template_df.create_subaccount(
+        f.create_template_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,

@@ -4,11 +4,10 @@ from django.test import override_settings
 import pytest
 
 
-def test_type_properly_serializes(api_client, user, create_actual, create_budget,
-        create_actual_type):
-    budget = create_budget()
-    actual_type = create_actual_type()
-    actual = create_actual(budget=budget, actual_type=actual_type)
+def test_type_properly_serializes(api_client, user, f):
+    budget = f.create_budget()
+    actual_type = f.create_actual_type()
+    actual = f.create_actual(budget=budget, actual_type=actual_type)
 
     api_client.force_login(user)
     response = api_client.get("/v1/actuals/%s/" % actual.pk)
@@ -22,11 +21,10 @@ def test_type_properly_serializes(api_client, user, create_actual, create_budget
     }
 
 
-def test_update_actual_type(api_client, user, create_budget, create_actual,
-        create_actual_type):
-    budget = create_budget()
-    actual_type = create_actual_type()
-    actual = create_actual(budget=budget)
+def test_update_actual_type(api_client, user, f):
+    budget = f.create_budget()
+    actual_type = f.create_actual_type()
+    actual = f.create_actual(budget=budget)
 
     api_client.force_login(user)
     response = api_client.patch("/v1/actuals/%s/" % actual.pk, data={
@@ -44,12 +42,11 @@ def test_update_actual_type(api_client, user, create_budget, create_actual,
     assert actual.actual_type == actual_type
 
 
-def test_update_actual(api_client, user, create_budget_account,
-        create_budget, create_actual, create_budget_subaccount):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    subaccount = create_budget_subaccount(parent=account)
-    actual = create_actual(owner=subaccount, budget=budget)
+def test_update_actual(api_client, user, f):
+    budget = f.create_budget()
+    account = f.create_budget_account(parent=budget)
+    subaccount = f.create_budget_subaccount(parent=account)
+    actual = f.create_actual(owner=subaccount, budget=budget)
 
     api_client.force_login(user)
     response = api_client.patch("/v1/actuals/%s/" % actual.pk, data={
@@ -81,16 +78,14 @@ def test_update_actual(api_client, user, create_budget_account,
     assert actual.payment_id == "Payment ID"
 
 
-def test_change_actual_parent_to_subaccount(api_client, user, create_budget,
-        create_budget_account, create_actual, create_budget_subaccount,
-        create_markup):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    markup = create_markup(parent=account)
-    subaccount = create_budget_subaccount(parent=account, markups=[markup])
+def test_change_actual_parent_to_subaccount(api_client, user, f):
+    budget = f.create_budget()
+    account = f.create_budget_account(parent=budget)
+    markup = f.create_markup(parent=account)
+    subaccount = f.create_budget_subaccount(parent=account, markups=[markup])
     actuals = [
-        create_actual(owner=markup, budget=budget, value=100.0),
-        create_actual(owner=markup, budget=budget, value=50.0)
+        f.create_actual(owner=markup, budget=budget, value=100.0),
+        f.create_actual(owner=markup, budget=budget, value=50.0)
     ]
 
     markup.refresh_from_db()
@@ -150,16 +145,14 @@ def test_change_actual_parent_to_subaccount(api_client, user, create_budget,
     assert actuals[0].owner == subaccount
 
 
-def test_change_actual_parent_to_markup(api_client, user, create_budget,
-        create_budget_account, create_actual, create_budget_subaccount,
-        create_markup):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    markup = create_markup(parent=account)
-    subaccount = create_budget_subaccount(parent=account, markups=[markup])
+def test_change_actual_parent_to_markup(api_client, user, f):
+    budget = f.create_budget()
+    account = f.create_budget_account(parent=budget)
+    markup = f.create_markup(parent=account)
+    subaccount = f.create_budget_subaccount(parent=account, markups=[markup])
     actuals = [
-        create_actual(owner=subaccount, budget=budget, value=100.0),
-        create_actual(owner=subaccount, budget=budget, value=50.0)
+        f.create_actual(owner=subaccount, budget=budget, value=100.0),
+        f.create_actual(owner=subaccount, budget=budget, value=50.0)
     ]
 
     markup.refresh_from_db()
@@ -219,14 +212,13 @@ def test_change_actual_parent_to_markup(api_client, user, create_budget,
     assert actuals[0].owner == markup
 
 
-def test_change_actual_owner_invalid_subaccount(api_client, user, create_actual,
-        create_budget_account, create_budget, create_budget_subaccount):
-    budgets = [create_budget(), create_budget()]
-    account = create_budget_account(parent=budgets[0])
-    subaccount = create_budget_subaccount(parent=account)
-    another_account = create_budget_account(parent=budgets[1])
-    another_subaccount = create_budget_subaccount(parent=another_account)
-    actual = create_actual(owner=subaccount, budget=budgets[0])
+def test_change_actual_owner_invalid_subaccount(api_client, user, f):
+    budgets = [f.create_budget(), f.create_budget()]
+    account = f.create_budget_account(parent=budgets[0])
+    subaccount = f.create_budget_subaccount(parent=account)
+    another_account = f.create_budget_account(parent=budgets[1])
+    another_subaccount = f.create_budget_subaccount(parent=another_account)
+    actual = f.create_actual(owner=subaccount, budget=budgets[0])
 
     api_client.force_login(user)
     response = api_client.patch(
@@ -237,19 +229,17 @@ def test_change_actual_owner_invalid_subaccount(api_client, user, create_actual,
     assert response.status_code == 400
 
 
-def test_change_actual_owner_invalid_markup(api_client, user, create_actual,
-        create_budget_account, create_budget, create_budget_subaccount,
-        create_markup):
-    budgets = [create_budget(), create_budget()]
+def test_change_actual_owner_invalid_markup(api_client, user, f):
+    budgets = [f.create_budget(), f.create_budget()]
 
-    account = create_budget_account(parent=budgets[0])
-    subaccount = create_budget_subaccount(parent=account)
+    account = f.create_budget_account(parent=budgets[0])
+    subaccount = f.create_budget_subaccount(parent=account)
 
-    another_account = create_budget_account(parent=budgets[1])
-    another_subaccount = create_budget_subaccount(parent=another_account)
-    markup = create_markup(parent=another_subaccount)
+    another_account = f.create_budget_account(parent=budgets[1])
+    another_subaccount = f.create_budget_subaccount(parent=another_account)
+    markup = f.create_markup(parent=another_subaccount)
 
-    actual = create_actual(owner=subaccount, budget=budgets[0])
+    actual = f.create_actual(owner=subaccount, budget=budgets[0])
 
     api_client.force_login(user)
     response = api_client.patch(
@@ -261,10 +251,9 @@ def test_change_actual_owner_invalid_markup(api_client, user, create_actual,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_delete_actual(api_client, user, create_actual, create_budget, freezer,
-        models):
-    budget = create_budget(created_by=user)
-    actual = create_actual(budget=budget, created_by=user)
+def test_delete_actual(api_client, user, f, freezer, models):
+    budget = f.create_budget(created_by=user)
+    actual = f.create_actual(budget=budget, created_by=user)
 
     api_client.force_login(user)
     freezer.move_to("2020-01-02")
@@ -280,10 +269,10 @@ def test_delete_actual(api_client, user, create_actual, create_budget, freezer,
 
 @pytest.mark.freeze_time('2020-01-01')
 @override_settings(STAFF_USER_GLOBAL_PERMISSIONS=True)
-def test_delete_actual_as_staff_user(api_client, user, staff_user, create_actual,
-        create_budget, freezer, models):
-    budget = create_budget(created_by=user)
-    actual = create_actual(budget=budget, created_by=user)
+def test_delete_actual_as_staff_user(api_client, user, staff_user, f, freezer,
+        models):
+    budget = f.create_budget(created_by=user)
+    actual = f.create_actual(budget=budget, created_by=user)
 
     # Login as the staff user because the staff user should be able to delete
     # another user's actual.

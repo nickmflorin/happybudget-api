@@ -1,8 +1,7 @@
-def test_create_subaccount_actual(api_client, user, create_budget_account,
-        create_budget, create_budget_subaccount, models):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    subaccount = create_budget_subaccount(parent=account)
+def test_create_subaccount_actual(api_client, user, f, models):
+    budget = f.create_budget()
+    account = f.create_budget_account(parent=budget)
+    subaccount = f.create_budget_subaccount(parent=account)
 
     api_client.force_login(user)
     response = api_client.post(
@@ -49,12 +48,11 @@ def test_create_subaccount_actual(api_client, user, create_budget_account,
     assert actual.owner == subaccount
 
 
-def test_create_markup_actual(api_client, user, create_budget_account,
-        create_budget, create_budget_subaccount, create_markup, models):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    markup = create_markup(parent=account)
-    subaccount = create_budget_subaccount(parent=account, markups=[markup])
+def test_create_markup_actual(api_client, user, f, models):
+    budget = f.create_budget()
+    account = f.create_budget_account(parent=budget)
+    markup = f.create_markup(parent=account)
+    subaccount = f.create_budget_subaccount(parent=account, markups=[markup])
 
     api_client.force_login(user)
     response = api_client.post(
@@ -104,26 +102,25 @@ def test_create_markup_actual(api_client, user, create_budget_account,
     assert actual.owner == markup
 
 
-def test_bulk_create_actual(api_client, user, create_budget, create_markup,
-        create_budget_account, create_budget_subaccount, models):
-    budget = create_budget()
+def test_bulk_create_actual(api_client, user, f, models):
+    budget = f.create_budget()
     accounts = [
-        create_budget_account(parent=budget),
-        create_budget_account(parent=budget)
+        f.create_budget_account(parent=budget),
+        f.create_budget_account(parent=budget)
     ]
     markups = [
-        create_markup(parent=accounts[0]),
-        create_markup(parent=accounts[1])
+        f.create_markup(parent=accounts[0]),
+        f.create_markup(parent=accounts[1])
     ]
     subaccounts = [
-        create_budget_subaccount(
+        f.create_budget_subaccount(
             parent=accounts[0],
             quantity=1,
             rate=100,
             multiplier=1,
             markups=[markups[0]]
         ),
-        create_budget_subaccount(
+        f.create_budget_subaccount(
             parent=accounts[1],
             quantity=2,
             rate=50,
@@ -234,26 +231,25 @@ def test_bulk_create_actual(api_client, user, create_budget, create_markup,
     assert budget.actual == 310.0
 
 
-def test_bulk_update_actuals(api_client, user, create_budget, create_markup,
-        create_budget_account, create_budget_subaccount, create_actual):
-    budget = create_budget()
+def test_bulk_update_actuals(api_client, user, f):
+    budget = f.create_budget()
     accounts = [
-        create_budget_account(parent=budget),
-        create_budget_account(parent=budget)
+        f.create_budget_account(parent=budget),
+        f.create_budget_account(parent=budget)
     ]
     markups = [
-        create_markup(parent=accounts[0]),
-        create_markup(parent=accounts[1])
+        f.create_markup(parent=accounts[0]),
+        f.create_markup(parent=accounts[1])
     ]
     subaccounts = [
-        create_budget_subaccount(
+        f.create_budget_subaccount(
             parent=accounts[0],
             quantity=1,
             rate=100,
             multiplier=1,
             markups=[markups[0]]
         ),
-        create_budget_subaccount(
+        f.create_budget_subaccount(
             parent=accounts[1],
             quantity=2,
             rate=50,
@@ -262,14 +258,14 @@ def test_bulk_update_actuals(api_client, user, create_budget, create_markup,
         )
     ]
     actuals = [
-        create_actual(owner=subaccounts[0], budget=budget, value=40.0),
-        create_actual(owner=subaccounts[0], budget=budget, value=30.0),
-        create_actual(owner=subaccounts[1], budget=budget, value=160.0),
-        create_actual(owner=subaccounts[1], budget=budget, value=10.0),
-        create_actual(owner=markups[0], budget=budget, value=20.0),
-        create_actual(owner=markups[0], budget=budget, value=10.0),
-        create_actual(owner=markups[1], budget=budget, value=50.0),
-        create_actual(owner=markups[1], budget=budget, value=40.0),
+        f.create_actual(owner=subaccounts[0], budget=budget, value=40.0),
+        f.create_actual(owner=subaccounts[0], budget=budget, value=30.0),
+        f.create_actual(owner=subaccounts[1], budget=budget, value=160.0),
+        f.create_actual(owner=subaccounts[1], budget=budget, value=10.0),
+        f.create_actual(owner=markups[0], budget=budget, value=20.0),
+        f.create_actual(owner=markups[0], budget=budget, value=10.0),
+        f.create_actual(owner=markups[1], budget=budget, value=50.0),
+        f.create_actual(owner=markups[1], budget=budget, value=40.0),
     ]
     # Make sure everything is calculated correctly before updating via the API
     # so we can more clearly understand why an error might occur.
@@ -344,27 +340,24 @@ def test_bulk_update_actuals(api_client, user, create_budget, create_markup,
     assert budget.actual == 290.0
 
 
-def test_change_actual_owner_in_bulk_update(api_client, user, create_budget,
-        create_budget_account, create_budget_subaccount, create_actual,
-        create_markup):
-
-    budget = create_budget()
+def test_change_actual_owner_in_bulk_update(api_client, user, f):
+    budget = f.create_budget()
     accounts = [
-        create_budget_account(parent=budget),
-        create_budget_account(parent=budget)
+        f.create_budget_account(parent=budget),
+        f.create_budget_account(parent=budget)
     ]
     markups = [
-        create_markup(parent=accounts[0]),
-        create_markup(parent=accounts[1])
+        f.create_markup(parent=accounts[0]),
+        f.create_markup(parent=accounts[1])
     ]
     subaccounts = [
-        create_budget_subaccount(
+        f.create_budget_subaccount(
             parent=accounts[0],
             quantity=1,
             rate=100,
             multiplier=1,
         ),
-        create_budget_subaccount(
+        f.create_budget_subaccount(
             parent=accounts[1],
             quantity=2,
             rate=50,
@@ -372,16 +365,15 @@ def test_change_actual_owner_in_bulk_update(api_client, user, create_budget,
         )
     ]
     actuals = [
-        create_actual(owner=subaccounts[0], budget=budget, value=40.0),
-        create_actual(owner=subaccounts[0], budget=budget, value=30.0),
-        create_actual(owner=subaccounts[1], budget=budget, value=160.0),
-        create_actual(owner=subaccounts[1], budget=budget, value=10.0),
-        create_actual(owner=markups[0], budget=budget, value=20.0),
-        create_actual(owner=markups[0], budget=budget, value=10.0),
-        create_actual(owner=markups[1], budget=budget, value=50.0),
-        create_actual(owner=markups[1], budget=budget, value=40.0),
+        f.create_actual(owner=subaccounts[0], budget=budget, value=40.0),
+        f.create_actual(owner=subaccounts[0], budget=budget, value=30.0),
+        f.create_actual(owner=subaccounts[1], budget=budget, value=160.0),
+        f.create_actual(owner=subaccounts[1], budget=budget, value=10.0),
+        f.create_actual(owner=markups[0], budget=budget, value=20.0),
+        f.create_actual(owner=markups[0], budget=budget, value=10.0),
+        f.create_actual(owner=markups[1], budget=budget, value=50.0),
+        f.create_actual(owner=markups[1], budget=budget, value=40.0),
     ]
-
     # Make sure everything is calculated correctly before updating via the API
     # so we can more clearly understand why an error might occur.
     subaccounts[0].refresh_from_db()
@@ -455,27 +447,25 @@ def test_change_actual_owner_in_bulk_update(api_client, user, create_budget,
     assert budget.actual == 360.0
 
 
-def test_bulk_delete_actuals(api_client, user, create_budget, create_actual,
-        models, create_budget_account, create_budget_subaccount,
-        create_markup):
-    budget = create_budget()
+def test_bulk_delete_actuals(api_client, user, models, f):
+    budget = f.create_budget()
     accounts = [
-        create_budget_account(parent=budget),
-        create_budget_account(parent=budget)
+        f.create_budget_account(parent=budget),
+        f.create_budget_account(parent=budget)
     ]
     markups = [
-        create_markup(parent=accounts[0]),
-        create_markup(parent=accounts[1])
+        f.create_markup(parent=accounts[0]),
+        f.create_markup(parent=accounts[1])
     ]
     subaccounts = [
-        create_budget_subaccount(
+        f.create_budget_subaccount(
             parent=accounts[0],
             quantity=1,
             rate=100,
             multiplier=1,
             markups=[markups[0]]
         ),
-        create_budget_subaccount(
+        f.create_budget_subaccount(
             parent=accounts[1],
             quantity=2,
             rate=50,
@@ -484,14 +474,14 @@ def test_bulk_delete_actuals(api_client, user, create_budget, create_actual,
         )
     ]
     actuals = [
-        create_actual(owner=subaccounts[0], budget=budget, value=40.0),
-        create_actual(owner=subaccounts[0], budget=budget, value=30.0),
-        create_actual(owner=subaccounts[1], budget=budget, value=160.0),
-        create_actual(owner=subaccounts[1], budget=budget, value=10.0),
-        create_actual(owner=markups[0], budget=budget, value=20.0),
-        create_actual(owner=markups[0], budget=budget, value=10.0),
-        create_actual(owner=markups[1], budget=budget, value=50.0),
-        create_actual(owner=markups[1], budget=budget, value=40.0),
+        f.create_actual(owner=subaccounts[0], budget=budget, value=40.0),
+        f.create_actual(owner=subaccounts[0], budget=budget, value=30.0),
+        f.create_actual(owner=subaccounts[1], budget=budget, value=160.0),
+        f.create_actual(owner=subaccounts[1], budget=budget, value=10.0),
+        f.create_actual(owner=markups[0], budget=budget, value=20.0),
+        f.create_actual(owner=markups[0], budget=budget, value=10.0),
+        f.create_actual(owner=markups[1], budget=budget, value=50.0),
+        f.create_actual(owner=markups[1], budget=budget, value=40.0),
     ]
 
     # Make sure everything is calculated correctly before updating via the API

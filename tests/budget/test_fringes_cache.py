@@ -2,10 +2,9 @@ from django.test import override_settings
 
 
 @override_settings(CACHE_ENABLED=True)
-def test_fringes_cache_invalidated_on_delete(api_client, user, budget_f,
-        create_fringe):
+def test_fringes_cache_invalidated_on_delete(api_client, user, budget_f, f):
     budget = budget_f.create_budget()
-    fringe = create_fringe(budget=budget)
+    fringe = f.create_fringe(budget=budget)
 
     api_client.force_login(user)
     response = api_client.get("/v1/budgets/%s/fringes/" % budget.pk)
@@ -20,13 +19,12 @@ def test_fringes_cache_invalidated_on_delete(api_client, user, budget_f,
 
 
 @override_settings(CACHE_ENABLED=True)
-def test_fringes_cache_invalidated_on_bulk_delete(api_client, user, budget_f,
-        create_fringe):
+def test_fringes_cache_invalidated_on_bulk_delete(api_client, user, budget_f, f):
     budget = budget_f.create_budget()
     fringes = [
-        create_fringe(budget=budget),
-        create_fringe(budget=budget),
-        create_fringe(budget=budget)
+        f.create_fringe(budget=budget),
+        f.create_fringe(budget=budget),
+        f.create_fringe(budget=budget)
     ]
     api_client.force_login(user)
     response = api_client.get("/v1/budgets/%s/fringes/" % budget.pk)
@@ -44,10 +42,9 @@ def test_fringes_cache_invalidated_on_bulk_delete(api_client, user, budget_f,
 
 
 @override_settings(CACHE_ENABLED=True)
-def test_fringes_cache_invalidated_on_create(api_client, user, budget_f,
-        create_fringe):
+def test_fringes_cache_invalidated_on_create(api_client, user, budget_f, f):
     budget = budget_f.create_budget()
-    create_fringe(budget=budget)
+    f.create_fringe(budget=budget)
 
     api_client.force_login(user)
     response = api_client.get("/v1/budgets/%s/fringes/" % budget.pk)
@@ -67,10 +64,9 @@ def test_fringes_cache_invalidated_on_create(api_client, user, budget_f,
 
 
 @override_settings(CACHE_ENABLED=True)
-def test_fringes_cache_invalidated_on_bulk_create(api_client, user, budget_f,
-        create_fringe):
+def test_fringes_cache_invalidated_on_bulk_create(api_client, user, budget_f, f):
     budget = budget_f.create_budget()
-    create_fringe(budget=budget)
+    f.create_fringe(budget=budget)
 
     api_client.force_login(user)
     response = api_client.get("/v1/budgets/%s/fringes/" % budget.pk)
@@ -92,10 +88,9 @@ def test_fringes_cache_invalidated_on_bulk_create(api_client, user, budget_f,
 
 
 @override_settings(CACHE_ENABLED=True)
-def test_fringes_cache_invalidated_on_update(api_client, user, budget_f,
-        create_fringe):
+def test_fringes_cache_invalidated_on_update(api_client, user, budget_f, f):
     budget = budget_f.create_budget()
-    fringes = [create_fringe(budget=budget), create_fringe(budget=budget)]
+    fringes = [f.create_fringe(budget=budget), f.create_fringe(budget=budget)]
 
     api_client.force_login(user)
     response = api_client.get("/v1/budgets/%s/fringes/" % budget.pk)
@@ -113,10 +108,9 @@ def test_fringes_cache_invalidated_on_update(api_client, user, budget_f,
 
 
 @override_settings(CACHE_ENABLED=True)
-def test_fringes_cache_invalidated_on_bulk_update(api_client, user, budget_f,
-        create_fringe):
+def test_fringes_cache_invalidated_on_bulk_update(api_client, user, budget_f, f):
     budget = budget_f.create_budget()
-    fringes = [create_fringe(budget=budget), create_fringe(budget=budget)]
+    fringes = [f.create_fringe(budget=budget), f.create_fringe(budget=budget)]
 
     api_client.force_login(user)
     response = api_client.get("/v1/budgets/%s/fringes/" % budget.pk)

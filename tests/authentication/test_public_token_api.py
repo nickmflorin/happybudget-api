@@ -2,10 +2,9 @@ import pytest
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_budget_public_token(api_client, user, create_budget,
-        create_public_token):
-    budget = create_budget()
-    public_token = create_public_token(instance=budget)
+def test_get_budget_public_token(api_client, user, f):
+    budget = f.create_budget()
+    public_token = f.create_public_token(instance=budget)
     api_client.force_login(user)
     response = api_client.get("/v1/auth/public-tokens/%s/" % public_token.pk)
     assert response.status_code == 200
@@ -19,10 +18,9 @@ def test_get_budget_public_token(api_client, user, create_budget,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_delete_budget_public_token(api_client, user, create_budget, models,
-        create_public_token):
-    budget = create_budget()
-    public_token = create_public_token(instance=budget)
+def test_delete_budget_public_token(api_client, user, models, f):
+    budget = f.create_budget()
+    public_token = f.create_public_token(instance=budget)
     api_client.force_login(user)
     response = api_client.delete("/v1/auth/public-tokens/%s/" % public_token.pk)
     assert response.status_code == 204
@@ -32,10 +30,9 @@ def test_delete_budget_public_token(api_client, user, create_budget, models,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_update_budget_public_token_expiry(api_client, user, create_budget,
-        create_public_token):
-    budget = create_budget()
-    public_token = create_public_token(instance=budget)
+def test_update_budget_public_token_expiry(api_client, user, f):
+    budget = f.create_budget()
+    public_token = f.create_public_token(instance=budget)
     api_client.force_login(user)
     response = api_client.patch(
         "/v1/auth/public-tokens/%s/" % public_token.pk,

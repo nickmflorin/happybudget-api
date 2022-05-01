@@ -5,12 +5,11 @@ def test_get_fringe_colors(api_client, user, colors):
     assert response.json()['data'] == [colors[0].code, colors[1].code]
 
 
-def test_update_fringe_color(api_client, user, create_color, models,
-        create_fringe, budget_f):
-    color = create_color(code='#AFAFAF', content_types=[models.Fringe])
-    another_color = create_color(code='#000000', content_types=[models.Fringe])
+def test_update_fringe_color(api_client, user, f, models, budget_f):
+    color = f.create_color(code='#AFAFAF', content_types=[models.Fringe])
+    another_color = f.create_color(code='#000000', content_types=[models.Fringe])
     budget = budget_f.create_budget()
-    fringe = create_fringe(budget=budget, color=color)
+    fringe = f.create_fringe(budget=budget, color=color)
 
     api_client.force_login(user)
     response = api_client.patch("/v1/fringes/%s/" % fringe.pk, {
@@ -22,11 +21,10 @@ def test_update_fringe_color(api_client, user, create_color, models,
     assert fringe.color.code == '#000000'
 
 
-def test_update_fringe_color_invalid_code(api_client, user, create_color,
-        models, create_fringe, budget_f):
-    color = create_color(code='#AFAFAF', content_types=[models.Fringe])
+def test_update_fringe_color_invalid_code(api_client, user, f, models, budget_f):
+    color = f.create_color(code='#AFAFAF', content_types=[models.Fringe])
     budget = budget_f.create_budget()
-    fringe = create_fringe(budget=budget, color=color)
+    fringe = f.create_fringe(budget=budget, color=color)
 
     api_client.force_login(user)
     response = api_client.patch("/v1/fringes/%s/" % fringe.pk, {

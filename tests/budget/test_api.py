@@ -2,14 +2,14 @@ import pytest
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_budgets(api_client, user, admin_user, create_budget):
-    budgets = create_budget(count=2)
+def test_get_budgets(api_client, user, admin_user, f):
+    budgets = f.create_budget(count=2)
     # Add additional budgets created by another use to ensure that those are
     # not included in the response.
-    create_budget(count=2, created_by=admin_user)
+    f.create_budget(count=2, created_by=admin_user)
     # Add additional archived budgets to ensure that those are not included in
     # the response.
-    create_budget(count=2, created_by=user, archived=True)
+    f.create_budget(count=2, created_by=user, archived=True)
     api_client.force_login(user)
     response = api_client.get("/v1/budgets/")
     assert response.status_code == 200
@@ -53,14 +53,14 @@ def test_get_budgets(api_client, user, admin_user, create_budget):
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_archived_budgets(api_client, user, admin_user, create_budget):
-    archived_budgets = create_budget(count=2, archived=True)
+def test_get_archived_budgets(api_client, user, admin_user, f):
+    archived_budgets = f.create_budget(count=2, archived=True)
     # Add additional budgets created by another use to ensure that those are
     # not included in the response.
-    create_budget(count=2, created_by=admin_user, archived=True)
+    f.create_budget(count=2, created_by=admin_user, archived=True)
     # Add additional non-archived budgets to ensure that those are not included
     # in the response.
-    create_budget(count=2, created_by=user)
+    f.create_budget(count=2, created_by=user)
     api_client.force_login(user)
     response = api_client.get("/v1/budgets/archived/")
     assert response.status_code == 200
@@ -104,17 +104,16 @@ def test_get_archived_budgets(api_client, user, admin_user, create_budget):
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_collaborating_budgets(api_client, create_budget, create_user,
-        create_collaborator):
-    users = create_user(count=4)
-    budgets = create_budget(count=4, created_by_array=users)
+def test_get_collaborating_budgets(api_client, f):
+    users = f.create_user(count=4)
+    budgets = f.create_budget(count=4, created_by_array=users)
     # The second budget cannot have a collaborator assigned as the second user
     # because the second user will be registered as the creator of the second
     # budget.
     _ = [
-        create_collaborator(instance=budgets[0], user=users[1]),
-        create_collaborator(instance=budgets[2], user=users[1]),
-        create_collaborator(instance=budgets[3], user=users[1]),
+        f.create_collaborator(instance=budgets[0], user=users[1]),
+        f.create_collaborator(instance=budgets[2], user=users[1]),
+        f.create_collaborator(instance=budgets[3], user=users[1]),
     ]
     api_client.force_login(users[1])
     response = api_client.get("/v1/budgets/collaborating/")
@@ -173,8 +172,8 @@ def test_get_collaborating_budgets(api_client, create_budget, create_user,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_budget(api_client, user, create_budget):
-    budget = create_budget()
+def test_get_budget(api_client, user, f):
+    budget = f.create_budget()
     api_client.force_login(user)
     response = api_client.get("/v1/budgets/%s/" % budget.pk)
     assert response.status_code == 200
@@ -203,8 +202,8 @@ def test_get_budget(api_client, user, create_budget):
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_update_budget(api_client, user, create_budget):
-    budget = create_budget()
+def test_update_budget(api_client, user, f):
+    budget = f.create_budget()
     api_client.force_login(user)
     response = api_client.patch("/v1/budgets/%s/" % budget.pk, data={
         "name": "New Name"
@@ -268,8 +267,8 @@ def test_create_budget(api_client, user, models):
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_derive_budget(api_client, user, template_df, staff_user, models):
-    template = template_df.create_budget(created_by=staff_user)
+def test_derive_budget(api_client, user, f, staff_user, models):
+    template = f.create_template(created_by=staff_user)
     api_client.force_login(user)
     response = api_client.post("/v1/budgets/", data={
         "name": "Test Name",
@@ -304,9 +303,8 @@ def test_derive_budget(api_client, user, template_df, staff_user, models):
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_duplicate_budget(api_client, standard_product_user, create_budget,
-        models):
-    original = create_budget(created_by=standard_product_user)
+def test_duplicate_budget(api_client, standard_product_user, f, models):
+    original = f.create_budget(created_by=standard_product_user)
     api_client.force_login(standard_product_user)
     response = api_client.post("/v1/budgets/%s/duplicate/" % original.pk)
     assert response.status_code == 201
@@ -336,9 +334,8 @@ def test_duplicate_budget(api_client, standard_product_user, create_budget,
     }
 
 
-def test_duplicate_archived_budget(api_client, standard_product_user,
-        create_budget):
-    original = create_budget(created_by=standard_product_user, archived=True)
+def test_duplicate_archived_budget(api_client, standard_product_user, f):
+    original = f.create_budget(created_by=standard_product_user, archived=True)
     api_client.force_login(standard_product_user)
     response = api_client.post("/v1/budgets/%s/duplicate/" % original.pk)
     assert response.status_code == 400
@@ -349,17 +346,16 @@ def test_duplicate_archived_budget(api_client, standard_product_user,
     }]}
 
 
-def test_delete_budget(api_client, user, create_budget, models,
-        create_budget_account, create_budget_subaccount):
-    budget = create_budget()
+def test_delete_budget(api_client, user, models, f):
+    budget = f.create_budget()
     accounts = [
-        create_budget_account(parent=budget),
-        create_budget_account(parent=budget),
-        create_budget_account(parent=budget)
+        f.create_budget_account(parent=budget),
+        f.create_budget_account(parent=budget),
+        f.create_budget_account(parent=budget)
     ]
-    create_budget_subaccount(count=6, parent=accounts[0])
-    create_budget_subaccount(count=6, parent=accounts[1])
-    create_budget_subaccount(count=6, parent=accounts[2])
+    f.create_budget_subaccount(count=6, parent=accounts[0])
+    f.create_budget_subaccount(count=6, parent=accounts[1])
+    f.create_budget_subaccount(count=6, parent=accounts[2])
 
     api_client.force_login(user)
     response = api_client.delete("/v1/budgets/%s/" % budget.pk)
@@ -370,19 +366,18 @@ def test_delete_budget(api_client, user, create_budget, models,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_budget_pdf(api_client, user, create_budget, create_markup,
-        create_budget_account, create_budget_subaccount):
-    budget = create_budget()
-    budget_markups = [create_markup(parent=budget)]
-    account = create_budget_account(parent=budget, markups=budget_markups)
-    account_markups = [create_markup(parent=account)]
-    subaccount = create_budget_subaccount(
+def test_get_budget_pdf(api_client, user, f):
+    budget = f.create_budget()
+    budget_markups = [f.create_markup(parent=budget)]
+    account = f.create_budget_account(parent=budget, markups=budget_markups)
+    account_markups = [f.create_markup(parent=account)]
+    subaccount = f.create_budget_subaccount(
         parent=account,
         markups=account_markups
     )
     subaccounts = [
-        create_budget_subaccount(parent=subaccount),
-        create_budget_subaccount(parent=subaccount)
+        f.create_budget_subaccount(parent=subaccount),
+        f.create_budget_subaccount(parent=subaccount)
     ]
     api_client.force_login(user)
     response = api_client.get("/v1/budgets/%s/pdf/" % budget.pk)

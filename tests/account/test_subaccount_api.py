@@ -74,13 +74,12 @@ def test_get_account_children(api_client, user, budget_f):
     assert response.json()['data'] == response_data
 
 
-def test_get_account_children_ordered_by_group(api_client, user, budget_f,
-        create_group):
+def test_get_account_children_ordered_by_group(api_client, user, budget_f, f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     groups = [
-        create_group(parent=account),
-        create_group(parent=account)
+        f.create_group(parent=account),
+        f.create_group(parent=account)
     ]
     # pylint: disable=expression-not-assigned
     [
@@ -97,14 +96,13 @@ def test_get_account_children_ordered_by_group(api_client, user, budget_f,
     assert [obj['id'] for obj in response.json()['data']] == [1, 4, 3, 5, 2]
 
 
-def test_create_budget_subaccount(api_client, user, budget_f, models,
-        create_group):
+def test_create_budget_subaccount(api_client, user, budget_f, models, f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
 
     # Make sure that we can create the SubAccount with a Group.  To do this, the
     # Group must not be empty.
-    group = create_group(parent=account)
+    group = f.create_group(parent=account)
     budget_f.create_subaccount(group=group, parent=account)
 
     api_client.force_login(user)
@@ -181,14 +179,13 @@ def test_create_budget_subaccount(api_client, user, budget_f, models,
     assert response.json() == response_data
 
 
-def test_create_subaccount_group_not_in_table(api_client, user, budget_f,
-        create_group):
+def test_create_subaccount_group_not_in_table(api_client, user, budget_f, f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     another_account = budget_f.create_account(parent=budget)
 
     # The group must not be empty.
-    group = create_group(parent=another_account)
+    group = f.create_group(parent=another_account)
     budget_f.create_subaccount(group=group, parent=another_account)
 
     api_client.force_login(user)
@@ -200,11 +197,10 @@ def test_create_subaccount_group_not_in_table(api_client, user, budget_f,
     assert response.json()['errors'][0]['code'] == 'does_not_exist_in_table'
 
 
-def test_create_subaccount_group_empty(api_client, user, budget_f,
-        create_group):
+def test_create_subaccount_group_empty(api_client, user, budget_f, f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
-    group = create_group(parent=account)
+    group = f.create_group(parent=account)
     api_client.force_login(user)
     response = api_client.post(
         "/v1/accounts/%s/children/" % account.pk,
@@ -214,18 +210,17 @@ def test_create_subaccount_group_empty(api_client, user, budget_f,
     assert response.json()['errors'][0]['code'] == 'is_empty'
 
 
-def test_get_community_template_account_children(api_client, user,
-        staff_user, create_template, create_template_account,
-        create_template_subaccount):
-    template = create_template(community=True, created_by=staff_user)
-    account = create_template_account(parent=template)
+def test_get_community_template_account_children(
+        api_client, user, staff_user, f):
+    template = f.create_template(community=True, created_by=staff_user)
+    account = f.create_template_account(parent=template)
     # pylint: disable=expression-not-assigned
     [
-        create_template_subaccount(
+        f.create_template_subaccount(
             parent=account,
             created_at=datetime.datetime(2020, 1, 1)
         ),
-        create_template_subaccount(
+        f.create_template_subaccount(
             parent=account,
             created_at=datetime.datetime(2020, 1, 2)
         )
@@ -236,18 +231,17 @@ def test_get_community_template_account_children(api_client, user,
 
 
 def test_get_another_users_community_template_account_children(api_client,
-        create_user, staff_user, create_template, create_template_account,
-        create_template_subaccount):
-    user = create_user(is_staff=True)
-    template = create_template(community=True, created_by=user)
-    account = create_template_account(parent=template)
+        staff_user, f):
+    user = f.create_user(is_staff=True)
+    template = f.create_template(community=True, created_by=user)
+    account = f.create_template_account(parent=template)
     # pylint: disable=expression-not-assigned
     [
-        create_template_subaccount(
+        f.create_template_subaccount(
             parent=account,
             created_at=datetime.datetime(2020, 1, 1)
         ),
-        create_template_subaccount(
+        f.create_template_subaccount(
             parent=account,
             created_at=datetime.datetime(2020, 1, 2)
         )

@@ -13,9 +13,9 @@ def test_ordering_bulk_create(api_client, user, models, budget_f):
     assert [f.order for f in fringes] == ["n", "t", "w"]
 
 
-def test_move_fringe_down(api_client, user, models, budget_f, create_fringe):
+def test_move_fringe_down(api_client, user, models, budget_f, f):
     budget = budget_f.create_budget()
-    fringes = create_fringe(budget=budget, count=10)
+    fringes = f.create_fringe(budget=budget, count=10)
     assert [a.order for a in fringes] == \
         ['n', 't', 'w', 'y', 'yn', 'ynt', 'yntw', 'yntwy', 'yntwyn', 'yntwynt']
     assert [f.pk for f in fringes] == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -32,10 +32,9 @@ def test_move_fringe_down(api_client, user, models, budget_f, create_fringe):
     assert [f.pk for f in fringes] == [1, 2, 5, 3, 4, 6, 7, 8, 9, 10]
 
 
-def test_move_fringe_to_start(api_client, user, models, budget_f,
-        create_fringe):
+def test_move_fringe_to_start(api_client, user, models, budget_f, f):
     budget = budget_f.create_budget()
-    fringes = create_fringe(count=10, budget=budget)
+    fringes = f.create_fringe(count=10, budget=budget)
     assert [c.order for c in fringes] == \
         ['n', 't', 'w', 'y', 'yn', 'ynt', 'yntw', 'yntwy', 'yntwyn', 'yntwynt']
     assert [c.pk for c in fringes] == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -54,9 +53,9 @@ def test_move_fringe_to_start(api_client, user, models, budget_f,
     assert [a.pk for a in fringes] == [5, 1, 2, 3, 4, 6, 7, 8, 9, 10]
 
 
-def test_move_fringe_to_end(api_client, user, models, create_fringe, budget_f):
+def test_move_fringe_to_end(api_client, user, models, f, budget_f):
     budget = budget_f.create_budget()
-    fringes = create_fringe(count=10, budget=budget)
+    fringes = f.create_fringe(count=10, budget=budget)
     assert [a.order for a in fringes] == \
         ['n', 't', 'w', 'y', 'yn', 'ynt', 'yntw', 'yntwy', 'yntwyn', 'yntwynt']
     assert [a.pk for a in fringes] == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -75,10 +74,9 @@ def test_move_fringe_to_end(api_client, user, models, create_fringe, budget_f):
     assert [a.pk for a in fringes] == [1, 2, 3, 4, 6, 7, 8, 9, 10, 5]
 
 
-def test_move_fringe_self_referential(api_client, user, create_fringe,
-        budget_f):
+def test_move_fringe_self_referential(api_client, user, budget_f, f):
     budget = budget_f.create_budget()
-    fringes = create_fringe(count=10, budget=budget)
+    fringes = f.create_fringe(count=10, budget=budget)
     assert [a.order for a in fringes] == \
         ['n', 't', 'w', 'y', 'yn', 'ynt', 'yntw', 'yntwy', 'yntwyn', 'yntwynt']
     assert [a.pk for a in fringes] == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -90,10 +88,9 @@ def test_move_fringe_self_referential(api_client, user, create_fringe,
     assert response.status_code == 400
 
 
-def test_move_fringe_same_order(api_client, user, models, budget_f,
-        create_fringe):
+def test_move_fringe_same_order(api_client, user, models, budget_f, f):
     budget = budget_f.create_budget()
-    fringes = create_fringe(budget=budget, count=10)
+    fringes = f.create_fringe(budget=budget, count=10)
     assert [a.order for a in fringes] == \
         ['n', 't', 'w', 'y', 'yn', 'ynt', 'yntw', 'yntwy', 'yntwyn', 'yntwynt']
     assert [f.pk for f in fringes] == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -110,9 +107,9 @@ def test_move_fringe_same_order(api_client, user, models, budget_f,
     assert [f.pk for f in fringes] == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 
-def test_move_fringe_up(api_client, user, models, budget_f, create_fringe):
+def test_move_fringe_up(api_client, user, models, budget_f, f):
     budget = budget_f.create_budget()
-    fringes = create_fringe(budget=budget, count=10)
+    fringes = f.create_fringe(budget=budget, count=10)
     assert [a.order for a in fringes] == \
         ['n', 't', 'w', 'y', 'yn', 'ynt', 'yntw', 'yntwy', 'yntwyn', 'yntwynt']
     assert [f.pk for f in fringes] == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]

@@ -3,13 +3,12 @@ import pytest
 from greenbudget.app.markup.models import Markup
 
 
-def test_get_subaccount_markups(api_client, user, models, create_markup,
-        budget_f):
+def test_get_subaccount_markups(api_client, user, models, budget_f, f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccount = budget_f.create_subaccount(parent=account)
     child_subaccount = budget_f.create_subaccount(parent=subaccount)
-    markup = create_markup(
+    markup = f.create_markup(
         parent=subaccount,
         subaccounts=[child_subaccount]
     )
@@ -474,8 +473,7 @@ def test_create_subaccount_flat_markup_children(api_client, user, models,
     }
 
 
-def test_bulk_delete_account_markups(api_client, user, models, create_markup,
-        budget_f):
+def test_bulk_delete_account_markups(api_client, user, models, f, budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     parent_subaccount = budget_f.create_subaccount(
@@ -485,17 +483,17 @@ def test_bulk_delete_account_markups(api_client, user, models, create_markup,
         multiplier=1
     )
     markups = [
-        create_markup(
+        f.create_markup(
             parent=parent_subaccount,
             unit=models.Markup.UNITS.flat,
             rate=100
         ),
-        create_markup(
+        f.create_markup(
             parent=parent_subaccount,
             unit=models.Markup.UNITS.flat,
             rate=100
         ),
-        create_markup(
+        f.create_markup(
             parent=parent_subaccount,
             unit=models.Markup.UNITS.percent,
             rate=0.5

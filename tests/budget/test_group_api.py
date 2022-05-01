@@ -1,6 +1,6 @@
-def test_get_budget_groups(api_client, user, create_group, budget_f):
+def test_get_budget_groups(api_client, user, f, budget_f):
     budget = budget_f.create_budget()
-    group = create_group(parent=budget)
+    group = f.create_group(parent=budget)
     account = budget_f.create_account(parent=budget, group=group)
     api_client.force_login(user)
     response = api_client.get("/v1/budgets/%s/groups/" % budget.pk)

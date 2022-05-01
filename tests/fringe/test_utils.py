@@ -1,20 +1,28 @@
 from greenbudget.app.fringe.utils import fringe_value
 
 
-def test_fringe_value(create_budget, create_fringe, models):
-    budget = create_budget()
+def test_fringe_value(f, models):
+    budget = f.create_budget()
     fringes = [
-        create_fringe(
+        f.create_fringe(
             budget=budget,
             cutoff=50,
             rate=0.5,
             unit=models.Fringe.UNITS.percent
         ),
-        create_fringe(budget=budget, rate=None),
-        create_fringe(
-            budget=budget, cutoff=20, rate=100, unit=models.Fringe.UNITS.flat),
-        create_fringe(budget=budget, rate=100, unit=models.Fringe.UNITS.flat),
-        create_fringe(budget=budget, rate=0.1, unit=models.Fringe.UNITS.percent)
+        f.create_fringe(budget=budget, rate=None),
+        f.create_fringe(
+            budget=budget,
+            cutoff=20,
+            rate=100,
+            unit=models.Fringe.UNITS.flat
+        ),
+        f.create_fringe(budget=budget, rate=100, unit=models.Fringe.UNITS.flat),
+        f.create_fringe(
+            budget=budget,
+            rate=0.1,
+            unit=models.Fringe.UNITS.percent
+        )
     ]
     original_value = 100
     value = fringe_value(original_value, fringes[:1])

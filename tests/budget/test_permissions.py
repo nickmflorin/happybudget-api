@@ -6,87 +6,83 @@ from greenbudget.app.collaborator.models import Collaborator
 
 
 @pytest.fixture
-def another_user_case(api_client, user, create_user, create_budget):
+def another_user_case(api_client, user, f):
     def inner(domain, case_info=None):
-        another_user = create_user()
+        another_user = f.create_user()
         api_client.force_login(user)
-        return create_budget(domain=domain, created_by=another_user)
+        return f.create_budget(domain=domain, created_by=another_user)
     return inner
 
 
 @pytest.fixture
-def staff_user_case(api_client, staff_user, user, create_budget):
+def staff_user_case(api_client, staff_user, user, f):
     def inner(domain, case_info=None):
         api_client.force_login(staff_user)
-        return create_budget(domain=domain, created_by=user)
+        return f.create_budget(domain=domain, created_by=user)
     return inner
 
 
 @pytest.fixture
-def public_case(api_client, user, create_budget, create_public_token,
-        create_template):
+def public_case(api_client, user, f):
     def inner(domain, case_info=None):
-        budget = create_budget(created_by=user)
-        public_token = create_public_token(instance=budget)
+        budget = f.create_budget(created_by=user)
+        public_token = f.create_public_token(instance=budget)
         api_client.include_public_token(public_token)
         if domain == 'budget':
             return budget
-        return create_template(created_by=user)
+        return f.create_template(created_by=user)
     return inner
 
 
 @pytest.fixture
-def another_public_case(api_client, user, create_budget, create_template,
-        create_public_token):
+def another_public_case(api_client, user, f):
     def inner(domain, case_info=None):
-        budget = create_budget(created_by=user)
-        another_budget = create_budget(created_by=user)
-        public_token = create_public_token(instance=another_budget)
+        budget = f.create_budget(created_by=user)
+        another_budget = f.create_budget(created_by=user)
+        public_token = f.create_public_token(instance=another_budget)
         api_client.include_public_token(public_token)
         if domain == 'budget':
             return budget
-        return create_template(created_by=user)
+        return f.create_template(created_by=user)
     return inner
 
 
 @pytest.fixture
-def logged_in_case(api_client, user, create_budget):
+def logged_in_case(api_client, user, f):
     def inner(domain, case_info=None):
         budget = None
         if case_info and case_info.get('create', False) is True:
-            budget = create_budget(domain=domain, created_by=user)
+            budget = f.create_budget(domain=domain, created_by=user)
         api_client.force_login(user)
         return budget
     return inner
 
 
 @pytest.fixture
-def not_logged_in_case(user, create_budget):
+def not_logged_in_case(user, f):
     def inner(domain, case_info=None):
         if case_info and case_info.get('create', False) is True:
-            return create_budget(domain=domain, created_by=user)
+            return f.create_budget(domain=domain, created_by=user)
         return None
     return inner
 
 
 @pytest.fixture
-def multiple_case(api_client, create_budget, user):
+def multiple_case(api_client, f, user):
     def inner(domain, case_info=None):
-        create_budget(domain=domain, created_by=user)
-        budget = create_budget(domain=domain, created_by=user)
+        f.create_budget(domain=domain, created_by=user)
         if case_info and case_info.get('login', True) is True:
             api_client.force_login(user)
-        return budget
+        return f.create_budget(domain=domain, created_by=user)
     return inner
 
 
 @pytest.fixture
-def collaborator_case(api_client, user, create_user, create_budget,
-        create_collaborator):
+def collaborator_case(api_client, user, f):
     def inner(domain, case_info):
-        budget = create_budget(created_by=user)
-        collaborating_user = create_user()
-        create_collaborator(
+        budget = f.create_budget(created_by=user)
+        collaborating_user = f.create_user()
+        f.create_collaborator(
             access_type=case_info['access_type'],
             user=collaborating_user,
             instance=budget
@@ -523,12 +519,11 @@ def test_template_duplicate_permissions(case, assertions,
 
 
 @pytest.mark.parametrize('case,assertions', BUDGET_CREATE_PERMISSIONS)
-def test_budget_detail_create_groups_permissions(case, assertions,
-        detail_create_test_case, make_permission_assertions,
-        create_budget_account):
+def test_budget_detail_create_groups_permissions(case, assertions, f,
+        detail_create_test_case, make_permission_assertions):
 
     def post_data(budget):
-        accounts = [create_budget_account(parent=budget)]
+        accounts = [f.create_budget_account(parent=budget)]
         return {'children': [a.pk for a in accounts], 'name': 'Test Group'}
 
     response = detail_create_test_case("budget", post_data, case, '/groups/')
@@ -536,12 +531,11 @@ def test_budget_detail_create_groups_permissions(case, assertions,
 
 
 @pytest.mark.parametrize('case,assertions', BUDGET_CREATE_PERMISSIONS)
-def test_budget_detail_create_markups_permissions(case, assertions,
-        detail_create_test_case, make_permission_assertions, models,
-        create_budget_account):
+def test_budget_detail_create_markups_permissions(case, assertions, f,
+        detail_create_test_case, make_permission_assertions, models):
 
     def post_data(budget):
-        accounts = [create_budget_account(parent=budget)]
+        accounts = [f.create_budget_account(parent=budget)]
         return {
             'children': [a.pk for a in accounts],
             'identifier': '0001',
@@ -586,11 +580,10 @@ def test_template_detail_create_permissions(case, path, data, assertions,
 
 @pytest.mark.parametrize('case,assertions', TEMPLATE_CREATE_PERMISSIONS)
 def test_template_detail_create_groups_permissions(case, assertions,
-        detail_create_test_case, make_permission_assertions,
-        create_template_account):
+        detail_create_test_case, make_permission_assertions, f):
 
     def post_data(budget):
-        accounts = [create_template_account(parent=budget)]
+        accounts = [f.create_template_account(parent=budget)]
         return {'children': [a.pk for a in accounts], 'name': 'Test Group'}
 
     response = detail_create_test_case("template", post_data, case, '/groups/')
@@ -599,11 +592,10 @@ def test_template_detail_create_groups_permissions(case, assertions,
 
 @pytest.mark.parametrize('case,assertions', TEMPLATE_CREATE_PERMISSIONS)
 def test_template_detail_create_markups_permissions(case, assertions,
-        detail_create_test_case, make_permission_assertions, models,
-        create_template_account):
+        detail_create_test_case, make_permission_assertions, models, f):
 
     def post_data(budget):
-        accounts = [create_template_account(parent=budget)]
+        accounts = [f.create_template_account(parent=budget)]
         return {
             'children': [a.pk for a in accounts],
             'identifier': '0001',

@@ -4,13 +4,12 @@ from greenbudget.app.collaborator.models import Collaborator
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_collaborators_as_owner(api_client, create_collaborator,
-        create_budget, user, models, create_user):
-    budget = create_budget()
-    additional_users = [create_user(), create_user()]
+def test_get_collaborators_as_owner(api_client, user, models, f):
+    budget = f.create_budget()
+    additional_users = [f.create_user(), f.create_user()]
     collaborators = [
-        create_collaborator(user=additional_users[0], instance=budget),
-        create_collaborator(user=additional_users[1], instance=budget),
+        f.create_collaborator(user=additional_users[0], instance=budget),
+        f.create_collaborator(user=additional_users[1], instance=budget),
     ]
     api_client.force_login(user)
     response = api_client.get("/v1/budgets/%s/collaborators/" % budget.pk)
@@ -67,17 +66,16 @@ def test_get_collaborators_as_owner(api_client, create_collaborator,
     Collaborator.ACCESS_TYPES.editor,
     Collaborator.ACCESS_TYPES.view_only,
 ])
-def test_get_collaborators_as_collaborator(api_client, create_collaborator,
-        create_budget, access_type, create_user):
-    budget = create_budget()
-    users = [create_user(), create_user()]
+def test_get_collaborators_as_collaborator(api_client, access_type, f):
+    budget = f.create_budget()
+    users = [f.create_user(), f.create_user()]
     _ = [
-        create_collaborator(
+        f.create_collaborator(
             user=users[0],
             instance=budget,
             access_type=access_type
         ),
-        create_collaborator(user=users[1], instance=budget),
+        f.create_collaborator(user=users[1], instance=budget),
     ]
     api_client.force_login(users[0])
     response = api_client.get("/v1/budgets/%s/collaborators/" % budget.pk)
@@ -85,10 +83,9 @@ def test_get_collaborators_as_collaborator(api_client, create_collaborator,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_collaborator_as_owner(api_client, create_budget, user, models,
-        create_user):
-    budget = create_budget()
-    collaborating_user = create_user()
+def test_create_collaborator_as_owner(api_client, user, models, f):
+    budget = f.create_budget()
+    collaborating_user = f.create_user()
     api_client.force_login(user)
     response = api_client.post(
         "/v1/budgets/%s/collaborators/" % budget.pk,
@@ -124,8 +121,8 @@ def test_create_collaborator_as_owner(api_client, create_budget, user, models,
     }
 
 
-def test_assign_self_as_collaborator(api_client, create_budget, user, models):
-    budget = create_budget(created_by=user)
+def test_assign_self_as_collaborator(api_client, f, user, models):
+    budget = f.create_budget(created_by=user)
     api_client.force_login(user)
     response = api_client.post(
         "/v1/budgets/%s/collaborators/" % budget.pk,
@@ -143,13 +140,12 @@ def test_assign_self_as_collaborator(api_client, create_budget, user, models):
     }]}
 
 
-def test_assign_owner_as_collaborator(api_client, create_budget, user, models,
-        create_user, create_collaborator):
-    owner = create_user()
-    budget = create_budget(created_by=owner)
+def test_assign_owner_as_collaborator(api_client, f, user, models):
+    owner = f.create_user()
+    budget = f.create_budget(created_by=owner)
     # Since we are not submitting the request as the owner of the budget, we
     # must submit it as a collaborator with the owner access type.
-    create_collaborator(instance=budget, user=user, owner=True)
+    f.create_collaborator(instance=budget, user=user, owner=True)
     api_client.force_login(user)
     response = api_client.post(
         "/v1/budgets/%s/collaborators/" % budget.pk,
@@ -170,11 +166,10 @@ def test_assign_owner_as_collaborator(api_client, create_budget, user, models,
     }]}
 
 
-def test_create_duplicate_collaborator(api_client, create_budget, user, models,
-        create_user, create_collaborator):
-    budget = create_budget()
-    collaborating_user = create_user()
-    create_collaborator(
+def test_create_duplicate_collaborator(api_client, user, models, f):
+    budget = f.create_budget()
+    collaborating_user = f.create_user()
+    f.create_collaborator(
         user=collaborating_user,
         instance=budget,
         owner=True
@@ -197,16 +192,15 @@ def test_create_duplicate_collaborator(api_client, create_budget, user, models,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_collaborator_as_collaborating_owner(api_client, create_budget,
-        models, create_user, create_collaborator):
-    budget = create_budget()
-    collaborating_user = create_user()
-    create_collaborator(
+def test_create_collaborator_as_collaborating_owner(api_client, models, f):
+    budget = f.create_budget()
+    collaborating_user = f.create_user()
+    f.create_collaborator(
         user=collaborating_user,
         instance=budget,
         owner=True
     )
-    another_collaborating_user = create_user()
+    another_collaborating_user = f.create_user()
     api_client.force_login(collaborating_user)
     response = api_client.post(
         "/v1/budgets/%s/collaborators/" % budget.pk,
@@ -246,16 +240,16 @@ def test_create_collaborator_as_collaborating_owner(api_client, create_budget,
     Collaborator.ACCESS_TYPES.editor,
     Collaborator.ACCESS_TYPES.view_only,
 ])
-def test_create_collaborator_as_non_owner_collaborator(api_client, create_budget,
-        models, create_user, create_collaborator, access_type):
-    budget = create_budget()
-    collaborating_user = create_user()
-    create_collaborator(
+def test_create_collaborator_as_non_owner_collaborator(api_client, access_type,
+        models, f):
+    budget = f.create_budget()
+    collaborating_user = f.create_user()
+    f.create_collaborator(
         user=collaborating_user,
         instance=budget,
         access_type=access_type
     )
-    another_collaborating_user = create_user()
+    another_collaborating_user = f.create_user()
     api_client.force_login(collaborating_user)
     response = api_client.post(
         "/v1/budgets/%s/collaborators/" % budget.pk,
@@ -275,11 +269,11 @@ def test_create_collaborator_as_non_owner_collaborator(api_client, create_budget
     }]}
 
 
-def test_create_collaborator_as_non_owner_non_collaborator(api_client,
-        create_budget, models, create_user, user):
-    owner = create_user()
-    budget = create_budget(created_by=owner)
-    collaborating_user = create_user()
+def test_create_collaborator_as_non_owner_non_collaborator(api_client, f, user,
+        models):
+    owner = f.create_user()
+    budget = f.create_budget(created_by=owner)
+    collaborating_user = f.create_user()
     api_client.force_login(user)
     response = api_client.post(
         "/v1/budgets/%s/collaborators/" % budget.pk,

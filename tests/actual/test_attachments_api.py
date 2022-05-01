@@ -5,14 +5,13 @@ from django.test import override_settings
 
 @override_settings(APP_URL="https://api.greenbudget.com")
 @pytest.mark.freeze_time('2020-01-01')
-def test_attachments_properly_serializes(api_client, user, create_actual,
-        create_budget, create_attachment):
-    budget = create_budget()
+def test_attachments_properly_serializes(api_client, user, f):
+    budget = f.create_budget()
     attachments = [
-        create_attachment(name='attachment1.jpeg'),
-        create_attachment(name='attachment2.jpeg')
+        f.create_attachment(name='attachment1.jpeg'),
+        f.create_attachment(name='attachment2.jpeg')
     ]
-    actual = create_actual(
+    actual = f.create_actual(
         budget=budget,
         attachments=attachments
     )
@@ -44,14 +43,13 @@ def test_attachments_properly_serializes(api_client, user, create_actual,
 
 @override_settings(APP_URL="https://api.greenbudget.com")
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_attachments(api_client, user, create_actual, create_budget,
-        create_attachment):
-    budget = create_budget()
+def test_get_attachments(api_client, user, f):
+    budget = f.create_budget()
     attachments = [
-        create_attachment(name='attachment1.jpeg'),
-        create_attachment(name='attachment2.jpeg')
+        f.create_attachment(name='attachment1.jpeg'),
+        f.create_attachment(name='attachment2.jpeg')
     ]
-    actual = create_actual(
+    actual = f.create_actual(
         budget=budget,
         attachments=attachments
     )
@@ -84,14 +82,13 @@ def test_get_attachments(api_client, user, create_actual, create_budget,
     ]
 
 
-def test_delete_attachment(api_client, user, create_actual, create_budget,
-        create_attachment):
-    budget = create_budget()
+def test_delete_attachment(api_client, user, f):
+    budget = f.create_budget()
     attachments = [
-        create_attachment(name='attachment1.jpeg'),
-        create_attachment(name='attachment2.jpeg')
+        f.create_attachment(name='attachment1.jpeg'),
+        f.create_attachment(name='attachment2.jpeg')
     ]
-    actual = create_actual(
+    actual = f.create_actual(
         budget=budget,
         attachments=attachments
     )
@@ -104,18 +101,17 @@ def test_delete_attachment(api_client, user, create_actual, create_budget,
 
 @pytest.mark.freeze_time('2020-01-01')
 @override_settings(APP_URL="https://api.greenbudget.com")
-def test_update_attachments(api_client, user, create_actual, create_budget,
-        create_attachment):
-    budget = create_budget()
+def test_update_attachments(api_client, user, f):
+    budget = f.create_budget()
     attachments = [
-        create_attachment(name='attachment1.jpeg'),
-        create_attachment(name='attachment2.jpeg')
+        f.create_attachment(name='attachment1.jpeg'),
+        f.create_attachment(name='attachment2.jpeg')
     ]
-    actual = create_actual(
+    actual = f.create_actual(
         budget=budget,
         attachments=attachments
     )
-    additional_attachment = create_attachment(name='attachment3.jpeg')
+    additional_attachment = f.create_attachment(name='attachment3.jpeg')
     api_client.force_login(user)
     response = api_client.patch("/v1/actuals/%s/" % actual.pk, data={
         'attachments': [a.pk for a in attachments] + [additional_attachment.pk]
@@ -158,14 +154,13 @@ def test_update_attachments(api_client, user, create_actual, create_budget,
 
 
 @override_settings(APP_URL="https://api.greenbudget.com")
-def test_upload_attachment(api_client, user, create_actual, create_budget,
-        create_attachment, test_uploaded_file, models):
-    budget = create_budget()
+def test_upload_attachment(api_client, user, f, test_uploaded_file, models):
+    budget = f.create_budget()
     attachments = [
-        create_attachment(name='attachment1.jpeg'),
-        create_attachment(name='attachment2.jpeg')
+        f.create_attachment(name='attachment1.jpeg'),
+        f.create_attachment(name='attachment2.jpeg')
     ]
-    actual = create_actual(
+    actual = f.create_actual(
         budget=budget,
         attachments=attachments
     )
@@ -195,14 +190,14 @@ def test_upload_attachment(api_client, user, create_actual, create_budget,
 
 
 @override_settings(APP_URL="https://api.greenbudget.com")
-def test_upload_multiple_attachments(api_client, user, create_actual,
-        create_budget, create_attachment, test_uploaded_file, models):
-    budget = create_budget()
+def test_upload_multiple_attachments(api_client, user, f, test_uploaded_file,
+        models):
+    budget = f.create_budget()
     attachments = [
-        create_attachment(name='attachment1.jpeg'),
-        create_attachment(name='attachment2.jpeg')
+        f.create_attachment(name='attachment1.jpeg'),
+        f.create_attachment(name='attachment2.jpeg')
     ]
-    actual = create_actual(
+    actual = f.create_actual(
         budget=budget,
         attachments=attachments
     )

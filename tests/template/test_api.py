@@ -2,13 +2,13 @@ import pytest
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_templates(api_client, user, create_template, staff_user):
+def test_get_templates(api_client, user, f, staff_user):
     api_client.force_login(user)
     templates = [
-        create_template(),
-        create_template(),
-        create_template(community=True, created_by=staff_user),
-        create_template(community=True, created_by=staff_user)
+        f.create_template(),
+        f.create_template(),
+        f.create_template(community=True, created_by=staff_user),
+        f.create_template(community=True, created_by=staff_user)
     ]
     response = api_client.get("/v1/templates/")
     assert response.status_code == 200
@@ -50,13 +50,13 @@ def test_get_templates(api_client, user, create_template, staff_user):
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_staff_user_templates(api_client, create_template, staff_user):
+def test_get_staff_user_templates(api_client, f, staff_user):
     api_client.force_login(staff_user)
     templates = [
-        create_template(created_by=staff_user),
-        create_template(created_by=staff_user),
-        create_template(community=True, created_by=staff_user),
-        create_template(community=True, created_by=staff_user)
+        f.create_template(created_by=staff_user),
+        f.create_template(created_by=staff_user),
+        f.create_template(community=True, created_by=staff_user),
+        f.create_template(community=True, created_by=staff_user)
     ]
     response = api_client.get("/v1/templates/")
     assert response.status_code == 200
@@ -98,12 +98,12 @@ def test_get_staff_user_templates(api_client, create_template, staff_user):
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_community_templates(api_client, user, create_template, staff_user):
+def test_get_community_templates(api_client, user, f, staff_user):
     api_client.force_login(user)
     templates = [
-        create_template(community=True, created_by=staff_user),
-        create_template(community=True, created_by=staff_user),
-        create_template()
+        f.create_template(community=True, created_by=staff_user),
+        f.create_template(community=True, created_by=staff_user),
+        f.create_template()
     ]
     response = api_client.get("/v1/templates/community/")
     assert response.status_code == 200
@@ -230,7 +230,7 @@ def test_create_hidden_community_template(api_client, staff_user, models):
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_hidden_non_community_template(api_client, staff_user, models):
+def test_create_hidden_non_community_template(api_client, staff_user):
     api_client.force_login(staff_user)
     response = api_client.post("/v1/templates/", data={
         "name": "Test Name",

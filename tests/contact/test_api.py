@@ -1,8 +1,8 @@
 from greenbudget.lib.utils.dateutils import api_datetime_string
 
 
-def test_get_contact(api_client, user, create_contact, models):
-    contact = create_contact()
+def test_get_contact(api_client, user, f, models):
+    contact = f.create_contact()
     api_client.force_login(user)
     response = api_client.get("/v1/contacts/%s/" % contact.pk)
     assert response.status_code == 200
@@ -30,13 +30,12 @@ def test_get_contact(api_client, user, create_contact, models):
     }
 
 
-def test_get_contact_tagged_actuals(api_client, user, create_contact,
-        create_actual, create_budget):
-    budget = create_budget()
-    contact = create_contact()
+def test_get_contact_tagged_actuals(api_client, user, f):
+    budget = f.create_budget()
+    contact = f.create_contact()
     actuals = [
-        create_actual(budget=budget, contact=contact),
-        create_actual(budget=budget, contact=contact)
+        f.create_actual(budget=budget, contact=contact),
+        f.create_actual(budget=budget, contact=contact)
     ]
     api_client.force_login(user)
     response = api_client.get("/v1/contacts/%s/tagged-actuals/" % contact.pk)
@@ -96,8 +95,8 @@ def test_get_contact_tagged_actuals(api_client, user, create_contact,
     ]
 
 
-def test_get_contacts(api_client, user, create_contact, models):
-    contacts = create_contact(count=2)
+def test_get_contacts(api_client, user, f, models):
+    contacts = f.create_contact(count=2)
     api_client.force_login(user)
     response = api_client.get("/v1/contacts/")
     assert response.status_code == 200
@@ -235,8 +234,8 @@ def test_create_blank_contact(api_client, user, models):
     }
 
 
-def test_update_contact(api_client, user, create_contact, models):
-    contact = create_contact()
+def test_update_contact(api_client, user, f, models):
+    contact = f.create_contact()
     api_client.force_login(user)
     response = api_client.patch("/v1/contacts/%s/" % contact.pk, data={
         'city': 'New York',
@@ -277,16 +276,16 @@ def test_update_contact(api_client, user, create_contact, models):
     }
 
 
-def test_delete_contact(api_client, user, create_contact, models):
-    contact = create_contact()
+def test_delete_contact(api_client, user, f, models):
+    contact = f.create_contact()
     api_client.force_login(user)
     response = api_client.delete("/v1/contacts/%s/" % contact.pk)
     assert response.status_code == 204
     assert models.Contact.objects.first() is None
 
 
-def test_bulk_delete_contacts(api_client, user, create_contact, models):
-    contacts = create_contact(count=2)
+def test_bulk_delete_contacts(api_client, user, f, models):
+    contacts = f.create_contact(count=2)
     api_client.force_login(user)
     response = api_client.patch("/v1/contacts/bulk-delete/", data={
         'ids': [c.pk for c in contacts]
@@ -362,8 +361,8 @@ def test_bulk_create_contact(api_client, user, models):
     ]
 
 
-def test_bulk_update_contacts(api_client, user, create_contact):
-    contacts = create_contact(count=2)
+def test_bulk_update_contacts(api_client, user, f):
+    contacts = f.create_contact(count=2)
     api_client.force_login(user)
     response = api_client.patch(
         "/v1/contacts/bulk-update/",
@@ -397,26 +396,26 @@ def test_bulk_update_contacts(api_client, user, create_contact):
     assert contacts[1].company == "Boeing"
 
 
-def test_search_filter(api_client, user, create_contact, models):
+def test_search_filter(api_client, user, f, models):
     contacts = [
-        create_contact(
+        f.create_contact(
             contact_type=models.Contact.TYPES.vendor,
             first_name='Jack',
             last_name='Smith'
         ),
-        create_contact(
+        f.create_contact(
             contact_type=models.Contact.TYPES.vendor,
             company='Jack Box TV'
         ),
-        create_contact(
+        f.create_contact(
             contact_type=models.Contact.TYPES.employee,
             first_name='Ginger',
         ),
-        create_contact(
+        f.create_contact(
             contact_type=models.Contact.TYPES.employee,
             first_name='Jack'
         ),
-        create_contact(
+        f.create_contact(
             contact_type=models.Contact.TYPES.employee,
             first_name='Jim'
         )

@@ -2,8 +2,8 @@ from django.test import override_settings
 
 
 @override_settings(CACHE_ENABLED=True)
-def test_cache_invalidated_on_delete(api_client, user, create_contact):
-    contacts = [create_contact(), create_contact()]
+def test_cache_invalidated_on_delete(api_client, user, f):
+    contacts = [f.create_contact(), f.create_contact()]
     api_client.force_login(user)
 
     response = api_client.get("/v1/contacts/")
@@ -19,8 +19,8 @@ def test_cache_invalidated_on_delete(api_client, user, create_contact):
 
 
 @override_settings(CACHE_ENABLED=True)
-def test_cache_invalidated_on_bulk_delete(api_client, user, create_contact):
-    contacts = [create_contact(), create_contact()]
+def test_cache_invalidated_on_bulk_delete(api_client, user, f):
+    contacts = [f.create_contact(), f.create_contact()]
     api_client.force_login(user)
 
     response = api_client.get("/v1/contacts/")
@@ -39,8 +39,8 @@ def test_cache_invalidated_on_bulk_delete(api_client, user, create_contact):
 
 
 @override_settings(CACHE_ENABLED=True)
-def test_cache_invalidated_on_update(api_client, user, create_contact):
-    contacts = [create_contact(), create_contact()]
+def test_cache_invalidated_on_update(api_client, user, f):
+    contacts = [f.create_contact(), f.create_contact()]
     api_client.force_login(user)
 
     response = api_client.get("/v1/contacts/")
@@ -59,8 +59,8 @@ def test_cache_invalidated_on_update(api_client, user, create_contact):
 
 
 @override_settings(CACHE_ENABLED=True)
-def test_cache_invalidated_on_bulk_update(api_client, user, create_contact):
-    contacts = [create_contact(), create_contact()]
+def test_cache_invalidated_on_bulk_update(api_client, user, f):
+    contacts = [f.create_contact(), f.create_contact()]
     api_client.force_login(user)
 
     response = api_client.get("/v1/contacts/")
@@ -81,8 +81,8 @@ def test_cache_invalidated_on_bulk_update(api_client, user, create_contact):
 
 
 @override_settings(CACHE_ENABLED=True)
-def test_cache_invalidated_on_create(api_client, user, create_contact):
-    create_contact(count=2)
+def test_cache_invalidated_on_create(api_client, user, f):
+    f.create_contact(count=2)
     api_client.force_login(user)
 
     response = api_client.get("/v1/contacts/")
@@ -100,8 +100,8 @@ def test_cache_invalidated_on_create(api_client, user, create_contact):
 
 
 @override_settings(CACHE_ENABLED=True)
-def test_cache_invalidated_on_bulk_create(api_client, user, create_contact):
-    create_contact(count=2)
+def test_cache_invalidated_on_bulk_create(api_client, user, f):
+    f.create_contact(count=2)
     api_client.force_login(user)
 
     response = api_client.get("/v1/contacts/")
@@ -122,8 +122,8 @@ def test_cache_invalidated_on_bulk_create(api_client, user, create_contact):
 
 @override_settings(CACHE_ENABLED=True, APP_URL="https://api.greenbudget.com")
 def test_cache_invalidated_on_upload_attachment(api_client, user,
-        create_contact, test_uploaded_file):
-    contacts = [create_contact(), create_contact()]
+        f, test_uploaded_file):
+    contacts = [f.create_contact(), f.create_contact()]
     uploaded_file = test_uploaded_file('test.jpeg')
 
     api_client.force_login(user)

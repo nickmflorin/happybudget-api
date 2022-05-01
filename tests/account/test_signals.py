@@ -22,17 +22,17 @@ def test_delete_account_reestimates(budget_f):
     assert budget.nominal_value == 0.0
 
 
-def test_delete_account_reactualizes(budget_df, create_actual):
-    budget = budget_df.create_budget()
-    account = budget_df.create_account(parent=budget)
-    parent_subaccount = budget_df.create_subaccount(parent=account)
-    subaccount = budget_df.create_subaccount(
+def test_delete_account_reactualizes(f):
+    budget = f.create_budget()
+    account = f.create_budget_account(parent=budget)
+    parent_subaccount = f.create_budget_subaccount(parent=account)
+    subaccount = f.create_subaccount(
         parent=parent_subaccount,
         rate=1,
         multiplier=5,
         quantity=10,
     )
-    create_actual(owner=subaccount, budget=budget, value=100.0)
+    f.create_actual(owner=subaccount, budget=budget, value=100.0)
 
     assert budget.actual == 100.0
     assert account.actual == 100.0

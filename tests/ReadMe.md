@@ -651,59 +651,6 @@ Instead of exposing fixtures for all budgeting related models of each domain,
 we simply expose them as an object that exposes methods to create the budgeting
 models for the appropriate domain.
 
-The two factory objects are exposed as the following fixtures:
-
-1. `budget_df`: Read as "Budget Domain Factory". Exposes methods to create
-   budgeting related models for the "budget" domain.
-2. `template_df`: Read as "Template Domain Factory". Exposes methods to create
-   budgeting related models for the "template" domain.
-
-Each of these factory objects exposes the following methods:
-
-1. `create_budget`: Creates a `Budget` or `Template`, depending on the factory
-   object.
-2. `create_account`: Creates a `BudgetAccount` or a `TemplateAccount`, depending
-   on the factory object.
-3. `create_subaccount`: Creates a `BudgetSubAccount` or a `TemplateSubAccount`,
-   depending on the factory object.
-
-##### Example
-
-In this example, we are testing whether or not a `Budget`'s actual value is
-recalculated after it's child `BudgetAccount` is deleted. Since actuals are
-only applicable for the "budget" domain, we use the `budget_df` fixture:
-
-```python
-# tests/account/test_signals.py
-
-def test_delete_account_reactualizes(budget_df, create_actual):
-    budget = budget_df.create_budget()
-    account = budget_df.create_account(parent=budget)
-    parent_subaccount = budget_df.create_subaccount(parent=account)
-    subaccount = budget_df.create_subaccount(
-        parent=parent_subaccount,
-        rate=1,
-        multiplier=5,
-        quantity=10,
-    )
-    create_actual(owner=subaccount, budget=budget, value=100.0)
-    account.delete()
-    assert budget.actual == 0.0
-```
-
-In this example, the root of the "budget" tree is the `budget`. The `budget`
-instance than has the `account` as a child, the `account` has the
-`parent_subaccount` as a child and the `parent_subaccount` has the `subaccount`
-as a child. These relationships comprise the budget "tree".
-
-Up until this point, the usage of `budget_df` and `template_df` has been purely
-for convenience purposes - as it saves us the time of having to use the
-`BaseBudget`, `Account` and `SubAccount` factory fixtures for the specific
-domain we are interested in.
-
-However, there is one very powerful implementation that is derived from this:
-the `budget_f` fixture.
-
 When used by a test, the `budget_f` fixture will automatically cause the test
 to run 2 times, once for each domain. That is, it will run the entire test
 where all budgeting related models are created for the "budget" domain, and also

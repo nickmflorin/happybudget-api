@@ -5,12 +5,11 @@ def test_get_group_colors(api_client, user, colors):
     assert response.json()['data'] == [colors[0].code, colors[1].code]
 
 
-def test_update_group_color(api_client, user, create_color, models,
-        create_group, create_budget):
-    color = create_color(code='#AFAFAF', content_types=[models.Group])
-    another_color = create_color(code='#000000', content_types=[models.Group])
-    budget = create_budget()
-    group = create_group(parent=budget, color=color)
+def test_update_group_color(api_client, user, f, models):
+    color = f.create_color(code='#AFAFAF', content_types=[models.Group])
+    another_color = f.create_color(code='#000000', content_types=[models.Group])
+    budget = f.create_budget()
+    group = f.create_group(parent=budget, color=color)
 
     api_client.force_login(user)
     response = api_client.patch("/v1/groups/%s/" % group.pk, {
@@ -22,11 +21,10 @@ def test_update_group_color(api_client, user, create_color, models,
     assert group.color.code == '#000000'
 
 
-def test_update_group_color_invalid_code(api_client, user, create_color, models,
-        create_group, create_budget):
-    color = create_color(code='#AFAFAF', content_types=[models.Group])
-    budget = create_budget()
-    group = create_group(parent=budget, color=color)
+def test_update_group_color_invalid_code(api_client, user, models, f):
+    color = f.create_color(code='#AFAFAF', content_types=[models.Group])
+    budget = f.create_budget()
+    group = f.create_group(parent=budget, color=color)
 
     api_client.force_login(user)
     response = api_client.patch("/v1/groups/%s/" % group.pk, {

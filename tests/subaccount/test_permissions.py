@@ -5,13 +5,12 @@ from greenbudget.app.collaborator.models import Collaborator
 
 
 @pytest.fixture
-def another_user_case(api_client, user, create_user, create_budget,
-        create_account, create_subaccount):
+def another_user_case(api_client, user, f):
     def inner(domain, case_info=None, model_kwargs=None):
-        another_user = create_user()
+        another_user = f.create_user()
         api_client.force_login(user)
-        budget = create_budget(domain=domain, created_by=another_user)
-        account = create_account(domain=domain, parent=budget)
+        budget = f.create_budget(domain=domain, created_by=another_user)
+        account = f.create_account(domain=domain, parent=budget)
 
         model_kwargs = model_kwargs or {}
         if hasattr(model_kwargs, '__call__'):
@@ -19,73 +18,68 @@ def another_user_case(api_client, user, create_user, create_budget,
 
         # Here, the user that created the SubAccount doesn't really matter,
         # since the ownership is dictated by the Budget.
-        return create_subaccount(domain=domain, parent=account, **model_kwargs)
+        return f.create_subaccount(domain=domain, parent=account, **model_kwargs)
     return inner
 
 
 @pytest.fixture
-def public_case(api_client, user, create_budget, create_public_token,
-        create_template, create_budget_account, create_template_account,
-        create_budget_subaccount, create_template_subaccount):
+def public_case(api_client, user,f):
     def inner(domain, case_info=None, model_kwargs=None):
-        budget = create_budget(created_by=user)
-        public_token = create_public_token(instance=budget)
+        budget = f.create_budget(created_by=user)
+        public_token = f.create_public_token(instance=budget)
         api_client.include_public_token(public_token)
 
         model_kwargs = model_kwargs or {}
 
         if domain == 'budget':
-            account = create_budget_account(parent=budget)
+            account = f.create_budget_account(parent=budget)
             if hasattr(model_kwargs, '__call__'):
                 model_kwargs = model_kwargs(account)
-            return create_budget_subaccount(parent=account, **model_kwargs)
+            return f.create_budget_subaccount(parent=account, **model_kwargs)
 
-        template = create_template(created_by=user)
-        account = create_template_account(parent=template)
+        template = f.create_template(created_by=user)
+        account = f.create_template_account(parent=template)
         if hasattr(model_kwargs, '__call__'):
             model_kwargs = model_kwargs(account)
-        return create_template_subaccount(parent=account, **model_kwargs)
+        return f.create_template_subaccount(parent=account, **model_kwargs)
     return inner
 
 
 @pytest.fixture
-def another_public_case(api_client, user, create_budget, create_template,
-        create_public_token, create_budget_account, create_template_account,
-        create_budget_subaccount, create_template_subaccount):
+def another_public_case(api_client, user, f):
     def inner(domain, case_info=None, model_kwargs=None):
-        budget = create_budget(created_by=user)
-        another_budget = create_budget(created_by=user)
-        public_token = create_public_token(instance=another_budget)
+        budget = f.create_budget(created_by=user)
+        another_budget = f.create_budget(created_by=user)
+        public_token = f.create_public_token(instance=another_budget)
         api_client.include_public_token(public_token)
 
         model_kwargs = model_kwargs or {}
 
         if domain == 'budget':
-            account = create_budget_account(parent=budget)
+            account = f.create_budget_account(parent=budget)
             if hasattr(model_kwargs, '__call__'):
                 model_kwargs = model_kwargs(account)
-            return create_budget_subaccount(parent=account, **model_kwargs)
+            return f.create_budget_subaccount(parent=account, **model_kwargs)
 
-        template = create_template(created_by=user)
-        account = create_template_account(parent=template)
+        template = f.create_template(created_by=user)
+        account = f.create_template_account(parent=template)
         if hasattr(model_kwargs, '__call__'):
             model_kwargs = model_kwargs(account)
-        return create_template_subaccount(parent=account, **model_kwargs)
+        return f.create_template_subaccount(parent=account, **model_kwargs)
     return inner
 
 
 @pytest.fixture
-def logged_in_case(api_client, user, create_budget, create_account,
-        create_subaccount):
+def logged_in_case(api_client, user, f):
     def inner(domain, case_info=None, model_kwargs=None):
         api_client.force_login(user)
         if case_info and case_info.get('create', False) is True:
-            budget = create_budget(domain=domain, created_by=user)
-            account = create_account(domain=domain, parent=budget)
+            budget = f.create_budget(domain=domain, created_by=user)
+            account = f.create_account(domain=domain, parent=budget)
             model_kwargs = model_kwargs or {}
             if hasattr(model_kwargs, '__call__'):
                 model_kwargs = model_kwargs(account)
-            return create_subaccount(
+            return f.create_subaccount(
                 domain=domain,
                 parent=account,
                 **model_kwargs
@@ -95,34 +89,32 @@ def logged_in_case(api_client, user, create_budget, create_account,
 
 
 @pytest.fixture
-def not_logged_in_case(user, create_budget, create_account,
-        create_subaccount):
+def not_logged_in_case(user, f):
     def inner(domain, case_info=None, model_kwargs=None):
         if case_info and case_info.get('create', False) is True:
-            budget = create_budget(domain=domain, created_by=user)
-            account = create_account(domain=domain, parent=budget)
+            budget = f.create_budget(domain=domain, created_by=user)
+            account = f.create_account(domain=domain, parent=budget)
             model_kwargs = model_kwargs or {}
             if hasattr(model_kwargs, '__call__'):
                 model_kwargs = model_kwargs(account)
-            return create_subaccount(
+            return f.create_subaccount(
                 domain=domain, parent=account, **model_kwargs)
         return None
     return inner
 
 
 @pytest.fixture
-def multiple_case(api_client, create_budget, create_account, user,
-        create_subaccount):
+def multiple_case(api_client, user, f):
     def inner(domain, case_info=None, model_kwargs=None):
         if case_info and case_info.get('login', True) is True:
             api_client.force_login(user)
-        create_budget(domain=domain, created_by=user)
-        budget = create_budget(domain=domain, created_by=user)
-        account = create_account(domain=domain, parent=budget)
+        f.create_budget(domain=domain, created_by=user)
+        budget = f.create_budget(domain=domain, created_by=user)
+        account = f.create_account(domain=domain, parent=budget)
         model_kwargs = model_kwargs or {}
         if hasattr(model_kwargs, '__call__'):
             model_kwargs = model_kwargs(account)
-        return create_subaccount(
+        return f.create_subaccount(
             domain=domain,
             parent=account,
             **model_kwargs
@@ -131,23 +123,22 @@ def multiple_case(api_client, create_budget, create_account, user,
 
 
 @pytest.fixture
-def collaborator_case(api_client, user, create_user, create_budget,
-        create_collaborator, create_budget_account, create_budget_subaccount):
+def collaborator_case(api_client, user, f):
     def inner(domain, case_info, model_kwargs=None):
-        budget = create_budget(created_by=user)
-        collaborating_user = create_user()
-        create_collaborator(
+        budget = f.create_budget(created_by=user)
+        collaborating_user = f.create_user()
+        f.create_collaborator(
             access_type=case_info['access_type'],
             user=collaborating_user,
             instance=budget
         )
         if case_info and case_info.get('login', True) is True:
             api_client.force_login(collaborating_user)
-        account = create_budget_account(parent=budget)
+        account = f.create_budget_account(parent=budget)
         model_kwargs = model_kwargs or {}
         if hasattr(model_kwargs, '__call__'):
             model_kwargs = model_kwargs(account)
-        return create_budget_subaccount(parent=account, **model_kwargs)
+        return f.create_budget_subaccount(parent=account, **model_kwargs)
     return inner
 
 
@@ -472,11 +463,10 @@ def test_budget_subaccount_detail_create_permissions(case, path, data,
 @pytest.mark.parametrize(
     'case,assertions', BUDGET_SUBACCOUNT_CREATE_PERMISSIONS)
 def test_budget_subaccount_detail_create_groups_permissions(case, assertions,
-        detail_create_test_case, make_permission_assertions,
-        create_budget_subaccount):
+        detail_create_test_case, make_permission_assertions, f):
 
     def post_data(subaccount):
-        accounts = [create_budget_subaccount(parent=subaccount)]
+        accounts = [f.create_budget_subaccount(parent=subaccount)]
         return {'children': [a.pk for a in accounts], 'name': 'Test Group'}
 
     response = detail_create_test_case("budget", post_data, case, '/groups/')
@@ -485,11 +475,10 @@ def test_budget_subaccount_detail_create_groups_permissions(case, assertions,
 
 @pytest.mark.parametrize('case,assertions', BUDGET_SUBACCOUNT_CREATE_PERMISSIONS)
 def test_budget_subaccount_detail_create_markups_permissions(case, assertions,
-        detail_create_test_case, make_permission_assertions, models,
-        create_budget_subaccount):
+        detail_create_test_case, make_permission_assertions, models, f):
 
     def post_data(account):
-        subaccounts = [create_budget_subaccount(parent=account)]
+        subaccounts = [f.create_budget_subaccount(parent=account)]
         return {
             'children': [a.pk for a in subaccounts],
             'identifier': '0001',
@@ -535,11 +524,10 @@ def test_template_subaccount_detail_create_permissions(case, path, data,
 @pytest.mark.parametrize(
     'case,assertions', TEMPLATE_SUBACCOUNT_CREATE_PERMISSIONS)
 def test_template_subaccount_detail_create_groups_permissions(case, assertions,
-        detail_create_test_case, make_permission_assertions,
-        create_template_subaccount):
+        detail_create_test_case, make_permission_assertions, f):
 
     def post_data(subaccount):
-        accounts = [create_template_subaccount(parent=subaccount)]
+        accounts = [f.create_template_subaccount(parent=subaccount)]
         return {'children': [a.pk for a in accounts], 'name': 'Test Group'}
 
     response = detail_create_test_case("template", post_data, case, '/groups/')
@@ -549,11 +537,10 @@ def test_template_subaccount_detail_create_groups_permissions(case, assertions,
 @pytest.mark.parametrize(
     'case,assertions', TEMPLATE_SUBACCOUNT_CREATE_PERMISSIONS)
 def test_template_subaccount_detail_create_markups_permissions(case, assertions,
-        detail_create_test_case, make_permission_assertions, models,
-        create_template_subaccount):
+        detail_create_test_case, make_permission_assertions, models, f):
 
     def post_data(account):
-        subaccounts = [create_template_subaccount(parent=account)]
+        subaccounts = [f.create_template_subaccount(parent=account)]
         return {
             'children': [a.pk for a in subaccounts],
             'identifier': '0001',
@@ -708,8 +695,8 @@ def test_subaccount_detail_read_attachment_permissions(case, assertions,
         (('logged_in', {'create': True}), {'status': 204}),
     ]
 )
-def test_subaccount_detail_delete_attachment_permissions(case, assertions,
-        detail_delete_test_case, create_attachment, make_permission_assertions):
+def test_subaccount_detail_delete_attachment_permissions(case, assertions, f,
+        detail_delete_test_case, make_permission_assertions):
     def path(subaccount):
         return '/attachments/%s/' % subaccount.attachments.first().pk
 
@@ -718,11 +705,11 @@ def test_subaccount_detail_delete_attachment_permissions(case, assertions,
         # have, and an SubAccount's ownership is dictated by the owner of the
         # related Budget.
         return {'attachments': [
-            create_attachment(
+            f.create_attachment(
                 name='attachment1.jpeg',
                 created_by=account.user_owner
             ),
-            create_attachment(
+            f.create_attachment(
                 name='attachment2.jpeg',
                 created_by=account.user_owner
             )

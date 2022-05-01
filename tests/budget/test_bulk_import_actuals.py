@@ -51,9 +51,9 @@ def patch_transactions_response(monkeypatch, patch_client_access_token,
 
 
 @pytest.fixture
-def perform_request(api_client, user, budget_df):
+def perform_request(api_client, user, f):
     def inner(budget=None, start_date=None, end_date=None):
-        budget = budget or budget_df.create_budget()
+        budget = budget or f.create_budget()
         api_client.force_login(user)
         return api_client.patch(
             "/v1/budgets/%s/bulk-import-actuals/" % budget.pk,
@@ -196,28 +196,28 @@ def mock_transactions(mock_plaid, mock_accounts):
 
 
 @pytest.fixture
-def actual_types(models, create_actual_type):
+def actual_types(models, f):
     plaid_credit_card_tp = models.ActualType.PLAID_TRANSACTION_TYPES.credit_card
     plaid_check_tp = models.ActualType.PLAID_TRANSACTION_TYPES.check
     plaid_ach_tp = models.ActualType.PLAID_TRANSACTION_TYPES.ach
     plaid_wire_tp = models.ActualType.PLAID_TRANSACTION_TYPES.wire
     return {
-        'credit_card': create_actual_type(
+        'credit_card': f.create_actual_type(
             title="Credit Card",
             color=None,
             plaid_transaction_type=plaid_credit_card_tp
         ),
-        'check': create_actual_type(
+        'check': f.create_actual_type(
             title="Check",
             color=None,
             plaid_transaction_type=plaid_check_tp
         ),
-        'ach': create_actual_type(
+        'ach': f.create_actual_type(
             title="ACH",
             color=None,
             plaid_transaction_type=plaid_ach_tp
         ),
-        'wire': create_actual_type(
+        'wire': f.create_actual_type(
             title="Wire",
             color=None,
             plaid_transaction_type=plaid_wire_tp
@@ -497,8 +497,8 @@ def test_bulk_import_actuals_plaid_error_transactions_get(
     }]}
 
 
-def test_bulk_import_actuals_with_template(template_df, perform_request):
-    budget = template_df.create_budget()
+def test_bulk_import_actuals_with_template(f, perform_request):
+    budget = f.create_template()
     response = perform_request(budget)
     assert response.status_code == 404
 

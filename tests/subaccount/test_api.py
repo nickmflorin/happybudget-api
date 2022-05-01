@@ -5,11 +5,10 @@ from greenbudget.app.budgeting.managers import (
     BudgetingPolymorphicOrderedRowManager)
 
 
-def test_unit_properly_serializes(api_client, user, budget_f,
-        create_subaccount_unit):
+def test_unit_properly_serializes(api_client, user, budget_f, f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
-    unit = create_subaccount_unit()
+    unit = f.create_subaccount_unit()
     subaccount = budget_f.create_subaccount(parent=account, unit=unit)
     api_client.force_login(user)
     response = api_client.get("/v1/subaccounts/%s/" % subaccount.pk)
@@ -23,12 +22,11 @@ def test_unit_properly_serializes(api_client, user, budget_f,
     }
 
 
-def test_update_subaccount_unit(api_client, user, budget_f,
-        create_subaccount_unit):
+def test_update_subaccount_unit(api_client, user, budget_f, f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccount = budget_f.create_subaccount(parent=account)
-    unit = create_subaccount_unit()
+    unit = f.create_subaccount_unit()
     api_client.force_login(user)
     response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk, data={
         "unit": unit.pk
@@ -45,11 +43,11 @@ def test_update_subaccount_unit(api_client, user, budget_f,
     assert subaccount.unit == unit
 
 
-def test_update_subaccount_contact(api_client, user, budget_df, create_contact):
-    budget = budget_df.create_budget()
-    account = budget_df.create_account(parent=budget)
-    contact = create_contact(created_by=user)
-    subaccount = budget_df.create_subaccount(parent=account)
+def test_update_subaccount_contact(api_client, user, f):
+    budget = f.create_budget()
+    account = f.create_account(parent=budget)
+    contact = f.create_contact(created_by=user)
+    subaccount = f.create_subaccount(parent=account)
     api_client.force_login(user)
     response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk, data={
         "contact": contact.pk
@@ -60,12 +58,11 @@ def test_update_subaccount_contact(api_client, user, budget_df, create_contact):
     assert subaccount.contact == contact
 
 
-def test_update_subaccount_contact_wrong_user(api_client, user, admin_user,
-        budget_df, create_contact):
-    budget = budget_df.create_budget()
-    account = budget_df.create_account(parent=budget)
-    contact = create_contact(created_by=admin_user)
-    subaccount = budget_df.create_subaccount(parent=account)
+def test_update_subaccount_contact_wrong_user(api_client, user, admin_user, f):
+    budget = f.create_budget()
+    account = f.create_account(parent=budget)
+    contact = f.create_contact(created_by=admin_user)
+    subaccount = f.create_subaccount(parent=account)
     api_client.force_login(user)
     response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk, data={
         "contact": contact.pk
@@ -73,13 +70,13 @@ def test_update_subaccount_contact_wrong_user(api_client, user, admin_user,
     assert response.status_code == 400
 
 
-def test_get_budget_subaccount(api_client, user, budget_df):
-    budget = budget_df.create_budget()
-    account = budget_df.create_account(parent=budget)
-    subaccount = budget_df.create_subaccount(parent=account)
+def test_get_budget_subaccount(api_client, user, f):
+    budget = f.create_budget()
+    account = f.create_account(parent=budget)
+    subaccount = f.create_subaccount(parent=account)
     table_siblings = [
-        budget_df.create_subaccount(parent=account),
-        budget_df.create_subaccount(parent=account)
+        f.create_subaccount(parent=account),
+        f.create_subaccount(parent=account)
     ]
     api_client.force_login(user)
     response = api_client.get("/v1/subaccounts/%s/" % subaccount.pk)
@@ -106,28 +103,28 @@ def test_get_budget_subaccount(api_client, user, budget_df):
         "contact": None,
         "attachments": [],
         "order": "n",
-        "domain": budget_df.domain,
+        "domain": budget.domain,
         "table": [
             {
                 "type": "subaccount",
                 "id": subaccount.pk,
                 "identifier": subaccount.identifier,
                 "description": subaccount.description,
-                "domain": budget_df.domain,
+                "domain": budget.domain,
             },
             {
                 'id': table_siblings[0].pk,
                 'identifier': table_siblings[0].identifier,
                 'type': 'subaccount',
                 'description': table_siblings[0].description,
-                'domain': budget_df.domain,
+                'domain': budget.domain,
             },
             {
                 'id': table_siblings[1].pk,
                 'identifier': table_siblings[1].identifier,
                 'type': 'subaccount',
                 'description': table_siblings[1].description,
-                'domain': budget_df.domain,
+                'domain': budget.domain,
             }
         ],
         "ancestors": [
@@ -148,13 +145,13 @@ def test_get_budget_subaccount(api_client, user, budget_df):
     }
 
 
-def test_get_template_subaccount(api_client, user, template_df):
-    budget = template_df.create_budget()
-    account = template_df.create_account(parent=budget)
-    subaccount = template_df.create_subaccount(parent=account)
+def test_get_template_subaccount(api_client, user, f):
+    budget = f.create_template()
+    account = f.create_template_account(parent=budget)
+    subaccount = f.create_template_subaccount(parent=account)
     table_siblings = [
-        template_df.create_subaccount(parent=account),
-        template_df.create_subaccount(parent=account)
+        f.create_template_subaccount(parent=account),
+        f.create_template_subaccount(parent=account)
     ]
     api_client.force_login(user)
     response = api_client.get("/v1/subaccounts/%s/" % subaccount.pk)
@@ -179,28 +176,28 @@ def test_get_template_subaccount(api_client, user, template_df):
         "fringes": [],
         "unit": None,
         "order": "n",
-        "domain": template_df.domain,
+        "domain": "template",
         "table": [
             {
                 "type": "subaccount",
                 "id": subaccount.pk,
                 "identifier": subaccount.identifier,
                 "description": subaccount.description,
-                "domain": template_df.domain,
+                "domain": "template",
             },
             {
                 'id': table_siblings[0].pk,
                 'identifier': table_siblings[0].identifier,
                 'type': 'subaccount',
                 'description': table_siblings[0].description,
-                'domain': template_df.domain,
+                'domain': "template",
             },
             {
                 'id': table_siblings[1].pk,
                 'identifier': table_siblings[1].identifier,
                 'type': 'subaccount',
                 'description': table_siblings[1].description,
-                'domain': template_df.domain,
+                'domain': "template",
             }
         ],
         "ancestors": [
@@ -221,10 +218,10 @@ def test_get_template_subaccount(api_client, user, template_df):
     }
 
 
-def test_update_budget_subaccount(api_client, user, budget_df):
-    budget = budget_df.create_budget()
-    account = budget_df.create_account(parent=budget)
-    subaccount = budget_df.create_subaccount(
+def test_update_budget_subaccount(api_client, user, f):
+    budget = f.create_budget()
+    account = f.create_account(parent=budget)
+    subaccount = f.create_subaccount(
         parent=account,
         description="Original Description",
         identifier="Original identifier"
@@ -260,27 +257,27 @@ def test_update_budget_subaccount(api_client, user, budget_df):
         "contact": None,
         "attachments": [],
         "order": "n",
-        "domain": budget_df.domain,
+        "domain": budget.domain,
         "table": [{
             "id": subaccount.id,
             "type": "subaccount",
             "identifier": subaccount.identifier,
             "description": subaccount.description,
-            "domain": budget_df.domain,
+            "domain": budget.domain,
         }],
         "ancestors": [
             {
                 "type": "budget",
                 "id": budget.pk,
                 "name": budget.name,
-                "domain": budget_df.domain
+                "domain": budget.domain
             },
             {
                 "id": account.id,
                 "type": "account",
                 "identifier": account.identifier,
                 "description": account.description,
-                "domain": budget_df.domain
+                "domain": budget.domain
             }
         ]
     }
@@ -290,10 +287,10 @@ def test_update_budget_subaccount(api_client, user, budget_df):
     assert subaccount.rate == 1.5
 
 
-def test_update_template_subaccount(api_client, user, template_df):
-    budget = template_df.create_budget()
-    account = template_df.create_account(parent=budget)
-    subaccount = template_df.create_subaccount(
+def test_update_template_subaccount(api_client, user, f):
+    budget = f.create_template()
+    account = f.create_template_account(parent=budget)
+    subaccount = f.create_template_subaccount(
         parent=account,
         description="Original Description",
         identifier="Original identifier"
@@ -327,27 +324,27 @@ def test_update_template_subaccount(api_client, user, template_df):
         "fringes": [],
         "unit": None,
         "order": "n",
-        "domain": template_df.domain,
+        "domain": "template",
         "table": [{
             "id": subaccount.id,
             "type": "subaccount",
             "identifier": subaccount.identifier,
             "description": subaccount.description,
-            "domain": template_df.domain,
+            "domain": "template",
         }],
         "ancestors": [
             {
                 "type": "budget",
                 "id": budget.pk,
                 "name": budget.name,
-                "domain": template_df.domain,
+                "domain": "template",
             },
             {
                 "id": account.id,
                 "type": "account",
                 "identifier": account.identifier,
                 "description": account.description,
-                "domain": template_df.domain,
+                "domain": "template",
             }
         ]
     }
@@ -527,11 +524,11 @@ def test_create_subaccount_with_rate_quantity_doesnt_default(api_client, user,
     assert child.nominal_value == 15.0
 
 
-def test_update_subaccount_fringes(api_client, user, budget_f, create_fringe):
-    budget = budget_f.create_budget()
-    account = budget_f.create_account(parent=budget)
-    subaccount = budget_f.create_subaccount(parent=account)
-    fringes = [create_fringe(budget=budget), create_fringe(budget=budget)]
+def test_update_subaccount_fringes(api_client, user, f):
+    budget = f.create_budget()
+    account = f.create_account(parent=budget)
+    subaccount = f.create_subaccount(parent=account)
+    fringes = [f.create_fringe(budget=budget), f.create_fringe(budget=budget)]
     api_client.force_login(user)
     response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk, data={
         "fringes": [fringe.pk for fringe in fringes]
@@ -542,15 +539,15 @@ def test_update_subaccount_fringes(api_client, user, budget_f, create_fringe):
     assert subaccount.fringes.count() == 2
 
 
-def test_get_children(api_client, user, budget_df):
-    budget = budget_df.create_budget()
-    account = budget_df.create_account(parent=budget)
-    parent = budget_df.create_subaccount(parent=account)
-    another_parent = budget_df.create_subaccount(parent=account)
+def test_get_children(api_client, user, f):
+    budget = f.create_budget()
+    account = f.create_account(parent=budget)
+    parent = f.create_subaccount(parent=account)
+    another_parent = f.create_subaccount(parent=account)
     subaccounts = [
-        budget_df.create_subaccount(parent=parent, identifier='A'),
-        budget_df.create_subaccount(parent=parent, identifier='B'),
-        budget_df.create_subaccount(
+        f.create_subaccount(parent=parent, identifier='A'),
+        f.create_subaccount(parent=parent, identifier='B'),
+        f.create_subaccount(
             parent=another_parent,
             identifier='C'
         )
@@ -581,7 +578,7 @@ def test_get_children(api_client, user, budget_df):
             "contact": None,
             "unit": None,
             "order": "n",
-            "domain": budget_df.domain,
+            "domain": budget.domain,
             "attachments": [],
         },
         {
@@ -605,21 +602,21 @@ def test_get_children(api_client, user, budget_df):
             "contact": None,
             "unit": None,
             "order": "t",
-            "domain": budget_df.domain,
+            "domain": budget.domain,
             "attachments": [],
         },
     ]
 
 
-def test_get_template_children(api_client, user, template_df):
-    budget = template_df.create_budget()
-    account = template_df.create_account(parent=budget)
-    parent = template_df.create_subaccount(parent=account)
-    another_parent = template_df.create_subaccount(parent=account)
+def test_get_template_children(api_client, user, f):
+    budget = f.create_template()
+    account = f.create_template_account(parent=budget)
+    parent = f.create_template_subaccount(parent=account)
+    another_parent = f.create_template_subaccount(parent=account)
     subaccounts = [
-        template_df.create_subaccount(parent=parent, identifier='A'),
-        template_df.create_subaccount(parent=parent, identifier='B'),
-        template_df.create_subaccount(
+        f.create_template_subaccount(parent=parent, identifier='A'),
+        f.create_template_subaccount(parent=parent, identifier='B'),
+        f.create_template_subaccount(
             parent=another_parent,
             identifier='C'
         )
@@ -648,7 +645,7 @@ def test_get_template_children(api_client, user, template_df):
             "children": [],
             "fringes": [],
             "order": "n",
-            "domain": template_df.domain,
+            "domain": "template",
             "unit": None
         },
         {
@@ -670,20 +667,19 @@ def test_get_template_children(api_client, user, template_df):
             "children": [],
             "fringes": [],
             "order": "t",
-            "domain": template_df.domain,
+            "domain": "template",
             "unit": None,
         },
     ]
 
 
-def test_get_children_ordered_by_group(api_client, user, budget_f,
-        create_group):
+def test_get_children_ordered_by_group(api_client, user, budget_f, f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccount = budget_f.create_subaccount(parent=account)
     groups = [
-        create_group(parent=subaccount),
-        create_group(parent=subaccount)
+        f.create_group(parent=subaccount),
+        f.create_group(parent=subaccount)
     ]
     # pylint: disable=expression-not-assigned
     [
@@ -716,11 +712,10 @@ def test_get_children_ordered_by_group(api_client, user, budget_f,
     assert [obj['id'] for obj in response.json()['data']] == [2, 5, 4, 6, 3]
 
 
-def test_remove_subaccount_from_group(api_client, user, budget_f, models,
-        create_group):
+def test_remove_subaccount_from_group(api_client, user, budget_f, models, f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
-    group = create_group(parent=account)
+    group = f.create_group(parent=account)
     subaccount = budget_f.create_subaccount(parent=account, group=group)
     api_client.force_login(user)
     response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk,
@@ -903,7 +898,7 @@ def test_bulk_update_children_with_rate_quantity_doesnt_default(api_client,
     assert subaccounts[1].rate == 1.5
 
 
-def test_bulk_update_children_fringes(api_client, user, budget_f, create_fringe):
+def test_bulk_update_children_fringes(api_client, user, budget_f, f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccount = budget_f.create_subaccount(parent=account)
@@ -924,8 +919,8 @@ def test_bulk_update_children_fringes(api_client, user, budget_f, create_fringe)
         )
     ]
     fringes = [
-        create_fringe(budget=budget, rate=0.5),
-        create_fringe(budget=budget, rate=0.2)
+        f.create_fringe(budget=budget, rate=0.5),
+        f.create_fringe(budget=budget, rate=0.2)
     ]
     api_client.force_login(user)
     response = api_client.patch(
@@ -1066,14 +1061,14 @@ def test_bulk_update_children_budget_updated_once(api_client, user, budget_f,
     assert len(calls) == 1
 
 
-def test_bulk_create_children(api_client, user, budget_f, models, create_fringe):
+def test_bulk_create_children(api_client, user, budget_f, models, f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccount = budget_f.create_subaccount(
         parent=account, rate=100, quantity=1)
     fringes = [
-        create_fringe(budget=budget, rate=0.5),
-        create_fringe(budget=budget, rate=0.2)
+        f.create_fringe(budget=budget, rate=0.5),
+        f.create_fringe(budget=budget, rate=0.2)
     ]
     subaccount.fringes.set(fringes)
     subaccount.refresh_from_db()

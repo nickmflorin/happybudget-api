@@ -138,7 +138,7 @@ def test_password_recovery_user_logged_in(api_client, user, path, extra_data):
     ("validate-password-recovery-token", {}),
     ("reset-password", {"password": VALID_PASSWORD})
 ])
-def test_password_recovery_missing_token(api_client, path, extra_data, settings):
+def test_password_recovery_missing_token(api_client, path, extra_data):
     response = api_client.post("/v1/auth/%s/" % path, data=extra_data)
     assert response.status_code == 403
 

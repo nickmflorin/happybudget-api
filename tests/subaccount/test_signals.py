@@ -33,18 +33,17 @@ def test_delete_subaccount_reestimates(budget_f, freezer):
         2019, 5, 20).replace(tzinfo=timezone.utc)
 
 
-def test_delete_subaccount_reactualizes(create_budget,
-        create_budget_account, create_budget_subaccount, create_actual):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
-    parent_subaccount = create_budget_subaccount(parent=account)
-    subaccount = create_budget_subaccount(
+def test_delete_subaccount_reactualizes(f):
+    budget = f.create_budget()
+    account = f.create_budget_account(parent=budget)
+    parent_subaccount = f.create_budget_subaccount(parent=account)
+    subaccount = f.create_budget_subaccount(
         parent=parent_subaccount,
         rate=1,
         multiplier=5,
         quantity=10,
     )
-    create_actual(owner=subaccount, budget=budget, value=100.0)
+    f.create_actual(owner=subaccount, budget=budget, value=100.0)
 
     assert budget.actual == 100.0
     assert account.actual == 100.0

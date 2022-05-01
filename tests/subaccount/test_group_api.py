@@ -1,9 +1,8 @@
-def test_get_subaccount_subaccount_groups(api_client, user, budget_f,
-        create_group):
+def test_get_subaccount_subaccount_groups(api_client, user, budget_f, f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccount = budget_f.create_subaccount(parent=account)
-    group = create_group(parent=subaccount)
+    group = f.create_group(parent=subaccount)
     child_subaccount = budget_f.create_subaccount(
         parent=subaccount,
         group=group

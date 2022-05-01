@@ -14,10 +14,10 @@ def test_get_account_group(api_client, user, budget_f, create_group):
     }
 
 
-def test_get_subaccount_group(api_client, user, budget_f, create_group):
+def test_get_subaccount_group(api_client, user, budget_f, f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
-    group = create_group(parent=account)
+    group = f.create_group(parent=account)
     subaccount = budget_f.create_subaccount(parent=account, group=group)
     api_client.force_login(user)
     response = api_client.get("/v1/groups/%s/" % group.pk)
@@ -31,10 +31,10 @@ def test_get_subaccount_group(api_client, user, budget_f, create_group):
     }
 
 
-def test_update_account_group(api_client, user, create_group, budget_f):
+def test_update_account_group(api_client, user, f, budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
-    group = create_group(name="Group Name", parent=budget)
+    group = f.create_group(name="Group Name", parent=budget)
 
     api_client.force_login(user)
     response = api_client.patch("/v1/groups/%s/" % group.pk, data={
@@ -56,11 +56,11 @@ def test_update_account_group(api_client, user, create_group, budget_f):
     }
 
 
-def test_update_subaccount_group(api_client, user, budget_f, create_group):
+def test_update_subaccount_group(api_client, user, budget_f, f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccount = budget_f.create_subaccount(parent=account)
-    group = create_group(parent=account)
+    group = f.create_group(parent=account)
 
     api_client.force_login(user)
     response = api_client.patch("/v1/groups/%s/" % group.pk, data={
@@ -84,11 +84,10 @@ def test_update_subaccount_group(api_client, user, budget_f, create_group):
     }
 
 
-def test_remove_subaccount_group_children(api_client, user, budget_f,
-        create_group):
+def test_remove_subaccount_group_children(api_client, user, budget_f, f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
-    group = create_group(parent=account)
+    group = f.create_group(parent=account)
     subaccounts = [
         budget_f.create_subaccount(parent=account, group=group),
         budget_f.create_subaccount(parent=account, group=group)
@@ -114,11 +113,11 @@ def test_remove_subaccount_group_children(api_client, user, budget_f,
 
 
 def test_update_account_group_child_not_same_parent(api_client, user, budget_f,
-        create_group):
+        f):
     budget = budget_f.create_budget()
     another_budget = budget_f.create_budget()
     account = budget_f.create_account(parent=another_budget)
-    group = create_group(parent=budget)
+    group = f.create_group(parent=budget)
     api_client.force_login(user)
     response = api_client.patch("/v1/groups/%s/" % group.pk, data={
         'children': [account.pk],
@@ -127,13 +126,13 @@ def test_update_account_group_child_not_same_parent(api_client, user, budget_f,
 
 
 def test_update_subaccount_group_child_not_same_parent(api_client, budget_f,
-        user, create_group):
+        user, f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccount = budget_f.create_subaccount(parent=account)
 
     another_account = budget_f.create_account(parent=budget)
-    group = create_group(parent=another_account)
+    group = f.create_group(parent=another_account)
 
     api_client.force_login(user)
     response = api_client.patch("/v1/groups/%s/" % group.pk, data={
@@ -143,12 +142,11 @@ def test_update_subaccount_group_child_not_same_parent(api_client, budget_f,
     assert response.json()['errors'][0]['code'] == 'does_not_exist_in_table'
 
 
-def test_account_group_account_already_in_group(api_client, user, budget_df,
-        create_group, models):
-    budget = budget_df.create_budget()
-    group = create_group(parent=budget)
-    account = budget_df.create_account(parent=budget, group=group)
-    another_group = create_group(parent=budget)
+def test_account_group_account_already_in_group(api_client, user, f, models):
+    budget = f.create_budget()
+    group = f.create_group(parent=budget)
+    account = f.create_account(parent=budget, group=group)
+    another_group = f.create_group(parent=budget)
 
     api_client.force_login(user)
     response = api_client.patch("/v1/groups/%s/" % another_group.pk, data={
@@ -162,12 +160,12 @@ def test_account_group_account_already_in_group(api_client, user, budget_df,
 
 
 def test_subaccount_group_account_already_in_group(api_client, user, budget_f,
-        create_group, models):
+        f, models):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
-    group = create_group(parent=account)
+    group = f.create_group(parent=account)
     subaccount = budget_f.create_subaccount(parent=account, group=group)
-    another_group = create_group(parent=account)
+    another_group = f.create_group(parent=account)
 
     api_client.force_login(user)
     response = api_client.patch("/v1/groups/%s/" % another_group.pk, data={
@@ -180,9 +178,9 @@ def test_subaccount_group_account_already_in_group(api_client, user, budget_f,
     assert models.Group.objects.count() == 1
 
 
-def test_delete_account_group(api_client, user, budget_f, models, create_group):
+def test_delete_account_group(api_client, user, budget_f, models, f):
     budget = budget_f.create_budget()
-    group = create_group(parent=budget)
+    group = f.create_group(parent=budget)
 
     api_client.force_login(user)
     response = api_client.delete("/v1/groups/%s/" % group.pk)
@@ -191,11 +189,10 @@ def test_delete_account_group(api_client, user, budget_f, models, create_group):
     assert models.Group.objects.count() == 0
 
 
-def test_delete_subaccount_group(api_client, user, budget_f, create_group,
-        models):
+def test_delete_subaccount_group(api_client, user, budget_f, f, models):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
-    group = create_group(parent=account)
+    group = f.create_group(parent=account)
 
     api_client.force_login(user)
     response = api_client.delete("/v1/groups/%s/" % group.pk)

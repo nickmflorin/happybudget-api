@@ -61,7 +61,7 @@ class IsCollaborator(BaseCollaboratorPermission):
 class IsOwnerOrCollaborator(IsCollaborator):
     def has_object_permission(self, request, view, obj):
         assert hasattr(obj, 'user_owner'), \
-            "The instance that is being collaborated on must have ownership."
+            "The instance that is being collaborated on must dictate ownership."
         if not obj.is_owned_by(request.user):
             return super().has_object_permission(request, view, obj)
         return True

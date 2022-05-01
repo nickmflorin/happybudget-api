@@ -5,13 +5,12 @@ from django.test import override_settings
 
 @pytest.mark.freeze_time('2020-01-01')
 @override_settings(APP_URL="https://api.greenbudget.com")
-def test_attachments_properly_serializes(api_client, user, create_contact,
-        create_attachment):
+def test_attachments_properly_serializes(api_client, user, f):
     attachments = [
-        create_attachment(name='attachment1.jpeg'),
-        create_attachment(name='attachment2.jpeg')
+        f.create_attachment(name='attachment1.jpeg'),
+        f.create_attachment(name='attachment2.jpeg')
     ]
-    contact = create_contact(attachments=attachments)
+    contact = f.create_contact(attachments=attachments)
     api_client.force_login(user)
     response = api_client.get("/v1/contacts/%s/" % contact.pk)
     assert response.status_code == 200
@@ -40,12 +39,12 @@ def test_attachments_properly_serializes(api_client, user, create_contact,
 
 @pytest.mark.freeze_time('2020-01-01')
 @override_settings(APP_URL="https://api.greenbudget.com")
-def test_get_attachments(api_client, user, create_attachment, create_contact):
+def test_get_attachments(api_client, user, f):
     attachments = [
-        create_attachment(name='attachment1.jpeg'),
-        create_attachment(name='attachment2.jpeg')
+        f.create_attachment(name='attachment1.jpeg'),
+        f.create_attachment(name='attachment2.jpeg')
     ]
-    contact = create_contact(attachments=attachments)
+    contact = f.create_contact(attachments=attachments)
     api_client.force_login(user)
     response = api_client.get("/v1/contacts/%s/attachments/" % contact.pk)
     assert response.status_code == 200
@@ -75,12 +74,12 @@ def test_get_attachments(api_client, user, create_attachment, create_contact):
     ]
 
 
-def test_delete_attachment(api_client, user, create_attachment, create_contact):
+def test_delete_attachment(api_client, user, f):
     attachments = [
-        create_attachment(name='attachment1.jpeg'),
-        create_attachment(name='attachment2.jpeg')
+        f.create_attachment(name='attachment1.jpeg'),
+        f.create_attachment(name='attachment2.jpeg')
     ]
-    contact = create_contact(attachments=attachments)
+    contact = f.create_contact(attachments=attachments)
     api_client.force_login(user)
     response = api_client.delete("/v1/contacts/%s/attachments/%s/" % (
         contact.pk, attachments[0].pk))
@@ -90,13 +89,13 @@ def test_delete_attachment(api_client, user, create_attachment, create_contact):
 
 @pytest.mark.freeze_time('2020-01-01')
 @override_settings(APP_URL="https://api.greenbudget.com")
-def test_update_attachments(api_client, user, create_attachment, create_contact):
+def test_update_attachments(api_client, user, f):
     attachments = [
-        create_attachment(name='attachment1.jpeg'),
-        create_attachment(name='attachment2.jpeg')
+        f.create_attachment(name='attachment1.jpeg'),
+        f.create_attachment(name='attachment2.jpeg')
     ]
-    contact = create_contact(attachments=attachments)
-    additional_attachment = create_attachment(name='attachment3.jpeg')
+    contact = f.create_contact(attachments=attachments)
+    additional_attachment = f.create_attachment(name='attachment3.jpeg')
     api_client.force_login(user)
     response = api_client.patch("/v1/contacts/%s/" % contact.pk, data={
         'attachments': [a.pk for a in attachments] + [additional_attachment.pk]
@@ -139,13 +138,12 @@ def test_update_attachments(api_client, user, create_attachment, create_contact)
 
 
 @override_settings(APP_URL="https://api.greenbudget.com")
-def test_upload_attachment(api_client, user, create_contact, create_attachment,
-        test_uploaded_file, models):
+def test_upload_attachment(api_client, user, f, test_uploaded_file, models):
     attachments = [
-        create_attachment(name='attachment1.jpeg'),
-        create_attachment(name='attachment2.jpeg')
+        f.create_attachment(name='attachment1.jpeg'),
+        f.create_attachment(name='attachment2.jpeg')
     ]
-    contact = create_contact(attachments=attachments)
+    contact = f.create_contact(attachments=attachments)
     uploaded_file = test_uploaded_file('test.jpeg')
     api_client.force_login(user)
     response = api_client.post(
@@ -172,13 +170,13 @@ def test_upload_attachment(api_client, user, create_contact, create_attachment,
 
 
 @override_settings(APP_URL="https://api.greenbudget.com")
-def test_upload_multiple_attachments(api_client, user, create_contact, models,
-        create_attachment, test_uploaded_file):
+def test_upload_multiple_attachments(api_client, user, f, models,
+        test_uploaded_file):
     attachments = [
-        create_attachment(name='attachment1.jpeg'),
-        create_attachment(name='attachment2.jpeg')
+        f.create_attachment(name='attachment1.jpeg'),
+        f.create_attachment(name='attachment2.jpeg')
     ]
-    contact = create_contact(attachments=attachments)
+    contact = f.create_contact(attachments=attachments)
     uploaded_files = [
         test_uploaded_file('test1.jpeg'),
         test_uploaded_file('test2.jpeg')

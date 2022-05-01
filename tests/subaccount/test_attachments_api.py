@@ -5,15 +5,14 @@ from django.test import override_settings
 
 @pytest.mark.freeze_time('2020-01-01')
 @override_settings(APP_URL="https://api.greenbudget.com")
-def test_attachments_properly_serialize(api_client, user, create_budget_account,
-        create_budget_subaccount, create_budget, create_attachment):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
+def test_attachments_properly_serialize(api_client, user, f):
+    budget = f.create_budget()
+    account = f.create_budget_account(parent=budget)
     attachments = [
-        create_attachment(name='attachment1.jpeg'),
-        create_attachment(name='attachment2.jpeg')
+        f.create_attachment(name='attachment1.jpeg'),
+        f.create_attachment(name='attachment2.jpeg')
     ]
-    subaccount = create_budget_subaccount(
+    subaccount = f.create_budget_subaccount(
         parent=account,
         attachments=attachments
     )
@@ -45,15 +44,14 @@ def test_attachments_properly_serialize(api_client, user, create_budget_account,
 
 @pytest.mark.freeze_time('2020-01-01')
 @override_settings(APP_URL="https://api.greenbudget.com")
-def test_get_attachments(api_client, user, create_budget_account,
-        create_budget_subaccount, create_budget, create_attachment):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
+def test_get_attachments(api_client, user, f):
+    budget = f.create_budget()
+    account = f.create_budget_account(parent=budget)
     attachments = [
-        create_attachment(name='attachment1.jpeg'),
-        create_attachment(name='attachment2.jpeg')
+        f.create_attachment(name='attachment1.jpeg'),
+        f.create_attachment(name='attachment2.jpeg')
     ]
-    subaccount = create_budget_subaccount(
+    subaccount = f.create_budget_subaccount(
         parent=account,
         attachments=attachments
     )
@@ -86,15 +84,14 @@ def test_get_attachments(api_client, user, create_budget_account,
     ]
 
 
-def test_delete_attachment(api_client, user, create_budget_account,
-        create_budget_subaccount, create_budget, create_attachment):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
+def test_delete_attachment(api_client, user, f):
+    budget = f.create_budget()
+    account = f.create_budget_account(parent=budget)
     attachments = [
-        create_attachment(name='attachment1.jpeg'),
-        create_attachment(name='attachment2.jpeg')
+        f.create_attachment(name='attachment1.jpeg'),
+        f.create_attachment(name='attachment2.jpeg')
     ]
-    subaccount = create_budget_subaccount(
+    subaccount = f.create_budget_subaccount(
         parent=account,
         attachments=attachments
     )
@@ -107,19 +104,18 @@ def test_delete_attachment(api_client, user, create_budget_account,
 
 @pytest.mark.freeze_time('2020-01-01')
 @override_settings(APP_URL="https://api.greenbudget.com")
-def test_update_attachments(api_client, user, create_budget_account,
-        create_budget_subaccount, create_budget, create_attachment):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
+def test_update_attachments(api_client, user, f):
+    budget = f.create_budget()
+    account = f.create_budget_account(parent=budget)
     attachments = [
-        create_attachment(name='attachment1.jpeg'),
-        create_attachment(name='attachment2.jpeg')
+        f.create_attachment(name='attachment1.jpeg'),
+        f.create_attachment(name='attachment2.jpeg')
     ]
-    subaccount = create_budget_subaccount(
+    subaccount = f.create_budget_subaccount(
         parent=account,
         attachments=attachments
     )
-    additional_attachment = create_attachment(name='attachment3.jpeg')
+    additional_attachment = f.create_attachment(name='attachment3.jpeg')
     api_client.force_login(user)
     response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk, data={
         'attachments': [a.pk for a in attachments] + [additional_attachment.pk]
@@ -162,16 +158,14 @@ def test_update_attachments(api_client, user, create_budget_account,
 
 
 @override_settings(APP_URL="https://api.greenbudget.com")
-def test_upload_attachment(api_client, user, create_budget_account,
-        create_budget_subaccount, create_budget, create_attachment,
-        test_uploaded_file, models):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
+def test_upload_attachment(api_client, user, f, test_uploaded_file, models):
+    budget = f.create_budget()
+    account = f.create_budget_account(parent=budget)
     attachments = [
-        create_attachment(name='attachment1.jpeg'),
-        create_attachment(name='attachment2.jpeg')
+        f.create_attachment(name='attachment1.jpeg'),
+        f.create_attachment(name='attachment2.jpeg')
     ]
-    subaccount = create_budget_subaccount(
+    subaccount = f.create_budget_subaccount(
         parent=account,
         attachments=attachments
     )
@@ -201,16 +195,15 @@ def test_upload_attachment(api_client, user, create_budget_account,
 
 
 @override_settings(APP_URL="https://api.greenbudget.com")
-def test_upload_multiple_attachments(api_client, user, create_budget_account,
-        create_budget_subaccount, create_budget, create_attachment,
-        test_uploaded_file, models):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
+def test_upload_multiple_attachments(api_client, user, f, test_uploaded_file,
+        models):
+    budget = f.create_budget()
+    account = f.create_budget_account(parent=budget)
     attachments = [
-        create_attachment(name='attachment1.jpeg'),
-        create_attachment(name='attachment2.jpeg')
+        f.create_attachment(name='attachment1.jpeg'),
+        f.create_attachment(name='attachment2.jpeg')
     ]
-    subaccount = create_budget_subaccount(
+    subaccount = f.create_budget_subaccount(
         parent=account,
         attachments=attachments
     )

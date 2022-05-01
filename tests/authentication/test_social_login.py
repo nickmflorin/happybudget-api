@@ -8,10 +8,10 @@ from django.test import override_settings
 @responses.activate
 @pytest.mark.freeze_time('2020-01-01')
 @override_settings(GOOGLE_OAUTH_API_URL="https://www.test-validate-user-token/")
-def test_social_login_user_exists(api_client, create_user):
+def test_social_login_user_exists(api_client, f):
     # A user with an unverified email should still be able to do social login
     # and their email address should be considered verified afterwards.
-    user = create_user(email="jjohnson@gmail.com", is_verified=False)
+    user = f.create_user(email="jjohnson@gmail.com", is_verified=False)
     responses.add(
         method=responses.GET,
         url="https://www.test-validate-user-token/?id_token=testtoken",
@@ -32,7 +32,7 @@ def test_social_login_user_exists(api_client, create_user):
 
     assert 'greenbudgetjwt' in response.cookies
     assert response.json() == {
-        "id": 1,
+        "id": user.pk,
         "first_name": user.first_name,
         "last_name": user.last_name,
         "email": user.email,
@@ -116,8 +116,8 @@ def test_social_login_user_does_not_exist(api_client, models):
 
 @responses.activate
 @override_settings(GOOGLE_OAUTH_API_URL="https://www.test-validate-user-token/")
-def test_social_login_invalid_token(api_client, create_user):
-    create_user(email="jjohnson@gmail.com")
+def test_social_login_invalid_token(api_client, f):
+    f.create_user(email="jjohnson@gmail.com")
     responses.add(
         method=responses.GET,
         url="https://www.test-validate-user-token/?id_token=testtoken",
@@ -137,8 +137,8 @@ def test_social_login_invalid_token(api_client, create_user):
 
 @responses.activate
 @override_settings(GOOGLE_OAUTH_API_URL="https://www.test-validate-user-token/")
-def test_social_login_invalid_provider(api_client, create_user):
-    create_user(email="jjohnson@gmail.com")
+def test_social_login_invalid_provider(api_client, f):
+    f.create_user(email="jjohnson@gmail.com")
     responses.add(
         method=responses.GET,
         url="https://www.test-validate-user-token/?id_token=testtoken",
@@ -158,8 +158,8 @@ def test_social_login_invalid_provider(api_client, create_user):
 
 @responses.activate
 @override_settings(GOOGLE_OAUTH_API_URL="https://www.test-validate-user-token/")
-def test_social_login_account_disabled(api_client, create_user):
-    user = create_user(email="jjohnson@gmail.com", is_active=False)
+def test_social_login_account_disabled(api_client, f):
+    user = f.create_user(email="jjohnson@gmail.com", is_active=False)
     responses.add(
         method=responses.GET,
         url="https://www.test-validate-user-token/?id_token=testtoken",

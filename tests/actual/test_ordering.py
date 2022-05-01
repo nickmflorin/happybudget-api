@@ -1,5 +1,5 @@
-def test_ordering_bulk_create(api_client, user, models, budget_df):
-    budget = budget_df.create_budget()
+def test_ordering_bulk_create(api_client, user, models, f):
+    budget = f.create_budget()
 
     api_client.force_login(user)
     response = api_client.patch(
@@ -13,9 +13,9 @@ def test_ordering_bulk_create(api_client, user, models, budget_df):
     assert [a.order for a in actuals] == ["n", "t", "w"]
 
 
-def test_move_actual_down(api_client, user, models, budget_df, create_actual):
-    budget = budget_df.create_budget()
-    actuals = create_actual(budget=budget, count=10)
+def test_move_actual_down(api_client, user, models, f):
+    budget = f.create_budget()
+    actuals = f.create_actual(budget=budget, count=10)
     assert [a.order for a in actuals] == \
         ['n', 't', 'w', 'y', 'yn', 'ynt', 'yntw', 'yntwy', 'yntwyn', 'yntwynt']
     assert [a.pk for a in actuals] == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -32,10 +32,9 @@ def test_move_actual_down(api_client, user, models, budget_df, create_actual):
     assert [a.pk for a in actuals] == [1, 2, 5, 3, 4, 6, 7, 8, 9, 10]
 
 
-def test_move_actual_to_start(api_client, user, models, budget_df,
-        create_actual):
-    budget = budget_df.create_budget()
-    actuals = create_actual(count=10, budget=budget)
+def test_move_actual_to_start(api_client, user, models, f):
+    budget = f.create_budget()
+    actuals = f.create_actual(count=10, budget=budget)
     assert [c.order for c in actuals] == \
         ['n', 't', 'w', 'y', 'yn', 'ynt', 'yntw', 'yntwy', 'yntwyn', 'yntwynt']
     assert [c.pk for c in actuals] == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -54,9 +53,9 @@ def test_move_actual_to_start(api_client, user, models, budget_df,
     assert [a.pk for a in actuals] == [5, 1, 2, 3, 4, 6, 7, 8, 9, 10]
 
 
-def test_move_actual_to_end(api_client, user, models, create_actual, budget_df):
-    budget = budget_df.create_budget()
-    actuals = create_actual(count=10, budget=budget)
+def test_move_actual_to_end(api_client, user, models, f):
+    budget = f.create_budget()
+    actuals = f.create_actual(count=10, budget=budget)
     assert [a.order for a in actuals] == \
         ['n', 't', 'w', 'y', 'yn', 'ynt', 'yntw', 'yntwy', 'yntwyn', 'yntwynt']
     assert [a.pk for a in actuals] == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -75,10 +74,9 @@ def test_move_actual_to_end(api_client, user, models, create_actual, budget_df):
     assert [a.pk for a in actuals] == [1, 2, 3, 4, 6, 7, 8, 9, 10, 5]
 
 
-def test_move_actual_self_referential(api_client, user, create_actual,
-        budget_df):
-    budget = budget_df.create_budget()
-    actuals = create_actual(count=10, budget=budget)
+def test_move_actual_self_referential(api_client, user, f):
+    budget = f.create_budget()
+    actuals = f.create_actual(count=10, budget=budget)
     assert [a.order for a in actuals] == \
         ['n', 't', 'w', 'y', 'yn', 'ynt', 'yntw', 'yntwy', 'yntwyn', 'yntwynt']
     assert [a.pk for a in actuals] == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -90,10 +88,9 @@ def test_move_actual_self_referential(api_client, user, create_actual,
     assert response.status_code == 400
 
 
-def test_move_actual_same_order(api_client, user, models, budget_df,
-        create_actual):
-    budget = budget_df.create_budget()
-    actuals = create_actual(budget=budget, count=10)
+def test_move_actual_same_order(api_client, user, models, f):
+    budget = f.create_budget()
+    actuals = f.create_actual(budget=budget, count=10)
     assert [a.order for a in actuals] == \
         ['n', 't', 'w', 'y', 'yn', 'ynt', 'yntw', 'yntwy', 'yntwyn', 'yntwynt']
     assert [a.pk for a in actuals] == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -110,9 +107,9 @@ def test_move_actual_same_order(api_client, user, models, budget_df,
     assert [a.pk for a in actuals] == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 
-def test_move_actual_up(api_client, user, models, budget_df, create_actual):
-    budget = budget_df.create_budget()
-    actuals = create_actual(budget=budget, count=10)
+def test_move_actual_up(api_client, user, models, f):
+    budget = f.create_budget()
+    actuals = f.create_actual(budget=budget, count=10)
     assert [a.order for a in actuals] == \
         ['n', 't', 'w', 'y', 'yn', 'ynt', 'yntw', 'yntwy', 'yntwyn', 'yntwynt']
     assert [a.pk for a in actuals] == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]

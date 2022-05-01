@@ -1,8 +1,8 @@
-def test_get_fringes(api_client, user, create_fringe, models, budget_f):
+def test_get_fringes(api_client, user, f, models, budget_f):
     budget = budget_f.create_budget()
     fringes = [
-        create_fringe(budget=budget),
-        create_fringe(budget=budget)
+        f.create_fringe(budget=budget),
+        f.create_fringe(budget=budget)
     ]
     api_client.force_login(user)
     response = api_client.get("/v1/budgets/%s/fringes/" % budget.pk)
@@ -137,15 +137,15 @@ def test_bulk_create_fringe(api_client, user, models, budget_f):
     assert budget.actual == 0.0
 
 
-def test_bulk_update_fringes(api_client, user, create_fringe, budget_f):
+def test_bulk_update_fringes(api_client, user, f, budget_f):
     budget = budget_f.create_budget()
     accounts = [
         budget_f.create_account(parent=budget),
         budget_f.create_account(parent=budget)
     ]
     fringes = [
-        create_fringe(budget=budget, rate=0.5),
-        create_fringe(budget=budget, rate=0.2)
+        f.create_fringe(budget=budget, rate=0.5),
+        f.create_fringe(budget=budget, rate=0.2)
     ]
     # Do not disable the signals, because disabling the signals will prevent
     # the metrics on the SubAccount(s) (and thus the Account(s) and Budget) from
@@ -240,15 +240,15 @@ def test_bulk_update_fringes(api_client, user, create_fringe, budget_f):
     assert budget.actual == 0.0
 
 
-def test_bulk_delete_fringes(api_client, user, create_fringe, models, budget_f):
+def test_bulk_delete_fringes(api_client, user, f, models, budget_f):
     budget = budget_f.create_budget()
     accounts = [
         budget_f.create_account(parent=budget),
         budget_f.create_account(parent=budget)
     ]
     fringes = [
-        create_fringe(budget=budget, rate=0.5),
-        create_fringe(budget=budget, rate=0.2)
+        f.create_fringe(budget=budget, rate=0.5),
+        f.create_fringe(budget=budget, rate=0.2)
     ]
     # Do not disable the signals, because disabling the signals will prevent
     # the metrics on the SubAccount(s) (and thus the Account(s) and Budget) from

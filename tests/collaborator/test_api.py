@@ -4,10 +4,9 @@ from greenbudget.app.collaborator.models import Collaborator
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_update_collaborator(api_client, create_collaborator, create_budget,
-        user, models):
-    budget = create_budget()
-    collaborator = create_collaborator(instance=budget, view_only=True)
+def test_update_collaborator(api_client, f, user, models):
+    budget = f.create_budget()
+    collaborator = f.create_collaborator(instance=budget, view_only=True)
     api_client.force_login(user)
     response = api_client.patch(
         "/v1/collaborators/%s/" % collaborator.pk,
@@ -39,11 +38,10 @@ def test_update_collaborator(api_client, create_collaborator, create_budget,
     assert collaborator.access_type == models.Collaborator.ACCESS_TYPES.owner
 
 
-def test_update_self_collaboration_state(api_client, create_collaborator,
-        create_budget, create_user, models):
-    budget = create_budget()
-    collaborating_user = create_user()
-    collaborator = create_collaborator(
+def test_update_self_collaboration_state(api_client, f, models):
+    budget = f.create_budget()
+    collaborating_user = f.create_user()
+    collaborator = f.create_collaborator(
         user=collaborating_user,
         instance=budget,
         owner=True
@@ -61,20 +59,18 @@ def test_update_self_collaboration_state(api_client, create_collaborator,
     }]}
 
 
-def test_delete_collaborator(api_client, create_collaborator, create_budget,
-        user, models):
-    budget = create_budget()
-    collaborator = create_collaborator(instance=budget, view_only=True)
+def test_delete_collaborator(api_client, f, user, models):
+    budget = f.create_budget()
+    collaborator = f.create_collaborator(instance=budget, view_only=True)
     api_client.force_login(user)
     response = api_client.delete("/v1/collaborators/%s/" % collaborator.pk)
     assert response.status_code == 204
     assert models.Collaborator.objects.count() == 0
 
 
-def test_delete_self_as_collaborator(api_client, create_collaborator,
-        create_budget):
-    budget = create_budget()
-    collaborator = create_collaborator(instance=budget, owner=True)
+def test_delete_self_as_collaborator(api_client, f):
+    budget = f.create_budget()
+    collaborator = f.create_collaborator(instance=budget, owner=True)
     api_client.force_login(collaborator.user)
     response = api_client.delete("/v1/collaborators/%s/" % collaborator.pk)
     assert response.status_code == 400
@@ -86,17 +82,16 @@ def test_delete_self_as_collaborator(api_client, create_collaborator,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_update_collaborator_user(api_client, create_collaborator, create_budget,
-        user, models, create_user):
-    budget = create_budget()
-    collaborating_user = create_user()
-    collaborator = create_collaborator(
+def test_update_collaborator_user(api_client, f, user, models):
+    budget = f.create_budget()
+    collaborating_user = f.create_user()
+    collaborator = f.create_collaborator(
         user=collaborating_user,
         instance=budget,
         view_only=True
     )
     api_client.force_login(user)
-    another_collaborating_user = create_user(first_name='blah')
+    another_collaborating_user = f.create_user(first_name='blah')
     response = api_client.patch(
         "/v1/collaborators/%s/" % collaborator.pk,
         data={'user': another_collaborating_user.pk}
@@ -129,11 +124,10 @@ def test_update_collaborator_user(api_client, create_collaborator, create_budget
     assert collaborator.user == collaborating_user
 
 
-def test_update_collaborator_as_collaborator(api_client, create_collaborator,
-        create_budget, models):
-    budget = create_budget()
-    collaborator = create_collaborator(instance=budget, owner=True)
-    another_collaborator = create_collaborator(instance=budget)
+def test_update_collaborator_as_collaborator(api_client, f, models):
+    budget = f.create_budget()
+    collaborator = f.create_collaborator(instance=budget, owner=True)
+    another_collaborator = f.create_collaborator(instance=budget)
     api_client.force_login(collaborator.user)
     response = api_client.patch(
         "/v1/collaborators/%s/" % another_collaborator.pk,
@@ -142,11 +136,10 @@ def test_update_collaborator_as_collaborator(api_client, create_collaborator,
     assert response.status_code == 200
 
 
-def test_delete_collaborator_as_collaborator(api_client, create_collaborator,
-        create_budget, models):
-    budget = create_budget()
-    collaborator = create_collaborator(instance=budget, owner=True)
-    another_collaborator = create_collaborator(instance=budget)
+def test_delete_collaborator_as_collaborator(api_client, f, models):
+    budget = f.create_budget()
+    collaborator = f.create_collaborator(instance=budget, owner=True)
+    another_collaborator = f.create_collaborator(instance=budget)
     api_client.force_login(collaborator.user)
     response = api_client.delete(
         "/v1/collaborators/%s/" % another_collaborator.pk)
@@ -158,11 +151,11 @@ def test_delete_collaborator_as_collaborator(api_client, create_collaborator,
     Collaborator.ACCESS_TYPES.editor,
     Collaborator.ACCESS_TYPES.view_only,
 ])
-def test_update_collaborator_as_non_owner_collaborator(api_client, create_user,
-        create_collaborator, create_budget, models, access_type):
-    budget = create_budget()
-    collaborating_user = create_user()
-    collaborator = create_collaborator(
+def test_update_collaborator_as_non_owner_collaborator(api_client, f, models,
+        access_type):
+    budget = f.create_budget()
+    collaborating_user = f.create_user()
+    collaborator = f.create_collaborator(
         user=collaborating_user,
         instance=budget,
         access_type=access_type
@@ -188,10 +181,10 @@ def test_update_collaborator_as_non_owner_collaborator(api_client, create_user,
     Collaborator.ACCESS_TYPES.view_only,
 ])
 def test_delete_collaborator_as_non_owner_collaborator(api_client, access_type,
-        create_collaborator, create_budget, create_user):
-    budget = create_budget()
-    collaborating_user = create_user()
-    collaborator = create_collaborator(
+        f):
+    budget = f.create_budget()
+    collaborating_user = f.create_user()
+    collaborator = f.create_collaborator(
         user=collaborating_user,
         instance=budget,
         access_type=access_type

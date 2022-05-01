@@ -1,7 +1,7 @@
-def test_update_fringe(api_client, user, budget_f, create_fringe, models):
+def test_update_fringe(api_client, user, budget_f, f, models):
     api_client.force_login(user)
     budget = budget_f.create_budget()
-    fringe = create_fringe(budget=budget)
+    fringe = f.create_fringe(budget=budget)
     response = api_client.patch("/v1/fringes/%s/" % fringe.pk, data={
         'name': 'Test Fringe',
         'rate': 5.5,
@@ -31,10 +31,10 @@ def test_update_fringe(api_client, user, budget_f, create_fringe, models):
     assert fringe.unit == 1
 
 
-def test_get_fringe(api_client, user, budget_f, create_fringe, models):
+def test_get_fringe(api_client, user, budget_f, f, models):
     api_client.force_login(user)
     budget = budget_f.create_budget()
-    fringe = create_fringe(budget=budget)
+    fringe = f.create_fringe(budget=budget)
     response = api_client.get("/v1/fringes/%s/" % fringe.pk)
     assert response.status_code == 200
     assert response.json() == {
@@ -54,10 +54,10 @@ def test_get_fringe(api_client, user, budget_f, create_fringe, models):
     }
 
 
-def test_delete_fringe(api_client, user, budget_f, create_fringe, models):
+def test_delete_fringe(api_client, user, budget_f, f, models):
     api_client.force_login(user)
     budget = budget_f.create_budget()
-    fringe = create_fringe(budget=budget)
+    fringe = f.create_fringe(budget=budget)
     response = api_client.delete("/v1/fringes/%s/" % fringe.pk)
     assert response.status_code == 204
     assert models.Fringe.objects.first() is None

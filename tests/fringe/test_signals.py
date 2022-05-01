@@ -3,17 +3,17 @@ import pytest
 from django.db import IntegrityError
 
 
-def test_subaccount_fringes_change(budget_f, create_fringe, models):
+def test_subaccount_fringes_change(budget_f, f, models):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     fringes = [
-        create_fringe(
+        f.create_fringe(
             budget=budget,
             cutoff=50,
             rate=0.5,
             unit=models.Fringe.UNITS.percent
         ),
-        create_fringe(
+        f.create_fringe(
             budget=budget,
             rate=100,
             unit=models.Fringe.UNITS.flat
@@ -35,17 +35,17 @@ def test_subaccount_fringes_change(budget_f, create_fringe, models):
     assert subaccount.nominal_value + subaccount.fringe_contribution == 200.0
 
 
-def test_subaccount_fringe_changed(budget_f, create_fringe, models):
+def test_subaccount_fringe_changed(budget_f, f, models):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     fringes = [
-        create_fringe(
+        f.create_fringe(
             budget=budget,
             cutoff=50,
             rate=0.5,
             unit=models.Fringe.UNITS.percent
         ),
-        create_fringe(
+        f.create_fringe(
             budget=budget,
             rate=100,
             unit=models.Fringe.UNITS.flat
@@ -72,17 +72,17 @@ def test_subaccount_fringe_changed(budget_f, create_fringe, models):
     assert subaccount.nominal_value + subaccount.fringe_contribution == 325.0
 
 
-def test_subaccount_fringe_deleted(budget_f, create_fringe, models):
+def test_subaccount_fringe_deleted(budget_f, f, models):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     fringes = [
-        create_fringe(
+        f.create_fringe(
             budget=budget,
             cutoff=50,
             rate=0.5,
             unit=models.Fringe.UNITS.percent
         ),
-        create_fringe(
+        f.create_fringe(
             budget=budget,
             rate=100,
             unit=models.Fringe.UNITS.flat
@@ -108,14 +108,14 @@ def test_subaccount_fringe_deleted(budget_f, create_fringe, models):
     assert subaccount.nominal_value + subaccount.fringe_contribution == 125.0
 
 
-def test_fringes_parent_constraint(budget_f, create_fringe):
+def test_fringes_parent_constraint(budget_f, f):
     budget = budget_f.create_budget()
     another_budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccount = budget_f.create_subaccount(parent=account)
     fringes = [
-        create_fringe(budget=another_budget),
-        create_fringe(budget=budget)
+        f.create_fringe(budget=another_budget),
+        f.create_fringe(budget=budget)
     ]
     with pytest.raises(IntegrityError):
         subaccount.fringes.set(fringes)

@@ -2,8 +2,8 @@ import pytest
 
 
 @pytest.fixture
-def units(create_subaccount_unit):
+def units(f):
     return [
-        create_subaccount_unit(title='Days'),
-        create_subaccount_unit(title='Weeks')
+        f.create_subaccount_unit(title='Days'),
+        f.create_subaccount_unit(title='Weeks')
     ]

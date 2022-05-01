@@ -2,9 +2,9 @@ import pytest
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_template(api_client, user, create_template):
+def test_get_template(api_client, user, f):
     api_client.force_login(user)
-    template = create_template()
+    template = f.create_template()
     response = api_client.get("/v1/budgets/%s/" % template.pk)
     assert response.status_code == 200
     assert response.json() == {
@@ -29,21 +29,19 @@ def test_get_template(api_client, user, create_template):
     }
 
 
-def test_get_another_user_template(api_client, user, create_template,
-        create_user):
-    another_user = create_user()
+def test_get_another_user_template(api_client, user, f):
+    another_user = f.create_user()
     api_client.force_login(user)
-    template = create_template(created_by=another_user)
+    template = f.create_template(created_by=another_user)
     response = api_client.get("/v1/budgets/%s/" % template.pk)
     assert response.status_code == 403
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_community_template(api_client, staff_user, create_template,
-        create_user):
-    another_staff_user = create_user(is_staff=True)
+def test_get_community_template(api_client, staff_user, f):
+    another_staff_user = f.create_user(is_staff=True)
     api_client.force_login(staff_user)
-    template = create_template(community=True, created_by=another_staff_user)
+    template = f.create_template(community=True, created_by=another_staff_user)
     response = api_client.get("/v1/budgets/%s/" % template.pk)
     assert response.status_code == 200
     assert response.json() == {
@@ -69,10 +67,9 @@ def test_get_community_template(api_client, staff_user, create_template,
     }
 
 
-def test_get_another_users_community_template(api_client, staff_user,
-        create_template, create_user):
-    user = create_user(is_staff=True)
-    template = create_template(created_by=user, community=True)
+def test_get_another_users_community_template(api_client, staff_user, f):
+    user = f.create_user(is_staff=True)
+    template = f.create_template(created_by=user, community=True)
     api_client.force_login(staff_user)
     response = api_client.get("/v1/budgets/%s/" % template.pk, data={
         "name": "New Name"
@@ -80,17 +77,16 @@ def test_get_another_users_community_template(api_client, staff_user,
     assert response.status_code == 200
 
 
-def test_get_community_template_non_staff_user(api_client, staff_user, user,
-        create_template):
+def test_get_community_template_non_staff_user(api_client, staff_user, user, f):
     api_client.force_login(user)
-    template = create_template(community=True, created_by=staff_user)
+    template = f.create_template(community=True, created_by=staff_user)
     response = api_client.get("/v1/budgets/%s/" % template.pk)
     assert response.status_code == 403
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_update_template(api_client, user, create_template):
-    template = create_template()
+def test_update_template(api_client, user, f):
+    template = f.create_template()
     api_client.force_login(user)
     response = api_client.patch("/v1/budgets/%s/" % template.pk, data={
         "name": "New Name"
@@ -121,8 +117,8 @@ def test_update_template(api_client, user, create_template):
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_update_community_template(api_client, staff_user, create_template):
-    template = create_template(created_by=staff_user, community=True)
+def test_update_community_template(api_client, staff_user, f):
+    template = f.create_template(created_by=staff_user, community=True)
     api_client.force_login(staff_user)
     response = api_client.patch("/v1/budgets/%s/" % template.pk, data={
         "name": "New Name"
@@ -153,8 +149,8 @@ def test_update_community_template(api_client, staff_user, create_template):
     }
 
 
-def test_hide_community_template(api_client, staff_user, create_template):
-    template = create_template(created_by=staff_user, community=True)
+def test_hide_community_template(api_client, staff_user, f):
+    template = f.create_template(created_by=staff_user, community=True)
     api_client.force_login(staff_user)
     response = api_client.patch("/v1/budgets/%s/" % template.pk, data={
         "name": "New Name",
@@ -166,8 +162,8 @@ def test_hide_community_template(api_client, staff_user, create_template):
     assert template.hidden is True
 
 
-def test_hide_non_community_template(api_client, user, create_template):
-    template = create_template()
+def test_hide_non_community_template(api_client, user, f):
+    template = f.create_template()
     api_client.force_login(user)
     response = api_client.patch("/v1/budgets/%s/" % template.pk, data={
         "name": "New Name",
@@ -183,10 +179,9 @@ def test_hide_non_community_template(api_client, user, create_template):
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_update_another_users_community_template(api_client, staff_user,
-        create_template, create_user):
-    user = create_user(is_staff=True)
-    template = create_template(created_by=user, community=True)
+def test_update_another_users_community_template(api_client, staff_user, f):
+    user = f.create_user(is_staff=True)
+    template = f.create_template(created_by=user, community=True)
     api_client.force_login(staff_user)
     response = api_client.patch("/v1/budgets/%s/" % template.pk, data={
         "name": "New Name"
@@ -217,8 +212,8 @@ def test_update_another_users_community_template(api_client, staff_user,
     }
 
 
-def test_make_template_community(api_client, staff_user, create_template):
-    template = create_template(created_by=staff_user)
+def test_make_template_community(api_client, staff_user, f):
+    template = f.create_template(created_by=staff_user)
     api_client.force_login(staff_user)
     response = api_client.patch("/v1/budgets/%s/" % template.pk, data={
         "community": True
@@ -228,9 +223,8 @@ def test_make_template_community(api_client, staff_user, create_template):
     assert template.community is True
 
 
-def test_make_template_community_requires_staff(api_client, staff_user, user,
-        create_template):
-    template = create_template(created_by=staff_user)
+def test_make_template_community_requires_staff(api_client, staff_user, user, f):
+    template = f.create_template(created_by=staff_user)
     api_client.force_login(user)
     response = api_client.patch("/v1/budgets/%s/" % template.pk, data={
         "community": True
@@ -238,9 +232,9 @@ def test_make_template_community_requires_staff(api_client, staff_user, user,
     assert response.status_code == 403
 
 
-def test_update_community_template_non_staff_user(api_client, staff_user,
-        create_template, user):
-    template = create_template(created_by=staff_user, community=True)
+def test_update_community_template_non_staff_user(api_client, staff_user, f,
+        user):
+    template = f.create_template(created_by=staff_user, community=True)
     api_client.force_login(user)
     response = api_client.patch("/v1/budgets/%s/" % template.pk, data={
         "name": "New Name"
@@ -249,8 +243,8 @@ def test_update_community_template_non_staff_user(api_client, staff_user,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_duplicate_template(api_client, user, create_template, models):
-    original = create_template(created_by=user)
+def test_duplicate_template(api_client, user, f, models):
+    original = f.create_template(created_by=user)
     api_client.force_login(user)
     response = api_client.post("/v1/budgets/%s/duplicate/" % original.pk)
     assert models.Template.objects.count() == 2
@@ -279,18 +273,17 @@ def test_duplicate_template(api_client, user, create_template, models):
     }
 
 
-def test_delete_template(api_client, user, create_template, models):
+def test_delete_template(api_client, user, f, models):
     api_client.force_login(user)
-    template = create_template()
+    template = f.create_template()
     response = api_client.delete("/v1/budgets/%s/" % template.pk)
     assert response.status_code == 204
     assert models.Template.objects.first() is None
 
 
-def test_delete_community_template(api_client, staff_user, create_template,
-        models):
+def test_delete_community_template(api_client, staff_user, f, models):
     api_client.force_login(staff_user)
-    template = create_template(created_by=staff_user, community=True)
+    template = f.create_template(created_by=staff_user, community=True)
     response = api_client.delete("/v1/budgets/%s/" % template.pk)
     assert response.status_code == 204
     assert models.Template.objects.first() is None

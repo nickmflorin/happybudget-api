@@ -3,15 +3,18 @@ import pytest
 
 
 @pytest.fixture
-def generate_data(create_fringe, create_group, create_markup, colors,
-        create_actual, create_contact, create_subaccount_unit):
-    def generate(factory, user, include_actuals=False):
-        contacts = create_contact(count=2)
-        base = factory.create_budget(created_by=user, name="Test Name")
-        fringes = create_fringe(
-            budget=base, created_by=user, updated_by=user, count=2)
-        account_groups = create_group(parent=base, count=3)
-        account_markups = create_markup(parent=base, count=3)
+def generate_data(f, colors):
+    def generate(domain, user, include_actuals=False):
+        contacts = f.create_contact(count=2)
+        base = f.create_budget(domain=domain, created_by=user, name="Test Name")
+        fringes = f.create_fringe(
+            budget=base,
+            created_by=user,
+            updated_by=user,
+            count=2
+        )
+        account_groups = f.create_group(parent=base, count=3)
+        account_markups = f.create_markup(parent=base, count=3)
 
         # Determines how Markup's should be allocated amongst each individual
         # account.
@@ -27,8 +30,9 @@ def generate_data(create_fringe, create_group, create_markup, colors,
             group = None
             if g_designation is not None:
                 group = account_groups[g_designation]
-            accounts.append(factory.create_account(
+            accounts.append(f.create_account(
                 parent=base,
+                domain=domain,
                 created_by=user,
                 updated_by=user,
                 group=group,
@@ -42,21 +46,21 @@ def generate_data(create_fringe, create_group, create_markup, colors,
         subaccounts = {}
         child_subaccounts = {}
 
-        subaccount_units = create_subaccount_unit(
+        subaccount_units = f.create_subaccount_unit(
             count=4,
             title_array=['Title 1', 'Title 2', 'Title 3', 'Title 4']
         )
 
         for account in accounts:
             # Create 2 Markups per Account
-            subaccount_markups[account.pk] = create_markup(
+            subaccount_markups[account.pk] = f.create_markup(
                 count=2,
                 parent=account
             )
             # Create 2 Groups per Account
             subaccount_groups[account.pk] = [
-                create_group(parent=account, color=colors[0]),
-                create_group(parent=account, color=colors[1]),
+                f.create_group(parent=account, color=colors[0]),
+                f.create_group(parent=account, color=colors[1]),
             ]
             # Create 2 SubAccount(s) for each Account, each with it's own Group.
             new_subaccounts = []
@@ -71,9 +75,10 @@ def generate_data(create_fringe, create_group, create_markup, colors,
                     'unit': subaccount_units[i]
                 }
 
-                if factory.domain == 'budget':
+                if domain == 'budget':
                     kwargs.update(contact=contacts[i])
-                new_subaccounts.append(factory.create_subaccount(**kwargs))
+                new_subaccounts.append(f.create_subaccount(
+                    domain=domain, **kwargs))
 
             subaccounts[account.pk] = new_subaccounts
 
@@ -82,11 +87,11 @@ def generate_data(create_fringe, create_group, create_markup, colors,
 
                 # Create 2 Groups per SubAccount
                 child_subaccount_groups[subaccount.pk] = [
-                    create_group(parent=subaccount, color=colors[0]),
-                    create_group(parent=subaccount, color=colors[0]),
+                    f.create_group(parent=subaccount, color=colors[0]),
+                    f.create_group(parent=subaccount, color=colors[0]),
                 ]
                 # Create 2 Markups per SubAccount
-                child_subaccount_markups[subaccount.pk] = create_markup(
+                child_subaccount_markups[subaccount.pk] = f.create_markup(
                     count=2,
                     parent=subaccount
                 )
@@ -94,8 +99,9 @@ def generate_data(create_fringe, create_group, create_markup, colors,
                 # Group.
                 for i in range(2):
                     # Intentionally leave out contacts so we can treat as null.
-                    sub = factory.create_subaccount(
+                    sub = f.create_subaccount(
                         parent=subaccount,
+                        domain=domain,
                         created_by=user,
                         updated_by=user,
                         fringes=[fringes[i]],
@@ -117,14 +123,14 @@ def generate_data(create_fringe, create_group, create_markup, colors,
         }
         if include_actuals:
             actuals = [
-                create_actual(
+                f.create_actual(
                     contact=contacts[0],
                     created_by=user,
                     updated_by=user,
                     budget=data['base']
                 ),
                 # Intentionally leave out contacts so we can treat as null.
-                create_actual(
+                f.create_actual(
                     created_by=user,
                     updated_by=user,
                     budget=data['base']
@@ -301,25 +307,23 @@ def make_result_assertions():
     return make_assert
 
 
-def test_duplicate_budget(budget_df, user, generate_data, models,
-        make_result_assertions):
-    data = generate_data(budget_df, user, include_actuals=True)
+def test_duplicate_budget(user, generate_data, models, make_result_assertions):
+    data = generate_data("budget", user, include_actuals=True)
     budget = models.Budget.objects.duplicate(data['base'], user)
     assert isinstance(budget, models.Budget)
     make_result_assertions(data, budget, user, include_actuals=True)
 
 
-def test_duplicate_template(template_df, user, generate_data, models,
-        make_result_assertions):
-    data = generate_data(template_df, user)
+def test_duplicate_template(user, generate_data, models, make_result_assertions):
+    data = generate_data("template", user)
     template = models.Template.objects.duplicate(data['base'], user)
     assert isinstance(template, models.Template)
     make_result_assertions(data, template, user)
 
 
-def test_derive_budget(template_df, user, generate_data, make_result_assertions,
-        models, admin_user):
-    data = generate_data(template_df, admin_user)
+def test_derive_budget(user, generate_data, make_result_assertions, models,
+        admin_user):
+    data = generate_data("template", admin_user)
     budget = models.Template.objects.derive(data['base'], user)
     budget.refresh_from_db()
     make_result_assertions(data, budget, user)

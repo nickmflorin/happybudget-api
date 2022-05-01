@@ -2,7 +2,7 @@ from django.db import IntegrityError
 import pytest
 
 
-def test_markup_changed_to_flat(budget_f, create_markup, models):
+def test_markup_changed_to_flat(budget_f, f, models):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     budget_f.create_subaccount(
@@ -16,13 +16,13 @@ def test_markup_changed_to_flat(budget_f, create_markup, models):
     assert account.nominal_value == 800.0
     assert account.markup_contribution == 0.0
     markups = [
-        create_markup(
+        f.create_markup(
             parent=budget,
             accounts=[account],
             rate=0.5,
             percent=True
         ),
-        create_markup(
+        f.create_markup(
             parent=budget,
             accounts=[account],
             rate=0.5,
@@ -56,18 +56,18 @@ def test_markup_changed_to_flat(budget_f, create_markup, models):
     assert budget.accumulated_markup_contribution == 400.5
 
 
-def test_account_markups_change(budget_f, create_markup):
+def test_account_markups_change(budget_f, f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     budget_f.create_subaccount(parent=account, quantity=10, rate=10)
     markups = [
-        create_markup(
+        f.create_markup(
             parent=budget,
             accounts=[account],
             rate=0.5,
             percent=True,
         ),
-        create_markup(
+        f.create_markup(
             parent=budget,
             accounts=[account],
             rate=0.6,
@@ -91,7 +91,7 @@ def test_account_markups_change(budget_f, create_markup):
     assert budget.accumulated_markup_contribution == 60.0
 
 
-def test_subaccount_markups_change(budget_f, create_markup):
+def test_subaccount_markups_change(budget_f, f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccounts = budget_f.create_subaccount(
@@ -101,13 +101,13 @@ def test_subaccount_markups_change(budget_f, create_markup):
         rate=10
     )
     markups = [
-        create_markup(
+        f.create_markup(
             parent=account,
             subaccounts=subaccounts,
             rate=0.5,
             percent=True,
         ),
-        create_markup(
+        f.create_markup(
             parent=account,
             subaccounts=[subaccounts[0]],
             rate=0.6,
@@ -151,18 +151,18 @@ def test_subaccount_markups_change(budget_f, create_markup):
     assert budget.accumulated_markup_contribution == 100.0
 
 
-def test_account_markup_changes_rate(budget_f, create_markup):
+def test_account_markup_changes_rate(budget_f, f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     budget_f.create_subaccount(parent=account, quantity=10, rate=10)
     markups = [
-        create_markup(
+        f.create_markup(
             parent=budget,
             accounts=[account],
             rate=0.5,
             percent=True,
         ),
-        create_markup(
+        f.create_markup(
             parent=budget,
             accounts=[account],
             rate=0.6,
@@ -189,18 +189,18 @@ def test_account_markup_changes_rate(budget_f, create_markup):
     assert budget.accumulated_markup_contribution == 130.0
 
 
-def test_account_markup_changes_unit(budget_f, create_markup, models):
+def test_account_markup_changes_unit(budget_f, f, models):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     budget_f.create_subaccount(parent=account, quantity=10, rate=10)
     markups = [
-        create_markup(
+        f.create_markup(
             parent=budget,
             accounts=[account],
             rate=0.5,
             percent=True,
         ),
-        create_markup(
+        f.create_markup(
             parent=budget,
             accounts=[account],
             rate=0.6,
@@ -229,7 +229,7 @@ def test_account_markup_changes_unit(budget_f, create_markup, models):
     assert budget.accumulated_markup_contribution == 60.5
 
 
-def test_account_markup_deleted(budget_f, create_markup):
+def test_account_markup_deleted(budget_f, f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     budget_f.create_subaccount(
@@ -240,13 +240,13 @@ def test_account_markup_deleted(budget_f, create_markup):
         count=2
     )
     markups = [
-        create_markup(
+        f.create_markup(
             parent=budget,
             accounts=[account],
             rate=0.5,
             percent=True
         ),
-        create_markup(
+        f.create_markup(
             parent=budget,
             accounts=[account],
             rate=0.5,
@@ -263,7 +263,7 @@ def test_account_markup_deleted(budget_f, create_markup):
     assert account.markup_contribution == 400.0
 
 
-def test_subaccount_markup_deleted(budget_f, create_markup):
+def test_subaccount_markup_deleted(budget_f, f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccount = budget_f.create_subaccount(
@@ -273,13 +273,13 @@ def test_subaccount_markup_deleted(budget_f, create_markup):
         rate=10
     )
     markups = [
-        create_markup(
+        f.create_markup(
             parent=account,
             subaccounts=[subaccount],
             rate=0.5,
             percent=True
         ),
-        create_markup(
+        f.create_markup(
             parent=account,
             subaccounts=[subaccount],
             rate=0.5,
@@ -305,18 +305,18 @@ def test_subaccount_markup_deleted(budget_f, create_markup):
     assert account.accumulated_markup_contribution == 200.0
 
 
-def test_account_markup_children_constraint(budget_f, create_markup):
+def test_account_markup_children_constraint(budget_f, f):
     budget = budget_f.create_budget()
     another_budget = budget_f.create_budget()
     account = budget_f.create_account(parent=another_budget)
     with pytest.raises(IntegrityError):
-        create_markup(parent=budget, accounts=[account])
+        f.create_markup(parent=budget, accounts=[account])
 
 
-def test_subaccount_markup_children_constraint(budget_f, create_markup):
+def test_subaccount_markup_children_constraint(budget_f, f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     another_account = budget_f.create_account(parent=budget)
     subaccount = budget_f.create_subaccount(parent=another_account)
     with pytest.raises(IntegrityError):
-        create_markup(parent=account, subaccounts=[subaccount])
+        f.create_markup(parent=account, subaccounts=[subaccount])

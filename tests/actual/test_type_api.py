@@ -1,7 +1,7 @@
-def test_unit_properly_serializes(api_client, user, create_actual_type):
+def test_unit_properly_serializes(api_client, user, f):
     types = [
-        create_actual_type(title='Vendor'),
-        create_actual_type(title='Company')
+        f.create_actual_type(title='Vendor'),
+        f.create_actual_type(title='Company')
     ]
     api_client.force_login(user)
     response = api_client.get("/v1/actuals/types/")

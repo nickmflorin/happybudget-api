@@ -40,11 +40,11 @@ def test_get_accounts(api_client, user, budget_f):
     ]
 
 
-def test_get_accounts_ordered_by_group(api_client, user, budget_f, create_group):
+def test_get_accounts_ordered_by_group(api_client, user, budget_f, f):
     budget = budget_f.create_budget()
     groups = [
-        create_group(parent=budget),
-        create_group(parent=budget)
+        f.create_group(parent=budget),
+        f.create_group(parent=budget)
     ]
     # pylint: disable=expression-not-assigned
     [
@@ -91,11 +91,11 @@ def test_get_accounts_filtered_by_id(api_client, user, budget_f):
     ]
 
 
-def test_create_account(api_client, user, budget_f, models, create_group):
+def test_create_account(api_client, user, budget_f, models, f):
     budget = budget_f.create_budget()
     # Make sure that we can create the Account with a Group.  To do this, the
     # Group must not be empty.
-    group = create_group(parent=budget)
+    group = f.create_group(parent=budget)
     budget_f.create_account(group=group, parent=budget)
 
     api_client.force_login(user)
@@ -146,13 +146,12 @@ def test_create_account(api_client, user, budget_f, models, create_group):
     }
 
 
-def test_create_account_group_not_in_table(api_client, user, budget_f,
-        create_group):
+def test_create_account_group_not_in_table(api_client, user, budget_f, f):
     budget = budget_f.create_budget()
     another_budget = budget_f.create_budget()
 
     # The group must not be empty.
-    group = create_group(parent=another_budget)
+    group = f.create_group(parent=another_budget)
     budget_f.create_account(group=group, parent=another_budget)
 
     api_client.force_login(user)
@@ -164,10 +163,9 @@ def test_create_account_group_not_in_table(api_client, user, budget_f,
     assert response.json()['errors'][0]['code'] == 'does_not_exist_in_table'
 
 
-def test_create_account_group_empty(api_client, user, budget_f,
-        create_group):
+def test_create_account_group_empty(api_client, user, budget_f, f):
     budget = budget_f.create_budget()
-    group = create_group(parent=budget)
+    group = f.create_group(parent=budget)
     api_client.force_login(user)
     response = api_client.post(
         "/v1/budgets/%s/children/" % budget.pk,
@@ -177,11 +175,11 @@ def test_create_account_group_empty(api_client, user, budget_f,
     assert response.json()['errors'][0]['code'] == 'is_empty'
 
 
-def test_bulk_update_accounts(api_client, user, budget_f, create_group):
+def test_bulk_update_accounts(api_client, user, budget_f, f):
     budget = budget_f.create_budget()
 
     # The group must not be empty.
-    group = create_group(parent=budget)
+    group = f.create_group(parent=budget)
     budget_f.create_account(group=group, parent=budget)
 
     accounts = budget_f.create_account(parent=budget, count=2)

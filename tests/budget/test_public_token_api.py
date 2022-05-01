@@ -3,10 +3,9 @@ import pytest
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_budget_with_public_token(api_client, user, create_budget,
-        create_public_token):
-    budget = create_budget()
-    public_token = create_public_token(instance=budget)
+def test_get_budget_with_public_token(api_client, user, f):
+    budget = f.create_budget()
+    public_token = f.create_public_token(instance=budget)
     api_client.force_login(user)
     response = api_client.get("/v1/budgets/%s/" % budget.pk)
     assert response.status_code == 200
@@ -41,14 +40,13 @@ def test_get_budget_with_public_token(api_client, user, create_budget,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_budget_public_token(api_client, user, create_budget, models,
-        create_public_token):
-    budget = create_budget()
+def test_create_budget_public_token(api_client, user, f, models):
+    budget = f.create_budget()
 
     # Create another public token so for another budget to make sure we can
     # share multiple budgets without unique validation errors.
-    another_budget = create_budget()
-    create_public_token(instance=another_budget)
+    another_budget = f.create_budget()
+    f.create_public_token(instance=another_budget)
 
     api_client.force_login(user)
     response = api_client.post("/v1/budgets/%s/public-token/" % budget.pk, data={
@@ -69,12 +67,12 @@ def test_create_budget_public_token(api_client, user, create_budget, models,
 
 @pytest.mark.freeze_time('2020-01-01')
 def test_create_budget_public_token_with_previously_expired(api_client, user,
-        create_budget, models, create_public_token):
-    budget = create_budget()
+        f, models):
+    budget = f.create_budget()
     # Create a public token for the same budget that has already expired.
     # This should not prevent us from being able to create a public token for
     # the budget.
-    create_public_token(
+    f.create_public_token(
         instance=budget,
         expires_at=datetime.datetime(2019, 11, 1)
     )
@@ -101,10 +99,9 @@ def test_create_budget_public_token_with_previously_expired(api_client, user,
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_create_another_budget_public_token(api_client, user, create_budget,
-        models, create_public_token):
-    budget = create_budget()
-    create_public_token(instance=budget)
+def test_create_another_budget_public_token(api_client, user, models, f):
+    budget = f.create_budget()
+    f.create_public_token(instance=budget)
     api_client.force_login(user)
     response = api_client.post("/v1/budgets/%s/public-token/" % budget.pk, data={
         'expires_at': '2021-01-01',

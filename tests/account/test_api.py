@@ -86,13 +86,13 @@ def test_update_account(api_client, user, budget_f):
     assert account.description == "Account description"
 
 
-def test_update_account_invalid_group(api_client, user, budget_f, create_group):
+def test_update_account_invalid_group(api_client, user, budget_f, f):
     budget = budget_f.create_budget()
     another_budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     # The Group must not be empty, otherwise we will get another error that we
     # are not testing for.
-    group = create_group(parent=another_budget)
+    group = f.create_group(parent=another_budget)
     budget_f.create_account(
         count=2,
         group=group,
@@ -180,8 +180,7 @@ def test_bulk_update_children(api_client, user, freezer, budget_f):
     assert budget.actual == 0.0
 
 
-def test_bulk_update_children_fringes(api_client, user, create_fringe,
-         budget_f):
+def test_bulk_update_children_fringes(api_client, user, f, budget_f):
     budget = budget_f.create_budget()
     account = budget_f.create_account(parent=budget)
     subaccounts = [
@@ -201,8 +200,8 @@ def test_bulk_update_children_fringes(api_client, user, create_fringe,
         )
     ]
     fringes = [
-        create_fringe(budget=budget, rate=0.5),
-        create_fringe(budget=budget, rate=0.2)
+        f.create_fringe(budget=budget, rate=0.5),
+        f.create_fringe(budget=budget, rate=0.2)
     ]
     api_client.force_login(user)
     response = api_client.patch(

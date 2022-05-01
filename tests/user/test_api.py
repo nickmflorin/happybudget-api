@@ -12,27 +12,27 @@ from greenbudget.app.user.mail import get_template
 
 
 @pytest.fixture
-def searchable_users(create_user):
+def searchable_users(f):
     return [
-        create_user(
+        f.create_user(
             email="bcosby@gmail.com",
             first_name="Bill",
             last_name="Cosby",
             last_login=datetime.datetime(2020, 4, 1)
         ),
-        create_user(
+        f.create_user(
             email="slapattheoscars@gmail.com",
             first_name="Will",
             last_name="Smith",
             last_login=datetime.datetime(2020, 3, 1)
         ),
-        create_user(
+        f.create_user(
             email="wsmith@gmail.com",
             first_name="Will",
             last_name="Smith",
             last_login=datetime.datetime(2020, 2, 1)
         ),
-        create_user(
+        f.create_user(
             email="bjohnson@gmail.com",
             first_name="Will",
             last_name='Jackson',
@@ -108,7 +108,7 @@ def test_registration_invalid_password(api_client, password):
     FROM_EMAIL="noreply@greenbudget.io",
     FRONTEND_URL="https://app.greenbudget.io"
 )
-def test_registration(api_client, models, settings, user):
+def test_registration(api_client, models, user):
     # Use another user to generate the Access Token for mock purposes.
     token = AccessToken.for_user(user)
 
