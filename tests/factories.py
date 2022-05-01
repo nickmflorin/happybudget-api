@@ -637,7 +637,6 @@ def create_header_template(user):
     return inner
 
 
-
 @pytest.fixture
 def all_fixture_factories(
     create_attachment,

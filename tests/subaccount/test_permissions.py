@@ -23,7 +23,7 @@ def another_user_case(api_client, user, f):
 
 
 @pytest.fixture
-def public_case(api_client, user,f):
+def public_case(api_client, user, f):
     def inner(domain, case_info=None, model_kwargs=None):
         budget = f.create_budget(created_by=user)
         public_token = f.create_public_token(instance=budget)
