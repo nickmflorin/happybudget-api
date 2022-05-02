@@ -81,6 +81,14 @@ class ParameterizedCase:
         })
 
     @classmethod
+    def multiple_budgets_not_authenticated(cls):
+        return cls('multiple_budgets', login=False, status=401, error={
+            'message': 'User is not authenticated.',
+            'code': 'account_not_authenticated',
+            'error_type': 'auth'
+        })
+
+    @classmethod
     def multiple_budgets_restricted(cls):
         return cls('multiple_budgets', login=True, status=403, error={
             'message': (
@@ -286,7 +294,21 @@ def establish_case(cases):
 
 
 @pytest.fixture
-def update_response(api_client, obj_url):
+def with_assertion(make_permission_assertions):
+    def inner(func):
+        def decorated(case, **kwargs):
+            make_assertion = kwargs.pop('make_assertion', True)
+            response = func(case, **kwargs)
+            if make_assertion:
+                make_permission_assertions(response)
+            return response
+        return decorated
+    return inner
+
+
+@pytest.fixture
+def update_response(api_client, obj_url, with_assertion):
+    @with_assertion
     def inner(case, **kwargs):
         case = case.with_info(method='PATCH', **kwargs)
         url, _ = obj_url(case)
@@ -299,7 +321,8 @@ def update_response(api_client, obj_url):
 
 
 @pytest.fixture
-def detail_response(api_client, obj_url):
+def detail_response(api_client, obj_url, with_assertion):
+    @with_assertion
     def inner(case, **kwargs):
         case = case.with_info(method='GET', **kwargs)
         url, _ = obj_url(case)
@@ -312,7 +335,8 @@ def detail_response(api_client, obj_url):
 
 
 @pytest.fixture
-def list_response(api_client, objless_url):
+def list_response(api_client, objless_url, with_assertion):
+    @with_assertion
     def inner(case, **kwargs):
         case = case.with_info(method='GET', **kwargs)
         url = objless_url(case)
@@ -325,7 +349,8 @@ def list_response(api_client, objless_url):
 
 
 @pytest.fixture
-def create_response(api_client, objless_url):
+def create_response(api_client, objless_url, with_assertion):
+    @with_assertion
     def inner(case, **kwargs):
         case = case.with_info(method='POST', **kwargs)
         url = objless_url(case)
@@ -344,7 +369,8 @@ def create_response(api_client, objless_url):
 
 
 @pytest.fixture
-def delete_response(api_client, obj_url):
+def delete_response(api_client, obj_url, with_assertion):
+    @with_assertion
     def inner(case, **kwargs):
         case = case.with_info(method='DELETE', **kwargs)
         url, _ = obj_url(case)
@@ -357,7 +383,8 @@ def delete_response(api_client, obj_url):
 
 
 @pytest.fixture
-def detail_create_response(api_client, obj_url):
+def detail_create_response(api_client, obj_url, with_assertion):
+    @with_assertion
     def inner(case, **kwargs):
         case = case.with_info(method='POST', **kwargs)
         url, obj = obj_url(case)
@@ -373,7 +400,8 @@ def detail_create_response(api_client, obj_url):
 
 
 @pytest.fixture
-def detail_update_response(api_client, obj_url):
+def detail_update_response(api_client, obj_url, with_assertion):
+    @with_assertion
     def inner(case, **kwargs):
         case = case.with_info(method='PATCH', **kwargs)
         url, obj = obj_url(case)

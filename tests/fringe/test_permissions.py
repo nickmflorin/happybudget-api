@@ -32,11 +32,7 @@ def create_obj(f):
     ParameterizedCase('another_public_case', status=401),
     ParameterizedCase('logged_in', create=True, status=200),
     ParameterizedCase.multiple_budgets_restricted(),
-    ParameterizedCase('multiple_budgets', login=False, status=401, error={
-        'message': 'User is not authenticated.',
-        'code': 'account_not_authenticated',
-        'error_type': 'auth'
-    }),
+    ParameterizedCase.multiple_budgets_not_authenticated(),
     ParameterizedCase(
         'collaborator',
         login=True,
@@ -74,10 +70,8 @@ def create_obj(f):
         status=401
     )
 ])
-def test_budget_fringe_detail_read_permissions(case, detail_response,
-        make_permission_assertions):
-    response = detail_response(case, domain="budget")
-    make_permission_assertions(response)
+def test_budget_fringe_detail_read_permissions(case, detail_response):
+    detail_response(case, domain="budget")
 
 
 @pytest.mark.parametrize('case', [
@@ -91,16 +85,10 @@ def test_budget_fringe_detail_read_permissions(case, detail_response,
     ParameterizedCase('public_case', status=401),
     ParameterizedCase('logged_in', create=True, status=200),
     ParameterizedCase('multiple_budgets', login=True, status=200),
-    ParameterizedCase('multiple_budgets', login=False, status=401, error={
-        'message': 'User is not authenticated.',
-        'code': 'account_not_authenticated',
-        'error_type': 'auth'
-    })
+    ParameterizedCase.multiple_budgets_not_authenticated(),
 ])
-def test_template_fringe_detail_read_permissions(case, detail_response,
-        make_permission_assertions):
-    response = detail_response(case, domain="template")
-    make_permission_assertions(response)
+def test_template_fringe_detail_read_permissions(case, detail_response):
+    detail_response(case, domain="template")
 
 
 FRINGE_DELETE_PERMISSIONS = [
@@ -113,11 +101,7 @@ FRINGE_DELETE_PERMISSIONS = [
     ParameterizedCase.not_logged_in(),
     ParameterizedCase('public_case', status=401),
     ParameterizedCase('logged_in', create=True, status=204),
-    ParameterizedCase('multiple_budgets', login=False, status=401, error={
-        'message': 'User is not authenticated.',
-        'code': 'account_not_authenticated',
-        'error_type': 'auth'
-    })
+    ParameterizedCase.multiple_budgets_not_authenticated(),
 ]
 
 
@@ -161,19 +145,15 @@ FRINGE_DELETE_PERMISSIONS = [
         status=401
     )
 ])
-def test_budget_fringe_delete_permissions(case, delete_response,
-        make_permission_assertions):
-    response = delete_response(case, domain="budget")
-    make_permission_assertions(response)
+def test_budget_fringe_delete_permissions(case, delete_response):
+    delete_response(case, domain="budget")
 
 
 @pytest.mark.parametrize('case', FRINGE_DELETE_PERMISSIONS + [
     ParameterizedCase('multiple_budgets', login=True, status=204)
 ])
-def test_template_fringe_delete_permissions(case, delete_response,
-        make_permission_assertions):
-    response = delete_response(case, domain="template")
-    make_permission_assertions(response)
+def test_template_fringe_delete_permissions(case, delete_response):
+    delete_response(case, domain="template")
 
 
 @pytest.mark.parametrize('case', [
@@ -188,11 +168,7 @@ def test_template_fringe_delete_permissions(case, delete_response,
     ParameterizedCase('another_public_case', status=401),
     ParameterizedCase('logged_in', create=True, status=200),
     ParameterizedCase.multiple_budgets_restricted(),
-    ParameterizedCase('multiple_budgets', login=False, status=401, error={
-        'message': 'User is not authenticated.',
-        'code': 'account_not_authenticated',
-        'error_type': 'auth'
-    }),
+    ParameterizedCase.multiple_budgets_not_authenticated(),
     ParameterizedCase(
         'collaborator',
         login=True,
@@ -230,11 +206,8 @@ def test_template_fringe_delete_permissions(case, delete_response,
         status=401
     )
 ])
-def test_budget_fringe_update_permissions(case, update_response,
-        make_permission_assertions):
-    response = update_response(
-        case, domain="budget", data={"name": "Test Fringe"})
-    make_permission_assertions(response)
+def test_budget_fringe_update_permissions(case, update_response):
+    update_response(case, domain="budget", data={"name": "Test Fringe"})
 
 
 @pytest.mark.parametrize('case', [
@@ -248,14 +221,7 @@ def test_budget_fringe_update_permissions(case, update_response,
     ParameterizedCase('public_case', status=401),
     ParameterizedCase('logged_in', create=True, status=200),
     ParameterizedCase('multiple_budgets', login=True, status=200),
-    ParameterizedCase('multiple_budgets', login=False, status=401, error={
-        'message': 'User is not authenticated.',
-        'code': 'account_not_authenticated',
-        'error_type': 'auth'
-    })
+    ParameterizedCase.multiple_budgets_not_authenticated(),
 ])
-def test_template_fringe_update_permissions(case, update_response,
-        make_permission_assertions):
-    response = update_response(
-        case, domain="template", data={"name": "Test Fringe"})
-    make_permission_assertions(response)
+def test_template_fringe_update_permissions(case, update_response):
+    update_response(case, domain="template", data={"name": "Test Fringe"})

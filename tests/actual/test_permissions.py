@@ -33,11 +33,7 @@ def create_obj(f):
     ParameterizedCase('another_public_case', status=401),
     ParameterizedCase('logged_in', create=True, status=200),
     ParameterizedCase.multiple_budgets_restricted(),
-    ParameterizedCase('multiple_budgets', login=False, status=401, error={
-        'message': 'User is not authenticated.',
-        'code': 'account_not_authenticated',
-        'error_type': 'auth'
-    }),
+    ParameterizedCase.multiple_budgets_not_authenticated(),
     ParameterizedCase(
         'collaborator',
         login=True,
@@ -75,10 +71,8 @@ def create_obj(f):
         status=401
     )
 ])
-def test_detail_read_permissions(case, detail_response,
-        make_permission_assertions):
-    response = detail_response(case)
-    make_permission_assertions(response)
+def test_detail_read_permissions(case, detail_response):
+    detail_response(case)
 
 
 @pytest.mark.parametrize('case', [
@@ -91,11 +85,7 @@ def test_detail_read_permissions(case, detail_response,
     ParameterizedCase.not_logged_in(),
     ParameterizedCase('public_case', status=401),
     ParameterizedCase('logged_in', create=True, status=204),
-    ParameterizedCase('multiple_budgets', login=False, status=401, error={
-        'message': 'User is not authenticated.',
-        'code': 'account_not_authenticated',
-        'error_type': 'auth'
-    }),
+    ParameterizedCase.multiple_budgets_not_authenticated(),
     ParameterizedCase.multiple_budgets_restricted(),
     ParameterizedCase('another_public_case', status=401),
     ParameterizedCase(
@@ -135,9 +125,8 @@ def test_detail_read_permissions(case, detail_response,
         status=401
     )
 ])
-def test_delete_permissions(case, delete_response, make_permission_assertions):
-    response = delete_response(case)
-    make_permission_assertions(response)
+def test_delete_permissions(case, delete_response):
+    delete_response(case)
 
 
 @pytest.mark.parametrize('case', [
@@ -152,11 +141,7 @@ def test_delete_permissions(case, delete_response, make_permission_assertions):
     ParameterizedCase('another_public_case', status=401),
     ParameterizedCase('logged_in', create=True, status=200),
     ParameterizedCase.multiple_budgets_restricted(),
-    ParameterizedCase('multiple_budgets', login=False, status=401, error={
-        'message': 'User is not authenticated.',
-        'code': 'account_not_authenticated',
-        'error_type': 'auth'
-    }),
+    ParameterizedCase.multiple_budgets_not_authenticated(),
     ParameterizedCase(
         'collaborator',
         login=True,
@@ -194,9 +179,8 @@ def test_delete_permissions(case, delete_response, make_permission_assertions):
         status=401
     )
 ])
-def test_update_permissions(case, update_response, make_permission_assertions):
-    response = update_response(case, data={'name': 'Test Actual'})
-    make_permission_assertions(response)
+def test_update_permissions(case, update_response):
+    update_response(case, data={'name': 'Test Actual'})
 
 
 ACTUAL_DETAIL_ATTACHMENT_PERMISSIONS = [
@@ -258,12 +242,11 @@ ACTUAL_DETAIL_ATTACHMENT_PERMISSIONS = [
         ParameterizedCase('logged_in', create=True, status=201),
     ]
 )
-def test_actual_detail_upload_attachment_permissions(case,
-        detail_create_response, make_permission_assertions, test_uploaded_file):
+def test_actual_detail_upload_attachment_permissions(case, test_uploaded_file,
+        detail_create_response):
     uploaded_file = test_uploaded_file('test.jpeg')
-    response = detail_create_response(case,
-        data={'file': uploaded_file}, path='/attachments/')
-    make_permission_assertions(response)
+    detail_create_response(
+        case, data={'file': uploaded_file}, path='/attachments/')
 
 
 @pytest.mark.parametrize(
@@ -272,10 +255,8 @@ def test_actual_detail_upload_attachment_permissions(case,
         ParameterizedCase('logged_in', create=True, status=200),
     ]
 )
-def test_actual_detail_read_attachment_permissions(case, detail_response,
-        make_permission_assertions):
-    response = detail_response(case, path='/attachments/')
-    make_permission_assertions(response)
+def test_actual_detail_read_attachment_permissions(case, detail_response):
+    detail_response(case, path='/attachments/')
 
 
 @pytest.mark.parametrize(
@@ -284,8 +265,7 @@ def test_actual_detail_read_attachment_permissions(case, detail_response,
         ParameterizedCase('logged_in', create=True, status=204),
     ]
 )
-def test_actual_detail_delete_attachment_permissions(case, f, delete_response,
-        make_permission_assertions):
+def test_actual_detail_delete_attachment_permissions(case, f, delete_response):
     def path(actual):
         return '/attachments/%s/' % actual.attachments.first().pk
 
@@ -304,5 +284,4 @@ def test_actual_detail_delete_attachment_permissions(case, f, delete_response,
             )
         ]}
 
-    response = delete_response(case, path=path, model_kwargs=model_kwargs)
-    make_permission_assertions(response)
+    delete_response(case, path=path, model_kwargs=model_kwargs)
