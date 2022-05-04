@@ -1,7 +1,6 @@
 # pylint: disable=redefined-outer-name
 import pytest
 
-from greenbudget.app.collaborator.models import Collaborator
 from tests.permissions import ParameterizedCase
 
 
@@ -20,7 +19,7 @@ def create_obj(f):
     return inner
 
 
-@pytest.mark.parametrize('case', [
+@ParameterizedCase.parameterize([
     ParameterizedCase(name='another_user', status=403, error={
         'message': (
             'The user must does not have permission to view this group.'),
@@ -33,48 +32,13 @@ def create_obj(f):
     ParameterizedCase('logged_in', create=True, status=200),
     ParameterizedCase.multiple_budgets_restricted(),
     ParameterizedCase.multiple_budgets_not_authenticated(),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.view_only,
-        status=200
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.owner,
-        status=200
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.editor,
-        status=200
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.view_only,
-        status=401
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.owner,
-        status=401
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.editor,
-        status=401
-    )
+    ParameterizedCase.collaborator(status=200),
 ])
 def test_budget_group_detail_read_permissions(case, detail_response):
     detail_response(case, domain="budget")
 
 
-@pytest.mark.parametrize('case', [
+@ParameterizedCase.parameterize([
     ParameterizedCase(name='another_user', status=403, error={
         'message': (
             'The user must does not have permission to view this group.'),
@@ -105,58 +69,23 @@ GROUP_DELETE_PERMISSIONS = [
 ]
 
 
-@pytest.mark.parametrize('case', GROUP_DELETE_PERMISSIONS + [
+@ParameterizedCase.parameterize(GROUP_DELETE_PERMISSIONS + [
     ParameterizedCase.multiple_budgets_restricted(),
     ParameterizedCase('another_public_case', status=401),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.view_only,
-        status=403
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.owner,
-        status=204
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.editor,
-        status=204
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.view_only,
-        status=401
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.owner,
-        status=401
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.editor,
-        status=401
-    )
+    ParameterizedCase.collaborator(view_only=403, status=204),
 ])
 def test_budget_group_delete_permissions(case, delete_response):
     delete_response(case, domain="budget")
 
 
-@pytest.mark.parametrize('case', GROUP_DELETE_PERMISSIONS + [
+@ParameterizedCase.parameterize(GROUP_DELETE_PERMISSIONS + [
     ParameterizedCase('multiple_budgets', login=True, status=204)
 ])
 def test_template_group_delete_permissions(case, delete_response):
     delete_response(case, domain="template")
 
 
-@pytest.mark.parametrize('case', [
+@ParameterizedCase.parameterize([
     ParameterizedCase(name='another_user', status=403, error={
         'message': (
             'The user must does not have permission to view this group.'),
@@ -169,48 +98,13 @@ def test_template_group_delete_permissions(case, delete_response):
     ParameterizedCase('logged_in', create=True, status=200),
     ParameterizedCase.multiple_budgets_restricted(),
     ParameterizedCase.multiple_budgets_not_authenticated(),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.view_only,
-        status=403
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.owner,
-        status=200
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.editor,
-        status=200
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.view_only,
-        status=401
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.owner,
-        status=401
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.editor,
-        status=401
-    )
+    ParameterizedCase.collaborator(view_only=403, status=200),
 ])
 def test_budget_group_update_permissions(case, update_response):
     update_response(case, domain="budget", data={"name": "Test Group"})
 
 
-@pytest.mark.parametrize('case', [
+@ParameterizedCase.parameterize([
     ParameterizedCase(name='another_user', status=403, error={
         'message': (
             'The user must does not have permission to view this group.'),

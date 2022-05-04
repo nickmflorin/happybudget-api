@@ -13,7 +13,7 @@ class UserDateTimeFieldDefault:
     def __call__(self, serializer_field):
         assert 'request' in serializer_field.context, \
             "The request must be provided in context when using this default."
-        return self.context['request'].user.now_in_timezone
+        return serializer_field.context['request'].user.now_in_timezone
 
 
 class UserDateFieldDefault(UserDateTimeFieldDefault):

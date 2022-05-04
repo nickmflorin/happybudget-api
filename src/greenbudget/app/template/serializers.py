@@ -58,9 +58,8 @@ class TemplateSerializer(TemplateSimpleSerializer):
             if not self.user.is_staff and is_community:
                 raise permissions.PermissionErr(
                     "Only staff users can modify community templates.")
-            elif 'hidden' in attrs:
-                if not is_community:
-                    raise exceptions.InvalidFieldError("hidden",
-                        message="Only community templates can be hidden/shown.")
+            elif 'hidden' in attrs and not is_community:
+                raise exceptions.InvalidFieldError("hidden",
+                    message="Only community templates can be hidden/shown.")
 
         return super().validate(attrs)

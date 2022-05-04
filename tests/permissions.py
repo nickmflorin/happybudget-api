@@ -1,6 +1,9 @@
 # pylint: disable=redefined-outer-name
 import copy
+from os import access
 import pytest
+
+from greenbudget.app.collaborator.models import Collaborator
 
 
 class PermissionCaseResponse:
@@ -73,6 +76,18 @@ class ParameterizedCase:
         return self.__class__(self.name, **kw)
 
     @classmethod
+    def parameterize(cls, cases):
+        flattened_cases = []
+        for case in cases:
+            if hasattr(case, '__iter__'):
+                flattened_cases += case
+            else:
+                flattened_cases += [case]
+        def decorator(func):
+            return pytest.mark.parametrize('case', flattened_cases)(func)
+        return decorator
+
+    @classmethod
     def not_logged_in(cls, create=True):
         return cls(name='not_logged_in', status=401, create=create, error={
             'message': 'User is not authenticated.',
@@ -98,6 +113,48 @@ class ParameterizedCase:
             'products': '__any__',
             'permission_id': 'multiple_budgets'
         })
+
+    @classmethod
+    def _collaborator(cls, **kwargs):
+        kwargs.setdefault('login', True)
+        return ParameterizedCase('collaborator', **kwargs)
+
+    @classmethod
+    def collaborator(cls, **kwargs):
+        access_type_names = ['view_only', 'owner', 'editor']
+        assert 'status' in kwargs \
+            or all([x in kwargs for x in access_type_names]), \
+            "Either the expected status code must be provided or the expected " \
+            "status code for each access type must be provided."
+        return [
+            cls._collaborator(
+                access_type=Collaborator.ACCESS_TYPES.view_only,
+                status=kwargs.get('view_only', kwargs.get('status'))
+            ),
+            cls._collaborator(
+                access_type=Collaborator.ACCESS_TYPES.owner,
+                status=kwargs.get('owner', kwargs.get('status'))
+            ),
+            cls._collaborator(
+                access_type=Collaborator.ACCESS_TYPES.editor,
+                status=kwargs.get('editor', kwargs.get('status'))
+            ),
+            cls._collaborator(
+                login=False,
+                access_type=Collaborator.ACCESS_TYPES.view_only,
+                status=401
+            ),
+            cls._collaborator(
+                login=False,
+                access_type=Collaborator.ACCESS_TYPES.owner,
+                status=401
+            ),
+            cls._collaborator(
+                login=False,
+                access_type=Collaborator.ACCESS_TYPES.editor,
+                status=401
+            )
+        ]
 
 
 @pytest.fixture
@@ -408,6 +465,7 @@ def detail_update_response(api_client, obj_url, with_assertion):
         data = getattr(case, 'data', None)
         if hasattr(data, '__call__'):
             data = data(obj)
+        r = api_client.patch(url, data=data)
         return PermissionCaseResponse.patch(
             response=api_client.patch(url, data=data),
             url=url,

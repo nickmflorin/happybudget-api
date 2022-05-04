@@ -3,8 +3,8 @@ name = "greenbudget"
 version = "0.1.0"
 description = "Backend Application for Green Buget Application"
 authors = ["nickmflorin <nickmflorin@gmail.com>"]
-repository = "https://github.com/Saturation-IO/greenbudget-api"
-homepage = "https://github.com/Saturation-IO/greenbudget-api"
+repository = "https://github.com/nickmflorin/greenbudget-api"
+homepage = "https://github.com/nickmflorin/greenbudget-api"
 include = [
   "README.md",
   "pyproject.toml"

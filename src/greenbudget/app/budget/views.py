@@ -458,12 +458,16 @@ class BudgetViewSet(
             priority=lambda c: c.view.action in ('create', 'duplicate'),
         ),
         permissions.AND(
-            permissions.IsNotViewAction('list', 'create', 'duplicate'),
+            permissions.IsNotViewAction(
+                'list', 'create', 'duplicate', 'bulk_import_actuals',
+                affects_after=True
+            ),
             permissions.AND(
                 BudgetObjPermission(
                     # Collaborators are not allowed to delete or duplicate the
                     # budget, only view and edit it's contents.
                     collaborator_can_destroy=False,
+                    restricted_collaborator_actions=('partial_update'),
                     # A user should be able to delete a Budget even if it is
                     # not permissioned due to the User's billing status.
                     product_can_destroy=True,
@@ -477,7 +481,21 @@ class BudgetViewSet(
                 default=permissions.IsFullyAuthenticated
             ),
             priority=lambda c:
-            c.view.action not in ('list', 'create', 'duplicate')
+            c.view.action not in (
+                'list', 'create', 'duplicate', 'bulk_import_actuals')
+        ),
+        permissions.AND(
+            permissions.IsViewAction('bulk_import_actuals'),
+            BudgetObjPermission(
+                # Only the collaborator with owner privileges can import
+                # actuals.
+                collaborator_access_types=(Collaborator.ACCESS_TYPES.owner,),
+                public=False,
+                priority=True
+            ),
+            priority=lambda c:
+            c.view.action == 'bulk_import_actuals',
+            is_object_applicable=lambda c: c.obj.domain == 'budget',
         )
     )]
 

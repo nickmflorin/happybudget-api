@@ -1,7 +1,6 @@
 # pylint: disable=redefined-outer-name
 import pytest
 
-from greenbudget.app.collaborator.models import Collaborator
 from tests.permissions import ParameterizedCase
 
 
@@ -20,7 +19,7 @@ def create_obj(f):
     return inner
 
 
-@pytest.mark.parametrize('case', [
+@ParameterizedCase.parameterize([
     ParameterizedCase(name='another_user', status=403, error={
         'message': (
             'The user must does not have permission to view this actual.'),
@@ -34,48 +33,13 @@ def create_obj(f):
     ParameterizedCase('logged_in', create=True, status=200),
     ParameterizedCase.multiple_budgets_restricted(),
     ParameterizedCase.multiple_budgets_not_authenticated(),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.view_only,
-        status=200
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.owner,
-        status=200
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.editor,
-        status=200
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.view_only,
-        status=401
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.owner,
-        status=401
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.editor,
-        status=401
-    )
+    ParameterizedCase.collaborator(status=200),
 ])
 def test_detail_read_permissions(case, detail_response):
     detail_response(case)
 
 
-@pytest.mark.parametrize('case', [
+@ParameterizedCase.parameterize([
     ParameterizedCase(name='another_user', status=403, error={
         'message': (
             'The user must does not have permission to view this actual.'),
@@ -88,48 +52,13 @@ def test_detail_read_permissions(case, detail_response):
     ParameterizedCase.multiple_budgets_not_authenticated(),
     ParameterizedCase.multiple_budgets_restricted(),
     ParameterizedCase('another_public_case', status=401),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.view_only,
-        status=403
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.owner,
-        status=204
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.editor,
-        status=204
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.view_only,
-        status=401
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.owner,
-        status=401
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.editor,
-        status=401
-    )
+    ParameterizedCase.collaborator(view_only=403, status=204),
 ])
 def test_delete_permissions(case, delete_response):
     delete_response(case)
 
 
-@pytest.mark.parametrize('case', [
+@ParameterizedCase.parameterize([
     ParameterizedCase(name='another_user', status=403, error={
         'message': (
             'The user must does not have permission to view this actual.'),
@@ -142,42 +71,7 @@ def test_delete_permissions(case, delete_response):
     ParameterizedCase('logged_in', create=True, status=200),
     ParameterizedCase.multiple_budgets_restricted(),
     ParameterizedCase.multiple_budgets_not_authenticated(),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.view_only,
-        status=403
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.owner,
-        status=200
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.editor,
-        status=200
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.view_only,
-        status=401
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.owner,
-        status=401
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.editor,
-        status=401
-    )
+    ParameterizedCase.collaborator(view_only=403, status=200),
 ])
 def test_update_permissions(case, update_response):
     update_response(case, data={'name': 'Test Actual'})
@@ -197,51 +91,13 @@ ACTUAL_DETAIL_ATTACHMENT_PERMISSIONS = [
     # Note: Currently, we do not allow uploading, deleting or updating of
     # attachments for entities that do not belong to the logged in user, even
     # when collaborating on the Budget.
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.view_only,
-        status=403
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.owner,
-        status=403
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.editor,
-        status=403
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.view_only,
-        status=401
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.owner,
-        status=401
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.editor,
-        status=401
-    )
+    ParameterizedCase.collaborator(status=403),
 ]
 
 
-@pytest.mark.parametrize(
-    'case',
-    ACTUAL_DETAIL_ATTACHMENT_PERMISSIONS + [
-        ParameterizedCase('logged_in', create=True, status=201),
-    ]
-)
+@ParameterizedCase.parameterize(ACTUAL_DETAIL_ATTACHMENT_PERMISSIONS + [
+    ParameterizedCase('logged_in', create=True, status=201),
+])
 def test_actual_detail_upload_attachment_permissions(case, test_uploaded_file,
         detail_create_response):
     uploaded_file = test_uploaded_file('test.jpeg')
@@ -249,22 +105,16 @@ def test_actual_detail_upload_attachment_permissions(case, test_uploaded_file,
         case, data={'file': uploaded_file}, path='/attachments/')
 
 
-@pytest.mark.parametrize(
-    'case',
-    ACTUAL_DETAIL_ATTACHMENT_PERMISSIONS + [
-        ParameterizedCase('logged_in', create=True, status=200),
-    ]
-)
+@ParameterizedCase.parameterize(ACTUAL_DETAIL_ATTACHMENT_PERMISSIONS + [
+    ParameterizedCase('logged_in', create=True, status=200),
+])
 def test_actual_detail_read_attachment_permissions(case, detail_response):
     detail_response(case, path='/attachments/')
 
 
-@pytest.mark.parametrize(
-    'case',
-    ACTUAL_DETAIL_ATTACHMENT_PERMISSIONS + [
-        ParameterizedCase('logged_in', create=True, status=204),
-    ]
-)
+@ParameterizedCase.parameterize(ACTUAL_DETAIL_ATTACHMENT_PERMISSIONS + [
+    ParameterizedCase('logged_in', create=True, status=204),
+])
 def test_actual_detail_delete_attachment_permissions(case, f, delete_response):
     def path(actual):
         return '/attachments/%s/' % actual.attachments.first().pk

@@ -16,14 +16,25 @@ class BaseCollaboratorPermission(permissions.BasePermission):
 
     def __init__(self, object_name=None, **kwargs):
         self._object_name = object_name
+        # If the access types are not explicitly provided, they will default
+        # to the access types defined for the specific subclass permission.
+        self._access_types = kwargs.get('access_types', None)
         super().__init__(**kwargs)
 
     def get_access_types(self, request):
-        if hasattr(self, 'access_types'):
-            if hasattr(self.access_types, '__call__'):
-                return self.access_types(request)
-            return self.access_types
-        return None
+        access_types = self._access_types
+        if access_types is None and hasattr(self, 'access_types'):
+            access_types = self.access_types
+        if hasattr(access_types, '__call__'):
+            access_types = access_types(request)
+
+        if access_types is not None:
+            assert isinstance(access_types, (list, tuple)) \
+                and len(access_types) != 0, \
+                "The provided access types must be an iterable with non-zero " \
+                "length."
+            Collaborator.ACCESS_TYPES.validate_values(access_types)
+        return access_types
 
     def has_object_permission(self, request, view, obj):
         try:

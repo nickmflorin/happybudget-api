@@ -1,7 +1,6 @@
 # pylint: disable=redefined-outer-name
 import pytest
 
-from greenbudget.app.collaborator.models import Collaborator
 from tests.permissions import ParameterizedCase
 
 
@@ -18,7 +17,7 @@ def create_obj(f):
     return inner
 
 
-@pytest.mark.parametrize('case', [
+@ParameterizedCase.parameterize([
     ParameterizedCase(name='another_user', status=403, error={
         'message': (
             'The user must does not have permission to view this account.'),
@@ -31,49 +30,14 @@ def create_obj(f):
     ParameterizedCase('logged_in', create=True, status=200),
     ParameterizedCase.multiple_budgets_restricted(),
     ParameterizedCase.multiple_budgets_not_authenticated(),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.view_only,
-        status=200
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.owner,
-        status=200
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.editor,
-        status=200
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.view_only,
-        status=401
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.owner,
-        status=401
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.editor,
-        status=401
-    )
+    ParameterizedCase.collaborator(status=200)
 ])
 @pytest.mark.parametrize('path', ['/', '/children/', '/markups/', '/groups/'])
 def test_budget_account_detail_read_permissions(case, path, detail_response):
     detail_response(case, path=path, domain="budget")
 
 
-@pytest.mark.parametrize('case', [
+@ParameterizedCase.parameterize([
     ParameterizedCase(name='another_user', status=403, error={
         'message': (
             'The user must does not have permission to view this account.'),
@@ -105,51 +69,16 @@ ACCOUNT_DELETE_PERMISSIONS = [
 ]
 
 
-@pytest.mark.parametrize('case', ACCOUNT_DELETE_PERMISSIONS + [
+@ParameterizedCase.parameterize(ACCOUNT_DELETE_PERMISSIONS + [
     ParameterizedCase.multiple_budgets_restricted(),
     ParameterizedCase('another_public_case', status=401),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.view_only,
-        status=403
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.owner,
-        status=204
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.editor,
-        status=204
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.view_only,
-        status=401
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.owner,
-        status=401
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.editor,
-        status=401
-    )
+    ParameterizedCase.collaborator(view_only=403, status=204)
 ])
 def test_budget_account_delete_permissions(case, delete_response):
     delete_response(case, domain="budget")
 
 
-@pytest.mark.parametrize('case', ACCOUNT_DELETE_PERMISSIONS + [
+@ParameterizedCase.parameterize(ACCOUNT_DELETE_PERMISSIONS + [
     ParameterizedCase('multiple_budgets', login=True, status=204)
 ])
 def test_template_account_delete_permissions(case, delete_response):
@@ -169,53 +98,18 @@ BUDGET_ACCOUNT_CREATE_PERMISSIONS = [
     ParameterizedCase('logged_in', create=True, status=201),
     ParameterizedCase.multiple_budgets_restricted(),
     ParameterizedCase.multiple_budgets_not_authenticated(),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.view_only,
-        status=403
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.owner,
-        status=201
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.editor,
-        status=201
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.view_only,
-        status=401
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.owner,
-        status=401
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.editor,
-        status=401
-    )
+    ParameterizedCase.collaborator(view_only=403, status=201)
 ]
 
 
-@pytest.mark.parametrize('case', BUDGET_ACCOUNT_CREATE_PERMISSIONS)
+@ParameterizedCase.parameterize(BUDGET_ACCOUNT_CREATE_PERMISSIONS)
 @pytest.mark.parametrize('path,data', [('/children/', {})])
 def test_budget_account_detail_create_permissions(case, path, data,
         detail_create_response):
     detail_create_response(case, data=data, path=path, domain="budget")
 
 
-@pytest.mark.parametrize('case', BUDGET_ACCOUNT_CREATE_PERMISSIONS)
+@ParameterizedCase.parameterize(BUDGET_ACCOUNT_CREATE_PERMISSIONS)
 def test_budget_account_detail_create_groups_permissions(case, f,
         detail_create_response):
 
@@ -227,7 +121,7 @@ def test_budget_account_detail_create_groups_permissions(case, f,
         case, domain="budget", data=post_data, path='/groups/')
 
 
-@pytest.mark.parametrize('case', BUDGET_ACCOUNT_CREATE_PERMISSIONS)
+@ParameterizedCase.parameterize(BUDGET_ACCOUNT_CREATE_PERMISSIONS)
 def test_budget_account_detail_create_markups_permissions(case, models, f,
         detail_create_response):
 
@@ -258,14 +152,14 @@ TEMPLATE_ACCOUNT_CREATE_PERMISSIONS = [
 ]
 
 
-@pytest.mark.parametrize('case', TEMPLATE_ACCOUNT_CREATE_PERMISSIONS)
+@ParameterizedCase.parameterize(TEMPLATE_ACCOUNT_CREATE_PERMISSIONS)
 @pytest.mark.parametrize('path,data', [('/children/', {})])
 def test_template_account_detail_create_permissions(case, path, data,
         detail_create_response):
     detail_create_response(case, domain="template", data=data, path=path)
 
 
-@pytest.mark.parametrize('case', TEMPLATE_ACCOUNT_CREATE_PERMISSIONS)
+@ParameterizedCase.parameterize(TEMPLATE_ACCOUNT_CREATE_PERMISSIONS)
 def test_template_account_detail_create_groups_permissions(case, f,
         detail_create_response, make_permission_assertions):
 
@@ -277,7 +171,7 @@ def test_template_account_detail_create_groups_permissions(case, f,
         case, domain="template", data=post_data, path='/groups/')
 
 
-@pytest.mark.parametrize('case', TEMPLATE_ACCOUNT_CREATE_PERMISSIONS)
+@ParameterizedCase.parameterize(TEMPLATE_ACCOUNT_CREATE_PERMISSIONS)
 def test_template_account_detail_create_markups_permissions(case, models, f,
         detail_create_response, make_permission_assertions):
 
@@ -293,7 +187,7 @@ def test_template_account_detail_create_markups_permissions(case, models, f,
         case, domain="template", data=post_data, path='/markups/')
 
 
-@pytest.mark.parametrize('case', [
+@ParameterizedCase.parameterize([
     ParameterizedCase(name='another_user', status=403, error={
         'message': (
             'The user must does not have permission to view this account.'),
@@ -306,48 +200,13 @@ def test_template_account_detail_create_markups_permissions(case, models, f,
     ParameterizedCase('logged_in', create=True, status=200),
     ParameterizedCase.multiple_budgets_restricted(),
     ParameterizedCase.multiple_budgets_not_authenticated(),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.view_only,
-        status=403
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.owner,
-        status=200
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.editor,
-        status=200
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.view_only,
-        status=401
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.owner,
-        status=401
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.editor,
-        status=401
-    )
+    ParameterizedCase.collaborator(view_only=403, status=200)
 ])
 def test_budget_account_update_permissions(case, update_response):
     update_response(case, domain="budget", data={"name": "Test Account"})
 
 
-@pytest.mark.parametrize('case', [
+@ParameterizedCase.parameterize([
     ParameterizedCase(name='another_user', status=403, error={
         'message': (
             'The user must does not have permission to view this account.'),

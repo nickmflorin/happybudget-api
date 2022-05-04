@@ -21,7 +21,7 @@ def user_password():
 
 @pytest.fixture
 def user(db, user_password, models):
-    return models.User.objects.create(
+    yield models.User.objects.create(
         email="test+user@gmail.com",
         first_name="Test",
         last_name="User",
@@ -36,7 +36,7 @@ def user(db, user_password, models):
 
 @pytest.fixture
 def admin_user(db, user_password, models):
-    return models.User.objects.create(
+    yield models.User.objects.create(
         email="admin+user@gmail.com",
         first_name="Admin",
         last_name="User",
@@ -51,7 +51,7 @@ def admin_user(db, user_password, models):
 
 @pytest.fixture
 def staff_user(db, user_password, models):
-    return models.User.objects.create(
+    yield models.User.objects.create(
         email="staff+user@gmail.com",
         first_name="Staff",
         last_name="User",

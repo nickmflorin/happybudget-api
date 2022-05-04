@@ -10,44 +10,9 @@ import pytest
 
 from greenbudget.app.actual.models import Actual
 from greenbudget.app.integrations.plaid.api import client
-from greenbudget.app.integrations.plaid.classification import PlaidCategories
 
 
 OptsCls = transactions_get_request_options.TransactionsGetRequestOptions
-
-
-@pytest.fixture
-def patch_client_access_token(monkeypatch):
-    access_token_response = mock.MagicMock()
-    access_token_response.access_token = "mock_access_token"
-
-    monkeypatch.setattr(
-        client,
-        'item_public_token_exchange',
-        lambda *args: access_token_response
-    )
-
-
-@pytest.fixture
-def transaction_response():
-    def inner(mock_transactions, mock_accounts, total_transactions=None):
-        response = mock.MagicMock()
-        response.transactions = mock_transactions
-        response.accounts = mock_accounts
-        response.total_transactions = total_transactions \
-            or len(mock_transactions)
-        return response
-    return inner
-
-
-@pytest.fixture
-def patch_transactions_response(monkeypatch, patch_client_access_token,
-        transaction_response):
-    def inner(mock_transactions, mock_accounts):
-        response = transaction_response(mock_transactions, mock_accounts)
-        monkeypatch.setattr(
-            client, 'transactions_get', lambda *args: response)
-    return inner
 
 
 @pytest.fixture
@@ -72,164 +37,12 @@ def perform_request(api_client, user, f):
     return inner
 
 
-@pytest.fixture
-def mock_accounts(mock_plaid):
-    return [
-        mock_plaid.Account(
-            account_id='01',
-            name='Savings Account',
-            official_name='My Savings Account',
-            type=mock_plaid.AccountType(value='depository'),
-            subtype=mock_plaid.AccountSubType(value='savings'),
-        ),
-        mock_plaid.Account(
-            account_id='02',
-            name='Checking Account',
-            official_name='My Checking Account',
-            type=mock_plaid.AccountType(value='depository'),
-            subtype=mock_plaid.AccountSubType(value='checking'),
-        ),
-        mock_plaid.Account(
-            account_id='03',
-            name='Credit Account',
-            official_name='My Credit Card Account',
-            type=mock_plaid.AccountType(value='credit'),
-            subtype=mock_plaid.AccountSubType(value='credit card')
-        ),
-    ]
-
-
-@pytest.fixture
-def mock_transactions(mock_plaid, mock_accounts):
-    return [
-        mock_plaid.Transaction(
-            category=["Food and Drink", "Restaurants"],
-            name="SparkFun",
-            amount=89.4,
-            date=datetime.date(2022, 1, 1),
-            transaction_id='01',
-            account_id=mock_accounts[2].account_id,
-            merchant_name='Spark Fun',
-        ),
-        mock_plaid.Transaction(
-            category=["Entertainment"],
-            name="Dave & Busters",
-            amount=10.0,
-            date=datetime.date(2022, 10, 5),
-            datetime=datetime.datetime(2022, 10, 5, 0, 0, 0),
-            transaction_id='02',
-            account_id=mock_accounts[0].account_id,
-            merchant_name='Dave',
-        ),
-        mock_plaid.Transaction(
-            category=["Restaurants"],
-            name="Spinellis",
-            amount=15.0,
-            date=datetime.date(2022, 10, 6),
-            datetime=datetime.datetime(2022, 10, 6, 0, 0, 0),
-            transaction_id='03',
-            account_id=mock_accounts[1].account_id,
-            merchant_name='Spinelli',
-        ),
-        mock_plaid.Transaction(
-            category=["Restaurants"],
-            name="Royal Farms",
-            amount=11.0,
-            date=datetime.date(2022, 10, 5),
-            transaction_id='04',
-            account_id=mock_accounts[2].account_id,
-            merchant_name='Rofo',
-        ),
-        # This transaction should be ignored.
-        mock_plaid.Transaction(
-            category=PlaidCategories.BANK_FEES.data,
-            name="Bank Fee",
-            amount=11.0,
-            date=datetime.date(2022, 1, 5),
-            transaction_id='05',
-            account_id=mock_accounts[2].account_id,
-        ),
-        # This transaction should be ignored.
-        mock_plaid.Transaction(
-            category=PlaidCategories.OVERDRAFT_FEES.data,
-            name="Overdraft Fee",
-            amount=100.0,
-            date=datetime.date(2022, 1, 5),
-            transaction_id='06',
-            account_id=mock_accounts[2].account_id,
-        ),
-        mock_plaid.Transaction(
-            category=PlaidCategories.CHECK_WITHDRAWAL.data,
-            name="Check Withdrawal",
-            amount=1000.0,
-            date=datetime.date(2022, 3, 5),
-            transaction_id='06',
-            account_id=mock_accounts[1].account_id,
-        ),
-        mock_plaid.Transaction(
-            category=PlaidCategories.ACH_TRANSFER.data,
-            name="ACH Transfer",
-            amount=4000.0,
-            date=datetime.date(2021, 3, 5),
-            transaction_id='07',
-            account_id=mock_accounts[1].account_id,
-        ),
-        mock_plaid.Transaction(
-            category=PlaidCategories.WIRE_TRANSFER.data,
-            name="Wire Transfer",
-            amount=9000.0,
-            date=datetime.date(2021, 6, 5),
-            transaction_id='08',
-            account_id=mock_accounts[1].account_id,
-        ),
-        # Pending transactions should be excluded.
-        mock_plaid.Transaction(
-            category=PlaidCategories.WIRE_TRANSFER.data,
-            name="Wire Transfer",
-            amount=9000.0,
-            pending=True,
-            date=datetime.date(2021, 6, 5),
-            transaction_id='09',
-            account_id=mock_accounts[1].account_id,
-        )
-    ]
-
-
-@pytest.fixture
-def actual_types(models, f):
-    plaid_credit_card_tp = models.ActualType.PLAID_TRANSACTION_TYPES.credit_card
-    plaid_check_tp = models.ActualType.PLAID_TRANSACTION_TYPES.check
-    plaid_ach_tp = models.ActualType.PLAID_TRANSACTION_TYPES.ach
-    plaid_wire_tp = models.ActualType.PLAID_TRANSACTION_TYPES.wire
-    return {
-        'credit_card': f.create_actual_type(
-            title="Credit Card",
-            color=None,
-            plaid_transaction_type=plaid_credit_card_tp
-        ),
-        'check': f.create_actual_type(
-            title="Check",
-            color=None,
-            plaid_transaction_type=plaid_check_tp
-        ),
-        'ach': f.create_actual_type(
-            title="ACH",
-            color=None,
-            plaid_transaction_type=plaid_ach_tp
-        ),
-        'wire': f.create_actual_type(
-            title="Wire",
-            color=None,
-            plaid_transaction_type=plaid_wire_tp
-        )
-    }
-
-
-def test_bulk_import_actuals(models, mock_accounts, mock_transactions,
-        patch_transactions_response, actual_types, perform_request):
-    patch_transactions_response(mock_transactions, mock_accounts)
+def test_bulk_import_actuals(models, mock_plaid_accounts, perform_request,
+        mock_plaid_transactions, patch_plaid_transactions_response,
+        plaid_actual_types):
+    patch_plaid_transactions_response(
+        mock_plaid_transactions, mock_plaid_accounts)
     response = perform_request()
-
     actuals = models.Actual.objects.all()
     assert actuals.count() == 7
     assert response.status_code == 200
@@ -248,8 +61,8 @@ def test_bulk_import_actuals(models, mock_accounts, mock_transactions,
             "type": "actual",
             "value": 89.4,
             "actual_type": {
-                "id": actual_types['credit_card'].pk,
-                "order": actual_types['credit_card'].order,
+                "id": plaid_actual_types['credit_card'].pk,
+                "order": plaid_actual_types['credit_card'].order,
                 "color": None,
                 "plural_title": None,
                 "title": "Credit Card"
@@ -299,8 +112,8 @@ def test_bulk_import_actuals(models, mock_accounts, mock_transactions,
             "type": "actual",
             "value": 11.0,
             "actual_type": {
-                "id": actual_types['credit_card'].pk,
-                "order": actual_types['credit_card'].order,
+                "id": plaid_actual_types['credit_card'].pk,
+                "order": plaid_actual_types['credit_card'].order,
                 "color": None,
                 "plural_title": None,
                 "title": "Credit Card"
@@ -320,8 +133,8 @@ def test_bulk_import_actuals(models, mock_accounts, mock_transactions,
             "type": "actual",
             "value": 1000.0,
             "actual_type": {
-                "id": actual_types['check'].pk,
-                "order": actual_types['check'].order,
+                "id": plaid_actual_types['check'].pk,
+                "order": plaid_actual_types['check'].order,
                 "color": None,
                 "plural_title": None,
                 "title": "Check"
@@ -341,8 +154,8 @@ def test_bulk_import_actuals(models, mock_accounts, mock_transactions,
             "type": "actual",
             "value": 4000.0,
             "actual_type": {
-                "id": actual_types['ach'].pk,
-                "order": actual_types['ach'].order,
+                "id": plaid_actual_types['ach'].pk,
+                "order": plaid_actual_types['ach'].order,
                 "color": None,
                 "plural_title": None,
                 "title": "ACH"
@@ -362,8 +175,8 @@ def test_bulk_import_actuals(models, mock_accounts, mock_transactions,
             "type": "actual",
             "value": 9000.0,
             "actual_type": {
-                "id": actual_types['wire'].pk,
-                "order": actual_types['wire'].order,
+                "id": plaid_actual_types['wire'].pk,
+                "order": plaid_actual_types['wire'].order,
                 "color": None,
                 "plural_title": None,
                 "title": "Wire"
@@ -372,19 +185,20 @@ def test_bulk_import_actuals(models, mock_accounts, mock_transactions,
     ]
 
 
-def test_bulk_import_actuals_paginated(mock_accounts, mock_transactions,
-        patch_client_access_token, perform_request, transaction_response):
+def test_bulk_import_actuals_paginated(mock_plaid_accounts, perform_request,
+        mock_plaid_transactions, patch_plaid_client_access_token,
+        plaid_transaction_response):
     with mock.patch.object(client, 'transactions_get') as mocked:
         mocked.side_effect = [
-            transaction_response(
-                mock_transactions=mock_transactions[:4],
-                mock_accounts=mock_accounts,
-                total_transactions=len(mock_transactions)
+            plaid_transaction_response(
+                mock_plaid_transactions=mock_plaid_transactions[:4],
+                mock_plaid_accounts=mock_plaid_accounts,
+                total_transactions=len(mock_plaid_transactions)
             ),
-            transaction_response(
-                mock_transactions=mock_transactions[4:],
-                mock_accounts=mock_accounts,
-                total_transactions=len(mock_transactions)
+            plaid_transaction_response(
+                mock_plaid_transactions=mock_plaid_transactions[4:],
+                mock_plaid_accounts=mock_plaid_accounts,
+                total_transactions=len(mock_plaid_transactions)
             )
         ]
         perform_request()
@@ -414,7 +228,8 @@ def test_bulk_import_actuals_paginated(mock_accounts, mock_transactions,
 
 
 def test_bulk_import_actuals_unconfigured_actual_type_map(perform_request,
-        models, mock_plaid, actual_types, patch_transactions_response):
+        models, mock_plaid, plaid_actual_types,
+        patch_plaid_transactions_response):
     # This account should cause the transaction to be classified as being
     # associated with ActualType.PLAID_TRANSACTION_TYPES.checking, which would
     # normally be mapped to an ActualType that is assigned to
@@ -441,12 +256,12 @@ def test_bulk_import_actuals_unconfigured_actual_type_map(perform_request,
         merchant_name='Spark Fun',
     )
 
-    patch_transactions_response([transaction], [account])
+    patch_plaid_transactions_response([transaction], [account])
 
     # Delete the ActualType associated with
     # ActualType.PLAID_TRANSACTION_TYPES.checking such that the mapping no
     # longer exists.
-    actual_types["check"].delete()
+    plaid_actual_types["check"].delete()
 
     response = perform_request()
 
@@ -485,7 +300,7 @@ def test_bulk_import_actuals_plaid_error_token_exchange(perform_request):
 
 
 def test_bulk_import_actuals_plaid_error_transactions_get(
-        patch_client_access_token, perform_request):
+        patch_plaid_client_access_token, perform_request):
     with mock.patch.object(client, 'transactions_get') as mocked:
         mocked.side_effect = plaid.ApiException()
         response = perform_request()

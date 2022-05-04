@@ -172,8 +172,8 @@ class IsViewAction(BasePermission):
 
 class IsNotViewAction(BasePermission):
     def __init__(self, *actions, **kwargs):
-        self._actions = list(actions, **kwargs)
-        super().__init__(*actions)
+        self._actions = list(actions)
+        super().__init__(*actions, **kwargs)
 
     def has_permission(self, request, view):
         return view.action not in self._actions

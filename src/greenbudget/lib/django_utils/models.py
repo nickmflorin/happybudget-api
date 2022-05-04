@@ -61,6 +61,10 @@ class Choices(RootChoices):
     def _slug_map(self):
         return {v: k for k, v in self._identifier_map.items()}
 
+    @property
+    def db_values(self):
+        return self._db_values
+
     def __getitem__(self, key):
         assert isinstance(key, int), \
             "The provided choice must be the value that is stored in the " \
@@ -72,6 +76,19 @@ class Choices(RootChoices):
 
     def get_slug(self, key):
         return self.__getitem__(key).slug
+
+    def validate_values(self, *values):
+        if len(values) == 1 and isinstance(values[0], (list, tuple)):
+            values = values[0]
+        else:
+            values = list(values)
+        invalid = [v for v in values if v not in self.db_values]
+        if invalid:
+            invalid = humanize_list(invalid)
+            raise ValueError(
+                f"Detected invalid value(s) {invalid} for choice class "
+                f"{self.__class__}."
+            )
 
 
 def error_is_unique_constraint(err, field):

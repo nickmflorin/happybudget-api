@@ -83,6 +83,10 @@ class BudgetObjPermission(permissions.OR):
         # on the related object.
         get_budget = kwargs.pop('get_budget', None)
 
+        # If the access types are not provided, it will default based on whether
+        # or not the request is a SAFE request.
+        access_types = kwargs.pop('collaborator_access_types', None)
+
         # Usually, if the User does not have the proper subscription to allow
         # access to multiple Budget(s), the User should not be able to destroy
         # entities related to the Budget.  This is not always the case though.
@@ -119,10 +123,12 @@ class BudgetObjPermission(permissions.OR):
                 'collaborator_can_destroy', False)
             restricted_c_actions = ensure_iterable(kwargs.pop(
                 'restricted_collaborator_actions', ()), cast=tuple)
-
             collaborator_permissions = (
                 permissions.IsFullyAuthenticated(affects_after=True),
-                IsCollaborator(get_permissioned_obj=get_budget)
+                IsCollaborator(
+                    get_permissioned_obj=get_budget,
+                    access_types=access_types
+                )
             )
             if not collaborator_can_destroy \
                     and 'destroy' not in restricted_c_actions:

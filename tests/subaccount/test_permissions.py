@@ -1,7 +1,6 @@
 # pylint: disable=redefined-outer-name
 import pytest
 
-from greenbudget.app.collaborator.models import Collaborator
 from tests.permissions import ParameterizedCase
 
 
@@ -29,7 +28,7 @@ def create_obj(f):
     return inner
 
 
-@pytest.mark.parametrize('case', [
+@ParameterizedCase.parameterize([
     ParameterizedCase(name='another_user', status=403, error={
         'message': (
             'The user must does not have permission to view this subaccount.'),
@@ -42,49 +41,14 @@ def create_obj(f):
     ParameterizedCase('logged_in', create=True, status=200),
     ParameterizedCase.multiple_budgets_restricted(),
     ParameterizedCase.multiple_budgets_not_authenticated(),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.view_only,
-        status=200
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.owner,
-        status=200
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.editor,
-        status=200
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.view_only,
-        status=401
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.owner,
-        status=401
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.editor,
-        status=401
-    )
+    ParameterizedCase.collaborator(status=200)
 ])
 @pytest.mark.parametrize('path', ['/', '/children/', '/markups/', '/groups/'])
 def test_budget_subaccount_detail_read_permissions(case, path, detail_response):
     detail_response(case, domain="budget", path=path)
 
 
-@pytest.mark.parametrize('case', [
+@ParameterizedCase.parameterize([
     ParameterizedCase(name='another_user', status=403, error={
         'message': (
             'The user must does not have permission to view this subaccount.'),
@@ -117,51 +81,16 @@ SUBACCOUNT_DELETE_PERMISSIONS = [
 ]
 
 
-@pytest.mark.parametrize('case', SUBACCOUNT_DELETE_PERMISSIONS + [
+@ParameterizedCase.parameterize(SUBACCOUNT_DELETE_PERMISSIONS + [
     ParameterizedCase.multiple_budgets_restricted(),
     ParameterizedCase('another_public_case', status=401),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.view_only,
-        status=403
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.owner,
-        status=204
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.editor,
-        status=204
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.view_only,
-        status=401
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.owner,
-        status=401
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.editor,
-        status=401
-    )
+    ParameterizedCase.collaborator(view_only=403, owner=204, editor=204),
 ])
 def test_budget_subaccount_delete_permissions(case, delete_response):
     delete_response(case, domain="budget")
 
 
-@pytest.mark.parametrize('case', SUBACCOUNT_DELETE_PERMISSIONS + [
+@ParameterizedCase.parameterize(SUBACCOUNT_DELETE_PERMISSIONS + [
     ParameterizedCase('multiple_budgets', login=True, status=204)
 ])
 def test_template_subaccount_delete_permissions(case, delete_response):
@@ -181,54 +110,18 @@ BUDGET_SUBACCOUNT_CREATE_PERMISSIONS = [
     ParameterizedCase('logged_in', create=True, status=201),
     ParameterizedCase.multiple_budgets_restricted(),
     ParameterizedCase.multiple_budgets_not_authenticated(),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.view_only,
-        status=403
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.owner,
-        status=201
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.editor,
-        status=201
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.view_only,
-        status=401
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.owner,
-        status=401
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.editor,
-        status=401
-    )
+    ParameterizedCase.collaborator(view_only=403, owner=201, editor=201),
 ]
 
 
-@pytest.mark.parametrize('case', BUDGET_SUBACCOUNT_CREATE_PERMISSIONS)
+@ParameterizedCase.parameterize(BUDGET_SUBACCOUNT_CREATE_PERMISSIONS)
 @pytest.mark.parametrize('path,data', [('/children/', {})])
 def test_budget_subaccount_detail_create_permissions(case, path, data,
         detail_create_response):
-    detail_create_response(
-        case, domain="budget", data=data, path=path)
+    detail_create_response(case, domain="budget", data=data, path=path)
 
 
-@pytest.mark.parametrize('case', BUDGET_SUBACCOUNT_CREATE_PERMISSIONS)
+@ParameterizedCase.parameterize(BUDGET_SUBACCOUNT_CREATE_PERMISSIONS)
 def test_budget_subaccount_detail_create_groups_permissions(case, f,
         detail_create_response):
 
@@ -240,7 +133,7 @@ def test_budget_subaccount_detail_create_groups_permissions(case, f,
         case, domain="budget", data=post_data, path='/groups/')
 
 
-@pytest.mark.parametrize('case', BUDGET_SUBACCOUNT_CREATE_PERMISSIONS)
+@ParameterizedCase.parameterize(BUDGET_SUBACCOUNT_CREATE_PERMISSIONS)
 def test_budget_subaccount_detail_create_markups_permissions(case, models, f,
         detail_create_response):
 
@@ -271,7 +164,7 @@ TEMPLATE_SUBACCOUNT_CREATE_PERMISSIONS = [
 ]
 
 
-@pytest.mark.parametrize('case', TEMPLATE_SUBACCOUNT_CREATE_PERMISSIONS)
+@ParameterizedCase.parameterize(TEMPLATE_SUBACCOUNT_CREATE_PERMISSIONS)
 @pytest.mark.parametrize('path,data', [('/children/', {})])
 def test_template_subaccount_detail_create_permissions(case, path, data,
         detail_create_response):
@@ -279,7 +172,7 @@ def test_template_subaccount_detail_create_permissions(case, path, data,
         case, domain="template", data=data, path=path)
 
 
-@pytest.mark.parametrize('case', TEMPLATE_SUBACCOUNT_CREATE_PERMISSIONS)
+@ParameterizedCase.parameterize(TEMPLATE_SUBACCOUNT_CREATE_PERMISSIONS)
 def test_template_subaccount_detail_create_groups_permissions(case, f,
         detail_create_response):
 
@@ -291,7 +184,7 @@ def test_template_subaccount_detail_create_groups_permissions(case, f,
         case, domain="template", data=post_data, path='/groups/')
 
 
-@pytest.mark.parametrize('case', TEMPLATE_SUBACCOUNT_CREATE_PERMISSIONS)
+@ParameterizedCase.parameterize(TEMPLATE_SUBACCOUNT_CREATE_PERMISSIONS)
 def test_template_subaccount_detail_create_markups_permissions(case, models, f,
         detail_create_response):
 
@@ -307,7 +200,7 @@ def test_template_subaccount_detail_create_markups_permissions(case, models, f,
         case, domain="template", data=post_data, path='/markups/')
 
 
-@pytest.mark.parametrize('case', [
+@ParameterizedCase.parameterize([
     ParameterizedCase(name='another_user', status=403, error={
         'message': (
             'The user must does not have permission to view this subaccount.'),
@@ -320,48 +213,13 @@ def test_template_subaccount_detail_create_markups_permissions(case, models, f,
     ParameterizedCase('logged_in', create=True, status=200),
     ParameterizedCase.multiple_budgets_restricted(),
     ParameterizedCase.multiple_budgets_not_authenticated(),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.view_only,
-        status=403
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.owner,
-        status=200
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.editor,
-        status=200
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.view_only,
-        status=401
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.owner,
-        status=401
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.editor,
-        status=401
-    )
+    ParameterizedCase.collaborator(view_only=403, owner=200, editor=200),
 ])
 def test_budget_subaccount_update_permissions(case, update_response):
     update_response(case, domain="budget", data={'name': 'Test Sub Account'})
 
 
-@pytest.mark.parametrize('case', [
+@ParameterizedCase.parameterize([
     ParameterizedCase(name='another_user', status=403, error={
         'message': (
             'The user must does not have permission to view this subaccount.'),
@@ -393,51 +251,13 @@ SUBACCOUNT_DETAIL_ATTACHMENT_PERMISSIONS = [
     # Note: Currently, we do not allow uploading, deleting or updating of
     # attachments for entities that do not belong to the logged in user, even
     # when collaborating on the Budget.
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.view_only,
-        status=403
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.owner,
-        status=403
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=True,
-        access_type=Collaborator.ACCESS_TYPES.editor,
-        status=403
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.view_only,
-        status=401
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.owner,
-        status=401
-    ),
-    ParameterizedCase(
-        'collaborator',
-        login=False,
-        access_type=Collaborator.ACCESS_TYPES.editor,
-        status=401
-    )
+    ParameterizedCase.collaborator(status=403)
 ]
 
 
-@pytest.mark.parametrize(
-    'case',
-    SUBACCOUNT_DETAIL_ATTACHMENT_PERMISSIONS + [
-        ParameterizedCase('logged_in', create=True, status=201),
-    ]
-)
+@ParameterizedCase.parameterize(SUBACCOUNT_DETAIL_ATTACHMENT_PERMISSIONS + [
+    ParameterizedCase('logged_in', create=True, status=201),
+])
 def test_subaccount_detail_upload_attachment_permissions(case,
         detail_create_response, test_uploaded_file):
     uploaded_file = test_uploaded_file('test.jpeg')
@@ -445,22 +265,16 @@ def test_subaccount_detail_upload_attachment_permissions(case,
         domain='budget', data={'file': uploaded_file}, path='/attachments/')
 
 
-@pytest.mark.parametrize(
-    'case',
-    SUBACCOUNT_DETAIL_ATTACHMENT_PERMISSIONS + [
-        ParameterizedCase('logged_in', create=True, status=200),
-    ]
-)
+@ParameterizedCase.parameterize(SUBACCOUNT_DETAIL_ATTACHMENT_PERMISSIONS + [
+    ParameterizedCase('logged_in', create=True, status=200),
+])
 def test_subaccount_detail_read_attachment_permissions(case, detail_response):
     detail_response(case, domain='budget', path='/attachments/')
 
 
-@pytest.mark.parametrize(
-    'case',
-    SUBACCOUNT_DETAIL_ATTACHMENT_PERMISSIONS + [
-        ParameterizedCase('logged_in', create=True, status=204),
-    ]
-)
+@ParameterizedCase.parameterize(SUBACCOUNT_DETAIL_ATTACHMENT_PERMISSIONS + [
+    ParameterizedCase('logged_in', create=True, status=204),
+])
 def test_subaccount_detail_delete_attachment_permissions(case, f,
         delete_response):
     def path(subaccount):

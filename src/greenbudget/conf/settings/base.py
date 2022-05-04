@@ -48,7 +48,10 @@ SECRET_KEY = config(
 )
 
 # Sentry Configuration
-# pylint: disable=line-too-long
+# This configuration was related to entities that were under the ownership of
+# Saturation IO - which has since stolen this software in a manner that
+# infringes on its copyright.  As such, it will be turned off until the related
+# entity can be reconfigured under new ownership.
 SENTRY_DSN = "https://9eeab5e26f804bd582385ffc5eda991d@o591585.ingest.sentry.io/5740484"  # noqa
 
 PWD_RESET_LINK_EXPIRY_TIME_IN_HRS = 24
