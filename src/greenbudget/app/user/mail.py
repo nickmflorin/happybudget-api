@@ -121,9 +121,10 @@ def send_mail(mail):
         raise EmailError() from e
 
 
+@suppress_with_setting("EMAIL_VERIFICATION_ENABLED")
 def send_email_verification_email(user, token=None):
-    if user.is_verified:
-        raise Exception("User is already verified.")
+    assert not user.email_is_verified, \
+        "User's email address is already verified."
     token = token or AccessToken.for_user(user)
     mail = EmailVerificationMail(user, str(token))
     return send_mail(mail)

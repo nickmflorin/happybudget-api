@@ -34,7 +34,7 @@ class UserAdmin(harry.HarryModelAdmin):
         harry.RowAction(
             name='send_email_verification',
             title='Send Email Verification',
-            disabled=lambda user: user.is_verified
+            disabled=lambda user: user.email_is_verified
         ),
         harry.RowAction(
             name='send_forgot_password',

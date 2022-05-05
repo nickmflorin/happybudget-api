@@ -4,10 +4,15 @@ import responses
 
 from django.test import override_settings
 
+from greenbudget.conf.settings.base import SOCIAL_AUTHENTICATION_ENABLED
+
 
 @responses.activate
 @pytest.mark.freeze_time('2020-01-01')
-@override_settings(GOOGLE_OAUTH_API_URL="https://www.test-validate-user-token/")
+@override_settings(
+    GOOGLE_OAUTH_API_URL="https://www.test-validate-user-token/",
+    SOCIAL_AUTHENTICATION_ENABLED=True
+)
 def test_social_login_user_exists(api_client, f):
     # A user with an unverified email should still be able to do social login
     # and their email address should be considered verified afterwards.
@@ -62,7 +67,10 @@ def test_social_login_user_exists(api_client, f):
 
 @responses.activate
 @pytest.mark.freeze_time('2020-01-01')
-@override_settings(GOOGLE_OAUTH_API_URL="https://www.test-validate-user-token/")
+@override_settings(
+    GOOGLE_OAUTH_API_URL="https://www.test-validate-user-token/",
+    SOCIAL_AUTHENTICATION_ENABLED=True
+)
 def test_social_login_user_does_not_exist(api_client, models):
     responses.add(
         method=responses.GET,
@@ -115,7 +123,10 @@ def test_social_login_user_does_not_exist(api_client, models):
 
 
 @responses.activate
-@override_settings(GOOGLE_OAUTH_API_URL="https://www.test-validate-user-token/")
+@override_settings(
+    GOOGLE_OAUTH_API_URL="https://www.test-validate-user-token/",
+    SOCIAL_AUTHENTICATION_ENABLED=True
+)
 def test_social_login_invalid_token(api_client, f):
     f.create_user(email="jjohnson@gmail.com")
     responses.add(
@@ -136,7 +147,10 @@ def test_social_login_invalid_token(api_client, f):
 
 
 @responses.activate
-@override_settings(GOOGLE_OAUTH_API_URL="https://www.test-validate-user-token/")
+@override_settings(
+    GOOGLE_OAUTH_API_URL="https://www.test-validate-user-token/",
+    SOCIAL_AUTHENTICATION_ENABLED=True
+)
 def test_social_login_invalid_provider(api_client, f):
     f.create_user(email="jjohnson@gmail.com")
     responses.add(
@@ -157,7 +171,10 @@ def test_social_login_invalid_provider(api_client, f):
 
 
 @responses.activate
-@override_settings(GOOGLE_OAUTH_API_URL="https://www.test-validate-user-token/")
+@override_settings(
+    GOOGLE_OAUTH_API_URL="https://www.test-validate-user-token/",
+    SOCIAL_AUTHENTICATION_ENABLED=True
+)
 def test_social_login_account_disabled(api_client, f):
     user = f.create_user(email="jjohnson@gmail.com", is_active=False)
     responses.add(
@@ -188,7 +205,8 @@ def test_social_login_account_disabled(api_client, f):
 @responses.activate
 @override_settings(
     GOOGLE_OAUTH_API_URL="https://www.test-validate-user-token/",
-    WAITLIST_ENABLED=True
+    WAITLIST_ENABLED=True,
+    SOCIAL_AUTHENTICATION_ENABLED=True
 )
 def test_social_login_user_not_on_waitlist(api_client):
     mock_response = mock.MagicMock()

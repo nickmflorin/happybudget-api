@@ -3,6 +3,7 @@ import mock
 
 import pytest
 from django.test import override_settings
+from greenbudget.conf.settings.base import EMAIL_VERIFICATION_ENABLED
 
 from greenbudget.lib.utils.dateutils import api_datetime_string
 from greenbudget.app.authentication.tokens import AccessToken
@@ -13,6 +14,7 @@ VALID_PASSWORD = "hoopla@H9_12$"
 
 
 @pytest.mark.freeze_time('2020-01-01')
+@override_settings(EMAIL_ENABLED=True)
 def test_validate_password_token(api_client, user):
     token = AccessToken.for_user(user)
     response = api_client.post(
@@ -52,7 +54,10 @@ def test_validate_password_token(api_client, user):
 
 
 @pytest.mark.freeze_time('2021-01-03')
-@override_settings(ACCESS_TOKEN_LIFETIME=timedelta(hours=24))
+@override_settings(
+    ACCESS_TOKEN_LIFETIME=timedelta(hours=24),
+    EMAIL_ENABLED=True
+)
 @pytest.mark.parametrize("path,extra_data", [
     ("validate-password-recovery-token", {}),
     ("reset-password", {"password": VALID_PASSWORD})
@@ -77,6 +82,7 @@ def test_password_recovery_expired_token(api_client, user, path, extra_data):
     ("validate-password-recovery-token", {}),
     ("reset-password", {"password": VALID_PASSWORD})
 ])
+@override_settings(EMAIL_ENABLED=True)
 def test_password_recovery_inactive_user(inactive_user, api_client, path,
         extra_data):
     token = AccessToken.for_user(inactive_user)
@@ -98,6 +104,7 @@ def test_password_recovery_inactive_user(inactive_user, api_client, path,
     ("validate-password-recovery-token", {}),
     ("reset-password", {"password": VALID_PASSWORD})
 ])
+@override_settings(EMAIL_ENABLED=True, EMAIL_VERIFICATION_ENABLED=True)
 def test_password_recovery_unverified_user(unverified_user, api_client, path,
         extra_data):
     token = AccessToken.for_user(unverified_user)
@@ -118,6 +125,7 @@ def test_password_recovery_unverified_user(unverified_user, api_client, path,
     ("validate-password-recovery-token", {}),
     ("reset-password", {"password": VALID_PASSWORD})
 ])
+@override_settings(EMAIL_ENABLED=True)
 def test_password_recovery_user_logged_in(api_client, user, path, extra_data):
     api_client.force_login(user)
     token = AccessToken.for_user(user)
@@ -138,6 +146,7 @@ def test_password_recovery_user_logged_in(api_client, user, path, extra_data):
     ("validate-password-recovery-token", {}),
     ("reset-password", {"password": VALID_PASSWORD})
 ])
+@override_settings(EMAIL_ENABLED=True)
 def test_password_recovery_missing_token(api_client, path, extra_data):
     response = api_client.post("/v1/auth/%s/" % path, data=extra_data)
     assert response.status_code == 403
@@ -147,6 +156,7 @@ def test_password_recovery_missing_token(api_client, path, extra_data):
     ("validate-password-recovery-token", {}),
     ("reset-password", {"password": VALID_PASSWORD})
 ])
+@override_settings(EMAIL_ENABLED=True)
 def test_password_recovery_invalid_token(api_client, path, extra_data):
     response = api_client.post("/v1/auth/%s/" % path, data={**extra_data, **{
         "token": 'hoopla'
@@ -190,6 +200,7 @@ def test_recover_password(user, api_client):
     }
 
 
+@override_settings(EMAIL_ENABLED=True)
 def test_reset_password(user, api_client):
     token = AccessToken.for_user(user)
     response = api_client.post("/v1/auth/reset-password/", data={
@@ -234,6 +245,7 @@ def test_reset_password(user, api_client):
     'hoopla@JJ',  # No numbers
     'hoopla123@',  # No capital letters
 ])
+@override_settings(EMAIL_ENABLED=True)
 def test_reset_password_invalid_password(api_client, user, password):
     token = AccessToken.for_user(user)
     response = api_client.post("/v1/auth/reset-password/", data={

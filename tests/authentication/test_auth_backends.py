@@ -1,4 +1,5 @@
 # pylint: disable=redefined-outer-name
+from django.test import override_settings
 import pytest
 
 from rest_framework.request import Request
@@ -38,18 +39,10 @@ def test_session_failure_unauthenticated_user(api_rf, unauthorized_user):
     assert auth_user is None, "Authentication successful."
 
 
-def test_session_failure_inactive_user(api_rf, user):
-    user.is_active = False
-    user.save()
-    request = api_rf.get('/')
-    request._request.user = user
-    backend = SessionAuthentication()
-    auth_user = backend.authenticate(request)
-    assert auth_user is None, "Authentication successful."
-
-
-def test_session_failure_unverified_user(api_rf, user):
-    user.is_verified = False
+@pytest.mark.parametrize("flag", ['is_active', 'is_verified'])
+@override_settings(EMAIL_VERIFICATION_ENABLED=True)
+def test_session_failure(api_rf, user, flag):
+    setattr(user, flag, False)
     user.save()
     request = api_rf.get('/')
     request._request.user = user
@@ -77,6 +70,7 @@ def test_cookie_session_failure_unauthenticated_user(api_rf, unauthorized_user):
 
 
 @pytest.mark.parametrize("flag", ['is_active', 'is_verified'])
+@override_settings(EMAIL_VERIFICATION_ENABLED=True)
 def test_cookie_session_failure(api_rf, user, flag):
     setattr(user, flag, False)
     user.save()

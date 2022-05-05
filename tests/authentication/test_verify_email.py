@@ -22,6 +22,7 @@ def validate_email_token(api_client, user):
 
 
 @pytest.mark.freeze_time('2020-01-01')
+@override_settings(EMAIL_VERIFICATION_ENABLED=True, EMAIL_ENABLED=True)
 def test_validate_email_token(validate_email_token, unverified_user):
     response = validate_email_token()
     assert response.status_code == 201
@@ -55,9 +56,12 @@ def test_validate_email_token(validate_email_token, unverified_user):
         }
     }
 
-
 @pytest.mark.freeze_time('2021-01-03')
-@override_settings(ACCESS_TOKEN_LIFETIME=timedelta(hours=24))
+@override_settings(
+    ACCESS_TOKEN_LIFETIME=timedelta(hours=24),
+    EMAIL_VERIFICATION_ENABLED=True,
+    EMAIL_ENABLED=True
+)
 def test_verify_email_expired_token(api_client, unverified_user):
     token = AccessToken.for_user(unverified_user)
     token.set_exp(claim='exp', from_time=datetime(2021, 1, 1))
@@ -76,6 +80,7 @@ def test_verify_email_expired_token(api_client, unverified_user):
 
 
 @pytest.mark.freeze_time('2020-01-01')
+@override_settings(EMAIL_VERIFICATION_ENABLED=True, EMAIL_ENABLED=True)
 def test_validate_email_token_inactive_user(inactive_user, validate_email_token):
     inactive_user.is_verified = False
     inactive_user.save()
@@ -91,8 +96,9 @@ def test_validate_email_token_inactive_user(inactive_user, validate_email_token)
     }
 
 
-def test_validate_email_token_user_logged_in(validate_email_token,
-        api_client, user):
+@override_settings(EMAIL_VERIFICATION_ENABLED=True, EMAIL_ENABLED=True)
+def test_validate_email_token_user_logged_in(validate_email_token, api_client,
+        user):
     api_client.force_login(user)
     response = validate_email_token()
     assert response.status_code == 403
@@ -105,11 +111,13 @@ def test_validate_email_token_user_logged_in(validate_email_token,
     }
 
 
+@override_settings(EMAIL_VERIFICATION_ENABLED=True, EMAIL_ENABLED=True)
 def test_validate_email_token_missing_token(api_client):
     response = api_client.post("/v1/auth/validate-email-verification-token/")
     assert response.status_code == 403
 
 
+@override_settings(EMAIL_VERIFICATION_ENABLED=True, EMAIL_ENABLED=True)
 def test_validate_email_token_invalid_token(api_client):
     response = api_client.post(
         "/v1/auth/validate-email-verification-token/",
@@ -127,6 +135,7 @@ def test_validate_email_token_invalid_token(api_client):
 
 @override_settings(
     EMAIL_ENABLED=True,
+    EMAIL_VERIFICATION_ENABLED=True,
     FROM_EMAIL="noreply@greenbudget.io",
     FRONTEND_URL="https://app.greenbudget.io"
 )
@@ -155,6 +164,7 @@ def test_send_verification_email(api_client, unverified_user):
     }
 
 
+@override_settings(EMAIL_VERIFICATION_ENABLED=True, EMAIL_ENABLED=True)
 def test_send_verification_email_verified_user(api_client, user):
     with mock.patch('greenbudget.app.user.mail.send_mail') as m:
         response = api_client.post("/v1/auth/verify-email/", data={
@@ -164,6 +174,7 @@ def test_send_verification_email_verified_user(api_client, user):
     assert not m.called
 
 
+@override_settings(EMAIL_VERIFICATION_ENABLED=True, EMAIL_ENABLED=True)
 def test_send_verification_email_inactive_user(api_client, inactive_user):
     with mock.patch('greenbudget.app.user.mail.send_mail') as m:
         response = api_client.post("/v1/auth/verify-email/", data={

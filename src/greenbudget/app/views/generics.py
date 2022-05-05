@@ -44,6 +44,7 @@ class GenericView(generics.GenericAPIView):
     `rest_framework.generics.GenericAPIView` class for specific functionality
     used in this application.
     """
+    hidden = None
 
     def check_permissions(self, request):
         permission = to_view_permission(self.get_permissions())
@@ -80,6 +81,76 @@ class GenericView(generics.GenericAPIView):
         obj = get_object_or_404(qs, **filter_kwargs)
         self.check_object_permissions(self.request, obj)
         return obj
+
+    def handle_request(self, request, *args, **kwargs):
+        """
+        Determines how the view should respond to a given request method and
+        calls the appropriate logic based on the request.
+        """
+        self.initial(request, *args, **kwargs)
+        handler = self.http_method_not_allowed
+        if request.method.lower() in self.http_method_names:
+            handler = getattr(
+                self,
+                request.method.lower(),
+                self.http_method_not_allowed
+            )
+        return handler(request, *args, **kwargs)
+
+    def prepare_request(self, request, *args, **kwargs):
+        """
+        Performs the initial preparation of the request after it is first
+        received by the view and before it is provided to the appropriate
+        view handler.
+        """
+        self.args = args
+        self.kwargs = kwargs
+        request = self.initialize_request(request, *args, **kwargs)
+        self.request = request
+        self.headers = self.default_response_headers
+        return request
+
+    def dispatch(self, request, *args, **kwargs):
+        """
+        Overrides the default `dispatch` method of
+        :obj:`rest_framework.generics.GenericAPIView` for the following reasons:
+
+        (1) Separation of Logic
+            The overridden method separates the logic in the original `dispatch`
+            method such that certain parts of the logic can be more easily
+            overridden while preserving the default behavior elsewhere.
+
+            This is done such that the views can be more easily extended
+            with custom behavior that applies to all requests a view receives.
+
+        (2) Endpoint Hiding & Forced 404(s)
+            The overridden method allows endpoints to be dynamically hidden
+            based on settings configurations.
+
+            Whether or not the view is "hidden" is dictated by the `hidden`
+            attribute on the view, which can be a boolean or a callable taking
+            the Django settings object as its first and only argument.
+        """
+        # pylint: disable=import-outside-toplevel
+        from django.conf import settings
+
+        request = self.prepare_request(request, *args, **kwargs)
+        try:
+            response = self.handle_request(request, *args, **kwargs)
+            hidden = self.hidden
+            if self.hidden is not None and hasattr(self.hidden, '__call__'):
+                # pylint: disable=not-callable
+                hidden = hidden(settings)
+            if hidden is True:
+                raise Http404()
+
+        # pylint: disable=broad-except
+        except Exception as exc:
+            response = self.handle_exception(exc)
+
+        self.response = self.finalize_response(
+            request, response, *args, **kwargs)
+        return self.response
 
     def get_object(self):
         """

@@ -9,15 +9,17 @@ SendInBlueTemplate = collections.namedtuple("SendInBlueTemplate", [
     "slug"
 ])
 
-EMAIL_ENABLED = True
-FROM_EMAIL = "noreply@greenbudget.io"
-EMAIL_HOST = 'smtp.sendgrid.net'
+EMAIL_ENABLED = False  # Post Copyright Infringement
+FROM_EMAIL = "noreply@greenbudget.io"  # Post Copyright Infringement
+EMAIL_HOST = 'smtp.sendgrid.net'  # Post Copyright Infringement
 
+# Post Copyright Infringement - All Configurations
 SEND_IN_BLUE_WHITELIST_ID = 11
 
 SEND_IN_BLUE_API_KEY = config(
     name='SEND_IN_BLUE_API_KEY',
     required=[Environments.PROD, Environments.DEV, Environments.LOCAL],
+    enabled=EMAIL_ENABLED
 )
 
 SEND_IN_BLUE_TEMPLATES = [

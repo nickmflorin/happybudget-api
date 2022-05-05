@@ -105,6 +105,7 @@ def test_registration_invalid_password(api_client, password):
 @pytest.mark.freeze_time('2020-01-01')
 @override_settings(
     EMAIL_ENABLED=True,
+    EMAIL_VERIFICATION_ENABLED=True,
     FROM_EMAIL="noreply@greenbudget.io",
     FRONTEND_URL="https://app.greenbudget.io"
 )

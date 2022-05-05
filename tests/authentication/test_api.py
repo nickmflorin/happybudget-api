@@ -1,4 +1,5 @@
 # pylint: disable=redefined-outer-name
+from django.test import override_settings
 import pytest
 
 
@@ -106,6 +107,7 @@ def test_login_account_disabled(login, settings):
     }
 
 
+@override_settings(EMAIL_VERIFICATION_ENABLED=True)
 def test_login_account_not_verified(login, settings):
     response = login(user_kwargs={'is_verified': False})
     assert response.status_code == 403

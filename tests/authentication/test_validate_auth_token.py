@@ -1,3 +1,4 @@
+from django.test import override_settings
 from http.cookies import SimpleCookie
 import pytest
 
@@ -107,8 +108,10 @@ def test_validate_auth_token_inactive_user(inactive_user, settings,
     assert settings.JWT_TOKEN_COOKIE_NAME not in response.cookies
 
 
-def test_validate_auth_token_unverified_user(unverified_user,
-        jwt_authenticated_client, settings):
+
+@override_settings(EMAIL_VERIFICATION_ENABLED=True)
+def test_validate_auth_token_unverified_user(unverified_user, settings,
+        jwt_authenticated_client):
     jwt_authenticated_client.force_login(unverified_user)
     response = jwt_authenticated_client.post("/v1/auth/validate/")
     assert response.status_code == 401

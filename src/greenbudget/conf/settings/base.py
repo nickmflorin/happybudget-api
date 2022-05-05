@@ -3,6 +3,14 @@ Default settings configurations for all environments.
 
 Each separate environment will import these configurations and override on a
 per-case basis.
+
+Post Copyright Infringement:
+---------------------------
+Any configuration marked with 'Post Copyright Infringement' denotes that the
+relevant configuration was related to entities that were under the ownership
+of Saturation IO, who has since stolen this software in a manner that infringes
+upon its copyright.  As such, the relevant configuration is turned off until
+it can be reconfigured under new ownership.
 """
 import datetime
 import os
@@ -30,13 +38,13 @@ DEBUG = False
 TIME_ZONE = 'UTC'
 USE_TZ = True
 
-APP_DOMAIN = 'api.greenbudget.io/'
+APP_DOMAIN = 'api.greenbudget.io/'  # Post Copyright Infringement
 APP_URL = 'https://%s' % APP_DOMAIN
 
 APP_V1_URL = LazySetting(
     lambda settings: os.path.join(str(settings.APP_URL), "v1"))
 
-FRONTEND_URL = "https://app.greenbudget.io/"
+FRONTEND_URL = "https://app.greenbudget.io/"  # Post Copyright Infringement
 
 SECRET_KEY = config(
     name='DJANGO_SECRET_KEY',
@@ -47,15 +55,13 @@ SECRET_KEY = config(
     }
 )
 
-# Sentry Configuration
-# This configuration was related to entities that were under the ownership of
-# Saturation IO - which has since stolen this software in a manner that
-# infringes on its copyright.  As such, it will be turned off until the related
-# entity can be reconfigured under new ownership.
-SENTRY_DSN = "https://9eeab5e26f804bd582385ffc5eda991d@o591585.ingest.sentry.io/5740484"  # noqa
+# Sentry Configuration - Post Copyright Infringement
+SENTRY_DSN = None
 
 PWD_RESET_LINK_EXPIRY_TIME_IN_HRS = 24
-GOOGLE_OAUTH_API_URL = "https://www.googleapis.com/oauth2/v3/tokeninfo/"
+
+SOCIAL_AUTHENTICATION_ENABLED = False
+GOOGLE_OAUTH_API_URL = None  # Post Copyright Infringement
 
 # Public Configuration
 PUBLIC_TOKEN_HEADER = "HTTP_X_PUBLICTOKEN"
@@ -64,7 +70,7 @@ PUBLIC_TOKEN_HEADER = "HTTP_X_PUBLICTOKEN"
 SESSION_COOKIE_NAME = 'greenbudgetsessionid'
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_DOMAIN = ".greenbudget.io"
+SESSION_COOKIE_DOMAIN = ".greenbudget.io"  # Post Copyright Infringement
 SESSION_COOKIE_AGE = 60 * 60 * 24
 SESSION_SAVE_EVERY_REQUEST = True
 
@@ -73,10 +79,10 @@ CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_HTTPONLY = False  # So frontend can include as a header.
 CSRF_COOKIE_NAME = 'greenbudgetcsrftoken'
 CSRF_COOKIE_SECURE = True
-CSRF_COOKIE_DOMAIN = ".greenbudget.io"
+CSRF_COOKIE_DOMAIN = ".greenbudget.io"  # Post Copyright Infringement
 CSRF_TRUSTED_ORIGINS = [
-    'https://app.greenbudget.io',
-    'https://api.greenbudget.io',
+    'https://app.greenbudget.io',  # Post Copyright Infringement
+    'https://api.greenbudget.io',  # Post Copyright Infringement
 ]
 
 # CORS Configuration
@@ -103,7 +109,7 @@ SLIDING_TOKEN_LIFETIME = datetime.timedelta(minutes=5)
 # JWT Configuration
 JWT_COOKIE_SECURE = True
 JWT_TOKEN_COOKIE_NAME = 'greenbudgetjwt'
-JWT_COOKIE_DOMAIN = ".greenbudget.io"
+JWT_COOKIE_DOMAIN = ".greenbudget.io"  # Post Copyright Infringement
 
 SIMPLE_JWT = {
     'AUTH_TOKEN_CLASSES': ('greenbudget.app.authentication.tokens.AuthToken',),
@@ -131,8 +137,8 @@ STAFF_USER_GLOBAL_PERMISSIONS = False
 
 # When True, User's will not be allowed to register unless they are on a
 # waitlist in SendGrid.
-WAITLIST_ENABLED = True
-EMAIL_VERIFICATION_ENABLED = True
+WAITLIST_ENABLED = False  # Post Copyright Infringement
+EMAIL_VERIFICATION_ENABLED = False  # Post Copyright Infringement
 
 INSTALLED_APPS = [
     'compressor',
@@ -274,16 +280,19 @@ REST_FRAMEWORK = {
 }
 
 # Plaid Configurations
-PLAID_ENVIRONMENT = plaid.Environment.Production
-PLAID_CLIENT_NAME = 'GreenBudget\'s Finance App'
+PLAID_ENABLED = False
+PLAID_ENVIRONMENT = plaid.Environment.Production  # Post Copyright Infringement
+PLAID_CLIENT_NAME = 'GreenBudget\'s Finance App'  # Post Copyright Infringement
 
 PLAID_CLIENT_ID = config(
     name='PLAID_CLIENT_ID',
     required=[Environments.PROD, Environments.DEV, Environments.LOCAL],
-    default={Environments.TEST: ''}
+    default={Environments.TEST: ''},
+    enabled=PLAID_ENABLED  # Post Copyright Infringement
 )
 PLAID_CLIENT_SECRET = config(
     name='PLAID_CLIENT_SECRET',
     required=[Environments.PROD, Environments.DEV, Environments.LOCAL],
-    default={Environments.TEST: ''}
+    default={Environments.TEST: ''},
+    enabled=PLAID_ENABLED  # Post Copyright Infringement
 )

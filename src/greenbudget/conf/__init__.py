@@ -27,25 +27,6 @@ def LazySetting(func):
     return SimpleLazyObject(lambda: get_lazy_setting(func))
 
 
-def suppress_with_setting(attr, value=False, suppressed_return_value=None):
-    def decorator(func):
-        @functools.wraps(func)
-        def inner(*args, **kwargs):
-            # pylint: disable=import-outside-toplevel
-            from django.conf import settings
-            current_value = getattr(settings, attr)
-            if current_value != value:
-                return func(*args, **kwargs)
-            logger.warning("Skipping call to %s because %s = %s." % (
-                func.__name__,
-                attr,
-                current_value
-            ))
-            return suppressed_return_value
-        return inner
-    return decorator
-
-
 class Environments:
     PROD = "Production"
     DEV = "Development"
@@ -65,8 +46,85 @@ def get_environment():
     return mapping[django_settings_module]
 
 
+def suppress_with_setting(attr, value=False, return_value=None, exc=None):
+    """
+    Decorator that decorates a given function such that the function
+    implementation will be suppressed when the provided setting attribute
+    evaluates to the provided value, which defaults to `False`.
+
+    Parameters:
+    ----------
+    attr: :obj:`str`
+        The settings attribute that exists on the Django settings object
+        :obj:`django.conf.settings` whose value dictates whether or not the
+        decorating function should be suppressed.
+
+    value: (optional)
+        The value of the settings attribute defined by `attr` that, when
+        consistent with the actual value of of the settings attribute defined
+        by `attr`, should cause the function to be suppressed.
+
+        Default: False
+
+    return_value: (optional)
+        The value that the function should return when it is suppressed.
+
+        Default: None
+
+    exc: :obj:`str` or :obj:`bool` (optional)
+        If it is desired that the function should raise an exception instead of
+        return a value when it is suppressed, this parameter can be specified.
+        If it is specified as `True`, :obj:`ConfigSuppressionError` will be
+        raised with a generic message.  If the value is a :obj:`str`,
+        :obj:`ConfigSuppressionError` will be raised with the value as its
+        message.
+
+        Default: None
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        def inner(*args, **kwargs):
+            # It is important here that the settings object is dynamically
+            # imported.
+            # pylint: disable=import-outside-toplevel
+            from django.conf import settings
+            current_value = getattr(settings, attr)
+            if current_value != value:
+                return func(*args, **kwargs)
+
+            if exc is True or isinstance(exc, str):
+                raise ConfigSuppressionError(
+                    config_name=attr,
+                    func=func,
+                    message=exc if isinstance(exc, str) else None
+                )
+            logger.warning("Skipping call to %s because %s = %s." % (
+                func.__name__,
+                attr,
+                current_value
+            ))
+            return return_value
+        return inner
+    return decorator
+
+
 class ConfigError(Exception):
     pass
+
+
+class ConfigSuppressionError(ConfigError):
+    def __init__(self, config_name, func, message=None):
+        self.config_name = config_name
+        self.message = message
+        self.func = func
+
+    def __str__(self):
+        if self.message is not None:
+            return self.message
+        return (
+            f"The function {self.func.__name__} is suppressed due to the "
+            f"value of configuration parameter {self.config_name}."
+        )
 
 
 class ConfigInvalidError(ConfigError):
@@ -102,7 +160,9 @@ class ConfigOptions:
         ConfigOption(param='required', default=False),
         ConfigOption(param='validate', default=None),
         ConfigOption(param='cast', default=str),
-        ConfigOption(param='cast_kwargs', default=None)
+        ConfigOption(param='cast_kwargs', default=None),
+        ConfigOption(param='enabled', default=True),
+        ConfigOption(param='disabled_value', default=None)
     ]
 
     def __init__(self, *args, **kwargs):
@@ -194,6 +254,22 @@ class Config:
 
             Default: ""
 
+        enabled: :obj:`bool` (optional)
+            If False, the configuration will be treated as disabled - and an
+            attempt to lookup the value in the .env file will not be made.
+
+            The configuration value will return as the value defined by the
+            parameter `disabled_value`, which defaults to `None`.
+
+            Default: True
+
+        disabled_value (optional)
+            If the parameter defined by `enabled` indicates that the
+            configuration is disabled, this value will be returned for the
+            configuration.
+
+            Default: None
+
         required: :obj:`boolean`, :obj:`list`, :obj:`tuple` or :obj:`dict`
             (optional)
             Whether or not the configuration parameter is required.
@@ -230,6 +306,12 @@ class Config:
                 raise TypeError("Invalid inclusion of configuration options.")
         else:
             options = ConfigOptions(**kwargs)
+
+        # If the configuration is disabled, simply return the `disabled_value`,
+        # which will be `None` unless otherwise specified.
+        enabled = options.enabled
+        if not enabled:
+            return options.disabled_value
 
         # Whether or not the configuration is required can be a function of
         # the environment we are in, specified as either a dict or an iterable.

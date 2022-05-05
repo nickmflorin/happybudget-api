@@ -6,6 +6,7 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import UserManager as DjangoUserManager
 from django.db import IntegrityError
 
+from greenbudget.conf import suppress_with_setting
 from greenbudget.lib.utils.urls import add_query_params_to_url
 
 from greenbudget.app.authentication.exceptions import (
@@ -18,9 +19,14 @@ from .query import UserQuerySet, UserQuerier
 logger = logging.getLogger('greenbudget')
 
 
+@suppress_with_setting("SOCIAL_AUTHENTICATION_ENABLED", exc=True)
 def get_social_google_user(token):
     # pylint: disable=import-outside-toplevel
     from .models import SocialUser
+    assert settings.GOOGLE_OAUTH_API_URL is not None, \
+        "The configuration parameter `SOCIAL_AUTHENTICATION_ENABLED` is True " \
+        "but the configuration parameter `GOOGLE_OAUTH_API_URL` has not been " \
+        "set."
     url = add_query_params_to_url(
         settings.GOOGLE_OAUTH_API_URL, id_token=token)
     try:
@@ -35,17 +41,24 @@ def get_social_google_user(token):
             logger.error("HTTP Error Validating Google Token: %s" % e)
             raise InvalidSocialToken() from e
         else:
-            data = response.json()
             return SocialUser(
-                first_name=data['given_name'],
-                last_name=data['family_name'],
-                email=data['email']
+                first_name=response.json()['given_name'],
+                last_name=response.json()['family_name'],
+                email=response.json()['email']
             )
 
 
 SOCIAL_USER_LOOKUPS = {
     'google': get_social_google_user
 }
+
+
+@suppress_with_setting("SOCIAL_AUTHENTICATION_ENABLED", exc=True)
+def get_social_user(token, provider):
+    try:
+        return SOCIAL_USER_LOOKUPS[provider](token)
+    except KeyError as e:
+        raise InvalidSocialProvider() from e
 
 
 class UserManager(UserQuerier, DjangoUserManager):
@@ -68,6 +81,9 @@ class UserManager(UserQuerier, DjangoUserManager):
                 and not user_is_on_waitlist(email):
             raise AccountNotOnWaitlist()
 
+        if kwargs['is_superuser'] is True or kwargs['is_staff'] is True:
+            kwargs['is_verified'] = True
+
         email = self.normalize_email(email)
         if kwargs['has_password'] and password in (None, ""):
             raise IntegrityError("The password must be a non-empty string.")
@@ -82,6 +98,7 @@ class UserManager(UserQuerier, DjangoUserManager):
     def create(self, email, password, **kwargs):
         return self._create_user(email, password, **kwargs)
 
+    @suppress_with_setting("SOCIAL_AUTHENTICATION_ENABLED", exc=True)
     def create_from_social(self, email, **kwargs):
         kwargs.update(password="", has_password=False, is_verified=True)
         return self._create_user(email, **kwargs)
@@ -90,50 +107,39 @@ class UserManager(UserQuerier, DjangoUserManager):
         kwargs.update(is_staff=True, is_superuser=True, is_verified=True)
         return self._create_user(email, password, **kwargs)
 
-    def get_social_user(self, token, provider):
+    @suppress_with_setting("SOCIAL_AUTHENTICATION_ENABLED", exc=True)
+    def get_from_social_token(self, token_id, provider):
         try:
-            return SOCIAL_USER_LOOKUPS[provider](token)
-        except KeyError as e:
-            raise InvalidSocialProvider() from e
-
-    def get_from_google_token(self, token_id):
-        try:
-            google_user = self.get_social_user(token_id, "google")
+            social_user = get_social_user(token_id, provider)
         except InvalidSocialToken as e:
             raise self.model.DoesNotExist() from e
         else:
-            user = self.get(email=google_user.email)
-            user.sync_with_social_provider(social_user=google_user)
+            user = self.get(email=social_user.email)
+            user.sync_with_social_provider(social_user=social_user)
             user.save()
             return user
 
-    def create_from_google_token(self, token_id):
-        google_user = self.get_social_user(token_id, "google")
+    @suppress_with_setting("SOCIAL_AUTHENTICATION_ENABLED", exc=True)
+    def create_from_social_token(self, token_id, provider):
+        social_user = get_social_user(token_id, provider)
         return self.create_from_social(
-            email=google_user.email,
-            first_name=google_user.first_name,
-            last_name=google_user.last_name
+            email=social_user.email,
+            first_name=social_user.first_name,
+            last_name=social_user.last_name
         )
 
-    def get_or_create_from_google_token(self, token_id):
+    @suppress_with_setting("SOCIAL_AUTHENTICATION_ENABLED", exc=True)
+    def get_or_create_from_social_token(self, token_id, provider):
         try:
-            user = self.get_from_google_token(token_id)
+            user = self.get_from_social_token(token_id, provider)
         except self.model.DoesNotExist:
-            return self.create_from_google_token(token_id)
+            return self.create_from_social_token(token_id, provider)
         else:
+            # If a user is created as a result of social authentication, then
+            # there email should already be considered verified because,
+            # at least currently, authenticating via social authentication
+            # inherently means the email address belongs to the user.
             if not user.is_verified:
                 user.is_verified = True
                 user.save(update_fields=['is_verified'])
             return user
-
-    def get_from_social_token(self, token_id, provider):
-        assert provider == "google", "Provider %s not supported." % provider
-        return self.get_from_google_token(token_id)
-
-    def create_from_social_token(self, token_id, provider):
-        assert provider == "google", "Provider %s not supported." % provider
-        return self.create_from_google_token(token_id)
-
-    def get_or_create_from_social_token(self, token_id, provider):
-        assert provider == "google", "Provider %s not supported." % provider
-        return self.get_or_create_from_google_token(token_id)
