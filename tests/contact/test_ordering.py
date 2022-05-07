@@ -5,7 +5,7 @@ def test_ordering_bulk_create(api_client, user, models):
         format='json',
         data={'data': [{}, {}, {}]}
     )
-    assert response.status_code == 201
+    assert response.status_code == 200
     contacts = models.Contact.objects.all()
     assert len(contacts) == 3
     assert [c.order for c in contacts] == ["n", "t", "w"]

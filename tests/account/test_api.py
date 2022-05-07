@@ -1,5 +1,4 @@
 import datetime
-from datetime import timezone
 
 from greenbudget.app.budgeting.managers import (
     BudgetingPolymorphicOrderedRowManager)
@@ -117,11 +116,13 @@ def test_bulk_update_children(api_client, user, freezer, budget_f):
     subaccounts = [
         budget_f.create_subaccount(
             parent=account,
-            created_at=datetime.datetime(2020, 1, 1)
+            created_at=datetime.datetime(2020, 1, 1).replace(
+                tzinfo=datetime.timezone.utc)
         ),
         budget_f.create_subaccount(
             parent=account,
-            created_at=datetime.datetime(2020, 1, 2)
+            created_at=datetime.datetime(2020, 1, 2).replace(
+                tzinfo=datetime.timezone.utc)
         )
     ]
     api_client.force_login(user)
@@ -175,7 +176,7 @@ def test_bulk_update_children(api_client, user, freezer, budget_f):
     # Make sure the Budget is updated in the database.
     budget.refresh_from_db()
     assert budget.updated_at == datetime.datetime(2021, 1, 1).replace(
-        tzinfo=timezone.utc)
+        tzinfo=datetime.timezone.utc)
     assert budget.nominal_value == 40.0
     assert budget.actual == 0.0
 
@@ -186,14 +187,16 @@ def test_bulk_update_children_fringes(api_client, user, f, budget_f):
     subaccounts = [
         budget_f.create_subaccount(
             parent=account,
-            created_at=datetime.datetime(2020, 1, 1),
+            created_at=datetime.datetime(2020, 1, 1).replace(
+                tzinfo=datetime.timezone.utc),
             quantity=1,
             rate=100,
             multiplier=1
         ),
         budget_f.create_subaccount(
             parent=account,
-            created_at=datetime.datetime(2020, 1, 2),
+            created_at=datetime.datetime(2020, 1, 2).replace(
+                tzinfo=datetime.timezone.utc),
             quantity=1,
             rate=100,
             multiplier=1
@@ -301,11 +304,13 @@ def test_bulk_update_children_budget_updated_once(api_client, user, budget_f,
     subaccounts = [
         budget_f.create_subaccount(
             parent=account,
-            created_at=datetime.datetime(2020, 1, 1)
+            created_at=datetime.datetime(2020, 1, 1).replace(
+                tzinfo=datetime.timezone.utc)
         ),
         budget_f.create_subaccount(
             parent=account,
-            created_at=datetime.datetime(2020, 1, 2)
+            created_at=datetime.datetime(2020, 1, 2).replace(
+                tzinfo=datetime.timezone.utc)
         )
     ]
     api_client.force_login(user)
@@ -347,7 +352,7 @@ def test_bulk_create_children(api_client, user, models, budget_f):
                 'rate': 5
             }
         ]})
-    assert response.status_code == 201
+    assert response.status_code == 200
     subaccounts = models.SubAccount.objects.all()
     assert len(subaccounts) == 2
 

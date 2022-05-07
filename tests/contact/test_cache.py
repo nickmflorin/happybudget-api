@@ -6,6 +6,7 @@ def test_cache_invalidated_on_delete(api_client, user, f):
     contacts = [f.create_contact(), f.create_contact()]
     api_client.force_login(user)
 
+    # Make the first request to the endpoint to cache the results.
     response = api_client.get("/v1/contacts/")
     assert response.status_code == 200
     assert response.json()['count'] == 2
@@ -13,6 +14,8 @@ def test_cache_invalidated_on_delete(api_client, user, f):
     response = api_client.delete("/v1/contacts/%s/" % contacts[0].pk)
     assert response.status_code == 204
 
+    # Make another request to the endpoint to ensure that the results are not
+    # cached.
     response = api_client.get("/v1/contacts/")
     assert response.status_code == 200
     assert response.json()['count'] == 1
@@ -23,6 +26,7 @@ def test_cache_invalidated_on_bulk_delete(api_client, user, f):
     contacts = [f.create_contact(), f.create_contact()]
     api_client.force_login(user)
 
+    # Make the first request to the endpoint to cache the results.
     response = api_client.get("/v1/contacts/")
     assert response.status_code == 200
     assert response.json()['count'] == 2
@@ -33,6 +37,8 @@ def test_cache_invalidated_on_bulk_delete(api_client, user, f):
     )
     assert response.status_code == 204
 
+    # Make another request to the endpoint to ensure that the results are not
+    # cached.
     response = api_client.get("/v1/contacts/")
     assert response.status_code == 200
     assert response.json()['count'] == 1
@@ -43,6 +49,7 @@ def test_cache_invalidated_on_update(api_client, user, f):
     contacts = [f.create_contact(), f.create_contact()]
     api_client.force_login(user)
 
+    # Make the first request to the endpoint to cache the results.
     response = api_client.get("/v1/contacts/")
     assert response.status_code == 200
     assert response.json()['count'] == 2
@@ -52,6 +59,8 @@ def test_cache_invalidated_on_update(api_client, user, f):
     })
     assert response.status_code == 200
 
+    # Make another request to the endpoint to ensure that the results are not
+    # cached.
     response = api_client.get("/v1/contacts/")
     assert response.status_code == 200
     assert response.json()['count'] == 2
@@ -63,6 +72,7 @@ def test_cache_invalidated_on_bulk_update(api_client, user, f):
     contacts = [f.create_contact(), f.create_contact()]
     api_client.force_login(user)
 
+    # Make the first request to the endpoint to cache the results.
     response = api_client.get("/v1/contacts/")
     assert response.status_code == 200
     assert response.json()['count'] == 2
@@ -74,6 +84,8 @@ def test_cache_invalidated_on_bulk_update(api_client, user, f):
     )
     assert response.status_code == 200
 
+    # Make another request to the endpoint to ensure that the results are not
+    # cached.
     response = api_client.get("/v1/contacts/")
     assert response.status_code == 200
     assert response.json()['count'] == 2
@@ -85,6 +97,7 @@ def test_cache_invalidated_on_create(api_client, user, f):
     f.create_contact(count=2)
     api_client.force_login(user)
 
+    # Make the first request to the endpoint to cache the results.
     response = api_client.get("/v1/contacts/")
     assert response.status_code == 200
     assert response.json()['count'] == 2
@@ -94,6 +107,8 @@ def test_cache_invalidated_on_create(api_client, user, f):
     })
     assert response.status_code == 201
 
+    # Make another request to the endpoint to ensure that the results are not
+    # cached.
     response = api_client.get("/v1/contacts/")
     assert response.status_code == 200
     assert response.json()['count'] == 3
@@ -104,6 +119,7 @@ def test_cache_invalidated_on_bulk_create(api_client, user, f):
     f.create_contact(count=2)
     api_client.force_login(user)
 
+    # Make the first request to the endpoint to cache the results.
     response = api_client.get("/v1/contacts/")
     assert response.status_code == 200
     assert response.json()['count'] == 2
@@ -113,8 +129,10 @@ def test_cache_invalidated_on_bulk_create(api_client, user, f):
         format='json',
         data={"data": [{"first_name": "Jill"}]}
     )
-    assert response.status_code == 201
+    assert response.status_code == 200
 
+    # Make another request to the endpoint to ensure that the results are not
+    # cached.
     response = api_client.get("/v1/contacts/")
     assert response.status_code == 200
     assert response.json()['count'] == 3
@@ -128,7 +146,7 @@ def test_cache_invalidated_on_upload_attachment(api_client, user,
 
     api_client.force_login(user)
 
-    # Make the first request to the contacts endpoint to cache the results.
+    # Make the first request to the endpoint to cache the results.
     response = api_client.get("/v1/contacts/")
     assert response.status_code == 200
     assert response.json()['count'] == 2
@@ -140,8 +158,8 @@ def test_cache_invalidated_on_upload_attachment(api_client, user,
     )
     assert response.status_code == 201
 
-    # Make another request to the contacts endpoint to ensure that the
-    # results are not cached.
+    # Make another request to the endpoint to ensure that the results are not
+    # cached.
     response = api_client.get("/v1/contacts/")
     assert response.status_code == 200
     assert response.json()['count'] == 2

@@ -129,4 +129,4 @@ class ContactViewSet(
         )
         return response.Response({
             'children': self.serializer_class(children, many=True).data
-        }, status=status.HTTP_201_CREATED)
+        }, status=status.HTTP_200_OK)

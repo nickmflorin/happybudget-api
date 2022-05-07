@@ -75,7 +75,7 @@ def test_create_fringe(api_client, user, budget_f, models):
     assert fringe.unit == 1
 
 
-def test_bulk_create_fringe(api_client, user, models, budget_f):
+def test_bulk_create_fringes(api_client, user, models, budget_f):
     budget = budget_f.create_budget()
     accounts = [
         budget_f.create_account(parent=budget),
@@ -105,7 +105,7 @@ def test_bulk_create_fringe(api_client, user, models, budget_f):
             {'name': 'fringe-a', 'rate': 1.2},
             {'name': 'fringe-b', 'rate': 2.2}
         ]})
-    assert response.status_code == 201
+    assert response.status_code == 200
 
     # The children in the response will be the created Fringes.
     assert len(response.json()['children']) == 2

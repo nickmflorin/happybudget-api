@@ -1,6 +1,5 @@
 # pylint: disable=redefined-outer-name
 import copy
-from os import access
 import pytest
 
 from greenbudget.app.collaborator.models import Collaborator
@@ -465,9 +464,8 @@ def detail_update_response(api_client, obj_url, with_assertion):
         data = getattr(case, 'data', None)
         if hasattr(data, '__call__'):
             data = data(obj)
-        r = api_client.patch(url, data=data)
         return PermissionCaseResponse.patch(
-            response=api_client.patch(url, data=data),
+            response=api_client.patch(url, data=data, format='json'),
             url=url,
             case=case
         )

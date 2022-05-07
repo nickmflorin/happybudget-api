@@ -74,7 +74,8 @@ def test_create_budget_public_token_with_previously_expired(api_client, user,
     # the budget.
     f.create_public_token(
         instance=budget,
-        expires_at=datetime.datetime(2019, 11, 1)
+        expires_at=datetime.datetime(2019, 11, 1).replace(
+            tzinfo=datetime.timezone.utc)
     )
     api_client.force_login(user)
     response = api_client.post("/v1/budgets/%s/public-token/" % budget.pk, data={

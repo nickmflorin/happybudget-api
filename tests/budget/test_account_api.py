@@ -242,7 +242,7 @@ def test_bulk_update_accounts_outside_budget(api_client, user, budget_f):
     assert response.status_code == 400
 
 
-def test_bulk_create_account(api_client, user, budget_f, models):
+def test_bulk_create_children(api_client, user, budget_f, models):
     budget = budget_f.create_budget()
     api_client.force_login(user)
     response = api_client.patch(
@@ -260,7 +260,7 @@ def test_bulk_create_account(api_client, user, budget_f, models):
                 }
             ]
         })
-    assert response.status_code == 201
+    assert response.status_code == 200
 
     accounts = models.Account.objects.all()
     assert len(accounts) == 2

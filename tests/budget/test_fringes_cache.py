@@ -78,7 +78,7 @@ def test_fringes_cache_invalidated_on_bulk_create(api_client, user, budget_f, f)
         format='json',
         data={'data': [{'name': 'Name 1'}, {'name': 'Name 2'}]}
     )
-    assert response.status_code == 201
+    assert response.status_code == 200
 
     response = api_client.get("/v1/budgets/%s/fringes/" % budget.pk)
     assert response.status_code == 200

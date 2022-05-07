@@ -316,6 +316,53 @@ def test_template_update_permissions(case, update_response):
     update_response(case, domain="template", data={'name': 'Test Budget'})
 
 
+BUDGET_DETAIL_UPDATE_PERMISSIONS = [
+    ParameterizedCase(name='another_user', status=403, error={
+        'message': (
+            'The user must does not have permission to view this budget.'),
+        'code': 'permission_error',
+        'error_type': 'permission'
+    }),
+    ParameterizedCase.not_logged_in(),
+    ParameterizedCase('public_case', status=401),
+    ParameterizedCase('logged_in', create=True, status=200)
+]
+
+@ParameterizedCase.parameterize(BUDGET_DETAIL_UPDATE_PERMISSIONS + [
+    ParameterizedCase('another_public_case', status=401),
+    ParameterizedCase.collaborator(view_only=403, status=200),
+    ParameterizedCase('multiple_budgets', login=True, status=403),
+    ParameterizedCase.multiple_budgets_not_authenticated(),
+])
+@pytest.mark.parametrize('path,data', [
+    ('/bulk-update-children/', {'data': []}),
+    ('/bulk-update-fringes/', {'data': []}),
+    ('/bulk-update-actuals/', {'data': []}),
+    ('/bulk-delete-children/', {'ids': []}),
+    ('/bulk-delete-fringes/', {'ids': []}),
+    ('/bulk-delete-actuals/', {'ids': []}),
+    ('/bulk-create-children/', {'ids': []}),
+    ('/bulk-create-fringes/', {'ids': []}),
+    ('/bulk-create-actuals/', {'ids': []}),
+])
+def test_budget_bulk_permissions(case, detail_update_response, path, data):
+    detail_update_response(case, domain="budget", path=path, data=data)
+
+
+@ParameterizedCase.parameterize(BUDGET_DETAIL_UPDATE_PERMISSIONS + [
+    ParameterizedCase('multiple_budgets', login=True, status=200),
+])
+@pytest.mark.parametrize('path,data', [
+    ('/bulk-update-children/', {'data': []}),
+    ('/bulk-update-fringes/', {'data': []}),
+    ('/bulk-delete-children/', {'ids': []}),
+    ('/bulk-delete-fringes/', {'ids': []}),
+    ('/bulk-create-children/', {'ids': []}),
+    ('/bulk-create-fringes/', {'ids': []}),
+])
+def test_template_bulk_permissions(case, detail_update_response, path, data):
+    detail_update_response(case, domain="template", path=path, data=data)
+
 
 @ParameterizedCase.parameterize([
     ParameterizedCase.not_logged_in(),
@@ -324,7 +371,7 @@ def test_template_update_permissions(case, update_response):
     ParameterizedCase.multiple_budgets_restricted(),
     ParameterizedCase.multiple_budgets_not_authenticated(),
     # Collaborators are not allowed to import Budget actuals, only the
-    # Collaborating owner is allowed to do so.
+    # Collaborating owner is allowed to do so.  At least for the time being.
     ParameterizedCase.collaborator(view_only=403, editor=403, owner=200)
 ])
 def test_bulk_import_actuals_permissions(case, detail_update_response, models,

@@ -503,10 +503,13 @@ class BudgetViewSet(
         base_cls = BaseBudget
         if self.action in ('pdf', 'list', 'bulk_import_actuals') \
                 or self.in_bulk_entity('actuals'):
+            # Actuals and PDF are only relevant for the budget domain.  The
+            # template domain for list actions is handled by a separate view.
             base_cls = Budget
         qs = base_cls.objects
         if self.action == 'list':
             qs = qs.filter(created_by=self.request.user)
+            # Archived Budget(s) are handled by a separate view.
             if base_cls is Budget:
                 qs = qs.filter(archived=False)
         return qs.all()

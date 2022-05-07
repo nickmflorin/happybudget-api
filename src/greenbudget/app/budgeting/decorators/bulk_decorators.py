@@ -292,7 +292,7 @@ class bulk_create_action(bulk_action):
                 self.base_serializer_cls,
                 instance=instance
             ),
-        }, status=status.HTTP_201_CREATED)
+        }, status=status.HTTP_200_OK)
 
 
 class bulk_delete_action(bulk_action):
@@ -302,7 +302,7 @@ class bulk_delete_action(bulk_action):
     """
     def __init__(self, action, *args, **kwargs):
         kwargs.setdefault('perform_destroy', action.perform_destroy)
-        super().__init__(action, **kwargs)
+        super().__init__(action, *args, **kwargs)
 
     def get_serializer_class(self):
         return create_bulk_delete_serializer(

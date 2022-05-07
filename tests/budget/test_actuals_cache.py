@@ -248,7 +248,7 @@ def test_bulk_update_actuals_invalidates_caches(api_client, user, f):
 
 
 @override_settings(CACHE_ENABLED=True)
-def test_bulk_create_actual_invalidates_caches(api_client, user, f):
+def test_bulk_create_actuals_invalidates_caches(api_client, user, f):
     budget = f.create_budget()
     account = f.create_account(parent=budget)
     subaccount = f.create_subaccount(parent=account)
@@ -306,7 +306,7 @@ def test_bulk_create_actual_invalidates_caches(api_client, user, f):
             }}
         ]}
     )
-    assert response.status_code == 201
+    assert response.status_code == 200
 
     response = api_client.get("/v1/subaccounts/%s/" % subaccount.pk)
     assert response.status_code == 200

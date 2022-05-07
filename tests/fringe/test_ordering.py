@@ -7,7 +7,7 @@ def test_ordering_bulk_create(api_client, user, models, budget_f):
         format='json',
         data={'data': [{}, {}, {}]}
     )
-    assert response.status_code == 201
+    assert response.status_code == 200
     fringes = models.Fringe.objects.all()
     assert len(fringes) == 3
     assert [f.order for f in fringes] == ["n", "t", "w"]

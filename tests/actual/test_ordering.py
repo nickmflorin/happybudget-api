@@ -7,7 +7,7 @@ def test_ordering_bulk_create(api_client, user, models, f):
         format='json',
         data={'data': [{}, {}, {}]}
     )
-    assert response.status_code == 201
+    assert response.status_code == 200
     actuals = models.Actual.objects.all()
     assert len(actuals) == 3
     assert [a.order for a in actuals] == ["n", "t", "w"]

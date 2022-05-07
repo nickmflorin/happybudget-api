@@ -1,7 +1,7 @@
 from django.contrib.contenttypes.models import ContentType
 
 
-def test_bulk_create_subaccount(user, budget_f, models):
+def test_bulk_create_subaccounts(user, budget_f, models):
     budget = budget_f.create_budget()
     accounts = [
         budget_f.create_account(parent=budget),

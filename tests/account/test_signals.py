@@ -1,5 +1,4 @@
 import datetime
-from datetime import timezone
 import pytest
 
 
@@ -61,5 +60,5 @@ def test_saving_account_saves_budget(freezer, budget_f, user, staff_user,
 
     budget.refresh_from_db()
     assert budget.updated_at == datetime.datetime(
-        2019, 5, 20).replace(tzinfo=timezone.utc)
+        2019, 5, 20).replace(tzinfo=datetime.timezone.utc)
     assert budget.updated_by == staff_user

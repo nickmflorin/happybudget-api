@@ -18,25 +18,29 @@ def searchable_users(f):
             email="bcosby@gmail.com",
             first_name="Bill",
             last_name="Cosby",
-            last_login=datetime.datetime(2020, 4, 1)
+            last_login=datetime.datetime(2020, 4, 1).replace(
+                tzinfo=datetime.timezone.utc)
         ),
         f.create_user(
             email="slapattheoscars@gmail.com",
             first_name="Will",
             last_name="Smith",
-            last_login=datetime.datetime(2020, 3, 1)
+            last_login=datetime.datetime(2020, 3, 1).replace(
+                tzinfo=datetime.timezone.utc)
         ),
         f.create_user(
             email="wsmith@gmail.com",
             first_name="Will",
             last_name="Smith",
-            last_login=datetime.datetime(2020, 2, 1)
+            last_login=datetime.datetime(2020, 2, 1).replace(
+                tzinfo=datetime.timezone.utc)
         ),
         f.create_user(
             email="bjohnson@gmail.com",
             first_name="Will",
             last_name='Jackson',
-            last_login=datetime.datetime(2020, 1, 1)
+            last_login=datetime.datetime(2020, 1, 1).replace(
+                tzinfo=datetime.timezone.utc)
         ),
     ]
 

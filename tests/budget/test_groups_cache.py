@@ -158,7 +158,7 @@ def test_groups_cache_invalidated_on_bulk_create_children(api_client, user,
         format='json',
         data={'data': [{'group': group.pk}]}
     )
-    assert response.status_code == 201
+    assert response.status_code == 200
     created_id = response.json()['children'][0]['id']
 
     response = api_client.get("/v1/budgets/%s/groups/" % budget.pk)

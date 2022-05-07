@@ -8,11 +8,13 @@ def test_get_account_children(api_client, user, budget_f):
     subaccounts = [
         budget_f.create_subaccount(
             parent=account,
-            created_at=datetime.datetime(2020, 1, 1)
+            created_at=datetime.datetime(2020, 1, 1).replace(
+                tzinfo=datetime.timezone.utc)
         ),
         budget_f.create_subaccount(
             parent=account,
-            created_at=datetime.datetime(2020, 1, 2)
+            created_at=datetime.datetime(2020, 1, 2).replace(
+                tzinfo=datetime.timezone.utc)
         ),
         budget_f.create_subaccount(parent=another_account)
     ]
@@ -218,11 +220,13 @@ def test_get_community_template_account_children(
     [
         f.create_template_subaccount(
             parent=account,
-            created_at=datetime.datetime(2020, 1, 1)
+            created_at=datetime.datetime(2020, 1, 1).replace(
+                tzinfo=datetime.timezone.utc)
         ),
         f.create_template_subaccount(
             parent=account,
-            created_at=datetime.datetime(2020, 1, 2)
+            created_at=datetime.datetime(2020, 1, 2).replace(
+                tzinfo=datetime.timezone.utc)
         )
     ]
     api_client.force_login(user)
@@ -239,11 +243,13 @@ def test_get_another_users_community_template_account_children(api_client,
     [
         f.create_template_subaccount(
             parent=account,
-            created_at=datetime.datetime(2020, 1, 1)
+            created_at=datetime.datetime(2020, 1, 1).replace(
+                tzinfo=datetime.timezone.utc)
         ),
         f.create_template_subaccount(
             parent=account,
-            created_at=datetime.datetime(2020, 1, 2)
+            created_at=datetime.datetime(2020, 1, 2).replace(
+                tzinfo=datetime.timezone.utc)
         )
     ]
     api_client.force_login(staff_user)

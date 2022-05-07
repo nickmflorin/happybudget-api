@@ -276,7 +276,7 @@ def test_caches_invalidated_on_bulk_create(api_client, user, budget_f):
         format='json',
         data={'data': [{'identifier': '1000'}]}
     )
-    assert response.status_code == 201
+    assert response.status_code == 200
     created_id = response.json()['children'][0]['id']
 
     response = api_client.get("/v1/subaccounts/%s/" % subaccount.pk)

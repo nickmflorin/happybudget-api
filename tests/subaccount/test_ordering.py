@@ -9,7 +9,7 @@ def test_ordering_bulk_create(api_client, user, models, budget_f):
         format='json',
         data={'data': [{}, {}, {}]}
     )
-    assert response.status_code == 201
+    assert response.status_code == 200
     subaccounts = models.SubAccount.objects.filter_by_parent(subaccount).all()
     assert len(subaccounts) == 3
     assert [sub.order for sub in subaccounts] == ["n", "t", "w"]

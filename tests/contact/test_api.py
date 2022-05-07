@@ -294,7 +294,7 @@ def test_bulk_delete_contacts(api_client, user, f, models):
     assert models.Contact.objects.count() == 0
 
 
-def test_bulk_create_contact(api_client, user, models):
+def test_bulk_create_contacts(api_client, user, models):
     api_client.force_login(user)
     response = api_client.patch(
         "/v1/contacts/bulk-create/",
@@ -314,7 +314,7 @@ def test_bulk_create_contact(api_client, user, models):
             }
         ]}
     )
-    assert response.status_code == 201
+    assert response.status_code == 200
     assert models.Contact.objects.count() == 2
     contacts = models.Contact.objects.all()
     assert response.json()['children'] == [

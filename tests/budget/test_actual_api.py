@@ -102,7 +102,7 @@ def test_create_markup_actual(api_client, user, f, models):
     assert actual.owner == markup
 
 
-def test_bulk_create_actual(api_client, user, f, models):
+def test_bulk_create_actuals(api_client, user, f, models):
     budget = f.create_budget()
     accounts = [
         f.create_budget_account(parent=budget),
@@ -160,7 +160,7 @@ def test_bulk_create_actual(api_client, user, f, models):
             },
         ]})
 
-    assert response.status_code == 201
+    assert response.status_code == 200
 
     # The children in the response will be the created Actuals.
     assert len(response.json()['children']) == 6
