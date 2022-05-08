@@ -62,6 +62,13 @@ class BasePermissionMetaclass(permissions.BasePermissionMetaclass):
             def inner(instance, request, view):
                 instance.guarantee_user_dependency_flags(request)
 
+                if instance.disabled:
+                    if instance.raise_on_disabled:
+                        raise Exception(
+                            f"Permission class {instance.__class__} is disabled!"
+                        )
+                    return True
+
                 # If the permission exposes a user permission method and this
                 # method evaluates to False, do not grant permission access.
                 if hasattr(instance, 'has_user_perm') \
@@ -78,6 +85,13 @@ class BasePermissionMetaclass(permissions.BasePermissionMetaclass):
             @with_raise_exception
             def inner(instance, request, view, obj):
                 instance.guarantee_user_dependency_flags(request)
+
+                if instance.disabled:
+                    if instance.raise_on_disabled:
+                        raise Exception(
+                            f"Permission class {instance.__class__} is disabled!"
+                        )
+                    return True
 
                 # If the permission exposes a user permission method and this
                 # method evaluates to False, do not grant permission access.
@@ -248,6 +262,14 @@ class BasePermission(metaclass=BasePermissionMetaclass):
         inside of an operand.
 
         Default: True
+
+    disabled: :obj:`bool` or :obj:`lambda` (optional)
+        Either a boolean value or a callback that takes the Django settings
+        object as its first and only argument that is used to denote whether
+        or not the specific permission is disabled.
+
+        If the permission is disabled, it will always return True for any
+        permission checks.
     """
     exception_class = PermissionErr
     user_dependency_flags = []
@@ -276,6 +298,9 @@ class BasePermission(metaclass=BasePermissionMetaclass):
         self._get_permissioned_obj = options.get('get_permissioned_obj')
         self._get_nested_obj = options.get('get_nested_obj', None)
 
+        self._disabled = options.get('disabled')
+        self._raise_on_disabled = options.get('raise_on_disabled', False)
+
     def __call__(self, **kwargs):
         """
         Returns a new instance of the same permission class with the provided
@@ -284,6 +309,26 @@ class BasePermission(metaclass=BasePermissionMetaclass):
         kw = copy.deepcopy(self._kwargs)
         kw.update(kwargs)
         return self.__class__(*self._args, **kw)
+
+    @property
+    def raise_on_disabled(self):
+        return self._raise_on_disabled
+
+    @property
+    def disabled(self):
+        disabled = self._disabled or getattr(self, 'default_disabled', None)
+        if disabled is None:
+            return False
+        elif hasattr(disabled, '__call__'):
+            # It is important here that the settings object is dynamically
+            # imported.
+            # pylint: disable=import-outside-toplevel
+            from django.conf import settings
+            return disabled(settings)
+        assert isinstance(disabled, bool), \
+            "The disabled value must either be provided as a boolean or a " \
+            "callback."
+        return disabled
 
     def get_permissioned_obj(self, obj):
         # If the callback to get the permissioned object was provided on

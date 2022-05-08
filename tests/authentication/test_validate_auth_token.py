@@ -1,5 +1,6 @@
-from django.test import override_settings
 from http.cookies import SimpleCookie
+
+from django.test import override_settings
 import pytest
 
 from greenbudget.lib.utils.dateutils import api_datetime_string
@@ -7,6 +8,7 @@ from greenbudget.app.authentication.tokens import AuthToken
 
 
 @pytest.mark.freeze_time('2020-01-01')
+@override_settings(BILLING_ENABLED=True)
 def test_validate_auth_token(api_client, settings, standard_product_user):
     token = AuthToken.for_user(standard_product_user)
     api_client.cookies = SimpleCookie({
@@ -46,6 +48,7 @@ def test_validate_auth_token(api_client, settings, standard_product_user):
     }
 
 
+@override_settings(BILLING_ENABLED=True)
 def test_validate_auth_token_twice_fetches_from_stripe_once(settings,
         api_client, mock_stripe, standard_product_user):
     token = AuthToken.for_user(standard_product_user)

@@ -9,6 +9,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+from greenbudget.conf import suppress_with_setting
+
 from greenbudget.lib.utils import ensure_iterable
 from greenbudget.lib.utils.dateutils import ensure_datetime
 
@@ -173,6 +175,7 @@ class User(UserAuthenticationMixin, AbstractUser):
         from greenbudget.app.budget.models import Budget
         return Budget.objects.filter(archived=True, created_by=self)
 
+    @suppress_with_setting('SOCIAL_AUTHENTICATION_ENABLED')
     def sync_with_social_provider(self, social_user=None, token=None,
             provider=None):
         assert social_user is not None \
@@ -187,6 +190,7 @@ class User(UserAuthenticationMixin, AbstractUser):
         if self.last_name is None or self.last_name == "":
             self.last_name = social_user.last_name
 
+    @suppress_with_setting('BILLING_ENABLED')
     def cache_stripe_from_token(self, token_obj):
         """
         Uses the Stripe information embedded in the provided token to cache
@@ -206,6 +210,7 @@ class User(UserAuthenticationMixin, AbstractUser):
                 user=self
             )
 
+    @suppress_with_setting('BILLING_ENABLED')
     def flush_stripe_cache(self):
         """
         Flushes the Stripe data on the :obj:`StripeCustomer` associated with the
@@ -215,6 +220,7 @@ class User(UserAuthenticationMixin, AbstractUser):
         if self.stripe_customer is not None:
             self.stripe_customer.flush_cache()
 
+    @suppress_with_setting('BILLING_ENABLED')
     def update_or_create_stripe_customer(self, metadata=None):
         """
         Updates or creates the Stripe customer data associated with the
@@ -247,6 +253,7 @@ class User(UserAuthenticationMixin, AbstractUser):
         self.stripe_customer = self.stripe_id
         return self.stripe_customer
 
+    @suppress_with_setting('BILLING_ENABLED')
     def get_or_create_stripe_customer(self, metadata=None):
         """
         Retrieves or creates the Stripe customer data associated with the
@@ -267,12 +274,20 @@ class User(UserAuthenticationMixin, AbstractUser):
         """
         Returns the :obj:`StripeCustomer` associated with the :obj:`User`.
         """
+        suppress_with_setting.raise_if_suppressed(
+            attr='BILLING_ENABLED',
+            func='stripe_customer'
+        )
         if not hasattr(self, '_stripe_customer') and self.stripe_id:
             self._stripe_customer = StripeCustomer(self)
         return getattr(self, '_stripe_customer', None)
 
     @stripe_customer.setter
     def stripe_customer(self, value):
+        suppress_with_setting.raise_if_suppressed(
+            attr='BILLING_ENABLED',
+            func='stripe_customer'
+        )
         if isinstance(value, str):
             self.stripe_id = value
         elif isinstance(value, stripe.Customer):
@@ -288,16 +303,17 @@ class User(UserAuthenticationMixin, AbstractUser):
 
     @property
     def billing_status(self):
-        if self.stripe_customer:
+        if settings.BILLING_ENABLED and self.stripe_customer:
             return self.stripe_customer.billing_status
         return None
 
     @property
     def product_id(self):
-        if self.stripe_customer:
+        if settings.BILLING_ENABLED and self.stripe_customer:
             return self.stripe_customer.product_id
         return None
 
+    @suppress_with_setting('BILLING_ENABLED')
     def has_product(self, product):
         assert product is not None, "Product must be non-null."
         if product == '__any__':

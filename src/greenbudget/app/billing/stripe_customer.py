@@ -2,6 +2,7 @@ import logging
 
 from django.utils.functional import cached_property
 
+from greenbudget.conf import suppress_with_setting
 from .utils import (
     get_product_internal_id, request_until_all_received, subscription_status)
 from . import stripe
@@ -33,6 +34,7 @@ class token_cached_stripe_property(cached_stripe_property):
     """
 
 
+@suppress_with_setting('BILLING_ENABLED')
 class StripeCustomer:
     """
     Wraps a :obj:`User` instance that is registered with Stripe such that

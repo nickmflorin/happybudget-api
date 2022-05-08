@@ -1,6 +1,8 @@
+from django.test import override_settings
 import pytest
 
 
+@override_settings(BILLING_ENABLED=True)
 def test_get_products(api_client, user, mock_stripe):
     products = [
         mock_stripe.Product.create(internal_id="greenbudget_standard"),
@@ -36,6 +38,7 @@ def test_get_products(api_client, user, mock_stripe):
     ]
 
 
+@override_settings(BILLING_ENABLED=True)
 def test_get_products_product_without_price_ommitted(api_client, user,
         mock_stripe):
     mock_stripe.Product.create(internal_id="greenbudget_standard")
@@ -48,6 +51,7 @@ def test_get_products_product_without_price_ommitted(api_client, user,
 
 
 @pytest.mark.freeze_time('2020-01-01')
+@override_settings(BILLING_ENABLED=True)
 def test_get_user_subscription(api_client, standard_product_user):
     api_client.force_login(standard_product_user)
     response = api_client.get("/v1/billing/subscription/")
@@ -65,6 +69,7 @@ def test_get_user_subscription(api_client, standard_product_user):
     }
 
 
+@override_settings(BILLING_ENABLED=True)
 def test_checkout_session(api_client, user, mock_stripe_data, prices):
     api_client.force_login(user)
     response = api_client.post(
@@ -77,6 +82,7 @@ def test_checkout_session(api_client, user, mock_stripe_data, prices):
     }
 
 
+@override_settings(BILLING_ENABLED=True)
 def test_checkout_session_user_already_stripe_customer(api_client, user, prices,
         mock_stripe_data, stripe_customer):
     api_client.force_login(user)
@@ -94,6 +100,7 @@ def test_checkout_session_user_already_stripe_customer(api_client, user, prices,
     assert len(session_ids) == 0
 
 
+@override_settings(BILLING_ENABLED=True)
 def test_portal_session(api_client, user, mock_stripe_data, stripe_customer):
     api_client.force_login(user)
     response = api_client.post("/v1/billing/portal-session/")
@@ -105,6 +112,7 @@ def test_portal_session(api_client, user, mock_stripe_data, stripe_customer):
     }
 
 
+@override_settings(BILLING_ENABLED=True)
 def test_portal_session_user_not_stripe_customer(api_client, user,
         mock_stripe_data):
     api_client.force_login(user)
@@ -121,6 +129,7 @@ def test_portal_session_user_not_stripe_customer(api_client, user,
     }
 
 
+@override_settings(BILLING_ENABLED=True)
 def test_sync_checkout_session(api_client, user, mock_stripe_data, prices):
     # We have to create the checkout session via the API (instead of directly
     # via mock_stripe) because the Session ID needs to be stored in the request

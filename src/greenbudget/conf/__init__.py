@@ -2,6 +2,7 @@ import collections
 import copy
 import csv
 import functools
+import inspect
 import logging
 import os
 import pathlib
@@ -46,11 +47,17 @@ def get_environment():
     return mapping[django_settings_module]
 
 
-def suppress_with_setting(attr, value=False, return_value=None, exc=None):
+class suppress_with_setting:
     """
-    Decorator that decorates a given function such that the function
-    implementation will be suppressed when the provided setting attribute
-    evaluates to the provided value, which defaults to `False`.
+    Decorator that decorates a given function or class such that the function
+    implementation or class initialization will be suppressed when the provided
+    setting attribute evaluates to the provided value, which defaults to
+    `False`.
+
+    In the case when this decorator is applied to a class, the decorator will
+    apply to the class's __init__ method, which means we cannot return a value
+    and the only option is to raise an exception.  This means that the
+    `return_value` argument does not apply.
 
     Parameters:
     ----------
@@ -67,45 +74,88 @@ def suppress_with_setting(attr, value=False, return_value=None, exc=None):
         Default: False
 
     return_value: (optional)
-        The value that the function should return when it is suppressed.
+        The value that the function should return when it is suppressed. Only
+        applicable when the decorator is decorating a function, not a class.
 
         Default: None
 
     exc: :obj:`str` or :obj:`bool` (optional)
         If it is desired that the function should raise an exception instead of
         return a value when it is suppressed, this parameter can be specified.
+
         If it is specified as `True`, :obj:`ConfigSuppressionError` will be
         raised with a generic message.  If the value is a :obj:`str`,
         :obj:`ConfigSuppressionError` will be raised with the value as its
         message.
 
+        In the case that the decorator is being applied to a class, the
+        exception will always be raised on initialization of the class.
+
         Default: None
     """
-    def decorator(func):
-        @functools.wraps(func)
-        def inner(*args, **kwargs):
-            # It is important here that the settings object is dynamically
-            # imported.
-            # pylint: disable=import-outside-toplevel
-            from django.conf import settings
-            current_value = getattr(settings, attr)
-            if current_value != value:
-                return func(*args, **kwargs)
+    def __init__(self, attr, **kwargs):
+        self._attr = attr
+        self._value = kwargs.pop('value', False)
+        self._return_value = kwargs.pop('return_value', None)
+        self._exc = kwargs.pop('exc', None)
 
-            if exc is True or isinstance(exc, str):
-                raise ConfigSuppressionError(
-                    config_name=attr,
-                    func=func,
-                    message=exc if isinstance(exc, str) else None
-                )
+    def __call__(self, func):
+        def func_inner(*args, **kwargs):
+            if not self.is_suppressed():
+                return func(*args, **kwargs)
+            # In the case that we are decorating a function, raising an
+            # exception is not the default behavior.
+            if self._exc is True or isinstance(self._exc, str):
+                self._raise_suppressed(func=func)
             logger.warning("Skipping call to %s because %s = %s." % (
                 func.__name__,
-                attr,
-                current_value
+                self._attr,
+                self.current_value()
             ))
-            return return_value
-        return inner
-    return decorator
+            return self._return_value
+
+        # In the case that we are decorating a class, we want to override the
+        # __init__ method to check if it is suppressed before allowing the
+        # class to initialize.  Raising an exception is the only allowed
+        # behavior.
+        if inspect.isclass(func):
+            original_init = func.__init__
+
+            def new_init(instance, *args, **kwargs):
+                if self.is_suppressed():
+                    self._raise_suppressed(klass=func)
+                original_init(instance, *args, **kwargs)
+            setattr(func, '__init__', new_init)
+            return func
+
+        return functools.wraps(func)(func_inner)
+
+    def _raise_suppressed(self, **kwargs):
+        raise ConfigSuppressionError(
+            attr=self._attr,
+            message=self._exc if isinstance(self._exc, str) else None,
+            **kwargs
+        )
+
+    @classmethod
+    def raise_suppressed(cls, attr, message=None, func=None, klass=None):
+        cls(attr, exc=message)._raise_suppressed(func=func, klass=klass)
+
+    @classmethod
+    def raise_if_suppressed(cls, attr, message=None, **kwargs):
+        instance = cls(attr, exc=message)
+        if instance.is_suppressed():
+            cls.raise_suppressed(attr, message=message, **kwargs)
+
+    def current_value(self):
+        # It is important here that the settings object is dynamically
+        # imported.
+        # pylint: disable=import-outside-toplevel
+        from django.conf import settings
+        return getattr(settings, self._attr)
+
+    def is_suppressed(self):
+        return self.current_value() == self._value
 
 
 class ConfigError(Exception):
@@ -113,17 +163,46 @@ class ConfigError(Exception):
 
 
 class ConfigSuppressionError(ConfigError):
-    def __init__(self, config_name, func, message=None):
-        self.config_name = config_name
+    obj_refs = ['func', 'klass', 'obj']
+
+    def __init__(self, attr, message=None, **kwargs):
+        self.attr = attr
         self.message = message
-        self.func = func
+
+        assert self.message is not None \
+            or any([x in kwargs for x in self.obj_refs]), \
+            "Either the function or class being suppressed must be provided " \
+            "if the message is not provided explicitly."
+        for ref in self.obj_refs:
+            setattr(self, f'_{ref}', kwargs.get(ref))
+
+    @property
+    def func_or_cls(self):
+        for ref in self.obj_refs:
+            if getattr(self, f'_{ref}') is not None:
+                return getattr(self, f'_{ref}')
+        raise Exception("Improperly configured initialization of exception.")
+
+    @property
+    def reference_name(self):
+        if not isinstance(self.func_or_cls, str):
+            if inspect.isclass(self.func_or_cls):
+                return 'class'
+            return 'function'
+        elif self._func is not None:
+            return 'function'
+        elif self._klass is not None:
+            return 'class'
+        return 'object'
 
     def __str__(self):
         if self.message is not None:
             return self.message
+        # The function or class can also be provided as a string name.
+        obj_name = getattr(self.func_or_cls, '__name__', self.func_or_cls)
         return (
-            f"The function {self.func.__name__} is suppressed due to the "
-            f"value of configuration parameter {self.config_name}."
+            f"The {self.reference_name} {obj_name} is suppressed due to the "
+            f"value of configuration parameter {self.attr}."
         )
 
 

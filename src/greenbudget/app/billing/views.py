@@ -38,7 +38,9 @@ class StripeSessionViewSet(mixins.CreateModelMixin, views.GenericViewSet):
 
 class CheckoutSessionViewSet(StripeSessionViewSet):
     serializer_class = UserCheckoutSessionSerializer
-    extra_permission_classes = [IsNotStripeCustomerPermission]
+    extra_permission_classes = [IsNotStripeCustomerPermission(
+        raise_on_disabled=True
+    )]
 
     def pre_response(self, session, request):
         # We want to include the session ID on the session so after the checkout
@@ -52,12 +54,16 @@ class CheckoutSessionViewSet(StripeSessionViewSet):
 
 class PortalSessionViewSet(StripeSessionViewSet):
     serializer_class = UserPortalSessionSerializer
-    extra_permission_classes = [IsStripeCustomerPermission]
+    extra_permission_classes = [IsStripeCustomerPermission(
+        raise_on_disabled=True
+    )]
 
 
 class SyncCheckoutSessionViewSet(mixins.CreateModelMixin, views.GenericViewSet):
     serializer_class = UserSyncStripeSerializer
-    extra_permission_classes = [IsNotStripeCustomerPermission]
+    extra_permission_classes = [IsNotStripeCustomerPermission(
+        raise_on_disabled=True
+    )]
 
     def update(self, request, *args, **kwargs):
         serializer = self.get_serializer(
@@ -99,7 +105,9 @@ class SubscriptionView(mixins.RetrieveModelMixin, views.GenericViewSet):
         if subscription is not None:
             data = self.serializer_class(subscription).data
         return response.Response(
-            {"subscription": data}, status=status.HTTP_200_OK)
+            {"subscription": data},
+            status=status.HTTP_200_OK
+        )
 
 
 @cache.endpoint_cache(cache_id='products', path="/billing/products/")

@@ -52,10 +52,11 @@ class AuthToken(BlacklistMixin, Token):
     @classmethod
     def for_user(cls, user):
         token = super().for_user(user)
-        token.payload.update(
-            billing_status=user.billing_status,
-            product_id=user.product_id
-        )
+        if settings.BILLING_ENABLED:
+            token.payload.update(
+                billing_status=user.billing_status,
+                product_id=user.product_id
+            )
         return token
 
 

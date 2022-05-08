@@ -279,6 +279,9 @@ REST_FRAMEWORK = {
     }
 }
 
+# Stripe Configurations
+BILLING_ENABLED = False  # Post Copyright Infringement
+
 # Plaid Configurations
 PLAID_ENABLED = False
 PLAID_ENVIRONMENT = plaid.Environment.Production  # Post Copyright Infringement

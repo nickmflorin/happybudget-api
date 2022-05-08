@@ -4,7 +4,14 @@ from .exceptions import ProductPermissionError
 from .mixins import ProductPermissionIdMixin
 
 
-class IsStripeCustomerPermission(permissions.BasePermission):
+class BillingPermissionMixin:
+    @classmethod
+    def default_disabled(cls, s):
+        return not s.BILLING_ENABLED
+
+
+class IsStripeCustomerPermission(
+        BillingPermissionMixin, permissions.BasePermission):
     def has_permission(self, request, view):
         if not request.user.is_authenticated \
                 or request.user.stripe_id is None:
@@ -12,7 +19,8 @@ class IsStripeCustomerPermission(permissions.BasePermission):
         return True
 
 
-class IsNotStripeCustomerPermission(permissions.BasePermission):
+class IsNotStripeCustomerPermission(
+        BillingPermissionMixin, permissions.BasePermission):
     def has_permission(self, request, view):
         if not request.user.is_authenticated \
                 or request.user.stripe_id is not None:
@@ -21,7 +29,10 @@ class IsNotStripeCustomerPermission(permissions.BasePermission):
 
 
 class BaseProductPermission(
-        ProductPermissionIdMixin, permissions.BasePermission):
+    BillingPermissionMixin,
+    ProductPermissionIdMixin,
+    permissions.BasePermission
+):
     code = permissions.PermissionErrorCodes.PRODUCT_PERMISSION_ERROR
     message = (
         "The user does not have the correct subscription to view this "

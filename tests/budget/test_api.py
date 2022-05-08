@@ -1,3 +1,4 @@
+from django.test import override_settings
 import pytest
 
 
@@ -303,6 +304,9 @@ def test_derive_budget(api_client, user, f, staff_user, models):
 
 
 @pytest.mark.freeze_time('2020-01-01')
+# Note: If billing is not enabled, the value of `is_perissioned` in the response
+# will always be True.
+@override_settings(BILLING_ENABLED=True)
 def test_duplicate_budget(api_client, standard_product_user, f, models):
     original = f.create_budget(created_by=standard_product_user)
     api_client.force_login(standard_product_user)

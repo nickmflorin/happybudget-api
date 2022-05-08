@@ -77,7 +77,8 @@ def get_session_user(request, cache_stripe_info=True):
             # Unless the request indicates to force reload the data from Stripe's
             # API, use the billing related values from Stripe in the JWT token
             # to attribute the user.
-            if not force_reload_from_stripe(request):
+            if not force_reload_from_stripe(request) \
+                    and settings.BILLING_ENABLED:
                 # Use the JWT token to prepopulate billing related values on the
                 # user to avoid unnecessary requests to Stripe's API.
                 session_user.cache_stripe_from_token(token_obj)
@@ -134,7 +135,8 @@ def get_cookie_user(request):
                     # the token user so that the JWT authentication token
                     # validation view does not make repetitive requests to
                     # Stripe's API.
-                    if not force_reload_from_stripe(request):
+                    if not force_reload_from_stripe(request) \
+                            and settings.BILLING_ENABLED:
                         token_user.cache_stripe_from_token(token_obj)
                     request._cached_cookie_user = token_user
     return request._cached_cookie_user
