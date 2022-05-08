@@ -454,7 +454,6 @@ def exception_handler(exc, context):
             {'errors': [map_detail(exc, message=message, code='not_found')]},
             status=status.HTTP_404_NOT_FOUND
         )
-
     elif isinstance(exc, exceptions.MethodNotAllowed):
         message = str(exc) or "This method is not allowed."
         logger.error("API encountered a 405 error", extra={
