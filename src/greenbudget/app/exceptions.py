@@ -3,14 +3,8 @@ from rest_framework import exceptions, status
 from rest_framework.exceptions import AuthenticationFailed  # noqa
 from django.utils.translation import gettext_lazy as _
 
-from greenbudget.lib.utils import ensure_iterable, get_string_formatted_kwargs
-
-
-def _consolidate_field_errors(fields, message):
-    error = {}
-    for field in fields:
-        error[field] = message
-    return error
+from greenbudget.lib.utils import (
+    ensure_iterable, get_string_formatted_kwargs, first_iterable_arg)
 
 
 class BadRequestErrorCodes:
@@ -109,35 +103,21 @@ class ValidationError(exceptions.ValidationError):
       >>> MyCustomValidationError(["foo", "bar"], message="This is a message.")
     """
     default_code = FieldErrorCodes.INVALID
-    error_type = 'form'
 
     def __init__(self, *args, **kwargs):
-
-        fields = None
+        self.fields = None
         message = self.default_detail
         if 'message' in kwargs:
             message = kwargs.pop('message')
-            if args:
-                fields = ensure_iterable(args[0])
-                if len(args) > 1:
-                    fields = list(args)
+            self.fields = first_iterable_arg(*args)
         elif 'field' in kwargs:
-            fields = ensure_iterable(kwargs.pop('field'))
+            self.fields = ensure_iterable(kwargs.pop('field'))
             if args:
                 message = args[0]
-                if not isinstance(message, str):
-                    raise Exception(
-                        f"Improper initialization of {self.__class__.__name__}.")
         elif args:
             message = args[0]
-            if not isinstance(message, str):
-                raise Exception(
-                    f"Improper initialization of {self.__class__.__name__}.")
 
-        data = _(message)
-
-        if not hasattr(self, 'error_type'):
-            self.error_type = 'field' if fields else 'form'
+        message = _(message) if isinstance(message, str) else message
 
         # This ValidationError allows a default detail to be specified with
         # string formatted parameters that if provided on __init__, will be
@@ -155,16 +135,22 @@ class ValidationError(exceptions.ValidationError):
                     format_kwargs[a] is not None
                     for a in string_formatted_kwargs
                 ]):
-                    data = exceptions.ErrorDetail(
+                    detail = exceptions.ErrorDetail(
                         _(self.default_info_detail.format(**format_kwargs)),
                         code=kwargs.get('code', self.default_code)
                     )
-                    if fields:
-                        data = _consolidate_field_errors(fields, data)
-        elif fields:
-            data = _consolidate_field_errors(fields, data)
+                    if self.fields:
+                        data = {field: detail for field in self.fields}
+        elif self.fields:
+            data = {field: message for field in self.fields}
+        else:
+            data = message
 
         super().__init__(data, **kwargs)
+
+    @property
+    def error_type(self):
+        return 'field' if self.fields else 'form'
 
 
 class RequiredFieldError(ValidationError):

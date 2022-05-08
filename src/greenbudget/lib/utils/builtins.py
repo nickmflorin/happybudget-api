@@ -360,3 +360,22 @@ def ensure_iterable(value, strict=False, cast=list, cast_none=True):
     elif strict:
         raise ValueError("Value %s is not an iterable." % value)
     return cast([value])
+
+
+def first_iterable_arg(*args, cast=list):
+    """
+    Allows for an iterable parameter to be flexibly specified as either the
+    first and only argument to a call or as individual arguments.
+
+    Usage:
+    -----
+    >>> first_iterable_arg('a', 'b', 'c')
+    >>> ['a', 'b', 'c']
+    >>> first_iterable_arg(['a', 'b', 'c'], 'd', 'e')
+    >>> ['a', 'b', 'c']
+    """
+    if not args:
+        return None
+    elif len(args) > 1:
+        return ensure_iterable(args, cast=cast)
+    return ensure_iterable(args[0], cast=cast)

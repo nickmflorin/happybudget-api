@@ -3,6 +3,7 @@ import pytest
 
 
 @pytest.mark.freeze_time('2020-01-01')
+@override_settings(BILLING_ENABLED=True)
 def test_get_budgets(api_client, user, admin_user, f):
     budgets = f.create_budget(count=2)
     # Add additional budgets created by another use to ensure that those are
@@ -54,6 +55,7 @@ def test_get_budgets(api_client, user, admin_user, f):
 
 
 @pytest.mark.freeze_time('2020-01-01')
+@override_settings(BILLING_ENABLED=True)
 def test_get_archived_budgets(api_client, user, admin_user, f):
     archived_budgets = f.create_budget(count=2, archived=True)
     # Add additional budgets created by another use to ensure that those are

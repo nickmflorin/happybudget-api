@@ -95,7 +95,6 @@ class BudgetingManagerMixin:
         """
         # pylint: disable=import-outside-toplevel
         from greenbudget.app.budget.models import BaseBudget
-
         budgets = set([])
         for instance in instances:
             assert isinstance(instance, BaseBudget) \

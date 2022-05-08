@@ -1,5 +1,7 @@
 import collections
 import datetime
+import logging
+import requests
 import stripe
 from timezone_field import TimeZoneField
 
@@ -13,8 +15,11 @@ from greenbudget.conf import suppress_with_setting
 
 from greenbudget.lib.utils import ensure_iterable
 from greenbudget.lib.utils.dateutils import ensure_datetime
+from greenbudget.lib.utils.urls import add_query_params_to_url
 
 from greenbudget.app import model
+from greenbudget.app.authentication.exceptions import (
+    InvalidSocialProvider, InvalidSocialToken)
 from greenbudget.app.authentication.utils import parse_user_id_from_token
 from greenbudget.app.billing import StripeCustomer
 from greenbudget.app.billing.constants import BillingStatus
@@ -22,6 +27,9 @@ from greenbudget.app.io.utils import upload_user_image_to
 
 from .mixins import UserAuthenticationMixin
 from .managers import UserManager
+
+
+logger = logging.getLogger('greenbudget')
 
 
 def upload_to(instance, filename):
@@ -175,7 +183,7 @@ class User(UserAuthenticationMixin, AbstractUser):
         from greenbudget.app.budget.models import Budget
         return Budget.objects.filter(archived=True, created_by=self)
 
-    @suppress_with_setting('SOCIAL_AUTHENTICATION_ENABLED')
+    @suppress_with_setting('SOCIAL_AUTHENTICATION_ENABLED', exc=True)
     def sync_with_social_provider(self, social_user=None, token=None,
             provider=None):
         assert social_user is not None \
@@ -190,7 +198,7 @@ class User(UserAuthenticationMixin, AbstractUser):
         if self.last_name is None or self.last_name == "":
             self.last_name = social_user.last_name
 
-    @suppress_with_setting('BILLING_ENABLED')
+    @suppress_with_setting('BILLING_ENABLED', exc=True)
     def cache_stripe_from_token(self, token_obj):
         """
         Uses the Stripe information embedded in the provided token to cache
@@ -210,7 +218,7 @@ class User(UserAuthenticationMixin, AbstractUser):
                 user=self
             )
 
-    @suppress_with_setting('BILLING_ENABLED')
+    @suppress_with_setting('BILLING_ENABLED', exc=True)
     def flush_stripe_cache(self):
         """
         Flushes the Stripe data on the :obj:`StripeCustomer` associated with the
@@ -220,7 +228,7 @@ class User(UserAuthenticationMixin, AbstractUser):
         if self.stripe_customer is not None:
             self.stripe_customer.flush_cache()
 
-    @suppress_with_setting('BILLING_ENABLED')
+    @suppress_with_setting('BILLING_ENABLED', exc=True)
     def update_or_create_stripe_customer(self, metadata=None):
         """
         Updates or creates the Stripe customer data associated with the
@@ -253,7 +261,7 @@ class User(UserAuthenticationMixin, AbstractUser):
         self.stripe_customer = self.stripe_id
         return self.stripe_customer
 
-    @suppress_with_setting('BILLING_ENABLED')
+    @suppress_with_setting('BILLING_ENABLED', exc=True)
     def get_or_create_stripe_customer(self, metadata=None):
         """
         Retrieves or creates the Stripe customer data associated with the
@@ -313,7 +321,7 @@ class User(UserAuthenticationMixin, AbstractUser):
             return self.stripe_customer.product_id
         return None
 
-    @suppress_with_setting('BILLING_ENABLED')
+    @suppress_with_setting('BILLING_ENABLED', exc=True)
     def has_product(self, product):
         assert product is not None, "Product must be non-null."
         if product == '__any__':
@@ -321,3 +329,43 @@ class User(UserAuthenticationMixin, AbstractUser):
                 and self.product_id is not None
         return self.billing_status == BillingStatus.ACTIVE \
             and self.product_id in ensure_iterable(product)
+
+    SOCIAL_USER_LOOKUPS = {
+        'google': 'get_google_user'
+    }
+
+    @classmethod
+    @suppress_with_setting("SOCIAL_AUTHENTICATION_ENABLED", exc=True)
+    def get_google_user(cls, token):
+        assert settings.GOOGLE_OAUTH_API_URL is not None, \
+            "Configuration parameter `GOOGLE_OAUTH_API_URL` is not defined."
+        url = add_query_params_to_url(
+            url=settings.GOOGLE_OAUTH_API_URL,
+            id_token=token
+        )
+        try:
+            response = requests.get(url)
+        except requests.RequestException as e:
+            logger.error("Network Error Validating Google Token: %s" % e)
+            raise InvalidSocialToken() from e
+        else:
+            try:
+                response.raise_for_status()
+            except requests.exceptions.HTTPError as e:
+                logger.error("HTTP Error Validating Google Token: %s" % e)
+                raise InvalidSocialToken() from e
+            else:
+                return SocialUser(
+                    first_name=response.json()['given_name'],
+                    last_name=response.json()['family_name'],
+                    email=response.json()['email']
+                )
+
+    @classmethod
+    @suppress_with_setting("SOCIAL_AUTHENTICATION_ENABLED", exc=True)
+    def get_social_user(cls, token, provider):
+        try:
+            method_name = cls.SOCIAL_USER_LOOKUPS[provider]
+        except KeyError as e:
+            raise InvalidSocialProvider() from e
+        return getattr(cls, method_name)(token)

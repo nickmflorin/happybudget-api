@@ -1,5 +1,4 @@
 import logging
-import requests
 
 from django.conf import settings
 from django.contrib.auth.hashers import make_password
@@ -7,58 +6,15 @@ from django.contrib.auth.models import UserManager as DjangoUserManager
 from django.db import IntegrityError
 
 from greenbudget.conf import suppress_with_setting
-from greenbudget.lib.utils.urls import add_query_params_to_url
 
 from greenbudget.app.authentication.exceptions import (
-    InvalidSocialProvider, InvalidSocialToken, AccountNotOnWaitlist)
+    InvalidSocialToken, AccountNotOnWaitlist)
 
 from .mail import user_is_on_waitlist
 from .query import UserQuerySet, UserQuerier
 
 
 logger = logging.getLogger('greenbudget')
-
-
-@suppress_with_setting("SOCIAL_AUTHENTICATION_ENABLED", exc=True)
-def get_social_google_user(token):
-    # pylint: disable=import-outside-toplevel
-    from .models import SocialUser
-    assert settings.GOOGLE_OAUTH_API_URL is not None, \
-        "The configuration parameter `SOCIAL_AUTHENTICATION_ENABLED` is True " \
-        "but the configuration parameter `GOOGLE_OAUTH_API_URL` has not been " \
-        "set."
-    url = add_query_params_to_url(
-        settings.GOOGLE_OAUTH_API_URL, id_token=token)
-    try:
-        response = requests.get(url)
-    except requests.RequestException as e:
-        logger.error("Network Error Validating Google Token: %s" % e)
-        raise InvalidSocialToken() from e
-    else:
-        try:
-            response.raise_for_status()
-        except requests.exceptions.HTTPError as e:
-            logger.error("HTTP Error Validating Google Token: %s" % e)
-            raise InvalidSocialToken() from e
-        else:
-            return SocialUser(
-                first_name=response.json()['given_name'],
-                last_name=response.json()['family_name'],
-                email=response.json()['email']
-            )
-
-
-SOCIAL_USER_LOOKUPS = {
-    'google': get_social_google_user
-}
-
-
-@suppress_with_setting("SOCIAL_AUTHENTICATION_ENABLED", exc=True)
-def get_social_user(token, provider):
-    try:
-        return SOCIAL_USER_LOOKUPS[provider](token)
-    except KeyError as e:
-        raise InvalidSocialProvider() from e
 
 
 class UserManager(UserQuerier, DjangoUserManager):
@@ -110,7 +66,7 @@ class UserManager(UserQuerier, DjangoUserManager):
     @suppress_with_setting("SOCIAL_AUTHENTICATION_ENABLED", exc=True)
     def get_from_social_token(self, token_id, provider):
         try:
-            social_user = get_social_user(token_id, provider)
+            social_user = self.model.get_social_user(token_id, provider)
         except InvalidSocialToken as e:
             raise self.model.DoesNotExist() from e
         else:
@@ -121,7 +77,7 @@ class UserManager(UserQuerier, DjangoUserManager):
 
     @suppress_with_setting("SOCIAL_AUTHENTICATION_ENABLED", exc=True)
     def create_from_social_token(self, token_id, provider):
-        social_user = get_social_user(token_id, provider)
+        social_user = self.model.get_social_user(token_id, provider)
         return self.create_from_social(
             email=social_user.email,
             first_name=social_user.first_name,

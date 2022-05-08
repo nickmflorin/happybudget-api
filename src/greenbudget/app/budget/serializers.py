@@ -1,3 +1,4 @@
+from django.conf import settings
 from rest_framework import serializers
 
 from greenbudget.app import exceptions
@@ -97,7 +98,7 @@ class BudgetSimpleSerializer(BaseBudgetSerializer):
             instance=instance.updated_by).data
         if self.user.is_authenticated and instance.user_owner == self.user:
             data['is_permissioned'] = False
-            if not self.user.has_product('__any__'):
+            if settings.BILLING_ENABLED and not self.user.has_product('__any__'):
                 data['is_permissioned'] = not instance.is_first_created
         return data
 
