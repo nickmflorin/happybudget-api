@@ -1,5 +1,7 @@
 # Green Budget API
 
+&copy; Nick Florin, 2021
+
 This project serves as a REST API supporting the GreenBudget platform.
 
 This documentation outlines how to properly setup and configure the application
