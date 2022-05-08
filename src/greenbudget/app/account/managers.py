@@ -14,7 +14,6 @@ from .cache import account_instance_cache
 
 
 class AccountManager(BudgetingPolymorphicOrderedRowManager):
-
     @signals.disable()
     def bulk_delete(self, instances, request=None):
         budgets = set([inst.budget for inst in instances])

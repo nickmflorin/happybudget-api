@@ -470,7 +470,7 @@ class Duplicator:
                         and actual.content_type_id == markup_ct.pk:
                     # Here, the Actual is tied to a Markup, so we need to
                     # make sure that relationship is established by associating
-                    # the duplciated Actual to the original Markup's duplicated
+                    # the duplicated Actual to the original Markup's duplicated
                     # form.
                     kwargs.update(
                         content_type_id=markup_ct.pk,
@@ -479,7 +479,7 @@ class Duplicator:
                 elif actual.content_type_id is not None:
                     # Here, the Actual is tied to a SubAccount, so we need to
                     # make sure that relationship is established by associating
-                    # the duplciated Actual to the original SubAccount's
+                    # the duplicated Actual to the original SubAccount's
                     # duplicated form.
                     kwargs.update(
                         content_type_id=self.destination_ct['subaccount'].pk,
