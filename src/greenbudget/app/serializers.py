@@ -51,7 +51,6 @@ def create_model_or_basic_serializer(**kwargs):
 
 def create_bulk_serializer(**kwargs):
     base_serializer_cls = create_model_or_basic_serializer(**kwargs)
-
     # We need to have an awareness of what instance the changes are related to.
     # This can either be done by directly passing in the child class or by
     # passing in the serializer class which has the associated model in it's
@@ -66,6 +65,8 @@ def create_bulk_serializer(**kwargs):
         child_cls = kwargs['serializer_cls'].Meta.model
 
     class BulkSerializer(base_serializer_cls):
+        bulk_context_name = 'bulk_context'
+
         @property
         def _child_context(self):
             context = {self.bulk_context_name: True}
@@ -78,10 +79,6 @@ def create_bulk_serializer(**kwargs):
         def manager_method_name(self):
             raise NotImplementedError()
 
-        @property
-        def bulk_context_name(self):
-            return "bulk_context"
-
         def _validate_manager(self):
             if not hasattr(child_cls.objects, self.manager_method_name):
                 raise Exception(
@@ -90,10 +87,60 @@ def create_bulk_serializer(**kwargs):
                 )
 
         def save(self, **kwargs):
+            """
+            Performs the base serializer class's save method in the case that
+            the serializer is an instance of :obj:`serializers.ModelSerializer`,
+            otherwise, performs the bulk operation.
+
+            The serializer will be an instance of
+            :obj:`serializers.ModelSerializer` only when the `model_cls`
+            parameter is provided.  This `model_cls` parameter does not refer
+            to the model that is being bulk updated, created or deleted - but
+            rather the parent model that is changing as a result of a bulk
+            update, create or delete.
+
+            For instance, when bulk-updating a series of children for an
+            :obj:`Account`, the endpoint is:
+
+            PATCH /v1/accounts/<pk>/bulk-update-children/
+
+            Here, the `model_cls` refers to the :obj:`Account` with the pk
+            in the request path that we are updating the children of.
+
+            Regardless of whether or not the serializer is a subclass of
+            :obj:`serializers.ModelSerializer`, the validated data on the
+            serializer will always be the data that is used to perform the
+            bulk update, create or delete.
+
+            The decision regarding how to apply that validated data to the
+            children depends on whether or not the base serializer class is a
+            subclass of :obj:`serializers.ModelSerializer`:
+
+            - Is subclass of :obj:`serializers.ModelSerializer`
+                1.  There is a parent model that the children are relative to.
+                2.  The `.save()` method does not need to be overridden, because
+                    the changes in the validated data will be applied in the
+                    `update` method, due to the fact that we are updating the
+                    parent model.
+                3.  The `.update()` method needs to be overridden, in order to
+                    apply the changes in the validated data to the children.
+
+            - Is not subclass of :obj:`serializers.ModelSerializer`
+                1.  There is no parent model that the children are relative to.
+                2.  The `.save()` method needs to be overridden, since the
+                    changes in the validated data will not be applied to the
+                    children in the `update()` method since there is no parent
+                    we are updating the children relative to.
+                3.  The `update()` method does not need to be overridden, since
+                    we are not updating the children relative to a parent model.
+            """
             # Applying the changes in the .save() method is only applicable when
             # not using a ModelSerializer.
             if isinstance(self, serializers.ModelSerializer):
                 return super().save(**kwargs)
+            # There is no parent model that the children are relative to, so
+            # we need to perform the bulk operation in the `.save()` method
+            # (since the `.update()` method will not be called).
             self._validate_manager()
             return self.perform({**self.validated_data, **kwargs})
 
@@ -102,6 +149,8 @@ def create_bulk_serializer(**kwargs):
             # when using a ModelSerializer.
             if not isinstance(self, serializers.ModelSerializer):
                 return super().update(instance, validated_data)
+            # There is a parent model that the children are relative to, so we
+            # need to perform the bulk operation in the `.update()` method.
             self._validate_manager()
             data = self.perform(validated_data)
             # We have to refresh the instance from the DB because of the changes
@@ -154,59 +203,6 @@ class BulkSerializerDataPrimaryKeyField(serializers.PrimaryKeyRelatedField):
         return super().to_internal_value(instance_id), data
 
 
-def create_bulk_patch_serializer(serializer_cls, **kwargs):
-    filter_qs = kwargs.get('filter_qs', models.Q())
-
-    base_serializer_cls = create_bulk_serializer(
-        fields=('data', ) + kwargs.get('fields', ()),
-        serializer_cls=serializer_cls,
-        **kwargs
-    )
-
-    class BulkSerializer(base_serializer_cls):
-        # Since we are simply converting each element in the array to a pair
-        # composed of the instance the ID refers to and the supplementary data,
-        # we still need to validate the supplementary data.
-        #
-        # NOTE: The reason that we do not want the validation to be performed
-        # inherently when the data is received (as it is in the POST case
-        # beacuse we use the child serializer class directly as a nested
-        # serializer) is because when updating an instance via a serializer, the
-        # serializer class needs to be initialized with the instance being
-        # updated to properly perform validation.
-        data = BulkSerializerDataPrimaryKeyField(
-            many=True,
-            required=True,
-            queryset=serializer_cls.Meta.model.objects.filter(filter_qs),
-        )
-
-    return BulkSerializer
-
-
-def create_bulk_post_serializer(serializer_cls, **kwargs):
-    base_serializer_cls = create_bulk_serializer(
-        fields=('data', ) + kwargs.get('fields', ()),
-        serializer_cls=serializer_cls,
-        **kwargs
-    )
-
-    class BulkSerializer(base_serializer_cls):
-        # Unlike the PATCH case, we simply use the child serializer class
-        # directly - since we do not have to worry about IDs for each object
-        # in the data (since an ID is not applicable for creating an object)
-        # and there is no instance that needs to be provided to the serializer.
-        data = serializer_cls(many=True, required=True)
-
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-            # We need/want to provide the nested serializer with the same
-            # context that this serializer receives.  DRF does not do that
-            # by default.
-            self.fields['data'].context.update(**self._child_context)
-
-    return BulkSerializer
-
-
 def create_bulk_delete_serializer(child_cls, **kwargs):
     base_serializer_cls = create_bulk_serializer(
         fields=('ids', ),
@@ -217,6 +213,7 @@ def create_bulk_delete_serializer(child_cls, **kwargs):
 
     class BulkDeleteSerializer(base_serializer_cls):
         manager_method_name = 'bulk_delete'
+        bulk_context_name = 'bulk_delete_context'
         return_results = False
 
         ids = serializers.PrimaryKeyRelatedField(
@@ -238,6 +235,34 @@ def create_bulk_delete_serializer(child_cls, **kwargs):
 
 
 def create_bulk_update_serializer(serializer_cls, **kwargs):
+    """
+    Creates a serializer that has a `data` field, which is used to serialize
+    the request data in the case of a bulk-update operation.
+
+    In a bulk-update operation, the `data` in the request body will be an
+    array of objects, each of which has an ID (referring to the model that
+    needs to be updated) and the supplementary data that needs to be applied
+    to the model during update:
+
+    POST /v1/budgets/<pk>/bulk-update-children/
+        {"data": [{"id": 4, "identifier": "1000"}]}
+
+    Note that we do not want to use an array of nested serializers to represent
+    the `data` field.  This is because when we are updating via a serializer,
+    the serializer class needs to be initialized with the instance being updated
+    in order to properly perform validation - but the instance is not yet
+    available at the time the serializer is initialized.
+
+    Usage of the :obj:`BulkSerializerDataPrimaryKeyField` allows us to convert
+    the ID in each object of the `data` array to it's corresponding model
+    without validating the supplementary data - which is something that is done
+    by initializing the child (or nested) serializer class with the model
+    instance in the `.perform()` method here.
+
+    Note that this differs from the bulk-create case, as in a POST request
+    we are not initializing any child serializer with an instance that already
+    exists - so we can use the nested serializer approach.
+    """
     filter_qs = kwargs.get('filter_qs', models.Q())
     ModelClass = serializer_cls.Meta.model
 
@@ -252,14 +277,21 @@ def create_bulk_update_serializer(serializer_cls, **kwargs):
             queryset=serializer_cls.Meta.model.objects.filter(filter_qs)
         )
 
-    base_serializer = create_bulk_patch_serializer(
+    base_serializer_cls = create_bulk_serializer(
+        fields=('data', ) + kwargs.get('fields', ()),
         serializer_cls=BulkUpdateChildSerializer,
         **kwargs
     )
 
-    class BulkUpdateSerializer(base_serializer):
+    class BulkUpdateSerializer(base_serializer_cls):
         manager_method_name = 'bulk_save'
         bulk_context_name = 'bulk_update_context'
+
+        data = BulkSerializerDataPrimaryKeyField(
+            many=True,
+            required=True,
+            queryset=serializer_cls.Meta.model.objects.filter(filter_qs),
+        )
 
         def validate_data(self, data):
             """
@@ -345,7 +377,7 @@ def create_bulk_update_serializer(serializer_cls, **kwargs):
                 update_fields.update(fields)
 
             # Exception should have already been raised at this point.
-            assert hasattr(ModelClass.objects, 'bulk_save')
+            assert hasattr(ModelClass.objects, self.manager_method_name)
 
             # It is possible that the bulk update only applies to M2M fields,
             # in which case there will be no `update_fields` and we do not need
@@ -366,16 +398,47 @@ def create_bulk_update_serializer(serializer_cls, **kwargs):
 
 
 def create_bulk_create_serializer(serializer_cls, **kwargs):
+    """
+    Creates a serializer that has a `data` field, which is used to serialize
+    the request data in the case of a bulk-create operation.
+
+    In a bulk-create operation, the `data` in the request body will be an
+    array of objects, each of which has the data that needs to be used to create
+    the individual child.
+
+    POST /v1/budgets/<pk>/bulk-create-children/
+        {"data": [{"identifier": "1000"}, {"identifier": "2000"}]}
+
+    Note that unlike the bulk-update case, we can in fact use an array of
+    nested serializers to represent the `data` field - because we do not need
+    to provide the nested serializers with an instance in order to properly
+    perform validation, as the instance is not applicable when creating new
+    instances.
+    """
     ModelClass = serializer_cls.Meta.model
 
-    base_serializer = create_bulk_post_serializer(
+    base_serializer_cls = create_bulk_serializer(
+        fields=('data', ) + kwargs.get('fields', ()),
         serializer_cls=serializer_cls,
         **kwargs
     )
 
-    class BulkCreateSerializer(base_serializer):
+    class BulkCreateSerializer(base_serializer_cls):
         manager_method_name = 'bulk_add'
         bulk_context_name = 'bulk_create_context'
+
+        # Unlike the PATCH case, we simply use the child serializer class
+        # directly as a nested serializer - since we do not have to worry about
+        # providing each nested serializer an instance as we are not updating
+        # the children, but creating them.
+        data = serializer_cls(many=True, required=True)
+
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            # We need/want to provide the nested serializer with the same
+            # context that this serializer receives.  DRF does not do that
+            # by default.
+            self.fields['data'].context.update(**self._child_context)
 
         def child_serializer_create(self, serializer, validated_data):
             """
@@ -429,7 +492,7 @@ def create_bulk_create_serializer(serializer_cls, **kwargs):
                 m2m_fields.append(m2m)
 
             # Exception should have already been raised at this point.
-            assert hasattr(ModelClass.objects, 'bulk_add')
+            assert hasattr(ModelClass.objects, self.manager_method_name)
 
             # We have to create the instances in a bulk/batch operation before
             # we can attribute the M2M fields to those instances.  Unfortunately,
