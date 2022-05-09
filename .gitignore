@@ -50,10 +50,10 @@ coverage.xml
 *.mo
 *.pot
 
-# Django:
+# Django
 *.log
 src/greenbudget/static/
-
+media/
 
 # pyenv
 .python-version
@@ -109,6 +109,5 @@ CACHE
 # Application Environment
 docker-compose.override.yml
 .env
-media/
 jwt_signing_key
 jwt_signing_key.pub
