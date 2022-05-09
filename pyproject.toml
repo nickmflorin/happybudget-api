@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "greenbudget"
-version = "0.1.0"
+version = "1.0.0"
 description = "Backend Application for Green Buget Application"
 authors = ["nickmflorin <nickmflorin@gmail.com>"]
 repository = "https://github.com/nickmflorin/greenbudget-api"

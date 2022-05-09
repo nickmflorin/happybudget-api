@@ -7,4 +7,4 @@ class GreenbudgetAppConfig(AppConfig):
 
     def ready(self):
         # pylint: disable=import-outside-toplevel,unused-import
-        import greenbudget.app.signals.receivers  # noqa
+        from .signals import receivers  # noqa
