@@ -1,6 +1,6 @@
 # Green Budget API
 
-&copy; Nick Florin, 2021
+&copy; Nick Florin, 2022
 
 This project serves as a REST API supporting the GreenBudget platform.
 
