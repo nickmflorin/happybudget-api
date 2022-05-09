@@ -8,9 +8,9 @@ This documentation outlines how to properly setup and configure the application
 in both production and local environments. For other documentation regarding
 the operation and development of this project, refer to the following list:
 
-1. [Testing](https://github.com/Saturation-IO/happybudget-api/blob/develop/tests/ReadMe.md)
-2. [Standards & Conventions](https://github.com/Saturation-IO/happybudget-api/blob/develop/Standards.md)
-3. [Configuration](https://github.com/Saturation-IO/happybudget-api/blob/develop/src/happybudget/conf/ReadMe.md)
+1. [Testing](https://github.com/nickmflorin/happybudget-api/blob/develop/tests/ReadMe.md)
+2. [Standards & Conventions](https://github.com/nickmflorin/happybudget-api/blob/develop/Standards.md)
+3. [Configuration](https://github.com/nickmflorin/happybudget-api/blob/develop/src/happybudget/conf/ReadMe.md)
 
 ### System Requirements
 
@@ -31,7 +31,7 @@ here (for obvious reasons).
 Clone this repository locally and `cd` into the directory.
 
 ```bash
-$ git clone https://github.com/Saturation-IO/happybudget-api.git
+$ git clone https://github.com/nickmflorin/happybudget-api.git
 ```
 
 #### Step 2: Environment
@@ -433,7 +433,7 @@ If you need to override certain settings for your own personal local development
 ### Testing
 
 See the `ReadMe.md` file in the `testing` directory
-[here](https://github.com/Saturation-IO/happybudget-api/blob/develop/tests/ReadMe.md).
+[here](https://github.com/nickmflorin/happybudget-api/blob/develop/tests/ReadMe.md).
 
 #### tox
 
@@ -651,7 +651,7 @@ $ sudo mkdir www
 $ sudo chmod 777 www
 $ chmod go-w ~/.ssh/config
 $ cd ./www
-$ git clone git@github.com:Saturation-IO/happybudget-api.git
+$ git clone git@github.com:nickmflorin/happybudget-api.git
 $ cd ./happybudget-api
 ```
 
