@@ -9,7 +9,7 @@ from plaid.model.location import Location
 from plaid.model.transaction import Transaction
 from plaid.model.payment_meta import PaymentMeta
 
-from greenbudget.app.integrations.plaid.constants import PlaidCategoryGroup
+from happybudget.app.integrations.plaid.constants import PlaidCategoryGroup
 
 
 class MockPlaidModel:

@@ -1,6 +1,6 @@
 import pytest
 
-from greenbudget.app.markup.models import Markup
+from happybudget.app.markup.models import Markup
 
 
 def test_get_account_markups(api_client, user, models, f, budget_f):

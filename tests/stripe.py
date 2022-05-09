@@ -9,7 +9,7 @@ import pytest
 
 from stripe.util import convert_to_stripe_object
 
-from greenbudget.app.billing import stripe
+from happybudget.app.billing import stripe
 
 
 def object_id(prefix, length=8):
@@ -200,7 +200,7 @@ def mock_stripe(mock_stripe_data):
             "metadata": {
                 "internal_id": internal_id
             },
-            "name": "Greenbudget %s" % slug.upper(),
+            "name": "HappyBudget %s" % slug.upper(),
             "package_dimensions": None,
             "shippable": None,
             "statement_descriptor": None,
@@ -488,8 +488,8 @@ def mock_stripe(mock_stripe_data):
 @pytest.fixture
 def products(mock_stripe):
     return [
-        mock_stripe.Product.create("greenbudget_standard"),
-        mock_stripe.Product.create("greenbudget_premium")
+        mock_stripe.Product.create("happybudget_standard"),
+        mock_stripe.Product.create("happybudget_premium")
     ]
 
 

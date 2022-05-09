@@ -1,10 +1,10 @@
 import pytest
 
-from greenbudget.app.io.exceptions import (
+from happybudget.app.io.exceptions import (
     MissingFileExtension,
     UnsupportedFileExtension
 )
-from greenbudget.app.io.utils import (
+from happybudget.app.io.utils import (
     upload_user_image_to,
     upload_temp_user_image_to,
     upload_user_file_to,

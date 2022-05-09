@@ -52,7 +52,7 @@ coverage.xml
 
 # Django
 *.log
-src/greenbudget/static/
+src/happybudget/static/
 media/
 
 # pyenv
@@ -98,7 +98,7 @@ pgadmin-data/
 statcdn/
 dump.rdb
 .project
-greenbudget/dump.rdb
+happybudget/dump.rdb
 CACHE
 
 # Elastic Beanstalk Files

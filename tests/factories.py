@@ -9,9 +9,9 @@ from django.contrib.contenttypes.models import ContentType
 
 import pytest
 
-from greenbudget.data import factories
-from greenbudget.app.budget.models import Budget
-from greenbudget.app.template.models import Template
+from happybudget.data import factories
+from happybudget.app.budget.models import Budget
+from happybudget.app.template.models import Template
 
 
 @pytest.fixture

@@ -4,7 +4,7 @@ from django.test import override_settings
 
 
 @pytest.mark.freeze_time('2020-01-01')
-@override_settings(APP_URL="https://api.greenbudget.com")
+@override_settings(APP_URL="https://api.happybudget.com")
 def test_attachments_properly_serialize(api_client, user, f):
     budget = f.create_budget()
     account = f.create_budget_account(parent=budget)
@@ -26,7 +26,7 @@ def test_attachments_properly_serialize(api_client, user, f):
             'name': 'attachment1.jpeg',
             'extension': 'jpeg',
             'url': (
-                'https://api.greenbudget.com'
+                'https://api.happybudget.com'
                 '/media/users/1/attachments/attachment1.jpeg'
             )
         },
@@ -35,7 +35,7 @@ def test_attachments_properly_serialize(api_client, user, f):
             'name': 'attachment2.jpeg',
             'extension': 'jpeg',
             'url': (
-                'https://api.greenbudget.com'
+                'https://api.happybudget.com'
                 '/media/users/1/attachments/attachment2.jpeg'
             )
         }
@@ -43,7 +43,7 @@ def test_attachments_properly_serialize(api_client, user, f):
 
 
 @pytest.mark.freeze_time('2020-01-01')
-@override_settings(APP_URL="https://api.greenbudget.com")
+@override_settings(APP_URL="https://api.happybudget.com")
 def test_get_attachments(api_client, user, f):
     budget = f.create_budget()
     account = f.create_budget_account(parent=budget)
@@ -67,7 +67,7 @@ def test_get_attachments(api_client, user, f):
             'extension': 'jpeg',
             'size': 823,
             'url': (
-                'https://api.greenbudget.com/'
+                'https://api.happybudget.com/'
                 'media/users/1/attachments/attachment1.jpeg'
             )
         },
@@ -77,7 +77,7 @@ def test_get_attachments(api_client, user, f):
             'extension': 'jpeg',
             'size': 823,
             'url': (
-                'https://api.greenbudget.com/'
+                'https://api.happybudget.com/'
                 'media/users/1/attachments/attachment2.jpeg'
             )
         }
@@ -103,7 +103,7 @@ def test_delete_attachment(api_client, user, f):
 
 
 @pytest.mark.freeze_time('2020-01-01')
-@override_settings(APP_URL="https://api.greenbudget.com")
+@override_settings(APP_URL="https://api.happybudget.com")
 def test_update_attachments(api_client, user, f):
     budget = f.create_budget()
     account = f.create_budget_account(parent=budget)
@@ -132,7 +132,7 @@ def test_update_attachments(api_client, user, f):
             'name': 'attachment1.jpeg',
             'extension': 'jpeg',
             'url': (
-                'https://api.greenbudget.com/'
+                'https://api.happybudget.com/'
                 'media/users/1/attachments/attachment1.jpeg'
             )
         },
@@ -141,7 +141,7 @@ def test_update_attachments(api_client, user, f):
             'name': 'attachment2.jpeg',
             'extension': 'jpeg',
             'url': (
-                'https://api.greenbudget.com/'
+                'https://api.happybudget.com/'
                 'media/users/1/attachments/attachment2.jpeg'
             )
         },
@@ -150,14 +150,14 @@ def test_update_attachments(api_client, user, f):
             'name': 'attachment3.jpeg',
             'extension': 'jpeg',
             'url': (
-                'https://api.greenbudget.com/'
+                'https://api.happybudget.com/'
                 'media/users/1/attachments/attachment3.jpeg'
             )
         }
     ]
 
 
-@override_settings(APP_URL="https://api.greenbudget.com")
+@override_settings(APP_URL="https://api.happybudget.com")
 def test_upload_attachment(api_client, user, f, test_uploaded_file, models):
     budget = f.create_budget()
     account = f.create_budget_account(parent=budget)
@@ -188,13 +188,13 @@ def test_upload_attachment(api_client, user, f, test_uploaded_file, models):
         'extension': 'jpeg',
         'size': 823,
         'url': (
-            'https://api.greenbudget.com/'
+            'https://api.happybudget.com/'
             'media/users/1/attachments/test.jpeg'
         )
     }]
 
 
-@override_settings(APP_URL="https://api.greenbudget.com")
+@override_settings(APP_URL="https://api.happybudget.com")
 def test_upload_multiple_attachments(api_client, user, f, test_uploaded_file,
         models):
     budget = f.create_budget()
@@ -230,7 +230,7 @@ def test_upload_multiple_attachments(api_client, user, f, test_uploaded_file,
             'extension': 'jpeg',
             'size': 823,
             'url': (
-                'https://api.greenbudget.com/'
+                'https://api.happybudget.com/'
                 'media/users/1/attachments/test1.jpeg'
             )
         },
@@ -240,7 +240,7 @@ def test_upload_multiple_attachments(api_client, user, f, test_uploaded_file,
             'extension': 'jpeg',
             'size': 823,
             'url': (
-                'https://api.greenbudget.com/'
+                'https://api.happybudget.com/'
                 'media/users/1/attachments/test2.jpeg'
             )
         }

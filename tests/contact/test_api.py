@@ -1,4 +1,4 @@
-from greenbudget.lib.utils.dateutils import api_datetime_string
+from happybudget.lib.utils.dateutils import api_datetime_string
 
 
 def test_get_contact(api_client, user, f, models):

@@ -1,6 +1,6 @@
 import datetime
 
-from greenbudget.app.budgeting.managers import (
+from happybudget.app.budgeting.managers import (
     BudgetingPolymorphicOrderedRowManager)
 
 

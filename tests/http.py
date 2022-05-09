@@ -13,8 +13,8 @@ from django.db import connection, connections
 
 from rest_framework.test import APIClient
 
-from greenbudget.app import cache
-from greenbudget.app.authentication.models import PublicToken
+from happybudget.app import cache
+from happybudget.app.authentication.models import PublicToken
 
 from .factories import *  # noqa
 from .models import *  # noqa
@@ -48,7 +48,7 @@ def no_requests(monkeypatch):
 
 @pytest.fixture
 def api_client(settings):
-    class GreenbudgetApiClient(APIClient):
+    class HappyBudgetApiClient(APIClient):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
             self._dynamic_headers = {}
@@ -74,7 +74,7 @@ def api_client(settings):
             else:
                 self._dynamic_headers[header_name] = str(token)
 
-    return GreenbudgetApiClient()
+    return HappyBudgetApiClient()
 
 
 @pytest.fixture

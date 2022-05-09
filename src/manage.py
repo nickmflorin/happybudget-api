@@ -5,7 +5,7 @@ import sys
 
 def main():
     os.environ.setdefault(
-        'DJANGO_SETTINGS_MODULE', 'greenbudget.conf.settings.local')
+        'DJANGO_SETTINGS_MODULE', 'happybudget.conf.settings.local')
     try:
         # pylint: disable=import-outside-toplevel
         from django.core.management import execute_from_command_line
@@ -20,8 +20,8 @@ def main():
 
     arguments = sys.argv[:]
     if arguments == ['src/manage.py', 'runserver'] \
-            and settings_module == 'greenbudget.conf.settings.local':
-        arguments = arguments + ['local.greenbudget.io:8000']
+            and settings_module == 'happybudget.conf.settings.local':
+        arguments = arguments + ['local.happybudget.io:8000']
 
     execute_from_command_line(arguments)
 

@@ -1,0 +1,1 @@
+# HappyBudget API Configuration

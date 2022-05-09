@@ -13,7 +13,7 @@ Our testing suite has it's own dedicated environment in which to operate.
 : `test`
 
 **Settings Module**
-: `greenbudget.conf.settings.test`
+: `happybudget.conf.settings.test`
 
 **File Storage**
 : Temporary File Storage

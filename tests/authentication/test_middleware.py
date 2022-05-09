@@ -8,20 +8,20 @@ import pytest
 from django.http import HttpResponse
 from django.utils.http import http_date
 
-from greenbudget.app.authentication.tokens import AuthToken
-import greenbudget.app.authentication.middleware
-from greenbudget.app.authentication.exceptions import ExpiredToken, InvalidToken
-from greenbudget.app.authentication.middleware import (
+from happybudget.app.authentication.tokens import AuthToken
+import happybudget.app.authentication.middleware
+from happybudget.app.authentication.exceptions import ExpiredToken, InvalidToken
+from happybudget.app.authentication.middleware import (
     AuthTokenCookieMiddleware, get_cookie_user)
 
-from greenbudget.app.user.contrib import AnonymousUser
+from happybudget.app.user.contrib import AnonymousUser
 
 
 @pytest.fixture
 def middleware_patch():
     def mock_patch(attr, **kwargs):
         return mock.patch.object(
-            greenbudget.app.authentication.middleware, attr, **kwargs)
+            happybudget.app.authentication.middleware, attr, **kwargs)
     return mock_patch
 
 

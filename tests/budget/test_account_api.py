@@ -1,4 +1,4 @@
-from greenbudget.lib.utils.urls import add_query_params_to_url
+from happybudget.lib.utils.urls import add_query_params_to_url
 
 
 def test_get_accounts(api_client, user, budget_f):

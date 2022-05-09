@@ -3,12 +3,12 @@ version: "3.3"
 services:
   web:
     environment:
-      DJANGO_SETTINGS_MODULE: greenbudget.conf.settings.prod
+      DJANGO_SETTINGS_MODULE: happybudget.conf.settings.prod
     build: .
-    command: bash -c "ls -al && gunicorn greenbudget.wsgi -c /app/greenbudget/conf/gunicorn_config.py"
+    command: bash -c "ls -al && gunicorn happybudget.wsgi -c /app/happybudget/conf/gunicorn_config.py"
     restart: always
     networks:
-      - greenbudget
+      - happybudget
     ports:
       - "8000:8000"
     # Note if you have trouble with Windows try mounting volumes in this format
@@ -20,5 +20,5 @@ services:
       - .env
 
 networks:
-  greenbudget:
+  happybudget:
     driver: bridge

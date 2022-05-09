@@ -2,7 +2,7 @@
 import copy
 import pytest
 
-from greenbudget.app.collaborator.models import Collaborator
+from happybudget.app.collaborator.models import Collaborator
 
 
 class PermissionCaseResponse:

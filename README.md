@@ -1,16 +1,16 @@
-# Green Budget API
+# HappyBudget API
 
 &copy; Nick Florin, 2022
 
-This project serves as a REST API supporting the GreenBudget platform.
+This project serves as a REST API supporting the HappyBudget platform.
 
 This documentation outlines how to properly setup and configure the application
 in both production and local environments. For other documentation regarding
 the operation and development of this project, refer to the following list:
 
-1. [Testing](https://github.com/Saturation-IO/greenbudget-api/blob/develop/tests/ReadMe.md)
-2. [Standards & Conventions](https://github.com/Saturation-IO/greenbudget-api/blob/develop/Standards.md)
-3. [Configuration](https://github.com/Saturation-IO/greenbudget-api/blob/develop/src/greenbudget/conf/ReadMe.md)
+1. [Testing](https://github.com/Saturation-IO/happybudget-api/blob/develop/tests/ReadMe.md)
+2. [Standards & Conventions](https://github.com/Saturation-IO/happybudget-api/blob/develop/Standards.md)
+3. [Configuration](https://github.com/Saturation-IO/happybudget-api/blob/develop/src/happybudget/conf/ReadMe.md)
 
 ### System Requirements
 
@@ -31,7 +31,7 @@ here (for obvious reasons).
 Clone this repository locally and `cd` into the directory.
 
 ```bash
-$ git clone https://github.com/Saturation-IO/greenbudget-api.git
+$ git clone https://github.com/Saturation-IO/happybudget-api.git
 ```
 
 #### Step 2: Environment
@@ -150,8 +150,8 @@ improvements have introduced the caveat that the browser no longer considers
 application no longer works when running the application on `localhost`. For this
 reason, the application is configured locally to **only** work on `127.0.0.1:8000`,
 not `localhost:8000`. However, the frontend expects that the API will be running
-on `local.greenbudget.io:8000`, so we need to setup our `/etc/hosts` file such
-that we can use `local.greenbudget.io` as a valid domain for the local development
+on `local.happybudget.io:8000`, so we need to setup our `/etc/hosts` file such
+that we can use `local.happybudget.io` as a valid domain for the local development
 server. Note that this step is also included in the frontend setup, so this may
 have already been done as a part of that setup but is repeated here for
 completeness.
@@ -165,12 +165,12 @@ $ sudo nano /etc/hosts
 Add the following configuration to the file:
 
 ```bash
-127.0.0.1       local.greenbudget.io
+127.0.0.1       local.happybudget.io
 ```
 
 Now, when we start the development server, we will be able to access the backend
-application at `local.greenbudget.io:8000`, and the frontend application at
-`local.greenbudget.io:3000`.
+application at `local.happybudget.io:8000`, and the frontend application at
+`local.happybudget.io:3000`.
 
 ##### Local Database
 
@@ -193,8 +193,8 @@ The database configuration parameters can be overridden in a `.env` file, but
 locally they default to the following if not present in the `.env` file:
 
 ```bash
-DATABASE_NAME=postgres_greenbudget
-DATABASE_USER=greenbudget
+DATABASE_NAME=postgres_happybudget
+DATABASE_USER=happybudget
 DATABASE_PASSWORD=''
 DATABASE_HOST=localhost
 DATABASE_PORT=5432
@@ -214,14 +214,14 @@ When starting Django, we may see some of the following database errors:
 
 ```bash
 $ django.db.utils.OperationalError: connection to server at "localhost" (::1), port 5432 failed: FATAL:
-$ database "postgres_greenbudget" does not exist
+$ database "postgres_happybudget" does not exist
 ```
 
 This happens if the database has not yet been created. We may also see the
 following:
 
 ```bash
-$ django.db.utils.OperationalError: FATAL:  role "greenbudget" does not exist
+$ django.db.utils.OperationalError: FATAL:  role "happybudget" does not exist
 ```
 
 This happens if the database user has not yet been created or does not have the
@@ -425,15 +425,15 @@ $ python src/manage.py runserver
 #### Django Settings
 
 By default, the Django settings module used when running locally (toggled via
-the `DJANGO_SETTINGS_MODULE` environment variable) is `greenbudget.conf.settings.local`.
+the `DJANGO_SETTINGS_MODULE` environment variable) is `happybudget.conf.settings.local`.
 If you need to override certain settings for your own personal local development,
-`greenbudget.conf.settings.local` should not be edited but instead a
-`greenbudget.conf.settings.local_override` Python file should be created.
+`happybudget.conf.settings.local` should not be edited but instead a
+`happybudget.conf.settings.local_override` Python file should be created.
 
 ### Testing
 
 See the `ReadMe.md` file in the `testing` directory
-[here](https://github.com/Saturation-IO/greenbudget-api/blob/develop/tests/ReadMe.md).
+[here](https://github.com/Saturation-IO/happybudget-api/blob/develop/tests/ReadMe.md).
 
 #### tox
 
@@ -533,10 +533,10 @@ we use `poetry install --no-dev` so that development dependencies are not includ
 
 | Environment |          Settings Module          |             URL             |      File Storage      |          Database          |
 | :---------: | :-------------------------------: | :-------------------------: | :--------------------: | :------------------------: |
-|   `local`   | `greenbudget.conf.settings.local` | `local.greenbudget.io:8000` |   Local File Storage   |  Local PostgreSQL Server   |
-|   `test`    | `greenbudget.conf.settings.test`  |             N/A             | Temporary File Storage | Transactional SQLite3 File |
-|  `develop`  |  `greenbudget.conf.settings.dev`  |   `devapi.greenbudget.io`   |         AWS S3         |   PostgreSQL on AWS RDS    |
-|   `prod`    | `greenbudget.conf.settings.prod`  |    `api.greenbudget.io`     |         AWS S3         |   PostgreSQL on AWS RDS    |
+|   `local`   | `happybudget.conf.settings.local` | `local.happybudget.io:8000` |   Local File Storage   |  Local PostgreSQL Server   |
+|   `test`    | `happybudget.conf.settings.test`  |             N/A             | Temporary File Storage | Transactional SQLite3 File |
+|  `develop`  |  `happybudget.conf.settings.dev`  |   `devapi.happybudget.io`   |         AWS S3         |   PostgreSQL on AWS RDS    |
+|   `prod`    | `happybudget.conf.settings.prod`  |    `api.happybudget.io`     |         AWS S3         |   PostgreSQL on AWS RDS    |
 
 ## Setting Up on EC2 Instance
 
@@ -552,8 +552,8 @@ Currently, we run EC2 instances for two separate environments:
 
 | Environment |         Settings Module          |           URL           |
 | :---------: | :------------------------------: | :---------------------: |
-|  `develop`  | `greenbudget.conf.settings.dev`  | `devapi.greenbudget.io` |
-|   `prod`    | `greenbudget.conf.settings.prod` |  `api.greenbudget.io`   |
+|  `develop`  | `happybudget.conf.settings.dev`  | `devapi.happybudget.io` |
+|   `prod`    | `happybudget.conf.settings.prod` |  `api.happybudget.io`   |
 
 #### Step 1: Installing Git
 
@@ -651,8 +651,8 @@ $ sudo mkdir www
 $ sudo chmod 777 www
 $ chmod go-w ~/.ssh/config
 $ cd ./www
-$ git clone git@github.com:Saturation-IO/greenbudget-api.git
-$ cd ./greenbudget-api
+$ git clone git@github.com:Saturation-IO/happybudget-api.git
+$ cd ./happybudget-api
 ```
 
 ##### ENV File
@@ -709,7 +709,7 @@ for it to be copied to the `docker` environment, and found by Django, it needs
 to be stored in the `BASE_DIR`:
 
 ```bash
-$ Enter file in which to save the key (/home/ec2-user/.ssh/id_rsa): /www/greenbudget-api/src/greenbudget/jwt_signing_key
+$ Enter file in which to save the key (/home/ec2-user/.ssh/id_rsa): /www/happybudget-api/src/happybudget/jwt_signing_key
 ```
 
 Do not enter a passphrase.
@@ -720,7 +720,7 @@ outside of the company.
 
 Now that we have the private/public RSA key pairs generated, we simply need to
 reference it's filename in the `.env` file, since Django will by default try to
-find it in `src/greenbudget/<filename>`. The RSA private/public key pairs are in
+find it in `src/happybudget/<filename>`. The RSA private/public key pairs are in
 the root of the `docker` environment, so this is simply:
 
 ```bash
@@ -791,7 +791,7 @@ differ slightly.
 ##### Prod Environment
 
 Check your `.env` file and make sure that
-`DJANGO_SETTINGS_MODULE=greenbudget.conf.settings.prod`. Then, check out the
+`DJANGO_SETTINGS_MODULE=happybudget.conf.settings.prod`. Then, check out the
 `master` branch:
 
 ```bash
@@ -814,7 +814,7 @@ $ docker-compose exec web python manage.py createsuperuser
 ##### Dev Environment
 
 Check your `.env` file and make sure that
-`DJANGO_SETTINGS_MODULE=greenbudget.conf.settings.dev`. Then, check out the
+`DJANGO_SETTINGS_MODULE=happybudget.conf.settings.dev`. Then, check out the
 `develop` branch:
 
 ```bash

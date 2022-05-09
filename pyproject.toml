@@ -1,10 +1,10 @@
 [tool.poetry]
-name = "greenbudget"
+name = "happybudget"
 version = "1.0.0"
-description = "Backend Application for Green Buget Application"
+description = "Backend Application for HappyBudget Application"
 authors = ["nickmflorin <nickmflorin@gmail.com>"]
-repository = "https://github.com/nickmflorin/greenbudget-api"
-homepage = "https://github.com/nickmflorin/greenbudget-api"
+repository = "https://github.com/nickmflorin/happybudget-api"
+homepage = "https://github.com/nickmflorin/happybudget-api"
 include = [
   "README.md",
   "pyproject.toml"

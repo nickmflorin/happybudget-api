@@ -7,7 +7,7 @@ from django.db import connections
 
 from pytest_django.fixtures import _disable_native_migrations
 
-from greenbudget.app import model
+from happybudget.app import model
 
 from .factories import *  # noqa
 from .http import *  # noqa
@@ -38,7 +38,7 @@ def set_model_middleware_user():
 def clear_local_threads(set_model_middleware_user):
     """
     Fixture that will automatically clear the request user associated with the
-    local threads on the :obj:`greenbudget.app.model.model` instance.
+    local threads on the :obj:`happybudget.app.model.model` instance.
 
     This is important because occasionally one test will execute after another
     test had already set a :obj:`User` on the local thread, where the
@@ -122,7 +122,7 @@ def django_db_setup(
 
         At the time that this fixture is called, Django will have already
         established the database connection and configured the connection
-        objects with the settings defined in `greenbudget.conf.settings.test`
+        objects with the settings defined in `happybudget.conf.settings.test`
         before we have a chance to alter the database configuration here. This
         means that after we alter the database configuration here, we must
         reestablish those related connections so the database setup and teardown
@@ -199,4 +199,4 @@ def disable_logging(caplog):
     caplog.set_level(logging.CRITICAL, logger="factory")
     caplog.set_level(logging.CRITICAL, logger="faker.factory")
     caplog.set_level(logging.CRITICAL, logger="factory-boy")
-    caplog.set_level(logging.INFO, logger="greenbudget")
+    caplog.set_level(logging.INFO, logger="happybudget")

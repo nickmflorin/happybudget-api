@@ -1,4 +1,4 @@
-from greenbudget.app.fringe.utils import fringe_value
+from happybudget.app.fringe.utils import fringe_value
 
 
 def test_fringe_value(f, models):

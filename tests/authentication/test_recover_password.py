@@ -3,11 +3,11 @@ import mock
 
 import pytest
 from django.test import override_settings
-from greenbudget.conf.settings.base import EMAIL_VERIFICATION_ENABLED
+from happybudget.conf.settings.base import EMAIL_VERIFICATION_ENABLED
 
-from greenbudget.lib.utils.dateutils import api_datetime_string
-from greenbudget.app.authentication.tokens import AccessToken
-from greenbudget.app.user.mail import get_template
+from happybudget.lib.utils.dateutils import api_datetime_string
+from happybudget.app.authentication.tokens import AccessToken
+from happybudget.app.user.mail import get_template
 
 
 VALID_PASSWORD = "hoopla@H9_12$"
@@ -173,8 +173,8 @@ def test_password_recovery_invalid_token(api_client, path, extra_data):
 
 @override_settings(
     EMAIL_ENABLED=True,
-    FROM_EMAIL="noreply@greenbudget.io",
-    FRONTEND_URL="https://app.greenbudget.io"
+    FROM_EMAIL="noreply@happybudget.io",
+    FRONTEND_URL="https://app.happybudget.io"
 )
 def test_recover_password(user, api_client):
     # Use another user to generate the Access Token for mock purposes.
@@ -184,7 +184,7 @@ def test_recover_password(user, api_client):
         return token
 
     with mock.patch.object(AccessToken, 'for_user', create_token):
-        with mock.patch('greenbudget.app.user.mail.send_mail') as m:
+        with mock.patch('happybudget.app.user.mail.send_mail') as m:
             response = api_client.post("/v1/auth/recover-password/", data={
                 "email": user.email
             })
@@ -195,7 +195,7 @@ def test_recover_password(user, api_client):
     assert mail_obj.template_id == get_template("password_recovery").id
     assert mail_obj.params == {
         'redirect_url': (
-            'https://app.greenbudget.io/recovery?token=%s' % str(token)
+            'https://app.happybudget.io/recovery?token=%s' % str(token)
         )
     }
 

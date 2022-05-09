@@ -3,8 +3,8 @@ import datetime
 import pytest
 import mock
 
-from greenbudget.app.integrations.plaid.api import client
-from greenbudget.app.integrations.plaid.classification import PlaidCategories
+from happybudget.app.integrations.plaid.api import client
+from happybudget.app.integrations.plaid.classification import PlaidCategories
 
 
 @pytest.fixture

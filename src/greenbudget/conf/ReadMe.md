@@ -1,1 +1,0 @@
-# Greenbudget API Configuration

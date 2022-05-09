@@ -1,6 +1,6 @@
 import pytest
 
-from greenbudget.app.collaborator.models import Collaborator
+from happybudget.app.collaborator.models import Collaborator
 
 
 @pytest.mark.freeze_time('2020-01-01')
