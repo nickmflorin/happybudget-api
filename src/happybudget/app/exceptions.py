@@ -118,6 +118,7 @@ class ValidationError(exceptions.ValidationError):
             message = args[0]
 
         message = _(message) if isinstance(message, str) else message
+        data = message
 
         # This ValidationError allows a default detail to be specified with
         # string formatted parameters that if provided on __init__, will be
@@ -143,8 +144,6 @@ class ValidationError(exceptions.ValidationError):
                         data = {field: detail for field in self.fields}
         elif self.fields:
             data = {field: message for field in self.fields}
-        else:
-            data = message
 
         super().__init__(data, **kwargs)
 
