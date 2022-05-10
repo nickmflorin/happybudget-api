@@ -24,14 +24,11 @@ class Registry:
         return self._signals
 
     def add(self, signal):
-        if signal.name is None:
-            raise Exception(
-                "A signal must be provided a name to be added to the "
-                "internal registry."
-            )
-        elif signal.name in [sig.name for sig in self._signals]:
-            raise Exception(
-                "Cannot register multiple signals with the same name.")
+        assert signal.name is not None, \
+            "A signal must be provided a name to be added to the " \
+            "internal registry."
+        assert signal.name not in [sig.name for sig in self._signals], \
+            "Cannot register multiple signals with the same name."
         self._signals.append(signal)
 
     def get_signal(self, name):
