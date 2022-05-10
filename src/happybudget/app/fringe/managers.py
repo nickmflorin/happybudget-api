@@ -38,10 +38,6 @@ class FringeManager(FringeQuerier, BudgetingOrderedRowManager):
 
     @signals.disable()
     def bulk_estimate_fringe_subaccounts(self, fringes, **kwargs):
-        # pylint: disable=import-outside-toplevel
-        from happybudget.app.account.models import Account
-        from happybudget.app.subaccount.models import SubAccount
-
         fringes = ensure_iterable(fringes)
         subs = set(concat([
             list(obj.subaccounts.all()) for obj in fringes]))
@@ -61,16 +57,20 @@ class FringeManager(FringeQuerier, BudgetingOrderedRowManager):
         # references to Fringe(s) in their detail/list responses.
         subaccount_instance_cache.invalidate(subs, ignore_deps=True)
         account_instance_cache.invalidate([
-            s.parent for s in subs if isinstance(s.parent, Account)
+            s.parent for s in subs
+            if isinstance(s.parent, self.model.account_cls)
         ])
         account_children_cache.invalidate([
-            s.parent for s in subs if isinstance(s.parent, Account)
+            s.parent for s in subs
+            if isinstance(s.parent, self.model.account_cls)
         ])
         subaccount_instance_cache.invalidate([
-            s.parent for s in subs if isinstance(s.parent, SubAccount)
+            s.parent for s in subs
+            if isinstance(s.parent, self.model.subaccount_cls)
         ])
         subaccount_children_cache.invalidate([
-            s.parent for s in subs if isinstance(s.parent, SubAccount)
+            s.parent for s in subs
+            if isinstance(s.parent, self.model.subaccount_cls)
         ])
 
     @signals.disable()
