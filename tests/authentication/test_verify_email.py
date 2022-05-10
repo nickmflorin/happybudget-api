@@ -56,6 +56,7 @@ def test_validate_email_token(validate_email_token, unverified_user):
         }
     }
 
+
 @pytest.mark.freeze_time('2021-01-03')
 @override_settings(
     ACCESS_TOKEN_LIFETIME=timedelta(hours=24),

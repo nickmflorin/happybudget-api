@@ -328,6 +328,7 @@ BUDGET_DETAIL_UPDATE_PERMISSIONS = [
     ParameterizedCase('logged_in', create=True, status=200)
 ]
 
+
 @ParameterizedCase.parameterize(BUDGET_DETAIL_UPDATE_PERMISSIONS + [
     ParameterizedCase('another_public_case', status=401),
     ParameterizedCase.collaborator(view_only=403, status=200),

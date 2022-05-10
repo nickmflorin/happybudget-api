@@ -28,7 +28,23 @@ def pytest_addoption(parser):
 
 @pytest.fixture
 def set_model_middleware_user():
+    """
+    Mimics the behavior of the middleware class
+    :obj:`happybudget.app.middleware.ModelRequestMiddleware` by setting the
+    :obj:`User` on the local thread of the `happybudget.app.model.model`
+    instance directly.  This allows relevant signals related to the model to
+    have a reference to the :obj:`User` that triggered the change.
+
+    This behavior is only required when testing signal behavior outside the
+    scope of an API request.  If there is an API request, the middleware will
+    be properly triggered and will automatically set the :obj:`User` on the
+    local thread of the `happybudget.app.model.model`.
+    """
     def inner(user):
+        # The `request` on the thread needs to be set to None so that the
+        # middleware uses the `user` on the thread instead - otherwise, a
+        # stale request might still be on the thread from a previous test that
+        # submitted an API request.
         setattr(model.model.thread, 'request', None)
         setattr(model.model.thread, 'user', user)
     return inner

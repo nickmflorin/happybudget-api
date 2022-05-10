@@ -306,7 +306,6 @@ def create_template(user):
         kwargs.setdefault('created_by', user)
         kwargs.setdefault('updated_by', kwargs['created_by'])
         return factories.TemplateFactory(*args, **kwargs)
-
     inner.__name__ = 'create_template'
     return inner
 

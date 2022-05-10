@@ -111,7 +111,6 @@ def test_validate_auth_token_inactive_user(inactive_user, settings,
     assert settings.JWT_TOKEN_COOKIE_NAME not in response.cookies
 
 
-
 @override_settings(EMAIL_VERIFICATION_ENABLED=True)
 def test_validate_auth_token_unverified_user(unverified_user, settings,
         jwt_authenticated_client):

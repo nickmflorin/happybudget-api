@@ -3,7 +3,6 @@ import mock
 
 import pytest
 from django.test import override_settings
-from happybudget.conf.settings.base import EMAIL_VERIFICATION_ENABLED
 
 from happybudget.lib.utils.dateutils import api_datetime_string
 from happybudget.app.authentication.tokens import AccessToken

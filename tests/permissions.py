@@ -82,6 +82,7 @@ class ParameterizedCase:
                 flattened_cases += case
             else:
                 flattened_cases += [case]
+
         def decorator(func):
             return pytest.mark.parametrize('case', flattened_cases)(func)
         return decorator
@@ -288,6 +289,7 @@ def another_public_case(api_client, user, f, create_obj):
 @pytest.fixture
 def multiple_case(api_client, f, user, create_obj, settings):
     settings.BILLING_ENABLED = True
+
     def inner(case):
         if getattr(case, 'login', True) is True:
             api_client.force_login(user)

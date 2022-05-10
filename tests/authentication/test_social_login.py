@@ -4,8 +4,6 @@ import responses
 
 from django.test import override_settings
 
-from happybudget.conf.settings.base import SOCIAL_AUTHENTICATION_ENABLED
-
 
 @responses.activate
 @pytest.mark.freeze_time('2020-01-01')
