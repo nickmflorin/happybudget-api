@@ -17,9 +17,7 @@ class ActualTypeViewSet(views.ListModelMixin, views.GenericViewSet):
     (1) GET /actuals/types/
     """
     serializer_class = ActualTypeSerializer
-
-    def get_queryset(self):
-        return ActualType.objects.all()
+    queryset_cls = ActualType
 
 
 class ActualAttachmentViewSet(
@@ -34,6 +32,7 @@ class ActualAttachmentViewSet(
     (3) POST /actuals/<pk>/attachments/
     """
     view_name = 'actual'
+    actual_queryset_cls = Actual
     actual_lookup_url_kwarg = 'actual_pk'
     permission_classes = [
         permissions.IsFullyAuthenticated(affects_after=True),
@@ -53,9 +52,6 @@ class ActualAttachmentViewSet(
     # pylint: disable=invalid-overridden-method
     def instance(self):
         return self.actual
-
-    def get_actual_queryset(self):
-        return Actual.objects.all()
 
 
 class GenericActualViewSet(views.GenericViewSet):
@@ -81,6 +77,7 @@ class ActualsViewSet(
     (2) PATCH /actuals/<pk>/
     (3) DELETE /actuals/<pk>/
     """
+    queryset_cls = Actual
     # Currently, the Actual(s) are not relevant for public permissions on a
     # Budget.
     permission_classes = [BudgetObjPermission(
@@ -93,6 +90,3 @@ class ActualsViewSet(
         context = super().get_serializer_context()
         context.update(budget=self.instance.budget)
         return context
-
-    def get_queryset(self):
-        return Actual.objects.all()

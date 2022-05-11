@@ -19,6 +19,7 @@ class GroupViewSet(
     (2) GET /groups/<pk>/
     (3) DELETE /groups/<pk>/
     """
+    queryset_cls = Group
     serializer_class = GroupSerializer
     permission_classes = [
         BudgetObjPermission(
@@ -44,6 +45,3 @@ class GroupViewSet(
             obj = self.get_object()
             context['parent'] = obj.parent
         return context
-
-    def get_queryset(self):
-        return Group.objects.all()

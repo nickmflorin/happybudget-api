@@ -10,12 +10,10 @@ class CollaboratorViewSet(
     views.DestroyModelMixin,
     views.GenericViewSet
 ):
+    queryset_cls = Collaborator
     serializer_class = CollaboratorSerializer
     permission_classes = [IsOwnerOrCollaboratingOwner(
         get_permissioned_obj=lambda obj: obj.instance)]
-
-    def get_queryset(self):
-        return Collaborator.objects.all()
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()

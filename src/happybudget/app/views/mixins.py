@@ -35,13 +35,18 @@ class NestedObjectViewMeta(type):
             return qs
 
         def get_queryset(instance):
-            nested_get = f"get_{view_name}_queryset"
-            if not hasattr(instance, nested_get):
-                raise NotImplementedError(
-                    "%s must define the method %s."
-                    % (klass.__name__, nested_get)
-                )
-            return getattr(instance, nested_get)()
+            nested_queryset_cls_name = f"{view_name}_queryset_cls"
+            nested_method_name = f"get_{view_name}_queryset"
+
+            if hasattr(instance, nested_queryset_cls_name) \
+                    and not hasattr(instance, nested_method_name):
+                queryset_cls = getattr(instance, nested_queryset_cls_name)
+                return queryset_cls.objects.all()
+
+            assert hasattr(instance, nested_method_name), \
+                f"The mixin {klass} requires that the method " \
+                f"{nested_method_name} be defined."
+            return getattr(instance, nested_method_name)()
 
         def get_object(instance):
             pms = getattr(instance, '%s_permission_classes' % view_name, [])

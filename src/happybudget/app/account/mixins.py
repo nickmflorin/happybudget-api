@@ -13,6 +13,8 @@ class AccountNestedMixin(views.NestedObjectViewMixin):
     """
     A mixin for views that extend off of an account's detail endpoint.
     """
+    view_name = 'account'
+    account_queryset_cls = Account
     account_permission_classes = [
         BudgetObjPermission(
             get_budget=lambda obj: obj.budget,
@@ -36,10 +38,6 @@ class AccountNestedMixin(views.NestedObjectViewMixin):
             ),
         )
     ]
-    view_name = 'account'
-
-    def get_account_queryset(self):
-        return Account.objects.all()
 
     @property
     def instance(self):

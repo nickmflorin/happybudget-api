@@ -13,6 +13,8 @@ class SubAccountNestedMixin(views.NestedObjectViewMixin):
     """
     A mixin for views that extend off of an subaccount's detail endpoint.
     """
+    view_name = 'subaccount'
+    subaccount_queryset_cls = SubAccount
     subaccount_permission_classes = [
         BudgetObjPermission(
             get_budget=lambda obj: obj.budget,
@@ -37,10 +39,6 @@ class SubAccountNestedMixin(views.NestedObjectViewMixin):
             ),
         )
     ]
-    view_name = 'subaccount'
-
-    def get_subaccount_queryset(self):
-        return SubAccount.objects.all()
 
     @cached_property
     def content_type(self):

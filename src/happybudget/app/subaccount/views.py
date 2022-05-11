@@ -45,6 +45,7 @@ class SubAccountUnitViewSet(
     (1) GET /subaccounts/units/
     (2) GET /subaccounts/units/<pk>/
     """
+    queryset_cls = SubAccountUnit
     serializer_class = SubAccountUnitSerializer
     permission_classes = [
         permissions.OR(
@@ -54,9 +55,6 @@ class SubAccountUnitViewSet(
             permissions.IsPublic
         )
     ]
-
-    def get_queryset(self):
-        return SubAccountUnit.objects.all()
 
 
 @views.filter_by_ids
@@ -217,6 +215,7 @@ class SubAccountViewSet(
     (4) PATCH /subaccounts/<pk>/bulk-update-children/
     (5) PATCH /subaccounts/<pk>/bulk-create-children/
     """
+    queryset_cls = SubAccount
     permission_classes = [
         BudgetObjPermission(
             get_budget=lambda obj: obj.budget,
@@ -254,9 +253,6 @@ class SubAccountViewSet(
         context = super().get_serializer_context()
         context.update(parent=self.instance.parent)
         return context
-
-    def get_queryset(self):
-        return SubAccount.objects.all()
 
 
 @views.filter_by_ids

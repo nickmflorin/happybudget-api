@@ -29,6 +29,7 @@ class FringesViewSet(
     (2) PATCH /fringes/<pk>/
     (3) DELETE /fringes/<pk>/
     """
+    queryset_cls = Fringe
     permission_classes = [
         BudgetObjPermission(
             get_budget=lambda obj: obj.budget,
@@ -47,6 +48,3 @@ class FringesViewSet(
         context = super().get_serializer_context()
         context.update(budget=self.instance.budget)
         return context
-
-    def get_queryset(self):
-        return Fringe.objects.all()

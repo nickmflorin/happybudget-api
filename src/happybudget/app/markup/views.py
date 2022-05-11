@@ -19,6 +19,7 @@ class MarkupViewSet(
     (2) GET /markups/<pk>/
     (3) DELETE /markups/<pk>/
     """
+    queryset_cls = Markup
     serializer_class = MarkupSerializer
     permission_classes = [
         BudgetObjPermission(
@@ -46,6 +47,3 @@ class MarkupViewSet(
             # Markup instance may be deleted due to a lack of children.
             context['parent'] = parent
         return context
-
-    def get_queryset(self):
-        return Markup.objects.all()

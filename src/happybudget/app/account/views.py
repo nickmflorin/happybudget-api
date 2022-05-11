@@ -201,6 +201,7 @@ class AccountViewSet(
     (4) PATCH /accounts/<pk>/bulk-update-children/
     (5) PATCH /accounts/<pk>/bulk-create-children/
     """
+    queryset_cls = Account
     permission_classes = [
         BudgetObjPermission(
             get_budget=lambda obj: obj.budget,
@@ -238,6 +239,3 @@ class AccountViewSet(
             'budget': BudgetSubAccountSerializer,
             'template': TemplateSubAccountSerializer
         }[self.instance_cls.domain]
-
-    def get_queryset(self):
-        return Account.objects.all()

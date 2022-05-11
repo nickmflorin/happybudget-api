@@ -16,7 +16,7 @@ def main():
             "forget to activate a virtual environment?"
         ) from exc
 
-    settings_module = os.environ.get("DJANGO_SETTINGS_MODULE")
+    settings_module = os.environ["DJANGO_SETTINGS_MODULE"]
 
     arguments = sys.argv[:]
     if arguments == ['src/manage.py', 'runserver'] \

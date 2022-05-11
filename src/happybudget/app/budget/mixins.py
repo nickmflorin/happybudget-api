@@ -13,7 +13,7 @@ class BaseBudgetNestedMixin(views.NestedObjectViewMixin):
     A mixin for views that extend off of a budget or template's detail endpoint.
     """
     view_name = "budget"
-
+    budget_queryset_cls = BaseBudget
     budget_permission_classes = [
         BudgetObjPermission(
             is_object_applicable=lambda c: c.obj.domain == 'budget',
@@ -37,9 +37,6 @@ class BaseBudgetNestedMixin(views.NestedObjectViewMixin):
     def instance(self):
         return self.budget
 
-    def get_budget_queryset(self):
-        return BaseBudget.objects.all()
-
     @cached_property
     def content_type(self):
         return ContentType.objects.get_for_model(type(self.budget))
@@ -50,9 +47,7 @@ class BudgetNestedMixin(BaseBudgetNestedMixin):
     A mixin for views that extend off of a budget's detail endpoint.
     """
     budget_permission_classes = [BudgetObjPermission]
-
-    def get_budget_queryset(self):
-        return Budget.objects.all()
+    budget_queryset_cls = Budget
 
 
 class BaseBudgetPublicNestedMixin(BaseBudgetNestedMixin):

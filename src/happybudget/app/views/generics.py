@@ -152,6 +152,20 @@ class GenericView(generics.GenericAPIView):
             request, response, *args, **kwargs)
         return self.response
 
+    def get_queryset(self):
+        """
+        Overrides the default `get_queryset` method of the
+        :obj:`rest_framework.generics.GenericAPIView` such that when a
+        `queryset_cls` is attributed to the view, the view will by default
+        use that model class's unfiltered queryset.
+        """
+        if not hasattr(self, 'queryset_cls'):
+            # This will raise an error with DRF, because it means we have not
+            # provided a means of implementing the `get_queryset()` method.
+            return super().get_queryset()
+        queryset_cls = getattr(self, 'queryset_cls')
+        return queryset_cls.objects.all()
+
     def get_object(self):
         """
         Overrides the default `get_object` method of the
