@@ -1,7 +1,7 @@
 from django import forms
 
-from greenbudget import harry
-from greenbudget.app.tagging.admin import TagAdminForm
+from happybudget import harry
+from happybudget.app.tagging.admin import TagAdminForm
 
 from .models import (
     SubAccountUnit, BudgetSubAccount, TemplateSubAccount)

@@ -6,7 +6,7 @@ from django import dispatch
 from django.dispatch.dispatcher import _make_id
 from django.utils.inspect import func_accepts_kwargs
 
-from greenbudget.lib.utils import ensure_iterable
+from happybudget.lib.utils import ensure_iterable
 
 
 class Registry:

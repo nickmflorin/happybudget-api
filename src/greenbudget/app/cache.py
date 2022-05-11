@@ -9,14 +9,14 @@ from django.core.cache import cache
 
 from rest_framework import response, status
 
-from greenbudget.conf import Environments
-from greenbudget.lib.utils import ensure_iterable, concat
+from happybudget.conf import Environments
+from happybudget.lib.utils import ensure_iterable, concat
 
-from greenbudget.app.user.contrib import AnonymousUser
-from greenbudget.app.user.models import User
+from happybudget.app.user.contrib import AnonymousUser
+from happybudget.app.user.models import User
 
 
-logger = logging.getLogger('greenbudget')
+logger = logging.getLogger('happybudget')
 
 
 DATABASE_ENGINE = 'django.core.cache.backends.db.DatabaseCache'
@@ -574,7 +574,7 @@ class endpoint_cache:
 
             Since we do not always have access to the :obj:`User` associated with
             a given need to invalidate a cache key, we use the middleware class
-            :obj:`greenbudget.app.middleware.CacheUserMiddleware` to set the
+            :obj:`happybudget.app.middleware.CacheUserMiddleware` to set the
             request on this class whenever a request is received via the API.
 
             In the case that the request is not set on this class, the

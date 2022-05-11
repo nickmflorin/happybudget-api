@@ -1,15 +1,15 @@
 from django import dispatch
 
-from greenbudget.app import signals
+from happybudget.app import signals
 
-from greenbudget.app.account.models import BudgetAccount, TemplateAccount
-from greenbudget.app.actual.models import Actual
-from greenbudget.app.fringe.models import Fringe
-from greenbudget.app.group.models import Group
-from greenbudget.app.markup.models import Markup
-from greenbudget.app.subaccount.models import (
+from happybudget.app.account.models import BudgetAccount, TemplateAccount
+from happybudget.app.actual.models import Actual
+from happybudget.app.fringe.models import Fringe
+from happybudget.app.group.models import Group
+from happybudget.app.markup.models import Markup
+from happybudget.app.subaccount.models import (
     BudgetSubAccount, TemplateSubAccount)
-from greenbudget.app.template.models import Template
+from happybudget.app.template.models import Template
 
 from .cache import budget_instance_cache
 from .models import Budget
@@ -47,8 +47,8 @@ def update_budget_updated_at(instance, **kwargs):
     The :obj:`User` will only possibly be None or not authenticated if the
     update or delete is happening outside of the context of an active request -
     because the :obj:`User` or request will always be set on the
-    :obj:`greenbudget.app.model.model` local thread via the
-    :obj:`greenbudget.app.middleware.ModelRequestMiddleware` when the update or
+    :obj:`happybudget.app.model.model` local thread via the
+    :obj:`happybudget.app.middleware.ModelRequestMiddleware` when the update or
     delete is being performed inside the request context.
 
     If the update or delete is not being performed inside of the request context,

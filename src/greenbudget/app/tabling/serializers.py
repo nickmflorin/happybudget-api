@@ -2,8 +2,8 @@ from copy import deepcopy
 
 from django.db import transaction
 
-from greenbudget.lib.drf.serializers import LazyContext
-from greenbudget.app import exceptions
+from happybudget.lib.drf.serializers import LazyContext
+from happybudget.app import exceptions
 
 from .fields import TablePrimaryKeyRelatedField
 from .utils import lexographic_midpoint

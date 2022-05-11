@@ -1,6 +1,6 @@
 from rest_framework import viewsets
 
-from greenbudget.app import permissions, views
+from happybudget.app import permissions, views
 
 from .models import Color
 from .serializers import ColorSerializer

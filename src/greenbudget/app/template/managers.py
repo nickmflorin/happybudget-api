@@ -1,6 +1,6 @@
-from greenbudget.app.budget.managers import BaseBudgetManager
-from greenbudget.app.budget.duplication import Duplicator
-from greenbudget.app.tabling.query import RowQuerier, RowPolymorphicQuerySet
+from happybudget.app.budget.managers import BaseBudgetManager
+from happybudget.app.budget.duplication import Duplicator
+from happybudget.app.tabling.query import RowQuerier, RowPolymorphicQuerySet
 
 
 class TemplateQuerier(RowQuerier):
@@ -20,6 +20,6 @@ class TemplateManager(TemplateQuerier, BaseBudgetManager):
 
     def derive(self, template, user, **overrides):
         # pylint: disable=import-outside-toplevel
-        from greenbudget.app.budget.models import Budget
+        from happybudget.app.budget.models import Budget
         duplicator = Duplicator(template, destination_cls=Budget)
         return duplicator(user, **overrides)

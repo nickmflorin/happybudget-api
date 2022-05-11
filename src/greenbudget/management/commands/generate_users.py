@@ -1,6 +1,6 @@
-from greenbudget.management import CustomCommand, debug_only
+from happybudget.management import CustomCommand, debug_only
 
-from greenbudget.data import generate_users
+from happybudget.data import generate_users
 
 
 @debug_only

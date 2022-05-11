@@ -8,13 +8,13 @@ from django.apps import apps
 from django.contrib.contenttypes.models import ContentType
 from django.db import IntegrityError, models
 
-from greenbudget import harry
-from greenbudget.app.subaccount.models import SubAccountUnit
+from happybudget import harry
+from happybudget.app.subaccount.models import SubAccountUnit
 
 from .models import Color, Tag
 
 
-logger = logging.getLogger("greenbudget")
+logger = logging.getLogger("happybudget")
 
 
 class ColorAdminForm(forms.ModelForm):

@@ -1,12 +1,12 @@
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers
 
-from greenbudget.app import exceptions
+from happybudget.app import exceptions
 
-from greenbudget.app.budget.models import BaseBudget
-from greenbudget.app.serializers import ModelSerializer
-from greenbudget.app.tabling.fields import TablePrimaryKeyRelatedField
-from greenbudget.app.tagging.serializers import ColorField
+from happybudget.app.budget.models import BaseBudget
+from happybudget.app.serializers import ModelSerializer
+from happybudget.app.tabling.fields import TablePrimaryKeyRelatedField
+from happybudget.app.tagging.serializers import ColorField
 
 from .models import Group
 

@@ -1,6 +1,6 @@
 from django import forms
 
-from greenbudget import harry
+from happybudget import harry
 from .models import Group
 
 

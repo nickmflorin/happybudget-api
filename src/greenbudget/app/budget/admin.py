@@ -2,8 +2,8 @@ import nested_admin
 
 from django import forms
 
-from greenbudget import harry
-from greenbudget.app.account.admin import BudgetAccountInline
+from happybudget import harry
+from happybudget.app.account.admin import BudgetAccountInline
 
 from .models import Budget
 

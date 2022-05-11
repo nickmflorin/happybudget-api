@@ -1,7 +1,7 @@
 from django.utils.translation import gettext_lazy as _
 
-from greenbudget.lib.utils import ensure_iterable
-from greenbudget.app import permissions, exceptions
+from happybudget.lib.utils import ensure_iterable
+from happybudget.app import permissions, exceptions
 
 from .mixins import ProductPermissionIdMixin
 

@@ -1,6 +1,6 @@
 from rest_framework import response, generics, status
 
-from greenbudget.app import views
+from happybudget.app import views
 
 from .models import Attachment
 from .serializers import (
@@ -79,7 +79,7 @@ class GenericAttachmentViewSet(
         it is more desirable that a permission error is raised.
 
         To do this we also define the `get_perissioned_queryset` method, which
-        will allow the :obj:`greenbudget.app.views.GenericViewSet` to raise
+        will allow the :obj:`happybudget.app.views.GenericViewSet` to raise
         object level permissions errors on the :obj:`Attachment` itself instead
         of a 404 when the :obj:`Attachment` does in fact exist but does not
         belong to the correct instance.  If the :obj:`Attachment` does not

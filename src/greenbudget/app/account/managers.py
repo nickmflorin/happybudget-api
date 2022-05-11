@@ -1,14 +1,14 @@
-from greenbudget.lib.utils import ensure_iterable
+from happybudget.lib.utils import ensure_iterable
 
-from greenbudget.app import signals
-from greenbudget.app.budget.cache import (
+from happybudget.app import signals
+from happybudget.app.budget.cache import (
     budget_groups_cache,
     budget_instance_cache,
     budget_children_cache
 )
-from greenbudget.app.budgeting.managers import (
+from happybudget.app.budgeting.managers import (
     BudgetingPolymorphicOrderedRowManager)
-from greenbudget.app.budgeting.utils import BudgetTree
+from happybudget.app.budgeting.utils import BudgetTree
 
 from .cache import account_instance_cache
 

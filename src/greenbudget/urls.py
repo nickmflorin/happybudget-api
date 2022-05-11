@@ -2,12 +2,12 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import path, include
 
-from greenbudget.conf import Environments
+from happybudget.conf import Environments
 
 
 urlpatterns = [
-    path('v1/', include('greenbudget.app.urls')),
-    path('', include('greenbudget.harry.urls')),
+    path('v1/', include('happybudget.app.urls')),
+    path('', include('happybudget.harry.urls')),
 ]
 
 if settings.ENVIRONMENT in (Environments.LOCAL, Environments.TEST):

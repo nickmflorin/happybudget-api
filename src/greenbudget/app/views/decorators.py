@@ -1,4 +1,4 @@
-from greenbudget.lib.utils.urls import parse_ids_from_request
+from happybudget.lib.utils.urls import parse_ids_from_request
 
 
 def filter_by_ids(cls):

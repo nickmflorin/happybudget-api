@@ -1,6 +1,6 @@
 from django import forms
 
-from greenbudget import harry
+from happybudget import harry
 
 from .exceptions import EmailError
 from .mail import send_email_verification_email, send_password_recovery_email

@@ -1,6 +1,6 @@
-from greenbudget.app import views, permissions
-from greenbudget.app.budget.permissions import BudgetObjPermission
-from greenbudget.app.io.views import GenericAttachmentViewSet
+from happybudget.app import views, permissions
+from happybudget.app.budget.permissions import BudgetObjPermission
+from happybudget.app.io.views import GenericAttachmentViewSet
 
 from .models import Actual, ActualType
 from .serializers import (

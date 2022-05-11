@@ -1,7 +1,7 @@
 from django.test import override_settings
 import mock
 
-from greenbudget.app.subaccount.views import SubAccountUnitViewSet
+from happybudget.app.subaccount.views import SubAccountUnitViewSet
 
 
 def test_unit_properly_serializes(api_client, user, units):

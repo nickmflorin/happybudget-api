@@ -1,7 +1,7 @@
 # pylint: disable=redefined-outer-name
 import pytest
 
-from greenbudget.app.collaborator.models import Collaborator
+from happybudget.app.collaborator.models import Collaborator
 from tests.permissions import ParameterizedCase
 
 

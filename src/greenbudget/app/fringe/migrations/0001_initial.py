@@ -1,5 +1,5 @@
 from django.db import migrations, models
-import greenbudget.app.budgeting.models
+import happybudget.app.budgeting.models
 
 
 class Migration(migrations.Migration):
@@ -29,7 +29,7 @@ class Migration(migrations.Migration):
                 'ordering': ('order',),
                 'get_latest_by': 'order',
             },
-            bases=(models.Model, greenbudget.app.budgeting.models.BudgetingModelMixin),
+            bases=(models.Model, happybudget.app.budgeting.models.BudgetingModelMixin),
         ),
         migrations.CreateModel(
             name='BudgetFringe',

@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from greenbudget.conf import Environments, config, ConfigInvalidError
+from happybudget.conf import Environments, config, ConfigInvalidError
 
 
 BASE_DIR = Path(os.path.abspath(__file__)).parents[2]

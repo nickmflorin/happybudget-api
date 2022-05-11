@@ -1,6 +1,6 @@
 import pytest
 
-from greenbudget.lib.utils.builtins import get_string_formatted_kwargs
+from happybudget.lib.utils.builtins import get_string_formatted_kwargs
 
 
 @pytest.mark.parametrize('string,expected', [

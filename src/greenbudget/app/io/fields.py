@@ -11,7 +11,7 @@ from django.forms.fields import ImageField as _ImageField
 from rest_framework import serializers
 
 
-logger = logging.getLogger('greenbudget')
+logger = logging.getLogger('happybudget')
 
 
 class NoValidationDjangoImageField(_ImageField):

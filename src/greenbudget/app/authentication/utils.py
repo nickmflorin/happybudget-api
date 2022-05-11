@@ -5,15 +5,15 @@ from django.contrib.auth import get_user_model
 
 from rest_framework_simplejwt.settings import api_settings
 
-from greenbudget.lib.utils import empty
-from greenbudget.app.user.contrib import AnonymousUser
+from happybudget.lib.utils import empty
+from happybudget.app.user.contrib import AnonymousUser
 
 from .exceptions import BaseTokenError, InvalidToken, ExpiredToken
 from .models import AnonymousPublicToken, PublicToken
 from .tokens import AuthToken
 
 
-logger = logging.getLogger('greenbudget')
+logger = logging.getLogger('happybudget')
 
 
 def validate_password(password):

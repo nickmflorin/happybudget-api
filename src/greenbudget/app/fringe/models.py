@@ -1,8 +1,8 @@
 from django.db import models
 
-from greenbudget.lib.django_utils.models import Choices
-from greenbudget.app import model
-from greenbudget.app.budgeting.models import BudgetingOrderedRowModel
+from happybudget.lib.django_utils.models import Choices
+from happybudget.app import model
+from happybudget.app.budgeting.models import BudgetingOrderedRowModel
 
 from .managers import FringeManager, BudgetFringeManager, TemplateFringeManager
 

@@ -1,5 +1,5 @@
-from greenbudget.lib.django_utils.urls import lazy_reverse
-from greenbudget.app import cache
+from happybudget.lib.django_utils.urls import lazy_reverse
+from happybudget.app import cache
 
 
 user_contacts_cache = cache.endpoint_cache(

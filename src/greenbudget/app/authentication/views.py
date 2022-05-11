@@ -5,8 +5,8 @@ from django.views.decorators.debug import sensitive_post_parameters
 
 from rest_framework import response, status
 
-from greenbudget.app import views, permissions
-from greenbudget.app.user.serializers import UserSerializer
+from happybudget.app import views, permissions
+from happybudget.app.user.serializers import UserSerializer
 
 from .backends import (
     CsrfExcemptCookieSessionAuthentication,

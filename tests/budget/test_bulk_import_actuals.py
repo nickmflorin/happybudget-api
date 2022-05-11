@@ -8,9 +8,9 @@ from plaid.model import (
 )
 import pytest
 
-from greenbudget.app.actual.models import Actual
-from greenbudget.app.integrations.plaid.api import client
-from greenbudget.app.integrations.plaid.classification import PlaidCategories
+from happybudget.app.actual.models import Actual
+from happybudget.app.integrations.plaid.api import client
+from happybudget.app.integrations.plaid.classification import PlaidCategories
 
 
 OptsCls = transactions_get_request_options.TransactionsGetRequestOptions

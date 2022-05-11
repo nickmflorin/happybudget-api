@@ -1,7 +1,7 @@
 from django.db.models.constants import LOOKUP_SEP
 from rest_framework import filters
 
-from greenbudget.lib.utils.urls import parse_ids_from_request
+from happybudget.lib.utils.urls import parse_ids_from_request
 
 
 class FullNameSearchFilter(filters.SearchFilter):

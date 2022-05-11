@@ -1,7 +1,7 @@
 import functools
 
-from greenbudget.lib.utils import ensure_iterable, empty
-from greenbudget.app.user.models import User
+from happybudget.lib.utils import ensure_iterable, empty
+from happybudget.app.user.models import User
 
 from .validators import (
     ValidationFailed, Validator, IntegerValidator, ModelExistsValidator,

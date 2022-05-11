@@ -1,30 +1,30 @@
 from rest_framework import serializers
 
-from greenbudget.lib.drf.fields import GenericRelatedField
-from greenbudget.lib.drf.serializers import PolymorphicNonPolymorphicSerializer
+from happybudget.lib.drf.fields import GenericRelatedField
+from happybudget.lib.drf.serializers import PolymorphicNonPolymorphicSerializer
 
-from greenbudget.app.budget.serializers import BudgetSimpleSerializer
-from greenbudget.app.contact.models import Contact
-from greenbudget.app.io.models import Attachment
-from greenbudget.app.io.serializers import SimpleAttachmentSerializer
-from greenbudget.app.markup.models import Markup
-from greenbudget.app.markup.serializers import MarkupSimpleSerializer
-from greenbudget.app.tabling.serializers import row_order_serializer
-from greenbudget.app.tagging.fields import TagField
-from greenbudget.app.tagging.serializers import TagSerializer, ColorSerializer
-from greenbudget.app.serializers import ModelSerializer
-from greenbudget.app.subaccount.models import BudgetSubAccount
-from greenbudget.app.subaccount.serializers import SubAccountAsOwnerSerializer
-from greenbudget.app.user.fields import OwnershipPrimaryKeyRelatedField
+from happybudget.app.budget.serializers import BudgetSimpleSerializer
+from happybudget.app.contact.models import Contact
+from happybudget.app.io.models import Attachment
+from happybudget.app.io.serializers import SimpleAttachmentSerializer
+from happybudget.app.markup.models import Markup
+from happybudget.app.markup.serializers import MarkupSimpleSerializer
+from happybudget.app.tabling.serializers import row_order_serializer
+from happybudget.app.tagging.fields import TagField
+from happybudget.app.tagging.serializers import TagSerializer, ColorSerializer
+from happybudget.app.serializers import ModelSerializer
+from happybudget.app.subaccount.models import BudgetSubAccount
+from happybudget.app.subaccount.serializers import SubAccountAsOwnerSerializer
+from happybudget.app.user.fields import OwnershipPrimaryKeyRelatedField
 
 from .models import Actual, ActualType
 
 
 class ActualOwnerSerializer(PolymorphicNonPolymorphicSerializer):
     choices = {
-        Markup: "greenbudget.app.markup.serializers.MarkupSimpleSerializer",
+        Markup: "happybudget.app.markup.serializers.MarkupSimpleSerializer",
         BudgetSubAccount: (
-            "greenbudget.app.subaccount.serializers."
+            "happybudget.app.subaccount.serializers."
             "SubAccountAsOwnerSerializer"
         ),
     }

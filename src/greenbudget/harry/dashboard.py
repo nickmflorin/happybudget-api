@@ -11,11 +11,11 @@ class Dashboard(BaseDashboard):
             column=1,
             collapsible=False,
             models=(
-                'greenbudget.app.budget.models.Budget',
-                'greenbudget.app.account.models.BudgetAccount',
-                'greenbudget.app.group.models.BudgetGroup',
-                'greenbudget.app.subaccount.models.BudgetSubAccount',
-                'greenbudget.app.fringe.models.BudgetFringe',
+                'happybudget.app.budget.models.Budget',
+                'happybudget.app.account.models.BudgetAccount',
+                'happybudget.app.group.models.BudgetGroup',
+                'happybudget.app.subaccount.models.BudgetSubAccount',
+                'happybudget.app.fringe.models.BudgetFringe',
             )
         ))
 
@@ -24,11 +24,11 @@ class Dashboard(BaseDashboard):
             column=1,
             collapsible=False,
             models=(
-                'greenbudget.app.template.models.Template',
-                'greenbudget.app.account.models.TemplateAccount',
-                'greenbudget.app.group.models.TemplateGroup',
-                'greenbudget.app.subaccount.models.TemplateSubAccount',
-                'greenbudget.app.fringe.models.TemplateFringe',
+                'happybudget.app.template.models.Template',
+                'happybudget.app.account.models.TemplateAccount',
+                'happybudget.app.group.models.TemplateGroup',
+                'happybudget.app.subaccount.models.TemplateSubAccount',
+                'happybudget.app.fringe.models.TemplateFringe',
             )
         ))
 
@@ -37,10 +37,10 @@ class Dashboard(BaseDashboard):
             column=1,
             collapsible=False,
             models=(
-                'greenbudget.app.tagging.models.Tag',
-                'greenbudget.app.tagging.models.Color',
-                'greenbudget.app.subaccount.models.SubAccountUnit',
-                'greenbudget.app.actual.models.ActualType',
+                'happybudget.app.tagging.models.Tag',
+                'happybudget.app.tagging.models.Color',
+                'happybudget.app.subaccount.models.SubAccountUnit',
+                'happybudget.app.actual.models.ActualType',
             )
         ))
 
@@ -49,6 +49,6 @@ class Dashboard(BaseDashboard):
             column=1,
             collapsible=False,
             models=(
-                'greenbudget.app.user.models.User',
+                'happybudget.app.user.models.User',
             )
         ))

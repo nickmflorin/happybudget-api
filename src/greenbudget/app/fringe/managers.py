@@ -1,16 +1,16 @@
 from django.contrib.contenttypes.models import ContentType
 
-from greenbudget.lib.utils import concat, ensure_iterable
+from happybudget.lib.utils import concat, ensure_iterable
 
-from greenbudget.app import signals
-from greenbudget.app.account.cache import (
+from happybudget.app import signals
+from happybudget.app.account.cache import (
     account_instance_cache, account_children_cache)
-from greenbudget.app.budget.cache import (
+from happybudget.app.budget.cache import (
     budget_fringes_cache, budget_instance_cache)
-from greenbudget.app.budgeting.managers import BudgetingOrderedRowManager
-from greenbudget.app.subaccount.cache import (
+from happybudget.app.budgeting.managers import BudgetingOrderedRowManager
+from happybudget.app.subaccount.cache import (
     subaccount_instance_cache, subaccount_children_cache)
-from greenbudget.app.tabling.query import (
+from happybudget.app.tabling.query import (
     OrderedRowQuerier, OrderedRowQuerySet)
 
 
@@ -18,13 +18,13 @@ class FringeQuerier(OrderedRowQuerier):
 
     def for_budgets(self):
         # pylint: disable=import-outside-toplevel
-        from greenbudget.app.budget.models import Budget
+        from happybudget.app.budget.models import Budget
         ctype_id = ContentType.objects.get_for_model(Budget).id
         return self.filter(budget__polymorphic_ctype_id=ctype_id)
 
     def for_templates(self):
         # pylint: disable=import-outside-toplevel
-        from greenbudget.app.template.models import Template
+        from happybudget.app.template.models import Template
         ctype_id = ContentType.objects.get_for_model(Template).id
         return self.filter(budget__polymorphic_ctype_id=ctype_id)
 
@@ -39,8 +39,8 @@ class FringeManager(FringeQuerier, BudgetingOrderedRowManager):
     @signals.disable()
     def bulk_estimate_fringe_subaccounts(self, fringes, **kwargs):
         # pylint: disable=import-outside-toplevel
-        from greenbudget.app.account.models import Account
-        from greenbudget.app.subaccount.models import SubAccount
+        from happybudget.app.account.models import Account
+        from happybudget.app.subaccount.models import SubAccount
 
         fringes = ensure_iterable(fringes)
         subs = set(concat([

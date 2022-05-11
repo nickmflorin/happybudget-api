@@ -3,8 +3,8 @@ from django.utils.translation import gettext_lazy as _
 
 from rest_framework import serializers
 
-from greenbudget.app import exceptions
-from greenbudget.app.user.models import User
+from happybudget.app import exceptions
+from happybudget.app.user.models import User
 
 
 class CollaboratingUserField(serializers.PrimaryKeyRelatedField):

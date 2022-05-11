@@ -2,8 +2,8 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
-from greenbudget.app import model
-from greenbudget.app.budgeting.models import BudgetingRowModel
+from happybudget.app import model
+from happybudget.app.budgeting.models import BudgetingRowModel
 
 from .managers import GroupManager, BudgetGroupManager, TemplateGroupManager
 
@@ -62,7 +62,7 @@ class Group(BudgetingRowModel):
     @property
     def budget(self):
         # pylint: disable=import-outside-toplevel
-        from greenbudget.app.budget.models import BaseBudget
+        from happybudget.app.budget.models import BaseBudget
         parent = self.parent
         while not isinstance(parent, BaseBudget):
             parent = parent.parent

@@ -1,6 +1,6 @@
 from django.db import migrations, models
-import greenbudget.app.user.managers
-import greenbudget.app.user.models
+import happybudget.app.user.managers
+import happybudget.app.user.models
 import timezone_field.fields
 
 
@@ -30,7 +30,7 @@ class Migration(migrations.Migration):
                 ('address', models.CharField(blank=True, max_length=30, null=True)),
                 ('phone_number', models.BigIntegerField(blank=True, null=True)),
                 ('timezone', timezone_field.fields.TimeZoneField(default='America/New_York')),
-                ('profile_image', models.ImageField(blank=True, null=True, upload_to=greenbudget.app.user.models.upload_to)),
+                ('profile_image', models.ImageField(blank=True, null=True, upload_to=happybudget.app.user.models.upload_to)),
                 ('is_active', models.BooleanField(default=True, help_text="Designates whether this user's account is disabled.", verbose_name='Active')),
                 ('is_staff', models.BooleanField(default=False, help_text='Designates whether this user can login to the admin site.', verbose_name='Staff')),
                 ('is_superuser', models.BooleanField(default=False, help_text='Designates whether this user is a superuser.', verbose_name='Superuser')),
@@ -46,7 +46,7 @@ class Migration(migrations.Migration):
                 'ordering': ('-created_at',),
             },
             managers=[
-                ('objects', greenbudget.app.user.managers.UserManager()),
+                ('objects', happybudget.app.user.managers.UserManager()),
             ],
         ),
     ]

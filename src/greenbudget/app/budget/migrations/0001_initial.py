@@ -1,7 +1,7 @@
 from django.db import migrations, models
 import django.db.models.deletion
-import greenbudget.app.budget.models
-import greenbudget.app.budgeting.models
+import happybudget.app.budget.models
+import happybudget.app.budgeting.models
 
 
 class Migration(migrations.Migration):
@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
                 ('name', models.CharField(max_length=256)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
-                ('image', models.ImageField(null=True, upload_to=greenbudget.app.budget.models.upload_to)),
+                ('image', models.ImageField(null=True, upload_to=happybudget.app.budget.models.upload_to)),
                 ('actual', models.FloatField(default=0.0)),
                 ('accumulated_value', models.FloatField(default=0.0)),
                 ('accumulated_fringe_contribution', models.FloatField(default=0.0)),
@@ -36,7 +36,7 @@ class Migration(migrations.Migration):
                 'ordering': ('-updated_at',),
                 'get_latest_by': 'updated_at',
             },
-            bases=(models.Model, greenbudget.app.budgeting.models.BudgetingTreeModelMixin),
+            bases=(models.Model, happybudget.app.budgeting.models.BudgetingTreeModelMixin),
         ),
         migrations.CreateModel(
             name='Budget',

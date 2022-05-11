@@ -1,4 +1,4 @@
-from greenbudget.app import views
+from happybudget.app import views
 
 from .models import HeaderTemplate
 from .serializers import (

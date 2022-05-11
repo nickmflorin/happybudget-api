@@ -1,4 +1,4 @@
-from greenbudget.conf import Environments, config
+from happybudget.conf import Environments, config
 
 
 STRIPE_API_KEY = config(

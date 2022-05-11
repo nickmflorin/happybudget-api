@@ -6,16 +6,16 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import UserManager as DjangoUserManager
 from django.db import IntegrityError
 
-from greenbudget.lib.utils.urls import add_query_params_to_url
+from happybudget.lib.utils.urls import add_query_params_to_url
 
-from greenbudget.app.authentication.exceptions import (
+from happybudget.app.authentication.exceptions import (
     InvalidSocialProvider, InvalidSocialToken, AccountNotOnWaitlist)
 
 from .mail import user_is_on_waitlist
 from .query import UserQuerySet, UserQuerier
 
 
-logger = logging.getLogger('greenbudget')
+logger = logging.getLogger('happybudget')
 
 
 def get_social_google_user(token):

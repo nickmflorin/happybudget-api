@@ -1,10 +1,10 @@
 from rest_framework import serializers
 
-from greenbudget.lib.drf.fields import ModelChoiceField
+from happybudget.lib.drf.fields import ModelChoiceField
 
-from greenbudget.app.serializers import ModelSerializer
-from greenbudget.app.tabling.serializers import row_order_serializer
-from greenbudget.app.tagging.serializers import ColorField
+from happybudget.app.serializers import ModelSerializer
+from happybudget.app.tabling.serializers import row_order_serializer
+from happybudget.app.tagging.serializers import ColorField
 
 from .models import Fringe
 

@@ -4,9 +4,9 @@ import pytest
 from rest_framework.request import Request
 from rest_framework.test import APIRequestFactory
 
-from greenbudget.app.authentication.backends import (
+from happybudget.app.authentication.backends import (
     SessionAuthentication, CookieSessionAuthentication)
-from greenbudget.app.user.contrib import AnonymousUser
+from happybudget.app.user.contrib import AnonymousUser
 
 
 class FixedAPIRequestFactory(APIRequestFactory):

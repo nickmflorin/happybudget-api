@@ -2,7 +2,7 @@ from django.db import models
 from rest_framework import serializers
 from rest_framework.utils import model_meta
 
-from greenbudget.app import exceptions
+from happybudget.app import exceptions
 
 
 class SerializerMixin:

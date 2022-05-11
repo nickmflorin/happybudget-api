@@ -3,16 +3,16 @@ import logging
 from django import dispatch
 from django.db import IntegrityError
 
-from greenbudget.lib.django_utils.models import generic_fk_instance_change
+from happybudget.lib.django_utils.models import generic_fk_instance_change
 
-from greenbudget.app import signals
-from greenbudget.app.account.models import Account
-from greenbudget.app.subaccount.models import SubAccount
+from happybudget.app import signals
+from happybudget.app.account.models import Account
+from happybudget.app.subaccount.models import SubAccount
 
 from .models import Markup
 
 
-logger = logging.getLogger('greenbudget')
+logger = logging.getLogger('happybudget')
 
 
 def get_children_to_reestimate_on_save(markup):

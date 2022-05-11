@@ -2,7 +2,7 @@ import functools
 
 from django.db import models
 
-from greenbudget.lib.utils import empty, ensure_iterable
+from happybudget.lib.utils import empty, ensure_iterable
 
 from .bulk_actions import *  # noqa
 from .bulk_registration import *  # noqa

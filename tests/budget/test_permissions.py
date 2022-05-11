@@ -2,7 +2,7 @@
 import pytest
 
 from django.test import override_settings
-from greenbudget.app.collaborator.models import Collaborator
+from happybudget.app.collaborator.models import Collaborator
 
 from tests.permissions import ParameterizedCase
 

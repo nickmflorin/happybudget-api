@@ -1,1 +1,1 @@
-# Greenbudget API Configuration
+# HappyBudget API Configuration

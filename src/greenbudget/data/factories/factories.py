@@ -2,25 +2,25 @@ import factory
 
 from django.contrib.contenttypes.models import ContentType
 
-from greenbudget.app.account.models import BudgetAccount, TemplateAccount
-from greenbudget.app.actual.models import Actual, ActualType
-from greenbudget.app.authentication.models import PublicToken
-from greenbudget.app.budget.models import Budget
-from greenbudget.app.collaborator.models import Collaborator
-from greenbudget.app.contact.models import Contact
-from greenbudget.app.fringe.models import Fringe
-from greenbudget.app.group.models import Group
-from greenbudget.app.io.models import Attachment
-from greenbudget.app.markup.models import Markup
-from greenbudget.app.pdf.models import HeaderTemplate
-from greenbudget.app.subaccount.models import (
+from happybudget.app.account.models import BudgetAccount, TemplateAccount
+from happybudget.app.actual.models import Actual, ActualType
+from happybudget.app.authentication.models import PublicToken
+from happybudget.app.budget.models import Budget
+from happybudget.app.collaborator.models import Collaborator
+from happybudget.app.contact.models import Contact
+from happybudget.app.fringe.models import Fringe
+from happybudget.app.group.models import Group
+from happybudget.app.io.models import Attachment
+from happybudget.app.markup.models import Markup
+from happybudget.app.pdf.models import HeaderTemplate
+from happybudget.app.subaccount.models import (
     BudgetSubAccount,
     TemplateSubAccount,
     SubAccountUnit
 )
-from greenbudget.app.tagging.models import Color
-from greenbudget.app.template.models import Template
-from greenbudget.app.user.models import User
+from happybudget.app.tagging.models import Color
+from happybudget.app.template.models import Template
+from happybudget.app.user.models import User
 
 from .base import CustomModelFactory
 

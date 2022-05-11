@@ -1,4 +1,4 @@
-from greenbudget.lib.utils import humanize_list
+from happybudget.lib.utils import humanize_list
 
 
 class InvalidAction(ValueError):

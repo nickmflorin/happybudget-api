@@ -1,9 +1,9 @@
 from rest_framework import serializers
 
-from greenbudget.app import permissions, exceptions
-from greenbudget.app.budget.serializers import BaseBudgetSerializer
-from greenbudget.app.io.fields import Base64ImageField
-from greenbudget.app.user.serializers import SimpleUserSerializer
+from happybudget.app import permissions, exceptions
+from happybudget.app.budget.serializers import BaseBudgetSerializer
+from happybudget.app.io.fields import Base64ImageField
+from happybudget.app.user.serializers import SimpleUserSerializer
 
 from .models import Template
 

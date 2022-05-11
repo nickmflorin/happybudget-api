@@ -3,17 +3,17 @@ import copy
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 
-from greenbudget.lib.utils import cumulative_sum
+from happybudget.lib.utils import cumulative_sum
 
-from greenbudget.app import model
-from greenbudget.app.authentication.models import PublicToken
-from greenbudget.app.budgeting.decorators import children_method_handler
-from greenbudget.app.budgeting.models import BudgetingTreePolymorphicModel
-from greenbudget.app.collaborator.models import Collaborator
-from greenbudget.app.group.models import Group
-from greenbudget.app.markup.models import Markup
-from greenbudget.app.io.utils import upload_user_image_to
-from greenbudget.app.user.mixins import ModelOwnershipMixin
+from happybudget.app import model
+from happybudget.app.authentication.models import PublicToken
+from happybudget.app.budgeting.decorators import children_method_handler
+from happybudget.app.budgeting.models import BudgetingTreePolymorphicModel
+from happybudget.app.collaborator.models import Collaborator
+from happybudget.app.group.models import Group
+from happybudget.app.markup.models import Markup
+from happybudget.app.io.utils import upload_user_image_to
+from happybudget.app.user.mixins import ModelOwnershipMixin
 
 from .managers import BudgetManager, BaseBudgetManager
 

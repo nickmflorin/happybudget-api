@@ -1,12 +1,12 @@
-from greenbudget.lib.django_utils.models import generic_fk_instance_change
-from greenbudget.lib.utils import split_kwargs
+from happybudget.lib.django_utils.models import generic_fk_instance_change
+from happybudget.lib.utils import split_kwargs
 
-from greenbudget.app import signals
-from greenbudget.app.account.cache import account_instance_cache
-from greenbudget.app.budget.cache import (
+from happybudget.app import signals
+from happybudget.app.account.cache import account_instance_cache
+from happybudget.app.budget.cache import (
     budget_instance_cache, budget_actuals_cache, budget_children_cache)
-from greenbudget.app.budgeting.managers import BudgetingOrderedRowManager
-from greenbudget.app.subaccount.cache import (
+from happybudget.app.budgeting.managers import BudgetingOrderedRowManager
+from happybudget.app.subaccount.cache import (
     subaccount_instance_cache, invalidate_parent_children_cache)
 
 
@@ -83,7 +83,7 @@ class ActualManager(BudgetingOrderedRowManager):
 
     def import_bank_account_transactions(self, **kwargs):
         # pylint: disable=import-outside-toplevel
-        from greenbudget.app.integrations.plaid.api import client
+        from happybudget.app.integrations.plaid.api import client
         split, model = split_kwargs(
             'raise_exception', 'account_ids', 'start_date', 'end_date',
             'public_token', **kwargs)

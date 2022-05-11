@@ -3,8 +3,8 @@ from django.views.decorators.debug import sensitive_post_parameters
 
 from rest_framework import response, status
 
-from greenbudget.app import views, permissions, exceptions
-from greenbudget.app.user.mail import send_email_verification_email
+from happybudget.app import views, permissions, exceptions
+from happybudget.app.user.mail import send_email_verification_email
 
 from .filters import UserSearchFilterBackend
 from .models import User

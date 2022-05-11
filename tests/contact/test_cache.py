@@ -120,7 +120,7 @@ def test_cache_invalidated_on_bulk_create(api_client, user, f):
     assert response.json()['count'] == 3
 
 
-@override_settings(CACHE_ENABLED=True, APP_URL="https://api.greenbudget.com")
+@override_settings(CACHE_ENABLED=True, APP_URL="https://api.happybudget.com")
 def test_cache_invalidated_on_upload_attachment(api_client, user,
         f, test_uploaded_file):
     contacts = [f.create_contact(), f.create_contact()]
@@ -149,5 +149,5 @@ def test_cache_invalidated_on_upload_attachment(api_client, user,
         'id': 1,
         'name': 'test.jpeg',
         'extension': 'jpeg',
-        'url': 'https://api.greenbudget.com/media/users/1/attachments/test.jpeg'
+        'url': 'https://api.happybudget.com/media/users/1/attachments/test.jpeg'
     }]

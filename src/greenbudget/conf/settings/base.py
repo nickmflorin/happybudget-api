@@ -10,7 +10,7 @@ import os
 from corsheaders.defaults import default_headers
 import plaid
 
-from greenbudget.conf import Environments, config, LazySetting
+from happybudget.conf import Environments, config, LazySetting
 
 from .admin import *  # noqa
 from .aws import *  # noqa
@@ -30,13 +30,13 @@ DEBUG = False
 TIME_ZONE = 'UTC'
 USE_TZ = True
 
-APP_DOMAIN = 'api.greenbudget.io/'
+APP_DOMAIN = 'api.happybudget.io/'
 APP_URL = 'https://%s' % APP_DOMAIN
 
 APP_V1_URL = LazySetting(
     lambda settings: os.path.join(str(settings.APP_URL), "v1"))
 
-FRONTEND_URL = "https://app.greenbudget.io/"
+FRONTEND_URL = "https://app.happybudget.io/"
 
 SECRET_KEY = config(
     name='DJANGO_SECRET_KEY',
@@ -58,35 +58,35 @@ GOOGLE_OAUTH_API_URL = "https://www.googleapis.com/oauth2/v3/tokeninfo/"
 PUBLIC_TOKEN_HEADER = "HTTP_X_PUBLICTOKEN"
 
 # Session Configuration
-SESSION_COOKIE_NAME = 'greenbudgetsessionid'
+SESSION_COOKIE_NAME = 'happybudgetsessionid'
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_DOMAIN = ".greenbudget.io"
+SESSION_COOKIE_DOMAIN = ".happybudget.io"
 SESSION_COOKIE_AGE = 60 * 60 * 24
 SESSION_SAVE_EVERY_REQUEST = True
 
 # CSRF Configuration
 CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_HTTPONLY = False  # So frontend can include as a header.
-CSRF_COOKIE_NAME = 'greenbudgetcsrftoken'
+CSRF_COOKIE_NAME = 'happybudgetcsrftoken'
 CSRF_COOKIE_SECURE = True
-CSRF_COOKIE_DOMAIN = ".greenbudget.io"
+CSRF_COOKIE_DOMAIN = ".happybudget.io"
 CSRF_TRUSTED_ORIGINS = [
-    'https://app.greenbudget.io',
-    'https://api.greenbudget.io',
+    'https://app.happybudget.io',
+    'https://api.happybudget.io',
 ]
 
 # CORS Configuration
 CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_ALLOW_ALL = False
 CORS_ORIGIN_REGEX_WHITELIST = (
-    r'^(https?://)?([\w\.-]*?)\.greenbudget\.io:?[\d]*?$',
+    r'^(https?://)?([\w\.-]*?)\.happybudget\.io:?[\d]*?$',
 )
 CORS_ALLOW_HEADERS = list(default_headers) + [
     "x-publictoken",
 ]
 
-ALLOWED_HOSTS = ['api.greenbudget.io']
+ALLOWED_HOSTS = ['api.happybudget.io']
 
 # We store these externally because rest_framework_simplejwt's reload settings
 # does not work properly, which means that when we override these values in
@@ -99,11 +99,11 @@ SLIDING_TOKEN_LIFETIME = datetime.timedelta(minutes=5)
 
 # JWT Configuration
 JWT_COOKIE_SECURE = True
-JWT_TOKEN_COOKIE_NAME = 'greenbudgetjwt'
-JWT_COOKIE_DOMAIN = ".greenbudget.io"
+JWT_TOKEN_COOKIE_NAME = 'happybudgetjwt'
+JWT_COOKIE_DOMAIN = ".happybudget.io"
 
 SIMPLE_JWT = {
-    'AUTH_TOKEN_CLASSES': ('greenbudget.app.authentication.tokens.AuthToken',),
+    'AUTH_TOKEN_CLASSES': ('happybudget.app.authentication.tokens.AuthToken',),
     'SLIDING_TOKEN_LIFETIME': SLIDING_TOKEN_LIFETIME,
     'ACCESS_TOKEN_LIFETIME': ACCESS_TOKEN_LIFETIME,
     'SLIDING_TOKEN_REFRESH_LIFETIME': SLIDING_TOKEN_REFRESH_LIFETIME,
@@ -135,10 +135,10 @@ INSTALLED_APPS = [
     'compressor',
     'grappelli.dashboard',
     'grappelli',
-    'greenbudget',  # Must be before django authentication.
+    'happybudget',  # Must be before django authentication.
     'polymorphic',
     'raven.contrib.django.raven_compat',
-    'greenbudget.harry.apps.HarryAdminConfig',
+    'happybudget.harry.apps.HarryAdminConfig',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -152,48 +152,48 @@ INSTALLED_APPS = [
     'nested_admin',
     'corsheaders',
     'timezone_field',
-    'greenbudget.app',
-    'greenbudget.data',
-    'greenbudget.app.account',
-    'greenbudget.app.actual',
-    'greenbudget.app.authentication',
-    'greenbudget.app.budget',
-    'greenbudget.app.budgeting',
-    'greenbudget.app.collaborator',
-    'greenbudget.app.contact',
-    'greenbudget.app.fringe',
-    'greenbudget.app.group',
-    'greenbudget.app.integrations',
-    'greenbudget.app.integrations.plaid',
-    'greenbudget.app.io',
-    'greenbudget.app.markup',
-    'greenbudget.app.pdf',
-    'greenbudget.app.subaccount',
-    'greenbudget.app.tabling',
-    'greenbudget.app.tagging',
-    'greenbudget.app.template',
-    'greenbudget.app.user'
+    'happybudget.app',
+    'happybudget.data',
+    'happybudget.app.account',
+    'happybudget.app.actual',
+    'happybudget.app.authentication',
+    'happybudget.app.budget',
+    'happybudget.app.budgeting',
+    'happybudget.app.collaborator',
+    'happybudget.app.contact',
+    'happybudget.app.fringe',
+    'happybudget.app.group',
+    'happybudget.app.integrations',
+    'happybudget.app.integrations.plaid',
+    'happybudget.app.io',
+    'happybudget.app.markup',
+    'happybudget.app.pdf',
+    'happybudget.app.subaccount',
+    'happybudget.app.tabling',
+    'happybudget.app.tagging',
+    'happybudget.app.template',
+    'happybudget.app.user'
 ]
 
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
-    'greenbudget.app.middleware.HealthCheckMiddleware',
+    'happybudget.app.middleware.HealthCheckMiddleware',
     'django.middleware.security.SecurityMiddleware',
     # This middleware must come before authentication middleware classes.
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'greenbudget.app.authentication.middleware.PublicTokenMiddleware',
+    'happybudget.app.authentication.middleware.PublicTokenMiddleware',
     # This middleware must come before the TokenCookieMiddleware.
-    'greenbudget.app.authentication.middleware.BillingTokenCookieMiddleware',
-    'greenbudget.app.authentication.middleware.AuthTokenCookieMiddleware',
-    'greenbudget.app.middleware.ModelRequestMiddleware',
-    'greenbudget.app.middleware.CacheUserMiddleware',
+    'happybudget.app.authentication.middleware.BillingTokenCookieMiddleware',
+    'happybudget.app.authentication.middleware.AuthTokenCookieMiddleware',
+    'happybudget.app.middleware.ModelRequestMiddleware',
+    'happybudget.app.middleware.CacheUserMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
 ]
 
-ROOT_URLCONF = 'greenbudget.urls'
+ROOT_URLCONF = 'happybudget.urls'
 
 TEMPLATES = [
     {
@@ -214,7 +214,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'greenbudget.wsgi.application'
+WSGI_APPLICATION = 'happybudget.wsgi.application'
 
 ACCEPTED_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png']
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
@@ -237,29 +237,29 @@ COMPRESS_PRECOMPILERS = (
 )
 
 AUTHENTICATION_BACKENDS = (
-    'greenbudget.app.authentication.backends.ModelAuthentication',
-    'greenbudget.app.authentication.backends.SocialModelAuthentication',
+    'happybudget.app.authentication.backends.ModelAuthentication',
+    'happybudget.app.authentication.backends.SocialModelAuthentication',
 )
 
 AUTHENTICATION_PERMISSION_CLASSES = [
-    'greenbudget.app.permissions.IsAuthenticated',
-    'greenbudget.app.permissions.IsActive',
-    'greenbudget.app.permissions.IsVerified'
+    'happybudget.app.permissions.IsAuthenticated',
+    'happybudget.app.permissions.IsActive',
+    'happybudget.app.permissions.IsVerified'
 ]
 
 REST_FRAMEWORK = {
     'DATETIME_FORMAT': '%Y-%m-%d %H:%M:%S',
     'NON_FIELD_ERRORS_KEY': '__all__',
-    'EXCEPTION_HANDLER': 'greenbudget.app.views.exception_handler',
+    'EXCEPTION_HANDLER': 'happybudget.app.views.exception_handler',
     'DEFAULT_FILTER_BACKENDS': [
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
     ],
     'DEFAULT_PERMISSION_CLASSES': AUTHENTICATION_PERMISSION_CLASSES,
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'greenbudget.app.authentication.backends.SessionAuthentication',
+        'happybudget.app.authentication.backends.SessionAuthentication',
     ),
-    'DEFAULT_PAGINATION_CLASS': 'greenbudget.lib.drf.pagination.Pagination',
+    'DEFAULT_PAGINATION_CLASS': 'happybudget.lib.drf.pagination.Pagination',
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
         'rest_framework.throttling.UserRateThrottle'

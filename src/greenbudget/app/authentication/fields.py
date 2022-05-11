@@ -1,4 +1,4 @@
-from greenbudget.lib.drf.fields import GenericRelatedField
+from happybudget.lib.drf.fields import GenericRelatedField
 
 from .exceptions import InvalidToken
 

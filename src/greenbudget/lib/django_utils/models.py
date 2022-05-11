@@ -9,7 +9,7 @@ from django.apps import apps
 from django.contrib.contenttypes.models import ContentType
 from django.db import IntegrityError
 
-from greenbudget.lib.utils import (
+from happybudget.lib.utils import (
     humanize_list, ensure_iterable, ImmutableAttributeMapping)
 
 
@@ -45,7 +45,7 @@ class Choices(RootChoices):
     slug that is used to access the instance on the model.
 
     class MyModel(models.Model):
-        FRUITS = greenbudget.lib.django_utils.models.Choices(
+        FRUITS = happybudget.lib.django_utils.models.Choices(
             (0, "apple", "Apple"),
             (1, "banana", "Banana"),
             (2, "strawberry", "Strawberry"),
@@ -166,7 +166,7 @@ def generic_fk_instance_change(instance, obj_id_change=None,
 
     if ct_change is not None:
         # The previous value of a FK will be the ID, not the full object -
-        # for reasons explained in greenbudget.app.model.
+        # for reasons explained in happybudget.app.model.
         previous_ct = None
         if ct_change.previous_value is not None:
             previous_ct = ContentType.objects.get(pk=ct_change.previous_value)

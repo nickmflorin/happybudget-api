@@ -7,7 +7,7 @@ from .exceptions import StripeBadRequest, UnconfiguredProductException
 from . import stripe
 
 
-logger = logging.getLogger('greenbudget')
+logger = logging.getLogger('happybudget')
 
 
 def get_product_internal_id(product):

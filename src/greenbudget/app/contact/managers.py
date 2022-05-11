@@ -1,5 +1,5 @@
-from greenbudget.app import signals
-from greenbudget.app.tabling.managers import OrderedRowManager
+from happybudget.app import signals
+from happybudget.app.tabling.managers import OrderedRowManager
 
 from .cache import user_contacts_cache
 from .query import ContactQuerySet

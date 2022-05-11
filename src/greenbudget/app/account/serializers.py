@@ -1,13 +1,13 @@
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers
 
-from greenbudget.app.budgeting.serializers import EntityAncestorSerializer
-from greenbudget.app.group.fields import GroupField
-from greenbudget.app.group.serializers import GroupSerializer
-from greenbudget.app.markup.serializers import MarkupSerializer
-from greenbudget.app.subaccount.serializers import SubAccountPdfSerializer
-from greenbudget.app.serializers import ModelSerializer
-from greenbudget.app.tabling.serializers import row_order_serializer
+from happybudget.app.budgeting.serializers import EntityAncestorSerializer
+from happybudget.app.group.fields import GroupField
+from happybudget.app.group.serializers import GroupSerializer
+from happybudget.app.markup.serializers import MarkupSerializer
+from happybudget.app.subaccount.serializers import SubAccountPdfSerializer
+from happybudget.app.serializers import ModelSerializer
+from happybudget.app.tabling.serializers import row_order_serializer
 
 from .models import Account, BudgetAccount, TemplateAccount
 

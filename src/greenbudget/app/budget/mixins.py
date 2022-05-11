@@ -1,8 +1,8 @@
 from django.contrib.contenttypes.models import ContentType
 from django.utils.functional import cached_property
 
-from greenbudget.app import permissions, views
-from greenbudget.app.template.permissions import TemplateObjPermission
+from happybudget.app import permissions, views
+from happybudget.app.template.permissions import TemplateObjPermission
 
 from .models import BaseBudget, Budget
 from .permissions import IsBudgetDomain, BudgetObjPermission

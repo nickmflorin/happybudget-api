@@ -1,7 +1,7 @@
 from django.core import management
 from django.db.migrations.recorder import MigrationRecorder
 
-from greenbudget.management import CustomCommand, debug_only
+from happybudget.management import CustomCommand, debug_only
 
 
 @debug_only

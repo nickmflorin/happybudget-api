@@ -6,8 +6,8 @@ from django.core.files.storage import get_storage_class
 
 from rest_framework import serializers
 
-from greenbudget.app import exceptions
-from greenbudget.app.serializers import ModelSerializer, Serializer
+from happybudget.app import exceptions
+from happybudget.app.serializers import ModelSerializer, Serializer
 
 from .exceptions import FileError
 from .fields import ImageField
@@ -21,7 +21,7 @@ from .utils import (
 )
 
 
-logger = logging.getLogger('greenbudget')
+logger = logging.getLogger('happybudget')
 
 
 class ImageFileFieldSerializer(Serializer):

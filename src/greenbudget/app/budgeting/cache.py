@@ -1,10 +1,10 @@
-from greenbudget.lib.django_utils.models import group_models_by_type, ModelMap
+from happybudget.lib.django_utils.models import group_models_by_type, ModelMap
 
-from greenbudget.app.account.cache import (
+from happybudget.app.account.cache import (
     account_groups_cache, account_markups_cache)
-from greenbudget.app.budget.cache import (
+from happybudget.app.budget.cache import (
     budget_groups_cache, budget_markups_cache)
-from greenbudget.app.subaccount.cache import (
+from happybudget.app.subaccount.cache import (
     subaccount_groups_cache, subaccount_markups_cache)
 
 

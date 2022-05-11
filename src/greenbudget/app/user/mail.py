@@ -5,14 +5,14 @@ from django.conf import settings
 import sib_api_v3_sdk
 from sib_api_v3_sdk.rest import ApiException
 
-from greenbudget.conf import suppress_with_setting
-from greenbudget.lib.utils.urls import add_query_params_to_url
+from happybudget.conf import suppress_with_setting
+from happybudget.lib.utils.urls import add_query_params_to_url
 
-from greenbudget.app.authentication.tokens import AccessToken
+from happybudget.app.authentication.tokens import AccessToken
 from .exceptions import EmailError
 
 
-logger = logging.getLogger("greenbudget")
+logger = logging.getLogger("happybudget")
 
 
 configuration = sib_api_v3_sdk.Configuration()

@@ -9,11 +9,11 @@ from rest_framework.response import Response
 from rest_framework.serializers import as_serializer_error
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
 
-from greenbudget.app.billing.exceptions import (
+from happybudget.app.billing.exceptions import (
     BillingError, ProductPermissionError)
 
 
-logger = logging.getLogger('greenbudget')
+logger = logging.getLogger('happybudget')
 
 
 ErrorTypeDesignation = collections.namedtuple(
@@ -373,7 +373,7 @@ def exception_handler(exc, context):
             (1) user_id: Informs the frontend what :obj:`User` triggered the
                 authentication related exception for cases when the :obj:`User`
                 is not logged in and the exception raised was an instance of
-                `greenbudget.app.authentication.exceptions.AuthenticationError`.
+                `happybudget.app.authentication.exceptions.AuthenticationError`.
 
                 This applies mostly to email confirmation, where we need to
                 inform the Front End  what :obj:`User` tried to login to the
@@ -394,7 +394,7 @@ def exception_handler(exc, context):
                 >>> { errors: [{
                 >>>     message: ...,
                 >>>     code: ...,
-                >>>     products: ["greenbudget_standard"]
+                >>>     products: ["happybudget_standard"]
                 >>> }] }
 
     (5) Consistent Handling of 404 Errors.

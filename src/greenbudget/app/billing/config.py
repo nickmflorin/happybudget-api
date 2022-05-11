@@ -1,5 +1,5 @@
 class ProductId:
-    STANDARD = "greenbudget_standard"
+    STANDARD = "happybudget_standard"
     __all__ = [STANDARD]
 
 

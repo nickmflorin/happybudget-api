@@ -2,7 +2,7 @@
 from http.cookies import SimpleCookie
 import pytest
 
-from greenbudget.app.authentication.tokens import AuthToken
+from happybudget.app.authentication.tokens import AuthToken
 
 
 @pytest.fixture

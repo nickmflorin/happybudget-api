@@ -4,7 +4,7 @@ import mock
 from rest_framework import status
 from rest_framework.response import Response
 
-from greenbudget.app.budget.views import BudgetActualsOwnersViewSet
+from happybudget.app.budget.views import BudgetActualsOwnersViewSet
 
 
 @override_settings(CACHE_ENABLED=True)
@@ -434,7 +434,7 @@ def test_bulk_delete_actuals_invalidates_caches(api_client, user, f):
     assert response.json()['data'][1]['actual'] == 20.0
 
 
-@override_settings(CACHE_ENABLED=True, APP_URL="https://api.greenbudget.com")
+@override_settings(CACHE_ENABLED=True, APP_URL="https://api.happybudget.com")
 def test_actuals_cache_invalidated_on_upload_attachment(api_client, user, f,
         test_uploaded_file):
     budget = f.create_budget()
@@ -470,7 +470,7 @@ def test_actuals_cache_invalidated_on_upload_attachment(api_client, user, f,
         'id': 1,
         'name': 'test.jpeg',
         'extension': 'jpeg',
-        'url': 'https://api.greenbudget.com/media/users/1/attachments/test.jpeg'
+        'url': 'https://api.happybudget.com/media/users/1/attachments/test.jpeg'
     }]
 
 

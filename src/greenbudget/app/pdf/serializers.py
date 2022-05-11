@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
-from greenbudget.app.io.fields import Base64ImageField
-from greenbudget.app.serializers import ModelSerializer
+from happybudget.app.io.fields import Base64ImageField
+from happybudget.app.serializers import ModelSerializer
 
 from .models import HeaderTemplate
 

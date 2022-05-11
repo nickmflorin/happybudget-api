@@ -1,7 +1,7 @@
 import collections
 from rest_framework import serializers
 
-from greenbudget.lib.utils import import_at_module_path
+from happybudget.lib.utils import import_at_module_path
 
 
 class ContextFieldLookupError(LookupError):

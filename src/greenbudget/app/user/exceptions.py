@@ -1,5 +1,5 @@
 from django.utils.translation import gettext_lazy as _
-from greenbudget.app import exceptions
+from happybudget.app import exceptions
 
 
 class EmailError(exceptions.BadRequest):

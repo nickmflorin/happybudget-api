@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from greenbudget.app.serializers import Serializer
+from happybudget.app.serializers import Serializer
 from .api import client
 
 

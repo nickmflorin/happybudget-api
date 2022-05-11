@@ -1,7 +1,7 @@
 import collections
 from copy import deepcopy
 
-from greenbudget.app.constants import ActionName
+from happybudget.app.constants import ActionName
 
 from .bulk_decorators import (
     bulk_create_action,

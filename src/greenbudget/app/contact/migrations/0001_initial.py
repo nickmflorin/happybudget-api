@@ -1,6 +1,6 @@
 from django.db import migrations, models
 import django.db.models.deletion
-import greenbudget.app.contact.models
+import happybudget.app.contact.models
 
 
 class Migration(migrations.Migration):
@@ -29,7 +29,7 @@ class Migration(migrations.Migration):
                 ('phone_number', models.CharField(max_length=128, null=True)),
                 ('email', models.EmailField(max_length=254, null=True)),
                 ('rate', models.IntegerField(null=True)),
-                ('image', models.ImageField(null=True, upload_to=greenbudget.app.contact.models.upload_to)),
+                ('image', models.ImageField(null=True, upload_to=happybudget.app.contact.models.upload_to)),
                 ('notes', models.CharField(max_length=256, null=True)),
                 ('attachments', models.ManyToManyField(related_name='contacts', to='io.Attachment')),
                 ('created_by', models.ForeignKey(editable=False, on_delete=django.db.models.deletion.CASCADE, related_name='created_%(class)ss', to='user.user')),

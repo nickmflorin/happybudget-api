@@ -13,8 +13,8 @@ from django.db import connection, connections
 
 from rest_framework.test import APIClient
 
-from greenbudget.app import cache
-from greenbudget.app.authentication.models import PublicToken
+from happybudget.app import cache
+from happybudget.app.authentication.models import PublicToken
 
 from .factories import *  # noqa
 from .models import *  # noqa

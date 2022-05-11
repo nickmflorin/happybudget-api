@@ -1,10 +1,10 @@
 from django.urls import reverse
 
-from greenbudget.lib.django_utils.models import ModelMap, group_models_by_type
-from greenbudget.lib.django_utils.urls import lazy_reverse
+from happybudget.lib.django_utils.models import ModelMap, group_models_by_type
+from happybudget.lib.django_utils.urls import lazy_reverse
 
-from greenbudget.app import cache
-from greenbudget.app.account.cache import (
+from happybudget.app import cache
+from happybudget.app.account.cache import (
     account_instance_cache, account_children_cache, account_groups_cache)
 
 

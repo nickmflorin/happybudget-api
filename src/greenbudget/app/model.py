@@ -8,14 +8,14 @@ from django.conf import settings
 from django.core.exceptions import FieldDoesNotExist
 from django.db import models
 
-from greenbudget.conf import Environments
-from greenbudget.lib.utils import (
+from happybudget.conf import Environments
+from happybudget.lib.utils import (
     ensure_iterable, humanize_list, DynamicArgumentException)
 
-from greenbudget.app import constants, signals
+from happybudget.app import constants, signals
 
 
-logger = logging.getLogger('greenbudget')
+logger = logging.getLogger('happybudget')
 
 
 class model_is_deleting(signals.disable):
@@ -654,7 +654,7 @@ class model:
         else:
             user = getattr(self.thread, 'user', None)
 
-        MIDDLEWARE_NAME = 'greenbudget.app.middleware.ModelRequestMiddleware'
+        MIDDLEWARE_NAME = 'happybudget.app.middleware.ModelRequestMiddleware'
         if user is None:
             if MIDDLEWARE_NAME not in settings.MIDDLEWARE:
                 logger.warning(

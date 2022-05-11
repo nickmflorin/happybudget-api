@@ -1,9 +1,9 @@
 from django.db import models
 from rest_framework import decorators, response, status, filters
 
-from greenbudget.app import views, serializers
-from greenbudget.app.actual.serializers import TaggedActualSerializer
-from greenbudget.app.io.views import GenericAttachmentViewSet
+from happybudget.app import views, serializers
+from happybudget.app.actual.serializers import TaggedActualSerializer
+from happybudget.app.io.views import GenericAttachmentViewSet
 
 from .cache import user_contacts_cache
 from .filters import ContactSearchFilterBackend

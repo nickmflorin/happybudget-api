@@ -5,18 +5,18 @@ from django.contrib.contenttypes.fields import (
     GenericRelation, GenericForeignKey)
 from django.contrib.contenttypes.models import ContentType
 
-from greenbudget.lib.django_utils.models import Choices
-from greenbudget.lib.utils import cumulative_sum
+from happybudget.lib.django_utils.models import Choices
+from happybudget.lib.utils import cumulative_sum
 
-from greenbudget.app import model
-from greenbudget.app.actual.models import Actual
-from greenbudget.app.budgeting.models import BudgetingRowModel
-from greenbudget.app.budgeting.utils import entity_text
+from happybudget.app import model
+from happybudget.app.actual.models import Actual
+from happybudget.app.budgeting.models import BudgetingRowModel
+from happybudget.app.budgeting.utils import entity_text
 
 from .managers import MarkupManager
 
 
-logger = logging.getLogger('greenbudget')
+logger = logging.getLogger('happybudget')
 
 
 @model.model(type='markup')

@@ -1,38 +1,38 @@
-from greenbudget.lib.drf.serializers import PolymorphicNonPolymorphicSerializer
+from happybudget.lib.drf.serializers import PolymorphicNonPolymorphicSerializer
 
-from greenbudget.app.account.models import (
+from happybudget.app.account.models import (
     Account, BudgetAccount, TemplateAccount)
-from greenbudget.app.budget.models import Budget
-from greenbudget.app.serializers import ModelSerializer
-from greenbudget.app.subaccount.models import (
+from happybudget.app.budget.models import Budget
+from happybudget.app.serializers import ModelSerializer
+from happybudget.app.subaccount.models import (
     SubAccount, BudgetSubAccount, TemplateSubAccount)
-from greenbudget.app.template.models import Template
+from happybudget.app.template.models import Template
 
 
 class EntityAncestorSerializer(PolymorphicNonPolymorphicSerializer):
     choices = {
-        Account: "greenbudget.app.account.serializers.AccountSimpleSerializer",
+        Account: "happybudget.app.account.serializers.AccountSimpleSerializer",
         SubAccount: (
-            "greenbudget.app.subaccount.serializers.SubAccountSimpleSerializer"),
-        Budget: "greenbudget.app.budget.serializers.BaseBudgetSerializer",
-        Template: "greenbudget.app.budget.serializers.BaseBudgetSerializer",
+            "happybudget.app.subaccount.serializers.SubAccountSimpleSerializer"),
+        Budget: "happybudget.app.budget.serializers.BaseBudgetSerializer",
+        Template: "happybudget.app.budget.serializers.BaseBudgetSerializer",
     }
 
 
 class EntityPolymorphicSerializer(PolymorphicNonPolymorphicSerializer):
     choices = {
         BudgetAccount: (
-            "greenbudget.app.account.serializers.BudgetAccountSerializer"),
+            "happybudget.app.account.serializers.BudgetAccountSerializer"),
         BudgetSubAccount: (
-            "greenbudget.app.subaccount.serializers.BudgetSubAccountSerializer"),
+            "happybudget.app.subaccount.serializers.BudgetSubAccountSerializer"),
         TemplateAccount: (
-            "greenbudget.app.account.serializers.TemplateAccountSerializer"),
+            "happybudget.app.account.serializers.TemplateAccountSerializer"),
         TemplateSubAccount: (
-            "greenbudget.app.subaccount.serializers."
+            "happybudget.app.subaccount.serializers."
             "TemplateSubAccountSerializer"
         ),
-        Budget: "greenbudget.app.budget.serializers.BudgetSerializer",
-        Template: "greenbudget.app.template.serializers.TemplateSerializer",
+        Budget: "happybudget.app.budget.serializers.BudgetSerializer",
+        Template: "happybudget.app.template.serializers.TemplateSerializer",
     }
 
 

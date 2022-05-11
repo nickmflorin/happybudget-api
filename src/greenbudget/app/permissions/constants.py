@@ -1,4 +1,4 @@
-from greenbudget.app.authentication.exceptions import NotAuthenticatedError
+from happybudget.app.authentication.exceptions import NotAuthenticatedError
 from .exceptions import PermissionErr
 
 

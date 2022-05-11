@@ -3,14 +3,14 @@ import collections
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Case, Q, When, Value as V, BooleanField
 
-from greenbudget.lib.utils import concat, ensure_iterable
+from happybudget.lib.utils import concat, ensure_iterable
 
-from greenbudget.app import signals
-from greenbudget.app.budget.cache import budget_actuals_owners_cache
-from greenbudget.app.budgeting.managers import (
+from happybudget.app import signals
+from happybudget.app.budget.cache import budget_actuals_owners_cache
+from happybudget.app.budgeting.managers import (
     BudgetingPolymorphicOrderedRowManager)
-from greenbudget.app.budgeting.utils import BudgetTree
-from greenbudget.app.tabling.query import (
+from happybudget.app.budgeting.utils import BudgetTree
+from happybudget.app.tabling.query import (
     OrderedRowQuerier, OrderedRowPolymorphicQuerySet)
 
 from .cache import (

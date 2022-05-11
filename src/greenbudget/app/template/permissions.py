@@ -1,5 +1,5 @@
-from greenbudget.app import permissions
-from greenbudget.app.budgeting.permissions import IsDomain
+from happybudget.app import permissions
+from happybudget.app.budgeting.permissions import IsDomain
 
 
 class IsTemplateDomain(IsDomain):

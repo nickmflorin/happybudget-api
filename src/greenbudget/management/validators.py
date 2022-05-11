@@ -1,4 +1,4 @@
-from greenbudget.lib.utils import conditionally_format_string
+from happybudget.lib.utils import conditionally_format_string
 
 
 class ValidationMessageMixin:

@@ -3,8 +3,8 @@ import copy
 from django.conf import settings
 from django.core.files import File
 
-from greenbudget.lib.utils import humanize_list
-from greenbudget.app.user.models import User
+from happybudget.lib.utils import humanize_list
+from happybudget.app.user.models import User
 
 
 class UserData:

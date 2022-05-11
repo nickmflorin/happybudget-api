@@ -3,7 +3,7 @@ Settings configuration file for production environment.
 """
 from boto3 import session
 
-from greenbudget.conf import Environments, config
+from happybudget.conf import Environments, config
 
 from .base import *  # noqa
 from .base import (

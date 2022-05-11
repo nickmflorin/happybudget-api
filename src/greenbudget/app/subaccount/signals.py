@@ -1,12 +1,12 @@
 from django import dispatch
 from django.db import IntegrityError
 
-from greenbudget.lib.django_utils.models import generic_fk_instance_change
+from happybudget.lib.django_utils.models import generic_fk_instance_change
 
-from greenbudget.app import signals
-from greenbudget.app.account.models import Account
-from greenbudget.app.budget.cache import budget_actuals_owners_cache
-from greenbudget.app.fringe.models import Fringe
+from happybudget.app import signals
+from happybudget.app.account.models import Account
+from happybudget.app.budget.cache import budget_actuals_owners_cache
+from happybudget.app.fringe.models import Fringe
 
 from .cache import (
     subaccount_instance_cache,

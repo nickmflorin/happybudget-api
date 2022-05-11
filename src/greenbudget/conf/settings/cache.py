@@ -1,4 +1,4 @@
-from greenbudget.conf import config, Environments
+from happybudget.conf import config, Environments
 
 ELASTICACHE_ENDPOINT = config(
     name='ELASTICACHE_ENDPOINT',

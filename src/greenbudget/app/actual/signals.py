@@ -1,8 +1,8 @@
 from django import dispatch
 from django.db import models
 
-from greenbudget.app import signals
-from greenbudget.app.budget.cache import budget_actuals_cache
+from happybudget.app import signals
+from happybudget.app.budget.cache import budget_actuals_cache
 
 from .models import Actual
 

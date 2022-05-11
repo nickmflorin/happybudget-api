@@ -1,12 +1,12 @@
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers
 
-from greenbudget.lib.drf.fields import ModelChoiceField
-from greenbudget.lib.drf.validators import UniqueTogetherValidator
+from happybudget.lib.drf.fields import ModelChoiceField
+from happybudget.lib.drf.validators import UniqueTogetherValidator
 
-from greenbudget.app import exceptions
-from greenbudget.app.serializers import ModelSerializer
-from greenbudget.app.user.serializers import SimpleUserSerializer
+from happybudget.app import exceptions
+from happybudget.app.serializers import ModelSerializer
+from happybudget.app.user.serializers import SimpleUserSerializer
 
 from .fields import CollaboratingUserField
 from .models import Collaborator

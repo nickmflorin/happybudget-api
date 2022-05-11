@@ -2,9 +2,9 @@ import copy
 import functools
 from rest_framework import permissions
 
-from greenbudget.lib.utils import (
+from happybudget.lib.utils import (
     get_string_formatted_kwargs, with_falsey_default)
-from greenbudget.app.authentication.exceptions import NotAuthenticatedError
+from happybudget.app.authentication.exceptions import NotAuthenticatedError
 
 from .constants import PermissionContext
 from .exceptions import PermissionErr

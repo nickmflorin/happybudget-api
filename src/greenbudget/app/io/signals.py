@@ -1,14 +1,14 @@
 from django import dispatch
 
-from greenbudget.app import signals
+from happybudget.app import signals
 
-from greenbudget.app.actual.models import Actual
-from greenbudget.app.budget.cache import budget_actuals_cache
-from greenbudget.app.contact.cache import user_contacts_cache
-from greenbudget.app.contact.models import Contact
-from greenbudget.app.subaccount.cache import (
+from happybudget.app.actual.models import Actual
+from happybudget.app.budget.cache import budget_actuals_cache
+from happybudget.app.contact.cache import user_contacts_cache
+from happybudget.app.contact.models import Contact
+from happybudget.app.subaccount.cache import (
     subaccount_instance_cache, invalidate_parent_children_cache)
-from greenbudget.app.subaccount.models import BudgetSubAccount
+from happybudget.app.subaccount.models import BudgetSubAccount
 
 from .models import Attachment
 

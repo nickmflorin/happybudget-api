@@ -1,8 +1,8 @@
 from django.core import management
 
-from greenbudget.management import CustomCommand, askable, skippable, debug_only
+from happybudget.management import CustomCommand, askable, skippable, debug_only
 
-from greenbudget.app import cache
+from happybudget.app import cache
 
 
 @debug_only

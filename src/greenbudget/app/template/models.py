@@ -1,7 +1,7 @@
 from django.db import models, IntegrityError
 
-from greenbudget.app import model
-from greenbudget.app.budget.models import BaseBudget
+from happybudget.app import model
+from happybudget.app.budget.models import BaseBudget
 
 from .managers import TemplateManager
 

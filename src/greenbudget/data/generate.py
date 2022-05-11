@@ -1,18 +1,18 @@
 from django.db import transaction, models
 
-from greenbudget.lib.utils import empty
-from greenbudget.lib.utils import cumulative_sum
+from happybudget.lib.utils import empty
+from happybudget.lib.utils import cumulative_sum
 
-from greenbudget.app import model
+from happybudget.app import model
 
-from greenbudget.app.account.models import BudgetAccount
-from greenbudget.app.budget.models import Budget
-from greenbudget.app.contact.models import Contact
-from greenbudget.app.fringe.models import Fringe
-from greenbudget.app.group.models import Group
-from greenbudget.app.subaccount.models import BudgetSubAccount, SubAccountUnit
-from greenbudget.app.tagging.models import Color
-from greenbudget.app.user.models import User
+from happybudget.app.account.models import BudgetAccount
+from happybudget.app.budget.models import Budget
+from happybudget.app.contact.models import Contact
+from happybudget.app.fringe.models import Fringe
+from happybudget.app.group.models import Group
+from happybudget.app.subaccount.models import BudgetSubAccount, SubAccountUnit
+from happybudget.app.tagging.models import Color
+from happybudget.app.user.models import User
 
 from .random import (
     select_random, select_random_model_choice, select_random_set)

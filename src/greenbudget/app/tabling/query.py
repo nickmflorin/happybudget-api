@@ -1,12 +1,12 @@
 import collections
 from django.db import models, transaction
 
-from greenbudget.lib.utils import ensure_iterable
-from greenbudget.lib.django_utils.query import (
+from happybudget.lib.utils import ensure_iterable
+from happybudget.lib.django_utils.query import (
     QuerySet,
     PolymorphicQuerySet
 )
-from greenbudget.lib.utils import concat
+from happybudget.lib.utils import concat
 
 from .utils import order_after
 

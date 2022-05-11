@@ -6,17 +6,17 @@ from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from greenbudget.lib.drf.validators import UniqueTogetherValidator
+from happybudget.lib.drf.validators import UniqueTogetherValidator
 
-from greenbudget.app import exceptions
-from greenbudget.app.budget.models import Budget
-from greenbudget.app.serializers import ModelSerializer, Serializer
-from greenbudget.app.user.fields import EmailField
-from greenbudget.app.user.mail import (
+from happybudget.app import exceptions
+from happybudget.app.budget.models import Budget
+from happybudget.app.serializers import ModelSerializer, Serializer
+from happybudget.app.user.fields import EmailField
+from happybudget.app.user.mail import (
     send_email_verification_email,
     send_password_recovery_email
 )
-from greenbudget.app.user.models import User
+from happybudget.app.user.models import User
 
 from .exceptions import EmailDoesNotExist
 from .fields import PublicTokenInstanceField

@@ -7,7 +7,7 @@ from .utils import (
 from . import stripe
 
 
-logger = logging.getLogger('greenbudget')
+logger = logging.getLogger('happybudget')
 
 
 class cached_stripe_property(cached_property):

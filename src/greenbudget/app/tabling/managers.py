@@ -2,8 +2,8 @@ from polymorphic.models import PolymorphicManager
 
 from django.db import models, transaction, IntegrityError
 
-from greenbudget.lib.django_utils.models import error_is_unique_constraint
-from greenbudget.lib.django_utils.query import PolymorphicQuerySet
+from happybudget.lib.django_utils.models import error_is_unique_constraint
+from happybudget.lib.django_utils.query import PolymorphicQuerySet
 
 from .query import (
     RowQuerySet, RowPolymorphicQuerySet, RowQuerier, OrderedRowQuerier,

@@ -3,7 +3,7 @@ Settings configuration file for test environment.
 """
 import logging
 
-from greenbudget.conf import config, Environments
+from happybudget.conf import config, Environments
 
 from .base import LOGGING, REST_FRAMEWORK
 from .base import *  # noqa
@@ -24,7 +24,7 @@ WAITLIST_ENABLED = False
 
 # Eventually we should configure these for a temporary test directory.
 STATICFILES_STORAGE = None
-DEFAULT_FILE_STORAGE = 'greenbudget.app.io.storages.LocalStorage'
+DEFAULT_FILE_STORAGE = 'happybudget.app.io.storages.LocalStorage'
 
 # Disable logging in tests
 LOGGING['loggers'] = {  # noqa
@@ -42,7 +42,7 @@ REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {}
 
 TEST_DATABASE_NAME = config(
     name='TEST_DATABASE_NAME',
-    default='postgres_test_greenbudget'
+    default='postgres_test_happybudget'
 )
 TEST_DATABASE_USER = config(
     name='TEST_DATABASE_USER',
@@ -80,7 +80,7 @@ CACHE_ENABLED = False
 # Even though the cache is disabled by default, there are tests that test the
 # cacheing behavior.  In these tests, we want to ensure that we are using the
 # DatabaseCache.  For an explanation of why we use the DatabaseCache, see the
-# documentation in regard to :obj:`greenbudget.app.cache.endpoint_cache`.
+# documentation in regard to :obj:`happybudget.app.cache.endpoint_cache`.
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.db.DatabaseCache',

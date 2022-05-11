@@ -2,8 +2,8 @@ from polymorphic.models import PolymorphicModel
 
 from django.db import models, IntegrityError
 
-from greenbudget.lib.utils import humanize_list, get_attribute
-from greenbudget.app.tabling.models import (
+from happybudget.lib.utils import humanize_list, get_attribute
+from happybudget.app.tabling.models import (
     RowModel, OrderedRowModel, OrderedRowPolymorphicModel)
 
 from .utils import AssociatedModel, entity_text

@@ -1,7 +1,7 @@
 from django.urls import reverse
 
-from greenbudget.app import cache
-from greenbudget.app.budget.cache import (
+from happybudget.app import cache
+from happybudget.app.budget.cache import (
     budget_instance_cache, budget_children_cache)
 
 

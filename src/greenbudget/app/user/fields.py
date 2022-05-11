@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from greenbudget.app import exceptions
+from happybudget.app import exceptions
 
 
 class UserDateTimeFieldDefault:

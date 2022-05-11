@@ -1,6 +1,6 @@
 from rest_framework import routers
 
-from greenbudget.app.tagging.views import ColorsViewSet
+from happybudget.app.tagging.views import ColorsViewSet
 
 from .models import Group
 from .views import GroupViewSet

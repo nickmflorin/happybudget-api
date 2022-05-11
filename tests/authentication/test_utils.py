@@ -3,11 +3,11 @@ from unittest import mock
 
 import pytest
 
-from greenbudget.app.authentication.tokens import AuthToken, AccessToken
-from greenbudget.app.authentication.exceptions import InvalidToken, ExpiredToken
-from greenbudget.app.authentication.utils import parse_token
-from greenbudget.app.user.contrib import AnonymousUser
-from greenbudget.app.user.models import User
+from happybudget.app.authentication.tokens import AuthToken, AccessToken
+from happybudget.app.authentication.exceptions import InvalidToken, ExpiredToken
+from happybudget.app.authentication.utils import parse_token
+from happybudget.app.user.contrib import AnonymousUser
+from happybudget.app.user.models import User
 
 
 class TestParseAuthTokens:

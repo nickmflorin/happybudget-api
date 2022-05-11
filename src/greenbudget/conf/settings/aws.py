@@ -1,4 +1,4 @@
-from greenbudget.conf import Environments, config
+from happybudget.conf import Environments, config
 
 AWS_ACCESS_KEY_ID = config(
     name='AWS_ACCESS_KEY_ID',

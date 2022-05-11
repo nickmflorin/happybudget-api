@@ -1,4 +1,4 @@
-from greenbudget.app.authentication.exceptions import (
+from happybudget.app.authentication.exceptions import (
     NotAuthenticatedError,
     AccountDisabled,
     AccountNotVerified

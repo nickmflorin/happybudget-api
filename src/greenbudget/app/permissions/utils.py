@@ -1,7 +1,7 @@
 from django.conf import settings
 
-from greenbudget.lib.utils import import_at_module_path
-from greenbudget.app.authentication.exceptions import NotAuthenticatedError
+from happybudget.lib.utils import import_at_module_path
+from happybudget.app.authentication.exceptions import NotAuthenticatedError
 
 from .constants import PErrors
 from .exceptions import PermissionErr

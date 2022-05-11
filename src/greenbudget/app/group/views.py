@@ -1,6 +1,6 @@
-from greenbudget.app import views
-from greenbudget.app.budget.permissions import BudgetObjPermission
-from greenbudget.app.template.permissions import TemplateObjPermission
+from happybudget.app import views
+from happybudget.app.budget.permissions import BudgetObjPermission
+from happybudget.app.template.permissions import TemplateObjPermission
 
 from .models import Group
 from .serializers import GroupSerializer

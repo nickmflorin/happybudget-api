@@ -1,16 +1,16 @@
 from django.contrib.contenttypes.models import ContentType
 
-from greenbudget.app.budgeting.query import BudgetAncestorQuerier
-from greenbudget.app.tabling.managers import RowManager
-from greenbudget.app.tabling.query import RowQuerier, RowQuerySet
+from happybudget.app.budgeting.query import BudgetAncestorQuerier
+from happybudget.app.tabling.managers import RowManager
+from happybudget.app.tabling.query import RowQuerier, RowQuerySet
 
 
 class GroupQuerier(RowQuerier, BudgetAncestorQuerier):
     def for_budgets(self):
         # pylint: disable=import-outside-toplevel
-        from greenbudget.app.account.models import BudgetAccount
-        from greenbudget.app.budget.models import Budget
-        from greenbudget.app.subaccount.models import BudgetSubAccount
+        from happybudget.app.account.models import BudgetAccount
+        from happybudget.app.budget.models import Budget
+        from happybudget.app.subaccount.models import BudgetSubAccount
         ctype_ids = [
             ContentType.objects.get_for_model(m).id
             for m in [BudgetAccount, Budget, BudgetSubAccount]
@@ -19,9 +19,9 @@ class GroupQuerier(RowQuerier, BudgetAncestorQuerier):
 
     def for_templates(self):
         # pylint: disable=import-outside-toplevel
-        from greenbudget.app.account.models import TemplateAccount
-        from greenbudget.app.template.models import Template
-        from greenbudget.app.subaccount.models import TemplateSubAccount
+        from happybudget.app.account.models import TemplateAccount
+        from happybudget.app.template.models import Template
+        from happybudget.app.subaccount.models import TemplateSubAccount
         ctype_ids = [
             ContentType.objects.get_for_model(m).id
             for m in [TemplateAccount, Template, TemplateSubAccount]

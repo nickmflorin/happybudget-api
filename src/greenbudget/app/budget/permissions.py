@@ -1,10 +1,10 @@
-from greenbudget.lib.utils import ensure_iterable
+from happybudget.lib.utils import ensure_iterable
 
-from greenbudget.app import permissions
-from greenbudget.app.billing import ProductPermissionId
-from greenbudget.app.billing.permissions import BaseProductPermission
-from greenbudget.app.budgeting.permissions import IsDomain
-from greenbudget.app.collaborator.permissions import IsCollaborator
+from happybudget.app import permissions
+from happybudget.app.billing import ProductPermissionId
+from happybudget.app.billing.permissions import BaseProductPermission
+from happybudget.app.budgeting.permissions import IsDomain
+from happybudget.app.collaborator.permissions import IsCollaborator
 
 from .models import Budget
 

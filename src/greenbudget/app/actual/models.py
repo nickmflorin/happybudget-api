@@ -5,16 +5,16 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models, IntegrityError
 from django.utils.translation import gettext_lazy as _
 
-from greenbudget.lib.django_utils.models import Choices
+from happybudget.lib.django_utils.models import Choices
 
-from greenbudget.app import model
-from greenbudget.app.budgeting.models import BudgetingOrderedRowModel
-from greenbudget.app.tagging.models import Tag
+from happybudget.app import model
+from happybudget.app.budgeting.models import BudgetingOrderedRowModel
+from happybudget.app.tagging.models import Tag
 
 from .managers import ActualManager
 
 
-logger = logging.getLogger('greenbudget')
+logger = logging.getLogger('happybudget')
 
 
 class ActualType(Tag):

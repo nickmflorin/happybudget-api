@@ -1,9 +1,9 @@
 from tqdm import tqdm
 
-from greenbudget.management import CustomCommand, debug_only, Query
+from happybudget.management import CustomCommand, debug_only, Query
 
-from greenbudget.app import cache
-from greenbudget.data import generate
+from happybudget.app import cache
+from happybudget.data import generate
 
 
 @debug_only

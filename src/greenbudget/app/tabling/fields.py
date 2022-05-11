@@ -3,8 +3,8 @@ from django.utils.translation import gettext_lazy as _
 
 from rest_framework import serializers
 
-from greenbudget.lib.drf.fields import find_parent_base_serializer
-from greenbudget.lib.drf.serializers import LazyContext
+from happybudget.lib.drf.fields import find_parent_base_serializer
+from happybudget.lib.drf.serializers import LazyContext
 
 
 class TablePrimaryKeyRelatedField(serializers.PrimaryKeyRelatedField):

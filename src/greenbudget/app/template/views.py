@@ -1,5 +1,5 @@
-from greenbudget.app import views, permissions
-from greenbudget.app.budget.cache import budget_instance_cache
+from happybudget.app import views, permissions
+from happybudget.app.budget.cache import budget_instance_cache
 
 from .models import Template
 from .serializers import TemplateSerializer, TemplateSimpleSerializer

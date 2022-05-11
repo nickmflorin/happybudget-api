@@ -6,20 +6,20 @@ from django.db import models
 
 from polymorphic.models import PolymorphicManager
 
-from greenbudget.lib.utils import ensure_iterable
-from greenbudget.lib.django_utils.query import QuerySet, PolymorphicQuerySet
+from happybudget.lib.utils import ensure_iterable
+from happybudget.lib.django_utils.query import QuerySet, PolymorphicQuerySet
 
-from greenbudget.app import signals
-from greenbudget.app.tabling.managers import (
+from happybudget.app import signals
+from happybudget.app.tabling.managers import (
     OrderedRowManagerMixin, RowManagerMixin)
-from greenbudget.app.tabling.query import (
+from happybudget.app.tabling.query import (
     OrderedRowPolymorphicQuerySet, OrderedRowQuerySet, RowQuerySet)
 
 from .cache import invalidate_groups_cache
 from .utils import BudgetTree
 
 
-logger = logging.getLogger('greenbudget')
+logger = logging.getLogger('happybudget')
 
 
 class BudgetingManagerMixin:
@@ -94,7 +94,7 @@ class BudgetingManagerMixin:
         models related to a :obj:`Budget` or :obj:`Template` in a bulk context.
         """
         # pylint: disable=import-outside-toplevel
-        from greenbudget.app.budget.models import BaseBudget
+        from happybudget.app.budget.models import BaseBudget
 
         budgets = set([])
         for instance in instances:
@@ -129,12 +129,12 @@ class BudgetingManagerMixin:
         thus should be deleted.
 
         This behavior is encapsulated by the
-        :obj:`greenbudget.app.group.signals.delete_empty_group` signal receiver,
+        :obj:`happybudget.app.group.signals.delete_empty_group` signal receiver,
         but this method is meant to be used in the case of bulk operations which
         do not fire signals.
         """
         # pylint: disable=import-outside-toplevel
-        from greenbudget.app.group.models import Group
+        from happybudget.app.group.models import Group
         groups_to_delete = set([])
         for group in groups:
             group_id = group if not isinstance(group, Group) else group.pk
@@ -386,10 +386,10 @@ class BudgetingManagerMixin:
         :obj:`Markup` and :obj:`BudgetSubAccount`.
         """
         # pylint: disable=import-outside-toplevel
-        from greenbudget.app.account.models import BudgetAccount
-        from greenbudget.app.budget.models import Budget
-        from greenbudget.app.markup.models import Markup
-        from greenbudget.app.subaccount.models import BudgetSubAccount
+        from happybudget.app.account.models import BudgetAccount
+        from happybudget.app.budget.models import Budget
+        from happybudget.app.markup.models import Markup
+        from happybudget.app.subaccount.models import BudgetSubAccount
 
         commit = kwargs.pop('commit', True)
         markups = set([
@@ -452,7 +452,7 @@ class BudgetingManagerMixin:
         :obj:`Account`, :obj:`BaseBudget`, :obj:`Markup` and :obj:`SubAccount`.
         """
         # pylint: disable=import-outside-toplevel
-        from greenbudget.app.markup.models import Markup
+        from happybudget.app.markup.models import Markup
 
         commit = kwargs.pop('commit', True)
         markups = set([

@@ -4,9 +4,9 @@ import os
 from django.conf import settings
 from rest_framework import serializers
 
-from greenbudget.lib.drf.fields import UnixTimestampField
-from greenbudget.app.serializers import ModelSerializer, Serializer
-from greenbudget.app.user.models import User
+from happybudget.lib.drf.fields import UnixTimestampField
+from happybudget.app.serializers import ModelSerializer, Serializer
+from happybudget.app.user.models import User
 
 from .exceptions import (
     CheckoutError, StripeBadRequest, CheckoutSessionInactiveError)
@@ -14,7 +14,7 @@ from .utils import get_product_internal_id, subscription_status
 from . import stripe
 
 
-logger = logging.getLogger('greenbudget')
+logger = logging.getLogger('happybudget')
 
 
 class UserSyncStripeSerializer(ModelSerializer):

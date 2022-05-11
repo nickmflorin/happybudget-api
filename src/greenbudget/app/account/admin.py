@@ -1,8 +1,8 @@
 from django import forms
 
-from greenbudget import harry
+from happybudget import harry
 
-from greenbudget.app.budgeting.admin import (
+from happybudget.app.budgeting.admin import (
     BudgetingTreePolymorphicOrderedRowModelInline)
 from .models import BudgetAccount, TemplateAccount
 

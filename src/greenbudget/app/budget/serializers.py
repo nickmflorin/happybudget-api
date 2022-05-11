@@ -1,16 +1,16 @@
 from rest_framework import serializers
 
-from greenbudget.app import exceptions
-from greenbudget.app.account.serializers import AccountPdfSerializer
-from greenbudget.app.actual.models import Actual
-from greenbudget.app.authentication.serializers import PublicTokenSerializer
-from greenbudget.app.group.serializers import GroupSerializer
-from greenbudget.app.io.fields import Base64ImageField
-from greenbudget.app.markup.serializers import MarkupSerializer
-from greenbudget.app.serializers import ModelSerializer
-from greenbudget.app.template.models import Template
-from greenbudget.app.user.fields import UserTimezoneAwareDateField
-from greenbudget.app.user.serializers import SimpleUserSerializer
+from happybudget.app import exceptions
+from happybudget.app.account.serializers import AccountPdfSerializer
+from happybudget.app.actual.models import Actual
+from happybudget.app.authentication.serializers import PublicTokenSerializer
+from happybudget.app.group.serializers import GroupSerializer
+from happybudget.app.io.fields import Base64ImageField
+from happybudget.app.markup.serializers import MarkupSerializer
+from happybudget.app.serializers import ModelSerializer
+from happybudget.app.template.models import Template
+from happybudget.app.user.fields import UserTimezoneAwareDateField
+from happybudget.app.user.serializers import SimpleUserSerializer
 
 from .models import BaseBudget, Budget
 

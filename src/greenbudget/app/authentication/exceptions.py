@@ -4,7 +4,7 @@ from rest_framework.exceptions import NotAuthenticated
 
 from rest_framework_simplejwt.exceptions import TokenError as BaseTokenError
 
-from greenbudget.app import exceptions
+from happybudget.app import exceptions
 
 
 class NotAuthenticatedErrorCodes:

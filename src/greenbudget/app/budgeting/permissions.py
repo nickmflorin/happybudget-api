@@ -1,4 +1,4 @@
-from greenbudget.app import permissions
+from happybudget.app import permissions
 
 
 class IsDomain(permissions.BasePermission):

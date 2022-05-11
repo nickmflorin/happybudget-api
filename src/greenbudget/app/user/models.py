@@ -9,14 +9,14 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from greenbudget.lib.utils import ensure_iterable
-from greenbudget.lib.utils.dateutils import ensure_datetime
+from happybudget.lib.utils import ensure_iterable
+from happybudget.lib.utils.dateutils import ensure_datetime
 
-from greenbudget.app import model
-from greenbudget.app.authentication.utils import parse_user_id_from_token
-from greenbudget.app.billing import StripeCustomer
-from greenbudget.app.billing.constants import BillingStatus
-from greenbudget.app.io.utils import upload_user_image_to
+from happybudget.app import model
+from happybudget.app.authentication.utils import parse_user_id_from_token
+from happybudget.app.billing import StripeCustomer
+from happybudget.app.billing.constants import BillingStatus
+from happybudget.app.io.utils import upload_user_image_to
 
 from .mixins import UserAuthenticationMixin
 from .managers import UserManager
@@ -145,7 +145,7 @@ class User(UserAuthenticationMixin, AbstractUser):
     @property
     def num_templates(self):
         # pylint: disable=import-outside-toplevel
-        from greenbudget.app.template.models import Template
+        from happybudget.app.template.models import Template
         return Template.objects.filter(community=False, created_by=self).count()
 
     @property
@@ -155,7 +155,7 @@ class User(UserAuthenticationMixin, AbstractUser):
     @property
     def collaborating_budgets(self):
         # pylint: disable=import-outside-toplevel
-        from greenbudget.app.budget.models import Budget
+        from happybudget.app.budget.models import Budget
         return Budget.objects.filter(pk__in=[
             collaboration.object_id
             for collaboration in self.collaborations.filter(
@@ -170,7 +170,7 @@ class User(UserAuthenticationMixin, AbstractUser):
     @property
     def archived_budgets(self):
         # pylint: disable=import-outside-toplevel
-        from greenbudget.app.budget.models import Budget
+        from happybudget.app.budget.models import Budget
         return Budget.objects.filter(archived=True, created_by=self)
 
     def sync_with_social_provider(self, social_user=None, token=None,

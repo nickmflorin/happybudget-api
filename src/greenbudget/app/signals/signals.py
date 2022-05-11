@@ -1,4 +1,4 @@
-from greenbudget.lib.utils import ensure_iterable
+from happybudget.lib.utils import ensure_iterable
 
 from .signal import Signal
 

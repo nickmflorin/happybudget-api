@@ -1,7 +1,7 @@
 import django.core.validators
 from django.db import migrations, models
 import django.db.models.deletion
-import greenbudget.app.pdf.models
+import happybudget.app.pdf.models
 
 
 class Migration(migrations.Migration):
@@ -21,8 +21,8 @@ class Migration(migrations.Migration):
                 ('header', models.TextField(null=True)),
                 ('left_info', models.TextField(null=True)),
                 ('right_info', models.TextField(null=True)),
-                ('left_image', models.ImageField(null=True, upload_to=greenbudget.app.pdf.models.upload_to)),
-                ('right_image', models.ImageField(null=True, upload_to=greenbudget.app.pdf.models.upload_to)),
+                ('left_image', models.ImageField(null=True, upload_to=happybudget.app.pdf.models.upload_to)),
+                ('right_image', models.ImageField(null=True, upload_to=happybudget.app.pdf.models.upload_to)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('created_by', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='header_templates', to='user.user')),

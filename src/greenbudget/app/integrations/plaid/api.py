@@ -22,7 +22,7 @@ from .models import PlaidTransaction, PlaidAccount
 from .exceptions import PlaidRequestError
 
 
-logger = logging.getLogger('greenbudget')
+logger = logging.getLogger('happybudget')
 
 
 configuration = plaid.Configuration(

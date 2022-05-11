@@ -1,12 +1,12 @@
 from rest_framework import serializers
 
-from greenbudget.lib.drf.fields import ModelChoiceField
+from happybudget.lib.drf.fields import ModelChoiceField
 
-from greenbudget.app.io.fields import Base64ImageField
-from greenbudget.app.io.serializers import SimpleAttachmentSerializer
-from greenbudget.app.io.models import Attachment
-from greenbudget.app.serializers import ModelSerializer
-from greenbudget.app.tabling.serializers import row_order_serializer
+from happybudget.app.io.fields import Base64ImageField
+from happybudget.app.io.serializers import SimpleAttachmentSerializer
+from happybudget.app.io.models import Attachment
+from happybudget.app.serializers import ModelSerializer
+from happybudget.app.tabling.serializers import row_order_serializer
 
 from .models import Contact
 

@@ -4,7 +4,7 @@ from django.contrib.auth.backends import ModelBackend
 
 from rest_framework import authentication
 
-from greenbudget.app import permissions
+from happybudget.app import permissions
 
 from .exceptions import (
     InvalidCredentialsError, EmailDoesNotExist, NotAuthenticatedError)
@@ -131,7 +131,7 @@ class SessionAuthentication(authentication.SessionAuthentication):
 
 class CookieSessionAuthentication(SessionAuthentication):
     """
-    An extension of :obj:`greenbudget.app.authentication.SessionAuthentication`
+    An extension of :obj:`happybudget.app.authentication.SessionAuthentication`
     that authenticates the :obj:`User` associated with the JWT token.
     """
     user_ref = 'cookie_user'
@@ -139,7 +139,7 @@ class CookieSessionAuthentication(SessionAuthentication):
 
 class CsrfExcemptCookieSessionAuthentication(CookieSessionAuthentication):
     """
-    An extension of `greenbudget.app.authentication.CookieSessionAuthentication`
+    An extension of `happybudget.app.authentication.CookieSessionAuthentication`
     that does not enforce CSRF checks.  This is required for views related to
     JWT token validation.
     """

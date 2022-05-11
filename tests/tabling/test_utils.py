@@ -1,6 +1,6 @@
 import pytest
 
-from greenbudget.app.tabling.utils import (
+from happybudget.app.tabling.utils import (
     lexographic_midpoint, InconsistentOrderingError)
 
 

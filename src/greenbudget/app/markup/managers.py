@@ -1,17 +1,17 @@
-from greenbudget.lib.utils import concat, ensure_iterable
+from happybudget.lib.utils import concat, ensure_iterable
 
-from greenbudget.app import signals
-from greenbudget.app.account.cache import account_instance_cache
-from greenbudget.app.budget.cache import (
+from happybudget.app import signals
+from happybudget.app.account.cache import account_instance_cache
+from happybudget.app.budget.cache import (
     budget_actuals_owners_cache,
     budget_instance_cache,
     budget_children_cache
 )
-from greenbudget.app.budgeting.cache import invalidate_markups_cache
-from greenbudget.app.budgeting.managers import BudgetingManager
-from greenbudget.app.budgeting.query import BudgetAncestorQuerier
-from greenbudget.app.subaccount.cache import subaccount_instance_cache
-from greenbudget.app.tabling.query import RowQuerySet
+from happybudget.app.budgeting.cache import invalidate_markups_cache
+from happybudget.app.budgeting.managers import BudgetingManager
+from happybudget.app.budgeting.query import BudgetAncestorQuerier
+from happybudget.app.subaccount.cache import subaccount_instance_cache
+from happybudget.app.tabling.query import RowQuerySet
 
 
 class MarkupQuerySet(BudgetAncestorQuerier, RowQuerySet):

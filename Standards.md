@@ -1,4 +1,4 @@
-# Greenbudget API Standards & Conventions
+# HappyBudget API Standards & Conventions
 
 ### The Zen of Python
 
@@ -67,8 +67,8 @@ If imports within a group share a common module, the more specific modules
 should be imported after the more general modules.
 
 ```python
-from greenbudget.lib.utils import ensure_iterable, get_nested_attribute
-from greenbudget.lib.utils.urls import parse_ids_from_request
+from happybudget.lib.utils import ensure_iterable, get_nested_attribute
+from happybudget.lib.utils.urls import parse_ids_from_request
 ```
 
 ##### Groups
@@ -122,17 +122,17 @@ Note that we try to import from `rest_framework` as top-level modules
 ###### Absolute Imports from lib and conf
 
 ```python
-from greenbudget.lib.utils import ensure_iterable, get_nested_attribute
-from greenbudget.lib.utils.urls import parse_ids_from_request
+from happybudget.lib.utils import ensure_iterable, get_nested_attribute
+from happybudget.lib.utils.urls import parse_ids_from_request
 ```
 
 ###### Absolute Imports from app
 
 ```python
-from greenbudget.app.io.fields import Base64ImageField
-from greenbudget.app.io.serializers import SimpleAttachmentSerializer
-from greenbudget.app.io.models import Attachment
-from greenbudget.app.tabling.serializers import row_order_serializer
+from happybudget.app.io.fields import Base64ImageField
+from happybudget.app.io.serializers import SimpleAttachmentSerializer
+from happybudget.app.io.models import Attachment
+from happybudget.app.tabling.serializers import row_order_serializer
 ```
 
 ###### Relative Imports
@@ -168,13 +168,13 @@ from rest_framework import views, exceptions, viewsets, serializers, generics
 from rest_framework.serializers import as_serializer_error
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
 
-from greenbudget.lib.utils import ensure_iterable, get_nested_attribute
-from greenbudget.lib.utils.urls import parse_ids_from_request
+from happybudget.lib.utils import ensure_iterable, get_nested_attribute
+from happybudget.lib.utils.urls import parse_ids_from_request
 
-from greenbudget.app.io.fields import Base64ImageField
-from greenbudget.app.io.serializers import SimpleAttachmentSerializer
-from greenbudget.app.io.models import Attachment
-from greenbudget.app.tabling.serializers import row_order_serializer
+from happybudget.app.io.fields import Base64ImageField
+from happybudget.app.io.serializers import SimpleAttachmentSerializer
+from happybudget.app.io.models import Attachment
+from happybudget.app.tabling.serializers import row_order_serializer
 
 from .models import BaseBudget, Budget
 from .permissions import budget_is_first_created
@@ -182,26 +182,26 @@ from .permissions import budget_is_first_created
 
 ### Explicit Imports of Internal Modules
 
-Consider we are in a file in the project, `greenbudget.app.subaccount.serializers`
+Consider we are in a file in the project, `happybudget.app.subaccount.serializers`
 for purposes of example. We want to import several serializers from
-`greenbudget.app.tagging.serializers`. Imports of internal modules & files
+`happybudget.app.tagging.serializers`. Imports of internal modules & files
 should never be done at the higher level module. An example of importing
 internal files from a higher level module would be the following:
 
 ```python
-# greenbudget.app.subaccount.serializers
-from greenbudget.app.tagging import serializers
+# happybudget.app.subaccount.serializers
+from happybudget.app.tagging import serializers
 ```
 
 Or even
 
 ```python
-# greenbudget.app.subaccount.serializers
-from greenbudget.app.tagging import serializers as tagging_serializers
+# happybudget.app.subaccount.serializers
+from happybudget.app.tagging import serializers as tagging_serializers
 ```
 
 The reason we strictly avoid this is the following: Let’s assume that
-`greenbudget.app.tagging.serializers` contains two serializers, `TagSerializer`
+`happybudget.app.tagging.serializers` contains two serializers, `TagSerializer`
 and `ColorSerializer`. Now let’s assume that some other developer decides to
 move `TagSerializer` into another file. There are two types of errors that we
 may get, depending on whether or not we import and access `TagSerializer` as an
@@ -215,9 +215,9 @@ the Python interpreter encounters the line of code where
 `tag_serializers.TagSerializer` is accessed:
 
 ```python
-# greenbudget.app.subaccount.serializers
+# happybudget.app.subaccount.serializers
 from rest_framework import decorators, status
-from greenbudget.app.tagging import serializers as tagging_serializers
+from happybudget.app.tagging import serializers as tagging_serializers
 
 @decorators.api_view(methods=["GET"])
 def my_view(instance):
@@ -233,8 +233,8 @@ This would happen while users are currently using the application.
 On the other hand, if we perform the import as
 
 ```python
-# greenbudget.app.subaccount.serializers
-from greenbudget.app.tagging.serializers import TagSerializer
+# happybudget.app.subaccount.serializers
+from happybudget.app.tagging.serializers import TagSerializer
 ```
 
 then the server would not even start due to an `ImportError`, allowing us to
@@ -248,7 +248,7 @@ being able to access parts of the application.
 > more dangerous.
 
 ```python
-from greenbudget.app import signals, views
+from happybudget.app import signals, views
 ```
 
 ## Linting

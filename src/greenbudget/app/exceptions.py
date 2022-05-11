@@ -3,7 +3,7 @@ from rest_framework import exceptions, status
 from rest_framework.exceptions import AuthenticationFailed  # noqa
 from django.utils.translation import gettext_lazy as _
 
-from greenbudget.lib.utils import ensure_iterable, get_string_formatted_kwargs
+from happybudget.lib.utils import ensure_iterable, get_string_formatted_kwargs
 
 
 def _consolidate_field_errors(fields, message):

@@ -1,6 +1,6 @@
 from django.db import models
 
-from greenbudget.app.user.filters import FullNameSearchFilter
+from happybudget.app.user.filters import FullNameSearchFilter
 
 from .models import Contact
 

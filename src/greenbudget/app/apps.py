@@ -2,9 +2,9 @@ from django.apps import AppConfig
 
 
 class GreenbudgetAppConfig(AppConfig):
-    name = 'greenbudget.app'
-    verbose_name = "Greenbudget App"
+    name = 'happybudget.app'
+    verbose_name = "HappyBudget App"
 
     def ready(self):
         # pylint: disable=import-outside-toplevel,unused-import
-        import greenbudget.app.signals.receivers  # noqa
+        import happybudget.app.signals.receivers  # noqa

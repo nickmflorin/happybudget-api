@@ -1,7 +1,7 @@
 from django.test import override_settings
 
 
-@override_settings(APP_URL="https://api.greenbudget.com")
+@override_settings(APP_URL="https://api.happybudget.com")
 def test_temp_upload_image(user, api_client, test_uploaded_file):
     uploaded_file = test_uploaded_file('test.jpeg')
     api_client.force_login(user)
@@ -12,11 +12,11 @@ def test_temp_upload_image(user, api_client, test_uploaded_file):
     )
     assert response.status_code == 200
     assert response.json() == {
-        'fileUrl': 'https://api.greenbudget.com/media/users/1/temp/test.jpeg'
+        'fileUrl': 'https://api.happybudget.com/media/users/1/temp/test.jpeg'
     }
 
 
-@override_settings(APP_URL="https://api.greenbudget.com")
+@override_settings(APP_URL="https://api.happybudget.com")
 def test_temp_upload_file(user, api_client, test_uploaded_file):
     uploaded_file = test_uploaded_file('test.pdf')
     api_client.force_login(user)
@@ -27,11 +27,11 @@ def test_temp_upload_file(user, api_client, test_uploaded_file):
     )
     assert response.status_code == 200
     assert response.json() == {
-        'fileUrl': 'https://api.greenbudget.com/media/users/1/temp/test.pdf'
+        'fileUrl': 'https://api.happybudget.com/media/users/1/temp/test.pdf'
     }
 
 
-@override_settings(APP_URL="https://api.greenbudget.com")
+@override_settings(APP_URL="https://api.happybudget.com")
 def test_temp_upload_file_missing_extension(user, api_client,
         test_uploaded_file):
     uploaded_file = test_uploaded_file('test')
@@ -52,7 +52,7 @@ def test_temp_upload_file_missing_extension(user, api_client,
     }
 
 
-@override_settings(APP_URL="https://api.greenbudget.com")
+@override_settings(APP_URL="https://api.happybudget.com")
 def test_temp_upload_image_missing_extension(user, api_client,
         test_uploaded_file):
     uploaded_file = test_uploaded_file('test')
@@ -73,7 +73,7 @@ def test_temp_upload_image_missing_extension(user, api_client,
     }
 
 
-@override_settings(APP_URL="https://api.greenbudget.com")
+@override_settings(APP_URL="https://api.happybudget.com")
 def test_temp_upload_image_invalid_extension(user, api_client,
         test_uploaded_file):
     uploaded_file = test_uploaded_file('test.gif')

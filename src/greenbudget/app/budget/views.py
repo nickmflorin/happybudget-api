@@ -3,32 +3,32 @@ from django.db import models
 
 from rest_framework import response, status, decorators
 
-from greenbudget.app import views, permissions, exceptions
-from greenbudget.app.account.serializers import (
+from happybudget.app import views, permissions, exceptions
+from happybudget.app.account.serializers import (
     BudgetAccountSerializer, TemplateAccountSerializer)
-from greenbudget.app.account.views import GenericAccountViewSet
-from greenbudget.app.actual.models import Actual
-from greenbudget.app.actual.serializers import (
+from happybudget.app.account.views import GenericAccountViewSet
+from happybudget.app.actual.models import Actual
+from happybudget.app.actual.serializers import (
     ActualSerializer, ActualOwnerSerializer)
-from greenbudget.app.actual.views import GenericActualViewSet
-from greenbudget.app.authentication.models import PublicToken
-from greenbudget.app.authentication.serializers import PublicTokenSerializer
-from greenbudget.app.budgeting.decorators import (
+from happybudget.app.actual.views import GenericActualViewSet
+from happybudget.app.authentication.models import PublicToken
+from happybudget.app.authentication.serializers import PublicTokenSerializer
+from happybudget.app.budgeting.decorators import (
     register_bulk_operations, BulkAction, BulkDeleteAction)
-from greenbudget.app.collaborator.models import Collaborator
-from greenbudget.app.collaborator.permissions import (
+from happybudget.app.collaborator.models import Collaborator
+from happybudget.app.collaborator.permissions import (
     IsOwnerOrCollaboratingOwner, IsOwnerOrCollaborator)
-from greenbudget.app.collaborator.serializers import CollaboratorSerializer
-from greenbudget.app.fringe.models import Fringe
-from greenbudget.app.fringe.serializers import FringeSerializer
-from greenbudget.app.fringe.views import GenericFringeViewSet
-from greenbudget.app.group.models import Group
-from greenbudget.app.group.serializers import GroupSerializer
-from greenbudget.app.markup.models import Markup
-from greenbudget.app.markup.serializers import MarkupSerializer
-from greenbudget.app.subaccount.models import BudgetSubAccount
-from greenbudget.app.template.permissions import TemplateObjPermission
-from greenbudget.app.template.serializers import TemplateSerializer
+from happybudget.app.collaborator.serializers import CollaboratorSerializer
+from happybudget.app.fringe.models import Fringe
+from happybudget.app.fringe.serializers import FringeSerializer
+from happybudget.app.fringe.views import GenericFringeViewSet
+from happybudget.app.group.models import Group
+from happybudget.app.group.serializers import GroupSerializer
+from happybudget.app.markup.models import Markup
+from happybudget.app.markup.serializers import MarkupSerializer
+from happybudget.app.subaccount.models import BudgetSubAccount
+from happybudget.app.template.permissions import TemplateObjPermission
+from happybudget.app.template.serializers import TemplateSerializer
 
 from .cache import (
     budget_children_cache,

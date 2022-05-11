@@ -1,6 +1,6 @@
 from django import dispatch
 
-from greenbudget.app import signals
+from happybudget.app import signals
 
 from .cache import user_contacts_cache
 from .models import Contact

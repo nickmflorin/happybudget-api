@@ -3,10 +3,10 @@ import copy
 from django.db import models
 from polymorphic.models import PolymorphicModel
 
-from greenbudget.lib.utils import (
+from happybudget.lib.utils import (
     ensure_iterable, humanize_list, get_attribute, empty,
     ImmutableAttributeMapping)
-from greenbudget.app.user.mixins import ModelOwnershipMixin
+from happybudget.app.user.mixins import ModelOwnershipMixin
 
 from .utils import lexographic_midpoint, validate_order
 

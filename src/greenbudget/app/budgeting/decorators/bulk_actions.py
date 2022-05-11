@@ -1,6 +1,6 @@
 from typing import Any
 
-from greenbudget.app.constants import ActionName
+from happybudget.app.constants import ActionName
 
 
 class BaseBulkAction:

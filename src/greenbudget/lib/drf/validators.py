@@ -1,8 +1,8 @@
 from rest_framework import serializers, validators
 from rest_framework.validators import qs_filter
 
-from greenbudget.lib.utils import ensure_iterable, humanize_list
-from greenbudget.app import exceptions
+from happybudget.lib.utils import ensure_iterable, humanize_list
+from happybudget.app import exceptions
 
 
 class ValidatorAttrs:

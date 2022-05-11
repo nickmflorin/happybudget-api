@@ -6,7 +6,7 @@ import sys
 AWS_HANDLER = {
     "level": logging.INFO,
     "class": "watchtower.CloudWatchLogHandler",
-    "log_group": "greenbudget-dev-api",
+    "log_group": "happybudget-dev-api",
     "stream_name": "logstream",
     "formatter": "aws",
 }
@@ -17,10 +17,10 @@ SENTRY_HANDLER = {
 }
 
 # Loggers that will issue their logs to AWS Cloudwatch.
-AWS_LOGGERS = ("django", "django.request", "django.server", "greenbudget")
+AWS_LOGGERS = ("django", "django.request", "django.server", "happybudget")
 # Loggers that will issue their logs with level greater than or equal to warning
 # to Sentry.
-SENTRY_LOGGERS = ("root", "greenbudget")
+SENTRY_LOGGERS = ("root", "happybudget")
 
 
 def attach_aws_logger(config, boto3_session):
@@ -52,7 +52,7 @@ LOGGING = {
         },
         'dynamic': {
             '()': (
-                'greenbudget.lib.logging.formatters.'
+                'happybudget.lib.logging.formatters.'
                 'DynamicExtraArgumentFormatter'
             ),
         },
@@ -63,7 +63,7 @@ LOGGING = {
         },
         "aws": {
             '()': (
-                'greenbudget.lib.logging.formatters.'
+                'happybudget.lib.logging.formatters.'
                 'DynamicExtraArgumentFormatter'
             ),
         },
@@ -81,7 +81,7 @@ LOGGING = {
             'stream': sys.stdout,
             'formatter': 'simple'
         },
-        'greenbudget.handler': {
+        'happybudget.handler': {
             'level': logging.DEBUG,
             'class': 'logging.StreamHandler',
             'stream': sys.stdout,
@@ -123,8 +123,8 @@ LOGGING = {
             'propagate': False,
         },
         'requests': {'level': logging.WARNING},
-        'greenbudget': {
-            'handlers': ['greenbudget.handler'],
+        'happybudget': {
+            'handlers': ['happybudget.handler'],
             'level': logging.INFO,
             'propagate': False,
         },

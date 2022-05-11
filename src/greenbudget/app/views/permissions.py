@@ -1,6 +1,6 @@
 from django.conf import settings
 
-from greenbudget.app import permissions
+from happybudget.app import permissions
 
 
 def to_view_permission(pms):

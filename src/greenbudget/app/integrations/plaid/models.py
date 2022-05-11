@@ -3,13 +3,13 @@ import logging
 from plaid.model.account_base import AccountBase
 from plaid.model.transaction import Transaction
 
-from greenbudget.lib.utils import ensure_iterable
+from happybudget.lib.utils import ensure_iterable
 from .classification import (
     PlaidCategory, TRANSACTION_CLASSIFICATIONS,
     TRANSACTION_IGNORE_CLASSIFICATIONS)
 
 
-logger = logging.getLogger('greenbudget')
+logger = logging.getLogger('happybudget')
 
 
 class PlaidAttribute:

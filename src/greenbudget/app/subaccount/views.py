@@ -1,18 +1,18 @@
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
-from greenbudget.app import views, permissions
-from greenbudget.app.budget.permissions import BudgetObjPermission
-from greenbudget.app.budget.serializers import BudgetSerializer
-from greenbudget.app.budgeting.decorators import (
+from happybudget.app import views, permissions
+from happybudget.app.budget.permissions import BudgetObjPermission
+from happybudget.app.budget.serializers import BudgetSerializer
+from happybudget.app.budgeting.decorators import (
     register_bulk_operations, BulkAction, BulkDeleteAction)
-from greenbudget.app.group.models import Group
-from greenbudget.app.group.serializers import GroupSerializer
-from greenbudget.app.io.views import GenericAttachmentViewSet
-from greenbudget.app.markup.models import Markup
-from greenbudget.app.markup.serializers import MarkupSerializer
-from greenbudget.app.template.permissions import TemplateObjPermission
-from greenbudget.app.template.serializers import TemplateSerializer
+from happybudget.app.group.models import Group
+from happybudget.app.group.serializers import GroupSerializer
+from happybudget.app.io.views import GenericAttachmentViewSet
+from happybudget.app.markup.models import Markup
+from happybudget.app.markup.serializers import MarkupSerializer
+from happybudget.app.template.permissions import TemplateObjPermission
+from happybudget.app.template.serializers import TemplateSerializer
 
 from .cache import (
     subaccount_children_cache,

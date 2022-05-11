@@ -5,14 +5,14 @@ import logging
 from django.contrib.contenttypes.models import ContentType
 from django.utils.functional import cached_property
 
-from greenbudget.app import signals
+from happybudget.app import signals
 
 from .exceptions import AssociatedObjectNotFound
 from .model import PolymorphicObjectSet, ConcreteObjectSet
 from .utils import instantiate_duplicate
 
 
-logger = logging.getLogger('greenbudget')
+logger = logging.getLogger('happybudget')
 
 
 TimedStat = collections.namedtuple('TimedStat', ['id', 'label'])
@@ -262,7 +262,7 @@ class Duplicator:
 
     def duplicate_fringes(self, duplicated_budget, user):
         # pylint: disable=import-outside-toplevel
-        from greenbudget.app.fringe.models import Fringe
+        from happybudget.app.fringe.models import Fringe
 
         # Duplicate the Fringe instances associated with the Budget.
         fringes = ConcreteObjectSet(model_cls=Fringe, user=user)
@@ -273,7 +273,7 @@ class Duplicator:
 
     def associate_fringes(self, fringes, subaccounts):
         # pylint: disable=import-outside-toplevel
-        from greenbudget.app.subaccount.models import SubAccount
+        from happybudget.app.subaccount.models import SubAccount
 
         # Apply the M2M Fringe relationhsips between a given Fringe and it's
         # associated SubAccount(s).
@@ -291,10 +291,10 @@ class Duplicator:
 
     def duplicate_groups(self, duplicated_budget, accounts, subaccounts, user):
         # pylint: disable=import-outside-toplevel
-        from greenbudget.app.budget.models import BaseBudget
-        from greenbudget.app.account.models import Account
-        from greenbudget.app.group.models import Group
-        from greenbudget.app.subaccount.models import SubAccount
+        from happybudget.app.budget.models import BaseBudget
+        from happybudget.app.account.models import Account
+        from happybudget.app.group.models import Group
+        from happybudget.app.subaccount.models import SubAccount
 
         # Duplicate the Group instances associated with the Budget, Account and
         # SubAccount instances.
@@ -367,7 +367,7 @@ class Duplicator:
 
     def duplicate_markups(self, duplicated_budget, accounts, subaccounts, user):
         # pylint: disable=import-outside-toplevel
-        from greenbudget.app.markup.models import Markup
+        from happybudget.app.markup.models import Markup
 
         markups = ConcreteObjectSet(model_cls=Markup, user=user)
         with markups.transaction():
@@ -392,8 +392,8 @@ class Duplicator:
 
     def associate_markups(self, markups, accounts, subaccounts):
         # pylint: disable=import-outside-toplevel
-        from greenbudget.app.account.models import Account
-        from greenbudget.app.subaccount.models import SubAccount
+        from happybudget.app.account.models import Account
+        from happybudget.app.subaccount.models import SubAccount
 
         # Apply the M2M Markup relationships between a given Markup and the
         # associated Account/SubAccount(s).
@@ -453,8 +453,8 @@ class Duplicator:
 
     def duplicate_actuals(self, duplicated_budget, subaccounts, markups, user):
         # pylint: disable=import-outside-toplevel
-        from greenbudget.app.actual.models import Actual
-        from greenbudget.app.markup.models import Markup
+        from happybudget.app.actual.models import Actual
+        from happybudget.app.markup.models import Markup
 
         markup_ct = ContentType.objects.get_for_model(Markup)
 

@@ -1,5 +1,5 @@
-from greenbudget.lib.utils.abstract import ImmutableSequence
-from greenbudget.app.actual.models import ActualType
+from happybudget.lib.utils.abstract import ImmutableSequence
+from happybudget.app.actual.models import ActualType
 
 from .constants import (
     PlaidAccountType, PlaidAccountSubType, PlaidCategoryGroup,

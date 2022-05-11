@@ -1,9 +1,9 @@
 from rest_framework import serializers, validators
 
-from greenbudget.app.authentication.exceptions import InvalidCredentialsError
-from greenbudget.app.authentication.utils import validate_password
-from greenbudget.app.io.fields import Base64ImageField
-from greenbudget.app.serializers import ModelSerializer
+from happybudget.app.authentication.exceptions import InvalidCredentialsError
+from happybudget.app.authentication.utils import validate_password
+from happybudget.app.io.fields import Base64ImageField
+from happybudget.app.serializers import ModelSerializer
 
 from .fields import EmailField
 from .models import User

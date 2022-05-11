@@ -23,7 +23,7 @@ def test_caches_on_search(api_client, user, budget_f):
     assert response.json()['count'] == 1
 
 
-@override_settings(CACHE_ENABLED=True, APP_URL="https://api.greenbudget.com")
+@override_settings(CACHE_ENABLED=True, APP_URL="https://api.happybudget.com")
 def test_caches_invalidated_on_upload_attachment(api_client, user, f,
         test_uploaded_file):
     budget = f.create_budget()
@@ -65,7 +65,7 @@ def test_caches_invalidated_on_upload_attachment(api_client, user, f,
         'id': 1,
         'name': 'test.jpeg',
         'extension': 'jpeg',
-        'url': 'https://api.greenbudget.com/media/users/1/attachments/test.jpeg'
+        'url': 'https://api.happybudget.com/media/users/1/attachments/test.jpeg'
     }]
 
     response = api_client.get("/v1/subaccounts/%s/" % subaccounts[0].pk)
@@ -75,7 +75,7 @@ def test_caches_invalidated_on_upload_attachment(api_client, user, f,
         'id': 1,
         'name': 'test.jpeg',
         'extension': 'jpeg',
-        'url': 'https://api.greenbudget.com/media/users/1/attachments/test.jpeg'
+        'url': 'https://api.happybudget.com/media/users/1/attachments/test.jpeg'
     }]
 
 

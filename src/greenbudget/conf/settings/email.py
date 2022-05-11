@@ -1,7 +1,7 @@
 import collections
 import os
 
-from greenbudget.conf import config, Environments, LazySetting
+from happybudget.conf import config, Environments, LazySetting
 
 SendInBlueTemplate = collections.namedtuple("SendInBlueTemplate", [
     "id",
@@ -10,7 +10,7 @@ SendInBlueTemplate = collections.namedtuple("SendInBlueTemplate", [
 ])
 
 EMAIL_ENABLED = True
-FROM_EMAIL = "noreply@greenbudget.io"
+FROM_EMAIL = "noreply@happybudget.io"
 EMAIL_HOST = 'smtp.sendgrid.net'
 
 SEND_IN_BLUE_WHITELIST_ID = 11

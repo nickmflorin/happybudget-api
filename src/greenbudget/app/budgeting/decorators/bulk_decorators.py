@@ -6,7 +6,7 @@ from typing import Any
 from django.db import models
 from rest_framework import decorators, response, status
 
-from greenbudget.app.serializers import (
+from happybudget.app.serializers import (
     create_bulk_create_serializer,
     create_bulk_update_serializer,
     create_bulk_delete_serializer
@@ -143,7 +143,7 @@ class bulk_action:
     @property
     def budget_serializer(self):
         # pylint: disable=import-outside-toplevel,unused-import
-        from greenbudget.app.budget.serializers import BudgetSerializer
+        from happybudget.app.budget.serializers import BudgetSerializer
 
         if self._budget_serializer is None:
             return BudgetSerializer

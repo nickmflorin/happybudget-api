@@ -1,4 +1,4 @@
-from greenbudget.app import views
+from happybudget.app import views
 from .serializers import CreateLinkTokenSerializer
 
 

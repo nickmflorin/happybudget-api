@@ -1,8 +1,8 @@
 from http.cookies import SimpleCookie
 import pytest
 
-from greenbudget.lib.utils.dateutils import api_datetime_string
-from greenbudget.app.authentication.tokens import AuthToken
+from happybudget.lib.utils.dateutils import api_datetime_string
+from happybudget.app.authentication.tokens import AuthToken
 
 
 @pytest.mark.freeze_time('2020-01-01')
@@ -34,7 +34,7 @@ def test_validate_auth_token(api_client, settings, standard_product_user):
         'timezone': str(standard_product_user.timezone),
         "profile_image": None,
         "is_first_time": False,
-        "product_id": "greenbudget_standard",
+        "product_id": "happybudget_standard",
         "billing_status": "active",
         "metrics": {
             "num_budgets": 0,
@@ -56,13 +56,13 @@ def test_validate_auth_token_twice_fetches_from_stripe_once(settings,
     response = api_client.post("/v1/auth/validate/")
     assert response.status_code == 201
     assert settings.JWT_TOKEN_COOKIE_NAME in response.cookies
-    assert response.json()['product_id'] == 'greenbudget_standard'
+    assert response.json()['product_id'] == 'happybudget_standard'
     assert response.json()['billing_status'] == 'active'
 
     response = api_client.post("/v1/auth/validate/")
     assert response.status_code == 201
     assert settings.JWT_TOKEN_COOKIE_NAME in response.cookies
-    assert response.json()['product_id'] == 'greenbudget_standard'
+    assert response.json()['product_id'] == 'happybudget_standard'
     assert response.json()['billing_status'] == 'active'
 
     assert mock_stripe.Customer.retrieve.call_count == 1

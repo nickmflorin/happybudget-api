@@ -1,11 +1,11 @@
 from django.db import models
 
-from greenbudget.lib.django_utils.models import Choices
-from greenbudget.lib.utils import conditionally_separate_strings
+from happybudget.lib.django_utils.models import Choices
+from happybudget.lib.utils import conditionally_separate_strings
 
-from greenbudget.app import model
-from greenbudget.app.io.utils import upload_user_image_to
-from greenbudget.app.tabling.models import OrderedRowModel
+from happybudget.app import model
+from happybudget.app.io.utils import upload_user_image_to
+from happybudget.app.tabling.models import OrderedRowModel
 
 from .managers import ContactManager
 

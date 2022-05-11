@@ -4,7 +4,7 @@ from dateutil import parser
 from django.conf import settings
 from rest_framework.settings import api_settings
 
-from greenbudget.conf import Environments
+from happybudget.conf import Environments
 
 
 def api_datetime_string(value, strict=True):

@@ -30,7 +30,7 @@ def test_social_login_user_exists(api_client, f):
     user.refresh_from_db()
     assert user.is_verified
 
-    assert 'greenbudgetjwt' in response.cookies
+    assert 'happybudgetjwt' in response.cookies
     assert response.json() == {
         "id": user.pk,
         "first_name": user.first_name,
@@ -84,7 +84,7 @@ def test_social_login_user_does_not_exist(api_client, models):
     assert user.is_verified
 
     assert response.status_code == 201
-    assert 'greenbudgetjwt' in response.cookies
+    assert 'happybudgetjwt' in response.cookies
     assert response.json() == {
         "id": 1,
         "first_name": user.first_name,
@@ -132,7 +132,7 @@ def test_social_login_invalid_token(api_client, f):
         'provider': 'google',
     })
     assert response.status_code == 403
-    assert 'greenbudgetjwt' not in response.cookies
+    assert 'happybudgetjwt' not in response.cookies
 
 
 @responses.activate
@@ -153,7 +153,7 @@ def test_social_login_invalid_provider(api_client, f):
         'provider': 'qanon',
     })
     assert response.status_code == 400
-    assert 'greenbudgetjwt' not in response.cookies
+    assert 'happybudgetjwt' not in response.cookies
 
 
 @responses.activate
@@ -174,7 +174,7 @@ def test_social_login_account_disabled(api_client, f):
         'provider': 'google',
     })
     assert response.status_code == 403
-    assert 'greenbudgetjwt' not in response.cookies
+    assert 'happybudgetjwt' not in response.cookies
     assert response.json() == {
         'errors': [{
             'message': 'The account is not active.',
@@ -205,7 +205,7 @@ def test_social_login_user_not_on_waitlist(api_client):
         }
     )
     with mock.patch(
-        'greenbudget.app.user.mail.contacts_api.get_contacts_from_list'
+        'happybudget.app.user.mail.contacts_api.get_contacts_from_list'
     ) as m:
         m.return_value = mock_response
         response = api_client.post("/v1/auth/social-login/", data={

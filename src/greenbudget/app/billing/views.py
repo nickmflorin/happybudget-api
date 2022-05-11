@@ -2,8 +2,8 @@ import logging
 
 from rest_framework import mixins, response, status
 
-from greenbudget.app import views, cache
-from greenbudget.app.user.serializers import UserSerializer
+from happybudget.app import views, cache
+from happybudget.app.user.serializers import UserSerializer
 
 from .exceptions import StripeBadRequest
 from .permissions import (
@@ -21,7 +21,7 @@ from .utils import get_products
 from . import stripe
 
 
-logger = logging.getLogger('greenbudget')
+logger = logging.getLogger('happybudget')
 
 
 class StripeSessionViewSet(mixins.CreateModelMixin, views.GenericViewSet):

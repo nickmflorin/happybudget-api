@@ -1,7 +1,7 @@
 from django import dispatch
 
-from greenbudget.app import signals
-from greenbudget.app.budget.cache import budget_groups_cache
+from happybudget.app import signals
+from happybudget.app.budget.cache import budget_groups_cache
 
 from .cache import account_instance_cache
 from .models import BudgetAccount, TemplateAccount

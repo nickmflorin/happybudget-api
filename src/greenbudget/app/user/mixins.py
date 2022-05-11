@@ -1,6 +1,6 @@
 from django.db import IntegrityError
 
-from greenbudget.lib.utils import get_attribute
+from happybudget.lib.utils import get_attribute
 
 
 class ModelOwnershipMixin:
@@ -58,7 +58,7 @@ class UserAuthenticationMixin:
 
     def has_permissions(self, permissions, raise_exception=True):
         # pylint: disable=import-outside-toplevel
-        from greenbudget.app.permissions import check_user_permissions, PErrors
+        from happybudget.app.permissions import check_user_permissions, PErrors
         try:
             check_user_permissions(
                 self, permissions=permissions, raise_exception=True)
@@ -70,7 +70,7 @@ class UserAuthenticationMixin:
 
     def can_authenticate(self, raise_exception=True):
         # pylint: disable=import-outside-toplevel
-        from greenbudget.app.permissions import (
+        from happybudget.app.permissions import (
             check_user_auth_permissions, PErrors)
         try:
             check_user_auth_permissions(self, raise_exception=True)

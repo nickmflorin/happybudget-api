@@ -1,7 +1,7 @@
 import collections
 import dj_database_url
 
-from greenbudget.conf import config, Environments
+from happybudget.conf import config, Environments
 from .constant import ROOT_DIR
 
 
@@ -60,7 +60,7 @@ FIXTURES = [
 
 """
 If Django is not starting because the database does not exist or we are getting
-an error related to the role `greenbudget` not existing, we need to do the
+an error related to the role `happybudget` not existing, we need to do the
 following (note that not all steps are required each time):
 
 (1) Connect to Default Postgres Database:
@@ -109,16 +109,16 @@ DATABASE_NAME = config(
     name='DATABASE_NAME',
     required=[Environments.PROD, Environments.DEV],
     default={
-        Environments.TEST: 'postgres_greenbudget',
-        Environments.LOCAL: 'postgres_greenbudget'
+        Environments.TEST: 'postgres_happybudget',
+        Environments.LOCAL: 'postgres_happybudget'
     }
 )
 DATABASE_USER = config(
     name='DATABASE_USER',
     required=[Environments.PROD, Environments.DEV],
     default={
-        Environments.TEST: 'greenbudget',
-        Environments.LOCAL: 'greenbudget'
+        Environments.TEST: 'happybudget',
+        Environments.LOCAL: 'happybudget'
     }
 )
 DATABASE_PASSWORD = config(

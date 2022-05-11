@@ -2,7 +2,7 @@ from django.conf import settings
 from django.core import management
 from django.db.migrations.recorder import MigrationRecorder
 
-from greenbudget.management import CustomCommand, debug_only
+from happybudget.management import CustomCommand, debug_only
 
 
 @debug_only
@@ -11,7 +11,7 @@ class Command(CustomCommand):
     def handle(self, *args, **options):
         internal_apps = [
             app.split('.')[-1] for app in settings.INSTALLED_APPS
-            if app.startswith('greenbudget')
+            if app.startswith('happybudget')
         ]
         qs = MigrationRecorder.Migration.objects.filter(
             app__in=internal_apps)

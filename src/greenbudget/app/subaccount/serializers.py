@@ -1,19 +1,19 @@
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers
 
-from greenbudget.app.budgeting.serializers import EntityAncestorSerializer
-from greenbudget.app.contact.models import Contact
-from greenbudget.app.fringe.models import Fringe
-from greenbudget.app.group.fields import GroupField
-from greenbudget.app.group.serializers import GroupSerializer
-from greenbudget.app.io.models import Attachment
-from greenbudget.app.io.serializers import SimpleAttachmentSerializer
-from greenbudget.app.markup.serializers import MarkupSerializer
-from greenbudget.app.serializers import ModelSerializer
-from greenbudget.app.tabling.serializers import row_order_serializer
-from greenbudget.app.tagging.fields import TagField
-from greenbudget.app.tagging.serializers import TagSerializer, ColorSerializer
-from greenbudget.app.user.fields import OwnershipPrimaryKeyRelatedField
+from happybudget.app.budgeting.serializers import EntityAncestorSerializer
+from happybudget.app.contact.models import Contact
+from happybudget.app.fringe.models import Fringe
+from happybudget.app.group.fields import GroupField
+from happybudget.app.group.serializers import GroupSerializer
+from happybudget.app.io.models import Attachment
+from happybudget.app.io.serializers import SimpleAttachmentSerializer
+from happybudget.app.markup.serializers import MarkupSerializer
+from happybudget.app.serializers import ModelSerializer
+from happybudget.app.tabling.serializers import row_order_serializer
+from happybudget.app.tagging.fields import TagField
+from happybudget.app.tagging.serializers import TagSerializer, ColorSerializer
+from happybudget.app.user.fields import OwnershipPrimaryKeyRelatedField
 
 from .models import (
     SubAccount, BudgetSubAccount, TemplateSubAccount, SubAccountUnit)

@@ -2,8 +2,8 @@ import csv
 
 from django.core import management
 
-from greenbudget.management import CustomCommand, debug_only
-from greenbudget.app.integrations.plaid.api import client
+from happybudget.management import CustomCommand, debug_only
+from happybudget.app.integrations.plaid.api import client
 
 
 @debug_only

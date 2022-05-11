@@ -1,4 +1,4 @@
-from greenbudget.app import permissions
+from happybudget.app import permissions
 
 from .exceptions import ProductPermissionError
 from .mixins import ProductPermissionIdMixin

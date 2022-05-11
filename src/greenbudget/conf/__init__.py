@@ -11,10 +11,10 @@ from dotenv import load_dotenv
 
 from django.utils.functional import SimpleLazyObject
 
-from greenbudget.lib.utils import humanize_list
+from happybudget.lib.utils import humanize_list
 
 
-logger = logging.getLogger('greenbudget')
+logger = logging.getLogger('happybudget')
 
 
 def get_lazy_setting(func):
@@ -55,13 +55,13 @@ class Environments:
 
 def get_environment():
     mapping = {
-        'greenbudget.conf.settings.dev': Environments.DEV,
-        'greenbudget.conf.settings.local': Environments.LOCAL,
-        'greenbudget.conf.settings.prod': Environments.PROD,
-        'greenbudget.conf.settings.test': Environments.TEST
+        'happybudget.conf.settings.dev': Environments.DEV,
+        'happybudget.conf.settings.local': Environments.LOCAL,
+        'happybudget.conf.settings.prod': Environments.PROD,
+        'happybudget.conf.settings.test': Environments.TEST
     }
     django_settings_module = os.getenv(
-        'DJANGO_SETTINGS_MODULE', 'greenbudget.conf.settings.prod')
+        'DJANGO_SETTINGS_MODULE', 'happybudget.conf.settings.prod')
     return mapping[django_settings_module]
 
 

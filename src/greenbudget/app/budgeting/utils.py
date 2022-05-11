@@ -1,7 +1,7 @@
 from django.utils.functional import cached_property
 
-from greenbudget.lib.utils import ensure_iterable, get_attribute
-from greenbudget.lib.django_utils.models import (
+from happybudget.lib.utils import ensure_iterable, get_attribute
+from happybudget.lib.django_utils.models import (
     import_model_at_path, ModelImportMap, ModelMap)
 
 

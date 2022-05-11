@@ -1,6 +1,6 @@
 from django.contrib.contenttypes.models import ContentType
 
-from greenbudget.app import permissions
+from happybudget.app import permissions
 
 from .models import Collaborator
 

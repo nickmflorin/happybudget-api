@@ -14,8 +14,8 @@ import pytest
 
 from django.test import override_settings
 
-from greenbudget.app.integrations.plaid.api import client
-from greenbudget.app.integrations.plaid.exceptions import PlaidRequestError
+from happybudget.app.integrations.plaid.api import client
+from happybudget.app.integrations.plaid.exceptions import PlaidRequestError
 
 
 def test_exchange_public_token(user):

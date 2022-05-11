@@ -4,8 +4,8 @@ from django.shortcuts import get_object_or_404
 
 from rest_framework import viewsets, serializers, generics
 
-from greenbudget.lib.utils import ensure_iterable, get_attribute
-from greenbudget.app import permissions
+from happybudget.lib.utils import ensure_iterable, get_attribute
+from happybudget.app import permissions
 
 from .permissions import to_view_permission
 

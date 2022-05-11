@@ -1,9 +1,9 @@
 from django import dispatch
 
-from greenbudget.app import signals
-from greenbudget.app.account.models import BudgetAccount, TemplateAccount
-from greenbudget.app.budgeting.cache import invalidate_groups_cache
-from greenbudget.app.subaccount.models import (
+from happybudget.app import signals
+from happybudget.app.account.models import BudgetAccount, TemplateAccount
+from happybudget.app.budgeting.cache import invalidate_groups_cache
+from happybudget.app.subaccount.models import (
     BudgetSubAccount, TemplateSubAccount)
 
 from .models import Group

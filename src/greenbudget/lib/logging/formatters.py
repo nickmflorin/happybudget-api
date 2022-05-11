@@ -12,9 +12,9 @@ class DynamicExtraArgumentFormatter(logging.Formatter):
 
     Usage:
     -----
-    >>> logger = logging.getLogger('greenbudget')
+    >>> logger = logging.getLogger('happybudget')
     >>> logger.info("Some message", extra={"foo": "bar", "apple": "banana"})
-    >>> [greenbudget] INFO: "Some message" [foo=bar, apple=banana]
+    >>> [happybudget] INFO: "Some message" [foo=bar, apple=banana]
     """
     LOGGING_FORMAT_VERSION = "1"
 

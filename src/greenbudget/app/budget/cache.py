@@ -1,6 +1,6 @@
 from django.urls import reverse
 
-from greenbudget.app import cache
+from happybudget.app import cache
 
 
 budget_children_cache = cache.endpoint_cache(

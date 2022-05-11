@@ -1,6 +1,6 @@
 from django.db import models
 
-from greenbudget.lib.django_utils.models import ModelMap
+from happybudget.lib.django_utils.models import ModelMap
 from .fields import DisallowedField, AllowedFieldOverride
 
 

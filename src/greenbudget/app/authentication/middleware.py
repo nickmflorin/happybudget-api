@@ -11,9 +11,9 @@ from django.utils.http import http_date
 
 from rest_framework_simplejwt.settings import api_settings
 
-from greenbudget.conf import Environments
-from greenbudget.app import permissions
-from greenbudget.app.user.contrib import AnonymousUser
+from happybudget.conf import Environments
+from happybudget.app import permissions
+from happybudget.app.user.contrib import AnonymousUser
 
 from .exceptions import InvalidToken
 from .tokens import AuthToken
@@ -21,7 +21,7 @@ from .utils import (
     parse_token_from_request, parse_token, parse_public_token)
 
 
-logger = logging.getLogger('greenbudget')
+logger = logging.getLogger('happybudget')
 
 
 def get_public_token(request):

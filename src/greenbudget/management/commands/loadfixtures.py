@@ -1,8 +1,8 @@
 from django.core import management
 from django.conf import settings
 
-from greenbudget.management import CustomCommand
-from greenbudget.app import cache
+from happybudget.management import CustomCommand
+from happybudget.app import cache
 
 
 class Command(CustomCommand):

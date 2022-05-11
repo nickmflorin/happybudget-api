@@ -1,4 +1,4 @@
-from greenbudget.app import views, exceptions
+from happybudget.app import views, exceptions
 
 from .models import Collaborator
 from .permissions import IsOwnerOrCollaboratingOwner

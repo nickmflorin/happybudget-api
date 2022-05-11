@@ -1,6 +1,6 @@
 from django.db import migrations, models
 import django.db.models.deletion
-import greenbudget.app.budgeting.models
+import happybudget.app.budgeting.models
 
 
 class Migration(migrations.Migration):
@@ -34,6 +34,6 @@ class Migration(migrations.Migration):
                 'ordering': ('created_at',),
                 'get_latest_by': 'updated_at',
             },
-            bases=(models.Model, greenbudget.app.budgeting.models.BudgetingModelMixin),
+            bases=(models.Model, happybudget.app.budgeting.models.BudgetingModelMixin),
         ),
     ]

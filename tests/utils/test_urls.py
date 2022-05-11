@@ -2,7 +2,7 @@ import pytest
 
 from django.http import QueryDict
 
-from greenbudget.lib.utils.urls import (
+from happybudget.lib.utils.urls import (
     add_query_params_to_url, get_query_params, get_base_url)
 
 

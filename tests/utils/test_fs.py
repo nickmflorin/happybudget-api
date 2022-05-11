@@ -1,6 +1,6 @@
 import pytest
 
-from greenbudget.lib.utils.fs import (
+from happybudget.lib.utils.fs import (
     parse_name_and_count, suffix_name_with_count, increment_name_count,
     construct_unique_name)
 

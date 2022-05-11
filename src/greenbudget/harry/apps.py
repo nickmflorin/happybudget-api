@@ -2,4 +2,4 @@ from django.contrib.admin.apps import AdminConfig
 
 
 class HarryAdminConfig(AdminConfig):
-    default_site = 'greenbudget.harry.site.HarryAdminSite'
+    default_site = 'happybudget.harry.site.HarryAdminSite'
