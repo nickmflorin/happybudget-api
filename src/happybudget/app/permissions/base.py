@@ -158,6 +158,13 @@ class BasePermission(metaclass=BasePermissionMetaclass):
 
     Parameters:
     ----------
+    object_name: :obj:`str` (optional)
+        Certain permission error messages may need to reference the object that
+        the permission check failed in reference to, and this reference can
+        be provided as the `object_name`.
+
+        Default: None
+
     get_permissioned_obj: :obj:`lambda` (optional)
         Can be either defined on the permission class statically and/or
         overridden on initialization.
@@ -291,12 +298,14 @@ class BasePermission(metaclass=BasePermissionMetaclass):
         self._is_object_applicable = with_falsey.get(
             'is_object_applicable', True)
 
-        self._priority = options.get('priority',
-            getattr(self, 'priority', False))
+        # This parameter can be provided both on initialization or statically
+        # on the permission class.
         self._affects_after = options.get('affects_after',
             getattr(self, 'affects_after', False))
+
+        self._priority = options.get('priority', False)
         self._get_permissioned_obj = options.get('get_permissioned_obj')
-        self._get_nested_obj = options.get('get_nested_obj', None)
+        self._get_nested_obj = options.get('get_nested_obj')
 
         self._disabled = options.get('disabled')
         self._raise_on_disabled = options.get('raise_on_disabled', False)

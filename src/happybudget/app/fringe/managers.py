@@ -15,7 +15,6 @@ from happybudget.app.tabling.query import (
 
 
 class FringeQuerier(OrderedRowQuerier):
-
     def for_budgets(self):
         # pylint: disable=import-outside-toplevel
         from happybudget.app.budget.models import Budget

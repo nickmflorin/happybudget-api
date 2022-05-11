@@ -1,6 +1,6 @@
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
-from django.db import models, IntegrityError
+from django.db import models
 
 from happybudget.lib.django_utils.models import Choices
 from happybudget.app import model
@@ -39,26 +39,34 @@ class Collaborator(models.Model):
         null=False
     )
 
+    pre_save_validators = [
+        model.PreSaveValidator(
+            check=lambda obj:
+            obj.user.is_active and obj.user.is_verified,
+            message=(
+                "A collaborator can only be associated with active, verified "
+                "users."
+            )
+        ),
+        model.PreSaveValidator(
+            check=lambda obj: hasattr(obj.instance, 'user_owner'),
+            message=(
+                "Collaborators can only be created for instances that dictate "
+                "ownership."
+            )
+        ),
+        model.PreSaveValidator(
+            check=lambda obj: obj.instance.user_owner != obj.user,
+            message=(
+                "A user cannot be assigned as a collaborator for an instance "
+                "they created."
+            )
+        )
+    ]
+
     class Meta:
         get_latest_by = "created_at"
         ordering = ('created_at', )
         verbose_name = "Collaborator"
         verbose_name_plural = "Collaborators"
         unique_together = (('content_type', 'object_id', 'user'))
-
-    def validate_before_save(self):
-        if not self.user.is_active or not self.user.is_verified:
-            raise IntegrityError(
-                "A collaborator can only be associated with active, verified "
-                "users."
-            )
-
-        assert hasattr(self.instance, 'user_owner'), \
-            "Collaborators can only be created for instances that dictate " \
-            "ownership."
-
-        if self.instance.user_owner == self.user:
-            raise IntegrityError(
-                "A user cannot be assigned as a collaborator for an instance "
-                "they created."
-            )

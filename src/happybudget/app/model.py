@@ -6,7 +6,7 @@ import threading
 import django
 from django.conf import settings
 from django.core.exceptions import FieldDoesNotExist
-from django.db import models
+from django.db import models, IntegrityError
 
 from happybudget.conf import Environments
 from happybudget.lib.utils import (
@@ -16,6 +16,16 @@ from happybudget.app import constants, signals
 
 
 logger = logging.getLogger('happybudget')
+
+
+class PreSaveValidator:
+    def __init__(self, check, message):
+        self._message = message
+        self._check = check
+
+    def __call__(self, instance):
+        if not self._check(instance):
+            raise IntegrityError(self._message)
 
 
 class model_is_deleting(signals.disable):
@@ -370,6 +380,9 @@ class model:
         # The fields that are being tracked.
         cls.__tracked_fields = self.tracked_fields(cls)
 
+        original_validate_before_save = getattr(
+            cls, 'validate_before_save', None)
+
         def raise_if_field_not_tracked(instance, field):
             self.validate_field(cls, field)
             # pragma: no cover
@@ -528,6 +541,16 @@ class model:
             with instance.deleting(**deleting_kwargs):
                 delete._original(instance, *args, **kwargs)
 
+        def validate_before_save(instance):
+            validators = getattr(instance, 'pre_save_validators', [])
+            assert all([isinstance(x, PreSaveValidator) for x in validators]), \
+                "Encountered invalid pre save validator.  All validators must " \
+                f"be an instance of {PreSaveValidator}."
+            for validator in validators:
+                validator(instance)
+            if original_validate_before_save is not None:
+                original_validate_before_save(instance)
+
         def save(instance, *args, **kwargs):
             """
             Overrides the :obj:`django.db.models.Model` save behavior to
@@ -578,8 +601,7 @@ class model:
             store(instance)
 
         def _pre_save(sender, instance, **kwargs):
-            if hasattr(instance, 'validate_before_save'):
-                instance.validate_before_save()
+            instance.validate_before_save()
 
         def _pre_delete(instance, **kwargs):
             self.send_with_user(
@@ -608,6 +630,7 @@ class model:
         cls.has_changes = has_changes
         cls.raise_if_field_not_tracked = raise_if_field_not_tracked
         cls.deleting = deleting
+        cls.validate_before_save = validate_before_save
 
         # Expose the :obj:`ActionName`` class on the model class for utility
         # purposes.

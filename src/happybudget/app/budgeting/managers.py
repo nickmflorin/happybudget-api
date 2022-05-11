@@ -23,11 +23,9 @@ logger = logging.getLogger('happybudget')
 
 
 class BudgetingManagerMixin:
-
     def validate_before_save(self, instances):
         for instance in instances:
-            if hasattr(instance, 'validate_before_save'):
-                instance.validate_before_save()
+            instance.validate_before_save()
 
     def bulk_update(self, instances, fields, **kwargs):
         self.validate_before_save(instances)

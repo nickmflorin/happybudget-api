@@ -8,14 +8,13 @@ from .models import Collaborator
 class BaseCollaboratorPermission(permissions.BasePermission):
     object_name = "budget"
     # Note: This message will almost never be used, as the ownership permission
-    # will take priority over this one.  There is no way to know if a user is
-    # not an owner of a Budget whether or not the user should not have permission
-    # because they are not the owner or not a collaborator.
+    # class will usually take priority over this permission class and, as such,
+    # the error message in the response will indicate that the user does not
+    # have permission to access the object, instead of this error message.
     message = "The user is not a collaborator for this {object_name}."
     user_dependency_flags = ['is_authenticated', 'is_active', 'is_verified']
 
-    def __init__(self, object_name=None, **kwargs):
-        self._object_name = object_name
+    def __init__(self, **kwargs):
         # If the access types are not explicitly provided, they will default
         # to the access types defined for the specific subclass permission.
         self._access_types = kwargs.get('access_types', None)
