@@ -22,6 +22,7 @@ if settings.ENVIRONMENT in (Environments.LOCAL, Environments.TEST):
 if settings.ENVIRONMENT != Environments.TEST:
     welcome_message = (
         f"Welcome to {happybudget.__appname__}!\n"
-        f"{happybudget.__copyright__}\n\n"
+        f"{happybudget.__copyright__}\n"
+        "All Rights Reserved\n\n"
     )
     sys.stdout.write(welcome_message)
