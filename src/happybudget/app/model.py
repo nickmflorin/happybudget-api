@@ -264,6 +264,7 @@ class model:
         value referencing only the ID of the FK model, not the model itself.
     """
     thread = threading.local()
+    MIDDLEWARE_NAME = 'happybudget.app.middleware.ModelRequestMiddleware'
 
     def __init__(self, **kwargs):
         self._type = kwargs.pop('type', None)
@@ -366,7 +367,6 @@ class model:
     def __call__(self, cls):
         cls.type = self.type(cls)
 
-        # pragma: no cover
         if hasattr(cls, '__decorated_for_signals__'):
             raise ModelException(model=cls, message=(
                 "Multi-table inheritance of %s not supported, base class "
@@ -379,9 +379,6 @@ class model:
 
         # The fields that are being tracked.
         cls.__tracked_fields = self.tracked_fields(cls)
-
-        original_validate_before_save = getattr(
-            cls, 'validate_before_save', None)
 
         def raise_if_field_not_tracked(instance, field):
             self.validate_field(cls, field)
@@ -548,8 +545,8 @@ class model:
                 f"be an instance of {PreSaveValidator}."
             for validator in validators:
                 validator(instance)
-            if original_validate_before_save is not None:
-                original_validate_before_save(instance)
+            if validate_before_save._original is not None:
+                validate_before_save._original(instance)
 
         def save(instance, *args, **kwargs):
             """
@@ -558,19 +555,16 @@ class model:
             such that the determination of how fields have changed since the
             last model save can be made.
             """
+            track_changes = kwargs.pop('track_changes', True)
+
             setattr(instance, '__just_added', False)
             if instance.pk is None:
                 setattr(instance, '__just_added', True)
 
-            new_instance = instance.id is None
-
-            track_changes = kwargs.pop('track_changes', True)
-
             save._original(instance, *args, **kwargs)
 
             dispatch_changes = []
-
-            if not new_instance and track_changes is not False:
+            if instance.id is not None and track_changes is not False:
                 for k in instance.__tracked_fields:
                     if instance.field_has_changed(k):
                         change = FieldChange(
@@ -630,11 +624,17 @@ class model:
         cls.has_changes = has_changes
         cls.raise_if_field_not_tracked = raise_if_field_not_tracked
         cls.deleting = deleting
-        cls.validate_before_save = validate_before_save
 
         # Expose the :obj:`ActionName`` class on the model class for utility
         # purposes.
         setattr(cls, 'actions', constants.ActionName)
+
+        # Replace the model pre-save validation method with the overridden one,
+        # but keep track of the original pre-save validation method so it can
+        # be reapplied.
+        validate_before_save._original = getattr(
+            cls, 'validate_before_save', None)
+        cls.validate_before_save = validate_before_save
 
         # Replace the model save method with the overridden one, but keep track
         # of the original save method so it can be reapplied.
@@ -647,11 +647,12 @@ class model:
         cls.delete = delete
 
         # Track that the model was decorated with this class for purposes of
-        # model inheritance and/or prevention of model inheritance.
+        # ensuring that this decorator is not being used on a parent model
+        # class.
         setattr(cls, '__decorated_for_signals__', self)
         return cls
 
-    def send_with_user(self, signal, instance, signal_kwargs, strict=False):
+    def send_with_user(self, signal, instance, signal_kwargs):
         for attr in [k for k in ['sender', 'signal'] if k in signal_kwargs]:
             del signal_kwargs[attr]
 
@@ -677,9 +678,8 @@ class model:
         else:
             user = getattr(self.thread, 'user', None)
 
-        MIDDLEWARE_NAME = 'happybudget.app.middleware.ModelRequestMiddleware'
         if user is None:
-            if MIDDLEWARE_NAME not in settings.MIDDLEWARE:
+            if self.MIDDLEWARE_NAME not in settings.MIDDLEWARE:
                 logger.warning(
                     "The user cannot be inferred for the model save because the"
                     "appropriate middleware is not installed."

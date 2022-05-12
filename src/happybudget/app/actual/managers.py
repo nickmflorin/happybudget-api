@@ -1,4 +1,3 @@
-from happybudget.lib.django_utils.models import generic_fk_instance_change
 from happybudget.lib.utils import split_kwargs
 
 from happybudget.app import signals
@@ -15,12 +14,12 @@ class ActualManager(BudgetingOrderedRowManager):
     def bulk_delete(self, instances, request=None):
         budgets = set([obj.budget for obj in instances])
         budget_actuals_cache.invalidate(budgets)
-        owners = set([obj.owner for obj in instances])
 
         for obj in instances:
             obj.delete()
 
-        self.bulk_actualize_all(owners)
+        self.reactualize_owners(instances, self.model.actions.DELETE)
+
         # If the bulk operation is not being performed inside the context of
         # an active request, we should not mark the Budget(s) as having been
         # updated because the method is being called programatically.
@@ -33,10 +32,7 @@ class ActualManager(BudgetingOrderedRowManager):
         # the primary keys for the instances to be hashable.
         created = self.bulk_create(instances, predetermine_pks=True)
 
-        owners_to_reactualize = set(
-            [obj.owner for obj in created if obj.owner is not None])
-
-        self.bulk_actualize_all(owners_to_reactualize)
+        self.reactualize_owners(created, self.model.actions.CREATE)
 
         budgets = set([obj.budget for obj in created])
         budget_actuals_cache.invalidate(budgets)
@@ -60,12 +56,8 @@ class ActualManager(BudgetingOrderedRowManager):
             update_fields = tuple(update_fields) + ('content_type', 'object_id')
 
         self.bulk_update(instances, update_fields)
+        self.reactualize_owners(instances, self.model.actions.UPDATE)
 
-        owners_to_reactualize = set([])
-        for obj in instances:
-            owners_to_reactualize.update(self.get_owners_to_reactualize(obj))
-
-        self.bulk_actualize_all(owners_to_reactualize)
         # If the bulk operation is not being performed inside the context of
         # an active request, we should not mark the Budget(s) as having been
         # updated because the method is being called programatically.
@@ -93,25 +85,15 @@ class ActualManager(BudgetingOrderedRowManager):
             for t in transactions if t.should_ignore is False
         ])
 
-    def get_owners_to_reactualize(self, obj):
+    def get_owners_to_reactualize(self, instances, action):
         owners_to_reactualize = set([])
-        # If the Actual is in the midst of being created, we always want
-        # to actualize the owners.
-        if obj._state.adding is True or obj.was_just_added():
-            if obj.owner is not None:
-                owners_to_reactualize.add(obj.owner)
-        else:
-            # We only need to reactualize the owner if the owner was changed
-            # or the actual value was changed.
-            old_owner, new_owner = generic_fk_instance_change(obj)
-            if old_owner != new_owner:
-                owners_to_reactualize.update([
-                    x for x in [new_owner, old_owner]
-                    if x is not None
-                ])
-            elif obj.field_has_changed('value') and obj.owner is not None:
-                owners_to_reactualize.add(obj.owner)
+        for obj in instances:
+            owners_to_reactualize.update(obj.get_owners_to_reactualize(action))
         return owners_to_reactualize
+
+    def reactualize_owners(self, instances, action, **kwargs):
+        owners = self.get_owners_to_reactualize(instances, action)
+        return self.bulk_actualize_all(owners, **kwargs)
 
     def bulk_actualize_all(self, instances, **kwargs):
         tree = super().bulk_actualize_all(instances, **kwargs)

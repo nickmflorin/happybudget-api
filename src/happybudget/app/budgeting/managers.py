@@ -388,6 +388,11 @@ class BudgetingManagerMixin:
         from happybudget.app.markup.models import Markup
         from happybudget.app.subaccount.models import BudgetSubAccount
 
+        assert all([
+            obj.domain == "budget"
+            for obj in ensure_iterable(instances)
+        ]), "Actualization is only applicable for the budget domain."
+
         commit = kwargs.pop('commit', True)
         markups = set([
             obj for obj in ensure_iterable(instances)

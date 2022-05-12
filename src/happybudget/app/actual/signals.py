@@ -21,8 +21,7 @@ def actual_to_delete(instance, **kwargs):
 # the same time.
 @dispatch.receiver(signals.post_delete, sender=Actual)
 def actual_deleted(instance, **kwargs):
-    if instance.owner is not None:
-        Actual.objects.bulk_actualize_all([instance.owner])
+    Actual.objects.reactualize_owners([instance], action=instance.actions.DELETE)
 
 
 @dispatch.receiver(signals.pre_save, sender=Actual)
@@ -32,5 +31,6 @@ def actual_to_save(instance, **kwargs):
 
 @dispatch.receiver(models.signals.post_save, sender=Actual)
 def actual_saved(instance, **kwargs):
-    owners_to_reactualize = Actual.objects.get_owners_to_reactualize(instance)
-    Actual.objects.bulk_actualize_all(owners_to_reactualize)
+    action = instance.actions.CREATE if kwargs['created'] \
+        else instance.actions.UPDATE
+    Actual.objects.reactualize_owners([instance], action=action)

@@ -40,12 +40,10 @@ class ActualOwnerField(GenericRelatedField):
                 and self.context.get('bulk_update_context', False) is not True:
             budget = self.parent.instance.budget
         else:
-            if 'budget' not in self.context:
-                raise Exception(
-                    "The budget must be provided in context when using %s in "
-                    "a POST context or a PATCH context during a bulk operation."
-                    % self.__class__.__name__
-                )
+            assert 'budget' in self.context, \
+                "The budget must be provided in context when using %s in " \
+                "a POST context or a PATCH context during a bulk operation." \
+                % self.__class__.__name__
             budget = self.context["budget"]
         return qs.filter_by_budget(budget)
 

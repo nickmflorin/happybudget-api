@@ -5,7 +5,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models, IntegrityError
 from django.utils.translation import gettext_lazy as _
 
-from happybudget.lib.django_utils.models import Choices
+from happybudget.lib.django_utils.models import (
+    Choices, generic_fk_instance_change)
 
 from happybudget.app import model
 from happybudget.app.budgeting.models import BudgetingOrderedRowModel
@@ -113,6 +114,28 @@ class Actual(BudgetingOrderedRowModel):
 
     def __str__(self):
         return str(self.name) or "----"
+
+    def get_owners_to_reactualize(self, action):
+        if action in (self.actions.CREATE, self.actions.DELETE):
+            return set([self.owner]) if self.owner is not None else set([])
+        owners_to_reactualize = set([])
+        # If the Actual is in the midst of being created, we always want
+        # to actualize the owners.
+        if self._state.adding is True or self.was_just_added():
+            if self.owner is not None:
+                owners_to_reactualize.add(self.owner)
+        else:
+            # We only need to reactualize the owner if the owner was changed
+            # or the actual value was changed.
+            old_owner, new_owner = generic_fk_instance_change(self)
+            if old_owner != new_owner:
+                owners_to_reactualize.update([
+                    x for x in [new_owner, old_owner]
+                    if x is not None
+                ])
+            elif self.field_has_changed('value') and self.owner is not None:
+                owners_to_reactualize.add(self.owner)
+        return owners_to_reactualize
 
     def validate_before_save(self):
         if self.contact is not None:

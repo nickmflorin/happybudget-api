@@ -171,6 +171,13 @@ class BudgetingTreePolymorphicOrderedRowModel(
         return entity_text(self)
 
     @property
+    def VALID_PARENTS(self):
+        raise NotImplementedError(
+            f"The model {self.__class__} must define a `VALID_PARENTS` "
+            "attribute."
+        )
+
+    @property
     def valid_parent_cls(self):
         return tuple([getattr(self, attr) for attr in self.VALID_PARENTS])
 
