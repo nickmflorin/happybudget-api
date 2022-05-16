@@ -26,8 +26,7 @@ def test_get_budget_with_public_token(api_client, user, f):
             "first_name": user.first_name,
             "last_name": user.last_name,
             "full_name": user.full_name,
-            "email": user.email,
-            "profile_image": None
+            "email": user.email
         },
         "public_token": {
             'id': public_token.pk,

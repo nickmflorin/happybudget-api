@@ -10,6 +10,7 @@ from django.contrib.contenttypes.models import ContentType
 import pytest
 
 from happybudget.data import factories
+from happybudget.lib.utils import humanize_list
 from happybudget.app.budget.models import Budget
 from happybudget.app.template.models import Template
 
@@ -160,12 +161,24 @@ def allow_multiple(func):
                     model_kwargs[k] = v[i]
                 instances.append(func(*args, **model_kwargs))
             return instances
+        else:
+            # If the count is not included, we should raise an exception if
+            # an array of values is specified for any parameter - since it
+            # would not apply.
+            array_params = [
+                k for k, _ in kwargs.items() if k.endswith('_array')]
+            if array_params:
+                array_params = humanize_list(array_params)
+                raise Exception(
+                    f"Array parameter(s) {array_params} specified, but the "
+                    "factory call did not specify a `count`."
+                )
         return func(*args, **kwargs)
     return inner
 
 
 @pytest.fixture
-def create_attachment(db, user, temp_media_root):
+def create_attachment(db, user):
     """
     A fixture that creates a :obj:`Attachment` instance using the
     :obj:`AttachmentFactory`.  Any data that is not explicitly provided will

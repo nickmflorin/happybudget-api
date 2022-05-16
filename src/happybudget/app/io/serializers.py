@@ -33,25 +33,27 @@ class ImageFileFieldSerializer(Serializer):
 
     def get_extension(self, instance, parser=None):
         parser = parser or parse_image_filename
-        # Note that imghdr uses the local file system, so it will look at the
-        # file in the local file system.  This only works when we are in local
-        # development, because we are using Django's FileSystemStorage.
         if using_s3_storage():
             try:
                 return parser(instance.name)[1]
             except FileError as e:
+                # This should not happen as the usage of this serializer should
+                # be avoided in cases where the image cannot be found.
                 logger.error("Corrupted file name stored in AWS.", extra={
                     "fname": instance.name,
                     "exception": e
                 })
                 return None
         try:
+            # Note that imghdr uses the local file system, so it will look at
+            # the file in the local file system.  This only works when we are
+            # in local development, because we are using Django's
+            # FileSystemStorage.
             return imghdr.what(instance.path)
-        except FileNotFoundError as e:
-            logger.error("Corrupted file path stored locally.", extra={
-                "filepath": instance.path,
-                "exception": e
-            })
+        except FileNotFoundError:
+            # This should not happen as the usage of this serializer should
+            # be avoided in cases where the image cannot be found.
+            logger.error(f"Could not find image {instance.url} locally.")
 
 
 class SimpleAttachmentSerializer(ModelSerializer):

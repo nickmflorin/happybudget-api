@@ -50,7 +50,10 @@ class BaseBudget(BudgetingTreePolymorphicModel, ModelOwnershipMixin):
         on_delete=models.CASCADE,
         editable=False
     )
-    image = models.ImageField(upload_to=upload_to, null=True)
+    # We have to include a long max length in the case that the file name is
+    # nested inside many directories and is long.  This happens mostly in tests,
+    # but does not hurt to have set outside of tests.
+    image = models.ImageField(upload_to=upload_to, null=True, max_length=256)
 
     ESTIMATED_FIELDS = ESTIMATED_FIELDS
     CALCULATED_FIELDS = CALCULATED_FIELDS

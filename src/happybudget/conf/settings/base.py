@@ -116,9 +116,9 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_LIFETIME': SLIDING_TOKEN_LIFETIME,
     'ACCESS_TOKEN_LIFETIME': ACCESS_TOKEN_LIFETIME,
     'SLIDING_TOKEN_REFRESH_LIFETIME': SLIDING_TOKEN_REFRESH_LIFETIME,
-    # 'SIGNING_KEY': SECRET_KEY,
     # We can use the SECRET_KEY temporarily when developing locally, but it
     # is not nearly as secure as using an RSA fingerprint in the ENV file.
+    # 'SIGNING_KEY': SECRET_KEY,
     'SIGNING_KEY': __JWT_SIGNING_KEY,
     'VERIFYING_KEY': __JWT_VERIFYING_KEY,
     'ALGORITHM': 'RS256',

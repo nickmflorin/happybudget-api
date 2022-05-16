@@ -129,8 +129,9 @@ def test_registration(api_client, models, user):
                 "email": "jjohnson@gmail.com",
             })
             assert response.status_code == 201
+            new_user = models.User.objects.all()[1]
             assert response.json() == {
-                "id": 2,
+                "id": new_user.pk,
                 "first_name": "Jack",
                 "last_name": "Johnson",
                 "email": "jjohnson@gmail.com",

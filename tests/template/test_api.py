@@ -1,12 +1,18 @@
 import pytest
+from django.test import override_settings
 
 
 @pytest.mark.freeze_time('2020-01-01')
-def test_get_templates(api_client, user, f, staff_user):
+@override_settings(APP_URL="https://api.happybudget.io")
+def test_get_templates(api_client, user, f, staff_user, test_uploaded_file):
     api_client.force_login(user)
+    image_files = [
+        test_uploaded_file("template1.jpeg"),
+        test_uploaded_file("template2.jpeg")
+    ]
     templates = [
-        f.create_template(),
-        f.create_template(),
+        f.create_template(image=image_files[0]),
+        f.create_template(image=image_files[1]),
         f.create_template(community=True, created_by=staff_user),
         f.create_template(community=True, created_by=staff_user)
     ]
@@ -20,14 +26,22 @@ def test_get_templates(api_client, user, f, staff_user):
             "updated_at": "2020-01-01 00:00:00",
             "type": "budget",
             "domain": "template",
-            "image": None,
+            "image": {
+                "url": (
+                    f"https://api.happybudget.io/media/users/{user.pk}"
+                    "/budgets/template1.jpeg"
+                ),
+                "size": 823,
+                "width": 100,
+                "height": 100,
+                "extension": "jpeg"
+            },
             "updated_by": {
                 "id": user.id,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
                 "full_name": user.full_name,
-                "email": user.email,
-                "profile_image": None
+                "email": user.email
             }
         },
         {
@@ -36,14 +50,22 @@ def test_get_templates(api_client, user, f, staff_user):
             "updated_at": "2020-01-01 00:00:00",
             "type": "budget",
             "domain": "template",
-            "image": None,
+            "image": {
+                "url": (
+                    f"https://api.happybudget.io/media/users/{user.pk}"
+                    "/budgets/template2.jpeg"
+                ),
+                "size": 823,
+                "width": 100,
+                "height": 100,
+                "extension": "jpeg"
+            },
             "updated_by": {
                 "id": user.id,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
                 "full_name": user.full_name,
-                "email": user.email,
-                "profile_image": None
+                "email": user.email
             }
         }
     ]
@@ -74,8 +96,7 @@ def test_get_staff_user_templates(api_client, f, staff_user):
                 "first_name": staff_user.first_name,
                 "last_name": staff_user.last_name,
                 "full_name": staff_user.full_name,
-                "email": staff_user.email,
-                "profile_image": None
+                "email": staff_user.email
             }
         },
         {
@@ -90,8 +111,7 @@ def test_get_staff_user_templates(api_client, f, staff_user):
                 "first_name": staff_user.first_name,
                 "last_name": staff_user.last_name,
                 "full_name": staff_user.full_name,
-                "email": staff_user.email,
-                "profile_image": None
+                "email": staff_user.email
             }
         }
     ]
@@ -122,8 +142,7 @@ def test_get_community_templates(api_client, user, f, staff_user):
                 "first_name": staff_user.first_name,
                 "last_name": staff_user.last_name,
                 "full_name": staff_user.full_name,
-                "email": staff_user.email,
-                "profile_image": None
+                "email": staff_user.email
             }
         },
         {
@@ -139,8 +158,7 @@ def test_get_community_templates(api_client, user, f, staff_user):
                 "first_name": staff_user.first_name,
                 "last_name": staff_user.last_name,
                 "full_name": staff_user.full_name,
-                "email": staff_user.email,
-                "profile_image": None
+                "email": staff_user.email
             }
         }
     ]
@@ -173,8 +191,7 @@ def test_create_template(api_client, user, models):
             "first_name": user.first_name,
             "last_name": user.last_name,
             "full_name": user.full_name,
-            "email": user.email,
-            "profile_image": None
+            "email": user.email
         }
     }
 
@@ -208,8 +225,7 @@ def test_create_community_template(api_client, staff_user, models):
             "first_name": staff_user.first_name,
             "last_name": staff_user.last_name,
             "full_name": staff_user.full_name,
-            "email": staff_user.email,
-            "profile_image": None
+            "email": staff_user.email
         }
     }
 

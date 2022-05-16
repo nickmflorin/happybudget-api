@@ -23,8 +23,7 @@ def test_get_template(api_client, user, f):
             "first_name": user.first_name,
             "last_name": user.last_name,
             "full_name": user.full_name,
-            "email": user.email,
-            "profile_image": None
+            "email": user.email
         }
     }
 
@@ -61,8 +60,7 @@ def test_get_community_template(api_client, staff_user, f):
             "first_name": another_staff_user.first_name,
             "last_name": another_staff_user.last_name,
             "full_name": another_staff_user.full_name,
-            "email": another_staff_user.email,
-            "profile_image": None
+            "email": another_staff_user.email
         }
     }
 
@@ -110,8 +108,7 @@ def test_update_template(api_client, user, f):
             "first_name": user.first_name,
             "last_name": user.last_name,
             "full_name": user.full_name,
-            "email": user.email,
-            "profile_image": None
+            "email": user.email
         }
     }
 
@@ -143,8 +140,7 @@ def test_update_community_template(api_client, staff_user, f):
             "first_name": staff_user.first_name,
             "last_name": staff_user.last_name,
             "full_name": staff_user.full_name,
-            "email": staff_user.email,
-            "profile_image": None
+            "email": staff_user.email
         }
     }
 
@@ -206,8 +202,7 @@ def test_update_another_users_community_template(api_client, staff_user, f):
             "first_name": staff_user.first_name,
             "last_name": staff_user.last_name,
             "full_name": staff_user.full_name,
-            "email": staff_user.email,
-            "profile_image": None
+            "email": staff_user.email
         }
     }
 
@@ -267,8 +262,7 @@ def test_duplicate_template(api_client, user, f, models):
             "first_name": user.first_name,
             "last_name": user.last_name,
             "full_name": user.full_name,
-            "email": user.email,
-            "profile_image": None
+            "email": user.email
         }
     }
 

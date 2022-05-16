@@ -40,10 +40,13 @@ class MockPlaidModel:
                     defaults.get(k, getattr(cls, f'default_{k}', None)))
         return base_cls(*args, **kwargs)
 
+    @property
+    def usage(self):
+        return self.__class__.__name__
+
 
 class MockPlaidAccountBalance(MockPlaidModel):
     base_cls = AccountBalance
-    usage = 'account_balance'
     defaults = {
         'available': 100.0,
         'current': 100.0,
@@ -56,7 +59,6 @@ class MockPlaidAccountBalance(MockPlaidModel):
 
 class MockPlaidAccountType(MockPlaidModel):
     base_cls = AccountType
-    usage = 'AccountType'
 
 
 class MockPlaidAccountSubType(MockPlaidModel):
@@ -75,12 +77,10 @@ class MockPlaidAccount(MockPlaidModel):
 
 class MockPlaidPaymentMeta(MockPlaidModel):
     base_cls = PaymentMeta
-    usage = 'PaymentMeta'
 
 
 class MockPlaidLocation(MockPlaidModel):
     base_cls = Location
-    usage = 'Location'
     defaults = {
         'address': '920 L Street NW',
         'city': 'Washington',
@@ -95,7 +95,6 @@ class MockPlaidLocation(MockPlaidModel):
 
 class MockPlaidTransaction(MockPlaidModel):
     base_cls = Transaction
-    usage = 'Transaction'
     defaults = {
         'pending': False,
         'payment_channel': 'mock_payment_channel',

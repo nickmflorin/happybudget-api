@@ -20,8 +20,14 @@ class TemplateSimpleSerializer(BaseBudgetSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
+        # For now, we do not need to include the User's profile image because
+        # this leads to a significant number of redundant HTTP requests (when
+        # images are stored in AWS) - especially if multiple Template(s) were
+        # last updated by the same user.
         data['updated_by'] = SimpleUserSerializer(
-            instance=instance.updated_by).data
+            instance=instance.updated_by,
+            include_profile_image=False
+        ).data
         if instance.community is False:
             del data['hidden']
         return data
@@ -39,7 +45,7 @@ class TemplateSerializer(TemplateSimpleSerializer):
     class Meta:
         model = Template
         fields = TemplateSimpleSerializer.Meta.fields \
-            + ('nominal_value', 'actual', 'community', 'hidden', 'nominal_value',
+            + ('nominal_value', 'actual', 'community', 'hidden',
                 'accumulated_markup_contribution',
                 'accumulated_fringe_contribution')
 

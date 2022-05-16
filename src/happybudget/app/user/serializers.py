@@ -75,13 +75,17 @@ class SimpleUserSerializer(ModelSerializer):
     last_name = serializers.CharField(read_only=True)
     full_name = serializers.CharField(read_only=True)
     email = EmailField(read_only=True)
-    profile_image = Base64ImageField(read_only=True)
 
     class Meta:
         model = User
         fields = (
-            'id', 'first_name', 'last_name', 'full_name', 'email',
-            'profile_image')
+            'id', 'first_name', 'last_name', 'full_name', 'email')
+
+    def __init__(self, *args, **kwargs):
+        include_profile_image = kwargs.pop('include_profile_image', True)
+        super().__init__(*args, **kwargs)
+        if include_profile_image:
+            self.fields['profile_image'] = Base64ImageField(read_only=True)
 
 
 class UserMetricsSerializer(ModelSerializer):

@@ -62,8 +62,7 @@ def test_get_contact_tagged_actuals(api_client, user, f):
                     "first_name": user.first_name,
                     "last_name": user.last_name,
                     "full_name": user.full_name,
-                    "email": user.email,
-                    "profile_image": None
+                    "email": user.email
                 }
             }
         },
@@ -87,8 +86,7 @@ def test_get_contact_tagged_actuals(api_client, user, f):
                     "first_name": user.first_name,
                     "last_name": user.last_name,
                     "full_name": user.full_name,
-                    "email": user.email,
-                    "profile_image": None
+                    "email": user.email
                 }
             }
         }

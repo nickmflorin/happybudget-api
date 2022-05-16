@@ -45,28 +45,64 @@ class Base64ImageField(serializers.ImageField):
     """
 
     def to_representation(self, instance):
+        """
+        Returns a serialized representation of the
+        :obj:`django.core.files.images.ImageFile` instance using the
+        :obj:`ImageFileFieldSerializer`.
+
+        Note:
+        ----
+        In the case that the image associated with the
+        :obj:`django.core.files.images.ImageFile` cannot be found, there are
+        two things to consider:
+
+        (1) The URL will still be accessible on the instance without raising an
+            exception, but accessing the `size`, `width`, `height` or other
+            attributes will raise an exception indicating the file cannot be
+            found.
+
+        (2) The parent `.to_representation()` method of the base
+            :obj:rest_framework.serializers.ImageField` class will simply return
+            the string URL, regardless of whether or not the file associated
+            with that URL actually exists.
+
+        Since this serializer returns a serialized object representation of the
+        :obj:`django.core.files.images.ImageFile` instance, that includes the
+        `size, `width` and `height` attributes - attempting to serialize the
+        instance if the URL is invalid or cannot be found will result in an
+        exception indicating that the file cannot be found.
+
+        In this case, we *do not* want to use the parent `.to_representation()`
+        method, because it will return the invalid URL - which will cause errors
+        in the FE - so we simply return None and log warnings.
+        """
         # pylint: disable=import-outside-toplevel
         from .serializers import ImageFileFieldSerializer
 
-        if instance is not None:
+        # Note: The value of an image field will never be None, but it defines
+        # a __bool__ method that returns whether or not there is a file
+        # associated with it.
+        if instance:
             try:
                 return ImageFileFieldSerializer(instance).data
-            except ValueError:
-                # This can happen if the instance does not have a file
-                # associated with it.
-                return super().to_representation(instance)
             except exceptions.ClientError:
                 # This can happen if there is an error retrieving the image from
                 # AWS.  Common case would be a 404 error if we had an image
                 # stored locally and we started using S3 in local dev mode.
-                logger.exception("Could not find AWS image.")
-                return super().to_representation(instance)
+                logger.exception(f"Could not find image {instance.url} in AWS.")
+                # Avoid using the parent `.to_representation()` method, see note
+                # in docstring.
+                return None
             except FileNotFoundError:
                 # This can happen if there is an error retrieving the image from
                 # local storage.  This happens a lot when switching between S3
                 # and local storage in local development.
-                logger.error("Could not find image file locally.")
-                return super().to_representation(instance)
+                logger.error(f"Could not find image {instance.url} locally.")
+                # Avoid using the parent `.to_representation()` method, see note
+                # in docstring.
+                return None
+        # It is okay to call the parent `.to_representation()` method because
+        # it will return None in the case that the instance does not exist.
         return super().to_representation(instance)
 
     def to_internal_value(self, data):
