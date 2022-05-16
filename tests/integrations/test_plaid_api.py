@@ -1,9 +1,12 @@
 import mock
 import plaid
 
+from django.test import override_settings
+
 from happybudget.app.integrations.plaid.api import client
 
 
+@override_settings(PLAID_ENABLED=True)
 def test_create_link_token(api_client, user, monkeypatch):
     def mock_link_token_create(*args, **kwargs):
         response = mock.MagicMock()
@@ -18,6 +21,7 @@ def test_create_link_token(api_client, user, monkeypatch):
     assert response.json() == {'link_token': '5032t5'}
 
 
+@override_settings(PLAID_ENABLED=True)
 def test_create_link_token_plaid_error(api_client, user, monkeypatch):
     def mock_link_token_create(*args, **kwargs):
         raise plaid.ApiException("There was an error.")

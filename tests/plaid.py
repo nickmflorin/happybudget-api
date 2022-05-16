@@ -12,6 +12,12 @@ from plaid.model.payment_meta import PaymentMeta
 from happybudget.app.integrations.plaid.constants import PlaidCategoryGroup
 
 
+class UsageAccessor:
+    def __get__(self, obj, objtype=None):
+        model = objtype if objtype is not None else obj.__class__
+        return model.base_cls.__name__
+
+
 class MockPlaidModel:
     """
     Base class for Plaid related models.  When extended, instantiating the
@@ -19,6 +25,8 @@ class MockPlaidModel:
     `plaid-python` SDK.  Default values can be defined such that specifying
     them is not required.
     """
+    usage = UsageAccessor()
+
     def __new__(cls, *args, **kwargs):
         base_cls = getattr(cls, 'base_cls')
 
@@ -39,10 +47,6 @@ class MockPlaidModel:
                 kwargs[k] = process_default(
                     defaults.get(k, getattr(cls, f'default_{k}', None)))
         return base_cls(*args, **kwargs)
-
-    @property
-    def usage(self):
-        return self.__class__.__name__
 
 
 class MockPlaidAccountBalance(MockPlaidModel):

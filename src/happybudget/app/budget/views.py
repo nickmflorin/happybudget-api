@@ -1,7 +1,7 @@
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
-from rest_framework import response, status, decorators
+from rest_framework import response, status
 
 from happybudget.app import views, permissions, exceptions
 from happybudget.app.account.serializers import (
@@ -514,12 +514,12 @@ class BudgetViewSet(
                 qs = qs.filter(archived=False)
         return qs.all()
 
-    @decorators.action(detail=True, methods=["GET"])
+    @views.action(detail=True, methods=["GET"])
     def pdf(self, request, *args, **kwargs):
         serializer = BudgetPdfSerializer(self.instance)
         return response.Response(serializer.data, status=status.HTTP_200_OK)
 
-    @decorators.action(detail=True, methods=["POST"])
+    @views.action(detail=True, methods=["POST"])
     def duplicate(self, request, *args, **kwargs):
         # We do not want to allow duplicating archived budgets, but we cannot
         # perform this filter in the `get_queryset` method because duplication
@@ -540,10 +540,11 @@ class BudgetViewSet(
             status=status.HTTP_201_CREATED
         )
 
-    @decorators.action(
+    @views.action(
         detail=True,
         methods=["PATCH"],
-        url_path='bulk-import-actuals'
+        url_path='bulk-import-actuals',
+        hidden=lambda s: not s.PLAID_ENABLED
     )
     def bulk_import_actuals(self, request, *args, **kwargs):
         serializer = BulkImportBudgetActualsSerializer(

@@ -16,24 +16,13 @@ from plaid.model import (
     products
 )
 
-from django.conf import settings
+from happybudget.conf import suppress_with_setting
 
 from .models import PlaidTransaction, PlaidAccount
 from .exceptions import PlaidRequestError
 
 
 logger = logging.getLogger('happybudget')
-
-
-configuration = plaid.Configuration(
-    host=settings.PLAID_ENVIRONMENT,
-    api_key={
-        'clientId': settings.PLAID_CLIENT_ID,
-        'secret': settings.PLAID_CLIENT_SECRET
-    }
-)
-
-api_client = plaid.ApiClient(configuration)
 
 
 def obj_to_json(obj):
@@ -97,6 +86,40 @@ class PlaidClient(plaid_api.PlaidApi):
     raised in the API context such that standardized errors are rendered in
     the 400 response body.
     """
+    def __init__(self):
+        # The base class :obj:`plaid_api.PlaidApi` initializes itself by setting
+        # the `api_client` on the class with the passed in value on __init__.
+        # We do not want to do this, since we want access of `api_client` to
+        # be dynamic based on settings configurations.  So we simply stub out
+        # __init__ to avoid the base class :obj:`plaid_api.PlaidApi`'s __init__
+        # method from executing.
+        pass
+
+    @property
+    def api_client(self):
+        """
+        Dynamically returns the API Client that the base class
+        :obj:`plaid_api.PlaidApi` would have otherwise been initialized with.
+
+        Access to the `api_client` will only happen inside methods that are
+        conditionally suppressed based on the `PLAID_ENABLED` settings
+        attribute.
+        """
+        # pylint: disable=import-outside-toplevel
+        from django.conf import settings
+        suppress_with_setting.raise_if_suppressed(
+            attr='PLAID_ENABLED',
+            func='api_client'
+        )
+        return plaid.ApiClient(plaid.Configuration(
+            host=settings.PLAID_ENVIRONMENT,
+            api_key={
+                'clientId': settings.PLAID_CLIENT_ID,
+                'secret': settings.PLAID_CLIENT_SECRET
+            }
+        ))
+
+    @suppress_with_setting("PLAID_ENABLED", exc=True)
     @raise_in_api_context("There was an error exchanging the public token.")
     def exchange_public_token(self, user, public_token):
         """
@@ -108,12 +131,16 @@ class PlaidClient(plaid_api.PlaidApi):
         response = self.item_public_token_exchange(request)
         return response.access_token
 
+    @suppress_with_setting("PLAID_ENABLED", exc=True)
     @raise_in_api_context("There was an error creating the link token.")
     def create_link_token(self, user):
         """
         Creates a link token for the given :obj:`User`.  The link token is
         used to open the Plaid Connect modal in the FE.
         """
+        # pylint: disable=import-outside-toplevel
+        from django.conf import settings
+
         request = link_token_create_request.LinkTokenCreateRequest(
             client_name=settings.PLAID_CLIENT_NAME,
             language='en',
@@ -125,6 +152,7 @@ class PlaidClient(plaid_api.PlaidApi):
         response = self.link_token_create(request)
         return response.link_token
 
+    @suppress_with_setting("PLAID_ENABLED", exc=True)
     def log_duplicates(self, response):
         # This is a temporary check to determine why Plaid seems to be returning
         # duplicate transactions.
@@ -144,6 +172,28 @@ class PlaidClient(plaid_api.PlaidApi):
             )
             logger.error(message)
 
+    @suppress_with_setting("PLAID_ENABLED", exc=True)
+    # pylint: disable=method-hidden
+    def transactions_get(self, *args, **kwargs):
+        # This method needs to be explicitly defined because we are not
+        # initializing the base class.
+        return super().transactions_get(*args, **kwargs)
+
+    @suppress_with_setting("PLAID_ENABLED", exc=True)
+    # pylint: disable=method-hidden
+    def item_public_token_exchange(self, *args, **kwargs):
+        # This method needs to be explicitly defined because we are not
+        # initializing the base class.
+        return super().item_public_token_exchange(*args, **kwargs)
+
+    @suppress_with_setting("PLAID_ENABLED", exc=True)
+    # pylint: disable=method-hidden
+    def link_token_create(self, *args, **kwargs):
+        # This method needs to be explicitly defined because we are not
+        # initializing the base class.
+        return super().link_token_create(*args, **kwargs)
+
+    @suppress_with_setting("PLAID_ENABLED", exc=True)
     def _fetch_transactions(self, access_token, account_ids=None,
             option_kwargs=None, **kwargs):
         option_kwargs = option_kwargs or {}
@@ -172,6 +222,7 @@ class PlaidClient(plaid_api.PlaidApi):
         self.log_duplicates(response)
         return response
 
+    @suppress_with_setting("PLAID_ENABLED", exc=True)
     @raise_in_api_context("There was an error retrieving the transactions.")
     def fetch_transactions(self, user, **kwargs):
         """
@@ -257,4 +308,4 @@ class PlaidClient(plaid_api.PlaidApi):
         return [t for t in transactions if t.pending is not True]
 
 
-client = PlaidClient(api_client)
+client = PlaidClient()

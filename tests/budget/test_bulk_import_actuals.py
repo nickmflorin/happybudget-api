@@ -7,6 +7,7 @@ from plaid.model import (
     transactions_get_request_options,
 )
 import pytest
+from django.test import override_settings
 
 from happybudget.app.actual.models import Actual
 from happybudget.app.integrations.plaid.api import client
@@ -37,15 +38,17 @@ def perform_request(api_client, user, f):
     return inner
 
 
+@override_settings(PLAID_ENABLED=True)
 def test_bulk_import_actuals(models, mock_plaid_accounts, perform_request,
         mock_plaid_transactions, patch_plaid_transactions_response,
         plaid_actual_types):
     patch_plaid_transactions_response(
         mock_plaid_transactions, mock_plaid_accounts)
     response = perform_request()
+    assert response.status_code == 200
+
     actuals = models.Actual.objects.all()
     assert actuals.count() == 7
-    assert response.status_code == 200
     assert response.json()["children"] == [
         {
             "id": actuals[0].pk,
@@ -185,6 +188,7 @@ def test_bulk_import_actuals(models, mock_plaid_accounts, perform_request,
     ]
 
 
+@override_settings(PLAID_ENABLED=True)
 def test_bulk_import_actuals_paginated(mock_plaid_accounts, perform_request,
         mock_plaid_transactions, patch_plaid_client_access_token,
         plaid_transaction_response):
@@ -227,6 +231,7 @@ def test_bulk_import_actuals_paginated(mock_plaid_accounts, perform_request,
     ])
 
 
+@override_settings(PLAID_ENABLED=True)
 def test_bulk_import_actuals_unconfigured_actual_type_map(perform_request,
         models, mock_plaid, plaid_actual_types,
         patch_plaid_transactions_response):
@@ -287,6 +292,7 @@ def test_bulk_import_actuals_unconfigured_actual_type_map(perform_request,
     }]
 
 
+@override_settings(PLAID_ENABLED=True)
 def test_bulk_import_actuals_plaid_error_token_exchange(perform_request):
     with mock.patch.object(client, 'item_public_token_exchange') as mocked:
         mocked.side_effect = plaid.ApiException()
@@ -299,6 +305,7 @@ def test_bulk_import_actuals_plaid_error_token_exchange(perform_request):
     }]}
 
 
+@override_settings(PLAID_ENABLED=True)
 def test_bulk_import_actuals_plaid_error_transactions_get(
         patch_plaid_client_access_token, perform_request):
     with mock.patch.object(client, 'transactions_get') as mocked:
@@ -312,12 +319,14 @@ def test_bulk_import_actuals_plaid_error_transactions_get(
     }]}
 
 
+@override_settings(PLAID_ENABLED=True)
 def test_bulk_import_actuals_with_template(f, perform_request):
     budget = f.create_template()
     response = perform_request(budget)
     assert response.status_code == 404
 
 
+@override_settings(PLAID_ENABLED=True)
 def test_bulk_import_actuals_end_date_before_start_date(perform_request):
     response = perform_request(start_date="2021-12-31", end_date="2020-01-01")
     assert response.status_code == 400

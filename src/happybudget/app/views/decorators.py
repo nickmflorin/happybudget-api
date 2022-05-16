@@ -1,3 +1,5 @@
+from rest_framework import decorators
+
 from happybudget.lib.utils.urls import parse_ids_from_request
 
 
@@ -24,3 +26,24 @@ def filter_by_ids(cls):
     if original_get_queryset is not None:
         cls.get_queryset = get_queryset
     return cls
+
+
+def action(**kwargs):
+    """
+    Overrides the default :obj:`rest_framework.decorators.action` decorator
+    such that actions on a view can be hidden.
+    """
+    # pylint: disable=import-outside-toplevel
+    from django.conf import settings
+
+    decorator = decorators.action(**kwargs)
+    hidden = kwargs.pop('hidden', None)
+    if hidden is not None and hasattr(hidden, '__call__'):
+        hidden = hidden(settings)
+
+    if hidden is True:
+        def _decorator(func):
+            setattr(func, '__hidden__', True)
+            return decorator(func)
+        return _decorator
+    return decorator

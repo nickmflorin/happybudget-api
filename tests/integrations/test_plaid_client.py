@@ -18,6 +18,7 @@ from happybudget.app.integrations.plaid.api import client
 from happybudget.app.integrations.plaid.exceptions import PlaidRequestError
 
 
+@override_settings(PLAID_ENABLED=True)
 def test_exchange_public_token(user):
     mock_response = mock.MagicMock()
     mock_response.access_token = "test_access_token"
@@ -34,6 +35,7 @@ def test_exchange_public_token(user):
     assert mocked.call_args[0][0] == req
 
 
+@override_settings(PLAID_ENABLED=True)
 def test_exchange_public_token_error_raise_exception(user):
     with mock.patch.object(client, 'item_public_token_exchange') as mocked:
         mocked.side_effect = plaid.ApiException()
@@ -48,6 +50,7 @@ def test_exchange_public_token_error_raise_exception(user):
     assert mocked.call_args[0][0] == req
 
 
+@override_settings(PLAID_ENABLED=True)
 def test_exchange_public_token_error_no_raise_exception(user):
     with mock.patch.object(client, 'item_public_token_exchange') as mocked:
         mocked.side_effect = plaid.ApiException()
@@ -62,8 +65,11 @@ def test_exchange_public_token_error_no_raise_exception(user):
     assert mocked.call_args[0][0] == req
 
 
-@override_settings(PLAID_CLIENT_NAME='Test Plaid Client Name')
-def test_create_link_token(user, settings):
+@override_settings(
+    PLAID_CLIENT_NAME='Test Plaid Client Name',
+    PLAID_ENABLED=True
+)
+def test_create_link_token(user):
     mock_response = mock.MagicMock()
     mock_response.link_token = "test_link_token"
 
@@ -85,6 +91,7 @@ def test_create_link_token(user, settings):
     assert mocked.call_args[0][0] == req
 
 
+@override_settings(PLAID_ENABLED=True)
 def test_create_link_token_error_raise_exception(user):
     with mock.patch.object(client, 'link_token_create') as mocked:
         mocked.side_effect = plaid.ApiException()
@@ -95,6 +102,7 @@ def test_create_link_token_error_raise_exception(user):
     assert mocked.called
 
 
+@override_settings(PLAID_ENABLED=True)
 def test_create_link_token_error_no_raise_exception(user):
     with mock.patch.object(client, 'link_token_create') as mocked:
         mocked.side_effect = plaid.ApiException()
@@ -105,6 +113,7 @@ def test_create_link_token_error_no_raise_exception(user):
     assert mocked.called
 
 
+@override_settings(PLAID_ENABLED=True)
 def test_fetch_transactions_with_public_token(user):
     mock_response = mock.MagicMock()
     mock_response.access_token = "test_access_token"
@@ -145,7 +154,10 @@ def test_fetch_transactions_with_public_token(user):
     assert mocked_t.call_args[0][0] == req
 
 
-@override_settings(PLAID_CLIENT_NAME='Test Plaid Client Name')
+@override_settings(
+    PLAID_CLIENT_NAME='Test Plaid Client Name',
+    PLAID_ENABLED=True
+)
 def test_fetch_transactions_with_access_token(user):
     mock_transactions_response = mock.MagicMock()
     mock_transactions_response.transactions = []
@@ -179,6 +191,7 @@ def test_fetch_transactions_with_access_token(user):
     assert mocked_t.call_args[0][0] == req
 
 
+@override_settings(PLAID_ENABLED=True)
 def test_fetch_transactions_error_raise_exception(user):
     with mock.patch.object(client, 'transactions_get') as mocked:
         mocked.side_effect = plaid.ApiException()
@@ -193,6 +206,7 @@ def test_fetch_transactions_error_raise_exception(user):
     assert mocked.called
 
 
+@override_settings(PLAID_ENABLED=True)
 def test_fetch_transactions_error_no_raise_exception(user):
     with mock.patch.object(client, 'transactions_get') as mocked:
         mocked.side_effect = plaid.ApiException()
