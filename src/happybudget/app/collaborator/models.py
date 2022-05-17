@@ -4,13 +4,12 @@ from django.db import models
 
 from happybudget.lib.django_utils.models import Choices
 from happybudget.app import model
+from happybudget.app.models import BaseModel
 
 
 @model.model(type="collaborator")
-class Collaborator(models.Model):
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
+class Collaborator(BaseModel(
+        polymorphic=False, updated_by=None, created_by=None)):
     # Even though this is just limited to a Budget right now, eventually, the
     # BudgetAccount and BudgetSubAccount will have a notion of collaboration
     # that is separate from the Budget they are related to.

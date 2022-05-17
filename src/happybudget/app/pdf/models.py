@@ -1,6 +1,7 @@
 from django.core.validators import MinLengthValidator
 from django.db import models
 
+from happybudget.app.models import BaseModel
 from happybudget.app.io.utils import upload_user_image_to
 from happybudget.app.user.mixins import ModelOwnershipMixin
 
@@ -13,7 +14,10 @@ def upload_to(instance, filename):
     )
 
 
-class HeaderTemplate(models.Model, ModelOwnershipMixin):
+class HeaderTemplate(
+    BaseModel(polymorphic=False, updated_by=None),
+    ModelOwnershipMixin
+):
     name = models.CharField(
         max_length=32,
         blank=False,
@@ -24,14 +28,6 @@ class HeaderTemplate(models.Model, ModelOwnershipMixin):
     right_info = models.TextField(null=True)
     left_image = models.ImageField(upload_to=upload_to, null=True)
     right_image = models.ImageField(upload_to=upload_to, null=True)
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(
-        to='user.User',
-        on_delete=models.CASCADE,
-        related_name="header_templates"
-    )
     ownership_field = 'created_by'
 
     class Meta:

@@ -150,7 +150,9 @@ class User(UserAuthenticationMixin, AbstractUser):
 
     @property
     def num_budgets(self):
-        return self.budgets.count()
+        # pylint: disable=import-outside-toplevel
+        from happybudget.app.budget.models import Budget
+        return Budget.objects.filter(created_by=self).count()
 
     @property
     def num_templates(self):

@@ -1,5 +1,6 @@
 from django.db import models
 
+from happybudget.app.models import BaseModel
 from happybudget.app.io.utils import upload_user_file_to
 from happybudget.app.user.mixins import ModelOwnershipMixin
 
@@ -12,15 +13,10 @@ def upload_attachment_to(instance, filename):
     )
 
 
-class Attachment(models.Model, ModelOwnershipMixin):
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(
-        to='user.User',
-        related_name='attachments',
-        on_delete=models.CASCADE,
-        editable=False
-    )
+class Attachment(
+    BaseModel(polymorphic=False, updated_by=None),
+    ModelOwnershipMixin
+):
     file = models.FileField(upload_to=upload_attachment_to, null=False)
     user_ownership_field = 'created_by'
 

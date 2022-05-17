@@ -95,11 +95,6 @@ class GenericView(generics.GenericAPIView):
                 request.method.lower(),
                 self.http_method_not_allowed
             )
-            # If the handler refers to a decorated action method, it may be
-            # the case that the method has been hidden via a parameter provided
-            # to `views.action()`.
-            if getattr(handler, '__hidden__', False) is True:
-                raise Http404()
         return handler(request, *args, **kwargs)
 
     def prepare_request(self, request, *args, **kwargs):

@@ -375,6 +375,7 @@ def test_template_bulk_permissions(case, detail_update_response, path, data):
     # Collaborating owner is allowed to do so.  At least for the time being.
     ParameterizedCase.collaborator(view_only=403, editor=403, owner=200)
 ])
+@override_settings(PLAID_ENABLED=True)
 def test_bulk_import_actuals_permissions(case, detail_update_response, models,
         patch_plaid_transactions_response, mock_plaid_transactions,
         mock_plaid_accounts):

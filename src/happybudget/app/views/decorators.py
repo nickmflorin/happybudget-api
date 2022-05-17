@@ -1,3 +1,6 @@
+import functools
+
+from django.http import Http404
 from rest_framework import decorators
 
 from happybudget.lib.utils.urls import parse_ids_from_request
@@ -33,17 +36,20 @@ def action(**kwargs):
     Overrides the default :obj:`rest_framework.decorators.action` decorator
     such that actions on a view can be hidden.
     """
-    # pylint: disable=import-outside-toplevel
-    from django.conf import settings
+    _hidden = kwargs.pop('hidden', None)
 
-    decorator = decorators.action(**kwargs)
-    hidden = kwargs.pop('hidden', None)
-    if hidden is not None and hasattr(hidden, '__call__'):
-        hidden = hidden(settings)
+    def _decorator(func):
+        @decorators.action(**kwargs)
+        @functools.wraps(func)
+        def inner(*args, **kwargs):
+            # pylint: disable=import-outside-toplevel
+            from django.conf import settings
 
-    if hidden is True:
-        def _decorator(func):
-            setattr(func, '__hidden__', True)
-            return decorator(func)
-        return _decorator
-    return decorator
+            hidden = _hidden
+            if hidden is not None and hasattr(hidden, '__call__'):
+                hidden = hidden(settings)
+            if hidden:
+                raise Http404()
+            return func(*args, **kwargs)
+        return inner
+    return _decorator

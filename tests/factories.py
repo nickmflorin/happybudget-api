@@ -85,6 +85,7 @@ def domain_fixture(**contextuals):
                 domain = kw.pop('domain', 'budget')
                 assert domain in ('budget', 'template'), \
                     "Invalid domain %s." % domain
+
                 factory = contextuals[domain]
                 if hasattr(factory._meta.model, 'created_by'):
                     if related_attr is not None:

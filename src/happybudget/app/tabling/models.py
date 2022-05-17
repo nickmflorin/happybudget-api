@@ -1,11 +1,12 @@
 import copy
 
 from django.db import models
-from polymorphic.models import PolymorphicModel
 
 from happybudget.lib.utils import (
     ensure_iterable, humanize_list, get_attribute, empty,
     ImmutableAttributeMapping)
+
+from happybudget.app.models import BaseModel
 from happybudget.app.user.mixins import ModelOwnershipMixin
 
 from .utils import lexographic_midpoint, validate_order
@@ -40,25 +41,8 @@ class TableKey(ImmutableAttributeMapping):
         return hash(self.values)
 
 
-class RowModelMixin(ModelOwnershipMixin, models.Model):
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    updated_by = models.ForeignKey(
-        to='user.User',
-        related_name='updated_%(class)ss',
-        on_delete=models.CASCADE,
-        editable=False
-    )
-    created_by = models.ForeignKey(
-        to='user.User',
-        related_name='created_%(class)ss',
-        on_delete=models.CASCADE,
-        editable=False
-    )
+class RowModelMixin(ModelOwnershipMixin):
     owner_field = 'created_by'
-
-    class Meta:
-        abstract = True
 
     @property
     def table_pivot(self):
@@ -207,17 +191,6 @@ class RowModelMixin(ModelOwnershipMixin, models.Model):
 
 
 class OrderedRowModelMixin(RowModelMixin):
-    order = models.CharField(
-        editable=False,
-        max_length=1024,
-        blank=False,
-        null=False,
-        default=None
-    )
-
-    class Meta:
-        abstract = True
-
     def order_at_bottom(self):
         try:
             last_in_table = self.table.latest()
@@ -242,21 +215,35 @@ class OrderedRowModelMixin(RowModelMixin):
             .get_table(*args, **kwargs).order_with_groups()
 
 
-class RowModel(RowModelMixin):
+class RowModel(BaseModel(polymorphic=False), RowModelMixin):
     class Meta:
         abstract = True
 
 
-class OrderedRowModel(OrderedRowModelMixin):
+class OrderedRowModel(BaseModel(polymorphic=False), OrderedRowModelMixin):
+    order = models.CharField(
+        editable=False,
+        max_length=1024,
+        blank=False,
+        null=False,
+        default=None
+    )
+
     class Meta:
         abstract = True
 
 
-class RowPolymorphicModel(PolymorphicModel, RowModelMixin):
-    class Meta:
-        abstract = True
+class OrderedRowPolymorphicModel(
+    BaseModel(polymorphic=True),
+    OrderedRowModelMixin
+):
+    order = models.CharField(
+        editable=False,
+        max_length=1024,
+        blank=False,
+        null=False,
+        default=None
+    )
 
-
-class OrderedRowPolymorphicModel(PolymorphicModel, OrderedRowModelMixin):
     class Meta:
         abstract = True

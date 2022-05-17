@@ -36,20 +36,6 @@ CALCULATED_FIELDS = ESTIMATED_FIELDS + ('actual', )
 
 class BaseBudget(BudgetingTreePolymorphicModel, ModelOwnershipMixin):
     name = models.CharField(max_length=256)
-    updated_at = models.DateTimeField(auto_now=True)
-    updated_by = models.ForeignKey(
-        to='user.User',
-        related_name='updated_budgets',
-        on_delete=models.CASCADE,
-        editable=False
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-    created_by = models.ForeignKey(
-        to='user.User',
-        related_name='budgets',
-        on_delete=models.CASCADE,
-        editable=False
-    )
     # We have to include a long max length in the case that the file name is
     # nested inside many directories and is long.  This happens mostly in tests,
     # but does not hurt to have set outside of tests.
@@ -98,19 +84,6 @@ class BaseBudget(BudgetingTreePolymorphicModel, ModelOwnershipMixin):
     def realized_value(self):
         return self.nominal_value + self.accumulated_fringe_contribution \
             + self.accumulated_markup_contribution
-
-    def mark_updated(self, user=None):
-        """
-        Marks the :obj:`BaseBudget` instance as having been updated by a
-        specific :obj:`User`.  This is only pertinent when the update is
-        performed inside of the request context with an actively logged in
-        :obj:`User`.
-        """
-        assert user is None or user.is_fully_authenticated, \
-            "A user that is not fully authenticated should not be " \
-            "permissioned to update any entities!"
-        self.updated_by = user
-        self.save(update_fields=['updated_at', 'updated_by'])
 
     @children_method_handler
     def accumulate_value(self, children):

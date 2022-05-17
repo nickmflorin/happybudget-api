@@ -5,24 +5,18 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
+from happybudget.app.models import BaseModel
+
 
 class AnonymousPublicToken:
     is_authenticated = False
 
 
-class PublicToken(models.Model):
+class PublicToken(BaseModel(polymorphic=False, updated_by=None)):
     is_authenticated = True
     public_id = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
     private_id = models.UUIDField(
         unique=True, default=uuid.uuid4, editable=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(
-        to='user.User',
-        related_name='created_%(class)ss',
-        on_delete=models.CASCADE,
-        editable=False
-    )
     content_type = models.ForeignKey(
         to=ContentType,
         on_delete=models.CASCADE,

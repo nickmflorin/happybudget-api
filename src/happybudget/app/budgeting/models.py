@@ -1,8 +1,8 @@
-from polymorphic.models import PolymorphicModel
-
 from django.db import models, IntegrityError
 
 from happybudget.lib.utils import humanize_list, get_attribute
+
+from happybudget.app.models import BaseModel
 from happybudget.app.tabling.models import (
     RowModel, OrderedRowModel, OrderedRowPolymorphicModel)
 
@@ -133,13 +133,18 @@ class BudgetingOrderedRowModel(OrderedRowModel, BudgetingModelMixin):
         abstract = True
 
 
-class BudgetingTreePolymorphicModel(PolymorphicModel, BudgetingTreeModelMixin):
+class BudgetingTreePolymorphicModel(
+    BaseModel(polymorphic=True),
+    BudgetingTreeModelMixin
+):
     class Meta:
         abstract = True
 
 
 class BudgetingTreePolymorphicOrderedRowModel(
-        OrderedRowPolymorphicModel, BudgetingTreeModelMixin):
+    OrderedRowPolymorphicModel,
+    BudgetingTreeModelMixin
+):
     identifier = models.CharField(null=True, max_length=128, blank=True)
     description = models.CharField(null=True, max_length=128, blank=True)
     actual = models.FloatField(default=0.0, blank=True)
