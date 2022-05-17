@@ -4,15 +4,13 @@ from happybudget.lib.django_utils.models import Choices
 from happybudget.lib.utils import conditionally_separate_strings
 
 from happybudget.app import model
-from happybudget.app.io.utils import upload_user_image_to
 from happybudget.app.tabling.models import OrderedRowModel
 
 from .managers import ContactManager
 
 
 def upload_to(instance, filename):
-    return upload_user_image_to(
-        user=instance.user_owner,
+    return instance.user_owner.upload_image_to(
         filename=filename,
         directory="contacts"
     )

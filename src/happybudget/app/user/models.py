@@ -23,7 +23,7 @@ from happybudget.app.authentication.exceptions import (
 from happybudget.app.authentication.utils import parse_user_id_from_token
 from happybudget.app.billing import StripeCustomer
 from happybudget.app.billing.constants import BillingStatus
-from happybudget.app.io.utils import upload_user_image_to
+from happybudget.app.io.utils import parse_image_filename, parse_filename
 
 from .mixins import UserAuthenticationMixin
 from .managers import UserManager
@@ -33,8 +33,7 @@ logger = logging.getLogger('happybudget')
 
 
 def upload_to(instance, filename):
-    return upload_user_image_to(
-        user=instance,
+    return instance.upload_image_to(
         filename=filename,
         directory="profile"
     )
@@ -371,3 +370,35 @@ class User(UserAuthenticationMixin, AbstractUser):
         except KeyError as e:
             raise InvalidSocialProvider() from e
         return getattr(cls, method_name)(token)
+
+    @property
+    def storage_directory(self):
+        return f'users/{self.pk}'
+
+    @property
+    def temp_storage_directory(self):
+        return f'{self.storage_directory}/temp'
+
+    def upload_temp_image_to(self, filename, directory=None, **kwargs):
+        filename, ext = parse_image_filename(filename, **kwargs)
+        if directory is not None:
+            return f'{self.temp_storage_directory}/{directory}/{filename}'
+        return f'{self.temp_storage_directory}/{filename}'
+
+    def upload_image_to(self, filename, directory=None, **kwargs):
+        filename, ext = parse_image_filename(filename, **kwargs)
+        if directory is not None:
+            return f'{self.storage_directory}/{directory}/{filename}'
+        return f'{self.storage_directory}/{filename}'
+
+    def upload_temp_file_to(self, filename, directory=None, **kwargs):
+        filename, _ = parse_filename(filename, **kwargs)
+        if directory is not None:
+            return f'{self.temp_storage_directory}/{directory}/{filename}'
+        return f'{self.temp_storage_directory}/{filename}'
+
+    def upload_file_to(self, filename, directory=None, **kwargs):
+        filename, _ = parse_filename(filename, **kwargs)
+        if directory is not None:
+            return f'{self.storage_directory}/{directory}/{filename}'
+        return f'{self.storage_directory}/{filename}'

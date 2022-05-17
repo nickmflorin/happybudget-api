@@ -12,15 +12,13 @@ from happybudget.app.budgeting.models import BudgetingTreePolymorphicModel
 from happybudget.app.collaborator.models import Collaborator
 from happybudget.app.group.models import Group
 from happybudget.app.markup.models import Markup
-from happybudget.app.io.utils import upload_user_image_to
 from happybudget.app.user.mixins import ModelOwnershipMixin
 
 from .managers import BudgetManager, BaseBudgetManager
 
 
 def upload_to(instance, filename):
-    return upload_user_image_to(
-        user=instance.user_owner,
+    return instance.user_owner.upload_image_to(
         filename=filename,
         directory="budgets"
     )
@@ -127,12 +125,6 @@ class BaseBudget(BudgetingTreePolymorphicModel, ModelOwnershipMixin):
     @children_method_handler
     def calculate(self, children, **kwargs):
         return self.estimate(children, **kwargs)
-
-    def save(self, *args, **kwargs):
-        if self.id is None and self.updated_by is None \
-                and self.created_by is not None:
-            self.updated_by = self.created_by
-        super().save(*args, **kwargs)
 
 
 @model.model(type='budget')

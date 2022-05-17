@@ -37,7 +37,6 @@ class QuerySetMixin:
 
 
 class QuerySet(QuerySetMixin, models.QuerySet):
-    # pylint: disable=signature-differs
     def bulk_update(self, *args, **kwargs):
         kwargs.setdefault('batch_size', settings.DEFAULT_BULK_BATCH_SIZE)
         return super().bulk_update(*args, **kwargs)
@@ -73,7 +72,6 @@ class PolymorphicQuerySet(QuerySetMixin, RootPolymorphicQuerySet):
     various other types of fields or circumstances that it currently does
     not support.
     """
-    # pylint: disable=signature-differs
     def bulk_update(self, *args, **kwargs):
         kwargs.setdefault('batch_size', settings.DEFAULT_BULK_BATCH_SIZE)
         return super().bulk_update(*args, **kwargs)

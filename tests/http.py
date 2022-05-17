@@ -57,7 +57,6 @@ def api_client(settings):
             self.force_authenticate(usr)
             super().force_login(usr, **kwargs)
 
-        # pylint: disable=signature-differs
         def generic(self, *args, **kwargs):
             kwargs_with_headers = copy.deepcopy(self._dynamic_headers)
             if self._dynamic_headers:

@@ -13,12 +13,7 @@ from .exceptions import FileError
 from .fields import ImageField
 from .models import Attachment
 from .storages import using_s3_storage
-from .utils import (
-    parse_filename,
-    parse_image_filename,
-    upload_temp_user_image_to,
-    upload_temp_user_file_to
-)
+from .utils import parse_filename, parse_image_filename
 
 
 logger = logging.getLogger('happybudget')
@@ -136,8 +131,7 @@ class TempFileSerializer(AbstractTempSerializer):
     file = serializers.FileField()
 
     def validate(self, attrs):
-        filename = upload_temp_user_file_to(
-            user=self.user,
+        filename = self.user.upload_temp_file_to(
             filename=attrs['file'].name,
             error_field='file'
         )
@@ -148,8 +142,7 @@ class TempImageSerializer(AbstractTempSerializer):
     image = ImageField()
 
     def validate(self, attrs):
-        image_name = upload_temp_user_image_to(
-            user=self.user,
+        image_name = self.user.upload_temp_image_to(
             filename=attrs['image'].name,
             error_field='image'
         )

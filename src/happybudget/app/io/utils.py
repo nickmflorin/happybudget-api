@@ -15,42 +15,6 @@ def is_base64_encoded_string(data):
         return False
 
 
-def user_storage_directory(user):
-    return f'users/{user.pk}'
-
-
-def user_temp_storage_directory(user):
-    return f'{user_storage_directory(user)}/temp'
-
-
-def upload_temp_user_image_to(user, filename, directory=None, error_field=None):
-    filename, ext = parse_image_filename(filename, error_field=error_field)
-    if directory is not None:
-        return f'{user_temp_storage_directory(user)}/{directory}/{filename}'
-    return f'{user_temp_storage_directory(user)}/{filename}'
-
-
-def upload_user_image_to(user, filename, directory=None, error_field=None):
-    filename, ext = parse_image_filename(filename, error_field=error_field)
-    if directory is not None:
-        return f'{user_storage_directory(user)}/{directory}/{filename}'
-    return f'{user_storage_directory(user)}/{filename}'
-
-
-def upload_temp_user_file_to(user, filename, directory=None, error_field=None):
-    filename, ext = parse_filename(filename, error_field=error_field)
-    if directory is not None:
-        return f'{user_temp_storage_directory(user)}/{directory}/{filename}'
-    return f'{user_temp_storage_directory(user)}/{filename}'
-
-
-def upload_user_file_to(user, filename, directory=None, error_field=None):
-    filename, ext = parse_filename(filename, error_field=error_field)
-    if directory is not None:
-        return f'{user_storage_directory(user)}/{directory}/{filename}'
-    return f'{user_storage_directory(user)}/{filename}'
-
-
 def parse_filename(filename, supported=None, error_field=None):
     if '.' not in filename:
         raise MissingFileExtension(field=error_field, filename=filename)

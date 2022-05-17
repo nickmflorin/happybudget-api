@@ -2,13 +2,11 @@ from django.core.validators import MinLengthValidator
 from django.db import models
 
 from happybudget.app.models import BaseModel
-from happybudget.app.io.utils import upload_user_image_to
 from happybudget.app.user.mixins import ModelOwnershipMixin
 
 
 def upload_to(instance, filename):
-    return upload_user_image_to(
-        user=instance.user_owner,
+    return instance.user_owner.upload_image_to(
         filename=filename,
         directory="exports/templates"
     )
