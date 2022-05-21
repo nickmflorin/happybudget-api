@@ -65,7 +65,6 @@ class UserSyncStripeSerializer(ModelSerializer):
                 })
             raise CheckoutError(
                 "Stripe and request session IDs are inconsistent.")
-
         try:
             session = stripe.checkout.Session.retrieve(attrs['session_id'])
         except stripe.error.InvalidRequestError as exc:
@@ -84,7 +83,6 @@ class UserSyncStripeSerializer(ModelSerializer):
             raise CheckoutError(
                 "The checkout session could not be retrieved from the session "
                 "ID.") from exc
-
         try:
             client_reference_id = int(session.client_reference_id)
         except ValueError as e:

@@ -3,6 +3,8 @@ from django.db import models
 from happybudget.app.models import BaseModel
 from happybudget.app.user.mixins import ModelOwnershipMixin
 
+from .utils import get_extension
+
 
 def upload_attachment_to(instance, filename):
     return instance.user_owner.upload_file_to(
@@ -33,3 +35,6 @@ class Attachment(
             getattr(self, m2m_related_field).count() == 0
             for m2m_related_field in m2m_related_fields
         ])
+
+    def get_extension(self, **kwargs):
+        return get_extension(self.file, **kwargs)

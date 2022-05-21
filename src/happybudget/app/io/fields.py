@@ -1,14 +1,15 @@
 import base64
 import logging
-import imghdr
 import uuid
-
-from botocore import exceptions
 
 from django.core.files.base import ContentFile
 from django.forms.fields import ImageField as _ImageField
 
 from rest_framework import serializers
+
+from .exceptions import FileError
+from .utils import (
+    get_extension, get_local_extension, handle_file_existence_errors)
 
 
 logger = logging.getLogger('happybudget')
@@ -35,6 +36,49 @@ class ImageField(serializers.ImageField):
     def __init__(self, *args, **kwargs):
         kwargs['_DjangoImageField'] = NoValidationDjangoImageField
         super().__init__(*args, **kwargs)
+
+
+class FileIntegerField(serializers.IntegerField):
+    """
+    An extension of :obj:`rest_framework.serializers.IntegerField` that wraps
+    the attribute lookup on the :obj:`django.db.models.fields.files.FieldFile`
+    such that errors related to the file not existing at the expected path
+    are either gracefully handled or converted to internal standardized
+    exceptions that the serializer this field belongs to can handle.
+    """
+    def __init__(self, *args, **kwargs):
+        self._strict = kwargs.pop('strict', True)
+        kwargs['read_only'] = True
+        super().__init__(*args, **kwargs)
+
+    def get_attribute(self, instance):
+        parent_method = handle_file_existence_errors(
+            super().get_attribute,
+            url=lambda obj: obj.file.url,
+            strict=self._strict
+        )
+        return parent_method(instance)
+
+
+class FileExtensionField(serializers.CharField):
+    """
+    An extension of :obj:`rest_framework.serializers.CharField` that finds
+    the extension a given :obj:`django.db.models.fields.files.FieldFile` is
+    associated with, while properly handling cases that the file may no longer
+    exist or the extension cannot be determined.
+    """
+    def __init__(self, *args, **kwargs):
+        self._strict = kwargs.pop('strict', True)
+        self._strict_extension = kwargs.pop('strict_extension', True)
+        kwargs['read_only'] = True
+        super().__init__(*args, **kwargs)
+
+    def to_representation(self, instance):
+        return get_extension(
+            instance,
+            strict=self._strict,
+            strict_extension=self._strict_extension
+        )
 
 
 class Base64ImageField(serializers.ImageField):
@@ -85,19 +129,7 @@ class Base64ImageField(serializers.ImageField):
         if instance:
             try:
                 return ImageFileFieldSerializer(instance).data
-            except exceptions.ClientError:
-                # This can happen if there is an error retrieving the image from
-                # AWS.  Common case would be a 404 error if we had an image
-                # stored locally and we started using S3 in local dev mode.
-                logger.exception(f"Could not find image {instance.url} in AWS.")
-                # Avoid using the parent `.to_representation()` method, see note
-                # in docstring.
-                return None
-            except FileNotFoundError:
-                # This can happen if there is an error retrieving the image from
-                # local storage.  This happens a lot when switching between S3
-                # and local storage in local development.
-                logger.error(f"Could not find image {instance.url} locally.")
+            except FileError:
                 # Avoid using the parent `.to_representation()` method, see note
                 # in docstring.
                 return None
@@ -115,13 +147,10 @@ class Base64ImageField(serializers.ImageField):
                 except TypeError:
                     self.fail('invalid_image')
                 file_name = str(uuid.uuid4())[:12]
-                file_extension = self.get_file_extension(file_name, decoded_file)
+                file_extension = get_local_extension(file_name, decoded_file)
+                file_extension = "jpg" if file_extension == "jpeg" \
+                    else file_extension
                 complete_file_name = "%s.%s" % (file_name, file_extension, )
                 data = ContentFile(decoded_file, name=complete_file_name)
 
-        # pylint: disable=super-with-arguments
-        return super(Base64ImageField, self).to_internal_value(data)
-
-    def get_file_extension(self, file_name, decoded_file):
-        extension = imghdr.what(file_name, decoded_file)
-        return "jpg" if extension == "jpeg" else extension
+        return super().to_internal_value(data)

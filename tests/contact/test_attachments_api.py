@@ -1,3 +1,4 @@
+import os
 import pytest
 
 from django.test import override_settings
@@ -61,6 +62,41 @@ def test_get_attachments(api_client, user, f):
                 'media/users/1/attachments/attachment1.jpeg'
             )
         },
+        {
+            'id': attachments[1].pk,
+            'name': 'attachment2.jpeg',
+            'extension': 'jpeg',
+            'size': 823,
+            'url': (
+                'https://api.happybudget.com/'
+                'media/users/1/attachments/attachment2.jpeg'
+            )
+        }
+    ]
+
+
+@pytest.mark.freeze_time('2020-01-01')
+@override_settings(APP_URL="https://api.happybudget.com")
+def test_get_attachments_file_not_found_locally(api_client, user, f):
+    # Note: We do not need to test if the file is not found remotely in AWS
+    # because the SimpleAttachmentSerializer, which is used for the list
+    # endpoint, only references the extension - and the extension can still be
+    # determined if the file does not exist since it is solely based on the name,
+    # which is stored on the DB field.
+    attachments = [
+        f.create_attachment(name='attachment1.jpeg'),
+        f.create_attachment(name='attachment2.jpeg')
+    ]
+    contact = f.create_contact(attachments=attachments)
+    os.remove(attachments[0].file.path)
+
+    api_client.force_login(user)
+    response = api_client.get("/v1/contacts/%s/attachments/" % contact.pk)
+    # Instead of causing a 500 error, the attachment associated with a file that
+    # cannot be found should simply be excluded.
+    assert response.status_code == 200
+    assert response.json()['count'] == 1
+    assert response.json()['data'] == [
         {
             'id': attachments[1].pk,
             'name': 'attachment2.jpeg',

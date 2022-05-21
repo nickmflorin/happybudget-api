@@ -1,7 +1,7 @@
 import pytest
 
 from happybudget.app.io.exceptions import (
-    MissingFileExtension, UnsupportedFileExtension)
+    MissingFileExtensionError, UnsupporedFileExtensionError)
 from happybudget.app.io.utils import parse_filename, parse_image_filename
 
 
@@ -9,8 +9,8 @@ from happybudget.app.io.utils import parse_filename, parse_image_filename
     ('testfile.jpg', 'testfile.jpg', 'jpg'),
     ('testFile.docx', 'testfile.docx', 'docx'),
     ('test file.pdf', 'testfile.pdf', 'pdf'),
-    ('testfile', MissingFileExtension, None),
-    ('testimage.', MissingFileExtension, None),
+    ('testfile', MissingFileExtensionError, None),
+    ('testimage.', MissingFileExtensionError, None),
 ])
 def test_parse_filename(filename, expected_filename, expected_ext):
     if isinstance(expected_filename, type):
@@ -27,9 +27,9 @@ def test_parse_filename(filename, expected_filename, expected_ext):
     ('testfile.jpg', 'testfile.jpg', 'jpg'),
     ('testFile.jpg', 'testfile.jpg', 'jpg'),
     ('test file.jpeg', 'testfile.jpeg', 'jpeg'),
-    ('testfile', MissingFileExtension, None),
-    ('testimage.', MissingFileExtension, None),
-    ('test.gif', UnsupportedFileExtension, None)
+    ('testfile', MissingFileExtensionError, None),
+    ('testimage.', MissingFileExtensionError, None),
+    ('test.gif', UnsupporedFileExtensionError, None)
 ])
 def test_parse_image_filename(filename, expected_filename, expected_ext):
     if isinstance(expected_filename, type):

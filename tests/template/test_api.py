@@ -230,7 +230,6 @@ def test_create_community_template(api_client, staff_user, models):
     }
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_create_hidden_community_template(api_client, staff_user, models):
     api_client.force_login(staff_user)
     response = api_client.post("/v1/templates/community/", data={
@@ -245,7 +244,6 @@ def test_create_hidden_community_template(api_client, staff_user, models):
     assert template.hidden is True
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_create_hidden_non_community_template(api_client, staff_user):
     api_client.force_login(staff_user)
     response = api_client.post("/v1/templates/", data={
@@ -261,7 +259,6 @@ def test_create_hidden_non_community_template(api_client, staff_user):
     }]
 
 
-@pytest.mark.freeze_time('2020-01-01')
 def test_create_community_template_non_staff_user(api_client, user):
     api_client.force_login(user)
     response = api_client.post("/v1/templates/community/", data={

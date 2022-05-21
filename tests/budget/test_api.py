@@ -1,8 +1,7 @@
-from botocore import exceptions
-
 from django.test import override_settings
 import pytest
 
+from happybudget.app.io.serializers import FileError
 from happybudget.app.io.serializers import ImageFileFieldSerializer
 
 
@@ -85,12 +84,8 @@ def test_get_budgets(api_client, user, f, test_uploaded_file, admin_user):
 
 @pytest.mark.freeze_time('2020-01-01')
 @override_settings(BILLING_ENABLED=True, APP_URL="https://api.happybudget.io")
-@pytest.mark.parametrize('exc_cls', [
-    exceptions.ClientError({}, 'PUT'),
-    FileNotFoundError()
-])
 def test_get_budgets_image_not_found(api_client, user, budget_f, monkeypatch,
-        test_uploaded_file, exc_cls):
+        test_uploaded_file):
     image_files = [
         test_uploaded_file("budget1.jpeg"),
         test_uploaded_file("budget2.jpeg")
@@ -99,7 +94,7 @@ def test_get_budgets_image_not_found(api_client, user, budget_f, monkeypatch,
 
     @property
     def data(instance):
-        raise exc_cls
+        raise FileError("aws", "testimage.jpeg")
 
     # If there is a problem finding the image, the exception will be raised
     # when the serializer `.data` property is accessed, since this will trigger
