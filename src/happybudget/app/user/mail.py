@@ -5,7 +5,6 @@ from django.conf import settings
 import sib_api_v3_sdk
 from sib_api_v3_sdk.rest import ApiException
 
-from happybudget.conf import suppress_with_setting
 from happybudget.lib.utils.urls import add_query_params_to_url
 
 from happybudget.app.authentication.tokens import AccessToken
@@ -89,14 +88,24 @@ class Mail(sib_api_v3_sdk.SendSmtpEmail):
     def template_slug(self):
         raise NotImplementedError()
 
+    def send(self):
+        try:
+            email_api.send_transac_email(self)
+        except ApiException as e:
+            logger.error("There was an error sending email: \n%s" % str(e))
+            raise EmailError() from e
+
 
 class EmailVerificationMail(Mail):
     template_slug = "email_verification"
 
-    def __init__(self, user, token, **kwargs):
+    def __init__(self, user, token=None, **kwargs):
+        assert not user.email_is_verified, \
+            "User's email address is already verified."
+        token = token or AccessToken.for_user(user)
         super().__init__(
             user=user,
-            redirect_query={"token": token},
+            redirect_query={"token": str(token)},
             **kwargs
         )
 
@@ -105,32 +114,9 @@ class PasswordRecoveryMail(Mail):
     template_slug = "password_recovery"
 
     def __init__(self, user, token, **kwargs):
+        token = token or AccessToken.for_user(user)
         super().__init__(
             user=user,
-            redirect_query={"token": token},
+            redirect_query={"token": str(token)},
             **kwargs
         )
-
-
-@suppress_with_setting("EMAIL_ENABLED")
-def send_mail(mail):
-    try:
-        email_api.send_transac_email(mail)
-    except ApiException as e:
-        logger.error("There was an error sending email: \n%s" % str(e))
-        raise EmailError() from e
-
-
-@suppress_with_setting("EMAIL_VERIFICATION_ENABLED")
-def send_email_verification_email(user, token=None):
-    assert not user.email_is_verified, \
-        "User's email address is already verified."
-    token = token or AccessToken.for_user(user)
-    mail = EmailVerificationMail(user, str(token))
-    return send_mail(mail)
-
-
-def send_password_recovery_email(user, token=None):
-    token = token or AccessToken.for_user(user)
-    mail = PasswordRecoveryMail(user, str(token))
-    return send_mail(mail)

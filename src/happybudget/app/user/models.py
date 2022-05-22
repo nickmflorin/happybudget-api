@@ -25,6 +25,7 @@ from happybudget.app.billing import StripeCustomer
 from happybudget.app.billing.constants import BillingStatus
 from happybudget.app.io.utils import parse_image_filename, parse_filename
 
+from .mail import EmailVerificationMail, PasswordRecoveryMail
 from .mixins import UserAuthenticationMixin
 from .managers import UserManager
 
@@ -402,3 +403,12 @@ class User(UserAuthenticationMixin, AbstractUser):
         if directory is not None:
             return f'{self.storage_directory}/{directory}/{filename}'
         return f'{self.storage_directory}/{filename}'
+
+    @suppress_with_setting("EMAIL_VERIFICATION_ENABLED")
+    @suppress_with_setting("EMAIL_ENABLED")
+    def send_email_verification_email(self, token=None):
+        return EmailVerificationMail(self, token=token).send()
+
+    @suppress_with_setting("EMAIL_ENABLED")
+    def send_password_recovery_email(self, token=None):
+        return PasswordRecoveryMail(self, token=token).send()

@@ -6,7 +6,7 @@ from django.test import override_settings
 
 from happybudget.lib.utils.dateutils import api_datetime_string
 from happybudget.app.authentication.tokens import AccessToken
-from happybudget.app.user.mail import get_template
+from happybudget.app.user.mail import get_template, Mail
 
 
 VALID_PASSWORD = "hoopla@H9_12$"
@@ -183,7 +183,7 @@ def test_recover_password(user, api_client):
         return token
 
     with mock.patch.object(AccessToken, 'for_user', create_token):
-        with mock.patch('happybudget.app.user.mail.send_mail') as m:
+        with mock.patch.object(Mail, 'send', autospec=True) as m:
             response = api_client.post("/v1/auth/recover-password/", data={
                 "email": user.email
             })

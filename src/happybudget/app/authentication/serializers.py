@@ -12,10 +12,6 @@ from happybudget.app import exceptions
 from happybudget.app.budget.models import Budget
 from happybudget.app.serializers import ModelSerializer, Serializer
 from happybudget.app.user.fields import EmailField
-from happybudget.app.user.mail import (
-    send_email_verification_email,
-    send_password_recovery_email
-)
 from happybudget.app.user.models import User
 
 from .exceptions import EmailDoesNotExist
@@ -215,7 +211,7 @@ class RecoverPasswordSerializer(Serializer):
         return {"user": user}
 
     def create(self, validated_data):
-        send_password_recovery_email(validated_data["user"])
+        validated_data["user"].send_password_recovery_email()
         return validated_data["user"]
 
 
@@ -227,7 +223,7 @@ class VerifyEmailSerializer(Serializer):
     )
 
     def create(self, validated_data):
-        send_email_verification_email(validated_data["user"])
+        validated_data["user"].send_email_verification_email()
         return validated_data['user']
 
 

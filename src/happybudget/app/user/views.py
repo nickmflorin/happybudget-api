@@ -4,7 +4,6 @@ from django.views.decorators.debug import sensitive_post_parameters
 from rest_framework import response, status
 
 from happybudget.app import views, permissions, exceptions
-from happybudget.app.user.mail import send_email_verification_email
 
 from .filters import UserSearchFilterBackend
 from .models import User
@@ -31,7 +30,7 @@ class UserRegistrationView(views.CreateModelMixin, views.GenericViewSet):
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
 
-        send_email_verification_email(instance)
+        instance.send_email_verification_email()
 
         return response.Response(
             UserSerializer(instance).data,

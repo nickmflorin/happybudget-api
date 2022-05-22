@@ -3,7 +3,6 @@ from django import forms
 from happybudget import harry
 
 from .exceptions import EmailError
-from .mail import send_email_verification_email, send_password_recovery_email
 from .models import User
 
 
@@ -46,7 +45,7 @@ class UserAdmin(harry.HarryModelAdmin):
     def send_email_verification(self, request, instance_id):
         user = User.objects.get(pk=instance_id)
         try:
-            send_email_verification_email(user)
+            user.send_email_verification_email()
         except EmailError:
             self.message_user(
                 request=request,
@@ -63,7 +62,7 @@ class UserAdmin(harry.HarryModelAdmin):
     def send_forgot_password(self, request, instance_id):
         user = User.objects.get(pk=instance_id)
         try:
-            send_password_recovery_email(user)
+            user.send_password_recovery_email()
         except EmailError:
             self.message_user(
                 request=request,

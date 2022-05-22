@@ -7,7 +7,7 @@ from django.test import override_settings
 
 from happybudget.lib.utils.dateutils import api_datetime_string
 from happybudget.app.authentication.tokens import AccessToken
-from happybudget.app.user.mail import get_template
+from happybudget.app.user.mail import get_template, Mail
 
 
 @pytest.fixture
@@ -148,7 +148,7 @@ def test_send_verification_email(api_client, unverified_user):
         return token
 
     with mock.patch.object(AccessToken, 'for_user', create_token):
-        with mock.patch('happybudget.app.user.mail.send_mail') as m:
+        with mock.patch.object(Mail, 'send', autospec=True) as m:
             response = api_client.post("/v1/auth/verify-email/", data={
                 "user": unverified_user.pk
             })
@@ -167,7 +167,7 @@ def test_send_verification_email(api_client, unverified_user):
 
 @override_settings(EMAIL_VERIFICATION_ENABLED=True, EMAIL_ENABLED=True)
 def test_send_verification_email_verified_user(api_client, user):
-    with mock.patch('happybudget.app.user.mail.send_mail') as m:
+    with mock.patch.object(Mail, 'send') as m:
         response = api_client.post("/v1/auth/verify-email/", data={
             "user": user.pk
         })
@@ -177,7 +177,7 @@ def test_send_verification_email_verified_user(api_client, user):
 
 @override_settings(EMAIL_VERIFICATION_ENABLED=True, EMAIL_ENABLED=True)
 def test_send_verification_email_inactive_user(api_client, inactive_user):
-    with mock.patch('happybudget.app.user.mail.send_mail') as m:
+    with mock.patch.object(Mail, 'send') as m:
         response = api_client.post("/v1/auth/verify-email/", data={
             "user": inactive_user.pk
         })

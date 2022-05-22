@@ -8,7 +8,7 @@ from django.test import override_settings
 from happybudget.lib.utils.urls import add_query_params_to_url
 
 from happybudget.app.authentication.tokens import AccessToken
-from happybudget.app.user.mail import get_template
+from happybudget.app.user.mail import get_template, Mail
 
 
 @pytest.fixture
@@ -121,7 +121,7 @@ def test_registration(api_client, models, user):
         return token
 
     with mock.patch.object(AccessToken, 'for_user', create_token):
-        with mock.patch('happybudget.app.user.mail.send_mail') as m:
+        with mock.patch.object(Mail, 'send', autospec=True) as m:
             response = api_client.post("/v1/users/registration/", data={
                 "first_name": "Jack",
                 "last_name": "Johnson",
