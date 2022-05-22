@@ -24,7 +24,6 @@ class TableKey(ImmutableAttributeMapping):
         return sorted(list(self.keys()))
 
     @property
-    # pylint: disable=invalid-overridden-method
     def values(self):
         # Make sure the values are ordered by the alphabetical order of the
         # keys for consistent resolution, hashing and comparison.

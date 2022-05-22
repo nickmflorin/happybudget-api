@@ -49,7 +49,6 @@ class ActualAttachmentViewSet(
     )]
 
     @property
-    # pylint: disable=invalid-overridden-method
     def instance(self):
         return self.actual
 

@@ -93,7 +93,8 @@ disable=
   too-many-public-methods,
   consider-using-f-string,
   consider-using-get,
-  signature-differs
+  signature-differs,
+  invalid-overridden-method
 
 
 [REPORTS]
