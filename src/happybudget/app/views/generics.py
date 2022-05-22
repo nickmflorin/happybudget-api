@@ -395,6 +395,8 @@ class GenericViewSet(viewsets.ViewSetMixin, GenericView):
         if isinstance(serializer, serializers.ModelSerializer):
             model_cls = serializer.Meta.model
             if hasattr(model_cls, 'updated_by'):
+                assert self.request.user.is_authenticated, \
+                    "Unauthenticated user attempting to mutate objects!"
                 kwargs.update(updated_by=self.request.user)
         return kwargs
 
@@ -406,5 +408,7 @@ class GenericViewSet(viewsets.ViewSetMixin, GenericView):
         if isinstance(serializer, serializers.ModelSerializer):
             model_cls = serializer.Meta.model
             if hasattr(model_cls, 'created_by'):
+                assert self.request.user.is_authenticated, \
+                    "Unauthenticated user attempting to create objects!"
                 kwargs.update(created_by=self.request.user)
         return kwargs
