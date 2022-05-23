@@ -656,10 +656,17 @@ class model:
         for attr in [k for k in ['sender', 'signal'] if k in signal_kwargs]:
             del signal_kwargs[attr]
 
-        # The user may be None if the change is being performed outside of a
-        # request context.  The user may also be an AnonymousUser if in a
-        # test environment.
-        user = self.get_user(instance)
+        force_ignore_signal_user = signal_kwargs.pop(
+            'force_ignore_signal_user', False)
+
+        # If we are intentially ignoring the user associated with the change,
+        # do not include even if the user associated with the changes is
+        # accessible on the thread.
+        user = None
+        if not force_ignore_signal_user:
+            # The user may be None if the change is being performed outside of a
+            # request context.
+            user = self.get_user(instance, **signal_kwargs)
         signal_kwargs.update(
             sender=type(instance),
             instance=instance,
@@ -667,7 +674,7 @@ class model:
         )
         signal.send(**signal_kwargs)
 
-    def get_user(self, instance):
+    def get_user(self, instance, **kwargs):
         # Allow the user to either be set directly on the thread or via the
         # request.  There are cases (like management commands) or tests where we
         # do not have access to the request, but can set the user on the thread
@@ -679,25 +686,33 @@ class model:
             user = getattr(self.thread, 'user', None)
 
         if user is None:
+            # Ignore warnings if the user cannot be inferred from the model
+            # save or delete if this flag is set.
+            ignore_signal_user = kwargs.pop('ignore_signal_user', False)
             if self.MIDDLEWARE_NAME not in settings.MIDDLEWARE:
                 logger.warning(
-                    "The user cannot be inferred for the model save because the"
-                    "appropriate middleware is not installed."
+                    "The user cannot be inferred for the model change because "
+                    "the appropriate middleware is not installed."
                 )
-            elif settings.ENVIRONMENT != Environments.TEST:
+            # There are cases where we are performing actions on a model and the
+            # :obj:`User` is simply not applicable.  In those cases, do not
+            # issue a warning.
+            elif settings.ENVIRONMENT != Environments.TEST \
+                    and not ignore_signal_user:
                 logger.warning(
-                    "The user cannot be inferred from the model save for model "
-                    "%s." % instance.__class__.__name__
+                    "The user cannot be inferred from the model change for "
+                    f"model {instance.__class__}."
                 )
         elif not user.is_fully_authenticated:
-            # There are cases in tests where the user inferred from the middle
-            # ware may not be authenticated.  We need to allow this, as this
-            # often happens when creating objects from factories.  In this case,
-            # the user related signals will not fire - but we do not want to
-            # throw a hard error.
+            # There are cases in tests where the user inferred from the
+            # relevant MIDDLEWARE may not be authenticated.  We need to allow
+            # this, as this often happens when creating objects from factories.
+            # In this case, the user related signals will not fire - but we do
+            # not want to throw a hard error.
             if settings.ENVIRONMENT != Environments.TEST:
                 raise Exception(
                     f"The user editing the model {self._type} should be fully "
                     "authenticated!"
                 )
+            return None
         return user

@@ -23,6 +23,7 @@ from happybudget.conf import Environments, config, LazySetting
 from .admin import *  # noqa
 from .aws import *  # noqa
 from .cache import *  # noqa
+from .celery import *  # noqa
 from .constant import *  # noqa
 from .constant import BASE_DIR
 from .db import *  # noqa

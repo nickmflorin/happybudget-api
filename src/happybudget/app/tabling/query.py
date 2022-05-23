@@ -1,12 +1,8 @@
 import collections
 from django.db import models, transaction
 
-from happybudget.lib.utils import ensure_iterable
-from happybudget.lib.django_utils.query import (
-    QuerySet,
-    PolymorphicQuerySet
-)
-from happybudget.lib.utils import concat
+from happybudget.lib.utils import ensure_iterable, concat
+from happybudget.app import query
 
 from .utils import order_after
 
@@ -241,18 +237,18 @@ class OrderedRowQuerier(RowQuerier):
         return self.order_by(preserved)
 
 
-class RowQuerySet(RowQuerier, QuerySet):
+class RowQuerySet(RowQuerier, query.QuerySet):
     pass
 
 
-class OrderedRowQuerySet(OrderedRowQuerier, QuerySet):
+class OrderedRowQuerySet(OrderedRowQuerier, query.QuerySet):
     pass
 
 
-class RowPolymorphicQuerySet(RowQuerier, PolymorphicQuerySet):
+class RowPolymorphicQuerySet(RowQuerier, query.PolymorphicQuerySet):
     pass
 
 
 class OrderedRowPolymorphicQuerySet(
-        OrderedRowQuerier, PolymorphicQuerySet):
+        OrderedRowQuerier, query.PolymorphicQuerySet):
     pass

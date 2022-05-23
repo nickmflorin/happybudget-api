@@ -1,5 +1,7 @@
 from polymorphic.models import PolymorphicModel
-from django.db import models
+from django.db import models, router
+
+from .query import Collector
 
 
 def BaseModel(polymorphic=False, **kwargs):
@@ -7,8 +9,12 @@ def BaseModel(polymorphic=False, **kwargs):
     Model factory that creates an abstract base model, optionally polymorphic,
     that should should be used for all pertinent models in the application.
 
-    The factory-created base model class incorporates create and update tracking
-    of model instances.
+    The factory-created base model class incorporates the following behaviors:
+
+    (1) Create and update tracking of model instances.
+    (2) Usage of a custom :obj:`Collector` class on delete that will pass
+        keyword arguments provided to the delete method through to signals that
+        are fired inside of the :obj:`Collector`.
     """
     base_cls = PolymorphicModel if polymorphic else models.Model
 
@@ -61,6 +67,16 @@ def BaseModel(polymorphic=False, **kwargs):
 
         class Meta:
             abstract = True
+
+        def delete(self, using=None, keep_parents=False, **kwargs):
+            if self.pk is None:
+                # Let Django's original method raise the error.
+                super().delete(using=using, keep_parents=keep_parents)
+            using = using or router.db_for_write(self.__class__, instance=self)
+            collector = Collector(using=using)
+            collector.collect([self], keep_parents=keep_parents)
+            # Pass the keyword arguments into the Collector's delete method.
+            return collector.delete(**kwargs)
 
     # Dynamically setting the fields on the model cls based on whether or not
     # they are excluded from the **kwargs messes with Django's internal

@@ -3,7 +3,7 @@ from polymorphic.models import PolymorphicManager
 from django.db import models, transaction, IntegrityError
 
 from happybudget.lib.django_utils.models import error_is_unique_constraint
-from happybudget.lib.django_utils.query import PolymorphicQuerySet
+from happybudget.app import query
 
 from .query import (
     RowQuerySet, RowPolymorphicQuerySet, RowQuerier, OrderedRowQuerier,
@@ -167,7 +167,7 @@ class OrderedRowManagerMixin(OrderedRowQuerier, RowManagerMixin):
                 # For the Polymorphic case, we need to include the argument
                 # to return the created objects.  In the non-polymorphic case,
                 # it is the default behavior by Django.
-                if issubclass(self.queryset_class, PolymorphicQuerySet):
+                if issubclass(self.queryset_class, query.PolymorphicQuerySet):
                     kwargs['return_created_objects'] = return_created_objects
                 return super().bulk_create(instances, **kwargs)
         except IntegrityError as e:

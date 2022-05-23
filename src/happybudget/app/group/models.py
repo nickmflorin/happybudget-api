@@ -60,6 +60,10 @@ class Group(BudgetingRowModel):
         return self.child_instance_cls.objects.filter(group=self)
 
     @property
+    def is_empty(self):
+        return self.children.count() == 0
+
+    @property
     def budget(self):
         # pylint: disable=import-outside-toplevel
         from happybudget.app.budget.models import BaseBudget

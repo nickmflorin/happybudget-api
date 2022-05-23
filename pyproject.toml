@@ -49,6 +49,7 @@ django-nested-admin = "^3.4.0"
 tqdm = "^4.62.3"
 plaid-python = "^9.1.0"
 fontawesomefree = "^6.1.1"
+celery = "^5.2.6"
 
 [tool.poetry.extras]
 docs = [

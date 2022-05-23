@@ -26,5 +26,5 @@ def group_to_be_deleted(instance, **kwargs):
 def delete_empty_group(instance, change, **kwargs):
     # Check if the object had been previously assigned a Group that is now
     # empty after the object is moved out of the Group.
-    if change.previous_value is not None:
+    if change.previous_value is not None and not instance.is_deleting:
         type(instance).objects.bulk_delete_empty_groups([change.previous_value])

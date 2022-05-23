@@ -28,6 +28,9 @@ class GroupQuerier(RowQuerier, BudgetAncestorQuerier):
         ]
         return self.filter(content_type__id__in=ctype_ids)
 
+    def empty(self):
+        return self.filter(accounts=None, subaccounts=None)
+
 
 class GroupQuerySet(RowQuerySet, GroupQuerier):
     pass

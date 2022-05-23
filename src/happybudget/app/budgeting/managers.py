@@ -7,9 +7,8 @@ from django.db import models
 from polymorphic.models import PolymorphicManager
 
 from happybudget.lib.utils import ensure_iterable
-from happybudget.lib.django_utils.query import QuerySet, PolymorphicQuerySet
 
-from happybudget.app import signals
+from happybudget.app import signals, query
 from happybudget.app.tabling.managers import (
     OrderedRowManagerMixin, RowManagerMixin)
 from happybudget.app.tabling.query import (
@@ -133,34 +132,29 @@ class BudgetingManagerMixin:
         # pylint: disable=import-outside-toplevel
         from happybudget.app.group.models import Group
         groups_to_delete = set([])
+
         for group in groups:
             group_id = group if not isinstance(group, Group) else group.pk
             if self.model.objects.filter(group_id=group_id).count() == 0:
-                try:
-                    group = Group.objects.get(pk=group_id)
-                except Group.DoesNotExist:
-                    # We have to be concerned with race conditions here.
-                    pass
-                else:
-                    groups_to_delete.add(group)
-                    logger.info(
-                        "Deleting group %s after it was removed from %s "
-                        "because the group no longer has any children."
-                        % (
-                            group_id,
-                            self.model.__class__.__name__,
-                        )
+                group = Group.objects.get(pk=group_id)
+                logger.info(
+                    "Deleting group %s after it was removed from %s "
+                    "because the group no longer has any children."
+                    % (
+                        group_id,
+                        self.model.__class__.__name__,
                     )
+                )
+                groups_to_delete.add(group)
 
         group_parents = set([g.parent for g in groups_to_delete])
         invalidate_groups_cache(group_parents)
-
-        for group in groups_to_delete:
-            try:
-                group.delete()
-            except Group.DoesNotExist:
-                # We have to be concerned with race conditions here.
-                pass
+        # We do not want to include information about the :obj:`User`
+        # associated with the current request since these deletes are for
+        # general maintenance purposes - not an explicit action by a
+        # :obj:`User`.
+        Group.objects.filter(pk__in=[g.pk for g in groups_to_delete]) \
+            .delete(force_ignore_signal_user=True)
 
     def group_by_parents(self, instances):
         """
@@ -498,7 +492,7 @@ class BudgetingManagerMixin:
 
 
 class BudgetingManager(BudgetingManagerMixin, models.Manager):
-    queryset_class = QuerySet
+    queryset_class = query.QuerySet
 
     def get_queryset(self):
         return self.queryset_class(self.model)
@@ -514,7 +508,7 @@ class BudgetingOrderedRowManager(OrderedRowManagerMixin, BudgetingRowManager):
 
 
 class BudgetingPolymorphicManager(BudgetingManagerMixin, PolymorphicManager):
-    queryset_class = PolymorphicQuerySet
+    queryset_class = query.PolymorphicQuerySet
 
     def get_queryset(self):
         return self.queryset_class(self.model)

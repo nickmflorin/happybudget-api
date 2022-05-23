@@ -717,11 +717,10 @@ def test_remove_subaccount_from_group(api_client, user, budget_f, models, f):
     group = f.create_group(parent=account)
     subaccount = budget_f.create_subaccount(parent=account, group=group)
     api_client.force_login(user)
+
     response = api_client.patch("/v1/subaccounts/%s/" % subaccount.pk,
         format='json',
-        data={
-            "group": None,
-        }
+        data={"group": None}
     )
     assert response.status_code == 200
     subaccount.refresh_from_db()

@@ -1,4 +1,7 @@
 
+import collections
+from operator import attrgetter
+
 from polymorphic.models import PolymorphicModel
 from polymorphic.query import PolymorphicQuerySet as RootPolymorphicQuerySet
 
@@ -6,10 +9,111 @@ from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models, connections, transaction
+from django.db.models.deletion import Collector as DjangoCollector
 from django.utils.functional import partition
 
 
+class Collector(DjangoCollector):
+    """
+    An extension of :obj:`django.db.models.deletion.Collector` that allows
+    keyword arguments to be passed into the :obj:`django.db.models.QuerySet`
+    `.delete()` method which will funnel through to the signals that are
+    traditionally triggered when this happens.
+
+    The majority of this implementation is exactly the same as the base class's
+    implementation, with the exception being how the **kwargs are passed through
+    when firing the appropriate signals.
+    """
+    def delete(self, **kwargs):
+        for model, instances in self.data.items():
+            self.data[model] = sorted(instances, key=attrgetter("pk"))
+
+        self.sort()
+        # The number of objects deleted for each model label.
+        deleted_counter = collections.Counter()
+
+        # Optimize for the case of a single object with no dependencies.
+        if len(self.data) == 1 and len(instances) == 1:
+            instance = list(instances)[0]
+            if self.can_fast_delete(instance):
+                with transaction.mark_for_rollback_on_error(self.using):
+                    count = models.sql.DeleteQuery(model).delete_batch(
+                        [instance.pk], self.using)
+                setattr(instance, model._meta.pk.attname, None)
+                return count, {model._meta.label: count}
+
+        with transaction.atomic(using=self.using, savepoint=False):
+            # Fire the appropriate pre_delete signals.
+            for model, obj in self.instances_with_model():
+                if not model._meta.auto_created:
+                    models.signals.pre_delete.send(
+                        sender=model,
+                        instance=obj,
+                        using=self.using,
+                        **kwargs  # Include additional keyword arguments.
+                    )
+
+            # Fast Deletes
+            for qs in self.fast_deletes:
+                count = qs._raw_delete(using=self.using)
+                if count:
+                    deleted_counter[qs.model._meta.label] += count
+
+            # Update Fields
+            for model, instances_for_fieldvalues in self.field_updates.items():
+                for (field, value), instances in instances_for_fieldvalues \
+                        .items():
+                    query = models.sql.UpdateQuery(model)
+                    query.update_batch(
+                        [obj.pk for obj in instances],
+                        {field.name: value},
+                        self.using
+                    )
+
+            # Reverse the instance collections.
+            for instances in self.data.values():
+                instances.reverse()
+
+            # Delete the instances.
+            for model, instances in self.data.items():
+                query = models.sql.DeleteQuery(model)
+                pk_list = [obj.pk for obj in instances]
+                count = query.delete_batch(pk_list, self.using)
+                if count:
+                    deleted_counter[model._meta.label] += count
+
+                if not model._meta.auto_created:
+                    for obj in instances:
+                        models.signals.post_delete.send(
+                            sender=model,
+                            instance=obj,
+                            using=self.using,
+                            **kwargs  # Include additional keyword arguments.
+                        )
+
+        # Update the collected instances.
+        for instances_for_fieldvalues in self.field_updates.values():
+            for (field, value), instances in instances_for_fieldvalues.items():
+                for obj in instances:
+                    setattr(obj, field.attname, value)
+        for model, instances in self.data.items():
+            for instance in instances:
+                setattr(instance, model._meta.pk.attname, None)
+        return sum(deleted_counter.values()), dict(deleted_counter)
+
+
 class QuerySetMixin:
+    """
+    Mixin for both general :obj:`django.db.models.QuerySet` classes or
+    :obj:`polymorphic.query.PolymorphicQuerySet` classes that provides the
+    following behavior:
+
+    (1) Support for Bulk Create & Update Behavior w Polymorphic Models
+    (2) Implements custom :obj:`Counter` that allows keyword arguments to be
+        passed through to signals on delete methods of a
+        :obj:`django.db.models.QuerySet` or
+        :obj:`polymorphic.query.PolymorphicQuerySet`
+    """
     def is_sqlite(self, instance=None):
         """
         Returns whether or not the current database is using an sqlite3 engine.
@@ -34,6 +138,45 @@ class QuerySetMixin:
         if db_backend == 'sqlite3':
             return True
         return False
+
+    def delete(self, **kwargs):
+        """
+        Overrides the traditional `.delete()` method of
+        :obj:`django.db.models.QuerySet` or
+        :obj:`polymorphic.query.PolymorphicQuerySet` such that the overridden
+        :obj:`Collector` is used.
+
+        Usage of the custom :obj:`Collector` allows keyword arguments passed
+        into the `.delete()` method to propogate through to the signals that
+        are fired.
+        """
+        # Checks that are performed by Django in the base class method.
+        self._not_support_combined_queries('delete')
+        # Let Django's base class method raise the error if it is warranted.
+        if self.query.is_sliced or self.query.distinct \
+                or self.query.distinct_fields or self._fields is not None:
+            return super().delete()
+
+        del_query = self._chain()
+
+        # The delete is actually 2 queries - one to find related objects,
+        # and one to delete. Make sure that the discovery of related
+        # objects is performed on the same database as the deletion.
+        del_query._for_write = True
+
+        # Disable non-supported fields.
+        del_query.query.select_for_update = False
+        del_query.query.select_related = False
+        del_query.query.clear_ordering(force=True)
+
+        # Here, we use the custom Collector object.
+        collector = Collector(using=del_query.db)
+        collector.collect(del_query)
+        deleted, _rows_count = collector.delete(**kwargs)
+
+        # Clear the result cache, in case this QuerySet gets reused.
+        self._result_cache = None
+        return deleted, _rows_count
 
 
 class QuerySet(QuerySetMixin, models.QuerySet):
