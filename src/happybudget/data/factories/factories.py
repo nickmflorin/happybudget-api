@@ -216,7 +216,7 @@ class MarkupFactory(CustomModelFactory):
                 self.subaccounts.add(child)
 
 
-class GroupFactory(CustomModelFactory):
+class GroupFactory(ConstantTimeMixin('created_at'), CustomModelFactory):
     """
     A DjangoModelFactory to create instances of :obj:`Group`.
     """

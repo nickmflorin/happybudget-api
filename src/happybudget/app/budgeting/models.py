@@ -188,9 +188,10 @@ class BudgetingTreePolymorphicOrderedRowModel(
 
     def validate_before_save(self):
         super().validate_before_save()
-        # The Group that the model belongs to must have the same parent as
-        # the model itself.
-        if self.group is not None and self.group.parent != self.parent:
+        # If the parent is not specified on the instance, we will get an instance
+        # of IntegrityError raised due to the non-nullable field anyways.
+        if self.group is not None and self.parent is not None \
+                and self.group.parent != self.parent:
             raise IntegrityError(
                 "Can only add groups with the same parent as the instance."
             )

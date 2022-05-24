@@ -42,8 +42,8 @@ def find_and_delete_empty_groups():
     """
     logger.info("Searching for empty groups that were not previously deleted.")
 
-    group_qs = Group.objects.empty().filter(
-        created_at__gt=datetime.datetime.now() - datetime.timedelta(minutes=5))
+    cutoff_time = datetime.datetime.now() - datetime.timedelta(minutes=5)
+    group_qs = Group.objects.empty().filter(created_at__lt=cutoff_time)
     if group_qs.count() != 0:
         logger.warning(
             f"Found {group_qs.count()} empty Group(s) in DB, "
