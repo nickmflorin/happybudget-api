@@ -135,11 +135,16 @@ like managing it yourself.
 
 ##### ENV File
 
-Finally, we need to create and edit a `.env` file in the project root to include
-configuration values and sensitive information. Ask another team member for help
-with this. In order to run the application locally, the `.env` file must specify
-the `DJANGO_SECRET_KEY`. The other ENV variables pertain to AWS configuration or
-RSA fingerprints for JWT - these should not be needed when running locally.
+For all environments, we use a `.env` file in the project root that configuration
+values and sensitive information is read from.  For remote environments, this
+`.env` file is required, but for `test` and `local` environments, the settings
+configuration associated with the OS environment variable `DJANGO_SETTINGS_MODULE`
+will default relevant values such that an `.env` file is not necessary when
+developing locally or running tests.
+
+However, if you wish to override certain configurations (i.e. the database
+configurations) you can place a `.env` file in the project root and implement
+those configuration values.
 
 ##### Local Domain
 
@@ -360,6 +365,24 @@ $ python src/manage.py createsuperuser
 
 You should always have a `superuser` account locally, and should use that as
 your primary account for logging into the application.
+
+##### Celery
+
+We use [celery](https://docs.celeryq.dev/en/stable/index.html) to manage periodic
+background tasks in the application.  These tasks are mostly concerned with
+performing cleanup or making sure that corrupted data or relationships aren't
+sneaking into the database.
+
+Running [celery](https://docs.celeryq.dev/en/stable/index.html) locally isn't
+required to run the application, but there are times where it will be needed
+when debugging or developing tasks that run in the application background.
+
+To run [celery](https://docs.celeryq.dev/en/stable/index.html) in the background,
+inside of the virtual environment simply run the following command:
+
+```bash
+$ celery -A happybudget worker -B -l info
+```
 
 Congratulations! You are now ready to run the application.
 

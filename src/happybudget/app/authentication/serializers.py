@@ -130,7 +130,9 @@ class AbstractTokenValidationSerializer(Serializer):
     def validate(self, attrs):
         user = self.get_user(attrs)
         user.has_permissions(
-            self.token_user_permission_classes, raise_exception=True)
+            permissions=self.token_user_permission_classes,
+            raise_exception=True
+        )
         return {"user": user}
 
     def create(self, validated_data):

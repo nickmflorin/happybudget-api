@@ -1,9 +1,3 @@
-from happybudget.app import exceptions
-
-
-PErrors = (exceptions.PermissionErr, exceptions.NotAuthenticatedError)
-
-
 class PermissionContext:
     OBJECT = "object"
     VIEW = "view"

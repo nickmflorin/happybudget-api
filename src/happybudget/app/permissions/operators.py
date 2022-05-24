@@ -1,9 +1,14 @@
 import functools
 
+from happybudget.app import exceptions
+
 from .base import BasePermission
 from .constants import (
-    ObjectContext, PErrors, PermissionOperation, PermissionContext, ViewContext)
+    ObjectContext, PermissionOperation, PermissionContext, ViewContext)
 from .utils import instantiate_permissions
+
+
+PErrors = (exceptions.PermissionErr, exceptions.NotAuthenticatedError)
 
 
 class Operator(BasePermission):

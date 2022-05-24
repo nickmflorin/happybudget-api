@@ -1,6 +1,8 @@
+from django.conf import settings
 from django.db import IntegrityError
 
 from happybudget.lib.utils import get_attribute
+from happybudget.app import exceptions, permissions
 
 
 class ModelOwnershipMixin:
@@ -56,12 +58,49 @@ class UserAuthenticationMixin:
     def is_fully_authenticated(self):
         return self.can_authenticate(raise_exception=False)
 
-    def has_permissions(self, permissions, **kwargs):
-        # pylint: disable=import-outside-toplevel
-        from happybudget.app.permissions import check_user_permissions
-        check_user_permissions(self, permissions=permissions)
+    def has_permissions(self, **kwargs):
+        """
+        A method to evaluate a set of permissions that extend
+        :obj:`UserPermission` for a given :obj:`User`.
+        """
+        pms = kwargs.pop(
+            'permissions',
+            settings.REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES']
+        )
+        default_exception_class = kwargs.pop(
+            'default_exception_class', exceptions.PermissionErr)
+        raise_exception = kwargs.pop('raise_exception', True)
+        hard_raise = kwargs.pop('hard_raise', False)
+
+        for permission in permissions.instantiate_permissions(pms):
+            assert hasattr(permission, 'has_user_perm'), \
+                f"The permission class {permission.__class__} does not have a " \
+                "user permission method."
+            try:
+                has_permission = permission.has_user_perm(
+                    self,
+                    raise_exception=True,
+                    hard_raise=hard_raise
+                )
+            except (
+                exceptions.PermissionErr,
+                exceptions.NotAuthenticatedError
+            ) as e:
+                if raise_exception:
+                    raise e
+                return False
+            if not has_permission:
+                if raise_exception:
+                    raise default_exception_class(
+                        detail=getattr(permission, 'message', None),
+                        hard_raise=hard_raise
+                    )
+                return False
+        return True
 
     def can_authenticate(self, **kwargs):
-        # pylint: disable=import-outside-toplevel
-        from happybudget.app.permissions import check_user_auth_permissions
-        return check_user_auth_permissions(self, **kwargs)
+        return self.has_permissions(
+            default_exception_class=exceptions.NotAuthenticatedError,
+            permissions=settings.AUTHENTICATION_PERMISSION_CLASSES,
+            **kwargs
+        )
