@@ -33,10 +33,12 @@ def find_and_delete_empty_groups():
     ----
     Due to ForeignKey relationships pointing to a :obj:`Group`, whenever a
     new :obj:`Group` is created the :obj:`Group` must first be created without
-    children before it can be assigned children.  This means that there is a
-    small chance that a :obj:`Group` will be empty when this task runs only
-    in the case that it was just created.  For this reason, we only remove
-    empty :obj:`Group`(s) that were created some time ago.
+    children before it can be assigned children.
+
+    This means that there is a small window of time where a newly created
+    :obj:`Group` will not have any children, but should not be deleted by this
+    task.  For this reason, we only remove empty :obj:`Group`(s) that were
+    created some time ago (5 minutes).
     """
     logger.info("Searching for empty groups that were not previously deleted.")
 

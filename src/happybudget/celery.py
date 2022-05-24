@@ -40,8 +40,15 @@ def say_hello():
 def setup_periodic_tasks(sender, **kwargs):
     # pylint: disable=import-outside-toplevel
     from happybudget.app.group.tasks import find_and_delete_empty_groups
+    from happybudget.app.io.tasks import find_and_delete_empty_attachments
+
     sender.add_periodic_task(
         60.0 * 5.0,  # Every 5 minutes
         find_and_delete_empty_groups.s(),
         name='Find and delete empty groups.'
+    )
+    sender.add_periodic_task(
+        60.0 * 5.0,  # Every 5 minutes
+        find_and_delete_empty_attachments.s(),
+        name='Find and delete empty attachments.'
     )
