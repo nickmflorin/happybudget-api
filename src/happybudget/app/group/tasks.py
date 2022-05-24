@@ -1,6 +1,6 @@
-from celery import current_app
 import datetime
 import logging
+from celery import current_app
 
 from .models import Group
 
