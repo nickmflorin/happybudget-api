@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from happybudget.app import permissions, exceptions
+from happybudget.app import exceptions
 from happybudget.app.budget.serializers import BaseBudgetSerializer
 from happybudget.app.io.fields import Base64ImageField
 from happybudget.app.user.serializers import SimpleUserSerializer
@@ -62,7 +62,7 @@ class TemplateSerializer(TemplateSimpleSerializer):
         else:
             is_community = attrs.get("community", self.instance.community)
             if not self.user.is_staff and is_community:
-                raise permissions.PermissionErr(
+                raise exceptions.PermissionErr(
                     "Only staff users can modify community templates.")
             elif 'hidden' in attrs and not is_community:
                 raise exceptions.InvalidFieldError("hidden",

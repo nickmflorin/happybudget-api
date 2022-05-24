@@ -1,10 +1,9 @@
 from django.conf import settings
 
 from happybudget.lib.utils import import_at_module_path
-from happybudget.app.authentication.exceptions import NotAuthenticatedError
+from happybudget.app import exceptions
 
 from .constants import PErrors
-from .exceptions import PermissionErr
 
 
 def instantiate_permissions(ps):
@@ -32,8 +31,9 @@ def check_user_permissions(user, **kwargs):
     )
     permissions = kwargs.pop('permissions', default_permissions)
     default_exception_class = kwargs.pop(
-        'default_exception_class', PermissionErr)
+        'default_exception_class', exceptions.PermissionErr)
     raise_exception = kwargs.pop('raise_exception', True)
+    hard_raise = kwargs.pop('hard_raise', False)
 
     for permission in instantiate_permissions(permissions):
         assert hasattr(permission, 'has_user_perm'), \
@@ -41,7 +41,10 @@ def check_user_permissions(user, **kwargs):
             "user permission method."
         try:
             has_permission = permission.has_user_perm(
-                user, raise_exception=True)
+                user,
+                raise_exception=True,
+                hard_raise=hard_raise
+            )
         except PErrors as e:
             if raise_exception:
                 raise e
@@ -49,15 +52,17 @@ def check_user_permissions(user, **kwargs):
         if not has_permission:
             if raise_exception:
                 raise default_exception_class(
-                    detail=getattr(permission, 'message', None))
+                    detail=getattr(permission, 'message', None),
+                    hard_raise=hard_raise
+                )
             return False
     return True
 
 
-def check_user_auth_permissions(user, raise_exception=True):
+def check_user_auth_permissions(user, **kwargs):
     return check_user_permissions(
         user=user,
-        default_exception_class=NotAuthenticatedError,
+        default_exception_class=exceptions.NotAuthenticatedError,
         default_permissions=settings.AUTHENTICATION_PERMISSION_CLASSES,
-        raise_exception=raise_exception
+        **kwargs
     )

@@ -1,19 +1,22 @@
 from django.utils.translation import gettext_lazy as _
 from rest_framework import status
-from rest_framework.exceptions import NotAuthenticated
-
 from rest_framework_simplejwt.exceptions import TokenError as BaseTokenError
 
-from happybudget.app import exceptions
+from happybudget.app.exceptions import (
+    NotAuthenticatedError, InvalidFieldError, AuthenticationFailedError)
 
 
 class NotAuthenticatedErrorCodes:
     ACCOUNT_DISABLED = "account_disabled"
-    ACCOUNT_NOT_AUTHENTICATED = "account_not_authenticated"
     ACCOUNT_NOT_VERIFIED = "account_not_verified"
     ACCOUNT_NOT_ON_WAITLIST = "account_not_on_waitlist"
     INVALID_TOKEN = "token_not_valid"
     EXPIRED_TOKEN = "token_expired"
+
+
+class AuthenticationFailedErrorCodes:
+    INVALID_SOCIAL_TOKEN = "invalid_social_token"
+    INVALID_SOCIAL_PROVIDER = "invalid_social_provider"
 
 
 class TokenError(BaseTokenError):
@@ -21,18 +24,6 @@ class TokenError(BaseTokenError):
         if user_id is not None:
             setattr(self, 'user_id', user_id)
         super().__init__()
-
-
-class NotAuthenticatedError(NotAuthenticated):
-    default_detail = _("User is not authenticated.")
-    default_code = NotAuthenticatedErrorCodes.ACCOUNT_NOT_AUTHENTICATED
-    status_code = status.HTTP_401_UNAUTHORIZED
-
-    def __init__(self, *args, **kwargs):
-        user_id = kwargs.pop('user_id', None)
-        if user_id is not None:
-            setattr(self, 'user_id', user_id)
-        NotAuthenticated.__init__(self, *args, **kwargs)
 
 
 class InvalidToken(NotAuthenticatedError):
@@ -77,31 +68,29 @@ class AccountNotOnWaitlist(NotAuthenticatedError):
     default_code = NotAuthenticatedErrorCodes.ACCOUNT_NOT_ON_WAITLIST
 
 
-class AuthErrorCodes:
+class AuthValidationErrorCodes:
     INVALID_CREDENTIALS = "invalid_credentials"
     EMAIL_DOES_NOT_EXIST = "email_does_not_exist"
-    INVALID_SOCIAL_TOKEN = "invalid_social_token"
-    INVALID_SOCIAL_PROVIDER = "invalid_social_provider"
 
 
-class EmailDoesNotExist(exceptions.InvalidFieldError):
+class EmailDoesNotExist(InvalidFieldError):
     default_detail = _(
         "The provided username does not exist in our system.")
-    default_code = AuthErrorCodes.EMAIL_DOES_NOT_EXIST
+    default_code = AuthValidationErrorCodes.EMAIL_DOES_NOT_EXIST
 
 
-class InvalidCredentialsError(exceptions.InvalidFieldError):
+class InvalidCredentialsError(InvalidFieldError):
     default_detail = _("The provided password is invalid.")
-    default_code = AuthErrorCodes.INVALID_CREDENTIALS
+    default_code = AuthValidationErrorCodes.INVALID_CREDENTIALS
 
 
-class InvalidSocialToken(exceptions.AuthenticationFailed):
+class InvalidSocialToken(AuthenticationFailedError):
     default_detail = _(
         "The provided social token is missing or invalid.")
-    default_code = AuthErrorCodes.INVALID_SOCIAL_TOKEN
+    default_code = AuthenticationFailedErrorCodes.INVALID_SOCIAL_TOKEN
 
 
-class InvalidSocialProvider(exceptions.AuthenticationFailed):
+class InvalidSocialProvider(AuthenticationFailedError):
     default_detail = _(
         "The provided social provider is missing or invalid.")
-    default_code = AuthErrorCodes.INVALID_SOCIAL_PROVIDER
+    default_code = AuthenticationFailedErrorCodes.INVALID_SOCIAL_PROVIDER

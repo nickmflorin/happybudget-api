@@ -1,7 +1,7 @@
 from django.utils.translation import gettext_lazy as _
 
 from happybudget.lib.utils import ensure_iterable
-from happybudget.app import permissions, exceptions
+from happybudget.app import exceptions
 
 from .mixins import ProductPermissionIdMixin
 
@@ -43,9 +43,9 @@ class StripeBadRequest(BillingError):
 
 
 class ProductPermissionError(
-        ProductPermissionIdMixin, permissions.PermissionErr):
+        ProductPermissionIdMixin, exceptions.PermissionErr):
     default_detail = _("The account is not subscribed to the correct product.")
-    default_code = permissions.PermissionErrorCodes.PRODUCT_PERMISSION_ERROR
+    default_code = exceptions.ErrorCodes.PRODUCT_PERMISSION_ERROR
 
     def __init__(self, *args, **kwargs):
         self.products = kwargs.pop('products', '__any__')
@@ -54,4 +54,4 @@ class ProductPermissionError(
 
         permission_id = kwargs.pop('permission_id', None)
         ProductPermissionIdMixin.__init__(self, permission_id=permission_id)
-        permissions.PermissionErr.__init__(self, *args, **kwargs)
+        exceptions.PermissionErr.__init__(self, *args, **kwargs)

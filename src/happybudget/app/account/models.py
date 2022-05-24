@@ -21,7 +21,6 @@ from .managers import (
     TemplateAccountManager
 )
 
-
 ESTIMATED_FIELDS = (
     'accumulated_value',
     'markup_contribution',

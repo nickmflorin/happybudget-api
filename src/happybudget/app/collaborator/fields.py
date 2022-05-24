@@ -23,7 +23,10 @@ class CollaboratingUserField(serializers.PrimaryKeyRelatedField):
         return self.context['budget'].user_owner
 
     def get_queryset(self):
-        assert self.user.is_fully_authenticated
+        # Raise appropriate exceptions if the User is not properly
+        # authenticated.
+        self.user.can_authenticate(hard_raise=True)
+
         # We have to update the queryset of the collaborating user such that it
         # excludes the following users:
         # (1) The user submitting the request: Since a user cannot assign

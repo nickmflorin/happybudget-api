@@ -1,5 +1,4 @@
 import base64
-import logging
 import uuid
 
 from django.core.files.base import ContentFile
@@ -10,9 +9,6 @@ from rest_framework import serializers
 from .exceptions import FileError
 from .utils import (
     get_extension, get_local_extension, handle_file_existence_errors)
-
-
-logger = logging.getLogger('happybudget')
 
 
 class NoValidationDjangoImageField(_ImageField):

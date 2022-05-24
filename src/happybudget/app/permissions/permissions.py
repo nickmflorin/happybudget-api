@@ -1,5 +1,5 @@
+from happybudget.app import exceptions
 from happybudget.app.authentication.exceptions import (
-    NotAuthenticatedError,
     AccountDisabled,
     AccountNotVerified
 )
@@ -13,7 +13,7 @@ class IsAuthenticated(BasePermission):
     Permission that ensures that the active user's account is both authenticated
     and active.
     """
-    exception_class = NotAuthenticatedError
+    exception_class = exceptions.NotAuthenticatedError
     affects_after = True
 
     def has_user_permission(self, user):
@@ -120,7 +120,7 @@ class IsOwner(BasePermission):
 
 
 class IsPublic(BasePermission):
-    exception_class = NotAuthenticatedError
+    exception_class = exceptions.NotAuthenticatedError
 
     def has_permission(self, request, view):
         return request.public_token.is_authenticated

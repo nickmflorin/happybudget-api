@@ -4,10 +4,9 @@ from rest_framework import permissions
 
 from happybudget.lib.utils import (
     get_string_formatted_kwargs, with_falsey_default)
-from happybudget.app.authentication.exceptions import NotAuthenticatedError
+from happybudget.app import exceptions
 
 from .constants import PermissionContext
-from .exceptions import PermissionErr
 
 
 def with_raise_exception(func):
@@ -22,10 +21,15 @@ def with_raise_exception(func):
     @functools.wraps(func)
     def decorated(instance, *args, **kwargs):
         raise_exception = kwargs.pop('raise_exception', True)
+        hard_raise = kwargs.pop('hard_raise', False)
         try:
             evaluated = func(instance, *args, **kwargs)
-        except (PermissionErr, NotAuthenticatedError) as e:
-            if raise_exception is True:
+        except (
+            exceptions.PermissionErr,
+            exceptions.NotAuthenticatedError
+        ) as e:
+            if raise_exception is True or hard_raise is True:
+                e.mark_for_hard_raise(hard_raise)
                 raise e
             # Make sure to return the message on the exception class such that
             # the failed permission will be treated with that same message.
@@ -35,11 +39,14 @@ def with_raise_exception(func):
                 # If the permission method returns a string message, than it
                 # indicates that the permission failed and the returned value
                 # is the message the PermissionErr should have.
-                if raise_exception:
+                if raise_exception or hard_raise:
                     if evaluated is False:
-                        instance.permission_denied()
+                        instance.permission_denied(hard_raise=hard_raise)
                     else:
-                        instance.permission_denied(message=evaluated)
+                        instance.permission_denied(
+                            hard_raise=hard_raise,
+                            message=evaluated
+                        )
                 return evaluated
             assert evaluated is True, \
                 f"Unexpected type {type(evaluated)} returned from " \
@@ -278,7 +285,7 @@ class BasePermission(metaclass=BasePermissionMetaclass):
         If the permission is disabled, it will always return True for any
         permission checks.
     """
-    exception_class = PermissionErr
+    exception_class = exceptions.PermissionErr
     user_dependency_flags = []
     default_object_name = 'object'
 
@@ -433,7 +440,7 @@ class BasePermission(metaclass=BasePermissionMetaclass):
         return self._priority
 
     def permission_denied(self, message=None, **kwargs):
-        exception_kwargs = {}
+        exception_kwargs = {'hard_raise': kwargs.pop('hard_raise', False)}
         if hasattr(self, 'message'):
             exception_kwargs['detail'] = self.message
         elif hasattr(self, 'code'):
@@ -452,6 +459,7 @@ class BasePermission(metaclass=BasePermissionMetaclass):
         if message is not None:
             exception_kwargs['detail'] = self.format_permission_message(message)
 
+        # pylint: disable=unexpected-keyword-arg
         raise self.exception_class(**exception_kwargs)
 
     def has_object_permission(self, request, view, obj):

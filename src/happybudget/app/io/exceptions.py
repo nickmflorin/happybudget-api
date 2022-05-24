@@ -48,24 +48,19 @@ class FileExtensionError(FileError):
         )
 
 
-class IOErrorCodes:
-    INVALID_FILE_NAME = "invalid_file_name"
-    INVALID_FILE_EXTENSION = "invalid_file_extension"
-
-
 class FileValidationError(exceptions.ValidationError):
     pass
 
 
 class FileNameInvalidError(FileValidationError):
     default_detail = _("The file name is invalid.")
-    default_code = IOErrorCodes.INVALID_FILE_NAME
+    default_code = "invalid_file_name"
     default_info_detail = "The file name `{filename}` is invalid."
 
 
 class FileExtensionInvalidError(FileValidationError):
     default_detail = _("The file extension is invalid.")
-    default_code = IOErrorCodes.INVALID_FILE_EXTENSION
+    default_code = "invalid_file_extension"
     default_info_detail = "The file extension `{ext}` is invalid."
 
 

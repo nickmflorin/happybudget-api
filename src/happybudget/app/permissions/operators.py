@@ -7,7 +7,6 @@ from .utils import instantiate_permissions
 
 
 class Operator(BasePermission):
-
     def __init__(self, *permissions, **kwargs):
         permissions = list(permissions)
         if len(permissions) == 1 and isinstance(permissions[0], (tuple, list)):

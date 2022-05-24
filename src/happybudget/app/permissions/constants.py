@@ -1,8 +1,7 @@
-from happybudget.app.authentication.exceptions import NotAuthenticatedError
-from .exceptions import PermissionErr
+from happybudget.app import exceptions
 
 
-PErrors = (PermissionErr, NotAuthenticatedError)
+PErrors = (exceptions.PermissionErr, exceptions.NotAuthenticatedError)
 
 
 class PermissionContext:

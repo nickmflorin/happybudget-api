@@ -2,7 +2,7 @@ from django.db import models
 from rest_framework import serializers
 from rest_framework.utils import model_meta
 
-from happybudget.app import exceptions
+from .exceptions import RequiredFieldError
 
 
 class SerializerMixin:
@@ -198,7 +198,7 @@ class BulkSerializerDataPrimaryKeyField(serializers.PrimaryKeyRelatedField):
     """
     def to_internal_value(self, data):
         if 'id' not in data:
-            raise exceptions.RequiredFieldError("id")
+            raise RequiredFieldError("id")
         instance_id = data.pop('id')
         return super().to_internal_value(instance_id), data
 

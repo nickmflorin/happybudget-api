@@ -105,28 +105,30 @@ def BaseModel(polymorphic=False, **kwargs):
         assert hasattr(instance, 'updated_by') or hasattr(instance, 'updated_at')
 
         def pluck_user():
-            assert args or 'user' in kwargs, \
-                "Model class {instance.__class__} defines a `updated_by` " \
-                "field, so the user is a required argument."
-            if args:
+            if not args and 'user' not in kwargs:
+                raise TypeError(
+                    "Model class {instance.__class__} defines a `updated_by` "
+                    "field, so the user is a required argument."
+                )
+            elif args:
                 if len(args) != 1 or kwargs:
-                    raise TypeError("Improper usage of method.")
+                    raise TypeError("Expected only 1 argument, the user.")
                 return args[0]
             return kwargs['user']
 
         update_fields = []
 
         if hasattr(instance, 'updated_at'):
-            update_fields.append('updated_at')
+            update_fields += ['updated_at']
 
         if hasattr(instance, 'updated_by'):
             user = pluck_user()
             if not isinstance(user, User):
                 raise ValueError(f"Expected type {User}, not {type(user)}.")
-            elif not user.is_fully_authenticated:
-                raise Exception(
-                    f"Unauthenticated user {user.pk} trying to update instance.")
-            update_fields.append('updated_by')
+            # Raise appropriate exceptions if the User is not properly
+            # authenticated.
+            user.can_authenticate(raise_exception=True, hard_raise=True)
+            update_fields += ['updated_by']
             setattr(instance, 'updated_by', user)
 
         instance.save(update_fields=update_fields)

@@ -4,10 +4,9 @@ from django.contrib.auth.backends import ModelBackend
 
 from rest_framework import authentication
 
-from happybudget.app import permissions
+from happybudget.app import permissions, exceptions
 
-from .exceptions import (
-    InvalidCredentialsError, EmailDoesNotExist, NotAuthenticatedError)
+from .exceptions import InvalidCredentialsError, EmailDoesNotExist
 
 
 class SocialModelAuthentication(ModelBackend):
@@ -54,7 +53,7 @@ class ModelAuthentication(ModelBackend):
             try:
                 return self._authenticate(email, password)
             except (InvalidCredentialsError, EmailDoesNotExist,
-                    NotAuthenticatedError) as e:
+                    exceptions.NotAuthenticatedError) as e:
                 # If we are coming from the Admin, we do not want to raise a
                 # DRF exception as it will not render in the response, it will
                 # just be a 500 error.

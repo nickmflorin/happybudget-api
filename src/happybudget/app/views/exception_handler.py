@@ -441,6 +441,12 @@ def exception_handler(exc, context):
         )
         return views.exception_handler(exc, context)
 
+    # If the exception class is initialized or marked as `hard_raise`, then we
+    # want to raise the exception without rendering the response.
+    hard_raise = getattr(exc, '__hard_raise__', False)
+    if hard_raise:
+        raise exc
+
     # By default, Django REST Framework will catch Http404 and return a response
     # { "detail": "Not found." } and will catch exceptions.MethodNotAllowed
     # and return a response { "detail": "Method not allowed." }.

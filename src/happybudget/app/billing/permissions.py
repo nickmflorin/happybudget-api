@@ -1,4 +1,4 @@
-from happybudget.app import permissions
+from happybudget.app import exceptions, permissions
 
 from .exceptions import ProductPermissionError
 from .mixins import ProductPermissionIdMixin
@@ -15,7 +15,7 @@ class IsStripeCustomerPermission(
     def has_permission(self, request, view):
         if not request.user.is_authenticated \
                 or request.user.stripe_id is None:
-            raise permissions.PermissionErr("User is not a Stripe customer.")
+            raise exceptions.PermissionErr("User is not a Stripe customer.")
         return True
 
 
@@ -24,7 +24,7 @@ class IsNotStripeCustomerPermission(
     def has_permission(self, request, view):
         if not request.user.is_authenticated \
                 or request.user.stripe_id is not None:
-            raise permissions.PermissionErr("User is already a Stripe customer.")
+            raise exceptions.PermissionErr("User is already a Stripe customer.")
         return True
 
 
@@ -33,7 +33,7 @@ class BaseProductPermission(
     ProductPermissionIdMixin,
     permissions.BasePermission
 ):
-    code = permissions.PermissionErrorCodes.PRODUCT_PERMISSION_ERROR
+    code = exceptions.ErrorCodes.PRODUCT_PERMISSION_ERROR
     message = (
         "The user does not have the correct subscription to view this "
         "{object_name}."
