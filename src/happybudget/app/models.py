@@ -1,6 +1,7 @@
 from polymorphic.models import PolymorphicModel
 from django.db import models, router
 
+from .managers import Manager, PolymorphicManager
 from .query import Collector
 
 
@@ -17,6 +18,7 @@ def BaseModel(polymorphic=False, **kwargs):
         are fired inside of the :obj:`Collector`.
     """
     base_cls = PolymorphicModel if polymorphic else models.Model
+    manager = PolymorphicManager if polymorphic else Manager
 
     activity_fields = [
         'updated_at', 'created_at', 'updated_by', 'created_by']
@@ -64,6 +66,7 @@ def BaseModel(polymorphic=False, **kwargs):
         created_by = get_field('created_by')
         updated_at = get_field('updated_at')
         updated_by = get_field('updated_by')
+        objects = manager()
 
         class Meta:
             abstract = True

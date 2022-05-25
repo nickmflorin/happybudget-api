@@ -1,8 +1,10 @@
 from django.db import models
 
+from happybudget.app import model
 from happybudget.app.models import BaseModel
 from happybudget.app.user.mixins import ModelOwnershipMixin
 
+from .managers import AttachmentManager
 from .utils import get_extension
 
 
@@ -13,12 +15,14 @@ def upload_attachment_to(instance, filename):
     )
 
 
+@model.model(type="attachment")
 class Attachment(
     BaseModel(polymorphic=False, updated_by=None),
     ModelOwnershipMixin
 ):
     file = models.FileField(upload_to=upload_attachment_to, null=False)
     user_ownership_field = 'created_by'
+    objects = AttachmentManager()
 
     class Meta:
         get_latest_by = "created_at"

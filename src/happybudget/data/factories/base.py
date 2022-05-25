@@ -1,3 +1,5 @@
+from django.db import models
+
 from factory.django import DjangoModelFactory
 from factory.base import FactoryMetaClass
 
@@ -43,5 +45,31 @@ class CustomModelFactory(DjangoModelFactory, metaclass=ModelFactoryMetaClass):
         return cls.post_create(created, **kwargs)
 
     @classmethod
-    def post_create(cls, model, **kwargs):
-        return model
+    def post_create(cls, m, **kwargs):
+        """
+        Overrides the default `post_create()` method such that auto-now or
+        auto-now-add fields can be explicitly set regardless of the time the
+        model is saved.
+
+        If a model has an auto-now or auto-now-add time related field, we cannot
+        simply include this value in the factory kwargs since it will be
+        overridden to the current time when the model is saved.  This method
+        will force explicitly set values for an auto-now or auto-now-add
+        time related field to be associated with the model by updating the
+        model with those fields and then refreshing the model from the DB,
+        which avoids saving the model directly and having those fields assume
+        the current date/time as a value.
+        """
+        update_kwargs = {}
+        for field in m.__class__._meta.get_fields():
+            if isinstance(field, (models.DateField, models.DateTimeField)) \
+                    and field.name in kwargs \
+                    and (getattr(field, 'auto_now_add', None) is True
+                    or getattr(field, 'auto_now', None) is True):
+                update_kwargs[field.name] = kwargs[field.name]
+
+        if update_kwargs:
+            # Applying a direct update bypasses the auto time fields.
+            m.__class__.objects.filter(pk=m.pk).update(**update_kwargs)
+            m.refresh_from_db()
+        return m

@@ -25,32 +25,6 @@ from happybudget.app.user.models import User
 from .base import CustomModelFactory
 
 
-def ConstantTimeMixin(*fields):
-    """
-    If a model has an auto-now time related field, we cannot simply include
-    this value in the factory kwargs since it will be overridden to the
-    current time when the model is saved.
-
-    If we use this mixin for the factory, then it will allow us to override
-    the provided field so it can be explicitly provided in the factory
-    arguments without an override from Django on model save.
-    """
-    class DynamicConstantTimeMixin:
-        @classmethod
-        def post_create(cls, model, **kwargs):
-            update_kwargs = {}
-            for field in fields:
-                if field in kwargs:
-                    update_kwargs[field] = kwargs[field]
-            instance = super(DynamicConstantTimeMixin, cls).post_create(
-                model, **kwargs)
-            # Applying a direct update bypasses the auto time fields.
-            model.__class__.objects.filter(pk=model.pk).update(**update_kwargs)
-            instance.refresh_from_db()
-            return instance
-    return DynamicConstantTimeMixin
-
-
 class ColorFactory(CustomModelFactory):
     """
     A DjangoModelFactory to create instances of :obj:`User`.
@@ -216,7 +190,7 @@ class MarkupFactory(CustomModelFactory):
                 self.subaccounts.add(child)
 
 
-class GroupFactory(ConstantTimeMixin('created_at'), CustomModelFactory):
+class GroupFactory(CustomModelFactory):
     """
     A DjangoModelFactory to create instances of :obj:`Group`.
     """
@@ -265,8 +239,7 @@ class TemplateAccountFactory(AccountFactory):
         model = TemplateAccount
 
 
-class SubAccountUnitFactory(
-        ConstantTimeMixin('created_at', 'updated_at'), TagFactory):
+class SubAccountUnitFactory(TagFactory):
     """
     A DjangoModelFactory to create instances of :obj:`SubAccountUnit`.
     """
@@ -308,8 +281,7 @@ class SubAccountFactory(CustomModelFactory):
                 self.fringes.add(fringe)
 
 
-class BudgetSubAccountFactory(
-        ConstantTimeMixin('created_at'), SubAccountFactory):
+class BudgetSubAccountFactory(SubAccountFactory):
     """
     A DjangoModelFactory to create instances of :obj:`BudgetSubAccount`.
     """
@@ -330,8 +302,7 @@ class BudgetSubAccountFactory(
                 self.attachments.add(attachment)
 
 
-class TemplateSubAccountFactory(
-        ConstantTimeMixin('created_at'), SubAccountFactory):
+class TemplateSubAccountFactory(SubAccountFactory):
     """
     A DjangoModelFactory to create instances of :obj:`TemplateSubAccount`.
     """
@@ -344,8 +315,7 @@ class TemplateSubAccountFactory(
         model = TemplateSubAccount
 
 
-class ActualTypeFactory(
-        ConstantTimeMixin('created_at', 'updated_at'), TagFactory):
+class ActualTypeFactory(TagFactory):
     """
     A DjangoModelFactory to create instances of :obj:`ActualType`.
     """

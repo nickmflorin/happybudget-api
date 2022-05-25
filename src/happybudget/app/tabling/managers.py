@@ -1,9 +1,7 @@
-from polymorphic.models import PolymorphicManager
-
 from django.db import models, transaction, IntegrityError
 
 from happybudget.lib.django_utils.models import error_is_unique_constraint
-from happybudget.app import query
+from happybudget.app import query, managers
 
 from .query import (
     RowQuerySet, RowPolymorphicQuerySet, RowQuerier, OrderedRowQuerier,
@@ -20,12 +18,7 @@ from .utils import order_after
 MAX_UNIQUE_CONSTRAINT_RECURSIONS = 1
 
 
-class RowManagerMixin(RowQuerier):
-    def get_queryset(self):
-        return self.queryset_class(self.model)
-
-
-class OrderedRowManagerMixin(OrderedRowQuerier, RowManagerMixin):
+class OrderedRowManagerMixin(OrderedRowQuerier, RowQuerier):
     def establish_ordering(self, instances, table, reordering=False):
         """
         Establishes the ordering of new rows not yet created such that they
@@ -270,17 +263,18 @@ class OrderedRowManagerMixin(OrderedRowQuerier, RowManagerMixin):
         return None
 
 
-class RowManager(RowManagerMixin, models.Manager):
+class RowManager(RowQuerier, managers.Manager):
     queryset_class = RowQuerySet
 
 
-class OrderedRowManager(OrderedRowManagerMixin, models.Manager):
+class OrderedRowManager(OrderedRowManagerMixin, managers.Manager):
     queryset_class = OrderedRowQuerySet
 
 
-class RowPolymorphicManager(RowManagerMixin, PolymorphicManager):
+class RowPolymorphicManager(RowQuerier, managers.PolymorphicManager):
     queryset_class = RowPolymorphicQuerySet
 
 
-class OrderedRowPolymorphicManager(OrderedRowManagerMixin, PolymorphicManager):
+class OrderedRowPolymorphicManager(
+        OrderedRowManagerMixin, managers.PolymorphicManager):
     queryset_class = OrderedRowPolymorphicQuerySet

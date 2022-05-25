@@ -1,9 +1,9 @@
 from django.contrib.contenttypes.models import ContentType
-from django.db import models
+
+from happybudget.app import managers, query
 
 
 class ColorQuerier:
-
     def for_model(self, model):
         content_type = ContentType.objects.get_for_model(model)
         return self.filter(content_types=content_type)
@@ -12,12 +12,9 @@ class ColorQuerier:
         return self.for_model(type(instance))
 
 
-class ColorQuery(ColorQuerier, models.QuerySet):
+class ColorQuery(ColorQuerier, query.QuerySet):
     pass
 
 
-class ColorManager(ColorQuerier, models.Manager):
+class ColorManager(ColorQuerier, managers.Manager):
     queryset_class = ColorQuery
-
-    def get_queryset(self):
-        return self.queryset_class(self.model)

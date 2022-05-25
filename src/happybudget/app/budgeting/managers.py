@@ -2,17 +2,13 @@ import collections
 import datetime
 import logging
 
-from django.db import models
-
-from polymorphic.models import PolymorphicManager
-
 from happybudget.lib.utils import ensure_iterable
 
-from happybudget.app import signals, query
-from happybudget.app.tabling.managers import (
-    OrderedRowManagerMixin, RowManagerMixin)
+from happybudget.app import signals, query, managers
+from happybudget.app.tabling.managers import OrderedRowManagerMixin
 from happybudget.app.tabling.query import (
-    OrderedRowPolymorphicQuerySet, OrderedRowQuerySet, RowQuerySet)
+    OrderedRowPolymorphicQuerySet, OrderedRowQuerySet, RowQuerySet,
+    RowQuerier)
 
 from .cache import invalidate_groups_cache
 from .utils import BudgetTree
@@ -491,15 +487,12 @@ class BudgetingManagerMixin:
         return tree
 
 
-class BudgetingManager(BudgetingManagerMixin, models.Manager):
+class BudgetingManager(BudgetingManagerMixin, managers.Manager):
     queryset_class = query.QuerySet
-
-    def get_queryset(self):
-        return self.queryset_class(self.model)
 
 
 class BudgetingRowManager(
-        RowManagerMixin, BudgetingManagerMixin, models.Manager):
+        RowQuerier, BudgetingManagerMixin, managers.Manager):
     queryset_class = RowQuerySet
 
 
@@ -507,13 +500,11 @@ class BudgetingOrderedRowManager(OrderedRowManagerMixin, BudgetingRowManager):
     queryset_class = OrderedRowQuerySet
 
 
-class BudgetingPolymorphicManager(BudgetingManagerMixin, PolymorphicManager):
-    queryset_class = query.PolymorphicQuerySet
-
-    def get_queryset(self):
-        return self.queryset_class(self.model)
+class BudgetingPolymorphicManager(
+        BudgetingManagerMixin, managers.PolymorphicManager):
+    pass
 
 
 class BudgetingPolymorphicOrderedRowManager(
-        BudgetingOrderedRowManager, PolymorphicManager):
+        BudgetingOrderedRowManager, managers.PolymorphicManager):
     queryset_class = OrderedRowPolymorphicQuerySet
