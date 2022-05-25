@@ -26,7 +26,7 @@ here (for obvious reasons).
 
 ## Getting Started
 
-#### Step 1: Repository
+### Step 1: Repository
 
 Clone this repository locally and `cd` into the directory.
 
@@ -34,9 +34,7 @@ Clone this repository locally and `cd` into the directory.
 $ git clone https://github.com/nickmflorin/happybudget-api.git
 ```
 
-#### Step 2: Environment
-
-##### Python Version
+### Step 2: Python
 
 First, you need to install [`pyenv`](https://github.com/pyenv/pyenv-virtualenv),
 a Python version manager for development. This will allow you to manage your
@@ -96,7 +94,7 @@ $ 3.9.0
 
 If this still doesn't work, contact a team member before proceeding further.
 
-##### Dependencies
+#### Dependencies
 
 Now we need to setup the dependencies. We use [`poetry`](https://python-poetry.org/docs/)
 as a dependency management system, so you will have to install that locally:
@@ -133,7 +131,23 @@ Note that [`poetry`](https://python-poetry.org/docs/) has the ability to manage
 virtual environments for you, so there is also that option if you do not feel
 like managing it yourself.
 
-##### ENV File
+### Step 3: Environment
+
+There are 4 distinct environments that the application runs in, with the
+current environment being dictated by the settings configuration file that
+is read from the OS environment variable `DJANGO_SETTINGS_MODULE`.
+
+The 4 distinct environments that the application runs in are as follows:
+
+| Environment |          Settings Module          |             URL             |      File Storage      |          Database          |
+| :---------: | :-------------------------------: | :-------------------------: | :--------------------: | :------------------------: |
+|   `local`   | `happybudget.conf.settings.local` | `local.happybudget.io:8000` |   Local File Storage   |  Local PostgreSQL Server   |
+|   `test`    | `happybudget.conf.settings.test`  |             N/A             | Temporary File Storage | Transactional SQLite3 File |
+|  `develop`  |  `happybudget.conf.settings.dev`  |   `devapi.happybudget.io`   |         AWS S3         |   PostgreSQL on AWS RDS    |
+|   `prod`    | `happybudget.conf.settings.prod`  |    `api.happybudget.io`     |         AWS S3         |   PostgreSQL on AWS RDS    |
+
+
+#### ENV File
 
 For all environments, we use a `.env` file in the project root that configuration
 values and sensitive information is read from.  For remote environments, this
@@ -146,7 +160,7 @@ However, if you wish to override certain configurations (i.e. the database
 configurations) you can place a `.env` file in the project root and implement
 those configuration values.
 
-##### Local Domain
+#### Local Domain
 
 Our authentication protocols rely on the ability to set cookies in the response
 that dictate user sessions and user information. Recent Google Chrome security
@@ -177,7 +191,7 @@ Now, when we start the development server, we will be able to access the backend
 application at `local.happybudget.io:8000`, and the frontend application at
 `local.happybudget.io:3000`.
 
-##### Local Database
+#### Local Database
 
 We use `postgresql` for our local (and production) databases, with the exception
 being our tests which run on a lightweight `sqlite` database so they can do
@@ -241,7 +255,7 @@ all of these steps are required each time, as some of the entities may already
 have been created or appropriately assigned when using a previous database or
 previously completing some of these steps.
 
-###### Connect to Default Postgres Database
+##### Connect to Default Postgres Database
 
 Since we do not know whether or not the database we are concerned with has been
 created yet, we connect to the default database `postgres` since we can still
@@ -366,7 +380,7 @@ $ python src/manage.py createsuperuser
 You should always have a `superuser` account locally, and should use that as
 your primary account for logging into the application.
 
-##### Celery
+#### Celery
 
 We use [celery](https://docs.celeryq.dev/en/stable/index.html) to manage periodic
 background tasks in the application.  These tasks are mostly concerned with
@@ -551,15 +565,6 @@ dependencies to allow additional dependencies to be included for local developme
 that we do not want to add in a production environment. By default, when
 running `poetry install` it will include the development dependencies. In production,
 we use `poetry install --no-dev` so that development dependencies are not included.
-
-## Application Environments
-
-| Environment |          Settings Module          |             URL             |      File Storage      |          Database          |
-| :---------: | :-------------------------------: | :-------------------------: | :--------------------: | :------------------------: |
-|   `local`   | `happybudget.conf.settings.local` | `local.happybudget.io:8000` |   Local File Storage   |  Local PostgreSQL Server   |
-|   `test`    | `happybudget.conf.settings.test`  |             N/A             | Temporary File Storage | Transactional SQLite3 File |
-|  `develop`  |  `happybudget.conf.settings.dev`  |   `devapi.happybudget.io`   |         AWS S3         |   PostgreSQL on AWS RDS    |
-|   `prod`    | `happybudget.conf.settings.prod`  |    `api.happybudget.io`     |         AWS S3         |   PostgreSQL on AWS RDS    |
 
 ## Setting Up on EC2 Instance
 
