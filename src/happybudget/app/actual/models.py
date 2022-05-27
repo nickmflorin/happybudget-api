@@ -18,6 +18,7 @@ from .managers import ActualManager
 logger = logging.getLogger('happybudget')
 
 
+@model.model(type="actual-type")
 class ActualType(Tag):
     color = models.ForeignKey(
         to="tagging.Color",

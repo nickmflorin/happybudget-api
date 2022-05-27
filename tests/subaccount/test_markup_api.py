@@ -508,7 +508,6 @@ def test_bulk_delete_account_markups(api_client, user, models, f, budget_f):
         quantity=10,
         multiplier=1
     )
-
     assert budget.nominal_value == 100.0
     assert budget.accumulated_markup_contribution == 250.0
 

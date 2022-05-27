@@ -27,6 +27,7 @@ from .managers import (
 )
 
 
+@model.model(type="subaccount-unit")
 class SubAccountUnit(Tag):
     color = models.ForeignKey(
         to="tagging.Color",

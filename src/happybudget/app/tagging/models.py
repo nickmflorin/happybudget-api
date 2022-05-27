@@ -73,12 +73,23 @@ class Tag(PolymorphicModel):
         verbose_name_plural = "All Tags"
         unique_together = (('title', 'polymorphic_ctype_id'))
 
-    def save(self, *args, **kwargs):
-        setattr(self, '_ignore_reindex', kwargs.pop('ignore_reindex', False))
-        super().save(*args, **kwargs)
-
     def __str__(self):
         return "<Tag title={title} order={order}>".format(
             title=self.title,
             order=self.order
         )
+
+    def validate_before_save(self):
+        if self.order is None:
+            instances = Tag.objects \
+                .filter(polymorphic_ctype_id=self.polymorphic_ctype_id) \
+                .order_by('order', '-updated_at') \
+                .only('order').exclude(pk=self.pk)
+            if instances.count():
+                self.order = max([i.order for i in instances]) + 1
+            else:
+                self.order = 0
+
+    def save(self, *args, **kwargs):
+        setattr(self, '_ignore_reindex', kwargs.pop('ignore_reindex', False))
+        super().save(*args, **kwargs)

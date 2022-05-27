@@ -53,8 +53,6 @@ class TagFactory(CustomModelFactory):
     """
     A DjangoModelFactory to create instances of :obj:`User`.
     """
-    order = factory.Sequence(lambda n: n + 1)
-
     class Meta:
         abstract = True
 

@@ -6,13 +6,13 @@ import threading
 import django
 from django.conf import settings
 from django.core.exceptions import FieldDoesNotExist
-from django.db import models, IntegrityError
+from django.db import models, IntegrityError, router
 
 from happybudget.conf import Environments
 from happybudget.lib.utils import (
     ensure_iterable, humanize_list, DynamicArgumentException)
 
-from happybudget.app import constants, signals
+from happybudget.app import constants, signals, query
 
 
 logger = logging.getLogger('happybudget')
@@ -239,6 +239,11 @@ class model:
         Model classes that are decorated with this decorator can automatically
         indicate deleting states when the model is in the process of being
         deleted.
+
+    (4) Deleting Signal Context
+        Model classes that are decorated with this decorator will automatically
+        use a custom :obj:`Collector` that will allow keyword arguments provided
+        to the `.delete()` method to propogate to delete related signals.
 
     There are some major caveats to it's usage:
 
@@ -512,22 +517,32 @@ class model:
             kwargs.setdefault('field_name', deleting_field_name)
             return model_is_deleting(instance, **kwargs)
 
-        def delete(instance, *args, **kwargs):
+        def delete(instance, *args, using=None, keep_parents=False, **kwargs):
             """
-            Overrides the :obj:`django.db.models.Model` delete behavior such
-            that the delete is performed inside the :obj:`model_is_deleting`
-            context manager.
+            Overrides the :obj:`django.db.models.Model` delete behavior in
+            order to implement the following custom behavior:
 
-            This has (2) implications:
+            (1) Performing the Delete Inside of Context
+                It is important the the delete be performed inside of the
+                :obj:`model_is_deleting` context such that the deleting state
+                of the instance is stored on the model.
 
-            (1) The `delete` method can be provided with a `disable_signals`
-                argument that can be used to disable signals while the delete
-                is performed.
+                This has (2) implications:
 
-            (2) Inside the context of the `delete` method, if the instance has
-                a field that is used to indicate deleting state that field will
-                be flagged such that signals can differentiate between delete
-                behavior from CASCADE deletes and non-CASCADE deletes.
+                (1) The `delete` method can be provided with a `disable_signals`
+                    argument that can be used to disable signals while the
+                    delete is performed.
+
+                (2) Inside the context of the `delete` method, if the instance
+                    has a field that is used to indicate deleting state that
+                    field will be flagged such that signals can differentiate
+                    between delete behavior from CASCADE deletes and non-CASCADE
+                    deletes.
+
+            (2) Usage of Custom :obj:`Collector` Class
+                It is important that the delete use the custom :obj:`Collector`
+                class so that keyword arguments provided to the delete
+                propogate through to the appropriate delete-related signals.
             """
             deleting_kwargs = {
                 'disable_signals': kwargs.pop('disable_signals', None)
@@ -536,7 +551,16 @@ class model:
                 deleting_kwargs.update(field_name=kwargs.pop('field_name'))
 
             with instance.deleting(**deleting_kwargs):
-                delete._original(instance, *args, **kwargs)
+                if instance.pk is None:
+                    # Let Django's original method raise the error due to
+                    # the deletion of an instance that no longer exists.
+                    delete._original(instance, *args, **kwargs)
+                using = using or router.db_for_write(
+                    instance.__class__, instance=instance)
+                collector = query.Collector(using=using)
+                collector.collect([instance], keep_parents=keep_parents)
+                # Pass the keyword arguments into the Collector's delete method.
+                return collector.delete(**kwargs)
 
         def validate_before_save(instance):
             validators = getattr(instance, 'pre_save_validators', [])

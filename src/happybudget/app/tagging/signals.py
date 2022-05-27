@@ -15,5 +15,5 @@ def reindex_tags(instance, **kwargs):
             polymorphic_ctype_id=instance.polymorphic_ctype_id).order_by(
                 'order', '-updated_at').all()
         for i, tag in enumerate(all_instances):
-            tag.order = i + 1
+            tag.order = i
             tag.save(ignore_reindex=True)

@@ -1,8 +1,7 @@
 from polymorphic.models import PolymorphicModel
-from django.db import models, router
+from django.db import models
 
 from .managers import Manager, PolymorphicManager
-from .query import Collector
 
 
 def BaseModel(polymorphic=False, **kwargs):
@@ -70,16 +69,6 @@ def BaseModel(polymorphic=False, **kwargs):
 
         class Meta:
             abstract = True
-
-        def delete(self, using=None, keep_parents=False, **kwargs):
-            if self.pk is None:
-                # Let Django's original method raise the error.
-                super().delete(using=using, keep_parents=keep_parents)
-            using = using or router.db_for_write(self.__class__, instance=self)
-            collector = Collector(using=using)
-            collector.collect([self], keep_parents=keep_parents)
-            # Pass the keyword arguments into the Collector's delete method.
-            return collector.delete(**kwargs)
 
     # Dynamically setting the fields on the model cls based on whether or not
     # they are excluded from the **kwargs messes with Django's internal

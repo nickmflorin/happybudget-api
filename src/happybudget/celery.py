@@ -31,11 +31,6 @@ def config_loggers(*args, **kwargs):
     dictConfig(settings.LOGGING)
 
 
-@app.task
-def say_hello():
-    print('Hello, World!')
-
-
 @app.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
     # pylint: disable=import-outside-toplevel
