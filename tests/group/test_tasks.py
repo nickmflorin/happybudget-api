@@ -27,6 +27,6 @@ def test_find_and_delete_empty_groups(f, models):
                 .replace(tzinfo=datetime.timezone.utc)
         )
     ]
-    f.create_budget_account(parent=budget, group=groups[1])
+    f.create_account(parent=budget, group=groups[1])
     find_and_delete_empty_groups()
     assert models.Group.objects.count() == 2

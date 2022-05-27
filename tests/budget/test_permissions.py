@@ -193,7 +193,7 @@ def test_budget_detail_create_groups_permissions(case, f,
         detail_create_response):
 
     def post_data(budget):
-        accounts = [f.create_budget_account(parent=budget)]
+        accounts = [f.create_account(parent=budget)]
         return {'children': [a.pk for a in accounts], 'name': 'Test Group'}
 
     detail_create_response(
@@ -205,7 +205,7 @@ def test_budget_detail_create_markups_permissions(case, f, models,
         detail_create_response):
 
     def post_data(budget):
-        accounts = [f.create_budget_account(parent=budget)]
+        accounts = [f.create_account(parent=budget)]
         return {
             'children': [a.pk for a in accounts],
             'identifier': '0001',
@@ -245,7 +245,7 @@ def test_template_detail_create_groups_permissions(case, f,
         detail_create_response):
 
     def post_data(budget):
-        accounts = [f.create_template_account(parent=budget)]
+        accounts = [f.create_account(parent=budget)]
         return {'children': [a.pk for a in accounts], 'name': 'Test Group'}
 
     detail_create_response(
@@ -257,7 +257,7 @@ def test_template_detail_create_markups_permissions(case, f, models,
         detail_create_response):
 
     def post_data(budget):
-        accounts = [f.create_template_account(parent=budget)]
+        accounts = [f.create_account(parent=budget)]
         return {
             'children': [a.pk for a in accounts],
             'identifier': '0001',

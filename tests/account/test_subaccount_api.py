@@ -215,15 +215,15 @@ def test_create_subaccount_group_empty(api_client, user, budget_f, f):
 def test_get_community_template_account_children(
         api_client, user, staff_user, f):
     template = f.create_template(community=True, created_by=staff_user)
-    account = f.create_template_account(parent=template)
+    account = f.create_account(parent=template)
     # pylint: disable=expression-not-assigned
     [
-        f.create_template_subaccount(
+        f.create_subaccount(
             parent=account,
             created_at=datetime.datetime(2020, 1, 1).replace(
                 tzinfo=datetime.timezone.utc)
         ),
-        f.create_template_subaccount(
+        f.create_subaccount(
             parent=account,
             created_at=datetime.datetime(2020, 1, 2).replace(
                 tzinfo=datetime.timezone.utc)
@@ -238,15 +238,15 @@ def test_get_another_users_community_template_account_children(api_client,
         staff_user, f):
     user = f.create_user(is_staff=True)
     template = f.create_template(community=True, created_by=user)
-    account = f.create_template_account(parent=template)
+    account = f.create_account(parent=template)
     # pylint: disable=expression-not-assigned
     [
-        f.create_template_subaccount(
+        f.create_subaccount(
             parent=account,
             created_at=datetime.datetime(2020, 1, 1).replace(
                 tzinfo=datetime.timezone.utc)
         ),
-        f.create_template_subaccount(
+        f.create_subaccount(
             parent=account,
             created_at=datetime.datetime(2020, 1, 2).replace(
                 tzinfo=datetime.timezone.utc)

@@ -126,7 +126,7 @@ def test_budget_subaccount_detail_create_groups_permissions(case, f,
         detail_create_response):
 
     def post_data(subaccount):
-        accounts = [f.create_budget_subaccount(parent=subaccount)]
+        accounts = [f.create_subaccount(parent=subaccount)]
         return {'children': [a.pk for a in accounts], 'name': 'Test Group'}
 
     detail_create_response(
@@ -138,7 +138,7 @@ def test_budget_subaccount_detail_create_markups_permissions(case, models, f,
         detail_create_response):
 
     def post_data(account):
-        subaccounts = [f.create_budget_subaccount(parent=account)]
+        subaccounts = [f.create_subaccount(parent=account)]
         return {
             'children': [a.pk for a in subaccounts],
             'identifier': '0001',
@@ -177,7 +177,7 @@ def test_template_subaccount_detail_create_groups_permissions(case, f,
         detail_create_response):
 
     def post_data(subaccount):
-        accounts = [f.create_template_subaccount(parent=subaccount)]
+        accounts = [f.create_subaccount(parent=subaccount)]
         return {'children': [a.pk for a in accounts], 'name': 'Test Group'}
 
     detail_create_response(
@@ -189,7 +189,7 @@ def test_template_subaccount_detail_create_markups_permissions(case, models, f,
         detail_create_response):
 
     def post_data(account):
-        subaccounts = [f.create_template_subaccount(parent=account)]
+        subaccounts = [f.create_subaccount(parent=account)]
         return {
             'children': [a.pk for a in subaccounts],
             'identifier': '0001',

@@ -23,8 +23,8 @@ def test_delete_account_reestimates(budget_f):
 
 def test_delete_account_reactualizes(f):
     budget = f.create_budget()
-    account = f.create_budget_account(parent=budget)
-    parent_subaccount = f.create_budget_subaccount(parent=account)
+    account = f.create_account(parent=budget)
+    parent_subaccount = f.create_subaccount(parent=account)
     subaccount = f.create_subaccount(
         parent=parent_subaccount,
         rate=1,

@@ -405,13 +405,13 @@ def test_duplicate_archived_budget(api_client, standard_product_user, f):
 def test_delete_budget(api_client, user, models, f):
     budget = f.create_budget()
     accounts = [
-        f.create_budget_account(parent=budget),
-        f.create_budget_account(parent=budget),
-        f.create_budget_account(parent=budget)
+        f.create_account(parent=budget),
+        f.create_account(parent=budget),
+        f.create_account(parent=budget)
     ]
-    f.create_budget_subaccount(count=6, parent=accounts[0])
-    f.create_budget_subaccount(count=6, parent=accounts[1])
-    f.create_budget_subaccount(count=6, parent=accounts[2])
+    f.create_subaccount(count=6, parent=accounts[0])
+    f.create_subaccount(count=6, parent=accounts[1])
+    f.create_subaccount(count=6, parent=accounts[2])
 
     api_client.force_login(user)
     response = api_client.delete("/v1/budgets/%s/" % budget.pk)
@@ -425,15 +425,15 @@ def test_delete_budget(api_client, user, models, f):
 def test_get_budget_pdf(api_client, user, f):
     budget = f.create_budget()
     budget_markups = [f.create_markup(parent=budget)]
-    account = f.create_budget_account(parent=budget, markups=budget_markups)
+    account = f.create_account(parent=budget, markups=budget_markups)
     account_markups = [f.create_markup(parent=account)]
-    subaccount = f.create_budget_subaccount(
+    subaccount = f.create_subaccount(
         parent=account,
         markups=account_markups
     )
     subaccounts = [
-        f.create_budget_subaccount(parent=subaccount),
-        f.create_budget_subaccount(parent=subaccount)
+        f.create_subaccount(parent=subaccount),
+        f.create_subaccount(parent=subaccount)
     ]
     api_client.force_login(user)
     response = api_client.get("/v1/budgets/%s/pdf/" % budget.pk)

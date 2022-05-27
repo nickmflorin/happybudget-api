@@ -438,8 +438,8 @@ def test_bulk_delete_actuals_invalidates_caches(api_client, user, f):
 def test_actuals_cache_invalidated_on_upload_attachment(api_client, user, f,
         test_uploaded_file):
     budget = f.create_budget()
-    account = f.create_budget_account(parent=budget)
-    subaccount = f.create_budget_subaccount(parent=account)
+    account = f.create_account(parent=budget)
+    subaccount = f.create_subaccount(parent=account)
     actuals = [
         f.create_actual(budget=budget, value=100, owner=subaccount),
         f.create_actual(budget=budget, value=120, owner=subaccount)
@@ -478,8 +478,8 @@ def test_actuals_cache_invalidated_on_upload_attachment(api_client, user, f,
 def test_actual_owners_search_not_cached(api_client, user, f):
     budget = f.create_budget()
     f.create_markup(parent=budget)
-    account = f.create_budget_account(parent=budget)
-    f.create_budget_subaccount(parent=account, count=4)
+    account = f.create_account(parent=budget)
+    f.create_subaccount(parent=account, count=4)
 
     def mock_response(*args, **kwargs):
         return Response(status=status.HTTP_200_OK)
@@ -503,8 +503,8 @@ def test_actual_owners_search_not_cached(api_client, user, f):
 def test_actual_owners_invalidated_on_markup_saved(api_client, user, f):
     budget = f.create_budget()
     f.create_markup(parent=budget)
-    account = f.create_budget_account(parent=budget)
-    f.create_budget_subaccount(parent=account, count=4)
+    account = f.create_account(parent=budget)
+    f.create_subaccount(parent=account, count=4)
 
     api_client.force_login(user)
     response = api_client.get("/v1/budgets/%s/actual-owners/" % budget.pk)
@@ -523,8 +523,8 @@ def test_actual_owners_invalidated_on_markup_saved(api_client, user, f):
 def test_actual_owners_invalidated_on_markup_deleted(api_client, user, f):
     budget = f.create_budget()
     markup = f.create_markup(parent=budget)
-    account = f.create_budget_account(parent=budget)
-    f.create_budget_subaccount(parent=account, count=4)
+    account = f.create_account(parent=budget)
+    f.create_subaccount(parent=account, count=4)
 
     api_client.force_login(user)
     response = api_client.get("/v1/budgets/%s/actual-owners/" % budget.pk)
@@ -543,15 +543,15 @@ def test_actual_owners_invalidated_on_markup_deleted(api_client, user, f):
 def test_actual_owners_invalidated_on_subaccount_saved(api_client, user, f):
     budget = f.create_budget()
     f.create_markup(parent=budget)
-    account = f.create_budget_account(parent=budget)
-    f.create_budget_subaccount(parent=account, count=4)
+    account = f.create_account(parent=budget)
+    f.create_subaccount(parent=account, count=4)
 
     api_client.force_login(user)
     response = api_client.get("/v1/budgets/%s/actual-owners/" % budget.pk)
     assert response.status_code == 200
     assert response.json()['count'] == 5
 
-    f.create_budget_subaccount(parent=account, count=1)
+    f.create_subaccount(parent=account, count=1)
 
     api_client.force_login(user)
     response = api_client.get("/v1/budgets/%s/actual-owners/" % budget.pk)

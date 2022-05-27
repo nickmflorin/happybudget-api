@@ -27,11 +27,11 @@ def test_caches_on_search(api_client, user, budget_f):
 def test_caches_invalidated_on_upload_attachment(api_client, user, f,
         test_uploaded_file):
     budget = f.create_budget()
-    account = f.create_budget_account(parent=budget)
-    subaccount = f.create_budget_subaccount(parent=account)
+    account = f.create_account(parent=budget)
+    subaccount = f.create_subaccount(parent=account)
     subaccounts = [
-        f.create_budget_subaccount(parent=subaccount),
-        f.create_budget_subaccount(parent=subaccount)
+        f.create_subaccount(parent=subaccount),
+        f.create_subaccount(parent=subaccount)
     ]
 
     uploaded_file = test_uploaded_file('test.jpeg')

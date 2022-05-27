@@ -1,7 +1,7 @@
 def test_create_actual_recalculates(f):
     budget = f.create_budget()
-    account = f.create_budget_account(parent=budget)
-    subaccount = f.create_budget_subaccount(parent=account)
+    account = f.create_account(parent=budget)
+    subaccount = f.create_subaccount(parent=account)
     f.create_actual(owner=subaccount, budget=budget, value=10)
 
     subaccount.refresh_from_db()
@@ -16,8 +16,8 @@ def test_create_actual_recalculates(f):
 
 def test_delete_actual_recalculates(f):
     budget = f.create_budget()
-    account = f.create_budget_account(parent=budget)
-    subaccount = f.create_budget_subaccount(parent=account)
+    account = f.create_account(parent=budget)
+    subaccount = f.create_subaccount(parent=account)
     actual = f.create_actual(owner=subaccount, budget=budget, value=10)
 
     subaccount.refresh_from_db()
@@ -43,8 +43,8 @@ def test_delete_actual_recalculates(f):
 
 def test_change_actual_owner_type_recalculates(f):
     budget = f.create_budget()
-    account = f.create_budget_account(parent=budget)
-    subaccount = f.create_budget_subaccount(parent=account)
+    account = f.create_account(parent=budget)
+    subaccount = f.create_subaccount(parent=account)
     markup = f.create_markup(parent=account)
     actual = f.create_actual(owner=subaccount, budget=budget, value=10)
 
@@ -60,11 +60,11 @@ def test_change_actual_owner_type_recalculates(f):
 
 def test_change_actual_owner_recalculates(f):
     budget = f.create_budget()
-    account = f.create_budget_account(parent=budget)
-    subaccount = f.create_budget_subaccount(parent=account)
+    account = f.create_account(parent=budget)
+    subaccount = f.create_subaccount(parent=account)
     actual = f.create_actual(owner=subaccount, budget=budget, value=10)
 
-    another_subaccount = f.create_budget_subaccount(parent=account)
+    another_subaccount = f.create_subaccount(parent=account)
     actual.owner = another_subaccount
     actual.save()
 
@@ -83,8 +83,8 @@ def test_change_actual_owner_recalculates(f):
 
 def test_change_actual_value_recalculates(f):
     budget = f.create_budget()
-    account = f.create_budget_account(parent=budget)
-    subaccount = f.create_budget_subaccount(parent=account)
+    account = f.create_account(parent=budget)
+    subaccount = f.create_subaccount(parent=account)
     actual = f.create_actual(owner=subaccount, budget=budget, value=10)
 
     actual.value = 5

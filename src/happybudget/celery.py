@@ -36,14 +36,21 @@ def setup_periodic_tasks(sender, **kwargs):
     # pylint: disable=import-outside-toplevel
     from happybudget.app.group.tasks import find_and_delete_empty_groups
     from happybudget.app.io.tasks import find_and_delete_empty_attachments
+    from happybudget.app.subaccount.tasks import (
+        fix_corrupted_fringe_relationships)
 
     sender.add_periodic_task(
         60.0 * 5.0,  # Every 5 minutes
         find_and_delete_empty_groups.s(),
-        name='Find and delete empty groups.'
+        name='Find and delete empty Group(s).'
     )
     sender.add_periodic_task(
         60.0 * 5.0,  # Every 5 minutes
         find_and_delete_empty_attachments.s(),
-        name='Find and delete empty attachments.'
+        name='Find and delete empty Attachment(s).'
+    )
+    sender.add_periodic_task(
+        60.0 * 60.0,  # Every Hour
+        fix_corrupted_fringe_relationships.s(),
+        name='Find and fix corrupted Fringe - SubAccount relationship(s).'
     )

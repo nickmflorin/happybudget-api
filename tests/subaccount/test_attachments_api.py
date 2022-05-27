@@ -8,12 +8,12 @@ from django.test import override_settings
 @override_settings(APP_URL="https://api.happybudget.com")
 def test_attachments_properly_serialize(api_client, user, f):
     budget = f.create_budget()
-    account = f.create_budget_account(parent=budget)
+    account = f.create_account(parent=budget)
     attachments = [
         f.create_attachment(name='attachment1.jpeg'),
         f.create_attachment(name='attachment2.jpeg')
     ]
-    subaccount = f.create_budget_subaccount(
+    subaccount = f.create_subaccount(
         parent=account,
         attachments=attachments
     )
@@ -47,12 +47,12 @@ def test_attachments_properly_serialize(api_client, user, f):
 @override_settings(APP_URL="https://api.happybudget.com")
 def test_get_attachments(api_client, user, f):
     budget = f.create_budget()
-    account = f.create_budget_account(parent=budget)
+    account = f.create_account(parent=budget)
     attachments = [
         f.create_attachment(name='attachment1.jpeg'),
         f.create_attachment(name='attachment2.jpeg')
     ]
-    subaccount = f.create_budget_subaccount(
+    subaccount = f.create_subaccount(
         parent=account,
         attachments=attachments
     )
@@ -94,12 +94,12 @@ def test_get_attachments_file_not_found_locally(api_client, user, f):
     # determined if the file does not exist since it is solely based on the name,
     # which is stored on the DB field.
     budget = f.create_budget()
-    account = f.create_budget_account(parent=budget)
+    account = f.create_account(parent=budget)
     attachments = [
         f.create_attachment(name='attachment1.jpeg'),
         f.create_attachment(name='attachment2.jpeg')
     ]
-    subaccount = f.create_budget_subaccount(
+    subaccount = f.create_subaccount(
         parent=account,
         attachments=attachments
     )
@@ -127,12 +127,12 @@ def test_get_attachments_file_not_found_locally(api_client, user, f):
 
 def test_delete_attachment(api_client, user, f):
     budget = f.create_budget()
-    account = f.create_budget_account(parent=budget)
+    account = f.create_account(parent=budget)
     attachments = [
         f.create_attachment(name='attachment1.jpeg'),
         f.create_attachment(name='attachment2.jpeg')
     ]
-    subaccount = f.create_budget_subaccount(
+    subaccount = f.create_subaccount(
         parent=account,
         attachments=attachments
     )
@@ -147,12 +147,12 @@ def test_delete_attachment(api_client, user, f):
 @override_settings(APP_URL="https://api.happybudget.com")
 def test_update_attachments(api_client, user, f):
     budget = f.create_budget()
-    account = f.create_budget_account(parent=budget)
+    account = f.create_account(parent=budget)
     attachments = [
         f.create_attachment(name='attachment1.jpeg'),
         f.create_attachment(name='attachment2.jpeg')
     ]
-    subaccount = f.create_budget_subaccount(
+    subaccount = f.create_subaccount(
         parent=account,
         attachments=attachments
     )
@@ -201,12 +201,12 @@ def test_update_attachments(api_client, user, f):
 @override_settings(APP_URL="https://api.happybudget.com")
 def test_upload_attachment(api_client, user, f, test_uploaded_file, models):
     budget = f.create_budget()
-    account = f.create_budget_account(parent=budget)
+    account = f.create_account(parent=budget)
     attachments = [
         f.create_attachment(name='attachment1.jpeg'),
         f.create_attachment(name='attachment2.jpeg')
     ]
-    subaccount = f.create_budget_subaccount(
+    subaccount = f.create_subaccount(
         parent=account,
         attachments=attachments
     )
@@ -239,12 +239,12 @@ def test_upload_attachment(api_client, user, f, test_uploaded_file, models):
 def test_upload_multiple_attachments(api_client, user, f, test_uploaded_file,
         models):
     budget = f.create_budget()
-    account = f.create_budget_account(parent=budget)
+    account = f.create_account(parent=budget)
     attachments = [
         f.create_attachment(name='attachment1.jpeg'),
         f.create_attachment(name='attachment2.jpeg')
     ]
-    subaccount = f.create_budget_subaccount(
+    subaccount = f.create_subaccount(
         parent=account,
         attachments=attachments
     )

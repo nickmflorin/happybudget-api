@@ -14,8 +14,8 @@ def test_get_actual_owners(api_client, user, f):
         )
     ]
     accounts = [
-        f.create_budget_account(parent=budget, identifier="Account A"),
-        f.create_budget_account(
+        f.create_account(parent=budget, identifier="Account A"),
+        f.create_account(
             parent=budget,
             identifier="Account B",
             markups=[markups[0]]
@@ -23,48 +23,48 @@ def test_get_actual_owners(api_client, user, f):
     ]
     markups.append(f.create_markup(parent=accounts[0]))
     first_level_subaccounts = [
-        f.create_budget_subaccount(
+        f.create_subaccount(
             parent=accounts[0],
             markups=[markups[2]],
             identifier="Sub Account A-A"
         ),
-        f.create_budget_subaccount(
+        f.create_subaccount(
             parent=accounts[0],
             identifier="Sub Account A-B"
         ),
-        f.create_budget_subaccount(
+        f.create_subaccount(
             parent=accounts[0],
             identifier="Sub Account A-C"
         ),
-        f.create_budget_subaccount(
+        f.create_subaccount(
             parent=accounts[0],
             identifier="Sub Account A-D"
         )
     ]
     markups.append(f.create_markup(parent=first_level_subaccounts[0]))
     second_level_subaccounts = [
-        f.create_budget_subaccount(
+        f.create_subaccount(
             parent=first_level_subaccounts[0],
             identifier="Sub Account A-A-A",
             markups=[markups[3]]
         ),
-        f.create_budget_subaccount(
+        f.create_subaccount(
             parent=first_level_subaccounts[1],
             identifier="Sub Account A-B-A"
         ),
-        f.create_budget_subaccount(
+        f.create_subaccount(
             parent=first_level_subaccounts[1],
             identifier="Sub Account A-B-B"
         ),
-        f.create_budget_subaccount(
+        f.create_subaccount(
             parent=first_level_subaccounts[2],
             identifier="Sub Account A-C-A"
         ),
-        f.create_budget_subaccount(
+        f.create_subaccount(
             parent=first_level_subaccounts[2],
             identifier="Sub Account A-C-B"
         ),
-        f.create_budget_subaccount(
+        f.create_subaccount(
             parent=first_level_subaccounts[2],
             identifier="Sub Account A-C-C"
         )

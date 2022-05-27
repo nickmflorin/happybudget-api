@@ -146,11 +146,11 @@ def test_get_budget_subaccount(api_client, user, f):
 
 def test_get_template_subaccount(api_client, user, f):
     budget = f.create_template()
-    account = f.create_template_account(parent=budget)
-    subaccount = f.create_template_subaccount(parent=account)
+    account = f.create_account(parent=budget)
+    subaccount = f.create_subaccount(parent=account)
     table_siblings = [
-        f.create_template_subaccount(parent=account),
-        f.create_template_subaccount(parent=account)
+        f.create_subaccount(parent=account),
+        f.create_subaccount(parent=account)
     ]
     api_client.force_login(user)
     response = api_client.get("/v1/subaccounts/%s/" % subaccount.pk)
@@ -288,8 +288,8 @@ def test_update_budget_subaccount(api_client, user, f):
 
 def test_update_template_subaccount(api_client, user, f):
     budget = f.create_template()
-    account = f.create_template_account(parent=budget)
-    subaccount = f.create_template_subaccount(
+    account = f.create_account(parent=budget)
+    subaccount = f.create_subaccount(
         parent=account,
         description="Original Description",
         identifier="Original identifier"
@@ -609,13 +609,13 @@ def test_get_children(api_client, user, f):
 
 def test_get_template_children(api_client, user, f):
     budget = f.create_template()
-    account = f.create_template_account(parent=budget)
-    parent = f.create_template_subaccount(parent=account)
-    another_parent = f.create_template_subaccount(parent=account)
+    account = f.create_account(parent=budget)
+    parent = f.create_subaccount(parent=account)
+    another_parent = f.create_subaccount(parent=account)
     subaccounts = [
-        f.create_template_subaccount(parent=parent, identifier='A'),
-        f.create_template_subaccount(parent=parent, identifier='B'),
-        f.create_template_subaccount(
+        f.create_subaccount(parent=parent, identifier='A'),
+        f.create_subaccount(parent=parent, identifier='B'),
+        f.create_subaccount(
             parent=another_parent,
             identifier='C'
         )

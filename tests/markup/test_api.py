@@ -839,8 +839,8 @@ def test_delete_template_flat_markup(api_client, user, models, f):
         f.create_markup(parent=budget, flat=True, rate=100),
         f.create_markup(parent=budget, percent=True, rate=0.1)
     ]
-    account = f.create_template_account(parent=budget, markups=[markups[1]])
-    f.create_template_subaccount(
+    account = f.create_account(parent=budget, markups=[markups[1]])
+    f.create_subaccount(
         count=2,
         rate=10,
         multiplier=1,
@@ -919,8 +919,8 @@ def test_delete_template_percent_markup(api_client, user, models, f):
         f.create_markup(parent=budget, flat=True, rate=100),
         f.create_markup(parent=budget, percent=True, rate=0.1)
     ]
-    account = f.create_template_account(parent=budget, markups=[markups[1]])
-    f.create_template_subaccount(
+    account = f.create_account(parent=budget, markups=[markups[1]])
+    f.create_subaccount(
         count=2,
         rate=10,
         multiplier=1,
@@ -1026,20 +1026,20 @@ def test_delete_budget_account_flat_markup(api_client, user, models, f):
 
 def test_delete_template_account_flat_markup(api_client, user, models, f):
     budget = f.create_template()
-    account = f.create_template_account(parent=budget)
+    account = f.create_account(parent=budget)
     markups = [
         f.create_markup(parent=account, flat=True, rate=100),
         f.create_markup(parent=account, percent=True, rate=0.1)
     ]
     subaccounts = [
-        f.create_template_subaccount(
+        f.create_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,
             parent=account,
             markups=[markups[1]]
         ),
-        f.create_template_subaccount(
+        f.create_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,
@@ -1164,20 +1164,20 @@ def test_delete_budget_account_percent_markup(api_client, user, f, models):
 
 def test_delete_template_account_percent_markup(api_client, user, f, models):
     budget = f.create_template()
-    account = f.create_template_account(parent=budget)
+    account = f.create_account(parent=budget)
     markups = [
         f.create_markup(parent=account, flat=True, rate=100),
         f.create_markup(parent=account, percent=True, rate=0.1)
     ]
     subaccounts = [
-        f.create_template_subaccount(
+        f.create_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,
             parent=account,
             markups=[markups[1]]
         ),
-        f.create_template_subaccount(
+        f.create_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,
@@ -1402,21 +1402,21 @@ def test_delete_budget_subaccount_percent_markup(api_client, user, f, models):
 
 def test_delete_template_subaccount_flat_markup(api_client, user, models, f):
     budget = f.create_template()
-    account = f.create_template_account(parent=budget)
-    subaccount = f.create_template_subaccount(parent=account)
+    account = f.create_account(parent=budget)
+    subaccount = f.create_subaccount(parent=account)
     markups = [
         f.create_markup(parent=subaccount, flat=True, rate=100),
         f.create_markup(parent=subaccount, percent=True, rate=0.1)
     ]
     subaccounts = [
-        f.create_template_subaccount(
+        f.create_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,
             parent=subaccount,
             markups=[markups[1]]
         ),
-        f.create_template_subaccount(
+        f.create_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,
@@ -1477,21 +1477,21 @@ def test_delete_template_subaccount_flat_markup(api_client, user, models, f):
 
 def test_delete_template_subaccount_percent_markup(api_client, user, models, f):
     budget = f.create_template()
-    account = f.create_template_account(parent=budget)
-    subaccount = f.create_template_subaccount(parent=account)
+    account = f.create_account(parent=budget)
+    subaccount = f.create_subaccount(parent=account)
     markups = [
         f.create_markup(parent=subaccount, flat=True, rate=100),
         f.create_markup(parent=subaccount, percent=True, rate=0.1)
     ]
     subaccounts = [
-        f.create_template_subaccount(
+        f.create_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,
             parent=subaccount,
             markups=[markups[1]]
         ),
-        f.create_template_subaccount(
+        f.create_subaccount(
             rate=10,
             multiplier=1,
             quantity=1,

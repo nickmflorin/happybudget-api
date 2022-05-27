@@ -6,14 +6,14 @@ from django.db import IntegrityError
 
 def test_empty_attachments_deleted(f):
     budget = f.create_budget()
-    account = f.create_budget_account(parent=budget)
+    account = f.create_account(parent=budget)
     attachments = [
         f.create_attachment(name='attachment1.jpeg'),
         f.create_attachment(name='attachment2.jpeg'),
         f.create_attachment(name='attachment3.jpeg')
     ]
-    account = f.create_budget_account(parent=budget)
-    subaccount = f.create_budget_subaccount(
+    account = f.create_account(parent=budget)
+    subaccount = f.create_subaccount(
         parent=account,
         attachments=attachments,
     )
@@ -31,14 +31,14 @@ def test_empty_attachments_deleted(f):
 
 def test_subaccount_attachment_invalid_created_by(admin_user, f):
     budget = f.create_budget()
-    account = f.create_budget_account(parent=budget)
+    account = f.create_account(parent=budget)
     attachments = [
         f.create_attachment(name='attachment1.jpeg'),
         f.create_attachment(name='attachment2.jpeg'),
         f.create_attachment(name='attachment3.jpeg', created_by=admin_user)
     ]
     with pytest.raises(IntegrityError):
-        f.create_budget_subaccount(
+        f.create_subaccount(
             parent=account,
             attachments=attachments
         )

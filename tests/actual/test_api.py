@@ -44,8 +44,8 @@ def test_update_actual_type(api_client, user, f):
 
 def test_update_actual(api_client, user, f):
     budget = f.create_budget()
-    account = f.create_budget_account(parent=budget)
-    subaccount = f.create_budget_subaccount(parent=account)
+    account = f.create_account(parent=budget)
+    subaccount = f.create_subaccount(parent=account)
     actual = f.create_actual(owner=subaccount, budget=budget)
 
     api_client.force_login(user)
@@ -80,9 +80,9 @@ def test_update_actual(api_client, user, f):
 
 def test_change_actual_parent_to_subaccount(api_client, user, f):
     budget = f.create_budget()
-    account = f.create_budget_account(parent=budget)
+    account = f.create_account(parent=budget)
     markup = f.create_markup(parent=account)
-    subaccount = f.create_budget_subaccount(parent=account, markups=[markup])
+    subaccount = f.create_subaccount(parent=account, markups=[markup])
     actuals = [
         f.create_actual(owner=markup, budget=budget, value=100.0),
         f.create_actual(owner=markup, budget=budget, value=50.0)
@@ -147,9 +147,9 @@ def test_change_actual_parent_to_subaccount(api_client, user, f):
 
 def test_change_actual_parent_to_markup(api_client, user, f):
     budget = f.create_budget()
-    account = f.create_budget_account(parent=budget)
+    account = f.create_account(parent=budget)
     markup = f.create_markup(parent=account)
-    subaccount = f.create_budget_subaccount(parent=account, markups=[markup])
+    subaccount = f.create_subaccount(parent=account, markups=[markup])
     actuals = [
         f.create_actual(owner=subaccount, budget=budget, value=100.0),
         f.create_actual(owner=subaccount, budget=budget, value=50.0)
@@ -214,10 +214,10 @@ def test_change_actual_parent_to_markup(api_client, user, f):
 
 def test_change_actual_owner_invalid_subaccount(api_client, user, f):
     budgets = [f.create_budget(), f.create_budget()]
-    account = f.create_budget_account(parent=budgets[0])
-    subaccount = f.create_budget_subaccount(parent=account)
-    another_account = f.create_budget_account(parent=budgets[1])
-    another_subaccount = f.create_budget_subaccount(parent=another_account)
+    account = f.create_account(parent=budgets[0])
+    subaccount = f.create_subaccount(parent=account)
+    another_account = f.create_account(parent=budgets[1])
+    another_subaccount = f.create_subaccount(parent=another_account)
     actual = f.create_actual(owner=subaccount, budget=budgets[0])
 
     api_client.force_login(user)
@@ -232,11 +232,11 @@ def test_change_actual_owner_invalid_subaccount(api_client, user, f):
 def test_change_actual_owner_invalid_markup(api_client, user, f):
     budgets = [f.create_budget(), f.create_budget()]
 
-    account = f.create_budget_account(parent=budgets[0])
-    subaccount = f.create_budget_subaccount(parent=account)
+    account = f.create_account(parent=budgets[0])
+    subaccount = f.create_subaccount(parent=account)
 
-    another_account = f.create_budget_account(parent=budgets[1])
-    another_subaccount = f.create_budget_subaccount(parent=another_account)
+    another_account = f.create_account(parent=budgets[1])
+    another_subaccount = f.create_subaccount(parent=another_account)
     markup = f.create_markup(parent=another_subaccount)
 
     actual = f.create_actual(owner=subaccount, budget=budgets[0])

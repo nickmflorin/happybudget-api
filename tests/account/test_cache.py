@@ -116,14 +116,13 @@ def test_caches_on_search(api_client, user, budget_f):
 
 
 @override_settings(CACHE_ENABLED=True, APP_URL="https://api.happybudget.com")
-def test_caches_invalidated_on_upload_attachment(api_client, user,
-        create_budget_account, create_budget_subaccount, create_budget,
+def test_caches_invalidated_on_upload_attachment(f, api_client, user,
         test_uploaded_file):
-    budget = create_budget()
-    account = create_budget_account(parent=budget)
+    budget = f.create_budget()
+    account = f.create_account(parent=budget)
     subaccounts = [
-        create_budget_subaccount(parent=account),
-        create_budget_subaccount(parent=account)
+        f.create_subaccount(parent=account),
+        f.create_subaccount(parent=account)
     ]
 
     uploaded_file = test_uploaded_file('test.jpeg')

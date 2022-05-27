@@ -1,7 +1,7 @@
 def test_create_subaccount_actual(api_client, user, f, models):
     budget = f.create_budget()
-    account = f.create_budget_account(parent=budget)
-    subaccount = f.create_budget_subaccount(parent=account)
+    account = f.create_account(parent=budget)
+    subaccount = f.create_subaccount(parent=account)
 
     api_client.force_login(user)
     response = api_client.post(
@@ -50,9 +50,9 @@ def test_create_subaccount_actual(api_client, user, f, models):
 
 def test_create_markup_actual(api_client, user, f, models):
     budget = f.create_budget()
-    account = f.create_budget_account(parent=budget)
+    account = f.create_account(parent=budget)
     markup = f.create_markup(parent=account)
-    subaccount = f.create_budget_subaccount(parent=account, markups=[markup])
+    subaccount = f.create_subaccount(parent=account, markups=[markup])
 
     api_client.force_login(user)
     response = api_client.post(
@@ -105,22 +105,22 @@ def test_create_markup_actual(api_client, user, f, models):
 def test_bulk_create_actuals(api_client, user, f, models):
     budget = f.create_budget()
     accounts = [
-        f.create_budget_account(parent=budget),
-        f.create_budget_account(parent=budget)
+        f.create_account(parent=budget),
+        f.create_account(parent=budget)
     ]
     markups = [
         f.create_markup(parent=accounts[0]),
         f.create_markup(parent=accounts[1])
     ]
     subaccounts = [
-        f.create_budget_subaccount(
+        f.create_subaccount(
             parent=accounts[0],
             quantity=1,
             rate=100,
             multiplier=1,
             markups=[markups[0]]
         ),
-        f.create_budget_subaccount(
+        f.create_subaccount(
             parent=accounts[1],
             quantity=2,
             rate=50,
@@ -234,22 +234,22 @@ def test_bulk_create_actuals(api_client, user, f, models):
 def test_bulk_update_actuals(api_client, user, f):
     budget = f.create_budget()
     accounts = [
-        f.create_budget_account(parent=budget),
-        f.create_budget_account(parent=budget)
+        f.create_account(parent=budget),
+        f.create_account(parent=budget)
     ]
     markups = [
         f.create_markup(parent=accounts[0]),
         f.create_markup(parent=accounts[1])
     ]
     subaccounts = [
-        f.create_budget_subaccount(
+        f.create_subaccount(
             parent=accounts[0],
             quantity=1,
             rate=100,
             multiplier=1,
             markups=[markups[0]]
         ),
-        f.create_budget_subaccount(
+        f.create_subaccount(
             parent=accounts[1],
             quantity=2,
             rate=50,
@@ -343,21 +343,21 @@ def test_bulk_update_actuals(api_client, user, f):
 def test_change_actual_owner_in_bulk_update(api_client, user, f):
     budget = f.create_budget()
     accounts = [
-        f.create_budget_account(parent=budget),
-        f.create_budget_account(parent=budget)
+        f.create_account(parent=budget),
+        f.create_account(parent=budget)
     ]
     markups = [
         f.create_markup(parent=accounts[0]),
         f.create_markup(parent=accounts[1])
     ]
     subaccounts = [
-        f.create_budget_subaccount(
+        f.create_subaccount(
             parent=accounts[0],
             quantity=1,
             rate=100,
             multiplier=1,
         ),
-        f.create_budget_subaccount(
+        f.create_subaccount(
             parent=accounts[1],
             quantity=2,
             rate=50,
@@ -450,22 +450,22 @@ def test_change_actual_owner_in_bulk_update(api_client, user, f):
 def test_bulk_delete_actuals(api_client, user, models, f):
     budget = f.create_budget()
     accounts = [
-        f.create_budget_account(parent=budget),
-        f.create_budget_account(parent=budget)
+        f.create_account(parent=budget),
+        f.create_account(parent=budget)
     ]
     markups = [
         f.create_markup(parent=accounts[0]),
         f.create_markup(parent=accounts[1])
     ]
     subaccounts = [
-        f.create_budget_subaccount(
+        f.create_subaccount(
             parent=accounts[0],
             quantity=1,
             rate=100,
             multiplier=1,
             markups=[markups[0]]
         ),
-        f.create_budget_subaccount(
+        f.create_subaccount(
             parent=accounts[1],
             quantity=2,
             rate=50,

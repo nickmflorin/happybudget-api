@@ -40,9 +40,9 @@ def test_find_and_delete_empty_attachments(f, models):
     ]
     f.create_contact(attachments=[attachments[1]])
     budget = f.create_budget()
-    account = f.create_budget_account(parent=budget)
+    account = f.create_account(parent=budget)
     f.create_actual(budget=budget, attachments=[attachments[3]])
-    f.create_budget_subaccount(
+    f.create_subaccount(
         parent=account,
         attachments=[attachments[4]]
     )

@@ -35,9 +35,9 @@ def test_delete_subaccount_reestimates(budget_f, freezer):
 
 def test_delete_subaccount_reactualizes(f):
     budget = f.create_budget()
-    account = f.create_budget_account(parent=budget)
-    parent_subaccount = f.create_budget_subaccount(parent=account)
-    subaccount = f.create_budget_subaccount(
+    account = f.create_account(parent=budget)
+    parent_subaccount = f.create_subaccount(parent=account)
+    subaccount = f.create_subaccount(
         parent=parent_subaccount,
         rate=1,
         multiplier=5,
