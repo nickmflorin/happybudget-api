@@ -31,6 +31,27 @@ def test_update_fringe(api_client, user, budget_f, f, models):
     assert fringe.unit == 1
 
 
+def test_update_fringe_with_subaccounts(api_client, user, budget_f, f):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    subaccounts = [
+        budget_f.create_subaccount(parent=account, rate=100, quantity=1),
+        budget_f.create_subaccount(parent=account, rate=100, quantity=2)
+    ]
+    fringe = f.create_fringe(budget=budget)
+    api_client.force_login(user)
+    response = api_client.patch("/v1/fringes/%s/" % fringe.pk, data={
+        'subaccounts': [s.pk for s in subaccounts]
+    })
+    assert response.status_code == 400
+    assert response.json() == {'errors': [{
+        'message': 'Field is not allowed for PATCH requests.',
+        'code': 'invalid',
+        'error_type': 'field',
+        'field': 'subaccounts'
+    }]}
+
+
 def test_get_fringe(api_client, user, budget_f, f, models):
     api_client.force_login(user)
     budget = budget_f.create_budget()

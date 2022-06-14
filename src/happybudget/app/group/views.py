@@ -40,7 +40,10 @@ class GroupViewSet(
         context = super().get_serializer_context()
         # The parent object is needed in context in order to update the children
         # of a Group - but that will only happen in a PATCH request for this
-        # view (POST request is handled by another view).
+        # view (POST request is handled by another view).  The parent of a Group
+        # never changes via POST or PATCH requests, so including it as context
+        # is safe (since it will not be changing as a result of the request
+        # data).
         if self.detail is True:
             obj = self.get_object()
             context['parent'] = obj.parent

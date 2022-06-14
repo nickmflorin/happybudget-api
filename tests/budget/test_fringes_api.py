@@ -75,6 +75,57 @@ def test_create_fringe(api_client, user, budget_f, models):
     assert fringe.unit == 1
 
 
+def test_create_fringe_with_subaccounts(api_client, user, budget_f, models):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    subaccounts = [
+        budget_f.create_subaccount(parent=account, rate=100, quantity=1),
+        budget_f.create_subaccount(parent=account, rate=100, quantity=2)
+    ]
+    api_client.force_login(user)
+    response = api_client.post("/v1/budgets/%s/fringes/" % budget.pk, data={
+        'name': 'Test Fringe',
+        'rate': 0.5,
+        'subaccounts': [s.pk for s in subaccounts]
+    })
+    assert response.status_code == 201
+    fringe = models.Fringe.objects.first()
+    assert fringe is not None
+
+    subaccounts[0].refresh_from_db()
+    assert subaccounts[0].fringe_contribution == 50
+    assert [f for f in subaccounts[0].fringes.all()] == [fringe]
+
+    subaccounts[1].refresh_from_db()
+    assert subaccounts[1].fringe_contribution == 100
+    assert [f for f in subaccounts[1].fringes.all()] == [fringe]
+
+
+def test_create_fringe_with_invalid_subaccounts(api_client, user, budget_f):
+    budgets = budget_f.create_budget(count=2)
+    accounts = budget_f.create_account(count=2, parent_array=budgets)
+    subaccounts = [
+        budget_f.create_subaccount(parent=accounts[0], rate=100, quantity=1),
+        budget_f.create_subaccount(parent=accounts[1], rate=100, quantity=2)
+    ]
+    api_client.force_login(user)
+    response = api_client.post("/v1/budgets/%s/fringes/" % budgets[0].pk, data={
+        'name': 'Test Fringe',
+        'rate': 0.5,
+        'subaccounts': [s.pk for s in subaccounts]
+    })
+    assert response.status_code == 400
+    assert response.json() == {'errors': [{
+        'code': 'does_not_belong_to_budget',
+        'error_type': 'field',
+        'field': 'subaccounts',
+        'message': (
+            'The child %s sub account with ID %s does not belong to the '
+            'correct budget.' % (subaccounts[1].domain, subaccounts[1].pk)
+        )
+    }]}
+
+
 def test_bulk_create_fringes(api_client, user, models, budget_f):
     budget = budget_f.create_budget()
     accounts = [
@@ -135,6 +186,56 @@ def test_bulk_create_fringes(api_client, user, models, budget_f):
     budget.refresh_from_db()
     assert budget.nominal_value == 200.0
     assert budget.actual == 0.0
+
+
+def test_bulk_create_fringe_with_subaccounts(api_client, user, budget_f, models):
+    budget = budget_f.create_budget()
+    account = budget_f.create_account(parent=budget)
+    subaccounts = [
+        budget_f.create_subaccount(parent=account, rate=100, quantity=1),
+        budget_f.create_subaccount(parent=account, rate=100, quantity=2)
+    ]
+    api_client.force_login(user)
+    response = api_client.patch(
+        "/v1/budgets/%s/bulk-create-fringes/" % budget.pk,
+        format='json',
+        data={'data': [
+            {
+                'name': 'fringe-a',
+                'rate': 0.5,
+                'subaccounts': [s.pk for s in subaccounts]
+            },
+            {
+                'name': 'fringe-b',
+                'rate': 0.5,
+                'subaccounts': [s.pk for s in subaccounts]
+            }
+        ]})
+    assert response.status_code == 200
+
+    assert response.json()['parent']['id'] == budget.pk
+    assert response.json()['parent']['nominal_value'] == 300.0
+    assert response.json()['parent']['accumulated_fringe_contribution'] == 300.0
+
+    # Make sure the actual Fringe(s) were created in the database.
+    fringes = models.Fringe.objects.all()
+    assert len(fringes) == 2
+
+    subaccounts[0].refresh_from_db()
+    assert subaccounts[0].fringe_contribution == 100
+    assert [f for f in subaccounts[0].fringes.all()] == list(fringes)
+
+    subaccounts[1].refresh_from_db()
+    assert subaccounts[1].fringe_contribution == 200
+    assert [f for f in subaccounts[1].fringes.all()] == list(fringes)
+
+    account.refresh_from_db()
+    assert account.accumulated_value == 300
+    assert account.accumulated_fringe_contribution == 300.0
+
+    budget.refresh_from_db()
+    assert budget.nominal_value == 300.0
+    assert budget.accumulated_fringe_contribution == 300.0
 
 
 def test_bulk_update_fringes(api_client, user, f, budget_f):

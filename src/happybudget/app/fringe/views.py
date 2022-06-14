@@ -46,5 +46,8 @@ class FringesViewSet(
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
+        # The Budget of a Fringe will never change via a POST or PATCH request,
+        # so including it as context is safe because it will not change as a
+        # result of the request data.
         context.update(budget=self.instance.budget)
         return context

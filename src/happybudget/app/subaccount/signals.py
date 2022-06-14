@@ -50,7 +50,7 @@ def validate_fringes(instance, reverse, **kwargs):
     signal=signals.m2m_changed,
     sender=TemplateSubAccount.fringes.through
 )
-def fringes_changed(instance, action, reverse, model, pk_set, **kwargs):
+def fringes_changed(instance, action, reverse, **kwargs):
     if action in ('post_add', 'post_remove'):
         instances = [instance]
         if reverse:
