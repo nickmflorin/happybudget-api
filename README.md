@@ -176,6 +176,11 @@ If you prefer to avoid building psycopg2 from source, please install the PyPI
 In this case, return to **Step 2** and make sure that `postgres` was properly
 installed.
 
+Once the dependencies are successfully installed, you should now be able to
+run the test suite (see **Testing** section below).  However, there is still
+additional setup required to be able to run the application locally.  These
+additional steps are outlined in **Step 4** and **Step 5**.
+
 ### Step 4: Environment
 
 There are 4 distinct environments that the application runs in, with the
