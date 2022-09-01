@@ -34,9 +34,27 @@ Clone this repository locally and `cd` into the directory.
 $ git clone https://github.com/nickmflorin/happybudget-api.git
 ```
 
-### Step 2: Python
+### Step 2: Postgres
 
-First, you need to install [`pyenv`](https://github.com/pyenv/pyenv-virtualenv),
+When developing locally (or being used in production) a `postgres` database
+is used.  First, check to see if you already have it installed on your machine:
+
+```bash
+$ which postgres
+```
+
+If the result of the command is a directory (usually `/usr/local/bin/postgres`),
+then it is already installed and you can proceed to the next step.  If not,
+simply install `postgres`:
+
+```bash
+$ brew install postgres
+```
+
+### Step 3: Python
+
+After `postgres` is installed, you need to install
+[`pyenv`](https://github.com/pyenv/pyenv-virtualenv),
 a Python version manager for development. This will allow you to manage your
 Python version on a project basis.
 
@@ -131,7 +149,34 @@ Note that [`poetry`](https://python-poetry.org/docs/) has the ability to manage
 virtual environments for you, so there is also that option if you do not feel
 like managing it yourself.
 
-### Step 3: Environment
+##### Troubleshooting Dependencies
+
+If you see an error when running `poetry install` that occurs when the
+installation of `psycopg2` fails, this means that `postgres` was not properly
+installed.  In this case, you will see an error with output that contains
+similar content as what is shown below:
+
+```bash
+python setup.py egg_info did not run successfully.
+
+Error: pg_config executable not found.
+
+pg_config is required to build psycopg2 from source.  Please add the directory
+containing pg_config to the $PATH or specify the full executable path with the
+option:
+
+  python setup.py build_ext --pg-config /path/to/pg_config build ...
+
+or with the pg_config option in 'setup.cfg'.
+
+If you prefer to avoid building psycopg2 from source, please install the PyPI
+'psycopg2-binary' package instead.
+```
+
+In this case, return to **Step 2** and make sure that `postgres` was properly
+installed.
+
+### Step 4: Environment
 
 There are 4 distinct environments that the application runs in, with the
 current environment being dictated by the settings configuration file that
