@@ -136,7 +136,7 @@ class NestedObjectViewMixin(metaclass=NestedObjectViewMeta):
     >>>     view_name = "budget"
     >>>
     >>>     def get_budget_queryset(self):
-    >>>         return Budget.objects.filter(created_by=self.request.user).all()
+    >>>         return Budget.objects.owned_by(self.request.user).all()
 
     In this example, a view that is responsible for handling the nested
     endpoints above will have access to a `budget` property, which returns

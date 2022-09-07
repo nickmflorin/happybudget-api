@@ -4,6 +4,8 @@ from django.db import models
 from happybudget.app.models import BaseModel
 from happybudget.app.user.mixins import ModelOwnershipMixin
 
+from .managers import HeaderTemplateManager
+
 
 def upload_to(instance, filename):
     return instance.user_owner.upload_image_to(
@@ -26,7 +28,8 @@ class HeaderTemplate(
     right_info = models.TextField(null=True)
     left_image = models.ImageField(upload_to=upload_to, null=True)
     right_image = models.ImageField(upload_to=upload_to, null=True)
-    ownership_field = 'created_by'
+    user_ownership_field = 'created_by'
+    objects = HeaderTemplateManager()
 
     class Meta:
         verbose_name = "Header Template"

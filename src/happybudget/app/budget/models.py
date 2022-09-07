@@ -145,7 +145,7 @@ class Budget(BaseBudget):
     @property
     def is_first_created(self):
         first_created = type(self).objects \
-            .filter(created_by=self.created_by) \
+            .owned_by(self.user_owner) \
             .only('pk') \
             .order_by('created_at').first()
         # Since this property is on an instance that exists, it should be

@@ -4,9 +4,12 @@ from happybudget.app.budgeting.managers import BudgetingPolymorphicManager
 from happybudget.app.budgeting.utils import BudgetTree
 
 from .duplication import Duplicator
+from .query import BudgetQuerySet, BudgetQuerier
 
 
-class BaseBudgetManager(BudgetingPolymorphicManager):
+class BaseBudgetManager(BudgetQuerier, BudgetingPolymorphicManager):
+    queryset_class = BudgetQuerySet
+
     @signals.disable()
     def bulk_calculate(self, *args, **kwargs):
         return self.bulk_estimate(*args, **kwargs)
@@ -28,11 +31,9 @@ class BaseBudgetManager(BudgetingPolymorphicManager):
         return tree
 
     @signals.disable()
-    def bulk_estimate(self, instances, **kwargs):
-        instances = ensure_iterable(instances)
-        commit = kwargs.pop('commit', True)
+    def bulk_estimate(self, instances, commit=True, **kwargs):
         tree = self.perform_bulk_routine(
-            instances=instances,
+            instances=ensure_iterable(instances),
             method_name='estimate',
             **kwargs
         )
@@ -47,8 +48,7 @@ class BaseBudgetManager(BudgetingPolymorphicManager):
 
 class BudgetManager(BaseBudgetManager):
     @signals.disable()
-    def bulk_calculate(self, instances, **kwargs):
-        commit = kwargs.pop('commit', True)
+    def bulk_calculate(self, instances, commit=True, **kwargs):
         tree = super().bulk_calculate(instances, commit=False, **kwargs)
         actualized_tree = self.bulk_actualize(instances, commit=False, **kwargs)
         tree.merge(actualized_tree)
@@ -57,11 +57,9 @@ class BudgetManager(BaseBudgetManager):
         return tree
 
     @signals.disable()
-    def bulk_actualize(self, instances, **kwargs):
-        instances = ensure_iterable(instances)
-        commit = kwargs.pop('commit', True)
+    def bulk_actualize(self, instances, commit=True, **kwargs):
         tree = self.perform_bulk_routine(
-            instances=instances,
+            instances=ensure_iterable(instances),
             method_name='actualize',
             **kwargs
         )

@@ -11,9 +11,12 @@ from happybudget.app.budgeting.managers import (
 from happybudget.app.budgeting.utils import BudgetTree
 
 from .cache import account_instance_cache
+from .query import AccountQuerySet, AccountQuerier
 
 
-class AccountManager(BudgetingPolymorphicOrderedRowManager):
+class AccountManager(AccountQuerier, BudgetingPolymorphicOrderedRowManager):
+    queryset_class = AccountQuerySet
+
     @signals.disable()
     def bulk_delete(self, instances, request=None):
         budgets = set([inst.budget for inst in instances])
@@ -117,11 +120,9 @@ class AccountManager(BudgetingPolymorphicOrderedRowManager):
         return tree
 
     @signals.disable()
-    def bulk_estimate(self, instances, **kwargs):
-        instances = ensure_iterable(instances)
-        commit = kwargs.pop('commit', True)
+    def bulk_estimate(self, instances, commit=True, **kwargs):
         tree = self.perform_bulk_routine(
-            instances=instances,
+            instances=ensure_iterable(instances),
             method_name='estimate',
             **kwargs
         )
@@ -137,8 +138,7 @@ class TemplateAccountManager(AccountManager):
 
 class BudgetAccountManager(AccountManager):
     @signals.disable()
-    def bulk_calculate(self, instances, **kwargs):
-        commit = kwargs.pop('commit', True)
+    def bulk_calculate(self, instances, commit=True, **kwargs):
         tree = super().bulk_calculate(instances, commit=False, **kwargs)
         actualized_tree = self.bulk_actualize(instances, commit=False, **kwargs)
         tree.merge(actualized_tree)
@@ -148,11 +148,9 @@ class BudgetAccountManager(AccountManager):
         return tree
 
     @signals.disable()
-    def bulk_actualize(self, instances, **kwargs):
-        instances = ensure_iterable(instances)
-        commit = kwargs.pop('commit', True)
+    def bulk_actualize(self, instances, commit=True, **kwargs):
         tree = self.perform_bulk_routine(
-            instances=instances,
+            instances=ensure_iterable(instances),
             method_name='actualize',
             **kwargs
         )

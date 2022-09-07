@@ -8,8 +8,12 @@ from happybudget.app.budgeting.managers import BudgetingOrderedRowManager
 from happybudget.app.subaccount.cache import (
     subaccount_instance_cache, invalidate_parent_children_cache)
 
+from .query import ActualQuerier, ActualQuerySet
 
-class ActualManager(BudgetingOrderedRowManager):
+
+class ActualManager(ActualQuerier, BudgetingOrderedRowManager):
+    queryset_class = ActualQuerySet
+
     @signals.disable()
     def bulk_delete(self, instances, request=None):
         budgets = set([obj.budget for obj in instances])

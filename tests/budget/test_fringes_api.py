@@ -94,10 +94,12 @@ def test_create_fringe_with_subaccounts(api_client, user, budget_f, models):
 
     subaccounts[0].refresh_from_db()
     assert subaccounts[0].fringe_contribution == 50
+    # pylint: disable=unnecessary-comprehension
     assert [f for f in subaccounts[0].fringes.all()] == [fringe]
 
     subaccounts[1].refresh_from_db()
     assert subaccounts[1].fringe_contribution == 100
+    # pylint: disable=unnecessary-comprehension
     assert [f for f in subaccounts[1].fringes.all()] == [fringe]
 
 
@@ -223,10 +225,12 @@ def test_bulk_create_fringe_with_subaccounts(api_client, user, budget_f, models)
 
     subaccounts[0].refresh_from_db()
     assert subaccounts[0].fringe_contribution == 100
+    # pylint: disable=unnecessary-comprehension
     assert [f for f in subaccounts[0].fringes.all()] == list(fringes)
 
     subaccounts[1].refresh_from_db()
     assert subaccounts[1].fringe_contribution == 200
+    # pylint: disable=unnecessary-comprehension
     assert [f for f in subaccounts[1].fringes.all()] == list(fringes)
 
     account.refresh_from_db()

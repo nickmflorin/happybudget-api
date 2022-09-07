@@ -30,4 +30,4 @@ class HeaderTemplateViewSet(
         return self.serializer_class
 
     def get_queryset(self):
-        return HeaderTemplate.objects.filter(created_by=self.request.user)
+        return HeaderTemplate.objects.owned_by(self.request.user)

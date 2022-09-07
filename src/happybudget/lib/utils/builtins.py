@@ -201,6 +201,18 @@ def get_attribute(*args, **kwargs):
     strict = kwargs.pop('strict', True)
     default = kwargs.pop('default', None)
     delimiter = kwargs.pop('delimiter', '.')
+    return_all = kwargs.pop('return_all', False)
+
+    all_parts = []
+
+    def append_return(v):
+        all_parts.append(v)
+        return v
+
+    def parts_or_v(v):
+        if return_all:
+            return all_parts
+        return v
 
     def get_from_dict(v, k):
         if delimiter in k:
@@ -209,10 +221,12 @@ def get_attribute(*args, **kwargs):
                 raise AttributeError(
                     'Dictionary does not have key %s.' % parts[0])
             # The default cannot be applied until the last level.
-            return get_from_dict(parts[0][k], delimiter.join(parts[1:]))
+            first_part = parts[0][k]
+            all_parts.append(first_part)
+            return get_from_dict(first_part, delimiter.join(parts[1:]))
         elif strict:
-            return v[k]
-        return v.get(k, default)
+            return append_return(v[k])
+        return append_return(v.get(k, default))
 
     def get_from_instance(v, k):
         if delimiter in k:
@@ -221,11 +235,12 @@ def get_attribute(*args, **kwargs):
                 raise AttributeError(
                     'Object does not have attribute %s.' % parts[0])
             # The default cannot be applied until the last level.
-            return get_from_instance(
-                getattr(v, parts[0]), delimiter.join(parts[1:]))
+            first_part = getattr(v, parts[0])
+            all_parts.append(first_part)
+            return get_from_instance(first_part, delimiter.join(parts[1:]))
         elif strict:
-            return getattr(v, k)
-        return getattr(v, k, default)
+            return append_return(getattr(v, k))
+        return append_return(getattr(v, k, default))
 
     assert len(args) == 2 or (kwargs and len(args) == 1), \
         "The attribute must be obtained from either a provided dict, " \
@@ -236,9 +251,9 @@ def get_attribute(*args, **kwargs):
         assert isinstance(args[0], str), \
             f"Attribute must be a string name, not {type(args[0])}"
         if isinstance(args[1], dict):
-            return get_from_dict(args[1], args[0])
-        return get_from_instance(args[1], args[0])
-    return get_from_dict(kwargs, args[0])
+            return parts_or_v(get_from_dict(args[1], args[0]))
+        return parts_or_v(get_from_instance(args[1], args[0]))
+    return parts_or_v(get_from_dict(kwargs, args[0]))
 
 
 def get_string_formatted_kwargs(value):

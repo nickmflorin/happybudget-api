@@ -508,7 +508,7 @@ class BudgetViewSet(
             base_cls = Budget
         qs = base_cls.objects
         if self.action == 'list':
-            qs = qs.filter(created_by=self.request.user)
+            qs = qs.owned_by(self.request.user)
             # Archived Budget(s) are handled by a separate view.
             if base_cls is Budget:
                 qs = qs.filter(archived=False)

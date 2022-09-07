@@ -12,9 +12,10 @@ from happybudget.app.subaccount.cache import (
     subaccount_instance_cache, subaccount_children_cache)
 from happybudget.app.tabling.query import (
     OrderedRowQuerier, OrderedRowQuerySet)
+from happybudget.app.user.query import ModelOwnershipQuerier
 
 
-class FringeQuerier(OrderedRowQuerier):
+class FringeQuerier(ModelOwnershipQuerier, OrderedRowQuerier):
     def for_budgets(self):
         # pylint: disable=import-outside-toplevel
         from happybudget.app.budget.models import Budget

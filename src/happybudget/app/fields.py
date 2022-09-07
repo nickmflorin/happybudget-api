@@ -216,6 +216,7 @@ class DualFilteredPrimaryKeyRelatedField(PrimaryKeyRelatedField):
             ).lower(),
         )
 
+    # pylint: disable=inconsistent-return-statements
     def to_internal_value(self, data):
         self.raise_request_if_invalid()
 
@@ -261,8 +262,9 @@ class DualFilteredPrimaryKeyRelatedField(PrimaryKeyRelatedField):
             # If the qs_filter is not a validation function, the queryset
             # it exists in is just the base queryset - and we need to perform
             # the validation on the instance before returning.
-            if hasattr(self.qs_filter, '__call__') \
-                    and not self.qs_filter(instance):
+            if (hasattr(self.qs_filter, '__call__')
+                    # pylint: disable=not-callable
+                    and not self.qs_filter(instance)):
                 self.dynamic_fail(data)
             else:
                 return instance

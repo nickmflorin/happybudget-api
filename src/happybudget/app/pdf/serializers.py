@@ -17,7 +17,7 @@ class SimpleHeaderTemplateSerializer(ModelSerializer):
 
     def validate_name(self, value):
         validator = serializers.UniqueTogetherValidator(
-            queryset=HeaderTemplate.objects.filter(created_by=self.user),
+            queryset=HeaderTemplate.objects.owned_by(self.user),
             fields=('name', ),
         )
         validator({'name': value, 'created_by': self.user}, self)

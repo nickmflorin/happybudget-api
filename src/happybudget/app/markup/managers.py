@@ -9,16 +9,12 @@ from happybudget.app.budget.cache import (
 )
 from happybudget.app.budgeting.cache import invalidate_markups_cache
 from happybudget.app.budgeting.managers import BudgetingManager
-from happybudget.app.budgeting.query import BudgetAncestorQuerier
 from happybudget.app.subaccount.cache import subaccount_instance_cache
-from happybudget.app.tabling.query import RowQuerySet
+
+from .query import MarkupQuerier, MarkupQuerySet
 
 
-class MarkupQuerySet(BudgetAncestorQuerier, RowQuerySet):
-    pass
-
-
-class MarkupManager(BudgetAncestorQuerier, BudgetingManager):
+class MarkupManager(MarkupQuerier, BudgetingManager):
     queryset_class = MarkupQuerySet
 
     def invalidate_related_caches(self, instances, old_parent=None):

@@ -54,7 +54,7 @@ class MultipleBudgetPermission(ProductPermission):
 
     def has_permission(self, request, view):
         if not self.user_has_products(request.user) \
-                and Budget.objects.filter(created_by=request.user).count() > 0:
+                and Budget.objects.owned_by(request.user).count() > 0:
             return False
         return True
 

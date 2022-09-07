@@ -1,8 +1,9 @@
 from happybudget.app.tabling.query import OrderedRowQuerySet, OrderedRowQuerier
-from happybudget.app.user.query import UserQuerySetMixin
+from happybudget.app.user.query import UserQuerySetMixin, ModelOwnershipQuerier
 
 
-class ContactQuerier(UserQuerySetMixin, OrderedRowQuerier):
+class ContactQuerier(
+        UserQuerySetMixin, OrderedRowQuerier, ModelOwnershipQuerier):
     pass
 
 

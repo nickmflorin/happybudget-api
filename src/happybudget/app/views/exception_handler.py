@@ -467,7 +467,8 @@ def exception_handler(exc, context):
             'code': 'method_not_allowed'
         })
         return Response(
-            {'errors': [map_detail(exc, message=message, code='not_found')]},
+            {'errors': [map_detail(
+                exc, message=message, code='method_not_allowed')]},
             status=status.HTTP_405_METHOD_NOT_ALLOWED
         )
     elif isinstance(exc, (
