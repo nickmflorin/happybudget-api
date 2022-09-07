@@ -1,5 +1,3 @@
-from django.contrib.contenttypes.models import ContentType
-
 from happybudget.lib.utils import concat, ensure_iterable
 
 from happybudget.app import signals
@@ -10,27 +8,8 @@ from happybudget.app.budget.cache import (
 from happybudget.app.budgeting.managers import BudgetingOrderedRowManager
 from happybudget.app.subaccount.cache import (
     subaccount_instance_cache, subaccount_children_cache)
-from happybudget.app.tabling.query import (
-    OrderedRowQuerier, OrderedRowQuerySet)
-from happybudget.app.user.query import ModelOwnershipQuerier
 
-
-class FringeQuerier(ModelOwnershipQuerier, OrderedRowQuerier):
-    def for_budgets(self):
-        # pylint: disable=import-outside-toplevel
-        from happybudget.app.budget.models import Budget
-        ctype_id = ContentType.objects.get_for_model(Budget).id
-        return self.filter(budget__polymorphic_ctype_id=ctype_id)
-
-    def for_templates(self):
-        # pylint: disable=import-outside-toplevel
-        from happybudget.app.template.models import Template
-        ctype_id = ContentType.objects.get_for_model(Template).id
-        return self.filter(budget__polymorphic_ctype_id=ctype_id)
-
-
-class FringeQuerySet(FringeQuerier, OrderedRowQuerySet):
-    pass
+from .query import FringeQuerier, FringeQuerySet
 
 
 class FringeManager(FringeQuerier, BudgetingOrderedRowManager):
