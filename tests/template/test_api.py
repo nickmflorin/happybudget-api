@@ -254,7 +254,6 @@ def test_create_hidden_non_community_template(api_client, staff_user):
     assert response.json()['errors'] == [{
         'message': 'Only community templates can be hidden/shown.',
         'code': 'invalid',
-        'error_type': 'field',
         'field': 'hidden'
     }]
 

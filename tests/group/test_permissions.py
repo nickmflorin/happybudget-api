@@ -24,7 +24,6 @@ def create_obj(f):
         'message': (
             'The user must does not have permission to view this group.'),
         'code': 'permission_error',
-        'error_type': 'permission'
     }),
     ParameterizedCase.not_logged_in(),
     ParameterizedCase('public_case', status=200),
@@ -43,7 +42,6 @@ def test_budget_group_detail_read_permissions(case, detail_response):
         'message': (
             'The user must does not have permission to view this group.'),
         'code': 'permission_error',
-        'error_type': 'permission'
     }),
     ParameterizedCase.not_logged_in(),
     ParameterizedCase('public_case', status=401),
@@ -60,7 +58,7 @@ GROUP_DELETE_PERMISSIONS = [
         'message': (
             'The user must does not have permission to view this group.'),
         'code': 'permission_error',
-        'error_type': 'permission'
+
     }),
     ParameterizedCase.not_logged_in(),
     ParameterizedCase('public_case', status=401),
@@ -90,7 +88,6 @@ def test_template_group_delete_permissions(case, delete_response):
         'message': (
             'The user must does not have permission to view this group.'),
         'code': 'permission_error',
-        'error_type': 'permission'
     }),
     ParameterizedCase.not_logged_in(),
     ParameterizedCase('public_case', status=401),
@@ -109,7 +106,7 @@ def test_budget_group_update_permissions(case, update_response):
         'message': (
             'The user must does not have permission to view this group.'),
         'code': 'permission_error',
-        'error_type': 'permission'
+
     }),
     ParameterizedCase.not_logged_in(),
     ParameterizedCase('public_case', status=401),

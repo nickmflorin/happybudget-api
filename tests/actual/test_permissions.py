@@ -24,7 +24,6 @@ def create_obj(f):
         'message': (
             'The user must does not have permission to view this actual.'),
         'code': 'permission_error',
-        'error_type': 'permission'
     }),
     ParameterizedCase.not_logged_in(),
     # Public domain does not yet include access to actuals.
@@ -44,7 +43,6 @@ def test_detail_read_permissions(case, detail_response):
         'message': (
             'The user must does not have permission to view this actual.'),
         'code': 'permission_error',
-        'error_type': 'permission'
     }),
     ParameterizedCase.not_logged_in(),
     ParameterizedCase('public_case', status=401),
@@ -63,7 +61,6 @@ def test_delete_permissions(case, delete_response):
         'message': (
             'The user must does not have permission to view this actual.'),
         'code': 'permission_error',
-        'error_type': 'permission'
     }),
     ParameterizedCase.not_logged_in(),
     ParameterizedCase('public_case', status=401),
@@ -82,7 +79,6 @@ ACTUAL_DETAIL_ATTACHMENT_PERMISSIONS = [
         'message': (
             'The user must does not have permission to view this actual.'),
         'code': 'permission_error',
-        'error_type': 'permission'
     }),
     ParameterizedCase.not_logged_in(),
     ParameterizedCase('public_case', status=401),

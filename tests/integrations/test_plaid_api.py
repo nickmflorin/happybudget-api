@@ -34,5 +34,4 @@ def test_create_link_token_plaid_error(api_client, user, monkeypatch):
     assert response.json() == {'errors': [{
         'message': 'There was an error creating the link token.',
         'code': 'plaid_request_error',
-        'error_type': 'bad_request'
     }]}

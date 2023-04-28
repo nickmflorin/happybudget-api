@@ -71,7 +71,6 @@ def test_password_recovery_expired_token(api_client, user, path, extra_data):
         'errors': [{
             'message': 'Token is expired.',
             'code': 'token_expired',
-            'error_type': 'auth',
             'user_id': user.id,
         }]
     }
@@ -93,7 +92,6 @@ def test_password_recovery_inactive_user(inactive_user, api_client, path,
         'errors': [{
             'message': 'The account is not active.',
             'code': 'account_disabled',
-            'error_type': 'auth',
             'user_id': inactive_user.pk,
         }]
     }
@@ -114,7 +112,6 @@ def test_password_recovery_unverified_user(unverified_user, api_client, path,
         'errors': [{
             'message': 'The email address is not verified.',
             'code': 'account_not_verified',
-            'error_type': 'auth',
             'user_id': unverified_user.pk,
         }]
     }
@@ -136,7 +133,6 @@ def test_password_recovery_user_logged_in(api_client, user, path, extra_data):
         'errors': [{
             'message': 'User already has an active session.',
             'code': 'permission_error',
-            'error_type': 'permission'
         }]
     }
 
@@ -165,7 +161,6 @@ def test_password_recovery_invalid_token(api_client, path, extra_data):
         'errors': [{
             'message': 'Token is invalid.',
             'code': 'token_not_valid',
-            'error_type': 'auth'
         }]
     }
 

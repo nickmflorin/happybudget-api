@@ -47,7 +47,6 @@ def test_update_fringe_with_subaccounts(api_client, user, budget_f, f):
     assert response.json() == {'errors': [{
         'message': 'Field is not allowed for PATCH requests.',
         'code': 'invalid',
-        'error_type': 'field',
         'field': 'subaccounts'
     }]}
 

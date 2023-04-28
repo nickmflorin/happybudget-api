@@ -22,7 +22,6 @@ def create_obj(f):
         'message': (
             'The user must does not have permission to view this account.'),
         'code': 'permission_error',
-        'error_type': 'permission'
     }),
     ParameterizedCase.not_logged_in(),
     ParameterizedCase('public_case', status=200),
@@ -42,7 +41,6 @@ def test_budget_account_detail_read_permissions(case, path, detail_response):
         'message': (
             'The user must does not have permission to view this account.'),
         'code': 'permission_error',
-        'error_type': 'permission'
     }),
     ParameterizedCase.not_logged_in(),
     ParameterizedCase('public_case', status=401),
@@ -60,7 +58,6 @@ ACCOUNT_DELETE_PERMISSIONS = [
         'message': (
             'The user must does not have permission to view this account.'),
         'code': 'permission_error',
-        'error_type': 'permission'
     }),
     ParameterizedCase.not_logged_in(),
     ParameterizedCase('public_case', status=401),
@@ -90,7 +87,6 @@ BUDGET_ACCOUNT_CREATE_PERMISSIONS = [
         'message': (
             'The user must does not have permission to view this account.'),
         'code': 'permission_error',
-        'error_type': 'permission'
     }),
     ParameterizedCase.not_logged_in(),
     ParameterizedCase('public_case', status=401),
@@ -142,7 +138,6 @@ TEMPLATE_ACCOUNT_CREATE_PERMISSIONS = [
         'message': (
             'The user must does not have permission to view this account.'),
         'code': 'permission_error',
-        'error_type': 'permission'
     }),
     ParameterizedCase.not_logged_in(),
     ParameterizedCase('public_case', status=401),
@@ -192,7 +187,6 @@ def test_template_account_detail_create_markups_permissions(case, models, f,
         'message': (
             'The user must does not have permission to view this account.'),
         'code': 'permission_error',
-        'error_type': 'permission'
     }),
     ParameterizedCase.not_logged_in(),
     ParameterizedCase('public_case', status=401),
@@ -211,7 +205,6 @@ def test_budget_account_update_permissions(case, update_response):
         'message': (
             'The user must does not have permission to view this account.'),
         'code': 'permission_error',
-        'error_type': 'permission'
     }),
     ParameterizedCase.not_logged_in(),
     ParameterizedCase('public_case', status=401),
@@ -228,7 +221,6 @@ ACCOUNT_DETAIL_UPDATE_PERMISSIONS = [
         'message': (
             'The user must does not have permission to view this account.'),
         'code': 'permission_error',
-        'error_type': 'permission'
     }),
     ParameterizedCase.not_logged_in(),
     ParameterizedCase('public_case', status=401),

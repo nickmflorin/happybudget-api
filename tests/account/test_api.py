@@ -105,7 +105,6 @@ def test_update_account_invalid_group(api_client, user, budget_f, f):
         'message': (
             'The child group with ID 1 does not belong to the correct table.'),
         'code': 'does_not_exist_in_table',
-        'error_type': 'field',
         'field': 'group'
     }]}
 

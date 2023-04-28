@@ -72,7 +72,6 @@ def test_login_invalid_email(login, settings):
     assert response.json() == {
         'errors': [{
             'message': 'The provided username does not exist in our system.',
-            'error_type': 'field',
             'field': 'email',
             'code': 'email_does_not_exist'
         }]
@@ -86,7 +85,6 @@ def test_login_invalid_password(login, settings):
     assert response.json() == {
         'errors': [{
             'message': 'The provided password is invalid.',
-            'error_type': 'field',
             'field': 'password',
             'code': 'invalid_credentials'
         }]
@@ -101,7 +99,6 @@ def test_login_account_disabled(login, settings):
         'errors': [{
             'message': 'The account is not active.',
             'code': 'account_disabled',
-            'error_type': 'auth',
             'user_id': 1,
         }]
     }
@@ -116,7 +113,6 @@ def test_login_account_not_verified(login, settings):
         'errors': [{
             'message': 'The email address is not verified.',
             'code': 'account_not_verified',
-            'error_type': 'auth',
             'user_id': 1,
         }]
     }

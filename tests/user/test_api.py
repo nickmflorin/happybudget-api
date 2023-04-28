@@ -55,7 +55,6 @@ def test_search_users_no_search_term(api_client, user):
     assert response.json() == {'errors': [{
         'message': 'The search parameter is required.',
         'code': 'bad_request',
-        'error_type': 'bad_request'
     }]}
 
 
@@ -221,7 +220,6 @@ def test_registration_user_not_on_waitlist(api_client):
         'errors': [{
             'message': 'The email address is not on the waitlist.',
             'code': 'account_not_on_waitlist',
-            'error_type': 'auth'
         }]
     }
 
@@ -319,7 +317,6 @@ def test_change_password_invalid_password(api_client, user):
         'errors': [{
             'message': 'The provided password is invalid.',
             'code': 'invalid_credentials',
-            'error_type': 'field',
             'field': 'password'
         }]
     }

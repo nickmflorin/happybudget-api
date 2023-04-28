@@ -90,7 +90,6 @@ def test_validate_auth_token_not_logged_in(settings, jwt_authenticated_client):
     assert response.json() == {'errors': [{
         'message': 'User is not authenticated.',
         'code': 'account_not_authenticated',
-        'error_type': 'auth'
     }]}
     assert settings.JWT_TOKEN_COOKIE_NAME not in response.cookies
 
@@ -104,7 +103,6 @@ def test_validate_auth_token_inactive_user(inactive_user, settings,
         'errors': [{
             'message': 'The account is not active.',
             'code': 'account_disabled',
-            'error_type': 'auth',
             'user_id': inactive_user.pk
         }]
     }
@@ -121,7 +119,6 @@ def test_validate_auth_token_unverified_user(unverified_user, settings,
         'errors': [{
             'message': 'The email address is not verified.',
             'code': 'account_not_verified',
-            'error_type': 'auth',
             'user_id': unverified_user.pk,
         }]
     }
@@ -146,7 +143,6 @@ def test_validate_auth_token_invalid_token(api_client, user, settings):
         'errors': [{
             'message': 'Token is invalid.',
             'code': 'token_not_valid',
-            'error_type': 'auth',
             'user_id': 1
         }]
     }

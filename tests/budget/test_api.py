@@ -398,7 +398,6 @@ def test_duplicate_archived_budget(api_client, standard_product_user, f):
     assert response.json() == {'errors': [{
         'message': 'Duplicating archived budgets is not permitted.',
         'code': 'bad_request',
-        'error_type': 'bad_request'
     }]}
 
 

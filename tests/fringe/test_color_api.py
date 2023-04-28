@@ -34,6 +34,5 @@ def test_update_fringe_color_invalid_code(api_client, user, f, models, budget_f)
         'message': (
             'This code "#AFff2AF2" is not a valid hexadecimal color code.'),
         'code': 'invalid_type',
-        'error_type': 'field',
         'field': 'color'
     }]}

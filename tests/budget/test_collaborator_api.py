@@ -135,7 +135,6 @@ def test_assign_self_as_collaborator(api_client, f, user, models):
     assert response.json() == {'errors': [{
         'message': 'A user cannot assign themselves as a collaborator.',
         'code': 'invalid',
-        'error_type': 'field',
         'field': 'user'
     }]}
 
@@ -161,7 +160,6 @@ def test_assign_owner_as_collaborator(api_client, f, user, models):
             'as a collaborator.'
         ),
         'code': 'invalid',
-        'error_type': 'field',
         'field': 'user'
     }]}
 
@@ -186,7 +184,6 @@ def test_create_duplicate_collaborator(api_client, user, models, f):
     assert response.json() == {'errors': [{
         'message': 'The user is already a collaborator.',
         'code': 'unique',
-        'error_type': 'field',
         'field': 'user'
     }]}
 
@@ -265,7 +262,6 @@ def test_create_collaborator_as_non_owner_collaborator(api_client, access_type,
             'correct access type.'
         ),
         'code': 'permission_error',
-        'error_type': 'permission'
     }]}
 
 
@@ -286,5 +282,4 @@ def test_create_collaborator_as_non_owner_non_collaborator(api_client, f, user,
     assert response.json() == {'errors': [{
         'message': 'The user is not a collaborator for this budget.',
         'code': 'permission_error',
-        'error_type': 'permission'
     }]}

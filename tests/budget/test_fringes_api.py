@@ -117,7 +117,6 @@ def test_create_fringe_with_invalid_subaccounts(api_client, user, budget_f):
     assert response.status_code == 400
     assert response.json() == {'errors': [{
         'code': 'does_not_belong_to_budget',
-        'error_type': 'field',
         'field': 'subaccounts',
         'message': (
             'The child %s sub account with ID %s does not belong to the '

@@ -54,7 +54,6 @@ class BadRequest(exceptions.ParseError):
     default_code = ErrorCodes.BAD_REQUEST
     default_detail = _("Bad request.")
     status_code = status.HTTP_400_BAD_REQUEST
-    error_type = 'bad_request'
 
 
 @base_exception_cls
@@ -199,10 +198,6 @@ class ValidationError(exceptions.ValidationError):
             data = {field: message for field in self.fields}
 
         super().__init__(data, **kwargs)
-
-    @property
-    def error_type(self):
-        return 'field' if self.fields else 'form'
 
 
 class RequiredFieldError(ValidationError):

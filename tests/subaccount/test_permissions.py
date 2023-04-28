@@ -33,7 +33,6 @@ def create_obj(f):
         'message': (
             'The user must does not have permission to view this subaccount.'),
         'code': 'permission_error',
-        'error_type': 'permission'
     }),
     ParameterizedCase.not_logged_in(),
     ParameterizedCase('public_case', status=200),
@@ -53,7 +52,6 @@ def test_budget_subaccount_detail_read_permissions(case, path, detail_response):
         'message': (
             'The user must does not have permission to view this subaccount.'),
         'code': 'permission_error',
-        'error_type': 'permission'
     }),
     ParameterizedCase.not_logged_in(),
     ParameterizedCase('public_case', status=401),
@@ -72,7 +70,6 @@ SUBACCOUNT_DELETE_PERMISSIONS = [
         'message': (
             'The user must does not have permission to view this subaccount.'),
         'code': 'permission_error',
-        'error_type': 'permission'
     }),
     ParameterizedCase.not_logged_in(),
     ParameterizedCase('public_case', status=401),
@@ -102,7 +99,6 @@ BUDGET_SUBACCOUNT_CREATE_PERMISSIONS = [
         'message': (
             'The user must does not have permission to view this subaccount.'),
         'code': 'permission_error',
-        'error_type': 'permission'
     }),
     ParameterizedCase.not_logged_in(),
     ParameterizedCase('public_case', status=401),
@@ -154,7 +150,6 @@ TEMPLATE_SUBACCOUNT_CREATE_PERMISSIONS = [
         'message': (
             'The user must does not have permission to view this subaccount.'),
         'code': 'permission_error',
-        'error_type': 'permission'
     }),
     ParameterizedCase.not_logged_in(),
     ParameterizedCase('public_case', status=401),
@@ -205,7 +200,6 @@ def test_template_subaccount_detail_create_markups_permissions(case, models, f,
         'message': (
             'The user must does not have permission to view this subaccount.'),
         'code': 'permission_error',
-        'error_type': 'permission'
     }),
     ParameterizedCase.not_logged_in(),
     ParameterizedCase('public_case', status=401),
@@ -224,7 +218,7 @@ def test_budget_subaccount_update_permissions(case, update_response):
         'message': (
             'The user must does not have permission to view this subaccount.'),
         'code': 'permission_error',
-        'error_type': 'permission'
+
     }),
     ParameterizedCase.not_logged_in(),
     ParameterizedCase('public_case', status=401),
@@ -241,7 +235,7 @@ SUBACCOUNT_DETAIL_UPDATE_PERMISSIONS = [
         'message': (
             'The user must does not have permission to view this subaccount.'),
         'code': 'permission_error',
-        'error_type': 'permission'
+
     }),
     ParameterizedCase.not_logged_in(),
     ParameterizedCase('public_case', status=401),
@@ -283,7 +277,6 @@ SUBACCOUNT_DETAIL_ATTACHMENT_PERMISSIONS = [
         'message': (
             'The user must does not have permission to view this subaccount.'),
         'code': 'permission_error',
-        'error_type': 'permission'
     }),
     ParameterizedCase.not_logged_in(),
     ParameterizedCase('public_case', status=401),

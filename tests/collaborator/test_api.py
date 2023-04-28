@@ -55,7 +55,6 @@ def test_update_self_collaboration_state(api_client, f, models):
     assert response.json() == {'errors': [{
         'message': 'A user cannot update their own collaboration state.',
         'code': 'bad_request',
-        'error_type': 'bad_request'
     }]}
 
 
@@ -77,7 +76,6 @@ def test_delete_self_as_collaborator(api_client, f):
     assert response.json() == {'errors': [{
         'message': 'A user cannot remove themselves as a collaborator.',
         'code': 'bad_request',
-        'error_type': 'bad_request'
     }]}
 
 
@@ -172,7 +170,6 @@ def test_update_collaborator_as_non_owner_collaborator(api_client, f, models,
             'correct access type.'
         ),
         'code': 'permission_error',
-        'error_type': 'permission'
     }]}
 
 
@@ -198,5 +195,4 @@ def test_delete_collaborator_as_non_owner_collaborator(api_client, access_type,
             'correct access type.'
         ),
         'code': 'permission_error',
-        'error_type': 'permission'
     }]}

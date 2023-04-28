@@ -9,66 +9,10 @@ from rest_framework.response import Response
 from rest_framework.serializers import as_serializer_error
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
 
-from happybudget.app.billing.exceptions import (
-    BillingError, ProductPermissionError)
+from happybudget.app.billing.exceptions import (ProductPermissionError)
 
 
 logger = logging.getLogger('happybudget')
-
-
-ErrorTypeDesignation = collections.namedtuple(
-    typename='ErrorTypeDesignation',
-    field_names=['exception_cls', 'error_type', 'conditional'],
-    defaults=(None, )
-)
-
-DefaultErrorTypes = [
-    ErrorTypeDesignation(
-        exception_cls=(Http404, exceptions.MethodNotAllowed),
-        error_type='http'
-    ),
-    ErrorTypeDesignation(
-        exception_cls=exceptions.PermissionDenied,
-        error_type='permission'
-    ),
-    ErrorTypeDesignation(exception_cls=BillingError, error_type='billing'),
-    ErrorTypeDesignation(
-        exception_cls=exceptions.ParseError,
-        error_type='bad_request'
-    ),
-    ErrorTypeDesignation(
-        exception_cls=exceptions.ValidationError,
-        error_type='form',
-        conditional=lambda e:
-            isinstance(e.detail, dict) and '__all__' in e.detail
-    ),
-    ErrorTypeDesignation(
-        exception_cls=exceptions.ValidationError,
-        error_type='field',
-        conditional=lambda e:
-            isinstance(e.detail, dict) and '__all__' not in e.detail
-    ),
-    ErrorTypeDesignation(
-        error_type='auth',
-        exception_cls=(
-            AuthenticationFailed,
-            exceptions.AuthenticationFailed,
-            exceptions.NotAuthenticated
-        )
-    )
-]
-
-
-def get_default_error_type(e):
-    for d in DefaultErrorTypes:
-        if isinstance(e, d.exception_cls) \
-                and (d.conditional is None or d.conditional(e)):
-            return d.error_type
-    return None
-
-
-def get_error_type(e):
-    return getattr(e, 'error_type', get_default_error_type(e))
 
 
 def map_detail(e, **kwargs):
@@ -84,7 +28,6 @@ def map_detail(e, **kwargs):
     return {**{
         'message': message or str(detail),
         'code': code or getattr(detail, 'code'),
-        'error_type': get_error_type(e)
     }, **kwargs}
 
 
@@ -183,7 +126,6 @@ def exception_handler(exc, context):
         >>>    "field": "username",
         >>>    "code": "invalid",
         >>>    "message": "Username is invalid.",
-        >>>    "error_type": "field"
         >>> }]}
 
     (2) Flatter Response Structure
@@ -238,13 +180,11 @@ def exception_handler(exc, context):
         >>>       "field": "username",
         >>>       "code": "invalid",
         >>>       "message": "Username is invalid.",
-        >>>       "error_type": "field"
         >>>   },
         >>>   {
         >>>       "field": "email",
         >>>       "code": "invalid",
         >>>       "message": "Email is invalid.",
-        >>>       "error_type": "field"
         >>>   }
         >>> ]}
 
@@ -252,78 +192,7 @@ def exception_handler(exc, context):
         body is when multiple field level validations failed.  For all other
         error types, there will only ever be 1 error.
 
-    (3) Inclusion of Error Type
-
-        By default, Django REST Framework does not give any indication of what
-        type of error occurred outside of letting us know if the error that
-        occurred related to a specific field or occurred outside of the context
-        of a specific field (when the error is indexed by "__all__").
-
-        In order for the Front End to better diagnose and make decisions based
-        on errors embedded in the response, we develop an error type dichotomy
-        that allows the Front End to categorize errors and handle them based on
-        where they lie in this dichotomy.
-
-        At the time of this writing, the dichotomy consists of the following
-        error subsets:
-
-        (1) http [404] Response or [405] Response
-            Errors that are related to unexpected API configuration related
-            problems, such as 404 errors or 405 errors.
-
-        (2) bad_request [400] Response
-            General errors that do not fall under the field, form or billing
-            error types.
-
-        (3) field [400] Response
-            Validation errors that are related to failed validation of specific
-            fields in the request data.
-
-        (4) form [400] Response
-            Validation errors that are related to request data validation that
-            does not pertain to a specific field in the request data.
-
-        (5) auth [401] Response
-            Validation errors related to proper authentication of a user.  These
-            occur when attempting to access a protected resource without being
-            authenticated or when the JWT authentication token is being
-            validated. In both cases, the Front End identifies when this type
-            of error is included in the response and will forcefully log out
-            the user.
-
-        (6) billing [400] Response
-            Billing related errors that occur when a user is attempting to
-            change, update or create subscriptions in Stripe.
-
-        (7) permission [403] Response
-            Errors raised when a user does not have the permissions to access
-            a resource they are attempting to access.  These are usually avoided
-            by the Front End, by only making requests when the logged in user
-            has certain permissions available - but they can nonetheless occur,
-            particularly when requests are submitted outside the context of our
-            Front End.
-
-        The error type of a specific error can be defined statically on the
-        custom exception class.  If the custom exception class does not define
-        the error type, the error type is inferred based on the error class that
-        was raised in this view.
-
-        >>> class CheckoutError(exceptions.BadRequest):
-        >>>     error_type = 'billing'
-        >>>     default_code = BillingErrorCodes.CHECKOUT_ERROR
-        >>>     default_detail = _("There was a error during checkout.")
-
-        >>> raise CheckoutError()
-        >>> Response [400]
-        >>> {"errors": [
-        >>>   {
-        >>>       "code": "checkout_error",
-        >>>       "message": "There was an error during checkout.",
-        >>>       "error_type": "billing"
-        >>>   }
-        >>> ]}
-
-    (4) Allowing for the Inclusion of Additional Context
+    (3) Allowing for the Inclusion of Additional Context
 
         Sometimes, especially in this application, we need to build errors that
         include much more information than just a code and a message.  Additional
@@ -360,13 +229,12 @@ def exception_handler(exc, context):
             >>>            "field": "username",
             >>>            "code": "invalid",
             >>>            "message": "Username is invalid.",
-            >>>            "error_type": "field",
             >>>            "username": "fakeuser@gmail.com",
             >>>        }
             >>>    ]
             >>> }
 
-        (4b) Logic in This Custom Exception Handler
+        (3b) Logic in This Custom Exception Handler
 
             Currently, this pertains to two parameters:
 
@@ -397,7 +265,7 @@ def exception_handler(exc, context):
                 >>>     products: ["happybudget_standard"]
                 >>> }] }
 
-    (5) Consistent Handling of 404 Errors.
+    (4) Consistent Handling of 404 Errors.
 
         By default, DRF will catch Django Http404 and render a response such as:
 
@@ -411,7 +279,6 @@ def exception_handler(exc, context):
         >>> {'errors': [{
         >>>    'message': 'Not found',
         >>>    'code': 'not_found',
-        >>>    'error_type': 'http'
         >>> }]}
     """
     # In case a Django ValidationError is raised outside of a serializer's
@@ -428,18 +295,6 @@ def exception_handler(exc, context):
         return views.exception_handler(exc, context)
 
     additional_data = {}
-    default_error_type = get_default_error_type(exc)
-
-    # If the error type cannot be determined, we cannot use our own error
-    # handling protocols as the API consumer will expect that error type to
-    # be defined.
-    error_type = getattr(exc, 'error_type', default_error_type)
-    if error_type is None:
-        logger.warning(
-            "Could not determine default error type for exception "
-            f"{exc.__class__.__name__}."
-        )
-        return views.exception_handler(exc, context)
 
     # If the exception class is initialized or marked as `hard_raise`, then we
     # want to raise the exception without rendering the response.
@@ -453,7 +308,6 @@ def exception_handler(exc, context):
     if isinstance(exc, Http404):
         message = str(exc) or "The requested resource could not be found."
         logger.warning("API encountered a 404 error", extra={
-            'error_type': error_type,
             'code': 'not_found'
         })
         return Response(
@@ -463,7 +317,6 @@ def exception_handler(exc, context):
     elif isinstance(exc, exceptions.MethodNotAllowed):
         message = str(exc) or "This method is not allowed."
         logger.error("API encountered a 405 error", extra={
-            'error_type': 'http',
             'code': 'method_not_allowed'
         })
         return Response(

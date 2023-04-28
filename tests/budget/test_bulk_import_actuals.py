@@ -301,7 +301,6 @@ def test_bulk_import_actuals_plaid_error_token_exchange(perform_request):
     assert response.json() == {'errors': [{
         'message': 'There was an error retrieving the transactions.',
         'code': 'plaid_request_error',
-        'error_type': 'bad_request'
     }]}
 
 
@@ -315,7 +314,6 @@ def test_bulk_import_actuals_plaid_error_transactions_get(
     assert response.json() == {'errors': [{
         'message': 'There was an error retrieving the transactions.',
         'code': 'plaid_request_error',
-        'error_type': 'bad_request'
     }]}
 
 
@@ -332,7 +330,6 @@ def test_bulk_import_actuals_end_date_before_start_date(perform_request):
     assert response.status_code == 400
     assert response.json() == {"errors": [{
         "code": "invalid",
-        "error_type": "field",
         "field": "start_date",
         "message": "The start date must be in the past and before the end date."
     }]}

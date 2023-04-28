@@ -93,7 +93,6 @@ def test_checkout_session_user_already_stripe_customer(api_client, user, prices,
         'errors': [{
             'message': 'User is already a Stripe customer.',
             'code': 'permission_error',
-            'error_type': 'permission'
         }]
     }
     session_ids = list(mock_stripe_data['checkout_sessions'].keys())
@@ -124,7 +123,6 @@ def test_portal_session_user_not_stripe_customer(api_client, user,
         'errors': [{
             'message': 'User is not a Stripe customer.',
             'code': 'permission_error',
-            'error_type': 'permission'
         }]
     }
 

@@ -362,7 +362,6 @@ def test_create_percent_markup_no_children(api_client, user, data, budget_f):
         'message': (
             'A markup with unit `percent` must have at least 1 child.'),
         'code': 'invalid',
-        'error_type': 'field',
         'field': 'children'
     }]}
 
@@ -381,7 +380,6 @@ def test_create_flat_markup_children(api_client, user, models, budget_f):
     assert response.json() == {'errors': [{
         'message': 'A markup with unit `flat` cannot have children.',
         'code': 'invalid',
-        'error_type': 'field',
         'field': 'children'
     }]}
 

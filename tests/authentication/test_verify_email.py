@@ -74,7 +74,6 @@ def test_verify_email_expired_token(api_client, unverified_user):
         'errors': [{
             'message': 'Token is expired.',
             'code': 'token_expired',
-            'error_type': 'auth',
             'user_id': unverified_user.id,
         }]
     }
@@ -91,7 +90,6 @@ def test_validate_email_token_inactive_user(inactive_user, validate_email_token)
         'errors': [{
             'message': 'The account is not active.',
             'code': 'account_disabled',
-            'error_type': 'auth',
             'user_id': inactive_user.pk,
         }]
     }
@@ -107,7 +105,6 @@ def test_validate_email_token_user_logged_in(validate_email_token, api_client,
         'errors': [{
             'message': 'User already has an active session.',
             'code': 'permission_error',
-            'error_type': 'permission',
         }]
     }
 
@@ -129,7 +126,6 @@ def test_validate_email_token_invalid_token(api_client):
         'errors': [{
             'message': 'Token is invalid.',
             'code': 'token_not_valid',
-            'error_type': 'auth'
         }]
     }
 

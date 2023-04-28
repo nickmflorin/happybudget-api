@@ -194,7 +194,6 @@ def test_social_login_account_disabled(api_client, f):
         'errors': [{
             'message': 'The account is not active.',
             'code': 'account_disabled',
-            'error_type': 'auth',
             'user_id': user.pk,
         }]
     }
@@ -233,6 +232,5 @@ def test_social_login_user_not_on_waitlist(api_client):
         'errors': [{
             'message': 'The email address is not on the waitlist.',
             'code': 'account_not_on_waitlist',
-            'error_type': 'auth'
         }]
     }

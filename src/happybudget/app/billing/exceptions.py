@@ -22,11 +22,10 @@ class BillingErrorCodes:
 
 
 class BillingError(exceptions.BadRequest):
-    error_type = 'billing'
+    pass
 
 
 class CheckoutError(BillingError):
-    error_type = 'billing'
     default_code = BillingErrorCodes.CHECKOUT_ERROR
     default_detail = _("There was a error during checkout.")
 
@@ -37,7 +36,6 @@ class CheckoutSessionInactiveError(CheckoutError):
 
 
 class StripeBadRequest(BillingError):
-    error_type = 'billing'
     default_code = BillingErrorCodes.STRIPE_REQUEST_ERROR
     default_detail = _("There was a Stripe error.")
 

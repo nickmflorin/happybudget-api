@@ -46,7 +46,6 @@ def test_temp_upload_file_missing_extension(user, api_client,
         'errors': [{
             'message': 'The file name `test` is missing an extension.',
             'code': 'invalid_file_name',
-            'error_type': 'field',
             'field': 'file'
         }]
     }
@@ -67,7 +66,6 @@ def test_temp_upload_image_missing_extension(user, api_client,
         'errors': [{
             'message': 'The file name `test` is missing an extension.',
             'code': 'invalid_file_name',
-            'error_type': 'field',
             'field': 'image'
         }]
     }
@@ -89,6 +87,5 @@ def test_temp_upload_image_invalid_extension(user, api_client,
             'message': 'The file extension `gif` is not supported.',
             'code': 'invalid_file_extension',
             'field': 'image',
-            'error_type': 'field',
         }]
     }

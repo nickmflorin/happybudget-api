@@ -551,7 +551,6 @@ def test_change_account_flat_markup_to_percent_no_children(api_client, user,
             'message': (
                 'A markup with unit `percent` must have at least 1 child.'),
             'code': 'invalid',
-            'error_type': 'field',
             'field': 'children'
         }]
     }
@@ -753,7 +752,6 @@ def test_change_account_percent_markup_to_flat_children(api_client, user, models
         'errors': [{
             'message': 'A markup with unit `flat` cannot have children.',
             'code': 'invalid',
-            'error_type': 'field',
             'field': 'children'
         }]
     }

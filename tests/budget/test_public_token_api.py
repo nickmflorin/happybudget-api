@@ -110,6 +110,5 @@ def test_create_another_budget_public_token(api_client, user, models, f):
     assert response.json() == {'errors': [{
         'message': 'Public token already exists for instance.',
         'code': 'unique',
-        'error_type': 'form'
     }]}
     assert models.PublicToken.objects.count() == 1

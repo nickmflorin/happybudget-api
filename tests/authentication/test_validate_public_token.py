@@ -46,7 +46,6 @@ def test_validate_public_token_expired_token(api_client, f):
     assert response.json() == {'errors': [{
         'message': 'Token is expired.',
         'code': 'token_expired',
-        'error_type': 'auth'
     }]}
 
 
@@ -79,7 +78,6 @@ def test_validate_public_token_invalid_instance(api_client, f):
     assert response.json() == {'errors': [{
         'message': 'Token is invalid.',
         'code': 'token_not_valid',
-        'error_type': 'auth'
     }]}
 
 
@@ -98,5 +96,4 @@ def test_validate_public_token_non_existent_instance(api_client, f):
     assert response.json() == {'errors': [{
         'message': 'Token is invalid.',
         'code': 'token_not_valid',
-        'error_type': 'auth'
     }]}

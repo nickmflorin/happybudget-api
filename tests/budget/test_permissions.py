@@ -29,7 +29,6 @@ def create_obj():
         'message': (
             'The user must does not have permission to view this budget.'),
         'code': 'permission_error',
-        'error_type': 'permission'
     }),
     ParameterizedCase.not_logged_in(),
     ParameterizedCase(
@@ -55,7 +54,6 @@ def test_budget_detail_read_permissions(case, path, detail_response):
         'message': (
             'The user must does not have permission to view this budget.'),
         'code': 'permission_error',
-        'error_type': 'permission'
     }),
     ParameterizedCase.not_logged_in(),
     ParameterizedCase('public_case', status=401),
@@ -88,7 +86,6 @@ BUDGET_DELETE_PERMISSIONS = [
         'message': (
             'The user must does not have permission to view this budget.'),
         'code': 'permission_error',
-        'error_type': 'permission'
     }),
     ParameterizedCase.not_logged_in(),
     ParameterizedCase('public_case', status=401),
@@ -116,7 +113,6 @@ BUDGET_CREATE_PERMISSIONS = [
         'message': (
             'The user must does not have permission to view this budget.'),
         'code': 'permission_error',
-        'error_type': 'permission'
     }),
     ParameterizedCase.not_logged_in(),
     ParameterizedCase('public_case', status=401),
@@ -144,7 +140,6 @@ def test_budget_detail_create_permissions(case, path, data,
         'message': (
             'The user must does not have permission to view this budget.'),
         'code': 'permission_error',
-        'error_type': 'permission'
     }),
     ParameterizedCase.not_logged_in(),
     ParameterizedCase('public_case', status=401),
@@ -154,7 +149,6 @@ def test_budget_detail_create_permissions(case, path, data,
         'message': (
             "The user's subscription does not support multiple budgets."),
         'code': 'product_permission_error',
-        'error_type': 'permission',
         'products': '__any__',
         'permission_id': 'multiple_budgets'
     }),
@@ -176,7 +170,6 @@ def test_budget_derive_permissions():
         'message': (
             'The user must does not have permission to view this budget.'),
         'code': 'permission_error',
-        'error_type': 'permission'
     }),
     ParameterizedCase.not_logged_in(),
     ParameterizedCase('public_case', status=401),
@@ -220,7 +213,6 @@ TEMPLATE_CREATE_PERMISSIONS = [
         'message': (
             'The user must does not have permission to view this budget.'),
         'code': 'permission_error',
-        'error_type': 'permission'
     }),
     ParameterizedCase.not_logged_in(),
     ParameterizedCase('public_case', status=401),
@@ -321,7 +313,6 @@ BUDGET_DETAIL_UPDATE_PERMISSIONS = [
         'message': (
             'The user must does not have permission to view this budget.'),
         'code': 'permission_error',
-        'error_type': 'permission'
     }),
     ParameterizedCase.not_logged_in(),
     ParameterizedCase('public_case', status=401),

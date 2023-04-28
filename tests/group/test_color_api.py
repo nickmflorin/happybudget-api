@@ -34,6 +34,5 @@ def test_update_group_color_invalid_code(api_client, user, models, f):
         'message': (
             'This code "#AFff2AF2" is not a valid hexadecimal color code.'),
         'code': 'invalid_type',
-        'error_type': 'field',
         'field': 'color'
     }]}

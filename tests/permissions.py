@@ -92,7 +92,6 @@ class ParameterizedCase:
         return cls(name='not_logged_in', status=401, create=create, error={
             'message': 'User is not authenticated.',
             'code': 'account_not_authenticated',
-            'error_type': 'auth'
         })
 
     @classmethod
@@ -100,7 +99,6 @@ class ParameterizedCase:
         return cls('multiple_budgets', login=False, status=401, error={
             'message': 'User is not authenticated.',
             'code': 'account_not_authenticated',
-            'error_type': 'auth'
         })
 
     @classmethod
@@ -109,7 +107,6 @@ class ParameterizedCase:
             'message': (
                 "The user's subscription does not support multiple budgets."),
             'code': 'product_permission_error',
-            'error_type': 'permission',
             'products': '__any__',
             'permission_id': 'multiple_budgets'
         })
