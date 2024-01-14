@@ -2,6 +2,8 @@
 
 &copy; Nick Florin, 2022
 
+This project is protected by federal copyright certificate with registration no. TXu 2-319-983.
+
 This project serves as a REST API supporting the HappyBudget platform.
 
 This documentation outlines how to properly setup and configure the application
